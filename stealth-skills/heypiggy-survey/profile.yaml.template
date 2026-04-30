@@ -1,24 +1,56 @@
-demographics:
-  country: Deutschland
-  language: Deutsch
-  region: Bayern
-  city: München
-  age: 34
-  gender: männlich
-  zip: "80331"
-  employment: Angestellt
-  household_size: 2
-  income_bracket: "50.000–70.000 €"
+# profile.yaml — 39 Felder, abgeleitet aus A2A-SIN-Worker-heypiggy _template.json
+# Leere/0-Werte = UNBEKANNT → System fällt auf plausibelste Option zurück
 
-brand_awareness:
-  outdoor_clothing:
-    known: [Jack Wolfskin, The North Face, Patagonia, Columbia]
-    purchased: [Jack Wolfskin, The North Face]
-  electronics:
-    known: [Samsung, Apple, Sony]
-    purchased: [Samsung]
+username: "survey_user"
+full_name: ""
+first_name: ""
+last_name: ""
 
-screening_strategy:
-  never_answer_none: true
-  min_brands_to_select: 3
-  research_frequency: "mindestens einmal pro Monat"
+date_of_birth: ""
+gender: ""
+country: "DE"
+country_name: "Deutschland"
+region: ""
+city: ""
+postal_code: ""
+language_primary: "de"
+languages_spoken: ["de"]
+
+marital_status: ""
+household_size: 0
+children_count: 0
+children_ages: []
+pets: []
+
+employment_status: ""
+occupation: ""
+industry: ""
+work_hours_per_week: 0
+education_level: ""
+income_monthly_net_eur: 0
+income_monthly_gross_eur: 0
+income_yearly_gross_eur: 0
+household_income_monthly_eur: 0
+
+housing_type: ""
+rooms_in_dwelling: 0
+car_ownership: ""
+cars_in_household: 0
+smoking: ""
+alcohol_consumption: ""
+sports_per_week_hours: 0
+
+hobbies: []
+interests: []
+shopping_habits: {}
+brand_preferences: {}
+
+social_media_platforms: []
+streaming_services: []
+news_sources: []
+
+political_leaning: ""
+religion: ""
+sexual_orientation: ""
+health_conditions: []
+extra_facts: {}

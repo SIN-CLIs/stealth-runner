@@ -112,3 +112,14 @@ BEFORE=$(./cli/heypiggy-balance $PID | python3 -c "import json,sys; print(json.l
 AFTER=$(./cli/heypiggy-balance $PID | python3 -c "import json,sys; print(json.load(sys.stdin)['eur'])")
 echo "Verdient: $((AFTER - BEFORE)) €"
 ```
+
+## 🤖 Worker-Mode (v2)
+Für komplexe Surveys optional den A2A-SIN-Worker als Vision-LLM-Backend:
+```bash
+heypiggy-survey-screener --pid PID --profile profile.yaml --worker-mode
+```
+Ohne `--worker-mode`: deterministisch via profile.yaml.
+Mit `--worker-mode`: delegiert an Worker → Vision-LLM für intelligente Antworten.
+
+## Profil (39 Felder)
+Siehe `profile.yaml.template` — abgeleitet aus Worker `_template.json`.
