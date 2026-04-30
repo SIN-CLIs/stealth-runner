@@ -52,3 +52,8 @@ IDLE → CAPTURE → VISION → EXECUTE → VERIFY → (loop) → DONE
 - ⬜ #4 Right-click Chromium — Known limitation
 - ⬜ #6 JA4 TLS Fingerprinting — Pending
 - ⬜ #7 macOS Monitoring — Pending
+
+## Tests (18/18 PASSED)
+- sin_survey_core: 12 tests (panel detection, EUR extraction, error classification)
+- runner: 6 tests (StealthExecutor, VisionClient, AuditLog, HumanProfile)
+- Run: `python3 tests/test_sin_survey_core.py && python3 tests/test_runner.py`
