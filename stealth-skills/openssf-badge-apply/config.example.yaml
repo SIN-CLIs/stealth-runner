@@ -1,0 +1,11 @@
+openssf_badge_apply:
+  api_token: "${OPENSSF_API_TOKEN}"
+  mode: api
+  repos:
+    - SIN-CLIs/screen-follow
+    - SIN-CLIs/skylight-cli
+    - SIN-CLIs/playstealth-cli
+    - SIN-CLIs/unmask-cli
+    - OpenSIN-AI/stealth-runner
+    - OpenSIN-AI/A2A-SIN-Worker-heypiggy
+    - OpenSIN-AI/Infra-SIN-OpenCode-Stack

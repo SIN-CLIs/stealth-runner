@@ -1,0 +1,55 @@
+{
+  "project_name": "{{REPO_NAME}}",
+  "repo_url": "https://github.com/{{OWNER}}/{{REPO_NAME}}",
+  "description": "{{DESCRIPTION}}",
+  "license": "MIT",
+  "criteria": {
+    "basics": {
+      "description_good": "Met", "interact": "Met", "contribution": "Met",
+      "license": "Met", "license_osi": "Met", "discussion": "Met",
+      "english": "Met", "repo_public": "Met", "version": "Met", "release_notes": "Met"
+    },
+    "change_control": {
+      "repo_tracked": "Met", "version_control": "Met", "release_history": "Met",
+      "release_notes_every": "Met", "release_notes_structured": "Met",
+      "release_notes_signed": "N/A", "release_notes_fixes": "Met"
+    },
+    "reporting": {
+      "bug_reporting": "Met", "vulnerability_reporting": "Met",
+      "vulnerability_reporting_private": "Met", "vulnerability_reporting_response": "Met"
+    },
+    "quality": {
+      "build": "Met", "build_automatic": "Met", "test": "Met",
+      "test_continuous_integration": "Met", "test_policy": "Met",
+      "test_most": "Met", "test_optional": "Met",
+      "coverage": "Met", "coverage_most": "Met",
+      "code_review": "Met", "code_review_all": "Met",
+      "coding_standards": "Met", "coding_standards_enforced": "Met",
+      "warnings": "Met", "warnings_fixed": "Met", "errors": "Met", "errors_fixed": "Met"
+    },
+    "security": {
+      "know_common_errors": "Met", "know_common_errors_list": "Met",
+      "input_validation": "Met", "sql_injection": "Met",
+      "hardening": "Met", "secure_delivery": "Met",
+      "crypto_used": "N/A", "crypto_default": "N/A", "crypto_release": "N/A",
+      "crypto_keylength": "N/A", "crypto_working": "N/A",
+      "crypto_pfs": "N/A", "crypto_password_storage": "N/A",
+      "crypto_random": "N/A", "crypto_timing": "N/A", "crypto_credential_agility": "N/A",
+      "vulnerability_reporting_process": "Met", "vulnerability_reporting_private": "Met",
+      "vulnerability_reporting_response": "Met", "vulnerability_reporting_acknowledge": "Met",
+      "vulnerability_fixes": "Met", "vulnerability_fixes_automatic": "Met",
+      "vulnerability_fixes_deadline": "Met"
+    },
+    "analysis": {
+      "static_analysis": "Met", "static_analysis_common_errors": "Met",
+      "static_analysis_often": "Met",
+      "dynamic_analysis": "N/A", "dynamic_analysis_unsafe": "N/A",
+      "dynamic_analysis_enable_assertions": "N/A"
+    },
+    "future": {
+      "roadmap": "Met", "governance": "Met",
+      "access_control": "Met", "bus_factor": "Met", "sustainability": "Met",
+      "commercial_support": "N/A", "financial_support": "N/A"
+    }
+  }
+}

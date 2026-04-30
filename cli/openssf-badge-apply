@@ -1,0 +1,40 @@
+#!/bin/bash
+set -euo pipefail
+REPO=""; DESCRIPTION=""; TOKEN=""
+while [[ $# -gt 0 ]]; do
+    case "$1" in
+        --repo) REPO="$2"; shift 2 ;;
+        --description) DESCRIPTION="$2"; shift 2 ;;
+        --api-token) TOKEN="$2"; shift 2 ;;
+        *) shift ;;
+    esac
+done
+[ -z "$REPO" ] && echo "Usage: openssf-badge-apply --repo OWNER/REPO --description DESC --api-token TOKEN" && exit 1
+[ -z "$TOKEN" ] && echo "API token required. Get it from https://www.bestpractices.dev/account" && exit 1
+
+OWNER=$(echo "$REPO" | cut -d/ -f1)
+NAME=$(echo "$REPO" | cut -d/ -f2)
+
+# Create project
+RESP=$(curl -sf -X POST "https://bestpractices.dev/api/projects" \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "{\"repo_url\": \"https://github.com/$REPO\"}" 2>/dev/null)
+PID=$(echo "$RESP" | python3 -c "import json,sys; print(json.load(sys.stdin).get('id',''))" 2>/dev/null)
+
+if [ -z "$PID" ]; then
+    echo "{\"status\":\"error\",\"reason\":\"project_create_failed\",\"response\":$RESP}"
+    exit 1
+fi
+echo "{\"status\":\"created\",\"project_id\":\"$PID\"}"
+
+# Submit criteria from template
+TEMPLATE=$(dirname "$0")/../stealth-skills/openssf-badge-apply/openssf-antworten.json
+CRITERIA=$(sed "s/{{REPO_NAME}}/$NAME/g; s/{{OWNER}}/$OWNER/g; s/{{DESCRIPTION}}/$DESCRIPTION/g" "$TEMPLATE" | python3 -c "import json,sys; print(json.dumps(json.load(sys.stdin)['criteria']))")
+
+curl -sf -X POST "https://bestpractices.dev/api/projects/$PID/criteria" \
+    -H "Authorization: Bearer $TOKEN" \
+    -H "Content-Type: application/json" \
+    -d "$CRITERIA" 2>/dev/null >/dev/null
+
+echo "{\"status\":\"done\",\"badge\":\"[![OpenSSF Best Practices](https://www.bestpractices.dev/projects/$PID/badge)](https://www.bestpractices.dev/projects/$PID)\"}"
