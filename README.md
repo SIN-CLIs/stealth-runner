@@ -1,97 +1,30 @@
-# stealth-runner
+# stealth-runner (Public Core Engine)
 
-**Orchestrator der Stealth-Triade**  
-`playstealth-cli` · `skylight-cli` · `unmask-cli`
-
-Der `stealth-runner` ist eine zustandsgesteuerte Automatisierungspipeline, die Webumfragen vollständig unsichtbar abwickelt – ohne Cursorbewegung, ohne DOM‑Zugriff, ohne Chrome DevTools Protocol (CDP).  
-Er kombiniert drei spezialisierte CLI‑Tools zu einer lückenlosen **Sense‑Think‑Act**‑Kette, die selbst modernste Anti‑Bot‑Systeme unterläuft.
+Generische Automatisierungs-Engine der Stealth-Quad.
+Orchestriert **Sense-Hide-Act-Verify-Learn** über atomare CLI-Tools —
+**völlig plattformneutral**. Kein Zielportal ist fest eingebaut.
 
 ## Architektur
-
 ```
-                      ┌──────────────────────────┐
-                      │     stealth-runner        │
-                      │   (Python 3.12 State      │
-                      │     Machine)              │
-                      └──────────┬───────────────┘
-                                 │
-                    ┌────────────┼────────────────┐
-                    │            │                │
-              ┌─────▼─────┐ ┌───▼────────┐ ┌─────▼─────┐
-              │ playstealth│ │ skylight   │ │  unmask   │
-              │   -cli     │ │   -cli     │ │   -cli    │
-              └─────────────┘ └────────────┘ └───────────┘
+[stealth-runner]  ←  lädt  →  [stealth-skills (privat)]
+       │                              │
+       ├─ state_machine.py            ├─ platforms/heypiggy/
+       ├─ executor.py                 ├─ platforms/swagbucks/
+       ├─ strategy_selector.py        └─ _registry.json
+       └─ learn.py
 ```
-
-- **playstealth‑cli** startet einen getarnten Chrome und liefert die PID.
-- **skylight‑cli** erstellt Screenshots mit Element‑Markierungen (SoM) und führt Klicks, Texteingaben, Scroll‑ und Drag‑Aktionen über die Accessibility‑API (`kAXPressAction`) aus.
-- **unmask‑cli** prüft nach jeder Aktion, ob die Tarnung noch intakt ist.
-
-Der Runner orchestriert alles über eine **asynchrone State Machine** und persistiert jede Aktion in einem Audit‑Log.
-
-## Zustände
-
-```
-IDLE → LAUNCH_BROWSER → WAIT_READY → CAPTURE → VISION → EXECUTE → VERIFY → (loop) → DONE
-```
-
-Jeder Übergang ist ein atomarer CLI‑Aufruf – kein Event‑Bus, kein CDP, keine persistenten Server‑Prozesse.
 
 ## Schnellstart
-
-### 1. Abhängigkeiten
-
-- **macOS ≥ 13** (für Accessibility‑API)
-- **Python ≥ 3.12**
-- **Drei CLI‑Tools** (müssen im `PATH` liegen):
-  - [`playstealth-cli`](https://github.com/SIN-CLIs/playstealth-cli)
-  - [`skylight-cli`](https://github.com/SIN-CLIs/skylight-cli)
-  - [`unmask-cli`](https://github.com/SIN-CLIs/unmask-cli)
-
-### 2. Installation
-
 ```bash
 git clone https://github.com/OpenSIN-AI/stealth-runner.git
 cd stealth-runner
-python -m venv .venv && source .venv/bin/activate
-pip install -e .
+pip install -e '.[dev]'
+stealth-runner --skills-path ../stealth-skills --brain-path ../Infra-SIN-Global-Brain
 ```
 
-### 3. Konfiguration
-
-```bash
-export CF_ACCOUNT_ID="deine-cloudflare-account-id"
-export CF_GATEWAY_ID="dein-gateway"
-export CF_API_TOKEN="dein-api-token"
-```
-
-### 4. Ausführen
-
-```bash
-stealth-runner "https://heypiggy.com/?page=dashboard"
-```
-
-## Tests
-
-```bash
-pytest tests/
-```
-
-## Dokumentation für Agenten
-
-- `AGENTS.md` – Erlaubte Tools, Verbote, Beispiele
-- `banned.md` – Liste der verbotenen Techniken (CDP, Chrome‑Extensions, `cua‑driver`)
-- `architecture.md` – Vollständige Systemarchitektur
-
-## Roadmap
-
-- [x] State Machine mit 9 Zuständen und Recovery‑Pfad
-- [x] StealthExecutor ohne `cua‑driver`‑Fallback
-- [x] Vollständiger Vision‑Prompt (10 Aktions‑Typen inkl. Captcha)
-- [x] OCR‑Fallback für Canvas‑Elemente (Apple Vision Framework)
-- [ ] Human‑Profile aktivieren (Jitter, Bézier‑Kurven, Hover‑Delay)
-- [ ] Parallelisierung mehrerer Survey‑Instanzen
+## Skill-System
+Eigene Plattform-Skills werden als Shell-Skripte + Markdown in einem separaten
+Repository abgelegt. Die Engine lädt sie über `--skills-path` und `_registry.json`.
 
 ## Lizenz
-
-MIT – siehe `LICENSE`.
+MIT — frei für jede Nutzung, Modifikation und Integration.
