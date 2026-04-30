@@ -33,5 +33,12 @@
       "status": "active"
     }
   },
-  "captured": []
+  "captured": [
+    {
+      "name": "captured-20260430-142837",
+      "cli": "captured/captured-20260430-142837/captured-20260430-142837",
+      "status": "new",
+      "captured_at": "2026-04-30T14:28:37"
+    }
+  ]
 }
