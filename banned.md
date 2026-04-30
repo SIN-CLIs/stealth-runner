@@ -19,3 +19,8 @@
 - Jede Aktion ist atomar und in JSON-Trace gespeichert
 - Crash bei Frage 7 = Resume bei Frage 7 (nicht Neustart)
 - Kein DOM-Zugriff, kein MCP-Server, kein Daemon
+
+## 🚫 Zusätzlich verboten (seit efd363f):
+- **cua-driver** — Altes Tool, vollständig durch skylight-cli v0.2.0 ersetzt
+- **open -na "Google Chrome"** — Browser-Start NUR via playstealth-cli launch
+- **AXStaticText klicken** — Nur AXButton, AXLink, AXCheckBox, AXRadioButton
