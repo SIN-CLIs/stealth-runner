@@ -1,0 +1,2 @@
+# States
+IDLE → EXECUTE → DONE

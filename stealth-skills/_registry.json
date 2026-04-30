@@ -1,0 +1,37 @@
+{
+  "skills": {
+    "google-login": {
+      "trigger": "google oauth login",
+      "cli": "cli/heypiggy-login",
+      "status": "active",
+      "last_verified": "2026-04-30",
+      "success_rate": 0.95
+    },
+    "heypiggy-survey": {
+      "trigger": "starte umfrage",
+      "cli": "cli/heypiggy-survey-start",
+      "status": "active"
+    },
+    "recovery-overquota": {
+      "trigger": "over quota",
+      "cli": "stealth-skills/modules/recovery-overquota/cli/recovery-overquota",
+      "status": "active"
+    },
+    "recovery-attentioncheck": {
+      "trigger": "attention check",
+      "cli": "stealth-skills/modules/recovery-attentioncheck/cli/recovery-attentioncheck",
+      "status": "active"
+    },
+    "question-matrix": {
+      "trigger": "matrix question",
+      "cli": "stealth-skills/modules/question-matrix/cli/question-matrix-solve",
+      "status": "active"
+    },
+    "router-detector": {
+      "trigger": "unbekannte survey",
+      "cli": "stealth-skills/modules/router-detector/cli/router-detector",
+      "status": "active"
+    }
+  },
+  "captured": []
+}
