@@ -9,3 +9,8 @@ dependencies = [
 ]
 [project.scripts]
 stealth-runner = "runner.state_machine:main"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+asyncio_mode = "auto"
+markers = ["anyio: async tests"]
