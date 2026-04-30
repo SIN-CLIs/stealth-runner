@@ -211,3 +211,44 @@ sleep 4
 - `states.md` — Zustandsautomat (IDLE→LOGOUT→LOGIN→DONE)
 - `recovery.md` — Captcha/2FA/Timeout-Strategie
 - `config.example.yaml` — Konfigurationsvorlage
+
+## 🚨 NIE WIEDER: Die 3 eisernen Regeln
+
+### Regel 1: NACH jedem Popup/Klick `list-elements` NEU abfragen
+```bash
+# ❌ FALSCH: Index von vor dem Popup verwenden
+skylight-cli click --pid X --element-index 131  # Google klicken
+skylight-cli type --pid X --element-index 140 --text "..."  # DIREKT tippen
+
+# ✅ RICHTIG: Nach Popup neu scannen
+skylight-cli click --pid X --element-index 131  # Google klicken
+sleep 5  # ⏳ WICHTIG: Popup laden lassen!
+skylight-cli list-elements --pid X  # 🔄 NEU SCANNEN
+# JETZT erst den NEUEN Index für "E-Mail oder Telefonnummer" suchen
+```
+
+### Regel 2: Koordinaten-Prüfung (Apple-Menü-Schutz)
+Jeder Klick MUSS `y > 30` sein. Alles darunter = Apple-Menüleiste.
+```bash
+# Im Agent IMMER vor Klick prüfen:
+if [ $CLICK_Y -lt 30 ]; then
+    echo "❌ APPLE-MENÜ! y=$CLICK_Y < 30 — NICHT klicken!" && exit 1
+fi
+```
+
+### Regel 3: Element-Label exakt matchen
+Google OAuth Feld heißt **"E-Mail oder Telefonnummer"** — NICHT "E-Mail" (das ist das HeyPiggy-Formular).
+```python
+# ❌ FALSCH: erstes "E-Mail"-Feld genommen → HeyPiggy-Formular
+if 'mail' in label.lower():  # trifft beides!
+
+# ✅ RICHTIG: exaktes Label für Google-Popup
+if 'telefon' in label.lower():  # NUR Google-Feld
+```
+
+## 🧪 Test-Checkliste (vor jedem Login)
+- [ ] `sleep 5` nach Google-Login-Klick (Popup braucht Zeit)
+- [ ] `list-elements` NEU nach Popup
+- [ ] "E-Mail oder Telefonnummer" suchen, nicht "E-Mail"
+- [ ] `y > 30` prüfen (kein Apple-Menü)
+- [ ] Primer `--x -1 --y -1` vor jedem Klick

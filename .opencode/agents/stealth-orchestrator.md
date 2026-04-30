@@ -49,3 +49,8 @@ screen-follow stop                       # Aufnahme beenden
 - `CGEventPostToPid` → Chrome 148 ignoriert
 - `--force-renderer-accessibility` → Crasht Chrome
 - `cua-driver` → ersetzt durch skylight-cli
+
+## 🚨 NIE WIEDER: Popup-Regeln (30.4.2026)
+1. **NACH jedem Klick der Popup öffnet:** `sleep 5`, dann `list-elements` NEU
+2. **y < 30 = APPLE-MENÜ** → sofort abbrechen
+3. **Google-Feld heißt "E-Mail oder Telefonnummer"** — nie "E-Mail" allein
