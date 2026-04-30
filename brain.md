@@ -73,3 +73,20 @@ IDLE → LAUNCH_BROWSER → WAIT_READY → CAPTURE → VISION → EXECUTE → VE
 - https://github.com/OpenSIN-AI/stealth-runner (GREENFIELD, PURE)
 - https://github.com/OpenSIN-AI/A2A-SIN-Worker-heypiggy (REFERENCE, not deleted)
 - https://github.com/SIN-CLIs/skylight-cli (Stealth Triade: act, v0.2.0)
+
+## Smoke Test Resultate (30.04.2026 — 17:20 UTC)
+
+| Test | Result |
+|------|--------|
+| **skylight-cli** | ✅ v0.2.0 installed |
+| **Bot-Chrome** | ✅ PID=91048 running |
+| **Screenshot** | ✅ 90 elements found (som mode) |
+| **Vision (NVIDIA Mistral)** | ✅ `{"action":"click","element_id":42,"reasoning":"First available survey with reward 2.23 €"}` |
+| **Click (dry-run)** | ✅ status=ok |
+| **State Machine** | ✅ CAPTURE→VISION→EXECUTE→VERIFY cycle |
+| **VisionClient backend** | ✅ urllib.request (KEIN openai) |
+| **NVIDIA_API_KEY** | ✅ gesetzt |
+
+### Nicht verfügbar (geplant):
+- ❌ playstealth-cli (binary) — Bot-Chrome via pgrep Workaround
+- ❌ unmask-cli (binary) — verify_stealth graceful fallback
