@@ -1,9 +1,18 @@
 #!/bin/bash
 # heypiggy-logout — Abmelden von heypiggy.com
+# Methode 1: Incognito (sicher, automatisch)
+# Methode 2: Google-Logout (accounts.google.com/Logout)
 set -euo pipefail
-PID=${1:-$(pgrep -f "Google Chrome.app/Contents/MacOS/Google Chrome$" | head -1)}
+METHOD=${1:-incognito}
 
-echo "{\"status\":\"logging_out\",\"method\":\"incognito\"}"
-open -na "Google Chrome" --args --incognito "https://heypiggy.com/?page=dashboard"
-sleep 4
-echo "{\"status\":\"ok\"}"
+if [ "$METHOD" = "google" ]; then
+    echo '{"status":"logging_out","method":"google"}'
+    open "https://accounts.google.com/Logout"
+    sleep 3
+    echo '{"status":"ok","method":"google_logout"}'
+else
+    echo '{"status":"logging_out","method":"incognito"}'
+    open -na "Google Chrome" --args --incognito "https://heypiggy.com/?page=dashboard"
+    sleep 4
+    echo '{"status":"ok","method":"incognito"}'
+fi
