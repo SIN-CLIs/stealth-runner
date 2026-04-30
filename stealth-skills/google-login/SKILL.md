@@ -17,6 +17,13 @@ Falls keine Web-Elemente: `chrome://accessibility` → "Suppress automatic" deak
 
 ## 🚪 LOGOUT (3 Methoden)
 
+### Methode 0: Manuell über heypiggy-UI (wie User es macht)
+```bash
+# 1. Klick auf Profil-Icon (rechts oben, ~x=1035 y=614)
+# 2. Dropdown-Menü → "Ausloggen" oder "Abmelden"
+# 3. Seite wechselt zu Login-Page
+```
+
 ### Methode 1: Google-Konto abmelden (accounts.google.com)
 ```bash
 # Direkt zur Google-Logout-Seite
