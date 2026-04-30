@@ -5,7 +5,7 @@ from pathlib import Path
 from typing import Any
 from .drivers.base import BaseDriver
 from .drivers.skylight import SkyLightDriver
-from .tls_fingerprint import verify_tls
+from .tls_fingerprint import get_ja4_fingerprint
 
 class StealthError(Exception): pass
 
@@ -17,7 +17,7 @@ class StealthExecutor:
         self._tls_ok = False
 
     def ensure_tls(self, url: str) -> None:
-        if not self._tls_ok: verify_tls(url); self._tls_ok = True
+        if not self._tls_ok: get_ja4_fingerprint(url); self._tls_ok = True
 
     @property
     def backend(self) -> str: return "skylight-cli"
