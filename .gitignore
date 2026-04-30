@@ -16,3 +16,11 @@ credentials.json
 .DS_Store
 .AppleDouble
 .LSOverride
+dist/
+build/
+*.egg-info/
+.coverage/
+.ruff_cache/
+.mypy_cache/
+uv.lock
+poetry.lock
