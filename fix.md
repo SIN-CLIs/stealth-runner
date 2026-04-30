@@ -41,3 +41,6 @@ Vision-Aktionen:          10
 - ✅ "Banane" als Antwort geklickt, "Nächste" navigiert
 - ⚠️  HeyPiggy-"Anmelden/Registrieren"-Popup überdeckt Dashboard → "Weiter" klicken zum Schließen
 - ⚠️  skylight-cli JSON bricht nach ~60s ab → VoiceOver muss neu gestartet werden
+## 15:50 — ERSTER AUTONOMER SURVEY 🎉
+- ✅ Pipeline: VoiceOver → Klick Survey-Preis → Consent → Frage beantworten → Schließen
+- ✅ EUR: 0.56€ → 0.58€ (+0.02€)
