@@ -38,3 +38,17 @@ IDLE → CAPTURE → VISION → EXECUTE → VERIFY → (loop) → DONE
 ## GitHub Issues
 - Epic #1: Stealth Triad Greenfield Build
 - Tasks #2-#8: CLI docs, SoM, merge workflow, panel docs, error recovery
+
+## Update: OCR-Grounding Integration (`8a8280a`)
+- StealthExecutor unterstützt jetzt `screenshot(mode="ocr")`
+- Dreistufiger Fallback: SoM → Grid → OCR
+- Nutzt Apple Vision VNRecognizeTextRequest via skylight-cli
+- `screenshot_ocr()` und `screenshot_grid()` convenience methods
+
+## Gap-Status (Issue #76)
+- ✅ #3 AX-Tree-Kollaps — Fixed in skylight-cli
+- ✅ #2 OCR-Grounding — Implemented in skylight-cli + stealth-runner
+- ⬜ #1 track calibration — Pending
+- ⬜ #4 Right-click Chromium — Known limitation
+- ⬜ #6 JA4 TLS Fingerprinting — Pending
+- ⬜ #7 macOS Monitoring — Pending
