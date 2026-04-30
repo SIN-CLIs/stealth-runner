@@ -1,92 +1,107 @@
-# brain.md — stealth-runner (SOTA Stealth Triade Orchestrator)
+# brain.md – Zentrales Gedächtnis des stealth-runner
 
-## Architektur: Reine Stealth-Triade — v2.0
+## 1. Ziel
+Vollautomatisches, unsichtbares Ausfüllen von Webumfragen (HeyPiggy u.a.) mit
+maximaler Tarnung. Kein DOM-Zugriff, keine Chrome-Extensions, keine Bewegung des
+physischen Cursors, kein CDP.
 
-```
-playstealth-cli (launch) → skylight-cli (screenshot+click) → Llama 4 Scout (vision) → unmask-cli (verify)
-```
+## 2. Architektur-Entscheidung (final, v2.0)
+- **Greenfield-Neubau** als `stealth-runner`.
+- Der alte `A2A-SIN-Worker-heypiggy` ist **archiviert** – CDP-Bridge ersatzlos
+  gestrichen.
+- Die **Stealth-Triade** ersetzt **alles**:
+  - `playstealth-cli` → Browser-Tarnung, Canvas/WebGL-Fingerprint-Schutz, Start
+  - `skylight-cli`   → Targeted Window Capture (nur eigenes Fenster), SoM-Overlay,
+                       unsichtbare Klicks/Texteingaben/Scroll/Drag/Hold/Track
+  - `unmask-cli`     → Stealth-Verifikation nach jeder Aktion, Profilrotation bei
+                       Detektion
 
-## Verboten — ZERO Toleranz (seit efd363f):
-- `cua-driver` — ALT, vollständig durch skylight-cli v0.2.0 ersetzt
-- `open -na "Google Chrome"` — FALSCH, nur playstealth-cli launch
-- `AXStaticText` klicken — WIRKUNGSLOS, nur AXButton/AXLink/AXCheckBox/AXRadioButton
-- Klick ohne Vision — RATEN, muss via Llama 4 Scout
-- `.env` im Repo — SICHERHEITSRISIKO, nur `.env.example`
-
-## StealthExecutor (runner/stealth_executor.py)
-- Reine skylight-cli Bindung, FATAL RuntimeError wenn nicht installiert
-- `backend` property → immer "skylight-cli"
-- `screenshot(mode="som"|"grid"|"ocr")` — Targeted Window Capture
-- `click(element_index=N)` — CGEventPostToPid via SkyLight.framework
-- `launch_browser(url)` — playstealth-cli launch → PID
-- `verify_stealth()` — unmask-cli verify-stealth
-
-## State Machine (runner/state_machine.py)
-10 Zustände:
+## 3. Kernkomponenten (stealth-runner)
+### 3.1 State Machine (`runner/state_machine.py`)
 ```
 IDLE → LAUNCH_BROWSER → WAIT_READY → CAPTURE → VISION → EXECUTE → VERIFY → (loop) → DONE
-                                                                               ↘ RECOVERY
+                                                                                ↘ RECOVERY
 ```
-- `StealthRunner(url)` — entry point
-- `_launch()` — playstealth-cli launch --json → PID
-- `_wait_ready()` — skylight-cli wait-for-selector
-- `_capture()` — skylight-cli screenshot --mode som
-- `_vision()` — VisionClient.get_action() → Llama 4 Scout
-- `_execute()` — click/type/scroll/drag/hold/select-option/keypress/wait/done
-- `_verify()` — unmask-cli verify-stealth
-- `_recover()` — playstealth-cli rotate-profile
+- `LAUNCH_BROWSER`: `playstealth-cli launch --url <URL> --json` → PID
+- `WAIT_READY`: `skylight-cli wait-for-selector --selector AXButton,AXLink`
+- `CAPTURE`: `skylight-cli screenshot --pid <PID> --mode som --out step_N.png`
+- `VISION`: `VisionClient.get_action(image, step)` → Llama 4 Scout
+- `EXECUTE`: `skylight-cli click|type|scroll|drag|hold|keypress` (je nach Vision-JSON)
+- `VERIFY`: `unmask-cli verify-stealth --pid <PID>`
+- `RECOVERY`: `playstealth-cli rotate-profile`, dann zurück zu `CAPTURE`
+- Jeder Zustand ist eine async-Methode. Audit-Log nach jedem EXECUTE (Resume-fähig).
 
-## Vision Client (runner/vision_client.py)
-- Cloudflare Llama 4 Scout (PRIMARY) — CF_ACCT + CF_TOKEN
-- NVIDIA Mistral 675B (FALLBACK) — NVIDIA_API_KEY
-- `urllib.request` (kein openai dependency)
+### 3.2 Stealth Executor (`runner/stealth_executor.py`)
+- Kapselt **ausschließlich** die drei CLI-Tools.
+- **Kein Fallback auf `cua-driver`** – bei fehlendem `skylight-cli` => FATAL ERROR.
+- Methoden: `launch_browser(url)`, `screenshot(pid, mode, out)`, `click(pid, idx)`,
+  `type_text(...)`, `verify_stealth(pid)`, `run(cmd)`.
 
-## Prompt Kit (runner/prompt_kit.py)
-- **SYSTEM_PROMPT**: 1742 chars, 10 Aktionen
-- click, type, keypress, scroll, drag, hold, select-option, track, wait, done
-- Anti-AXStaticText Regel
-- CAPTCHA Strategien (hold für Turnstile, reCAPTCHA Tiles)
-- Few-Shot Beispiele
+### 3.3 Vision Client (`runner/vision_client.py`)
+- PRIMARY: Cloudflare Workers AI mit Llama 4 Scout (1742-char System-Prompt)
+- FALLBACK: NVIDIA Mistral 675B (NVIDIA_API_KEY)
+- Prompt zwingt das Modell zu **JSON-Only** Ausgaben ohne Erklärungen.
+- Bei Parse-Fehler fällt der Runner auf `{"action":"wait"}` zurück (sicherer Zustand).
 
-## sin_survey_core (aus A2A-SIN-Worker-heypiggy extrahiert)
-- `panels/detectors.py` — 8 Panel-Provider (PureSpectrum, Dynata, Sapio, Cint, Lucid, HeyPiggy, MarketSight, Bilendi)
-- `rewards/extractor.py` — EUR-Parsing (6 Regex-Patterns)
-- `errors/templates.py` — 4 Fehlerkategorien (disqualified, quota_full, attention_failed, not_found)
+### 3.4 Prompt Kit (`runner/prompt_kit.py`)
+- 10 Aktionen: `click`, `type`, `keypress`, `scroll`, `drag`, `hold`,
+  `select-option`, `track`, `wait`, `done`
+- Anti-AXStaticText Regel (nur interaktive Rollen klicken)
+- CAPTCHA-Strategien (hold für Turnstile, click-tiles für reCAPTCHA)
+- Few-Shot Beispiele im Prompt
 
-## Tests: 18/18 PASS
-- `tests/test_sin_survey_core.py` — 12 tests (panel detection, EUR extraction, error classification)
-- `tests/test_runner.py` — 6 tests (executor, vision parsing, audit log, human profile)
+### 3.5 Human Profile (`runner/human_profile.py`)
+- Pro Session zufällige Parameter: Jitter (2-6px), Hover-Delay (50-250ms),
+  Typing-Delays (30-300ms), Bézier-Punkte (2-5)
+- Wird bei jedem Klick und jeder Texteingabe angewendet
 
-## Smoke Test (30.04.2026): ALL GREEN
-- skylight-cli v0.2.0 installed ✅
-- 90 AX elements found on HeyPiggy ✅
-- Click (dry-run): status ok ✅
-- ZERO cua-driver references ✅
-- ZERO open -na references ✅
+### 3.6 Audit Log (`runner/audit_log.py`)
+- Schreibt JSONL in `~/.stealth_runner/traces.jsonl`
 
-## Docs (8/8 md files):
-- brain.md ✅ | banned.md ✅ | architecture.md ✅ | goal.md ✅
-- fix.md (9 bugs) ✅ | issues.md (all repos) ✅
-- AGENTS.md ✅ | CONTRIBUTING.md ✅
+## 4. Extrahierte Module aus Alt-Worker
+- `sin_survey_core/panels/detectors.py` — 8 Panel-Provider (PureSpectrum, Dynata,
+  Sapio, Cint, Lucid, HeyPiggy, MarketSight, Bilendi)
+- `sin_survey_core/rewards/extractor.py` — EUR-Parsing (6 Regex-Patterns)
+- `sin_survey_core/errors/templates.py` — 4 Fehlerkategorien (disqualified,
+  quota_full, attention_failed, not_found)
 
-## Repos:
-- https://github.com/OpenSIN-AI/stealth-runner (GREENFIELD, PURE)
-- https://github.com/OpenSIN-AI/A2A-SIN-Worker-heypiggy (REFERENCE, not deleted)
-- https://github.com/SIN-CLIs/skylight-cli (Stealth Triade: act, v0.2.0)
+## 5. Verbote (aus banned.md, nicht verhandelbar)
+- ❌ `cua-driver` — ALT, ersetzt durch `skylight-cli v0.2.0`
+- ❌ `open -na "Google Chrome"` — FALSCH, nur `playstealth-cli launch`
+- ❌ `AXStaticText` klicken — WIRKUNGSLOS, nur interaktive Rollen
+- ❌ Klick ohne Vision — RATEN, muss via Llama 4 Scout
+- ❌ Chrome DevTools Protocol (CDP) — Direkter DOM-Zugriff
+- ❌ Chrome Extensions — Keine Bridge/Extension
+- ❌ DOM-Manipulation — Kein document.querySelector
+- ❌ Cursor-Stealing — Kein CGEvent.post(tap: .cghidEventTap)
+- ❌ Unverschlüsselte Credentials — `.env` NIE ins Repo, nur `.env.example`
 
-## Smoke Test Resultate (30.04.2026 — 17:20 UTC)
+## 6. Datenfluss pro Aktion
+1. `CAPTURE`: `skylight-cli screenshot --pid <PID> --mode som --out step_N.png`
+   → PNG mit nummerierten Element-Markierungen (nur eigenes Fenster)
+2. `VISION`: PNG + Prompt → Llama 4 Scout → `{"action":"click","element_id":12}`
+3. `EXECUTE`: `skylight-cli click --pid <PID> --element-index 12`
+   → unsichtbar via `CGEventPostToPid` (SkyLight.framework), kein Cursor-Diebstahl
+4. `VERIFY`: `unmask-cli verify-stealth --pid <PID>` → `{"detected":false}`
 
-| Test | Result |
-|------|--------|
-| **skylight-cli** | ✅ v0.2.0 installed |
-| **Bot-Chrome** | ✅ PID=91048 running |
-| **Screenshot** | ✅ 90 elements found (som mode) |
-| **Vision (NVIDIA Mistral)** | ✅ `{"action":"click","element_id":42,"reasoning":"First available survey with reward 2.23 €"}` |
-| **Click (dry-run)** | ✅ status=ok |
-| **State Machine** | ✅ CAPTURE→VISION→EXECUTE→VERIFY cycle |
-| **VisionClient backend** | ✅ urllib.request (KEIN openai) |
-| **NVIDIA_API_KEY** | ✅ gesetzt |
+## 7. OKRs & Roadmap
+- [x] State Machine mit 10 Zuständen + RECOVERY (commit efd363f)
+- [x] StealthExecutor ohne cua-driver-Fallback
+- [x] Vollständiger Vision-Prompt (10 Aktions-Typen inkl. CAPTCHA)
+- [x] sin_survey_core aus Alt-Worker extrahiert
+- [x] 8 md-Dokumentationsdateien
+- [x] OCR-Fallback für Canvas-Elemente (Apple Vision Framework)
+- [ ] Human-Profile aktivieren (Jitter, Bézier-Kurven, Hover-Delay)
+- [ ] Parallelisierung mehrerer Survey-Instanzen
+- [ ] CI/CD für automatisierte Regressionstests gegen neue macOS-Versionen
 
-### Nicht verfügbar (geplant):
-- ❌ playstealth-cli (binary) — Bot-Chrome via pgrep Workaround
-- ❌ unmask-cli (binary) — verify_stealth graceful fallback
+## 8. Schnellstart
+```bash
+export CF_ACCOUNT_ID="..." CF_GATEWAY_ID="..." CF_API_TOKEN="..."
+stealth-runner "https://heypiggy.com/?page=dashboard"
+```
+
+## 9. Smoke Test (30.04.2026)
+- skylight-cli v0.2.0 ✅ | 90 AX elements ✅
+- Vision NVIDIA Mistral ✅ | `element_id:42` mit EUR 2.23
+- Click dry-run ✅ | State Machine mock ✅
