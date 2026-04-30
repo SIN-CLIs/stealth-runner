@@ -1,34 +1,39 @@
 # brain.md — stealth-runner
 
-## Backend: skylight-cli (PRIMARY)
-- Kompiliert aus SIN-CLIs/skylight-cli (`swift build -c release`)
-- Installiert in `~/.local/bin/skylight-cli`
-- Auto-detection via `shutil.which("skylight-cli")`
-- Targeted Window Capture via `CGWindowListCreateImage` (nur Chrome-Buffer)
-- SoM-Screenshots mit AX-Elementen
-- SkyLight `CGEventPostToPid` — kein Cursor-Sprung
+## ARCHITEKTUR: Reine Stealth-Triade
+```
+playstealth-cli (launch) → skylight-cli (act) → unmask-cli (verify)
+```
 
-## State Machine
-IDLE → CAPTURE → VISION → EXECUTE → VERIFY → (loop) → DONE
+## VERBOTEN (NIEMALS):
+- cua-driver — ALT, ersetzt durch skylight-cli v0.2.0
+- open -na "Google Chrome" — FALSCH, nur playstealth-cli launch
+- AXStaticText klicken — WIRKUNGSLOS, nur AXButton/AXLink/AXCheckBox/AXRadioButton
+- Klick ohne Vision — RATEN, muss via Llama 4 Scout
 
-## StealthExecutor
-- `screenshot(mode="som"|"grid"|"ocr", capture_mode="window"|"display")`
-- `click(element_id=N)` via skylight-cli
-- `verify_stealth()` via unmask-cli (graceful fallback)
+## PIPELINE:
+1. playstealth-cli launch → PID
+2. skylight-cli screenshot --mode som → Bild mit Element-IDs
+3. Llama 4 Scout → element_id
+4. skylight-cli click --element-index ID
+5. unmask-cli verify-stealth
 
-## Vision Client
-- Cloudflare Llama 4 Scout (PRIMARY) / NVIDIA Mistral 675B (FALLBACK)
-- SoM-aware prompts with AX element references
+## StealthExecutor:
+- Nur skylight-cli (kein cua-driver Fallback)
+- Window Capture via CGWindowListCreateImage
+- Click via CGEventPostToPid (SkyLight.framework)
 
-## Bugs Fixed (9/9)
-1. ask_vision() hang → use ask_vision_text() internally
-2. Chrome UI clicks → validate_click_coordinates()
-3. AX-Tree collapse → _AXObserverAddNotificationAndCheckRemote
-4. action["type"] KeyError → action.get("action")
-5. Canvas-only UIs → OCR-Grounding (Apple Vision)
-6. Grid overlay noise → disabled grid
-7. cua_click() missing → added coordinate click
-8. Wrong Chrome window → 4-stage fallback
-9. Display capture leak → targeted window capture (skylight-cli)
+## State Machine:
+IDLE → CAPTURE → VISION → EXECUTE → VERIFY → DONE
+
+## Vision Client:
+- Cloudflare Llama 4 Scout (PRIMARY)
+- NVIDIA Mistral 675B (FALLBACK)
+- SoM-aware prompts
+
+## sin_survey_core:
+- panels/detectors.py — PureSpectrum, Dynata, Sapio, Cint, Lucid, HeyPiggy
+- rewards/extractor.py — EUR-Parsing
+- errors/templates.py — DQ-Erkennung
 
 ## Tests: 18/18 PASS

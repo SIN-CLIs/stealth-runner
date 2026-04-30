@@ -1,43 +1,37 @@
 #!/usr/bin/env python3
 import asyncio, subprocess, json, os, sys, time
-from runner import StealthExecutor, VisionClient, StealthRunner, AuditLog
 
-BOT_PID = int(os.environ.get("STEALTH_PID", "54971"))
+BOT_USER_DATA = "/tmp/heypiggy-bot"
 
-def find_bot_window():
-    r = subprocess.run(['cua-driver', 'call', 'list_windows'], capture_output=True, text=True, timeout=10)
-    data = json.loads(r.stdout)
-    windows = data.get('structuredContent', data).get('windows', [])
-    for w in windows:
-        title = (w.get('title') or '').lower()
-        if 'heypiggy' in title and w.get('pid') != 2253:
-            return w['pid'], w['window_id']
-    for w in windows:
-        if w.get('pid') == BOT_PID:
-            return BOT_PID, w['window_id']
-    chrome = [w for w in windows if w.get('app_name') == 'Google Chrome']
-    if chrome:
-        best = sorted(chrome, key=lambda w: -w['pid'])[0]
-        return best['pid'], best['window_id']
-    return BOT_PID, 0
+def find_bot_pid():
+    try:
+        out = subprocess.check_output(
+            ["pgrep", "-f", f"user-data-dir={BOT_USER_DATA}"], text=True
+        ).strip()
+        pids = [int(p) for p in out.split("\n") if p]
+        return min(pids) if pids else 0
+    except:
+        return 0
 
 async def main():
-    print("🤖 Stealth Runner v1.0")
-    pid, wid = find_bot_window()
-    print(f"   Bot-Chrome: PID={pid} wid={wid}")
-    if not wid:
-        print("❌ Kein Bot-Chrome Fenster!")
+    pid = find_bot_pid()
+    if not pid:
+        print("❌ Bot-Chrome nicht gefunden. Starte mit:")
+        print("   playstealth-cli launch --url 'https://heypiggy.com/?page=dashboard' --json")
         return
 
-    executor = StealthExecutor(pid, wid)
-    vision = VisionClient()
-    audit = AuditLog()
+    from runner import StealthExecutor, VisionClient, AuditLog
+    from runner.state_machine import StealthRunner
 
-    runner = StealthRunner(pid, wid, vision, audit)
+    wid = 0
+    e = StealthExecutor(pid, wid)
+    v = VisionClient()
+    a = AuditLog()
+
+    print(f"🤖 StealthRunner — PID={pid} | backend={e.backend}")
+    runner = StealthRunner(pid, wid, v, a)
     session = await runner.run()
-
-    print(f"\n📊 Session: {session}")
-    print(f"   Audit: {audit.get_summary()['path']}")
+    print(f"💰 EUR: {session.get('earnings_eur',0):.2f} | Steps: {session.get('steps',0)} | Rec: {session.get('recoveries',0)}")
 
 if __name__ == "__main__":
     asyncio.run(main())
