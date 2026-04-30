@@ -1,0 +1,24 @@
+# Google Login Konfiguration
+
+google_login:
+  email: "${GOOGLE_EMAIL}"
+  password: "${GOOGLE_PASSWORD}"
+  
+  timing:
+    popup_wait: 5s
+    type_delay: 3s
+    page_load: 4s
+    timeout: 45s
+    max_retries: 2
+    
+  browser:
+    incognito_logout: true
+    profile_path: "~/.chrome-profiles/heypiggy"
+    
+  captcha:
+    auto_solve: false
+    screenshot_dir: "/tmp/captcha/"
+
+  recording:
+    enabled: false
+    tool: screen-follow
