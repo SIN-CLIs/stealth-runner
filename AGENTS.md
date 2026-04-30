@@ -49,3 +49,14 @@ NUR `--element-index` benutzen.
 Gestartet als GUI (`screen-follow &`) oder mit Video (`screen-follow record --video &").
 Audit-Trail in `/tmp/screen-follow-audit.jsonl`. Klick-Events enthalten jetzt
 Element-Info (`elementRole`, `elementLabel`) via `AXUIElementCopyElementAtPosition`.
+
+## 🧠 Self-Improving System (SOTA v3.3)
+- **Skill Capture Loop:** `python3 src/stealth_runner/learn.py` — erstellt Skills aus Audit-Logs
+- **Strategy Evolution:** `python3 src/stealth_runner/strategy_selector.py` — wählt optimale Skills
+- **Global Brain:** Facts + Rules in `../Infra-SIN-Global-Brain/brain/`
+- **Registry:** `stealth-skills/_registry.json` — alle Skills zentral registriert
+
+## 🚨 3 Eiserne Regeln
+1. `sleep 5` + `list-elements` NEU nach Popup-Klick
+2. `y < 30 = Apple-Menü` → abbrechen
+3. Google-Feld = "E-Mail oder Telefonnummer" (nicht "E-Mail")
