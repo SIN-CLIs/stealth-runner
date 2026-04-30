@@ -1,0 +1,5 @@
+#!/bin/bash
+# Auto-recovery for: voiceover_expired
+set -euo pipefail
+PID="${1:?PID}"
+
