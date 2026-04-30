@@ -48,22 +48,22 @@ Keine Verwechslung mit `/doctor` mehr.
 
 ## ❌ Fehler
 
-### 1. Google-Login: Falsches Feld getippt 🔴
+### 1. Google-Login: Falsches Feld getippt 🔴→✅ GEFIXT
 **Was passiert ist:**
 - Google Login-Button korrekt geklickt → OAuth-Popup öffnete sich ✅
 - `type` Command aufgerufen mit `--element-index 50`
 - **ABER:** Element 50 war das E-Mail-Feld der HeyPiggy-Login-Seite, NICHT das Google-OAuth-Popup-Feld
 
-**Warum:**
-- Nach dem Google-Login-Klick änderte sich die Seite (Popup erschien)
-- Meine Element-Suche (`list-elements`) fand das ERSTE AXTextField mit "E-Mail"
-- Das erste Feld war das HeyPiggy-eigene Login-Formular, nicht das Google-Popup
-- Hätte warten müssen, bis das Popup vollständig geladen ist, dann E-Mail-Feld IM Popup suchen
+**Fix (12:15):**
+- Element 79 identifiziert als "E-Mail oder Telefonnummer" mit Pfad durch AXWebArea (Popup-Container)
+- Erst klicken (fokussieren), dann `type --element-index 79 --text "jeremy@gmail.com"`
+- Screenshot-Hash geändert: `9ba394d2...` → `df2d87eb...` ✅
+- Text wurde ins Google-OAuth-Popup-Feld geschrieben
 
 **Lösung für nächstes Mal:**
 1. Nach Popup-Klick `wait-for-selector` oder sleep(3) abwarten
 2. `list-elements` NACH Popup-Ladung
-3. E-Mail-Feld mit Pfad-Filter suchen: Pfad muss den neuen Popup-Container enthalten
+3. Feld mit spezifischem Label suchen: "E-Mail oder Telefonnummer" statt generischem "E-Mail"
 
 ---
 
