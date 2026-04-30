@@ -33,3 +33,19 @@ python3 main.py "https://heypiggy.com/?page=dashboard"
 ## WARUM DAS APPLE-MENÜ GEKLICKT WURDE
 Bildschirm-Koordinaten: (0,0) = oben links = Apple-Menü. Nie raten.
 NUR `--element-index` benutzen.
+
+
+## 🤖 Atomare heypiggy-CLIs
+| CLI | Aufruf | Zweck |
+|-----|--------|-------|
+| `heypiggy-login` | `./cli/heypiggy-login` | Google OAuth Login |
+| `heypiggy-logout` | `./cli/heypiggy-logout [incognito\|google]` | Abmelden |
+| `heypiggy-balance` | `./cli/heypiggy-balance` | EUR-Guthaben |
+| `heypiggy-navigate` | `./cli/heypiggy-navigate $PID dashboard\|surveys\|earnings` | Navigation |
+| `heypiggy-click` | `./cli/heypiggy-click $PID "Label"` | Klick per Label
+## 🎥 screen-follow — Aufzeichnung
+
+`screen-follow` zeichnet ALLES auf: Maus, Tastatur, Klicks, Scrollen.
+Gestartet als GUI (`screen-follow &`) oder mit Video (`screen-follow record --video &").
+Audit-Trail in `/tmp/screen-follow-audit.jsonl`. Klick-Events enthalten jetzt
+Element-Info (`elementRole`, `elementLabel`) via `AXUIElementCopyElementAtPosition`.
