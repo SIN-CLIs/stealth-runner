@@ -1,130 +1,109 @@
-# brain.md — stealth-runner v3.3 (30. April 2026)
+# brain.md — stealth-runner v3.4 (30. April 2026, 16:30)
 
 > **Stealth Quad: playstealth → skylight → screen-follow ← unmask**
-> **Self-improving system: learn.py → Global Brain → Strategy Evolution**
+> **Self-improving: learn.py + anti_learn.py + strategy_selector.py**
 
----
-
-## 1. Architektur
-State Machine (9 Zustände) orchestriert atomare CLI-Aufrufe:
+## 1. Architecture
+State Machine (9 States) orchestrates atomic CLI calls:
 ```
 IDLE → LAUNCH_BROWSER → WAIT_READY → CAPTURE → VISION → EXECUTE → VERIFY → DONE
                                                                    ↕ RECOVERY
 ```
-Nach DONE: `learn_from_session()` → Skill Capture + Global Brain Update.
+After DONE: `learn_from_session()` → Skill Capture + Global Brain.
 
-## 2. Self-Improving System (SOTA v3.3)
+## 2. Self-Improving System
+- **learn.py** — Erfolge → neue Skills in captured/
+- **anti_learn.py** — Fehler → Recovery-Skills (7 Error-Typen)
+- **strategy_selector.py** — Brain-Daten → optimale Strategie
+- **Global Brain Bridge** — Facts + Rules in brain/.../memory/
 
-### Skill Capture Loop (`src/stealth_runner/learn.py`)
-```
-Session läuft → screen-follow zeichnet auf → DONE
-→ learn_from_session() analysiert Audit-Log
-→ Skill in stealth-skills/captured/ generiert
-→ push_to_global_brain() schreibt Facts + Rules
-→ Registry aktualisiert
-```
+## 3. Click Mechanism: AXPress
+`AXUIElementPerformAction(element, kAXPressAction)`. 
+`CGEventPostToPid` und `CGEvent.post` = TOT auf Chrome 148/macOS 26.
 
-### Strategy Evolution (`src/stealth_runner/strategy_selector.py`)
-```
-Vor Session: router-detector → Router erkannt
-→ select_best_strategy() lädt Erfolgsdaten aus Brain
-→ Optimale Skill-Sequenz für diesen Router
-→ Session startet mit bester Strategie
-```
-
-### Global Brain Bridge
-- Facts (discoveries) → `brain/.../memory/facts.json`
-- Rules (strategies) → `brain/.../memory/rules.json`
-- Trigger-Erkennung: matrix, star_rating, gui-navigation
-- Success-Rate-Tracking pro Skill
-
-## 3. Stealth-Skills (stealth-skills/)
-### Active Skills
-- **google-login**: Google OAuth Login/Logout (3 Methoden + 3 eiserne Regeln)
-- **heypiggy-survey**: Dashboard→Screening→EUR (39-Feld-Profil, Worker-Mode)
-- **openssf-badge-apply**: OpenSSF Badge API-Automatisierung
-
-### Survey Modules (modular)
-- **router-detector**: Toluna, PureSpectrum, Dynata, Cint, Bilendi
-- **recovery-overquota**: "Umfrage bereits voll"
-- **recovery-attentioncheck**: "Wählen Sie Antwort C"
-- **question-matrix**: Tabellen-Fragen
-- **question-ranking**: Reihenfolge
-- **question-opentext**: Offene Textfragen
-- **question-slider**: Schieberegler
-- **heypiggy-history**: Umfrage-Historie
-
-### Templates + Registry
-- `_templates/`: cli, SKILL, states, recovery
-- `_registry.json`: Alle Skills registriert
-- `captured/`: Automatisch generierte Skills
-
-## 4. Klick-Mechanismus: AXPress
-`AXUIElementPerformAction(element, kAXPressAction)` — einzige funktionierende Methode.
-`CGEventPostToPid` und `CGEvent.post` sind TOT auf Chrome 148/macOS 26.
-
-## 5. Chrome Accessibility: VoiceOver-Trick
+## 4. Chrome Accessibility: VoiceOver-Trick
 ```bash
-osascript -e 'tell app "VoiceOver" to launch' && sleep 2
-osascript -e 'tell app "VoiceOver" to quit'
+osascript -e 'tell app "VoiceOver" to launch' && sleep 1 && osascript -e 'tell app "VoiceOver" to quit'
+```
+Effekt hält ~60s, dann wiederholen.
+
+## 5. 3 Iron Rules (never again)
+1. `sleep 5` + `list-elements` NEU nach Popup
+2. `y < 30 = APPLE-MENÜ` → abort
+3. Google field = "E-Mail oder Telefonnummer" (not "E-Mail")
+
+## 6. Profile System
+`profiles/jeremy.yaml` — 39 fields, auto-read by heypiggy-login.
+**Never commited** (.gitignore).
+
+## 7. Atomare CLIs (cli/)
+| CLI | Function |
+|-----|----------|
+| heypiggy-login | Google OAuth (auto-profile) |
+| heypiggy-logout | Logout (incognito|google) |
+| heypiggy-balance | EUR check |
+| heypiggy-navigate | Navigation |
+| heypiggy-click | Click by label |
+| heypiggy-survey-list | Scan surveys (best-value|fastest|highest) |
+| heypiggy-survey-start | "Umfrage starten" |
+| heypiggy-survey-screener | Auto-answer questions |
+| heypiggy-survey-complete | Complete + EUR track |
+| openssf-badge-apply | OpenSSF Badge API |
+
+## 8. Stealth-Skills (stealth-skills/)
+- **google-login**: Login/Logout, 3 rules
+- **heypiggy-survey**: Dashboard→EUR (39-field profile, worker-mode)
+- **openssf-badge-apply**: OpenSSF Badge automation
+- **modules**: router-detector, recovery-overquota, recovery-attentioncheck, question-matrix/question-ranking/question-opentext/question-slider, heypiggy-history
+
+## 9. Skill Capture Loop
+```
+Session → screen-follow record → learn.py
+  → Skill in captured/ + Registry update
+  → anti_learn.py (errors) → Recovery skills
+  → push_to_global_brain() → Facts + Rules
 ```
 
-## 6. Profile-System
-`profiles/jeremy.yaml` — Google-Login + 39-Feld-Demografie.
-**Nie committed** (in .gitignore). Auto-read by `cli/heypiggy-login`.
-
-## 7. Die 3 eisernen Regeln (nie wieder Fehler)
-1. **`sleep 5` + `list-elements` NEU** nach jedem Popup-Klick
-2. **`y < 30 = ❌ APPLE-MENÜ`** → sofort abbrechen
-3. **Google-Feld = "E-Mail oder Telefonnummer"** (nicht nur "E-Mail")
-
-## 8. Atomare heypiggy-CLIs (cli/)
-| CLI | Funktion |
-|-----|----------|
-| `heypiggy-login` | Google OAuth (auto-read profile) |
-| `heypiggy-logout [incognito|google]` | Abmelden |
-| `heypiggy-balance` | EUR-Guthaben |
-| `heypiggy-navigate $PID page` | Navigation |
-| `heypiggy-click $PID "Label"` | Klick per Label |
-| `heypiggy-survey-list` | Umfragen scannen |
-| `heypiggy-survey-start` | "Umfrage starten" |
-| `heypiggy-survey-screener` | Screening-Fragen |
-| `heypiggy-survey-complete` | Abschluss + EUR |
-| `openssf-badge-apply` | OpenSSF Badge API |
-
-## 9. screen-follow Integration
-`screen-follow` zeichnet auf: Maus, Tastatur, Klicks (mit Element-Label), Scrollen.
-- GUI: `screen-follow &` (+ JSONL Audit)
+## 10. screen-follow Integration
+- GUI: `screen-follow &` (Live-Overlays + JSONL Audit)
 - Video: `screen-follow record --video &`
 - Trace: `screen-follow trace --last 50`
+- Element-Labels: `AXUIElementCopyElementAtPosition`
 
-## 10. Verbote
-- ❌ `--x`/`--y` → Apple-Menü (0,0)
-- ❌ `CGEventPostToPid` → ignoriert
-- ❌ `--force-renderer-accessibility` → crasht
-- ❌ `cua-driver` → ersetzt
-- ❌ Ohne Primer klicken
+## 11. Survey Pipeline (proven 30.4.)
+```
+VoiceOver → Dashboard → Klick Preis-Text → "Umfrage starten"
+→ Consent "Zustimmen" → Frage (Radio/Checkbox)
+→ "Nächste" → "Schließen" → Balance +0.02-0.30€
+```
+**Erfolgreich getestet:** Banane-Frage, Consent-Page, Captcha-Feld
 
-## 12. EUR-Tracking (Target: 100€)
-- **Aktuell:** 0.35€
+## 12. EUR Tracking
+- **Aktuell:** 0.58€
 - **Ziel:** 100.00€
-- **Fehlen:** 99.65€ ≈ 332 Umfragen bei ~0.30€/Umfrage
-- **Gelernte Skills:** 2 captured sessions (captcha, open text, navigation)
+- **Fehlen:** 99.42€ ≈ 332 Umfragen bei ~0.30€/Umfrage
 
-## 13. Live-Test Ergebnisse (30.4.2026)
-- **Session 1 (30s):** 1654 Events, 14 Klicks, 5 Tasten
-- **Session 2 (60s):** 2572 Events, 19 Klicks, 70 Tasten — Umfrage mit Captcha, Formular
-- **Session 3 (180s):** 9191 Events, 77 Klicks, 77 Tasten — Offene Textfrage beantwortet
-- **Learn.py:** erfolgreich Skills aus Sessions extrahiert
+## 13. LIVE SESSIONS (30.4.2026)
+| Session | Events | Klicks | Tasten | Erkenntnis |
+|---------|--------|--------|--------|------------|
+| 30s | 1654 | 14 | 5 | Seite geladen |
+| 60s | 2572 | 19 | 70 | Captcha + Navigtion |
+| 180s | 9191 | 77 | 77 | Offene Textfrage |
+| Survey1 | — | 3 | 0 | Banane→Nächste→Close = +0.02€ |
 
-## 14. Nächster Schritt
-- screen-follow dauerhaft laufen lassen
-- survey-screener mit gelernten Skills ausführen
-- Jede Umfrage = ~0.30€ → 332 Umfragen bis 100€
+## 14. Forbidden
+- ❌ `--x`/`--y` → Apple Menu (0,0)
+- ❌ `CGEventPostToPid` → Chrome ignores
+- ❌ `--force-renderer-accessibility` → crashes Chrome
+- ❌ `cua-driver` → replaced
+- ❌ Click without primer
 
-## 15. Live-Survey-Durchbruch (15:45)
-- **Survey gestartet:** Klick auf "0.04 €" Text → Umfrage geöffnet
-- **Erste Frage beantwortet:** "Welche Frucht ist gelb?" → "Banane" (Index 115)
-- **Navigation:** "Nächste" (Index 156) → nächste Frage
-- **Erkenntnis:** HeyPiggy-"Anmelden/Registrieren"-Popup muss erst geschlossen werden
-- **Erkenntnis:** VoiceOver-Effekt hält ~60s, dann Neustart nötig
+## 15. Repos (all public, synced)
+- OpenSIN-AI/stealth-runner (Engine, MIT)
+- OpenSIN-AI/A2A-SIN-Worker-heypiggy (archived)
+- OpenSIN-AI/Infra-SIN-OpenCode-Stack (config)
+- SIN-CLIs/skylight-cli (Act)
+- SIN-CLIs/screen-follow (Verify)
+- SIN-CLIs/unmask-cli (Sense)
+- SIN-CLIs/stealth-skills (private skills)
+- SIN-CLIs/playstealth-cli (Hide)
