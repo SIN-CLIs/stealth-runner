@@ -60,3 +60,8 @@ Element-Info (`elementRole`, `elementLabel`) via `AXUIElementCopyElementAtPositi
 1. `sleep 5` + `list-elements` NEU nach Popup-Klick
 2. `y < 30 = Apple-Menü` → abbrechen
 3. Google-Feld = "E-Mail oder Telefonnummer" (nicht "E-Mail")
+
+## 🏢 White-Label Architecture
+- **Engine:** `stealth-runner` (MIT, öffentlich) — generische Automatisierung
+- **Skills:** `stealth-skills` (privat) — Plattform-Wissen (heypiggy, swagbucks, ...)
+- **Runtime:** `stealth-runner --skills-path PATH --platform NAME`
