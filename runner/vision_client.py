@@ -1,6 +1,7 @@
 import json, base64, urllib.request, os, re
 from io import BytesIO
 from PIL import Image
+from sin_survey_core import extract_eur_from_text, classify_error
 
 CF_TOKEN = os.environ.get("CF_TOKEN", "")
 CF_ACCT = os.environ.get("CF_ACCT", "4621434bea0a1efc1ceff2a3f670e0c9")
@@ -22,15 +23,16 @@ class VisionClient:
     def detect_state(self, window_state):
         return _detect_page_state(window_state)
 
-    def extract_earnings(self, screenshot_path):
-        img = Image.open(screenshot_path).convert('RGB')
-        buf = BytesIO()
-        img.save(buf, 'JPEG', quality=50)
-        img_b64 = base64.b64encode(buf.getvalue()).decode()
-        prompt = 'Find the EUR amount earned on this page. Reply ONLY: EUR=1.23 or EUR=0'
-        text = self._ask_vision(img_b64, prompt)
-        m = re.search(r'EUR\s*=\s*([\d.]+)', text, re.I)
-        return float(m.group(1)) if m else 0.0
+    def extract_earnings(self, screenshot_path=None, page_text=""):
+        data = None
+        if screenshot_path:
+            img = Image.open(screenshot_path).convert('RGB')
+            buf = BytesIO()
+            img.save(buf, 'JPEG', quality=50)
+            img_b64 = base64.b64encode(buf.getvalue()).decode()
+            prompt = 'Find the EUR amount earned on this page. Reply ONLY: EUR=1.23 or EUR=0'
+            data = self._ask_vision(img_b64, prompt)
+        return extract_eur_from_text(data or page_text or "")
 
     def _build_action_prompt(self, session):
         return (
