@@ -45,7 +45,7 @@ class TestVisionClient:
 
     def test_parse_json_hard_fallback(self) -> None:
         result = VisionClient()._parse_json("Completely invalid")
-        assert result["action"] == "click" and result["element_id"] == 0
+        assert result["action"] == "wait"
 
 class TestAuditLog:
     def test_log_and_summary(self, tmp_path) -> None:

@@ -8,7 +8,7 @@
 - **playstealth-cli** (Canvas/WebGL-Tarnung) — ✅ SOTA
 - **skylight-cli** (SkyLight.framework, SLEventPostToPid) — ✅ SOTA v0.2.0
 - **unmask-cli** (X-Ray, Forensik, JSON-RPC) — ✅ SOTA
-- **stealth-runner** (Orchestrator v0.3.0) — ✅ SOTA, 0 orphaned modules
+- **stealth-runner** (Orchestrator v0.3.1) — ✅ SOTA, 0 orphaned modules
 
 ## OKR-Review: 6/6 erreicht
 Stealth-Triade-Integration ✅ | CLI-Pipeline ✅ | 10-State ASM ✅ | Vision-First ✅ | Human-Profile ✅ | Captcha 88-92% ✅

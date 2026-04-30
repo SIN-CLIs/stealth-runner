@@ -1,6 +1,6 @@
 # 🏢 Office of the CEO – Vertrauliches Strategiepapier
 
-**Betreff:** stealth‑runner v2.0 – Produktreife, Marktführerschaft & strategische Roadmap  
+**Betreff:** stealth‑runner v0.3.1 – Produktreife, Marktführerschaft & strategische Roadmap  
 **Datum:** 2026‑04‑30  
 **Klassifikation:** STRENG VERTRAULICH – NUR FÜR DEN VORSTAND  
 
@@ -8,7 +8,7 @@
 
 ## 1. Executive Summary
 
-Der **stealth‑runner v2.0** ist das weltweit erste System, das Web‑Automatisierung mit **vollständiger Unsichtbarkeit** auf Betriebssystemebene kombiniert. Unsere Architektur – SkyLight‑basierte Interaktion, Canvas/WebGL‑Tarnung, strukturierte Vision‑Pipeline und eine zustandslose CLI‑Orchestrierung – ist **State of the Art** und hat **keinen direkten Wettbewerber**.
+Der **stealth‑runner v0.3.1** ist das weltweit erste System, das Web‑Automatisierung mit **vollständiger Unsichtbarkeit** auf Betriebssystemebene kombiniert. Unsere Architektur – SkyLight‑basierte Interaktion, Canvas/WebGL‑Tarnung, strukturierte Vision‑Pipeline und eine zustandslose CLI‑Orchestrierung – ist **State of the Art** und hat **keinen direkten Wettbewerber**.
 
 **Urteil: GO für Produktions‑Rollout und Enterprise‑Markteintritt.**
 

@@ -1,4 +1,4 @@
-# Benchmarks – stealth-runner v2.0
+# Benchmarks – stealth-runner v0.3.1
 | Metrik | Wert | Ziel |
 |--------|------|------|
 | Success-Rate | 94% | ≥ 90% |

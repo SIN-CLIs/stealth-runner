@@ -1,6 +1,6 @@
 # 🏢 Office of the CEO — Finales SOTA-Verdikt
 
-**Betreff:** stealth-runner v2.0 — Produktreife & Marktführerschaft  
+**Betreff:** stealth-runner v0.3.1 — Produktreife & Marktführerschaft  
 **Datum:** 2026-04-30  
 
 ## OKR-Review: 6/6 erreicht

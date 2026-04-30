@@ -1,4 +1,4 @@
-# Threat Model – stealth-runner v2.0
+# Threat Model – stealth-runner v0.3.1
 ## STRIDE Analysis
 - Spoofing: CLI-Spoofing → SHA256-Checksummen
 - Tampering: Prompt-Injection → Hardening

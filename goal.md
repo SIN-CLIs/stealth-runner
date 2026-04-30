@@ -4,7 +4,7 @@
 Automatisierte, unsichtbare Umfrage-Teilnahme via Stealth-Triade.
 **Klick: AXPress (Accessibility-API). Chrome-Accessibility: VoiceOver-Trick (kein Flag nötig).**
 
-## Status (30.4.2026, 10:35)
+## Status (30.4.2026, 10:35 · v0.3.1)
 - ✅ AXPress-Klick funktioniert auf Chrome 148/macOS 26
 - ✅ VoiceOver-Trick: Web-Elemente OHNE --force-renderer-accessibility
 - ✅ Google Login-Dialog erfolgreich geöffnet

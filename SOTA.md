@@ -1,6 +1,6 @@
 # SOTA.md – State of the Art der Stealth-Triade
 
-**stealth-runner v2.0 – Die Referenz für unsichtbare Web-Automatisierung unter macOS**
+**stealth-runner v0.3.1 – Die Referenz für unsichtbare Web-Automatisierung unter macOS**
 
 ---
 
@@ -115,4 +115,4 @@ click_jitter_px: 2–6 px | hover_before_click_ms: 50–250
 
 ---
 
-**Version:** 2.0 · **Status:** 18/18 Tests PASS · Stealth-Triade aktiv
+**Version:** 0.3.1 · **Status:** 18/18 Tests PASS · Stealth-Triade aktiv

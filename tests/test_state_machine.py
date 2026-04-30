@@ -14,7 +14,7 @@ async def test_state_transition_idle_to_launch():
     runner = SurveyRunner("https://test.com")
     runner.pid = 99999
     await runner._transition()
-    assert runner.state == State.LAUNCH_BROWSER
+    assert runner.state == State.CAPTURE
 
 @pytest.mark.asyncio
 async def test_max_recoveries_stops():

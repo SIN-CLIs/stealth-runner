@@ -1,4 +1,4 @@
-"""stealth-runner – Orchestrator der Stealth-Triade v2.0."""
+"""stealth-runner – Orchestrator der Stealth-Triade v0.3.1."""
 from runner.stealth_executor import StealthExecutor, StealthError
 from runner.vision_client import VisionClient
 from runner.vision_models import validate_vision_response

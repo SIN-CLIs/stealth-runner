@@ -1,4 +1,4 @@
-# architecture.md — stealth‑runner v2.0
+# architecture.md — stealth‑runner v0.3.1
 
 > **Definitive Architektur‑Referenz**
 > Stand: 2026‑04‑30 · Commit `c1ddc87` · 18/18 Tests PASS

@@ -50,7 +50,7 @@ Gestartet als GUI (`screen-follow &`) oder mit Video (`screen-follow record --vi
 Audit-Trail in `/tmp/screen-follow-audit.jsonl`. Klick-Events enthalten jetzt
 Element-Info (`elementRole`, `elementLabel`) via `AXUIElementCopyElementAtPosition`.
 
-## 🧠 Self-Improving System (SOTA v3.3)
+## 🧠 Self-Improving System (SOTA v0.3.1)
 - **Skill Capture Loop:** `python3 src/stealth_runner/learn.py` — erstellt Skills aus Audit-Logs
 - **Strategy Evolution:** `python3 src/stealth_runner/strategy_selector.py` — wählt optimale Skills
 - **Global Brain:** Facts + Rules in `../Infra-SIN-Global-Brain/brain/`

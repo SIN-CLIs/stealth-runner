@@ -4,6 +4,8 @@ Generische Automatisierungs-Engine der Stealth-Quad.
 Orchestriert **Sense-Hide-Act-Verify-Learn** über atomare CLI-Tools —
 **völlig plattformneutral**. Kein Zielportal ist fest eingebaut.
 
+**Release:** v0.3.1
+
 ## Architektur
 ```
 [stealth-runner]  ←  lädt  →  [stealth-skills (privat)]

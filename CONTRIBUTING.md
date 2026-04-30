@@ -1,7 +1,7 @@
 # CONTRIBUTING.md — stealth-runner
 
 > **Merge-Regeln, Code-Konventionen, PR-Checkliste**
-> Stand: 2026-04-30 · v2.0 Greenfield
+> Stand: 2026-04-30 · v0.3.1 Greenfield
 
 ---
 

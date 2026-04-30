@@ -12,7 +12,7 @@
 - [ ] Multi-Display
 
 ## 🟢 PRIO 3 — Releases
-- [ ] git tag v0.1.0 stealth-runner
+- [ ] git tag v0.3.1 stealth-runner
 - [ ] git tag v0.3.0 screen-follow
 - [ ] OpenSSF Badge für alle 7 Repos
 

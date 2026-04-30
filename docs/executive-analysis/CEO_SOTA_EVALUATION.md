@@ -2,7 +2,7 @@
 
 # 🏢 Office of the CEO – Abschließende SOTA- & Marktentscheidungsvorlage
 
-**Betreff:** stealth‑runner v2.0 – Marktreife, SOTA‑Status & strategische Ausrichtung  
+**Betreff:** stealth‑runner v0.3.1 – Marktreife, SOTA‑Status & strategische Ausrichtung  
 **Datum:** 2026‑04‑30  
 **Klassifikation:** STRENG VERTRAULICH  
 

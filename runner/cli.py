@@ -17,7 +17,7 @@ def run(
     dry_run: bool = typer.Option(False, "--dry-run", help="Nur loggen, keine echten CLI-Aktionen"),
     verbose: bool = typer.Option(False, "--verbose", "-v", help="Ausführliche Log-Ausgabe"),
 ) -> None:
-    console.print(f"\n[bold cyan]🚀 stealth-runner v2.0[/]")
+    console.print(f"\n[bold cyan]🚀 stealth-runner v0.3.1[/]")
     if dry_run: console.print("[yellow]⚠️  DRY-RUN[/]")
     with Progress(SpinnerColumn(), TextColumn("[progress.description]{task.description}"), console=console) as progress:
         task = progress.add_task("Initialisiere State Machine...", total=None)

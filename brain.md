@@ -1,4 +1,4 @@
-# brain.md — stealth-runner v3.4 (30. April 2026, 16:30)
+# brain.md — stealth-runner v0.3.1 (30. April 2026, 16:30)
 
 > **Stealth Quad: playstealth → skylight → screen-follow ← unmask**
 > **Self-improving: learn.py + anti_learn.py + strategy_selector.py**
