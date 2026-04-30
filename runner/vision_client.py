@@ -2,10 +2,10 @@ import base64, json, os, re, urllib.request
 from io import BytesIO
 from PIL import Image
 
-CF_ACCOUNT = os.environ.get("CF_ACCT", "4621434bea0a1efc1ceff2a3f670e0c9")
+CF_ACCOUNT = os.environ.get("CF_ACCT")
 CF_TOKEN = os.environ.get("CF_TOKEN", "")
 NVIDIA_KEY = os.environ.get("NVIDIA_API_KEY", "")
-CF_URL = f"https://api.cloudflare.com/client/v4/accounts/{CF_ACCOUNT}/ai/run/@cf/meta/llama-4-scout-17b-16e-instruct"
+CF_URL = f"https://api.cloudflare.com/client/v4/accounts/{CF_ACCOUNT}/ai/run/@cf/meta/llama-4-scout-17b-16e-instruct" if CF_ACCOUNT else None
 NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
 from .prompt_kit import SYSTEM_PROMPT, build_prompt
 
@@ -19,7 +19,7 @@ class VisionClient:
         return self._parse_json(text)
 
     def _call_llm(self, img_b64, prompt):
-        if CF_TOKEN:
+        if CF_TOKEN and CF_URL:
             data = json.dumps({
                 'messages': [{'role':'user','content': [
                     {'type':'text','text': prompt},

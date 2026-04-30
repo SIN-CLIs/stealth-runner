@@ -92,8 +92,8 @@ class StealthRunner:
         action_type = act.get("action", "wait")
         if action_type == "click" and "element_id" in act:
             self.executor.click(element_index=act["element_id"])
-        elif action_type == "type" and "text" in act:
-            self.executor.type_text(act["text"])
+        elif action_type == "type" and "args" in act and "text" in act["args"]:
+            self.executor.type_text(text=act["args"]["text"], element_index=act.get("element_id"))
         elif action_type == "scroll":
             self.executor.scroll(act.get("direction", "down"))
         self.log.log("execute", action=act)

@@ -1,7 +1,7 @@
 import subprocess, json, time, shutil, os
 
 class StealthExecutor:
-    def __init__(self, pid, wid):
+    def __init__(self, pid=None, wid=None):
         self.pid = pid
         self.wid = wid
 
@@ -32,8 +32,11 @@ class StealthExecutor:
         resp = self._run(cmd)
         return {"status": "ok", "raw": resp}
 
-    def type_text(self, text):
-        resp = self._run(["skylight-cli", "type", "--pid", str(self.pid), "--text", text])
+    def type_text(self, text, element_index=None):
+        cmd = ["skylight-cli", "type", "--pid", str(self.pid), "--text", text]
+        if element_index is not None:
+            cmd.extend(["--element-index", str(element_index)])
+        resp = self._run(cmd)
         return {"status": "ok", "raw": resp}
 
     def get_window_state(self):
