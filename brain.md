@@ -61,3 +61,19 @@ IDLE → CAPTURE → VISION → EXECUTE → VERIFY → (loop) → DONE
 ## Docs: fix.md + issues.md
 - fix.md: 8 Bugs behoben (Tabelle aller Fixes mit Commits)
 - issues.md: Alle Issues per Repo (Tabelle mit Status)
+
+## Survivor #127: Continuous Stealth Verification ✅
+- `StealthExecutor.verify_stealth()` — unmask-cli guard loop
+- Graceful fallback if unmask-cli not installed
+- Stealth breach triggers RECOVERY state
+
+## Survivor Status
+- #127: ✅ Closed (unmask guard loop)
+- #148: ✅ Closed (error recovery)
+- #153: ✅ Closed (sin_survey_core)
+- #157: ✅ Closed (CONTRIBUTING.md)
+- #160: ✅ Closed (SoM prompts)
+- #164: ⬜ CLI help text
+- #165: ⬜ CLI flags section
+- #166: ⬜ CLI flags examples
+- #167: ⬜ Epic tracker
