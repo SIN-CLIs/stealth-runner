@@ -1,0 +1,12 @@
+#!/bin/bash
+set -euo pipefail
+PID="${1:?PID erforderlich}"
+URL=$(unmask-cli tab url --pid "$PID" 2>/dev/null || echo "")
+if echo "$URL"|grep -qi toluna; then R="toluna";C=0.98
+elif echo "$URL"|grep -qi purespectrum; then R="purespectrum";C=0.98
+elif echo "$URL"|grep -qi opinion-dynata; then R="dynata";C=0.95
+elif echo "$URL"|grep -qi cint.com; then R="cint";C=0.93
+elif echo "$URL"|grep -qi bilendi; then R="bilendi";C=0.92
+else R="unknown";C=0
+fi
+echo "{\"router\":\"$R\",\"confidence\":$C}"

@@ -1,0 +1,8 @@
+#!/bin/bash
+set -euo pipefail; PID="${1:?PID}"
+Q=$(skylight-cli list-elements --pid "$PID" 2>/dev/null | python3 -c "import json,sys; print(' '.join(e.get('label','') for e in json.load(sys.stdin)['elements']))")
+T=$(echo "$Q"|grep -oiE "wählen sie [a-z0-9]+"|head -1|sed 's/wählen sie //i'||echo "")
+if [ -n "$T" ]; then
+    skylight-cli click --label "$T" --pid "$PID" 2>/dev/null >/dev/null || true
+    sleep 1; echo "{\"status\":\"solved\",\"selected\":\"$T\"}"
+else echo '{"status":"no_check"}'; fi

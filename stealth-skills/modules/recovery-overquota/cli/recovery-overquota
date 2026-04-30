@@ -1,0 +1,7 @@
+#!/bin/bash
+set -euo pipefail; PID="${1:?PID}"
+BODY=$(skylight-cli list-elements --pid "$PID" 2>/dev/null | python3 -c "import json,sys; print(' '.join(e.get('label','') for e in json.load(sys.stdin)['elements']))")
+if echo "$BODY"|grep -qiE "bereits voll|over quota|quota exceeded|genügend"; then
+    skylight-cli click --text "Zurück" --pid "$PID" 2>/dev/null >/dev/null || true
+    sleep 2; echo '{"status":"recovered","next":"select_survey"}'
+else echo '{"status":"no_quota"}'; fi

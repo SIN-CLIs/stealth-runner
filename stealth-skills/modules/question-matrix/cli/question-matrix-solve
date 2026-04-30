@@ -1,0 +1,28 @@
+#!/bin/bash
+set -euo pipefail; PID="${1:?PID}"
+# Zähle Radio-Buttons pro Zeile (Matrix-Erkennung)
+ROWS=$(skylight-cli list-elements --pid "$PID" 2>/dev/null | python3 -c "
+import json,sys
+elements=json.load(sys.stdin)['elements']
+radios=[e for e in elements if e['role']=='AXRadioButton' and 'AXWebArea' in e.get('path','')]
+# Gruppiere nach Y-Position (Matrix-Zeilen)
+from collections import defaultdict
+rows=defaultdict(list)
+for r in radios:
+    y=int(r['frame']['y']/25)*25
+    rows[y].append(r)
+print(len(rows))
+")
+if [ "$ROWS" -gt 1 ]; then
+    # Klicke ersten Radio-Button pro Zeile
+    for i in $(seq 0 $((ROWS-1))); do
+        IDX=$(skylight-cli list-elements --pid "$PID" 2>/dev/null | python3 -c "
+import json,sys
+radios=[e for e in json.load(sys.stdin)['elements'] if e['role']=='AXRadioButton']
+if len(radios)>$i*2: print(radios[$i*2]['index'])
+")
+        [ -n "$IDX" ] && skylight-cli click --pid "$PID" --element-index "$IDX" 2>/dev/null >/dev/null
+        sleep 0.2
+    done
+    echo "{\"status\":\"solved\",\"rows\":$ROWS}"
+else echo '{"status":"no_matrix"}'; fi
