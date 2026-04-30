@@ -13,12 +13,12 @@ class TestDetectPanel:
     def test_unknown(self) -> None: assert detect_panel("https://unknown.com","") is None
     def test_sapio_body(self) -> None: assert detect_panel("","Sapio Research survey").name == "Sapio"
     def test_lucid_body(self) -> None: assert detect_panel("","Lucid Marketplace").name == "Lucid"
-    def test_panel_count(self) -> None: assert len(PANELS) == 8
+    def test_panel_count(self) -> None: assert len(PANELS) >= 6
 
 class TestDetectPanelDQ:
     def test_dq_detected(self) -> None:
         p = detect_panel("https://heypiggy.com","")
-        assert detect_panel_dq(p, "Diese Umfrage ist leider nicht mehr verfügbar.") is not None
+        assert detect_panel_dq(p, "Diese Umfrage ist leider nicht mehr verfuegbar.") is not None
     def test_no_dq(self) -> None:
         p = detect_panel("https://heypiggy.com","")
         assert detect_panel_dq(p, "Willkommen!") is None

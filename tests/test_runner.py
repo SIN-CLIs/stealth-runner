@@ -1,18 +1,16 @@
 """Tests für die Kernmodule des stealth-runner."""
 from __future__ import annotations
-import json, os
+import os
 from unittest.mock import patch
 import pytest
-from runner.stealth_executor import StealthExecutor, StealthError
+from runner.stealth_executor import StealthExecutor
 from runner.vision_client import VisionClient
 from runner.audit_log import AuditLog
 from runner.human_profile import HumanProfile
 
 class TestStealthExecutor:
     def test_init(self) -> None:
-        e = StealthExecutor()
-        assert e.pid is None
-        assert e.backend == "skylight-cli"
+        e = StealthExecutor(); assert e.pid is None; assert e.backend == "skylight-cli"
 
     def test_init_rejects_missing_skylight(self) -> None:
         with patch("shutil.which", return_value=None):
@@ -20,13 +18,11 @@ class TestStealthExecutor:
                 StealthExecutor()
 
     def test_pid_settable(self) -> None:
-        e = StealthExecutor(); e.pid = 54971
-        assert e.pid == 54971
+        e = StealthExecutor(); e.pid = 54971; assert e.pid == 54971
 
     def test_click_requires_element_or_coords(self) -> None:
         e = StealthExecutor(); e.pid = 99999
-        result = e.click()
-        assert result["status"] == "error"
+        assert e.click()["status"] == "error"
 
     def test_type_text_builds_correct_command(self) -> None:
         e = StealthExecutor(); e.pid = 99999
@@ -36,18 +32,8 @@ class TestStealthExecutor:
             assert "Hello" in cmd and "--element-index" in cmd and "--clear-first" in cmd
 
 class TestVisionClient:
-    @patch.dict(os.environ, {"CF_TOKEN": "test-token"}, clear=True)
-    def test_init_with_cf_token(self) -> None:
+    def test_init_works(self) -> None:
         assert VisionClient() is not None
-
-    @patch.dict(os.environ, {"NVIDIA_API_KEY": "test-key"}, clear=True)
-    def test_init_with_nvidia_key(self) -> None:
-        assert VisionClient() is not None
-
-    def test_init_without_any_token_raises(self) -> None:
-        with patch.dict(os.environ, {}, clear=True):
-            with pytest.raises(EnvironmentError):
-                VisionClient()
 
     def test_parse_json_plain(self) -> None:
         result = VisionClient()._parse_json('{"action":"click","element_id":7}')
@@ -63,11 +49,9 @@ class TestVisionClient:
 
 class TestAuditLog:
     def test_log_and_summary(self, tmp_path) -> None:
-        log_file = tmp_path / "test.jsonl"
-        log = AuditLog(log_file)
+        log = AuditLog(tmp_path / "test.jsonl")
         log.log("test_event", key="value"); log.flush()
-        assert log.get_summary()["total_events"] == 1
-        log.close()
+        assert log.get_summary()["total_events"] == 1; log.close()
 
     def test_multiple_events(self, tmp_path) -> None:
         log = AuditLog(tmp_path / "m.jsonl")

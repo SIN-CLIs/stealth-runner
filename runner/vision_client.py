@@ -14,7 +14,7 @@ NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
 class VisionClient:
     def __init__(self) -> None:
         if not CF_TOKEN and not NVIDIA_KEY:
-            raise EnvironmentError("CF_TOKEN or NVIDIA_API_KEY must be set")
+            raise OSError("CF_TOKEN or NVIDIA_API_KEY must be set")
 
     def get_action(self, image_path: str, user_prompt: str) -> dict[str, Any]:
         with open(image_path, "rb") as f:
