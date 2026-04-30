@@ -33,6 +33,55 @@ class VisionClient:
             data = self._ask_vision(img_b64, prompt)
         return extract_eur_from_text(data or page_text or "")
 
+    def _build_action_prompt(self, session):
+        return (
+            'You are a survey automation agent. Analyze the screenshot and decide the NEXT action.\n'
+            'Previous steps: {steps}. Current EUR: {eur}.\n'
+            'Screenshot shows elements marked as [N] AXRole "text".\n'
+            'Reply with JSON: {{"action":"click","element_id":N,"reasoning":"..."}}\n'
+            'or {{"action":"type","text":"...","reasoning":"..."}}\n'
+            'or {{"action":"scroll","direction":"down","reasoning":"..."}}\n'
+        ).format(steps=session.get('steps', 0), eur=session.get('earnings_eur', 0.0))
+
+    def _ask_vision(self, img_b64, prompt):
+        if CF_TOKEN:
+            try:
+                data = json.dumps({'messages':[{'role':'user','content':[
+                    {'type':'text','text':prompt},
+                    {'type':'image_url','image_url':{'url':f'data:image/jpeg;base64,{img_b64}'}}
+                ]}],'max_tokens':120}).encode()
+                req = urllib.request.Request(CF_URL, data=data,
+                    headers={'Authorization':f'Bearer {CF_TOKEN}','Content-Type':'application/json'})
+                r = json.loads(urllib.request.urlopen(req, timeout=35).read())
+                return r.get('result',{}).get('response','')
+            except: pass
+        if NVIDIA_KEY:
+            try:
+                data = json.dumps({'model':'mistralai/mistral-large-3-675b-instruct-2512',
+                    'messages':[{'role':'user','content':[
+                        {'type':'text','text':prompt},
+                        {'type':'image_url','image_url':{'url':f'data:image/jpeg;base64,{img_b64}'}}
+                    ]}],'max_tokens':120}).encode()
+                req = urllib.request.Request(NVIDIA_URL, data=data,
+                    headers={'Authorization':f'Bearer {NVIDIA_KEY}','Content-Type':'application/json'})
+                resp = json.loads(urllib.request.urlopen(req, timeout=60).read())
+                return resp['choices'][0]['message']['content']
+            except: pass
+        return ''
+
+    def _parse_action(self, text):
+        try:
+            return json.loads(text.strip().split('```json')[1].split('```')[0].strip())
+        except: pass
+        try:
+            return json.loads(text.strip())
+        except: pass
+        m = re.search(r'\{.*\}', text, re.DOTALL)
+        if m:
+            try: return json.loads(m.group(0))
+            except: pass
+        return {"action": "click", "element_id": 0, "reasoning": f"parse_failed: {text[:50]}"}
+
 def _detect_page_state(window_state):
     markdown = window_state.get('tree_markdown', '')
     url = window_state.get('url', '').lower()
