@@ -1,10 +1,46 @@
 #!/bin/bash
-# Listet Umfragen auf dem Dashboard
-PID=${1:-$(pgrep -f "Google Chrome.app/Contents/MacOS/Google Chrome$" | head -1)}
-skylight-cli list-elements --pid $PID 2>/dev/null | python3 -c "
+# Scannt das HeyPiggy-Dashboard und wählt die beste Umfrage aus.
+set -euo pipefail
+PID="${1:?PID erforderlich}"
+STRATEGY="${2:-best-value}"
+
+# Elemente via skylight-cli (Label-basiert, kein DOM-Scraping nötig)
+ITEMS=$(skylight-cli list-elements --pid "$PID" 2>/dev/null | python3 -c "
 import json,sys
+items=[]
 for e in json.load(sys.stdin)['elements']:
     l=e.get('label','')
-    if 'AXWebArea' in (e.get('path','')) and ('Umfrage' in l or '€' in l or 'Min' in l):
-        print(f'[{e[\"index\"]}] {l[:100]}')
-" | head -20
+    if 'AXWebArea' in (e.get('path','')):
+        # Extrahiere Vergütung + Dauer aus Labels
+        import re
+        reward=re.search(r'(\d+[,.]\d+)\s*€', l)
+        duration=re.search(r'(\d+)\s*Min', l)
+        if reward:
+            items.append({
+                'label': l[:80],
+                'index': e['index'],
+                'reward': float(reward.group(1).replace(',','.')),
+                'duration': int(duration.group(1)) if duration else 10,
+                'role': e['role']
+            })
+print(json.dumps(items))
+")
+
+# Strategie anwenden
+if [ "$STRATEGY" = "best-value" ]; then
+    SELECTED=$(echo "$ITEMS" | python3 -c "
+import json,sys
+items=json.load(sys.stdin)
+if items:
+    best=max(items, key=lambda x: x['reward']/max(x['duration'],1))
+    print(json.dumps(best))
+")
+elif [ "$STRATEGY" = "fastest" ]; then
+    SELECTED=$(echo "$ITEMS" | python3 -c "import json,sys; items=json.load(sys.stdin); print(json.dumps(min(items, key=lambda x: x['duration']))) if items else '{}'")
+elif [ "$STRATEGY" = "highest" ]; then
+    SELECTED=$(echo "$ITEMS" | python3 -c "import json,sys; items=json.load(sys.stdin); print(json.dumps(max(items, key=lambda x: x['reward']))) if items else '{}'")
+else
+    SELECTED=$(echo "$ITEMS" | python3 -c "import json,sys; items=json.load(sys.stdin); [print(json.dumps(i)) for i in items if str(i.get('index'))=='${STRATEGY#specific:}']")
+fi
+
+echo "{\"selected\": $SELECTED, \"total_available\": $(echo "$ITEMS" | python3 -c 'import json,sys; print(len(json.load(sys.stdin)))')}"

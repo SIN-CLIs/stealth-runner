@@ -1,0 +1,14 @@
+#!/bin/bash
+# Abschluss: Zurück zu HeyPiggy + EUR prüfen
+set -euo pipefail
+PID="${1:?PID erforderlich}"
+
+BEFORE=$(./cli/heypiggy-balance "$PID" 2>/dev/null | python3 -c "import json,sys; print(json.load(sys.stdin).get('eur','0'))" 2>/dev/null || echo "0")
+
+# Zurück zu HeyPiggy
+./cli/heypiggy-navigate "$PID" dashboard 2>/dev/null >/dev/null
+sleep 3
+
+AFTER=$(./cli/heypiggy-balance "$PID" 2>/dev/null | python3 -c "import json,sys; print(json.load(sys.stdin).get('eur','0'))" 2>/dev/null || echo "0")
+
+echo "{\"status\":\"completed\",\"eur_before\":\"$BEFORE\",\"eur_after\":\"$AFTER\"}"

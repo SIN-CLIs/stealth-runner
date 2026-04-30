@@ -1,0 +1,57 @@
+#!/bin/bash
+# Iteriert durch Screening-Fragen, beantwortet anhand Profil
+set -euo pipefail
+PID="${1:?PID erforderlich}"
+MAX="${2:-20}"
+
+for i in $(seq 1 "$MAX"); do
+    TEXT=$(skylight-cli list-elements --pid "$PID" 2>/dev/null | python3 -c "
+import json,sys
+for e in json.load(sys.stdin)['elements']:
+    if 'AXWebArea' in (e.get('path','')) and e['role']=='AXStaticText':
+        print(e.get('label','')[:200])
+" | tr '\n' ' ')
+    
+    # Screen-out?
+    if echo "$TEXT" | grep -qiE "passt nicht|leider nicht|disqualif|screen.?out|over quota"; then
+        echo "{\"status\":\"disqualified\",\"reason\":\"screen_out\",\"question\":$i}"
+        exit 0
+    fi
+    
+    # Complete?
+    if echo "$TEXT" | grep -qiE "vielen dank|abgeschlossen|survey complete"; then
+        echo "{\"status\":\"screening_passed\",\"questions\":$((i-1))}"
+        exit 0
+    fi
+    
+    # Fangfrage: klicke ersten Radio-Button/Checkbox
+    BTN=$(skylight-cli list-elements --pid "$PID" 2>/dev/null | python3 -c "
+import json,sys
+for e in json.load(sys.stdin)['elements']:
+    if e['role'] in ('AXRadioButton','AXCheckBox') and 'AXWebArea' in (e.get('path','')):
+        print(e['index']); break
+")
+    [ -n "$BTN" ] && skylight-cli click --pid "$PID" --element-index "$BTN" 2>/dev/null >/dev/null
+    
+    # Numerisches Feld?
+    NUM=$(skylight-cli list-elements --pid "$PID" 2>/dev/null | python3 -c "
+import json,sys
+for e in json.load(sys.stdin)['elements']:
+    if e['role']=='AXTextField' and 'AXWebArea' in (e.get('path','')):
+        print(e['index']); break
+")
+    [ -n "$NUM" ] && skylight-cli type --pid "$PID" --element-index "$NUM" --text "34" 2>/dev/null >/dev/null
+    
+    # Weiter
+    WEITER=$(skylight-cli list-elements --pid "$PID" 2>/dev/null | python3 -c "
+import json,sys
+for e in json.load(sys.stdin)['elements']:
+    if e['role']=='AXButton' and 'weiter' in (e.get('label','')or'').lower():
+        print(e['index']); break
+")
+    [ -n "$WEITER" ] && skylight-cli click --pid "$PID" --element-index "$WEITER" 2>/dev/null >/dev/null
+    
+    sleep 2
+done
+
+echo "{\"status\":\"max_questions\",\"questions\":$MAX}"
