@@ -1,0 +1,17 @@
+#!/bin/bash
+# heypiggy-click — Klick auf Element per Label (nicht Index!)
+set -euo pipefail
+PID=${1:-$(pgrep -f "Google Chrome.app/Contents/MacOS/Google Chrome$" | head -1)}
+LABEL=${2:-}
+[ -z "$LABEL" ] && echo '{"status":"error","reason":"no_label"}' && exit 1
+
+IDX=$(skylight-cli list-elements --pid $PID 2>/dev/null | python3 -c "
+import json,sys
+for e in json.load(sys.stdin)['elements']:
+    if '$LABEL' in (e.get('label','')or''):
+        print(e['index']); break
+")
+[ -z "$IDX" ] && echo "{\"status\":\"error\",\"reason\":\"element_not_found\",\"label\":\"$LABEL\"}" && exit 2
+
+skylight-cli click --pid $PID --element-index $IDX 2>/dev/null >/dev/null
+echo "{\"status\":\"ok\",\"element_index\":$IDX,\"label\":\"$LABEL\"}"

@@ -1,0 +1,61 @@
+#!/bin/bash
+# heypiggy-login — Google OAuth Login auf heypiggy.com
+# Atomarer CLI-Baustein für den stealth-runner
+set -euo pipefail
+
+PID=${1:-$(pgrep -f "Google Chrome.app/Contents/MacOS/Google Chrome$" | head -1)}
+EMAIL=${HEYPIGGY_EMAIL:-${GOOGLE_EMAIL:-}}
+PW=${HEYPIGGY_PASSWORD:-${GOOGLE_PASSWORD:-}}
+
+[ -z "$EMAIL" ] && echo '{"status":"error","reason":"no_email"}' && exit 1
+[ -z "$PID" ] && echo '{"status":"error","reason":"no_chrome"}' && exit 1
+
+echo "{\"status\":\"logging_in\",\"pid\":$PID}" >&2
+
+# Navigator zu heypiggy
+osascript -e 'tell app "Google Chrome" to set URL of active tab of window 1 to "https://heypiggy.com/?page=dashboard"' 2>/dev/null
+sleep 4
+
+# Google Login klicken
+GOOGLE=$(skylight-cli list-elements --pid $PID 2>/dev/null | python3 -c "
+import json,sys
+for e in json.load(sys.stdin)['elements']:
+    if 'Google' in (e.get('label','')or'') and e['role']=='AXLink':
+        print(e['index']); break
+")
+[ -z "$GOOGLE" ] && echo '{"status":"error","reason":"no_google_button"}' && exit 2
+skylight-cli click --pid $PID --element-index $GOOGLE 2>/dev/null >/dev/null
+sleep 5
+
+# Email
+F=$(skylight-cli list-elements --pid $PID 2>/dev/null | python3 -c "
+import json,sys
+for e in json.load(sys.stdin)['elements']:
+    if e['role']=='AXTextField' and 'telefon' in (e.get('label','')or'').lower():
+        print(e['index']); break
+")
+[ -z "$F" ] && echo '{"status":"error","reason":"no_email_field"}' && exit 3
+skylight-cli type --pid $PID --element-index $F --text "$EMAIL" 2>/dev/null >/dev/null
+sleep 3
+
+# Password
+P=$(skylight-cli list-elements --pid $PID 2>/dev/null | python3 -c "
+import json,sys
+for e in json.load(sys.stdin)['elements']:
+    if e['role']=='AXTextField' and 'verschlüsselt' in (e.get('label','')or''):
+        print(e['index']); break
+")
+[ -n "$P" ] && [ -n "$PW" ] && {
+    skylight-cli type --pid $PID --element-index $P --text "$PW" 2>/dev/null >/dev/null
+    sleep 1
+    W=$(skylight-cli list-elements --pid $PID 2>/dev/null | python3 -c "
+import json,sys
+for e in json.load(sys.stdin)['elements']:
+    if e['role']=='AXButton' and 'weiter' in (e.get('label','')or'').lower():
+        print(e['index']); break
+")
+    skylight-cli click --pid $PID --element-index $W 2>/dev/null >/dev/null
+    sleep 5
+}
+
+echo "{\"status\":\"ok\",\"pid\":$PID}"

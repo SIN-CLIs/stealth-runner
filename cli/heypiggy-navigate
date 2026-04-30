@@ -1,0 +1,17 @@
+#!/bin/bash
+# heypiggy-navigate — Zu Seite navigieren
+set -euo pipefail
+PID=${1:-$(pgrep -f "Google Chrome.app/Contents/MacOS/Google Chrome$" | head -1)}
+PAGE=${2:-dashboard}
+
+case "$PAGE" in
+    dashboard) URL="https://heypiggy.com/?page=dashboard" ;;
+    surveys)   URL="https://heypiggy.com/?page=surveys" ;;
+    earnings)  URL="https://heypiggy.com/?page=earnings" ;;
+    profile)   URL="https://heypiggy.com/?page=profile" ;;
+    *)         URL="https://heypiggy.com/?page=$PAGE" ;;
+esac
+
+osascript -e "tell app \"Google Chrome\" to set URL of active tab of window 1 to \"$URL\"" 2>/dev/null
+sleep 3
+echo "{\"status\":\"ok\",\"url\":\"$URL\",\"pid\":$PID}"

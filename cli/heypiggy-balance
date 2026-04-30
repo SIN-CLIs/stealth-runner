@@ -1,0 +1,13 @@
+#!/bin/bash
+# heypiggy-balance — EUR-Guthaben abfragen
+set -euo pipefail
+PID=${1:-$(pgrep -f "Google Chrome.app/Contents/MacOS/Google Chrome$" | head -1)}
+
+BALANCE=$(skylight-cli list-elements --pid $PID 2>/dev/null | python3 -c "
+import json,sys
+for e in json.load(sys.stdin)['elements']:
+    if 'money' in (e.get('label','')or'').lower() and e['role']=='AXLink':
+        import re; m=re.search(r'[\d,.]+',e['label']); print(m.group() if m else '0')
+        break
+")
+echo "{\"status\":\"ok\",\"eur\":\"$BALANCE\"}"
