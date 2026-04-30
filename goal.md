@@ -1,7 +1,14 @@
 # goal.md — stealth-runner
 
 ## Primärziel
-Automatisierte, unsichtbare Umfrage-Teilnahme via Stealth-Triade
+Automatisierte, unsichtbare Umfrage-Teilnahme via Stealth-Triade.
+**Klick-Mechanismus: AXPress (Accessibility-API) — funktioniert auf Chrome 148/macOS 26.**
+
+## Status (30.4.2026)
+- ✅ Klick funktioniert (AXUIElementPerformAction + kAXPressAction)
+- ⚠️ Chrome braucht `--force-renderer-accessibility`, stürzt nach ~30s
+- ✅ safe_click.py eliminiert Apple-Menü-Fehler
+- ❌ Login-Flow noch nicht automatisiert (Google OAuth)
 
 ## OKRs Q2 2026
 1. 50 Live-Surveys ohne Bot-Detektion

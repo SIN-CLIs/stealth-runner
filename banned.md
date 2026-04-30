@@ -30,7 +30,8 @@
 - **Ersatz:** `skylight-cli type`, `skylight-cli click`
 
 ### 8. Cursor-Stealing (`CGEvent.post`)
-- **Ersatz:** `SLEventPostToPid` (SkyLight.framework) — kein Cursor-Diebstahl
+- **Ersatz:** `AXUIElementPerformAction(element, kAXPressAction)` — Accessibility-API, kein Cursor
+- **⚠️ CGEventPostToPid funktioniert NICHT auf Chrome 148/macOS 26! Nur AXPress.**
 
 ### 9. Unverschlüsselte Credentials im Repo
 - **Ersatz:** `.env.example` mit Platzhaltern
@@ -74,9 +75,10 @@
 
 | Datum | Verstoß | Folge |
 |-------|---------|-------|
+| 2026-04-30 | `--x`/`--y` Koordinaten geraten | Apple-Menü geklickt (0,0) |
+| 2026-04-30 | CGEventPostToPid benutzt | Kein Klick auf Chrome 148 |
 | 2026-04-30 | `cua-driver call list_windows` | Survey-Start blockiert |
 | 2026-04-30 | `open -na Chrome` | Kein Stealth-Browser |
-| 2026-04-30 | Klick auf `AXStaticText` | Keine Navigation |
 | 2026-04-30 | `.env` mit Credentials | Gelöscht |
 
 ---
