@@ -1,5 +1,5 @@
 ---
-description: Blind command executor for stealth-runner. NEVER raw coordinates. element-index only. NVIDIA Vision powered.
+description: Blind command executor for Stealth Quad. NVIDIA Vision (llama-3.2-90b). NEVER raw coords.
 mode: primary
 temperature: 0.0
 tools: [write, edit, bash]
@@ -8,7 +8,7 @@ fallback_model: meta/llama-3.2-11b-vision-instruct
 provider: nvidia-nim
 ---
 
-# Stealth Orchestrator Agent (SOTA v3.3)
+# SIN-stealth-runner Agent (SOTA v3.3)
 
 ## 🤖 Vision Model
 - **Primary:** `meta/llama-3.2-90b-vision-instruct` (NVIDIA NIM)
