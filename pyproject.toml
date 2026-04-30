@@ -4,12 +4,17 @@ build-backend = "hatchling.build"
 
 [project]
 name = "stealth-runner"
-version = "0.2.0"
-description = "Orchestrator der Stealth-Triade v2.0"
+version = "0.3.0"
+description = "Orchestrator der Stealth-Triade v3.0 — SOTA Production-Ready"
 requires-python = ">=3.12"
 license = { text = "MIT" }
 authors = [{ name = "SIN-CLIs", email = "openssin@proton.me" }]
-dependencies = ["anyio>=4.0", "httpx>=0.28", "pydantic>=2.0", "python-dotenv>=1.0", "structlog>=24.0", "tenacity>=8.0", "filelock>=3.0", "typer>=0.12", "rich>=13.0"]
+dependencies = [
+    "anyio>=4.0", "httpx>=0.28", "pydantic>=2.0", "python-dotenv>=1.0",
+    "structlog>=24.0", "tenacity>=8.0", "filelock>=3.0", "typer>=0.12",
+    "rich>=13.0", "scipy>=1.12", "curl-cffi>=0.6", "diskcache>=5.6",
+    "opentelemetry-api>=1.20", "opentelemetry-sdk>=1.20",
+]
 
 [project.optional-dependencies]
 dev = ["pytest>=8.0", "pytest-asyncio>=0.24", "pytest-cov>=6.0", "ruff>=0.9", "mypy>=1.14", "coverage>=7.0"]
@@ -18,12 +23,9 @@ dev = ["pytest>=8.0", "pytest-asyncio>=0.24", "pytest-cov>=6.0", "ruff>=0.9", "m
 stealth-runner = "runner.cli:main_cli"
 
 [tool.pytest.ini_options]
-testpaths = ["tests"]
-asyncio_mode = "auto"
-addopts = ["-v", "--tb=short", "--cov=runner", "--cov=sin_survey_core", "--cov-report=term-missing"]
+testpaths = ["tests"]; asyncio_mode = "auto"
 
 [tool.ruff]
-target-version = "py312"
-line-length = 100
+target-version = "py312"; line-length = 100
 [tool.ruff.lint]
 select = ["E", "W", "F", "I", "B", "SIM", "UP"]
