@@ -46,7 +46,7 @@ IDLE → LAUNCH_BROWSER → WAIT_READY → CAPTURE → VISION → EXECUTE → VE
 
 | Kriterium | Status |
 |-----------|--------|
-| Zero-Cursor-Stealing (`SLEventPostToPid`) | ✅ 100% |
+| Zero-Cursor-Stealing (`AXUIElementPerformAction`) | ✅ 100% |
 | Canvas/WebGL-Tarnung (playstealth-cli) | ✅ |
 | AX-Tree-Resilienz (`_AXObserverAddNotificationAndCheckRemote`) | ✅ skylight-cli v0.2.0 |
 | Multi-Model-Vision (CF Llama 4 Scout + NVIDIA Mistral) | ✅ |
@@ -98,7 +98,7 @@ click_jitter_px: 2–6 px | hover_before_click_ms: 50–250
 | AXStaticText klick | Nur interaktive Rollen |
 | Klick ohne Vision | `VisionClient.get_action()` |
 | CDP/DOM | `skylight-cli` |
-| Cursor-Stealing | `SLEventPostToPid` |
+| Cursor-Stealing | `AXPress` (Accessibility API) |
 
 ---
 
