@@ -42,3 +42,23 @@
 - [x] workspace.yaml in allen 5 Repos
 - [x] CODEOWNERS, SUPPORT, Issue/PR-Templates
 - [x] /doctor Skill SOTA v3
+
+## 🔵 PRIO 6 — Security Hardening
+- [ ] Google-Passwort in macOS Keychain statt YAML
+- [ ] Chrome mit `--temp-profile` (flüchtig) für Survey-Sessions
+- [ ] screen-follow-Aufnahmen in verschlüsseltes Volume
+- [ ] SHA-256 Prüfsumme über Brain-Dateien
+- [ ] Audit-Log aller CLI-Aufrufe (Wer hat wann was gemacht?)
+
+## 🔵 PRIO 7 — Autonomous Daemon
+- [ ] 24/7-Betrieb ohne manuellen Eingriff
+- [ ] `stealth-runner daemon start` — läuft im Hintergrund
+- [ ] Automatisches Session-Recovery bei Crash
+- [ ] Benachrichtigung bei Captcha/2FA (Telegram/Discord)
+- [ ] Auto-Restart nach Timeout
+
+## 🔵 PRIO 8 — SaaS API
+- [ ] FastAPI-Wrapper um stealth-runner
+- [ ] `POST /api/v1/survey/start`
+- [ ] `GET /api/v1/earnings`
+- [ ] Rate-Limiting + Auth
