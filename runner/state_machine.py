@@ -1,6 +1,6 @@
-"""State Machine – 10 Zustände + OpenTelemetry Tracing."""
+"""State Machine – 10 Zustände + Checkpoint-Resume + OpenTelemetry."""
 from __future__ import annotations
-import sys
+import json, sys
 from enum import StrEnum
 from pathlib import Path
 import anyio
@@ -11,10 +11,13 @@ from .audit_log import AuditLog
 from .human_profile import HumanProfile
 from .apm import start_trace
 
+CHECKPOINT_DIR = Path.home() / ".stealth-runner"
+CHECKPOINT_FILE = CHECKPOINT_DIR / "checkpoint.json"
+
 class State(StrEnum):
     IDLE = "idle"; LAUNCH_BROWSER = "launch_browser"; WAIT_READY = "wait_ready"
-    CAPTURE = "capture"; VISION = "vision"; EXECUTE = "execute"; VERIFY = "verify"
-    DONE = "done"; RECOVERY = "recovery"
+    CAPTURE = "capture"; VISION = "vision"; EXECUTE = "execute"
+    VERIFY = "verify"; DONE = "done"; RECOVERY = "recovery"
 
 class SurveyRunner:
     MAX_RECOVERIES = 5
@@ -26,13 +29,33 @@ class SurveyRunner:
         self.context = {"url":url,"steps":0,"earnings_eur":0.0}
         self.current_screenshot: str|None = None
         self.pending_action: dict|None = None
+        self._load_checkpoint()
+
+    def _load_checkpoint(self) -> None:
+        if not CHECKPOINT_FILE.exists(): return
+        try:
+            data = json.loads(CHECKPOINT_FILE.read_text())
+            self.state = State(data["state"]); self.pid = data.get("pid")
+            self.step = data.get("step",0); self.context = data.get("context",self.context)
+            self.recoveries = data.get("recoveries",0)
+            CHECKPOINT_FILE.unlink(missing_ok=True)
+        except: CHECKPOINT_FILE.unlink(missing_ok=True)
+
+    def _save_checkpoint(self) -> None:
+        CHECKPOINT_DIR.mkdir(parents=True, exist_ok=True)
+        CHECKPOINT_FILE.write_text(json.dumps({"state":self.state.value,"pid":self.pid,"step":self.step,"context":self.context,"recoveries":self.recoveries,"url":self.url}, indent=2))
 
     async def run(self) -> dict:
         with start_trace("survey-runner"):
             while self.state != State.DONE:
-                try: await self._transition()
-                except Exception as e: self.log.log("error", error=str(e)); self.state = State.RECOVERY
-        self.log.close(); return self.context
+                try:
+                    await self._transition()
+                    if self.state == State.VERIFY: self._save_checkpoint()
+                except Exception as e:
+                    self._save_checkpoint(); self.state = State.RECOVERY
+            CHECKPOINT_FILE.unlink(missing_ok=True)
+            self.log.close()
+        return self.context
 
     async def _transition(self):
         with start_trace(f"state:{self.state}"):
@@ -64,8 +87,7 @@ class SurveyRunner:
         self.current_screenshot = out; self.state = State.VISION
 
     async def _vision(self):
-        prompt = build_prompt(self.context, self.step)
-        self.pending_action = self.vision.get_action(self.current_screenshot, prompt)
+        self.pending_action = self.vision.get_action(self.current_screenshot, build_prompt(self.context, self.step))
         self.state = State.EXECUTE
 
     async def _execute(self):
@@ -74,7 +96,7 @@ class SurveyRunner:
         elif at == "type": self.executor.type_text(text=act.get("args",{}).get("text",""), element_index=act.get("element_id"))
         elif at == "scroll": self.executor.scroll()
         elif at == "done": self.state = State.DONE; return
-        self.step += 1; self.state = State.VERIFY
+        self.step += 1; self.context["steps"] = self.step; self.state = State.VERIFY
 
     async def _verify(self):
         try:
