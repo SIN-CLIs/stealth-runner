@@ -9,7 +9,7 @@
 Die **Stealth-Triade** – `playstealth-cli`, `skylight-cli`, `unmask-cli` – in Verbindung mit dem **stealth-runner** ist die weltweit fortschrittlichste Umgehungsarchitektur für Anti-Bot-Systeme auf macOS. Sie kombiniert Betriebssystem-Interaktion auf Kernel-Ebene, spezialisierte Vision-Modelle und eine strikt zustandslose CLI-Pipeline zu einem System, das sich von kommerziellen Lösungen fundamental unterscheidet.
 
 **Kerninnovationen:**
-- **Kein DOM-Zugriff, kein CDP** – Alle Interaktionen erfolgen über SkyLight.framework (`SLEventPostToPid`)
+- **Kein DOM-Zugriff, kein CDP** – Alle Interaktionen via `AXUIElementPerformAction` (Accessibility‑API). `CGEventPostToPid` funktioniert NICHT auf Chrome 148.
 - **Unsichtbare Cursor-Steuerung** – Der physische Mauszeiger wird nie bewegt
 - **Canvas/WebGL-Fingerprint-Patching** – Vollständige Maskerade als legitimer Chrome
 - **10-Punkt-Vision-Prompt** – Beherrscht alle Captcha-Typen inkl. Cloudflare Turnstile

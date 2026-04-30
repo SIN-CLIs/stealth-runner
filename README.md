@@ -24,7 +24,7 @@ Er kombiniert drei spezialisierte CLI‑Tools zu einer lückenlosen **Sense‑Th
 ```
 
 - **playstealth‑cli** startet einen getarnten Chrome und liefert die PID.
-- **skylight‑cli** erstellt Screenshots mit Element‑Markierungen (SoM) und führt unsichtbare Klicks, Texteingaben, Scroll‑ und Drag‑Aktionen aus.
+- **skylight‑cli** erstellt Screenshots mit Element‑Markierungen (SoM) und führt Klicks, Texteingaben, Scroll‑ und Drag‑Aktionen über die Accessibility‑API (`kAXPressAction`) aus.
 - **unmask‑cli** prüft nach jeder Aktion, ob die Tarnung noch intakt ist.
 
 Der Runner orchestriert alles über eine **asynchrone State Machine** und persistiert jede Aktion in einem Audit‑Log.
@@ -41,7 +41,7 @@ Jeder Übergang ist ein atomarer CLI‑Aufruf – kein Event‑Bus, kein CDP, ke
 
 ### 1. Abhängigkeiten
 
-- **macOS ≥ 13** (für SkyLight.framework)
+- **macOS ≥ 13** (für Accessibility‑API)
 - **Python ≥ 3.12**
 - **Drei CLI‑Tools** (müssen im `PATH` liegen):
   - [`playstealth-cli`](https://github.com/SIN-CLIs/playstealth-cli)

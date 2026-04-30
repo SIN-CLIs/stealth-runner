@@ -35,9 +35,9 @@ ohne Chrome DevTools Protocol (CDP) und ohne DOM‑Zugriff.
     │playstealth  │ │ skylight  │  │  unmask‑cli     │
     │   ‑cli      │ │   ‑cli    │  │                 │
     │             │ │           │  │                 │
-    │ Canvas/     │ │ SkyLight  │  │ Fingerprint‑    │
-    │ WebGL‑      │ │ .frame‑   │  │ Verifikation    │
-    │ Patches     │ │ work      │  │                 │
+     │ Canvas/     │ │ AXPress   │  │ Fingerprint‑    │
+     │ WebGL‑      │ │ (Access-  │  │ Verifikation    │
+     │ Patches     │ │ ibility)  │  │                 │
     └─────────────┘ └───────────┘  └─────────────────┘
 ```
 
@@ -45,7 +45,8 @@ ohne Chrome DevTools Protocol (CDP) und ohne DOM‑Zugriff.
   User‑Agent‑Patches) und gibt die PID zurück.
 - **skylight‑cli** – Erstellt Screenshots mit Set‑of‑Marks (SoM),
   führt Klicks, Texteingaben, Scroll‑ und Drag‑Aktionen
-  über `SLEventPostToPid` (SkyLight.framework) unsichtbar aus.
+  über `AXUIElementPerformAction` (Accessibility‑API) aus —
+  `CGEventPostToPid` funktioniert NICHT auf Chrome 148/macOS 26.
 - **unmask‑cli** – Prüft nach jeder Aktion den aktuellen Fingerprint
   und löst bei Detektion eine Profilrotation aus.
 

@@ -1,18 +1,18 @@
 # 🎯 CEO Strategic Review: stealth-runner Ecosystem
 
 ## 📊 Executive Summary
-Die Stealth-Triade verfolgt einen **architektonisch differenzierenden Ansatz**: strikte Trennung von Sense/Think/Act über atomare CLIs, Verzicht auf direkte CDP-Steuerung im Orchestrator und macOS-native Event-Injection via SkyLight.framework. Das Konzept ist **innovativ und umgeht moderne Anti-Bot-Heuristiken effektiv**.
+Die Stealth-Triade verfolgt einen **architektonisch differenzierenden Ansatz**: strikte Trennung von Sense/Think/Act über atomare CLIs, Verzicht auf direkte CDP-Steuerung im Orchestrator und macOS-native Event-Injection via Accessibility‑API (`kAXPressAction`). Das Konzept ist **innovativ und umgeht moderne Anti-Bot-Heuristiken effektiv**.
 
 ## ✅ Erreichte Ziele
 - Atomare CLI-Orchestrierung: Kein Event-Bus, keine persistenten Server
-- macOS Native Stealth: CGEventPostToPid, SoM-Overlay, AX-Tree-Walking
+- macOS Native Stealth: AXPress (Accessibility), SoM-Overlay, AX-Tree-Walking
 - Structured Vision Pipeline: Pydantic V2, Confidence-Thresholds, Semantic Caching
 - Observability & Compliance: JSONL Audit mit O_SYNC/fcntl, structlog, Correlation IDs
 
 ## ⚠️ Kritische Lücken
 1. **CDP-Paradoxon**: Orchestrator ist CDP-frei, aber CLIs nutzen CDP intern
 2. **CLI-Contract Fragmentierung**: skylight (Exit-Codes 0-5), playstealth (Python), unmask (JSON-RPC)
-3. **Plattform-Lock-in**: macOS-only via SkyLight.framework
+3. **Plattform-Lock-in**: macOS-only via Accessibility‑API
 4. **Supply-Chain-Härtung**: CLI-Checksummen, Signierung, SBOM fehlen
 
 ## 🚀 Next 30 Days
