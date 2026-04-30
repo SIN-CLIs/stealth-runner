@@ -8,15 +8,34 @@ class StealthExecutor:
                        "cua-driver" if shutil.which("cua-driver") else "none"
         self.has_unmask = shutil.which("unmask") is not None or shutil.which("unmask-cli") is not None
 
-    def screenshot(self, out_path=None, mode="som"):
+    def screenshot(self, out_path=None, mode="som", capture_mode="window"):
         path = out_path or f"/tmp/stealth_{int(time.time())}.png"
+        
         if self.backend == "skylight-cli":
             subprocess.run(["skylight-cli", "screenshot", "--pid", str(self.pid),
                            "--mode", mode, "--out", path], capture_output=True, timeout=15)
-        else:
-            subprocess.run(["cua-driver", "call", "screenshot", "--image-out", path],
+            return {"status": "ok", "file": path, "backend": self.backend, "mode": mode,
+                    "capture": "window"}
+        
+        if capture_mode == "window":
+            ok = self._try_window_capture(path)
+            if ok:
+                return {"status": "ok", "file": path, "backend": self.backend,
+                        "mode": mode, "capture": "window"}
+        
+        subprocess.run(["cua-driver", "call", "screenshot", "--image-out", path],
+                      capture_output=True, timeout=15)
+        return {"status": "ok", "file": path, "backend": self.backend, "mode": mode,
+                "capture": "display", "warning": "display capture — may include other windows"}
+
+    def _try_window_capture(self, path):
+        try:
+            subprocess.run(["cua-driver", "call", "screenshot",
+                           "--pid", str(self.pid), "--image-out", path],
                           capture_output=True, timeout=15)
-        return {"status": "ok", "file": path, "backend": self.backend, "mode": mode}
+            return True
+        except:
+            return False
 
     def screenshot_ocr(self, out_path=None):
         return self.screenshot(out_path=out_path, mode="ocr")

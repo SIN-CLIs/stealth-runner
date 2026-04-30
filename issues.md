@@ -53,7 +53,7 @@
 
 | # | Title | Status |
 |---|-------|--------|
-| - | Keine Issues | - |
+| #9 | P0-PRIVACY: Targeted Window Capture | OPEN |
 
 ## SIN-CLIs Gesamt
 

@@ -12,3 +12,4 @@
 | 8 | Falsches Chrome-Fenster | PID 87049 statt Bot-Chrome | `find_bot_window()` findet falsches Fenster | Robuster 4-Stage Fallback mit HeyPiggy-Title-Check | `8189bea` | stealth-runner |
 
 ## Status: 8/8 Bugs gefixed ✅
+| 9 | Display-Capture leak | KI sieht private Fenster | cua-driver macht Full-Screen Capture | PID-basiertes Window Capture, `CGWindowListCreateImage` | #9 | stealth-runner |

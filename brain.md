@@ -77,3 +77,8 @@ IDLE → CAPTURE → VISION → EXECUTE → VERIFY → (loop) → DONE
 - #165: ⬜ CLI flags section
 - #166: ⬜ CLI flags examples
 - #167: ⬜ Epic tracker
+
+## Issue #9 — P0-PRIVACY: Targeted Window Capture
+- Bug: Full-Display Screenshot leak private Fenster an Vision-LLM
+- Fix: PID-basierter Window Capture via `CGWindowListCreateImage`
+- Status: OPEN
