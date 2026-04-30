@@ -1,50 +1,75 @@
-# brain.md — stealth-runner
+# brain.md — stealth-runner (SOTA Stealth Triade Orchestrator)
 
-## ARCHITEKTUR: Reine Stealth-Triade
+## Architektur: Reine Stealth-Triade — v2.0
+
 ```
-playstealth-cli (launch) → skylight-cli (act) → unmask-cli (verify)
+playstealth-cli (launch) → skylight-cli (screenshot+click) → Llama 4 Scout (vision) → unmask-cli (verify)
 ```
 
-## VERBOTEN (NIEMALS):
-- cua-driver — ALT, ersetzt durch skylight-cli v0.2.0
-- open -na "Google Chrome" — FALSCH, nur playstealth-cli launch
-- AXStaticText klicken — WIRKUNGSLOS, nur AXButton/AXLink/AXCheckBox/AXRadioButton
+## Verboten — ZERO Toleranz (seit efd363f):
+- `cua-driver` — ALT, vollständig durch skylight-cli v0.2.0 ersetzt
+- `open -na "Google Chrome"` — FALSCH, nur playstealth-cli launch
+- `AXStaticText` klicken — WIRKUNGSLOS, nur AXButton/AXLink/AXCheckBox/AXRadioButton
 - Klick ohne Vision — RATEN, muss via Llama 4 Scout
+- `.env` im Repo — SICHERHEITSRISIKO, nur `.env.example`
 
-## PIPELINE:
-1. playstealth-cli launch → PID
-2. skylight-cli screenshot --mode som → Bild mit Element-IDs
-3. Llama 4 Scout → element_id
-4. skylight-cli click --element-index ID
-5. unmask-cli verify-stealth
+## StealthExecutor (runner/stealth_executor.py)
+- Reine skylight-cli Bindung, FATAL RuntimeError wenn nicht installiert
+- `backend` property → immer "skylight-cli"
+- `screenshot(mode="som"|"grid"|"ocr")` — Targeted Window Capture
+- `click(element_index=N)` — CGEventPostToPid via SkyLight.framework
+- `launch_browser(url)` — playstealth-cli launch → PID
+- `verify_stealth()` — unmask-cli verify-stealth
 
-## StealthExecutor:
-- Nur skylight-cli (kein cua-driver Fallback)
-- Window Capture via CGWindowListCreateImage
-- Click via CGEventPostToPid (SkyLight.framework)
+## State Machine (runner/state_machine.py)
+10 Zustände:
+```
+IDLE → LAUNCH_BROWSER → WAIT_READY → CAPTURE → VISION → EXECUTE → VERIFY → (loop) → DONE
+                                                                               ↘ RECOVERY
+```
+- `StealthRunner(url)` — entry point
+- `_launch()` — playstealth-cli launch --json → PID
+- `_wait_ready()` — skylight-cli wait-for-selector
+- `_capture()` — skylight-cli screenshot --mode som
+- `_vision()` — VisionClient.get_action() → Llama 4 Scout
+- `_execute()` — click/type/scroll/drag/hold/select-option/keypress/wait/done
+- `_verify()` — unmask-cli verify-stealth
+- `_recover()` — playstealth-cli rotate-profile
 
-## State Machine:
-IDLE → CAPTURE → VISION → EXECUTE → VERIFY → DONE
+## Vision Client (runner/vision_client.py)
+- Cloudflare Llama 4 Scout (PRIMARY) — CF_ACCT + CF_TOKEN
+- NVIDIA Mistral 675B (FALLBACK) — NVIDIA_API_KEY
+- `urllib.request` (kein openai dependency)
 
-## Vision Client:
-- Cloudflare Llama 4 Scout (PRIMARY)
-- NVIDIA Mistral 675B (FALLBACK)
-- SoM-aware prompts
+## Prompt Kit (runner/prompt_kit.py)
+- **SYSTEM_PROMPT**: 1742 chars, 10 Aktionen
+- click, type, keypress, scroll, drag, hold, select-option, track, wait, done
+- Anti-AXStaticText Regel
+- CAPTCHA Strategien (hold für Turnstile, reCAPTCHA Tiles)
+- Few-Shot Beispiele
 
-## sin_survey_core:
-- panels/detectors.py — PureSpectrum, Dynata, Sapio, Cint, Lucid, HeyPiggy
-- rewards/extractor.py — EUR-Parsing
-- errors/templates.py — DQ-Erkennung
+## sin_survey_core (aus A2A-SIN-Worker-heypiggy extrahiert)
+- `panels/detectors.py` — 8 Panel-Provider (PureSpectrum, Dynata, Sapio, Cint, Lucid, HeyPiggy, MarketSight, Bilendi)
+- `rewards/extractor.py` — EUR-Parsing (6 Regex-Patterns)
+- `errors/templates.py` — 4 Fehlerkategorien (disqualified, quota_full, attention_failed, not_found)
 
 ## Tests: 18/18 PASS
+- `tests/test_sin_survey_core.py` — 12 tests (panel detection, EUR extraction, error classification)
+- `tests/test_runner.py` — 6 tests (executor, vision parsing, audit log, human profile)
 
-## SYSTEM_PROMPT: 1742 chars, 10 actions
-- click, type, keypress, scroll, drag, hold, select-option, track, wait, done
-- Anti-AXStaticText regel
-- Captcha strategies (hold, reCAPTCHA tile click)
-- Few-shot examples
+## Smoke Test (30.04.2026): ALL GREEN
+- skylight-cli v0.2.0 installed ✅
+- 90 AX elements found on HeyPiggy ✅
+- Click (dry-run): status ok ✅
+- ZERO cua-driver references ✅
+- ZERO open -na references ✅
 
-## StealthRunner class (renamed from SurveyRunner)
-- LAUNCH_BROWSER → playstealth-cli launch
-- WAIT_READY → skylight-cli wait-for-selector
-- 10-state machine: IDLE→LAUNCH→WAIT→CAPTURE→VISION→EXECUTE→VERIFY→(loop)→DONE
+## Docs (8/8 md files):
+- brain.md ✅ | banned.md ✅ | architecture.md ✅ | goal.md ✅
+- fix.md (9 bugs) ✅ | issues.md (all repos) ✅
+- AGENTS.md ✅ | CONTRIBUTING.md ✅
+
+## Repos:
+- https://github.com/OpenSIN-AI/stealth-runner (GREENFIELD, PURE)
+- https://github.com/OpenSIN-AI/A2A-SIN-Worker-heypiggy (REFERENCE, not deleted)
+- https://github.com/SIN-CLIs/skylight-cli (Stealth Triade: act, v0.2.0)
