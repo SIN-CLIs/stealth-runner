@@ -39,6 +39,12 @@
       "cli": "captured/captured-20260430-142837/captured-20260430-142837",
       "status": "new",
       "captured_at": "2026-04-30T14:28:37"
+    },
+    {
+      "name": "captured-20260430-143401",
+      "cli": "captured/captured-20260430-143401/captured-20260430-143401",
+      "status": "new",
+      "captured_at": "20260430-143401"
     }
   ]
 }

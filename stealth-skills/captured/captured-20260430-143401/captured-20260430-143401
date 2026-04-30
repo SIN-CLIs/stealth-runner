@@ -1,0 +1,13 @@
+#!/bin/bash
+# captured-20260430-143401 — 3min Survey-Session
+set -euo pipefail
+PID="${1:?PID}"
+
+# Gesamter eingegebener Text: "19931311HungeraufnüssNüsse!AbendsbeimFilmschauensnacken.Danke!"
+skylight-cli type --pid $PID --element-index N --text '19931311HungeraufnüssNüsse!AbendsbeimFilmschauensnacken.Danke!'
+# Klick: AXLink "Zurück zur Website"
+skylight-cli click --pid $PID --label 'Zurück zur Website'
+# Klick: AXTextArea "shell"
+skylight-cli click --pid $PID --label 'shell'
+
+echo '{"status":"ok"}'

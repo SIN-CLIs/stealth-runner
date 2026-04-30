@@ -1,0 +1,27 @@
+#!/bin/bash
+# captured-20260430-142837 - Auto-captured from heypiggy survey session
+set -euo pipefail
+PID="${1:?PID}"
+
+# Klick auf AXImage: "80"
+skylight-cli click --pid $PID --label '80'
+# Klick auf AXButton: ">>"
+skylight-cli click --pid $PID --label '>>'
+# Klick auf AXButton: "Go to next question"
+skylight-cli click --pid $PID --label 'Go to next question'
+# Klick auf AXTextField: "Type the characters you see in the image"
+skylight-cli click --pid $PID --label 'Type the characters you see in the image'
+# Taste: "x"
+# Taste: "e"
+# Taste: "n"
+# Taste: "b"
+# Taste: "4"
+# Taste: "X"
+# Taste: "Q"
+# Taste: "W"
+# Taste: "f"
+# Taste: "1"
+# Klick auf AXGroup: "Schreibtisch"
+skylight-cli click --pid $PID --label 'Schreibtisch'
+
+echo '{"status":"ok"}'
