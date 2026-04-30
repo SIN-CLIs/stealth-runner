@@ -1,31 +1,15 @@
-# AGENTS.md — Agent Operating Manual for stealth-runner
+# AGENTS.md – DER EINZIGE BEFEHL
 
-> **Read this file COMPLETELY before executing any action.**
-> Every violation makes the survey immediately detectable.
+## ⚠️ VOR JEDEM START PRÜFEN
+which playstealth-cli skylight-cli unmask
 
-## 1. What Is The stealth-runner?
-The `stealth-runner` controls a masked Chrome browser **exclusively** through three CLI tools:
-
-| Tool | Purpose |
-|------|---------|
-| `playstealth-cli` | Launch browser, mask fingerprint, rotate profiles |
-| `skylight-cli` | Screenshots (SoM), invisible clicks, text input, scroll, drag |
-| `unmask-cli` | Stealth verification after every action |
-
-## 2. State Machine
-```
-IDLE → LAUNCH_BROWSER → WAIT_READY → CAPTURE → VISION → EXECUTE → VERIFY → (loop) → DONE
-```
-
-## 3. How To Start
+## 🟢 STARTEN
 ```bash
-python main.py "https://heypiggy.com/?page=dashboard"
+python3 main.py "https://heypiggy.com/?page=dashboard"
 ```
+Das ist ALLES. Drück Enter, warte. Der Runner macht alles automatisch:
+Primer-Klick → Screenshot → KI wählt Element → Klick → Verify → Loop.
 
-## 4. Crash / Resume
-Runner saves checkpoint after every VERIFY. Crash → re-run same command → auto-resumes.
-
-## 5. ABSOLUTELY FORBIDDEN
-- ❌ `cua-driver` · ❌ `open -na Chrome` · ❌ Clicking `AXStaticText`
-- ❌ Blind clicking without Vision · ❌ CDP/DOM/JavaScript
-- ❌ Chrome Extensions · ❌ Cursor stealing · ❌ `.env` with real secrets
+## ❌ NIEMALS
+- skylight-cli von Hand, --x/--y, cua-driver, open -a Chrome
+## 🚨 CRASH → gleicher Befehl nochmal (Checkpoint-Resume)
