@@ -35,3 +35,9 @@ Vision-Aktionen:          10
 ---
 
 **Letztes Update:** 2026-04-30 · `stealth-runner` v2.0 · 18/18 Tests PASS
+## 30.4. 15:45 — Survey-Flow funktioniert
+- ✅ VoiceOver-Trick vor jedem Klick (ohne = 0 Web-Elemente)
+- ✅ Klick auf Survey-Preis-Text (0.04€) öffnet Umfrage
+- ✅ "Banane" als Antwort geklickt, "Nächste" navigiert
+- ⚠️  HeyPiggy-"Anmelden/Registrieren"-Popup überdeckt Dashboard → "Weiter" klicken zum Schließen
+- ⚠️  skylight-cli JSON bricht nach ~60s ab → VoiceOver muss neu gestartet werden

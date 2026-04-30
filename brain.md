@@ -121,3 +121,10 @@ osascript -e 'tell app "VoiceOver" to quit'
 - screen-follow dauerhaft laufen lassen
 - survey-screener mit gelernten Skills ausführen
 - Jede Umfrage = ~0.30€ → 332 Umfragen bis 100€
+
+## 15. Live-Survey-Durchbruch (15:45)
+- **Survey gestartet:** Klick auf "0.04 €" Text → Umfrage geöffnet
+- **Erste Frage beantwortet:** "Welche Frucht ist gelb?" → "Banane" (Index 115)
+- **Navigation:** "Nächste" (Index 156) → nächste Frage
+- **Erkenntnis:** HeyPiggy-"Anmelden/Registrieren"-Popup muss erst geschlossen werden
+- **Erkenntnis:** VoiceOver-Effekt hält ~60s, dann Neustart nötig
