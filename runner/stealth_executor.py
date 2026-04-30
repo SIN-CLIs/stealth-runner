@@ -7,15 +7,21 @@ class StealthExecutor:
         self.backend = "skylight-cli" if shutil.which("skylight-cli") else \
                        "cua-driver" if shutil.which("cua-driver") else "none"
 
-    def screenshot(self, out_path=None):
+    def screenshot(self, out_path=None, mode="som"):
         path = out_path or f"/tmp/stealth_{int(time.time())}.png"
         if self.backend == "skylight-cli":
             subprocess.run(["skylight-cli", "screenshot", "--pid", str(self.pid),
-                           "--mode", "som", "--out", path], capture_output=True, timeout=15)
+                           "--mode", mode, "--out", path], capture_output=True, timeout=15)
         else:
             subprocess.run(["cua-driver", "call", "screenshot", "--image-out", path],
                           capture_output=True, timeout=15)
-        return {"status": "ok", "file": path, "backend": self.backend}
+        return {"status": "ok", "file": path, "backend": self.backend, "mode": mode}
+
+    def screenshot_ocr(self, out_path=None):
+        return self.screenshot(out_path=out_path, mode="ocr")
+
+    def screenshot_grid(self, out_path=None):
+        return self.screenshot(out_path=out_path, mode="grid")
 
     def click(self, x=None, y=None, element_id=None):
         if self.backend == "skylight-cli":
