@@ -1,16 +1,18 @@
 #!/bin/bash
 # heypiggy-login — Google OAuth Login auf heypiggy.com
-# Atomarer CLI-Baustein für den stealth-runner
+# Liest Credentials aus profiles/jeremy.yaml (nicht im Git!)
 set -euo pipefail
-
 PID=${1:-$(pgrep -f "Google Chrome.app/Contents/MacOS/Google Chrome$" | head -1)}
-EMAIL=${HEYPIGGY_EMAIL:-${GOOGLE_EMAIL:-}}
-PW=${HEYPIGGY_PASSWORD:-${GOOGLE_PASSWORD:-}}
 
-[ -z "$EMAIL" ] && echo '{"status":"error","reason":"no_email"}' && exit 1
+# Auto-Load from profile
+PROFILE_FILE="${HEYPIGGY_PROFILE:-profiles/jeremy.yaml}"
+EMAIL=$(python3 -c "import yaml; print(yaml.safe_load(open('$PROFILE_FILE'))['google_email'])" 2>/dev/null || echo "${GOOGLE_EMAIL:-}")
+PW=$(python3 -c "import yaml; print(yaml.safe_load(open('$PROFILE_FILE'))['google_password'])" 2>/dev/null || echo "${GOOGLE_PASSWORD:-}")
+
+[ -z "$EMAIL" ] && echo '{"status":"error","reason":"no_email — set GOOGLE_EMAIL or create profiles/jeremy.yaml"}' && exit 1
 [ -z "$PID" ] && echo '{"status":"error","reason":"no_chrome"}' && exit 1
 
-echo "{\"status\":\"logging_in\",\"pid\":$PID}" >&2
+echo "{\"status\":\"logging_in\",\"pid\":$PID,\"email\":\"$EMAIL\"}" >&2
 
 # Navigator zu heypiggy
 osascript -e 'tell app "Google Chrome" to set URL of active tab of window 1 to "https://heypiggy.com/?page=dashboard"' 2>/dev/null
@@ -38,14 +40,14 @@ for e in json.load(sys.stdin)['elements']:
 skylight-cli type --pid $PID --element-index $F --text "$EMAIL" 2>/dev/null >/dev/null
 sleep 3
 
-# Password
+# Auto-detect password field (Google auto-advance)
 P=$(skylight-cli list-elements --pid $PID 2>/dev/null | python3 -c "
 import json,sys
 for e in json.load(sys.stdin)['elements']:
     if e['role']=='AXTextField' and 'verschlüsselt' in (e.get('label','')or''):
         print(e['index']); break
 ")
-[ -n "$P" ] && [ -n "$PW" ] && {
+if [ -n "$P" ] && [ -n "$PW" ]; then
     skylight-cli type --pid $PID --element-index $P --text "$PW" 2>/dev/null >/dev/null
     sleep 1
     W=$(skylight-cli list-elements --pid $PID 2>/dev/null | python3 -c "
@@ -54,8 +56,8 @@ for e in json.load(sys.stdin)['elements']:
     if e['role']=='AXButton' and 'weiter' in (e.get('label','')or'').lower():
         print(e['index']); break
 ")
-    skylight-cli click --pid $PID --element-index $W 2>/dev/null >/dev/null
+    [ -n "$W" ] && skylight-cli click --pid $PID --element-index $W 2>/dev/null >/dev/null
     sleep 5
-}
+fi
 
-echo "{\"status\":\"ok\",\"pid\":$PID}"
+echo "{\"status\":\"ok\",\"pid\":$PID,\"email\":\"$EMAIL\"}"

@@ -24,3 +24,4 @@ build/
 .mypy_cache/
 uv.lock
 poetry.lock
+profiles/
