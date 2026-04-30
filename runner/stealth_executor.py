@@ -1,4 +1,4 @@
-import subprocess, json, time, shutil
+import subprocess, json, time, shutil, os
 
 class StealthExecutor:
     def __init__(self, pid, wid):
@@ -9,7 +9,8 @@ class StealthExecutor:
         self.has_unmask = shutil.which("unmask") is not None or shutil.which("unmask-cli") is not None
 
     def screenshot(self, out_path=None, mode="som", capture_mode="window"):
-        path = out_path or f"/tmp/stealth_{int(time.time())}.png"
+        path = out_path or os.path.join("/tmp", f"stealth_{int(time.time())}.png")
+        path = os.path.realpath(path)
         
         if self.backend == "skylight-cli":
             subprocess.run(["skylight-cli", "screenshot", "--pid", str(self.pid),
