@@ -1,4 +1,4 @@
-"""VisionClient – Cloudflare/NVIDIA mit diskcache Semantic Cache."""
+"""VisionClient – Cloudflare/NVIDIA mit diskcache-Semantic-Cache."""
 from __future__ import annotations
 import base64, json, os, re, hashlib
 import httpx
@@ -10,26 +10,25 @@ CF_TOKEN = os.environ.get("CF_TOKEN")
 NVIDIA_KEY = os.environ.get("NVIDIA_API_KEY")
 CF_URL = f"https://api.cloudflare.com/client/v4/accounts/{CF_ACCOUNT}/ai/run/@cf/meta/llama-4-scout-17b-16e-instruct" if CF_ACCOUNT else ""
 NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
-cache = Cache("/tmp/stealth_vision_cache")
+_cache = Cache("/tmp/stealth_vision_cache")
 
 class VisionClient:
     def get_action(self, image_path: str, prompt: str) -> dict:
         with open(image_path, "rb") as f: raw = f.read()
         img_hash = hashlib.sha256(raw).hexdigest()
-        cached = cache.get(img_hash)
-        if cached: return cached
+        if cached := _cache.get(img_hash): return cached
         b64 = base64.b64encode(raw).decode()
         text = self._call_llm(b64, f"{SYSTEM_PROMPT}\n\n{prompt}")
         action = self._parse_json(text)
-        cache.set(img_hash, action, expire=3600)
+        _cache.set(img_hash, action, expire=3600)
         return action
 
     def _call_llm(self, img_b64: str, prompt: str) -> str:
         if CF_TOKEN and CF_URL:
             try:
                 r = httpx.post(CF_URL, headers={"Authorization": f"Bearer {CF_TOKEN}"}, json={"messages":[{"role":"user","content":[{"type":"text","text":prompt},{"type":"image_url","image_url":{"url":f"data:image/png;base64,{img_b64}"}}]}],"max_tokens":200}, timeout=45)
-                data = r.json().get("result",{}).get("response","")
-                if data: return data
+                d = r.json().get("result",{}).get("response","")
+                if d: return d
             except: pass
         if NVIDIA_KEY:
             try:
@@ -45,5 +44,7 @@ class VisionClient:
         try: return json.loads(text)
         except:
             m = re.search(r"\{.*\}", text, re.DOTALL)
-            if m: return json.loads(m.group())
+            if m:
+                try: return json.loads(m.group())
+                except: pass
         return {"action":"wait"}

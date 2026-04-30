@@ -1,12 +1,13 @@
-"""HumanProfile mit echten statistischen Verteilungen (scipy)."""
+"""HumanProfile – SOTA Behavioral Biometrics via scipy.stats PDFs."""
 from __future__ import annotations
-import random, anyio
+import random
 from dataclasses import dataclass, field
+import anyio
 from scipy import stats
 
-DIST_DWELL = stats.gamma(a=5, scale=200)
-DIST_FLIGHT = stats.norm(loc=400, scale=100)
-DIST_TYPING = stats.norm(loc=180, scale=40)
+DWELL = stats.gamma(a=5, scale=200)
+FLIGHT = stats.norm(loc=400, scale=100)
+TYPING = stats.norm(loc=180, scale=40)
 
 @dataclass
 class HumanProfile:
@@ -18,16 +19,17 @@ class HumanProfile:
     hover_ms: int = 80
 
     def __post_init__(self):
-        self.min_delay = max(2.0, DIST_DWELL.rvs()/1000.0)
-        self.max_delay = max(self.min_delay+3, DIST_DWELL.rvs()*1.5/1000.0)
-        self.typing_speed = int(max(60, DIST_TYPING.rvs()))
+        self.min_delay = max(2.0, DWELL.rvs()/1000.0)
+        self.max_delay = max(self.min_delay+3, DWELL.rvs()*1.5/1000.0)
+        self.typing_speed = int(max(60, TYPING.rvs()))
 
-    async def click_delay(self) -> None:
+    async def click_delay(self):
         await anyio.sleep(random.uniform(self.min_delay, self.max_delay))
 
-    async def type_delay(self, text: str) -> None:
-        await anyio.sleep(len(text) / (self.typing_speed/60) * random.uniform(0.8, 1.2))
+    async def type_delay(self, text: str):
+        secs = len(text)/(self.typing_speed/60)*random.uniform(0.8,1.2)
+        await anyio.sleep(secs)
 
     @classmethod
-    def random(cls, name: str = "sota") -> "HumanProfile":
+    def random(cls, name: str="sota") -> "HumanProfile":
         return cls(profile_name=name)

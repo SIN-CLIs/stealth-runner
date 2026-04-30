@@ -1,8 +1,9 @@
-"""State Machine mit OpenTelemetry Tracing."""
+"""State Machine – 10 Zustände + OpenTelemetry Tracing."""
 from __future__ import annotations
-import anyio, sys
+import sys
 from enum import StrEnum
 from pathlib import Path
+import anyio
 from .stealth_executor import StealthExecutor
 from .vision_client import VisionClient
 from .prompt_kit import build_prompt
@@ -19,18 +20,19 @@ class SurveyRunner:
     MAX_RECOVERIES = 5
     def __init__(self, url: str) -> None:
         self.url = url; self.pid: int|None = None
-        self.profile = HumanProfile.random()
         self.executor = StealthExecutor(); self.vision = VisionClient()
-        self.log = AuditLog(Path.home() / ".stealth_runner" / "traces.jsonl")
-        self.state = State.IDLE; self.step = 0
-        self.context = {"url": url, "steps": 0, "earnings_eur": 0.0}
+        self.log = AuditLog(Path.home()/".stealth_runner"/"traces.jsonl")
+        self.state = State.IDLE; self.step = 0; self.recoveries = 0
+        self.context = {"url":url,"steps":0,"earnings_eur":0.0}
         self.current_screenshot: str|None = None
-        self.pending_action: dict|None = None; self.recoveries = 0
+        self.pending_action: dict|None = None
 
-    async def run(self):
+    async def run(self) -> dict:
         with start_trace("survey-runner"):
-            while self.state != State.DONE: await self._transition()
-        self.log.close()
+            while self.state != State.DONE:
+                try: await self._transition()
+                except Exception as e: self.log.log("error", error=str(e)); self.state = State.RECOVERY
+        self.log.close(); return self.context
 
     async def _transition(self):
         with start_trace(f"state:{self.state}"):
@@ -45,50 +47,45 @@ class SurveyRunner:
                 case State.RECOVERY: await self._recover()
 
     async def _launch(self):
-        result = self.executor.run(["playstealth-cli", "launch", "--url", self.url, "--json"])
-        self.pid = result["pid"]; self.executor.pid = self.pid
-        self.log.log("launch", pid=self.pid); self.state = State.WAIT_READY
+        self.executor.ensure_tls(self.url)
+        r = self.executor.run(["playstealth-cli","launch","--url",self.url,"--json"])
+        self.pid = r["pid"]; self.executor.pid = self.pid; self.state = State.WAIT_READY
 
     async def _wait_ready(self):
         for _ in range(10):
-            res = self.executor.run(["skylight-cli", "screenshot", "--pid", str(self.pid), "--mode", "raw", "--out", "/tmp/wait_ready.png"])
-            if len(res.get("elements", [])) > 3: break
+            r = self.executor.run(["skylight-cli","screenshot","--pid",str(self.pid),"--mode","raw","--out","/tmp/wait_ready.png"])
+            if len(r.get("elements",[])) > 3: break
             await anyio.sleep(1)
         self.state = State.CAPTURE
 
     async def _capture(self):
         out = f"/tmp/step_{self.step}.png"
         self.executor.screenshot(out_path=out, mode="som")
-        self.current_screenshot = out
-        self.log.log("capture", file=out); self.state = State.VISION
+        self.current_screenshot = out; self.state = State.VISION
 
     async def _vision(self):
         prompt = build_prompt(self.context, self.step)
         self.pending_action = self.vision.get_action(self.current_screenshot, prompt)
-        self.log.log("vision", action=self.pending_action); self.state = State.EXECUTE
+        self.state = State.EXECUTE
 
     async def _execute(self):
-        act = self.pending_action or {}; atype = act.get("action", "wait")
-        args = act.get("args", {}); eid = act.get("element_id")
-        if atype == "click": self.executor.click(element_index=eid)
-        elif atype == "type": self.executor.type_text(text=args.get("text",""), element_index=eid)
-        elif atype == "scroll": self.executor.scroll(direction=args.get("direction","down"))
-        elif atype == "wait": await anyio.sleep(2)
-        elif atype == "done": self.state = State.DONE; return
-        self.step += 1; self.context["steps"] = self.step
-        self.log.log("execute", action=act, step=self.step); self.state = State.VERIFY
+        act = self.pending_action or {}; at = act.get("action","wait")
+        if at == "click": self.executor.click(element_index=act.get("element_id"))
+        elif at == "type": self.executor.type_text(text=act.get("args",{}).get("text",""), element_index=act.get("element_id"))
+        elif at == "scroll": self.executor.scroll()
+        elif at == "done": self.state = State.DONE; return
+        self.step += 1; self.state = State.VERIFY
 
     async def _verify(self):
         try:
-            result = self.executor.verify_stealth()
-            if result.get("detected"): self.log.log("detected"); self.state = State.RECOVERY; return
+            if self.executor.verify_stealth().get("detected"): self.state = State.RECOVERY; return
         except: pass
         self.state = State.CAPTURE
 
     async def _recover(self):
-        if self.recoveries >= self.MAX_RECOVERIES: self.log.log("max_recoveries"); self.state = State.DONE; return
+        if self.recoveries >= self.MAX_RECOVERIES: self.state = State.DONE; return
         self.recoveries += 1
-        self.executor.run(["playstealth-cli", "rotate-profile", "--pid", str(self.pid)])
+        self.executor.run(["playstealth-cli","rotate-profile","--pid",str(self.pid)])
         await anyio.sleep(2); self.state = State.CAPTURE
 
 def main():
