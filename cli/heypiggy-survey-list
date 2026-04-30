@@ -1,0 +1,10 @@
+#!/bin/bash
+# Listet Umfragen auf dem Dashboard
+PID=${1:-$(pgrep -f "Google Chrome.app/Contents/MacOS/Google Chrome$" | head -1)}
+skylight-cli list-elements --pid $PID 2>/dev/null | python3 -c "
+import json,sys
+for e in json.load(sys.stdin)['elements']:
+    l=e.get('label','')
+    if 'AXWebArea' in (e.get('path','')) and ('Umfrage' in l or '€' in l or 'Min' in l):
+        print(f'[{e[\"index\"]}] {l[:100]}')
+" | head -20

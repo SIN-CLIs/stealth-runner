@@ -1,0 +1,9 @@
+#!/bin/bash
+PID=${1:-$(pgrep -f "Google Chrome.app/Contents/MacOS/Google Chrome$" | head -1)}
+BTN=$(skylight-cli list-elements --pid $PID 2>/dev/null | python3 -c "
+import json,sys
+for e in json.load(sys.stdin)['elements']:
+    if 'Umfrage starten' in (e.get('label','')or''):
+        print(e['index']); break
+")
+[ -n "$BTN" ] && skylight-cli click --pid $PID --element-index $BTN 2>/dev/null && echo "{\"status\":\"started\",\"index\":$BTN}" || echo '{"status":"error","reason":"no_button"}'

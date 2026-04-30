@@ -1,0 +1,14 @@
+heypiggy_survey:
+  strategy: best-value
+  max_surveys_per_session: 5
+  max_screening_questions: 25
+  timing:
+    survey_list_refresh: 2s
+    tab_switch_wait: 3s
+    question_timeout: 10s
+  recording:
+    enabled: true
+    output_dir: "~/screen-recordings/"
+  compensation:
+    min_reward: 0.05
+    skip_low_rating: 3

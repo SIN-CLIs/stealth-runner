@@ -1,0 +1,24 @@
+demographics:
+  country: Deutschland
+  language: Deutsch
+  region: Bayern
+  city: München
+  age: 34
+  gender: männlich
+  zip: "80331"
+  employment: Angestellt
+  household_size: 2
+  income_bracket: "50.000–70.000 €"
+
+brand_awareness:
+  outdoor_clothing:
+    known: [Jack Wolfskin, The North Face, Patagonia, Columbia]
+    purchased: [Jack Wolfskin, The North Face]
+  electronics:
+    known: [Samsung, Apple, Sony]
+    purchased: [Samsung]
+
+screening_strategy:
+  never_answer_none: true
+  min_brands_to_select: 3
+  research_frequency: "mindestens einmal pro Monat"
