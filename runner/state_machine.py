@@ -77,13 +77,14 @@ class StealthRunner:
     async def _execute(self):
         action = self.current_action
         result = {}
-        if action["type"] == "click":
+        action_type = action.get("action") or action.get("type", "")
+        if action_type == "click":
             result = self.executor.click(element_id=action.get("element_id"))
-        elif action["type"] == "type":
+        elif action_type == "type":
             result = self.executor.type_text(action.get("text", ""))
-        elif action["type"] == "scroll":
+        elif action_type == "scroll":
             result = self.executor.scroll(action.get("direction", "down"))
-        self.audit.log("execute", action_type=action["type"], result=result)
+        self.audit.log("execute", action_type=action_type, result=result)
         self.session["steps"] += 1
         time.sleep(1)
         self.state = "VERIFY"

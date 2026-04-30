@@ -10,8 +10,15 @@ def find_bot_window():
     windows = data.get('structuredContent', data).get('windows', [])
     for w in windows:
         title = (w.get('title') or '').lower()
-        if 'heypiggy' in title and w.get('pid') == BOT_PID:
+        if 'heypiggy' in title and w.get('pid') != 2253:
             return w['pid'], w['window_id']
+    for w in windows:
+        if w.get('pid') == BOT_PID:
+            return BOT_PID, w['window_id']
+    chrome = [w for w in windows if w.get('app_name') == 'Google Chrome']
+    if chrome:
+        best = sorted(chrome, key=lambda w: -w['pid'])[0]
+        return best['pid'], best['window_id']
     return BOT_PID, 0
 
 async def main():
