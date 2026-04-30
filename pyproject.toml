@@ -1,0 +1,11 @@
+[project]
+name = "stealth-runner"
+version = "0.2.0"
+description = "Orchestrator der Stealth-Triade v2.0"
+requires-python = ">=3.12"
+dependencies = [
+    "anyio>=4.0",
+    "httpx>=0.28",
+]
+[project.scripts]
+stealth-runner = "runner.state_machine:main"

@@ -1,14 +1,17 @@
 #!/usr/bin/env python3
-import asyncio
+"""Main entry point for the stealth-runner."""
 import sys
-from runner.state_machine import StealthRunner
+import anyio
+from runner.state_machine import SurveyRunner
 
 def main():
     if len(sys.argv) != 2:
-        print("Usage: python -m runner.state_machine <URL>")
+        print("Usage: python main.py <URL>")
         sys.exit(1)
     url = sys.argv[1]
-    asyncio.run(StealthRunner(url).run())
+    runner = SurveyRunner(url)
+    result = anyio.run(runner.run)
+    print(f"Survey completed. Context: {result}")
 
 if __name__ == "__main__":
     main()
