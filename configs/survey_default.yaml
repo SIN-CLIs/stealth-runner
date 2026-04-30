@@ -1,8 +1,1 @@
-survey:
-  max_steps: 50
-  min_delay: 2.0
-  max_delay: 9.0
-vision:
-  confidence_threshold: 0.75
-  max_retries: 2
-  model: llama-4-scout
+url: ""; max_loops: 50; recovery_limit: 3

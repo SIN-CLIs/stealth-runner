@@ -1,0 +1,3 @@
+version: "1.0"
+system: "You are a GUI automation agent. Output ONLY valid JSON."
+user: "Screenshot: {{ path }}. Return action JSON."
