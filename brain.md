@@ -1,80 +1,78 @@
-# brain.md – Zentrales Gedächtnis des stealth-runner v3.1
+# brain.md — stealth-runner v3.2 (30. April 2026)
 
-> **Stand: 30. April 2026 — VoiceOver-Trick + Google-Login-Durchbruch**
+> **Stealth Quad: playstealth → skylight → screen-follow ← unmask**
 
-## 1. Ziel
-Vollautomatisches, unsichtbares Ausfüllen von Webumfragen mit maximaler Tarnung.
+---
 
-## 2. Architektur
-- Stealth-Triade: `playstealth-cli` · `skylight-cli` · `unmask-cli`
-- Alter `A2A-SIN-Worker-heypiggy` archiviert
-
-## 3. 🔥 Klick-Mechanismus: AXPress (Accessibility API)
-
-**CGEventPostToPid und CGEvent.post(tap:) sind TOT auf Chrome 148 / macOS 26.**
-Einzig funktionierender Klick:
-```swift
-AXUIElementPerformAction(element, kAXPressAction as CFString)
+## 1. Architektur
+State Machine (9 Zustände) orchestriert atomare CLI-Aufrufe:
+```
+IDLE → LAUNCH_BROWSER → WAIT_READY → CAPTURE → VISION → EXECUTE → VERIFY → DONE
+                                                                   ↕ RECOVERY
 ```
 
-## 4. 🔥🔥 Chrome Accessibility aktivieren (OHNE Crash!)
+## 2. Klick-Mechanismus: AXPress
+`AXUIElementPerformAction(element, kAXPressAction)` — einzige funktionierende Methode.
+`CGEventPostToPid` und `CGEvent.post` sind TOT auf Chrome 148/macOS 26.
 
-**Problem:** `--force-renderer-accessibility` Flag crasht Chrome auf macOS 26 (GPU exit_code=15).
-
-**Lösung — VoiceOver-Trick (30.4.2026, 10:30):**
-
+## 3. Chrome Accessibility: VoiceOver-Trick
 ```bash
-# Schritt 1: VoiceOver KURZ starten (zwingt Chrome, AX-Tree zu befüllen)
-osascript -e 'tell application "VoiceOver" to launch'
-sleep 2
-
-# Schritt 2: chrome://accessibility öffnen
-osascript -e 'tell app "Google Chrome" to set URL of active tab of window 1 to "chrome://accessibility/"'
-
-# Schritt 3: "Suppress automatic accessibility" DEAKTIVIEREN
-skylight-cli list-elements --pid PID | finde Checkbox "Suppress automatic"
-skylight-cli click --pid PID --element-index N  # Checkbox deaktivieren
-
-# Schritt 4: VoiceOver stoppen — AX-Tree BLEIBT!
-osascript -e 'tell application "VoiceOver" to quit'
-
-# AB JETZT: Web-Elemente permanent verfügbar, AXPress-Klicks funktionieren
+osascript -e 'tell app "VoiceOver" to launch' && sleep 2
+osascript -e 'tell app "VoiceOver" to quit'
+# Danach Web-Elemente im AX-Tree. Kein --force-renderer-accessibility nötig.
 ```
 
-**Warum das funktioniert:** Chrome erkennt VoiceOver als Assistive Technology und aktiviert den vollen Accessibility-Tree. Nach dem Stoppen von VoiceOver bleibt der Tree bestehen, solange "Suppress automatic accessibility" deaktiviert ist (Standard: deaktiviert, aber manche Chrome-Profile haben es aktiviert).
+## 4. Profile-System
+`profiles/jeremy.yaml` — Google-Login + Demografie + Brand-Preferences.
+**Nie committed** (in .gitignore). `cli/heypiggy-login` liest automatisch daraus.
 
-**Ergebnis:** 27+ Web-Elemente auf heypiggy.com, 6+ klickbare Buttons/Links, KEIN Chrome-Crash, stabil über Stunden.
+## 5. Atomare heypiggy-CLIs (cli/)
+| CLI | Funktion |
+|-----|----------|
+| `heypiggy-login` | Google OAuth Login (auto-read profile) |
+| `heypiggy-logout [incognito|google]` | Abmelden |
+| `heypiggy-balance` | EUR-Guthaben abfragen |
+| `heypiggy-navigate $PID dashboard|surveys|earnings` | Navigation |
+| `heypiggy-click $PID "Label"` | Klick per Label |
+| `heypiggy-survey-list` | Umfragen scannen (best-value|fastest|highest) |
+| `heypiggy-survey-start` | "Umfrage starten" klicken |
+| `heypiggy-survey-screener` | Screening-Fragen beantworten |
+| `heypiggy-survey-complete` | Abschluss + EUR-Tracking |
 
-## 5. Safe-Click-Pipeline
-```
-safe_click.py  →  Primer  →  Element-Tabelle  →  Web-Button finden  →  --element-index Klick
-```
+## 6. Stealth-Skills (stealth-skills/)
+- **google-login**: SKILL.md, states.md, recovery.md, config.example.yaml
+- **heypiggy-survey**: SKILL.md, states.md, recovery.md, profile.yaml.template, brain.md
 
-## 6. NVIDIA Vision Model
-Mistral hat KEIN Vision-Modell. Vision-fähig via NVIDIA NIM:
-- ⭐ `meta/llama-3.2-90b-vision-instruct` (beste)
-- `nvidia/neva-22b` (NVIDIA-eigen)
-- API: `https://integrate.api.nvidia.com/v1/chat/completions`
+## 7. screen-follow Integration
+`screen-follow` zeichnet auf: Maus, Tastatur, Klicks (mit Element-Label), Scrollen.
+- GUI: `screen-follow &` (+ JSONL Audit)
+- Video: `screen-follow record --video &`
+- Trace: `screen-follow trace --last 50`
 
-## 7. Verbote
-- ❌ `--x`/`--y` → Apple-Menü (0,0 = oben links)
-- ❌ `CGEventPostToPid`/`CGEvent.post` → Chrome 148 ignoriert
-- ❌ `cua-driver`, CDP, DOM
-- ❌ `AXStaticText` klicken
-- ❌ Ohne Primer-Klick klicken
+## 8. skylight-cli Commands
+| Befehl | Typ |
+|--------|-----|
+| `click --pid X --element-index N` | AXPress-Klick |
+| `type --pid X --element-index N --text "..."` | CGEvent Unicode Keyboard |
+| `list-elements --pid X` | AX-Tree Dump |
+| `screenshot --pid X --mode raw|som --out f.png` | Bild |
+| `hold --pid X --element-index N --duration 3000` | Cloudflare |
+| `click --pid X --x -1 --y -1` | Primer (MUSS) |
 
-## 8. Status
-| Komponente | Status |
-|-----------|--------|
-| Klick (AXPress) | ✅ Funktioniert |
-| Chrome Accessibility | ✅ VoiceOver-Trick |
-| safe_click.py | ✅ Läuft |
-| Google Login Klick | ✅ Dialog erscheint |
-| Survey-Loop | ❌ Noch nicht |
-| EUR verdient | ❌ Noch nicht |
+## 9. Verbote
+- ❌ `--x`/`--y` → Apple-Menü (0,0)
+- ❌ `CGEventPostToPid` → ignoriert
+- ❌ `--force-renderer-accessibility` → crasht
+- ❌ `cua-driver` → ersetzt
+- ❌ Ohne Primer klicken
 
-## 9. Nächste Schritte
-- [ ] Google OAuth Login automatisieren (E-Mail eingeben, Weiter klicken)
-- [ ] Dashboard-Navigation nach Login
-- [ ] Umfrage finden + beantworten
-- [ ] Vision-Modell (Llama 3.2 90B) integrieren
+## 10. Repos (alle auf main, synced)
+- stealth-runner (OpenSIN-AI)
+- skylight-cli, unmask-cli, playstealth-cli, screen-follow (SIN-CLIs)
+- A2A-SIN-Worker-heypiggy (archiviert, OpenSIN-AI)
+- infra-opencode-stack (OpenSIN-AI)
+
+## 11. Nächste Schritte
+- [ ] Google-Login mit zukunftsorientierte.energie@gmail.com abschließen
+- [ ] Survey-Pipeline live testen → EUR verdienen
+- [ ] Releases taggen (v0.1.0 stealth-runner, v0.3.0 screen-follow)
