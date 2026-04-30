@@ -57,3 +57,7 @@ IDLE → CAPTURE → VISION → EXECUTE → VERIFY → (loop) → DONE
 - sin_survey_core: 12 tests (panel detection, EUR extraction, error classification)
 - runner: 6 tests (StealthExecutor, VisionClient, AuditLog, HumanProfile)
 - Run: `python3 tests/test_sin_survey_core.py && python3 tests/test_runner.py`
+
+## Docs: fix.md + issues.md
+- fix.md: 8 Bugs behoben (Tabelle aller Fixes mit Commits)
+- issues.md: Alle Issues per Repo (Tabelle mit Status)
