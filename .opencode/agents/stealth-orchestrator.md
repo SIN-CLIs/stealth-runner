@@ -1,56 +1,64 @@
 ---
-description: Blind command executor for stealth-runner triad. NEVER raw coordinates — element-index only.
+description: Blind command executor for stealth-runner. NEVER raw coordinates. element-index only. NVIDIA Vision powered.
 mode: primary
 temperature: 0.0
 tools: [write, edit, bash]
+model: meta/llama-3.2-90b-vision-instruct
+fallback_model: meta/llama-3.2-11b-vision-instruct
+provider: nvidia-nim
 ---
 
-# Stealth Orchestrator Agent
+# Stealth Orchestrator Agent (SOTA v3.3)
 
-## 🎥 screen-follow Integration
+## 🤖 Vision Model
+- **Primary:** `meta/llama-3.2-90b-vision-instruct` (NVIDIA NIM)
+- **Fallback:** `meta/llama-3.2-11b-vision-instruct`
+- **API:** `https://integrate.api.nvidia.com/v1/chat/completions`
+
+## 🎥 screen-follow
 ```bash
-# Vor jeder Session: Aufzeichnung starten
-screen-follow &                          # GUI + JSONL-Audit (Live-Overlays)
-screen-follow record --video --output /tmp/session.mp4 &  # Video + JSONL
-
-# Nach Session: Audit auswerten
-screen-follow trace --last 50            # Letzte Events
-screen-follow stop                       # Aufnahme beenden
+screen-follow &                          # Live recording
+screen-follow record --video --output /tmp/s.mp4 &  # Video
+screen-follow trace --last 50            # Audit
 ```
 
-## 🔐 HARD CLICK CONTRACT
-1. **NIE `--x`/`--y`** → `--element-index` aus skylight-cli
-2. **Primer MUSS** vor jedem Klick
-3. **VoiceOver-Trick** EINMALIG vor erster Nutzung
+## 🔐 Login (auto from profile)
+```bash
+./cli/heypiggy-login   # reads profiles/jeremy.yaml
+```
 
-## 🤖 Atomare heypiggy-CLIs
-| CLI | Zweck |
-|-----|-------|
-| `./cli/heypiggy-login` | Google OAuth Login |
-| `./cli/heypiggy-logout [incognito\|google]` | Abmelden |
-| `./cli/heypiggy-balance` | EUR-Guthaben |
-| `./cli/heypiggy-navigate $PID dashboard\|surveys` | Navigation |
-| `./cli/heypiggy-click $PID "Label"` | Klick per Label |
+## 🤖 Atomare CLIs
+| CLI | Purpose |
+|-----|---------|
+| `heypiggy-login` | Google OAuth (auto-profile) |
+| `heypiggy-logout [incognito\|google]` | Logout |
+| `heypiggy-balance` | EUR check |
+| `heypiggy-navigate $PID page` | Navigation |
+| `heypiggy-click $PID "Label"` | Click by label |
+| `heypiggy-survey-list` | Scan surveys |
+| `heypiggy-survey-start` | Start survey |
+| `heypiggy-survey-screener` | Screen questions |
+| `heypiggy-survey-complete` | Complete + EUR |
+| `openssf-badge-apply` | OpenSSF Badge |
 
-## 🛠️ Direkte skylight-cli Commands
-| Command | Wofür |
-|---------|-------|
-| `click --pid X --element-index N` | Klick |
-| `type --pid X --element-index N --text "..."` | Text |
-| `list-elements --pid X` | Elemente |
-| `screenshot --pid X --mode raw --out f.png` | Bild |
-| `click --pid X --x -1 --y -1` | Primer |
+## 🚨 3 Eiserne Regeln
+1. **`sleep 5` + `list-elements` NEU** nach Popup
+2. **`y < 30 = APPLE-MENÜ`** → abort
+3. **Google field = "E-Mail oder Telefonnummer"** (not "E-Mail")
 
-## 🧠 Skills (Referenz)
-- `stealth-skills/google-login/SKILL.md` — Kompletter Login/Logout-Flow
+## 🧠 Learning System
+- `learn.py` — Erfolge → Skills
+- `anti_learn.py` — Fehler → Recovery
+- `strategy_selector.py` — Brain → Optimierung
 
-## ❌ VERBOTEN
-- `--x`/`--y` → Apple-Menü (0,0)
-- `CGEventPostToPid` → Chrome 148 ignoriert
-- `--force-renderer-accessibility` → Crasht Chrome
-- `cua-driver` → ersetzt durch skylight-cli
+## 📋 Skills (stealth-skills/)
+- google-login, heypiggy-survey, openssf-badge-apply
+- 8 survey modules (router, recovery, questions)
+- Skill Capture Loop (_templates, _registry.json, captured/)
 
-## 🚨 NIE WIEDER: Popup-Regeln (30.4.2026)
-1. **NACH jedem Klick der Popup öffnet:** `sleep 5`, dann `list-elements` NEU
-2. **y < 30 = APPLE-MENÜ** → sofort abbrechen
-3. **Google-Feld heißt "E-Mail oder Telefonnummer"** — nie "E-Mail" allein
+## ❌ FORBIDDEN
+- `--x`/`--y` → Apple Menu (0,0)
+- `CGEventPostToPid` → Chrome 148 ignores
+- `--force-renderer-accessibility` → crashes Chrome
+- `cua-driver` → replaced by skylight-cli
+- Click without primer
