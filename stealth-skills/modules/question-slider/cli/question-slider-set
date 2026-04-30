@@ -1,0 +1,11 @@
+#!/bin/bash
+set -euo pipefail; PID="${1:?PID}"
+# Finde Slider und setze Mittelwert
+SLIDER=$(skylight-cli list-elements --pid "$PID" 2>/dev/null | python3 -c "
+import json,sys
+for e in json.load(sys.stdin)['elements']:
+    if e['role']=='AXSlider' and 'AXWebArea' in e.get('path',''):
+        print(e['index']); break
+")
+[ -n "$SLIDER" ] && skylight-cli hold --pid "$PID" --element-index "$SLIDER" --duration 1000 2>/dev/null >/dev/null
+echo '{"status":"set"}'

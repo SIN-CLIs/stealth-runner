@@ -1,0 +1,12 @@
+#!/bin/bash
+# Zeigt Umfrage-Historie und EUR-Transaktionen
+PID="${1:-$(pgrep -f "Google Chrome.app/Contents/MacOS/Google Chrome$" | head -1)}"
+./cli/heypiggy-navigate "$PID" dashboard 2>/dev/null >/dev/null
+sleep 2
+skylight-cli list-elements --pid "$PID" 2>/dev/null | python3 -c "
+import json,sys
+for e in json.load(sys.stdin)['elements']:
+    l=e.get('label','')
+    if 'AXWebArea' in e.get('path','') and ('€' in l or 'history' in l.lower() or 'transaktion' in l.lower()):
+        print(l[:100])
+" | head -20

@@ -1,0 +1,13 @@
+#!/bin/bash
+set -euo pipefail; PID="${1:?PID}"
+# Wähle erste N Elemente in Reihenfolge
+ITEMS=$(skylight-cli list-elements --pid "$PID" 2>/dev/null | python3 -c "
+import json,sys
+btns=[e for e in json.load(sys.stdin)['elements'] if e['role'] in ('AXButton','AXCheckBox') and 'AXWebArea' in e.get('path','')]
+for b in btns[:5]: print(b['index'])
+")
+for idx in $ITEMS; do
+    skylight-cli click --pid "$PID" --element-index $idx 2>/dev/null >/dev/null
+    sleep 0.3
+done
+echo '{"status":"solved"}'
