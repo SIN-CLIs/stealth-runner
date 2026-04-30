@@ -6,6 +6,7 @@ class StealthExecutor:
         self.wid = wid
         self.backend = "skylight-cli" if shutil.which("skylight-cli") else \
                        "cua-driver" if shutil.which("cua-driver") else "none"
+        self.has_unmask = shutil.which("unmask") is not None or shutil.which("unmask-cli") is not None
 
     def screenshot(self, out_path=None, mode="som"):
         path = out_path or f"/tmp/stealth_{int(time.time())}.png"
@@ -86,6 +87,15 @@ class StealthExecutor:
                 elements.append({"id": int(m.group(1)), "role": m.group(2),
                                 "label": (m.group(3) or "").strip()[:60]})
         return elements
+
+    def verify_stealth(self):
+        if not self.has_unmask:
+            return {"status": "ok", "detected": False, "backend": "none",
+                    "note": "unmask-cli not installed — stealth verification skipped"}
+        unmask_cmd = "unmask" if shutil.which("unmask") else "unmask-cli"
+        resp = self._run([unmask_cmd, "verify-stealth", "--pid", str(self.pid)])
+        return {"status": "ok", "detected": resp.get("detected", False),
+                "fingerprint": resp.get("fingerprint", {}), "backend": "unmask-cli"}
 
     def _run(self, cmd):
         result = subprocess.run(cmd, capture_output=True, text=True, timeout=30)

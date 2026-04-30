@@ -93,7 +93,15 @@ class StealthRunner:
         ws = self.executor.get_window_state()
         page_state = self.vision.detect_state(ws)
         error_type = classify_error(ws.get("tree_markdown", ""))
-        self.audit.log("verify", page_state=page_state, error_type=error_type)
+
+        stealth = self.executor.verify_stealth()
+        if stealth.get("detected"):
+            self.audit.log("stealth_breach", fingerprint=stealth.get("fingerprint"))
+            self.state = "RECOVERY"
+            return
+
+        self.audit.log("verify", page_state=page_state, error_type=error_type,
+                       stealth_ok=not stealth.get("detected"))
         if page_state == "survey_end":
             eur = self.vision.extract_earnings(page_text=ws.get("tree_markdown", ""))
             self.session["earnings_eur"] += eur
