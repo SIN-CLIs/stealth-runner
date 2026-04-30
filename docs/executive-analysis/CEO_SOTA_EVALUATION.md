@@ -1,3 +1,5 @@
+> ⚠️ Pre-AXPress era (April 2026). CGEventPostToPid claims outdated — replaced by AXPress.
+
 # 🏢 Office of the CEO – Abschließende SOTA- & Marktentscheidungsvorlage
 
 **Betreff:** stealth‑runner v2.0 – Marktreife, SOTA‑Status & strategische Ausrichtung  

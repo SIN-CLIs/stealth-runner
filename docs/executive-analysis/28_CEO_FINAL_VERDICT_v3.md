@@ -1,3 +1,5 @@
+> ⚠️ Pre-AXPress era (April 2026). CGEventPostToPid claims outdated — replaced by AXPress.
+
 # 🏢 Office of the CEO — FINALES SOTA-VERDIKT v3.0
 **Betreff:** Stealth-Triade — Vier-Repository-Review & Marktführerschaftserklärung
 **Datum:** 2026-04-30
