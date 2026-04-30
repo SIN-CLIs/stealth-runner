@@ -1,0 +1,33 @@
+# Stealth-Triade Workspace — alle zugehörigen Repos
+# /doctor skill auditiert diese Repos automatisch
+
+repos:
+  - name: stealth-runner
+    path: ~/dev/stealth-runner
+    role: orchestrator
+    url: https://github.com/OpenSIN-AI/stealth-runner
+
+  - name: skylight-cli
+    path: ~/dev/skylight-cli
+    role: act-layer
+    url: https://github.com/SIN-CLIs/skylight-cli
+
+  - name: unmask-cli
+    path: ~/dev/unmask-cli
+    role: sense-layer
+    url: https://github.com/SIN-CLIs/unmask-cli
+
+  - name: playstealth-cli
+    path: ~/dev/playstealth-cli
+    role: hide-layer
+    url: https://github.com/SIN-CLIs/playstealth-cli
+
+  - name: heypiggy-worker
+    path: ~/dev/A2A-SIN-Worker-heypiggy
+    role: archive
+    url: https://github.com/OpenSIN-AI/A2A-SIN-Worker-heypiggy
+    note: Archiviert — Panel-Detektoren + Reward-Logik extrahiert nach stealth-runner
+
+click_mechanism: AXPress
+chrome_accessibility: VoiceOver-trick
+forbidden: [CGEventPostToPid, cua-driver, CDP, DOM, --force-renderer-accessibility]
