@@ -7,7 +7,7 @@ CF_TOKEN = os.environ.get("CF_TOKEN", "")
 NVIDIA_KEY = os.environ.get("NVIDIA_API_KEY", "")
 CF_URL = f"https://api.cloudflare.com/client/v4/accounts/{CF_ACCOUNT}/ai/run/@cf/meta/llama-4-scout-17b-16e-instruct"
 NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
-from .prompt_kit import SYSTEM_PROMPT
+from .prompt_kit import SYSTEM_PROMPT, build_prompt
 
 class VisionClient:
     def get_action(self, image_path, user_prompt):

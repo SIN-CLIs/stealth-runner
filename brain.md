@@ -37,3 +37,14 @@ IDLE → CAPTURE → VISION → EXECUTE → VERIFY → DONE
 - errors/templates.py — DQ-Erkennung
 
 ## Tests: 18/18 PASS
+
+## SYSTEM_PROMPT: 1742 chars, 10 actions
+- click, type, keypress, scroll, drag, hold, select-option, track, wait, done
+- Anti-AXStaticText regel
+- Captcha strategies (hold, reCAPTCHA tile click)
+- Few-shot examples
+
+## StealthRunner class (renamed from SurveyRunner)
+- LAUNCH_BROWSER → playstealth-cli launch
+- WAIT_READY → skylight-cli wait-for-selector
+- 10-state machine: IDLE→LAUNCH→WAIT→CAPTURE→VISION→EXECUTE→VERIFY→(loop)→DONE

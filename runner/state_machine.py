@@ -6,7 +6,7 @@ from .stealth_executor import StealthExecutor
 from .vision_client import VisionClient
 from .prompt_kit import build_prompt
 from .audit_log import AuditLog
-from sin_survey_core import classify_error
+from .human_profile import HumanProfile
 
 class State(StrEnum):
     IDLE = "idle"
@@ -19,7 +19,7 @@ class State(StrEnum):
     DONE = "done"
     RECOVERY = "recovery"
 
-class SurveyRunner:
+class StealthRunner:
     def __init__(self, url, profile=None):
         self.url = url
         self.pid = None
