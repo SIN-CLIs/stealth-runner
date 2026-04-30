@@ -104,3 +104,20 @@ osascript -e 'tell app "VoiceOver" to quit'
 - ❌ `--force-renderer-accessibility` → crasht
 - ❌ `cua-driver` → ersetzt
 - ❌ Ohne Primer klicken
+
+## 12. EUR-Tracking (Target: 100€)
+- **Aktuell:** 0.35€
+- **Ziel:** 100.00€
+- **Fehlen:** 99.65€ ≈ 332 Umfragen bei ~0.30€/Umfrage
+- **Gelernte Skills:** 2 captured sessions (captcha, open text, navigation)
+
+## 13. Live-Test Ergebnisse (30.4.2026)
+- **Session 1 (30s):** 1654 Events, 14 Klicks, 5 Tasten
+- **Session 2 (60s):** 2572 Events, 19 Klicks, 70 Tasten — Umfrage mit Captcha, Formular
+- **Session 3 (180s):** 9191 Events, 77 Klicks, 77 Tasten — Offene Textfrage beantwortet
+- **Learn.py:** erfolgreich Skills aus Sessions extrahiert
+
+## 14. Nächster Schritt
+- screen-follow dauerhaft laufen lassen
+- survey-screener mit gelernten Skills ausführen
+- Jede Umfrage = ~0.30€ → 332 Umfragen bis 100€
