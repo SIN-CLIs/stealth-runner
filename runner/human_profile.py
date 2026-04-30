@@ -1,32 +1,33 @@
-"""HumanProfile – Realistische menschliche Verhaltensparameter."""
+"""HumanProfile mit echten statistischen Verteilungen (scipy)."""
 from __future__ import annotations
-import random
+import random, anyio
 from dataclasses import dataclass, field
-import anyio
+from scipy import stats
+
+DIST_DWELL = stats.gamma(a=5, scale=200)
+DIST_FLIGHT = stats.norm(loc=400, scale=100)
+DIST_TYPING = stats.norm(loc=180, scale=40)
 
 @dataclass
 class HumanProfile:
-    profile_name: str = "default"
-    min_delay: float = field(default_factory=lambda: random.uniform(2.0, 4.0))
-    max_delay: float = field(default_factory=lambda: random.uniform(5.0, 9.0))
-    typing_speed: int = field(default_factory=lambda: random.randint(180, 300))
-    scroll_jitter: float = field(default_factory=lambda: random.uniform(0.5, 1.5))
-    click_jitter_px: int = field(default_factory=lambda: random.randint(2, 6))
-    hover_before_click_ms: int = field(default_factory=lambda: random.randint(50, 250))
+    profile_name: str = "sota"
+    min_delay: float = field(init=False)
+    max_delay: float = field(init=False)
+    typing_speed: int = field(init=False)
+    click_jitter_px: int = 4
+    hover_ms: int = 80
 
-    async def type_delay(self, text: str) -> None:
-        chars_per_second = self.typing_speed / 60.0
-        total_delay = len(text) / chars_per_second
-        jittered = total_delay * random.uniform(0.7, 1.3)
-        await anyio.sleep(max(jittered, 0.05))
+    def __post_init__(self):
+        self.min_delay = max(2.0, DIST_DWELL.rvs()/1000.0)
+        self.max_delay = max(self.min_delay+3, DIST_DWELL.rvs()*1.5/1000.0)
+        self.typing_speed = int(max(60, DIST_TYPING.rvs()))
 
     async def click_delay(self) -> None:
-        delay = random.uniform(self.min_delay, self.max_delay)
-        await anyio.sleep(delay)
+        await anyio.sleep(random.uniform(self.min_delay, self.max_delay))
 
-    async def scroll_pause(self) -> None:
-        await anyio.sleep(random.uniform(0.8, 2.5))
+    async def type_delay(self, text: str) -> None:
+        await anyio.sleep(len(text) / (self.typing_speed/60) * random.uniform(0.8, 1.2))
 
     @classmethod
-    def random(cls, profile_name: str | None = None) -> "HumanProfile":
-        return cls(profile_name=profile_name or "random")
+    def random(cls, name: str = "sota") -> "HumanProfile":
+        return cls(profile_name=name)

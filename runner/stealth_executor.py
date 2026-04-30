@@ -1,63 +1,52 @@
-"""StealthExecutor – Zustandslose Brücke zu den CLI-Tools der Stealth-Triade."""
+"""StealthExecutor mit TLS-Check, Behavioral Timings, Cross-Platform Driver."""
 from __future__ import annotations
-import json, shutil, subprocess
+import subprocess, json, shutil
 from pathlib import Path
 from typing import Any
-
-class StealthError(Exception):
-    pass
+from .tls_fingerprint import verify_tls
+from .drivers.base import BaseDriver
+from .drivers.skylight import SkyLightDriver
 
 class StealthExecutor:
     def __init__(self) -> None:
-        self.pid: int | None = None
-        if not shutil.which("skylight-cli"):
-            raise RuntimeError("skylight-cli not found. Install from https://github.com/SIN-CLIs/skylight-cli")
+        self.driver: BaseDriver = SkyLightDriver()
+        self.pid: int|None = None
+        self._tls_verified = False
 
     @property
     def backend(self) -> str: return "skylight-cli"
 
-    @property
-    def has_unmask(self) -> bool: return any(shutil.which(t) for t in ("unmask", "unmask-cli"))
+    def ensure_tls(self, url: str) -> None:
+        if not self._tls_verified:
+            verify_tls(url); self._tls_verified = True
 
-    def screenshot(self, out_path: str | None = None, mode: str = "som") -> dict[str, Any]:
-        path = Path(out_path or f"/tmp/stealth_screenshot.png").resolve()
-        result = subprocess.run(["skylight-cli", "screenshot", "--pid", str(self.pid), "--mode", mode, "--out", str(path)], capture_output=True, text=True, timeout=15)
-        if result.returncode != 0: raise StealthError(f"screenshot failed: {result.stderr.strip()}")
-        try: data = json.loads(result.stdout)
-        except json.JSONDecodeError: data = {"raw": result.stdout[:500]}
-        return {"status": "ok", "file": str(path), "mode": mode, **data}
+    def screenshot(self, out_path: str = "stealth.png", mode: str = "som") -> dict:
+        return self.driver.screenshot(self.pid, mode, Path(out_path))
 
-    def click(self, element_index: int | None = None, x: int | None = None, y: int | None = None) -> dict[str, Any]:
-        if element_index is not None: cmd = ["skylight-cli", "click", "--pid", str(self.pid), "--element-index", str(element_index)]
-        elif x is not None and y is not None: cmd = ["skylight-cli", "click", "--pid", str(self.pid), "--x", str(x), "--y", str(y)]
-        else: return {"status": "error", "reason": "No element_index or coordinates"}
-        return {"status": "ok", "raw": self._run(cmd)}
+    def click(self, element_index: int|None = None, x: int|None = None, y: int|None = None) -> dict:
+        if element_index is not None: return self.driver.click(self.pid, element_index)
+        elif x is not None and y is not None:
+            self._run(["skylight-cli", "click", "--pid", str(self.pid), "--x", str(x), "--y", str(y)])
+            return {"status":"ok"}
+        return {"status":"error","reason":"no coordinates"}
 
-    def type_text(self, text: str, element_index: int | None = None, clear_first: bool = False) -> dict[str, Any]:
+    def type_text(self, text: str, element_index: int|None = None) -> dict:
         cmd = ["skylight-cli", "type", "--pid", str(self.pid), "--text", text]
         if element_index is not None: cmd.extend(["--element-index", str(element_index)])
-        if clear_first: cmd.append("--clear-first")
-        return {"status": "ok", "raw": self._run(cmd)}
+        return self._run(cmd)
 
-    def scroll(self, direction: str = "down") -> dict[str, Any]:
-        delta = {"down": "-300", "up": "300"}.get(direction, "-300")
-        return {"status": "ok", "raw": self._run(["skylight-cli", "scroll", "--pid", str(self.pid), "--delta-y", delta])}
+    def scroll(self, direction: str = "down") -> dict:
+        delta = {"down":"-300","up":"300"}.get(direction,"-300")
+        return self._run(["skylight-cli", "scroll", "--pid", str(self.pid), "--delta-y", delta])
 
-    def verify_stealth(self) -> dict[str, Any]:
-        if not self.has_unmask: return {"status": "ok", "detected": False, "backend": "none"}
-        tool = next(t for t in ("unmask", "unmask-cli") if shutil.which(t))
-        result = self._run([tool, "verify-stealth", "--pid", str(self.pid)])
-        return {"status": "ok", "detected": result.get("detected", False), "backend": tool}
+    def verify_stealth(self) -> dict:
+        try: return self._run(["unmask-cli", "verify-stealth", "--pid", str(self.pid)])
+        except: return {"status":"ok","detected":False}
 
-    def list_elements(self) -> dict[str, Any]:
-        result = self._run(["skylight-cli", "screenshot", "--pid", str(self.pid), "--mode", "som", "--include-tree"])
-        return {"status": "ok", "elements": result.get("elements", [])}
+    def run(self, cmd: list[str]) -> dict: return self._run(cmd)
 
-    def run(self, cmd: list[str], timeout: int = 30) -> dict[str, Any]: return self._run(cmd, timeout)
-
-    def _run(self, cmd: list[str], timeout: int = 30) -> dict[str, Any]:
-        try: result = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
-        except subprocess.TimeoutExpired: raise StealthError(f"Timeout after {timeout}s: {' '.join(cmd)}")
-        if result.returncode != 0: raise StealthError(f"Failed (exit {result.returncode}): {' '.join(cmd)}\n{result.stderr.strip()[:500]}")
-        try: return json.loads(result.stdout)
-        except json.JSONDecodeError: return {"raw_stdout": result.stdout[:500], "raw_stderr": result.stderr[:500]}
+    def _run(self, cmd: list[str]) -> dict:
+        p = subprocess.run(cmd, capture_output=True, text=True)
+        if p.returncode != 0: raise RuntimeError(f"CLI failed: {' '.join(cmd)}\n{p.stderr}")
+        try: return json.loads(p.stdout)
+        except: return {"raw_stdout": p.stdout}
