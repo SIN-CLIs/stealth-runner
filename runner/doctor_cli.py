@@ -860,10 +860,65 @@ def run_doctor(repo: Path) -> dict:
                 "## Reporting a Vulnerability\n\n"
                 f"Open an issue at {remote_url.replace('.git', '/issues') if remote_url else 'the repository'}\n"
                 "or contact the maintainers directly.\n", encoding="utf-8")
-            print(f"      🔒 SECURITY.md: erstellt", flush=True)
-            fixes += 1
+        print(f"      🔒 SECURITY.md: erstellt", flush=True)
+        fixes += 1
     except Exception as e:
         print(f"      ⚠️ SECURITY.md: {e}", flush=True)
+
+    # ── PHASE 4: CLEANUP ──────────────────────────────────────
+    cleanup_count = 0
+    # Graphify-AST-Cache (wird beim nächsten Commit neu gebaut)
+    for f in (repo / "graphify-out" / "cache" / "ast").rglob("*.json"):
+        try:
+            f.unlink()
+            cleanup_count += 1
+        except:
+            pass
+    # __pycache__ Verzeichnisse
+    for d in repo.rglob("__pycache__"):
+        if d.is_dir():
+            try:
+                import shutil
+                shutil.rmtree(d)
+                cleanup_count += 1
+            except:
+                pass
+    # .pytest_cache + .ruff_cache
+    for cache_dir in [".pytest_cache", ".ruff_cache", ".mypy_cache"]:
+        d = repo / cache_dir
+        if d.exists():
+            try:
+                import shutil
+                shutil.rmtree(d)
+                cleanup_count += 1
+            except:
+                pass
+    # Alte .doctor/ Artefakte (behalte aktuelles)
+    old_artifacts = [".svg", ".xml", ".dot", ".png", ".json", ".txt", ".md"]
+    for f in doc_dir.iterdir():
+        if f.suffix in old_artifacts and f.name not in ("vale-report.json",):
+            try:
+                f.unlink()
+                cleanup_count += 1
+            except:
+                pass
+    if cleanup_count > 0:
+        print(f"      🧹 {cleanup_count} Cache/Temp-Dateien gelöscht", flush=True)
+
+    # Globale Cleanup: Alte Chrome-Profile in /tmp (älter als 1h)
+    try:
+        tmp = Path("/tmp")
+        count = 0
+        for d in tmp.glob("heypiggy-bot-*"):
+            age = __import__("time").time() - d.stat().st_mtime
+            if age > 3600:  # älter als 1 Stunde
+                import shutil
+                shutil.rmtree(d)
+                count += 1
+        if count > 0:
+            print(f"      🗑️ {count} alte Chrome-Profile gelöscht (>/tmp)", flush=True)
+    except:
+        pass
 
     # Essentielle Docs prüfen
     for doc in ["README.md", "LICENSE", "CONTRIBUTING.md", "SECURITY.md", "AGENTS.md", "brain.md", "goal.md"]:
