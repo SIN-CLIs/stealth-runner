@@ -1,4 +1,5 @@
 """State Machine – 10 Zustände mit Vision-free Fast Path."""
+from .security import Security
 from __future__ import annotations
 import json, sys, os
 from enum import StrEnum
