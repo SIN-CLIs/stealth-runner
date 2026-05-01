@@ -1,7 +1,7 @@
 # Graph Report - stealth-runner  (2026-05-01)
 
 ## Corpus Check
-- 79 files · ~27,923 words
+- 79 files · ~27,915 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
@@ -207,7 +207,7 @@ Nodes (2): Vision-Client Konfiguration (YAML-basiert)., VisionConfig
 
 ### Community 20 - "Community 20"
 Cohesion: 0.28
-Nodes (4): capture_loop(), mac_eye_cleanup(), mac_eye_init(), nanotime()
+Nodes (4): capture(), cleanup(), init(), nsec()
 
 ### Community 21 - "Community 21"
 Cohesion: 0.25

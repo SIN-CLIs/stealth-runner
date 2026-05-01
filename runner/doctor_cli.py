@@ -68,15 +68,28 @@ def check_tools():
 
 
 def find_repos() -> list[Path]:
-    found = set()
+    """NUR die 7 Haupt-Repos, nicht alle 143 in ~/dev/."""
+    names = [
+        "stealth-runner", "playstealth-cli", "skylight-cli",
+        "screen-follow", "unmask-cli", "A2A-SIN-Worker-heypiggy",
+        "infra-opencode-stack",
+    ]
+    found = []
     for item in DEV.iterdir():
-        if item.is_dir() and (item / ".git").exists():
-            found.add(item)
+        if item.name in names and (item / ".git").exists():
+            found.append(item)
         if item.is_dir() and not item.name.startswith("."):
             for sub in item.iterdir():
-                if sub.is_dir() and (sub / ".git").exists():
-                    found.add(sub)
-    return sorted(found, key=lambda p: p.name)
+                if sub.name in names and (sub / ".git").exists():
+                    found.append(sub)
+    # Fallback: CLI-Argumente wenn angegeben
+    if found:
+        return sorted(found, key=lambda p: p.name)
+    # Wenn nichts gefunden: aktuelle Verzeichnisse durchsuchen
+    cwd = Path.cwd()
+    if (cwd / ".git").exists():
+        return [cwd]
+    return found
 
 
 def run_doctor(repo: Path) -> dict:
