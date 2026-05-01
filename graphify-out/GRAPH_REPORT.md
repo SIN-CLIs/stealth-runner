@@ -1,12 +1,12 @@
 # Graph Report - stealth-runner  (2026-05-01)
 
 ## Corpus Check
-- 80 files · ~48,564 words
+- 80 files · ~49,824 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 625 nodes · 817 edges · 108 communities detected
-- Extraction: 78% EXTRACTED · 22% INFERRED · 0% AMBIGUOUS · INFERRED: 178 edges (avg confidence: 0.68)
+- 644 nodes · 832 edges · 117 communities detected
+- Extraction: 79% EXTRACTED · 21% INFERRED · 0% AMBIGUOUS · INFERRED: 178 edges (avg confidence: 0.68)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -45,11 +45,11 @@
 - [[_COMMUNITY_Community 32|Community 32]]
 - [[_COMMUNITY_Community 33|Community 33]]
 - [[_COMMUNITY_Community 34|Community 34]]
-- [[_COMMUNITY_Community 35|Community 35]]
+- [[_COMMUNITY_Community 36|Community 36]]
 - [[_COMMUNITY_Community 37|Community 37]]
 - [[_COMMUNITY_Community 38|Community 38]]
 - [[_COMMUNITY_Community 39|Community 39]]
-- [[_COMMUNITY_Community 40|Community 40]]
+- [[_COMMUNITY_Community 42|Community 42]]
 - [[_COMMUNITY_Community 43|Community 43]]
 - [[_COMMUNITY_Community 44|Community 44]]
 - [[_COMMUNITY_Community 45|Community 45]]
@@ -118,6 +118,15 @@
 - [[_COMMUNITY_Community 108|Community 108]]
 - [[_COMMUNITY_Community 109|Community 109]]
 - [[_COMMUNITY_Community 110|Community 110]]
+- [[_COMMUNITY_Community 111|Community 111]]
+- [[_COMMUNITY_Community 112|Community 112]]
+- [[_COMMUNITY_Community 113|Community 113]]
+- [[_COMMUNITY_Community 114|Community 114]]
+- [[_COMMUNITY_Community 115|Community 115]]
+- [[_COMMUNITY_Community 116|Community 116]]
+- [[_COMMUNITY_Community 117|Community 117]]
+- [[_COMMUNITY_Community 118|Community 118]]
+- [[_COMMUNITY_Community 119|Community 119]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `StealthExecutor` - 28 edges
@@ -128,8 +137,8 @@
 6. `SkylightDriver` - 16 edges
 7. `detect_panel()` - 14 edges
 8. `HumanProfile` - 13 edges
-9. `classify_element()` - 10 edges
-10. `Hands` - 10 edges
+9. `RingBuffer` - 12 edges
+10. `classify_element()` - 10 edges
 
 ## Surprising Connections (you probably didn't know these)
 - `main()` --calls--> `SurveyRunner`  [INFERRED]
@@ -146,8 +155,8 @@
 ## Communities
 
 ### Community 0 - "Community 0"
-Cohesion: 0.07
-Nodes (15): AuditLog, AuditLog – Thread-safe JSONL trace mit Batched Writes., HumanProfile, HumanProfile – SOTA Behavioral Biometrics via scipy.stats PDFs., stealth-runner – Orchestrator der Stealth-Triade v0.3.1., build_prompt(), prompt_kit – SYSTEM_PROMPT mit expliziten SoM-Referenzen., State Machine — JEDER Schritt VISION (Omni-first, Multi-Frame). (+7 more)
+Cohesion: 0.05
+Nodes (21): AuditLog, AuditLog – Thread-safe JSONL trace mit Batched Writes., Typer CLI mit Rich Progress für den stealth-runner., run(), HumanProfile, HumanProfile – SOTA Behavioral Biometrics via scipy.stats PDFs., stealth-runner – Orchestrator der Stealth-Triade v0.3.1., build_prompt() (+13 more)
 
 ### Community 1 - "Community 1"
 Cohesion: 0.09
@@ -159,7 +168,7 @@ Nodes (16): Exception, FatalCLIError, Async CLI-Executor mit Timeout, Exit-Code-
 
 ### Community 3 - "Community 3"
 Cohesion: 0.11
-Nodes (13): _extract_json(), LiveOmniMonitor, OmniObservation, Live Omni Screen Monitor – Rolling Video Buffer + Screenshot Hybrid.  ARCHITEKTU, Extrahiert die letzten N Sekunden als base64-mp4., Screenshot (schnell) oder Rolling-Video-Clip (temporal) an Omni., Hybrid Loop: Screenshot (schnell) + Video (alle 5 Schritte temporal)., Screenshot + Rolling Video Buffer → Omni → skylight-cli Execute. (+5 more)
+Nodes (13): _extract_json(), LiveOmniMonitor, OmniObservation, Live Omni Screen Monitor – Rolling Video Buffer + Screenshot Hybrid.  ARCHITEKTU, Extrahiert die letzten N Sekunden als base64-mp4., Screenshot (schnell) oder Rolling-Video-Clip (temporal) an Omni.         Nutzt S, Hybrid Loop: Screenshot (schnell) + Video (alle 5 Schritte temporal)., Screenshot + Rolling Video Buffer → Omni → skylight-cli Execute. (+5 more)
 
 ### Community 4 - "Community 4"
 Cohesion: 0.08
@@ -175,7 +184,7 @@ Nodes (16): BaseSettings, AuditLogger, StealthConfig, SurveyConfig, FatalError, 
 
 ### Community 7 - "Community 7"
 Cohesion: 0.11
-Nodes (15): Fehlerklassifikation für Umfrage-Abbrüche (4 Kategorien, mehrsprachig)., classify_error(), ErrorCategory, ErrorInfo, Fehlerklassifikation für Umfrage-Abbrüche — ErrorCategory Enum + ErrorInfo Datac, EarningsSummary, extract_earnings_summary(), extract_eur_from_text() (+7 more)
+Nodes (13): LiveEye, Frame mit Motion-Detection + Differencing in den Ringpuffer.         - Statische, CRF Auto-Adjustment: mehr Qualität bei Motion, weniger bei Stillstand., Conv3D Token-Optimierung: weniger Frames bei low motion = weniger Tokens., Ringpuffer → mp4 im Speicher. CRF dynamisch je nach Motion., Live-Video-Auge: Ringbuffer → Omni → Aktion., Video-Clip aus Ringbuffer → Omni (SSE Streaming) → Entscheidung., Live-Loop: capture → buffer → Omni → analyze → repeat. (+5 more)
 
 ### Community 8 - "Community 8"
 Cohesion: 0.14
@@ -186,12 +195,12 @@ Cohesion: 0.15
 Nodes (7): classify_element(), _has_images(), prescan_dom(), dom_prescan – Vision-free Fast Path via unmask-cli DOM-Scan., Tests für dom_prescan – Vision-free Fast Path., TestClassifyElement, TestPrescanDom
 
 ### Community 10 - "Community 10"
-Cohesion: 0.15
-Nodes (7): Typer CLI mit Rich Progress für den stealth-runner., run(), SurveyRunner, main(), test_max_recoveries_stops(), test_state_machine_initializes(), test_state_transition_idle_to_launch()
+Cohesion: 0.1
+Nodes (11): Fehlerklassifikation für Umfrage-Abbrüche (4 Kategorien, mehrsprachig)., classify_error(), ErrorCategory, ErrorInfo, Fehlerklassifikation für Umfrage-Abbrüche — ErrorCategory Enum + ErrorInfo Datac, ExtendedState, Erweiterte State Machine mit Exit-Code-Routing & Stealth-Scoring., sin_survey_core – Aus dem A2A-SIN-Worker extrahierte Survey-Intelligenz. (+3 more)
 
 ### Community 11 - "Community 11"
-Cohesion: 0.15
-Nodes (9): LiveEye, Live-Loop: capture → buffer → Omni → analyze → repeat., Memory-Ringpuffer: Letzte N Frames im RAM, kein Disk I/O., mss capture → numpy (3ms)., Frame als PNG in den Ringpuffer (kein Disk I/O)., Ringpuffer → mp4 im Speicher. Nur die letzten N Sekunden., Live-Video-Auge: Ringbuffer → Omni → Aktion., Video-Clip aus Ringbuffer → Omni → Entscheidung. (+1 more)
+Cohesion: 0.17
+Nodes (9): EarningsSummary, extract_earnings_summary(), extract_eur_from_text(), EUR-Betrag-Extraktion aus Umfrage-Seitentexten.  Verwendet vorkompilierte Regex-, Extrahiert den ersten EUR-Betrag aus einem beliebigen Text., Strukturierte EUR-Auszahlung aus einem Survey-Chunk., Extrahiert EUR-Betrag und gibt eine Zusammenfassung zurück., EUR-Betrag-Extraktion aus Umfrage-Seitentexten.  Bietet zwei Funktionen:  * :fun (+1 more)
 
 ### Community 12 - "Community 12"
 Cohesion: 0.18
@@ -202,562 +211,616 @@ Cohesion: 0.24
 Nodes (5): classify_error(), learn_from_error(), Anti-Learning Module — Error-to-Recovery Generator., store(), TestClassifyError
 
 ### Community 14 - "Community 14"
-Cohesion: 0.17
-Nodes (4): ExtendedState, Erweiterte State Machine mit Exit-Code-Routing & Stealth-Scoring., Property-based Tests für Exit-Code-Handling., TestExitCodeRouting
-
-### Community 15 - "Community 15"
 Cohesion: 0.25
 Nodes (9): chrome_health_check(), is_chrome_running(), Chrome Health-Check und Recovery., Prüft, ob Chrome-Prozess noch läuft., Startet Chrome neu und gibt Haupt-PID zurück., Führt Health-Check durch und startet Chrome neu falls nötig., relaunch_chrome(), Tests für Chrome Recovery. (+1 more)
 
-### Community 16 - "Community 16"
+### Community 15 - "Community 15"
 Cohesion: 0.27
 Nodes (10): cua(), find_popup_windows(), get_popup_state(), omni_analyze_live(), cua-driver call mit JSON-Args., cua-driver list_windows → Popups erkennen., Nur Popup-Elemente sehen (nicht die Hauptseite)., Omni analysiert den Accessibility-Tree LIVE. (+2 more)
 
-### Community 17 - "Community 17"
+### Community 16 - "Community 16"
 Cohesion: 0.25
 Nodes (10): capture_screen(), click_element(), omni_analyze(), screen-follow Screenshot → Base64 für Omni., Omni analysiert den Screen und sagt was zu tun ist., skylight-cli click – NUR mit element-index., skylight-cli type – NUR mit element-index., Trio Layer: screen-follow → Omni → skylight-cli. (+2 more)
 
-### Community 18 - "Community 18"
+### Community 17 - "Community 17"
 Cohesion: 0.27
 Nodes (9): load_state(), State-File Management mit Backup & Recovery., Lädt State mit Backup-Recovery., Speichert State mit Backup., Versucht, State aus Backups wiederherzustellen., Validiert State-Struktur., _recover_state(), save_state() (+1 more)
 
-### Community 19 - "Community 19"
+### Community 18 - "Community 18"
 Cohesion: 0.27
 Nodes (4): has_mac_eye(), MacEyeReader, MacEyeReader – Liest Framebuffer direkt aus Shared Memory (mac_eye.dylib). Erfor, Liest den Ringbuffer aus dem Shared Memory.
 
-### Community 20 - "Community 20"
+### Community 19 - "Community 19"
 Cohesion: 0.25
 Nodes (2): Vision-Client Konfiguration (YAML-basiert)., VisionConfig
 
-### Community 21 - "Community 21"
+### Community 20 - "Community 20"
 Cohesion: 0.28
 Nodes (4): capture(), cleanup(), init(), nsec()
 
-### Community 22 - "Community 22"
+### Community 21 - "Community 21"
 Cohesion: 0.25
 Nodes (2): Thread-sichere Survey-Queue (SQLite + FileLock)., SurveyQueue
 
-### Community 23 - "Community 23"
+### Community 22 - "Community 22"
 Cohesion: 0.29
 Nodes (2): FrameOptimizer, Frame-Diffing & ROI-Cropping für Vision-Token-Optimierung.
 
-### Community 24 - "Community 24"
+### Community 23 - "Community 23"
 Cohesion: 0.53
 Nodes (5): check_tools(), find_repos(), main(), NUR die 7 Haupt-Repos, nicht alle 143 in ~/dev/., run_doctor()
 
-### Community 25 - "Community 25"
+### Community 24 - "Community 24"
 Cohesion: 0.33
 Nodes (2): AuditLoggerSync, Crash-sicheres JSONL Audit-Log mit O_SYNC + fcntl.
 
-### Community 26 - "Community 26"
+### Community 25 - "Community 25"
 Cohesion: 0.33
 Nodes (2): ScreenFollowDriver – Bildschirmaufnahme via screen-follow CLI., ScreenFollowDriver
 
-### Community 27 - "Community 27"
+### Community 26 - "Community 26"
 Cohesion: 0.33
 Nodes (2): UnmaskDriver – DOM-Scan via unmask-cli für Vision-free Fast Path., UnmaskDriver
 
-### Community 28 - "Community 28"
+### Community 27 - "Community 27"
 Cohesion: 0.4
 Nodes (1): Behavioral Biometrics via scipy.stats PDFs.
 
-### Community 29 - "Community 29"
+### Community 28 - "Community 28"
 Cohesion: 0.4
 Nodes (1): Resilienz-Patterns: Retry, Circuit Breaker, Graceful Shutdown.
 
-### Community 30 - "Community 30"
+### Community 29 - "Community 29"
 Cohesion: 0.6
 Nodes (4): learn_from_session(), push_to_global_brain(), Skill Capture Loop — parst screen-follow Audit-Log (type: mouse_down, etc.)., update_registry()
 
-### Community 31 - "Community 31"
+### Community 30 - "Community 30"
 Cohesion: 0.5
 Nodes (2): Stealth-Scoring nach 6 Prüfvektoren mit gewichteten Thresholds., StealthResult
 
-### Community 32 - "Community 32"
+### Community 31 - "Community 31"
 Cohesion: 0.5
 Nodes (1): Semantic Vision Cache via diskcache.
 
-### Community 33 - "Community 33"
+### Community 32 - "Community 32"
 Cohesion: 0.67
 Nodes (3): load_brain_rules(), Strategy Evolution Module — wählt optimale Skill-Sequenz aus Brain-Daten., select_best_strategy()
 
-### Community 34 - "Community 34"
+### Community 33 - "Community 33"
 Cohesion: 0.67
 Nodes (1): Structured Logging mit structlog.
 
-### Community 35 - "Community 35"
+### Community 34 - "Community 34"
 Cohesion: 0.67
 Nodes (1): OpenTelemetry APM – Traces über alle States.
 
-### Community 37 - "Community 37"
+### Community 36 - "Community 36"
 Cohesion: 1.0
 Nodes (1): Zentrale Konfiguration – lädt .env und validiert alle Secrets.
 
-### Community 38 - "Community 38"
+### Community 37 - "Community 37"
 Cohesion: 1.0
 Nodes (1): pytest-Konfiguration für den stealth-runner.
 
-### Community 39 - "Community 39"
+### Community 38 - "Community 38"
 Cohesion: 1.0
 Nodes (1): Test-Suite für den stealth-runner. Führe mit: pytest tests/ -v
 
-### Community 40 - "Community 40"
+### Community 39 - "Community 39"
 Cohesion: 1.0
 Nodes (1): stealth-runner: Vision-driven CLI orchestrator for stealth survey automation.
 
-### Community 43 - "Community 43"
+### Community 42 - "Community 42"
 Cohesion: 1.0
 Nodes (1): Memory-Ringpuffer: Letzte N Frames im RAM, kein Disk I/O.
+
+### Community 43 - "Community 43"
+Cohesion: 1.0
+Nodes (1): mss capture → numpy (3ms).
 
 ### Community 44 - "Community 44"
 Cohesion: 1.0
-Nodes (1): mss capture → numpy (3ms).
+Nodes (1): Frame als PNG in den Ringpuffer (kein Disk I/O).
 
 ### Community 45 - "Community 45"
 Cohesion: 1.0
-Nodes (1): Frame als PNG in den Ringpuffer (kein Disk I/O).
+Nodes (1): Ringpuffer → mp4 im Speicher. Nur die letzten N Sekunden.
 
 ### Community 46 - "Community 46"
 Cohesion: 1.0
-Nodes (1): Ringpuffer → mp4 im Speicher. Nur die letzten N Sekunden.
+Nodes (1): Live-Video-Auge: Ringbuffer → Omni → Aktion.
 
 ### Community 47 - "Community 47"
 Cohesion: 1.0
-Nodes (1): Live-Video-Auge: Ringbuffer → Omni → Aktion.
+Nodes (1): Video-Clip aus Ringbuffer → Omni → Entscheidung.
 
 ### Community 48 - "Community 48"
 Cohesion: 1.0
-Nodes (1): Video-Clip aus Ringbuffer → Omni → Entscheidung.
+Nodes (1): Live-Loop: capture → buffer → Omni → analyze → repeat.
 
 ### Community 49 - "Community 49"
 Cohesion: 1.0
-Nodes (1): Live-Loop: capture → buffer → Omni → analyze → repeat.
+Nodes (1): Extrahiert die letzten N Sekunden als base64-mp4.
 
 ### Community 50 - "Community 50"
 Cohesion: 1.0
-Nodes (1): Memory-Ringpuffer: Letzte N Frames im RAM, kein Disk I/O.
+Nodes (1): Screenshot (schnell) oder Rolling-Video-Clip (temporal) an Omni.
 
 ### Community 51 - "Community 51"
 Cohesion: 1.0
-Nodes (1): mss capture → numpy (3ms).
+Nodes (1): Hybrid Loop: Screenshot (schnell) + Video (alle 5 Schritte temporal).
 
 ### Community 52 - "Community 52"
 Cohesion: 1.0
-Nodes (1): Frame als PNG in den Ringpuffer (kein Disk I/O).
+Nodes (1): Memory-Ringpuffer: Letzte N Frames im RAM, kein Disk I/O.
 
 ### Community 53 - "Community 53"
 Cohesion: 1.0
-Nodes (1): Ringpuffer → mp4 im Speicher. Nur die letzten N Sekunden.
+Nodes (1): mss capture → numpy (3ms).
 
 ### Community 54 - "Community 54"
 Cohesion: 1.0
-Nodes (1): Live-Video-Auge: Ringbuffer → Omni → Aktion.
+Nodes (1): Frame als PNG in den Ringpuffer (kein Disk I/O).
 
 ### Community 55 - "Community 55"
 Cohesion: 1.0
-Nodes (1): Video-Clip aus Ringbuffer → Omni → Entscheidung.
+Nodes (1): Ringpuffer → mp4 im Speicher. Nur die letzten N Sekunden.
 
 ### Community 56 - "Community 56"
 Cohesion: 1.0
-Nodes (1): Live-Loop: capture → buffer → Omni → analyze → repeat.
+Nodes (1): Live-Video-Auge: Ringbuffer → Omni → Aktion.
 
 ### Community 57 - "Community 57"
 Cohesion: 1.0
-Nodes (1): Alle 5s: Screenshot → Omni → Aktion. Plus pixel-diff für schnelle Changes.
+Nodes (1): Video-Clip aus Ringbuffer → Omni → Entscheidung.
 
 ### Community 58 - "Community 58"
 Cohesion: 1.0
-Nodes (1): skylight-cli: find AXButton by label → click.
+Nodes (1): Live-Loop: capture → buffer → Omni → analyze → repeat.
 
 ### Community 59 - "Community 59"
 Cohesion: 1.0
-Nodes (1): Schnellster Pfad: runterskaliertes Bild + 1 Wort Antwort + greedy.
+Nodes (1): Memory-Ringpuffer: Letzte N Frames im RAM, kein Disk I/O.
 
 ### Community 60 - "Community 60"
 Cohesion: 1.0
-Nodes (1): skylight-cli: find AXButton by label → click.
+Nodes (1): mss capture → numpy (3ms).
 
 ### Community 61 - "Community 61"
 Cohesion: 1.0
-Nodes (1): skylight-cli: find AXButton by label → click.
+Nodes (1): Frame als PNG in den Ringpuffer (kein Disk I/O).
 
 ### Community 62 - "Community 62"
 Cohesion: 1.0
-Nodes (1): Pixel-Diff ≙ Menschliche Netzhaut – nur SIGNALE (Änderungen) senden.
+Nodes (1): Ringpuffer → mp4 im Speicher. Nur die letzten N Sekunden.
 
 ### Community 63 - "Community 63"
 Cohesion: 1.0
-Nodes (1): Pixel-Diff: nur veränderte Pixel erkennen, 95% Reduktion.
+Nodes (1): Live-Video-Auge: Ringbuffer → Omni → Aktion.
 
 ### Community 64 - "Community 64"
 Cohesion: 1.0
-Nodes (1): Omni: sagt WAS zu tun ist, gibt LABEL zurück.
+Nodes (1): Video-Clip aus Ringbuffer → Omni → Entscheidung.
 
 ### Community 65 - "Community 65"
 Cohesion: 1.0
-Nodes (1): NUR element-index, nie Koordinaten.
+Nodes (1): Live-Loop: capture → buffer → Omni → analyze → repeat.
 
 ### Community 66 - "Community 66"
 Cohesion: 1.0
-Nodes (1): skylight-cli mit Fehlerbehandlung.
+Nodes (1): Alle 5s: Screenshot → Omni → Aktion. Plus pixel-diff für schnelle Changes.
 
 ### Community 67 - "Community 67"
 Cohesion: 1.0
-Nodes (1): Skylight API call. KEIN --window-id (gibt's nicht!).
+Nodes (1): skylight-cli: find AXButton by label → click.
 
 ### Community 68 - "Community 68"
 Cohesion: 1.0
-Nodes (1): skylight-cli list-elements → manuell label filtern.
+Nodes (1): Schnellster Pfad: runterskaliertes Bild + 1 Wort Antwort + greedy.
 
 ### Community 69 - "Community 69"
 Cohesion: 1.0
-Nodes (1): cua-driver list_windows + get_window_state → Popup-Element finden.
+Nodes (1): skylight-cli: find AXButton by label → click.
 
 ### Community 70 - "Community 70"
 Cohesion: 1.0
-Nodes (1): Popup-first → Fallback. NUR element-index.
+Nodes (1): skylight-cli: find AXButton by label → click.
 
 ### Community 71 - "Community 71"
 Cohesion: 1.0
-Nodes (1): Auge → Hirn → Hand, 50 Hz, <100ms Reaktion.
+Nodes (1): Pixel-Diff ≙ Menschliche Netzhaut – nur SIGNALE (Änderungen) senden.
 
 ### Community 72 - "Community 72"
 Cohesion: 1.0
-Nodes (1): Auge → Hirn → Hand, 50 Hz, <100ms Reaktion.
+Nodes (1): Pixel-Diff: nur veränderte Pixel erkennen, 95% Reduktion.
 
 ### Community 73 - "Community 73"
 Cohesion: 1.0
-Nodes (1): Screenshot mit Workaround für skylight-cli --output Bug.
+Nodes (1): Omni: sagt WAS zu tun ist, gibt LABEL zurück.
 
 ### Community 74 - "Community 74"
 Cohesion: 1.0
-Nodes (1): Findet element_index für ein Label via skylight-cli list-elements.
+Nodes (1): NUR element-index, nie Koordinaten.
 
 ### Community 75 - "Community 75"
 Cohesion: 1.0
-Nodes (1): NUR element-index: Popup-first → Fallback skylight-cli.
+Nodes (1): skylight-cli mit Fehlerbehandlung.
 
 ### Community 76 - "Community 76"
 Cohesion: 1.0
-Nodes (1): cua-driver screenshot → numpy array.
+Nodes (1): Skylight API call. KEIN --window-id (gibt's nicht!).
 
 ### Community 77 - "Community 77"
 Cohesion: 1.0
-Nodes (1): Fallback: cua-driver screenshot --raw gibt PNG-Daten auf stdout.
+Nodes (1): skylight-cli list-elements → manuell label filtern.
 
 ### Community 78 - "Community 78"
 Cohesion: 1.0
-Nodes (1): Omni ≙ Sehrinde – analysiert NUR Veränderungen, sagt WAS zu tun ist.
+Nodes (1): cua-driver list_windows + get_window_state → Popup-Element finden.
 
 ### Community 79 - "Community 79"
 Cohesion: 1.0
-Nodes (1): Nur die Change-Region an Omni schicken → Label + Action bekommen.
+Nodes (1): Popup-first → Fallback. NUR element-index.
 
 ### Community 80 - "Community 80"
 Cohesion: 1.0
-Nodes (1): Hände ≙ skylight-cli + cua-driver – NUR element-index, nie Pixel.
+Nodes (1): Auge → Hirn → Hand, 50 Hz, <100ms Reaktion.
 
 ### Community 81 - "Community 81"
 Cohesion: 1.0
-Nodes (1): Findet element_index für ein Label – POPUP-FIRST, Fallback normales Fenster.
+Nodes (1): Auge → Hirn → Hand, 50 Hz, <100ms Reaktion.
 
 ### Community 82 - "Community 82"
 Cohesion: 1.0
-Nodes (1): Fokussiert per click, tippt per skylight-cli type.
+Nodes (1): Screenshot mit Workaround für skylight-cli --output Bug.
 
 ### Community 83 - "Community 83"
 Cohesion: 1.0
-Nodes (1): Der komplette Live-Agent: Auge → Hirn → Hand in einem Loop.
+Nodes (1): Findet element_index für ein Label via skylight-cli list-elements.
 
 ### Community 84 - "Community 84"
 Cohesion: 1.0
-Nodes (1): Fokussiert per click, tippt per skylight-cli type.
+Nodes (1): NUR element-index: Popup-first → Fallback skylight-cli.
 
 ### Community 85 - "Community 85"
 Cohesion: 1.0
-Nodes (1): Pixel-Diff Retina: Nur Veränderungen erkennen – wie menschliches Auge.
+Nodes (1): cua-driver screenshot → numpy array.
 
 ### Community 86 - "Community 86"
 Cohesion: 1.0
-Nodes (1): cua-driver screenshot → numpy array.
+Nodes (1): Fallback: cua-driver screenshot --raw gibt PNG-Daten auf stdout.
 
 ### Community 87 - "Community 87"
 Cohesion: 1.0
-Nodes (1): Vergleicht Frame mit letztem → nur Veränderung zurück.
+Nodes (1): Omni ≙ Sehrinde – analysiert NUR Veränderungen, sagt WAS zu tun ist.
 
 ### Community 88 - "Community 88"
 Cohesion: 1.0
-Nodes (1): Omni + UGround: Analysiert nur veränderte Regionen.
+Nodes (1): Nur die Change-Region an Omni schicken → Label + Action bekommen.
 
 ### Community 89 - "Community 89"
 Cohesion: 1.0
-Nodes (1): Omni analysiert die Veränderung und sagt was zu tun ist.
+Nodes (1): Hände ≙ skylight-cli + cua-driver – NUR element-index, nie Pixel.
 
 ### Community 90 - "Community 90"
 Cohesion: 1.0
-Nodes (1): Führt Aktionen AUSSCHLIESSLICH per element-index aus – nie per Pixel.
+Nodes (1): Findet element_index für ein Label – POPUP-FIRST, Fallback normales Fenster.
 
 ### Community 91 - "Community 91"
 Cohesion: 1.0
-Nodes (1): skylight-cli list-elements → Element mit Label finden.
+Nodes (1): Fokussiert per click, tippt per skylight-cli type.
 
 ### Community 92 - "Community 92"
 Cohesion: 1.0
-Nodes (1): Der komplette Live-Agent: Auge → Hirn → Hand in Echtzeit.
+Nodes (1): Der komplette Live-Agent: Auge → Hirn → Hand in einem Loop.
 
 ### Community 93 - "Community 93"
 Cohesion: 1.0
-Nodes (1): Omni sagt Label → skylight-cli findet element_index → cua-driver clickt.
+Nodes (1): Fokussiert per click, tippt per skylight-cli type.
 
 ### Community 94 - "Community 94"
 Cohesion: 1.0
-Nodes (1): Der komplette Live-Agent: Auge → Hirn → Hand in Echtzeit.
+Nodes (1): Pixel-Diff Retina: Nur Veränderungen erkennen – wie menschliches Auge.
 
 ### Community 95 - "Community 95"
 Cohesion: 1.0
-Nodes (1): Live-Loop: Nur Änderungen verarbeiten, sonst nichts tun.
+Nodes (1): cua-driver screenshot → numpy array.
 
 ### Community 96 - "Community 96"
 Cohesion: 1.0
-Nodes (1): Führt Aktionen aus basierend auf Omni-Entscheidungen.
+Nodes (1): Vergleicht Frame mit letztem → nur Veränderung zurück.
 
 ### Community 97 - "Community 97"
 Cohesion: 1.0
-Nodes (1): cua-driver click per element-index (Popup-sicher).
+Nodes (1): Omni + UGround: Analysiert nur veränderte Regionen.
 
 ### Community 98 - "Community 98"
 Cohesion: 1.0
-Nodes (1): Live-Loop: Nur Änderungen verarbeiten, sonst nichts tun.
+Nodes (1): Omni analysiert die Veränderung und sagt was zu tun ist.
 
 ### Community 99 - "Community 99"
 Cohesion: 1.0
-Nodes (1): Phase 1: Repo bis auf letzten Millimeter scannen.
+Nodes (1): Führt Aktionen AUSSCHLIESSLICH per element-index aus – nie per Pixel.
 
 ### Community 100 - "Community 100"
 Cohesion: 1.0
-Nodes (1): Phase 2: Analysieren – Fehler finden, Qualität prüfen.
+Nodes (1): skylight-cli list-elements → Element mit Label finden.
 
 ### Community 101 - "Community 101"
 Cohesion: 1.0
-Nodes (1): Phase 3: Fehlende Dokumente generieren (nur bei genug Daten).
+Nodes (1): Der komplette Live-Agent: Auge → Hirn → Hand in Echtzeit.
 
 ### Community 102 - "Community 102"
 Cohesion: 1.0
-Nodes (1): Der Doktor – scannt, findet, fixrt, committed.
+Nodes (1): Omni sagt Label → skylight-cli findet element_index → cua-driver clickt.
 
 ### Community 103 - "Community 103"
 Cohesion: 1.0
-Nodes (1): Hauptlauf: Alle Repos → Alle Lenses → Fixen → Report.
+Nodes (1): Der komplette Live-Agent: Auge → Hirn → Hand in Echtzeit.
 
 ### Community 104 - "Community 104"
 Cohesion: 1.0
-Nodes (1): Lens 1: Finde + fixe veraltete Claims in ALLEN .md Dateien.
+Nodes (1): Live-Loop: Nur Änderungen verarbeiten, sonst nichts tun.
 
 ### Community 105 - "Community 105"
 Cohesion: 1.0
-Nodes (1): Lens 6: Finde API-Keys + Passwoerter in Docs.
+Nodes (1): Führt Aktionen aus basierend auf Omni-Entscheidungen.
 
 ### Community 106 - "Community 106"
 Cohesion: 1.0
-Nodes (1): Lens 4: Prüfe welche SOTA Docs fehlen.
+Nodes (1): cua-driver click per element-index (Popup-sicher).
 
 ### Community 107 - "Community 107"
 Cohesion: 1.0
-Nodes (1): Lens 2: Finde defekte Links via md-dead-link-check (wenn installiert).
+Nodes (1): Live-Loop: Nur Änderungen verarbeiten, sonst nichts tun.
 
 ### Community 108 - "Community 108"
 Cohesion: 1.0
-Nodes (1): Commit + Push in ALLEN Repos.
+Nodes (1): Phase 1: Repo bis auf letzten Millimeter scannen.
 
 ### Community 109 - "Community 109"
 Cohesion: 1.0
-Nodes (1): Hybrid Loop: Screenshot (schnell) + Video (alle 5 Schritte temporal).
+Nodes (1): Phase 2: Analysieren – Fehler finden, Qualität prüfen.
 
 ### Community 110 - "Community 110"
+Cohesion: 1.0
+Nodes (1): Phase 3: Fehlende Dokumente generieren (nur bei genug Daten).
+
+### Community 111 - "Community 111"
+Cohesion: 1.0
+Nodes (1): Der Doktor – scannt, findet, fixrt, committed.
+
+### Community 112 - "Community 112"
+Cohesion: 1.0
+Nodes (1): Hauptlauf: Alle Repos → Alle Lenses → Fixen → Report.
+
+### Community 113 - "Community 113"
+Cohesion: 1.0
+Nodes (1): Lens 1: Finde + fixe veraltete Claims in ALLEN .md Dateien.
+
+### Community 114 - "Community 114"
+Cohesion: 1.0
+Nodes (1): Lens 6: Finde API-Keys + Passwoerter in Docs.
+
+### Community 115 - "Community 115"
+Cohesion: 1.0
+Nodes (1): Lens 4: Prüfe welche SOTA Docs fehlen.
+
+### Community 116 - "Community 116"
+Cohesion: 1.0
+Nodes (1): Lens 2: Finde defekte Links via md-dead-link-check (wenn installiert).
+
+### Community 117 - "Community 117"
+Cohesion: 1.0
+Nodes (1): Commit + Push in ALLEN Repos.
+
+### Community 118 - "Community 118"
+Cohesion: 1.0
+Nodes (1): Hybrid Loop: Screenshot (schnell) + Video (alle 5 Schritte temporal).
+
+### Community 119 - "Community 119"
 Cohesion: 1.0
 Nodes (1): Hybrid Loop: Screenshot (schnell) + Video (alle 5 Schritte temporal).
 
 ## Knowledge Gaps
-- **160 isolated node(s):** `FastAPI wrapper for stealth-runner – SaaS API (SOTA #14).`, `NUR die 7 Haupt-Repos, nicht alle 143 in ~/dev/.`, `State-File Management mit Backup & Recovery.`, `Lädt State mit Backup-Recovery.`, `Speichert State mit Backup.` (+155 more)
+- **174 isolated node(s):** `FastAPI wrapper for stealth-runner – SaaS API (SOTA #14).`, `NUR die 7 Haupt-Repos, nicht alle 143 in ~/dev/.`, `State-File Management mit Backup & Recovery.`, `Lädt State mit Backup-Recovery.`, `Speichert State mit Backup.` (+169 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **Thin community `Community 20`** (9 nodes): `config.py`, `current_model()`, `fallback_models()`, `max_tokens()`, `Vision-Client Konfiguration (YAML-basiert).`, `timeout()`, `VisionConfig`, `.__init__()`, `._load_config()`
+- **Thin community `Community 19`** (9 nodes): `config.py`, `current_model()`, `fallback_models()`, `max_tokens()`, `Vision-Client Konfiguration (YAML-basiert).`, `timeout()`, `VisionConfig`, `.__init__()`, `._load_config()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 22`** (8 nodes): `survey_queue.py`, `Thread-sichere Survey-Queue (SQLite + FileLock).`, `SurveyQueue`, `.claim_task()`, `.enqueue()`, `.__init__()`, `.mark_done()`, `.mark_failed()`
+- **Thin community `Community 21`** (8 nodes): `survey_queue.py`, `Thread-sichere Survey-Queue (SQLite + FileLock).`, `SurveyQueue`, `.claim_task()`, `.enqueue()`, `.__init__()`, `.mark_done()`, `.mark_failed()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 23`** (7 nodes): `FrameOptimizer`, `.crop_roi()`, `.__init__()`, `.is_duplicate()`, `frame_optimizer.py`, `Frame-Diffing & ROI-Cropping für Vision-Token-Optimierung.`, `skipped_count()`
+- **Thin community `Community 22`** (7 nodes): `FrameOptimizer`, `.crop_roi()`, `.__init__()`, `.is_duplicate()`, `frame_optimizer.py`, `Frame-Diffing & ROI-Cropping für Vision-Token-Optimierung.`, `skipped_count()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 25`** (6 nodes): `AuditLoggerSync`, `.close()`, `.__init__()`, `.log()`, `audit_logger_sync.py`, `Crash-sicheres JSONL Audit-Log mit O_SYNC + fcntl.`
+- **Thin community `Community 24`** (6 nodes): `AuditLoggerSync`, `.close()`, `.__init__()`, `.log()`, `audit_logger_sync.py`, `Crash-sicheres JSONL Audit-Log mit O_SYNC + fcntl.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 26`** (6 nodes): `ScreenFollowDriver – Bildschirmaufnahme via screen-follow CLI.`, `ScreenFollowDriver`, `.get_status()`, `.start_recording()`, `.stop_recording()`, `screen_follow.py`
+- **Thin community `Community 25`** (6 nodes): `ScreenFollowDriver – Bildschirmaufnahme via screen-follow CLI.`, `ScreenFollowDriver`, `.get_status()`, `.start_recording()`, `.stop_recording()`, `screen_follow.py`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 27`** (6 nodes): `UnmaskDriver – DOM-Scan via unmask-cli für Vision-free Fast Path.`, `UnmaskDriver`, `.dom_scan()`, `.inspect()`, `.network_capture()`, `unmask.py`
+- **Thin community `Community 26`** (6 nodes): `UnmaskDriver – DOM-Scan via unmask-cli für Vision-free Fast Path.`, `UnmaskDriver`, `.dom_scan()`, `.inspect()`, `.network_capture()`, `unmask.py`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 28`** (5 nodes): `behavioral_biometrics.py`, `Behavioral Biometrics via scipy.stats PDFs.`, `sample_dwell_time()`, `sample_flight_time()`, `sample_typing_speed()`
+- **Thin community `Community 27`** (5 nodes): `behavioral_biometrics.py`, `Behavioral Biometrics via scipy.stats PDFs.`, `sample_dwell_time()`, `sample_flight_time()`, `sample_typing_speed()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 29`** (5 nodes): `install_shutdown_handlers()`, `resilience.py`, `Resilienz-Patterns: Retry, Circuit Breaker, Graceful Shutdown.`, `register_shutdown_handler()`, `vision_retry()`
+- **Thin community `Community 28`** (5 nodes): `install_shutdown_handlers()`, `resilience.py`, `Resilienz-Patterns: Retry, Circuit Breaker, Graceful Shutdown.`, `register_shutdown_handler()`, `vision_retry()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 31`** (4 nodes): `calculate_stealth_score()`, `stealth_scorer.py`, `Stealth-Scoring nach 6 Prüfvektoren mit gewichteten Thresholds.`, `StealthResult`
+- **Thin community `Community 30`** (4 nodes): `calculate_stealth_score()`, `stealth_scorer.py`, `Stealth-Scoring nach 6 Prüfvektoren mit gewichteten Thresholds.`, `StealthResult`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 32`** (4 nodes): `get_cached_action()`, `semantic_cache.py`, `Semantic Vision Cache via diskcache.`, `set_cached_action()`
+- **Thin community `Community 31`** (4 nodes): `get_cached_action()`, `semantic_cache.py`, `Semantic Vision Cache via diskcache.`, `set_cached_action()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 34`** (3 nodes): `get_logger()`, `logging_config.py`, `Structured Logging mit structlog.`
+- **Thin community `Community 33`** (3 nodes): `get_logger()`, `logging_config.py`, `Structured Logging mit structlog.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 35`** (3 nodes): `apm.py`, `OpenTelemetry APM – Traces über alle States.`, `start_trace()`
+- **Thin community `Community 34`** (3 nodes): `apm.py`, `OpenTelemetry APM – Traces über alle States.`, `start_trace()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 37`** (2 nodes): `config.py`, `Zentrale Konfiguration – lädt .env und validiert alle Secrets.`
+- **Thin community `Community 36`** (2 nodes): `config.py`, `Zentrale Konfiguration – lädt .env und validiert alle Secrets.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 38`** (2 nodes): `conftest.py`, `pytest-Konfiguration für den stealth-runner.`
+- **Thin community `Community 37`** (2 nodes): `conftest.py`, `pytest-Konfiguration für den stealth-runner.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 39`** (2 nodes): `__init__.py`, `Test-Suite für den stealth-runner. Führe mit: pytest tests/ -v`
+- **Thin community `Community 38`** (2 nodes): `__init__.py`, `Test-Suite für den stealth-runner. Führe mit: pytest tests/ -v`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 40`** (2 nodes): `__init__.py`, `stealth-runner: Vision-driven CLI orchestrator for stealth survey automation.`
+- **Thin community `Community 39`** (2 nodes): `__init__.py`, `stealth-runner: Vision-driven CLI orchestrator for stealth survey automation.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 43`** (1 nodes): `Memory-Ringpuffer: Letzte N Frames im RAM, kein Disk I/O.`
+- **Thin community `Community 42`** (1 nodes): `Memory-Ringpuffer: Letzte N Frames im RAM, kein Disk I/O.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 44`** (1 nodes): `mss capture → numpy (3ms).`
+- **Thin community `Community 43`** (1 nodes): `mss capture → numpy (3ms).`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 45`** (1 nodes): `Frame als PNG in den Ringpuffer (kein Disk I/O).`
+- **Thin community `Community 44`** (1 nodes): `Frame als PNG in den Ringpuffer (kein Disk I/O).`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 46`** (1 nodes): `Ringpuffer → mp4 im Speicher. Nur die letzten N Sekunden.`
+- **Thin community `Community 45`** (1 nodes): `Ringpuffer → mp4 im Speicher. Nur die letzten N Sekunden.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 47`** (1 nodes): `Live-Video-Auge: Ringbuffer → Omni → Aktion.`
+- **Thin community `Community 46`** (1 nodes): `Live-Video-Auge: Ringbuffer → Omni → Aktion.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 48`** (1 nodes): `Video-Clip aus Ringbuffer → Omni → Entscheidung.`
+- **Thin community `Community 47`** (1 nodes): `Video-Clip aus Ringbuffer → Omni → Entscheidung.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 49`** (1 nodes): `Live-Loop: capture → buffer → Omni → analyze → repeat.`
+- **Thin community `Community 48`** (1 nodes): `Live-Loop: capture → buffer → Omni → analyze → repeat.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 50`** (1 nodes): `Memory-Ringpuffer: Letzte N Frames im RAM, kein Disk I/O.`
+- **Thin community `Community 49`** (1 nodes): `Extrahiert die letzten N Sekunden als base64-mp4.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 51`** (1 nodes): `mss capture → numpy (3ms).`
+- **Thin community `Community 50`** (1 nodes): `Screenshot (schnell) oder Rolling-Video-Clip (temporal) an Omni.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 52`** (1 nodes): `Frame als PNG in den Ringpuffer (kein Disk I/O).`
+- **Thin community `Community 51`** (1 nodes): `Hybrid Loop: Screenshot (schnell) + Video (alle 5 Schritte temporal).`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 53`** (1 nodes): `Ringpuffer → mp4 im Speicher. Nur die letzten N Sekunden.`
+- **Thin community `Community 52`** (1 nodes): `Memory-Ringpuffer: Letzte N Frames im RAM, kein Disk I/O.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 54`** (1 nodes): `Live-Video-Auge: Ringbuffer → Omni → Aktion.`
+- **Thin community `Community 53`** (1 nodes): `mss capture → numpy (3ms).`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 55`** (1 nodes): `Video-Clip aus Ringbuffer → Omni → Entscheidung.`
+- **Thin community `Community 54`** (1 nodes): `Frame als PNG in den Ringpuffer (kein Disk I/O).`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 56`** (1 nodes): `Live-Loop: capture → buffer → Omni → analyze → repeat.`
+- **Thin community `Community 55`** (1 nodes): `Ringpuffer → mp4 im Speicher. Nur die letzten N Sekunden.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 57`** (1 nodes): `Alle 5s: Screenshot → Omni → Aktion. Plus pixel-diff für schnelle Changes.`
+- **Thin community `Community 56`** (1 nodes): `Live-Video-Auge: Ringbuffer → Omni → Aktion.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 58`** (1 nodes): `skylight-cli: find AXButton by label → click.`
+- **Thin community `Community 57`** (1 nodes): `Video-Clip aus Ringbuffer → Omni → Entscheidung.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 59`** (1 nodes): `Schnellster Pfad: runterskaliertes Bild + 1 Wort Antwort + greedy.`
+- **Thin community `Community 58`** (1 nodes): `Live-Loop: capture → buffer → Omni → analyze → repeat.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 60`** (1 nodes): `skylight-cli: find AXButton by label → click.`
+- **Thin community `Community 59`** (1 nodes): `Memory-Ringpuffer: Letzte N Frames im RAM, kein Disk I/O.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 61`** (1 nodes): `skylight-cli: find AXButton by label → click.`
+- **Thin community `Community 60`** (1 nodes): `mss capture → numpy (3ms).`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 62`** (1 nodes): `Pixel-Diff ≙ Menschliche Netzhaut – nur SIGNALE (Änderungen) senden.`
+- **Thin community `Community 61`** (1 nodes): `Frame als PNG in den Ringpuffer (kein Disk I/O).`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 63`** (1 nodes): `Pixel-Diff: nur veränderte Pixel erkennen, 95% Reduktion.`
+- **Thin community `Community 62`** (1 nodes): `Ringpuffer → mp4 im Speicher. Nur die letzten N Sekunden.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 64`** (1 nodes): `Omni: sagt WAS zu tun ist, gibt LABEL zurück.`
+- **Thin community `Community 63`** (1 nodes): `Live-Video-Auge: Ringbuffer → Omni → Aktion.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 65`** (1 nodes): `NUR element-index, nie Koordinaten.`
+- **Thin community `Community 64`** (1 nodes): `Video-Clip aus Ringbuffer → Omni → Entscheidung.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 66`** (1 nodes): `skylight-cli mit Fehlerbehandlung.`
+- **Thin community `Community 65`** (1 nodes): `Live-Loop: capture → buffer → Omni → analyze → repeat.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 67`** (1 nodes): `Skylight API call. KEIN --window-id (gibt's nicht!).`
+- **Thin community `Community 66`** (1 nodes): `Alle 5s: Screenshot → Omni → Aktion. Plus pixel-diff für schnelle Changes.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 68`** (1 nodes): `skylight-cli list-elements → manuell label filtern.`
+- **Thin community `Community 67`** (1 nodes): `skylight-cli: find AXButton by label → click.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 69`** (1 nodes): `cua-driver list_windows + get_window_state → Popup-Element finden.`
+- **Thin community `Community 68`** (1 nodes): `Schnellster Pfad: runterskaliertes Bild + 1 Wort Antwort + greedy.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 70`** (1 nodes): `Popup-first → Fallback. NUR element-index.`
+- **Thin community `Community 69`** (1 nodes): `skylight-cli: find AXButton by label → click.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 71`** (1 nodes): `Auge → Hirn → Hand, 50 Hz, <100ms Reaktion.`
+- **Thin community `Community 70`** (1 nodes): `skylight-cli: find AXButton by label → click.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 72`** (1 nodes): `Auge → Hirn → Hand, 50 Hz, <100ms Reaktion.`
+- **Thin community `Community 71`** (1 nodes): `Pixel-Diff ≙ Menschliche Netzhaut – nur SIGNALE (Änderungen) senden.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 73`** (1 nodes): `Screenshot mit Workaround für skylight-cli --output Bug.`
+- **Thin community `Community 72`** (1 nodes): `Pixel-Diff: nur veränderte Pixel erkennen, 95% Reduktion.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 74`** (1 nodes): `Findet element_index für ein Label via skylight-cli list-elements.`
+- **Thin community `Community 73`** (1 nodes): `Omni: sagt WAS zu tun ist, gibt LABEL zurück.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 75`** (1 nodes): `NUR element-index: Popup-first → Fallback skylight-cli.`
+- **Thin community `Community 74`** (1 nodes): `NUR element-index, nie Koordinaten.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 76`** (1 nodes): `cua-driver screenshot → numpy array.`
+- **Thin community `Community 75`** (1 nodes): `skylight-cli mit Fehlerbehandlung.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 77`** (1 nodes): `Fallback: cua-driver screenshot --raw gibt PNG-Daten auf stdout.`
+- **Thin community `Community 76`** (1 nodes): `Skylight API call. KEIN --window-id (gibt's nicht!).`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 78`** (1 nodes): `Omni ≙ Sehrinde – analysiert NUR Veränderungen, sagt WAS zu tun ist.`
+- **Thin community `Community 77`** (1 nodes): `skylight-cli list-elements → manuell label filtern.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 79`** (1 nodes): `Nur die Change-Region an Omni schicken → Label + Action bekommen.`
+- **Thin community `Community 78`** (1 nodes): `cua-driver list_windows + get_window_state → Popup-Element finden.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 80`** (1 nodes): `Hände ≙ skylight-cli + cua-driver – NUR element-index, nie Pixel.`
+- **Thin community `Community 79`** (1 nodes): `Popup-first → Fallback. NUR element-index.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 81`** (1 nodes): `Findet element_index für ein Label – POPUP-FIRST, Fallback normales Fenster.`
+- **Thin community `Community 80`** (1 nodes): `Auge → Hirn → Hand, 50 Hz, <100ms Reaktion.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 82`** (1 nodes): `Fokussiert per click, tippt per skylight-cli type.`
+- **Thin community `Community 81`** (1 nodes): `Auge → Hirn → Hand, 50 Hz, <100ms Reaktion.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 83`** (1 nodes): `Der komplette Live-Agent: Auge → Hirn → Hand in einem Loop.`
+- **Thin community `Community 82`** (1 nodes): `Screenshot mit Workaround für skylight-cli --output Bug.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 84`** (1 nodes): `Fokussiert per click, tippt per skylight-cli type.`
+- **Thin community `Community 83`** (1 nodes): `Findet element_index für ein Label via skylight-cli list-elements.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 85`** (1 nodes): `Pixel-Diff Retina: Nur Veränderungen erkennen – wie menschliches Auge.`
+- **Thin community `Community 84`** (1 nodes): `NUR element-index: Popup-first → Fallback skylight-cli.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 86`** (1 nodes): `cua-driver screenshot → numpy array.`
+- **Thin community `Community 85`** (1 nodes): `cua-driver screenshot → numpy array.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 87`** (1 nodes): `Vergleicht Frame mit letztem → nur Veränderung zurück.`
+- **Thin community `Community 86`** (1 nodes): `Fallback: cua-driver screenshot --raw gibt PNG-Daten auf stdout.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 88`** (1 nodes): `Omni + UGround: Analysiert nur veränderte Regionen.`
+- **Thin community `Community 87`** (1 nodes): `Omni ≙ Sehrinde – analysiert NUR Veränderungen, sagt WAS zu tun ist.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 89`** (1 nodes): `Omni analysiert die Veränderung und sagt was zu tun ist.`
+- **Thin community `Community 88`** (1 nodes): `Nur die Change-Region an Omni schicken → Label + Action bekommen.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 90`** (1 nodes): `Führt Aktionen AUSSCHLIESSLICH per element-index aus – nie per Pixel.`
+- **Thin community `Community 89`** (1 nodes): `Hände ≙ skylight-cli + cua-driver – NUR element-index, nie Pixel.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 91`** (1 nodes): `skylight-cli list-elements → Element mit Label finden.`
+- **Thin community `Community 90`** (1 nodes): `Findet element_index für ein Label – POPUP-FIRST, Fallback normales Fenster.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 92`** (1 nodes): `Der komplette Live-Agent: Auge → Hirn → Hand in Echtzeit.`
+- **Thin community `Community 91`** (1 nodes): `Fokussiert per click, tippt per skylight-cli type.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 93`** (1 nodes): `Omni sagt Label → skylight-cli findet element_index → cua-driver clickt.`
+- **Thin community `Community 92`** (1 nodes): `Der komplette Live-Agent: Auge → Hirn → Hand in einem Loop.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 94`** (1 nodes): `Der komplette Live-Agent: Auge → Hirn → Hand in Echtzeit.`
+- **Thin community `Community 93`** (1 nodes): `Fokussiert per click, tippt per skylight-cli type.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 95`** (1 nodes): `Live-Loop: Nur Änderungen verarbeiten, sonst nichts tun.`
+- **Thin community `Community 94`** (1 nodes): `Pixel-Diff Retina: Nur Veränderungen erkennen – wie menschliches Auge.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 96`** (1 nodes): `Führt Aktionen aus basierend auf Omni-Entscheidungen.`
+- **Thin community `Community 95`** (1 nodes): `cua-driver screenshot → numpy array.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 97`** (1 nodes): `cua-driver click per element-index (Popup-sicher).`
+- **Thin community `Community 96`** (1 nodes): `Vergleicht Frame mit letztem → nur Veränderung zurück.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 98`** (1 nodes): `Live-Loop: Nur Änderungen verarbeiten, sonst nichts tun.`
+- **Thin community `Community 97`** (1 nodes): `Omni + UGround: Analysiert nur veränderte Regionen.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 99`** (1 nodes): `Phase 1: Repo bis auf letzten Millimeter scannen.`
+- **Thin community `Community 98`** (1 nodes): `Omni analysiert die Veränderung und sagt was zu tun ist.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 100`** (1 nodes): `Phase 2: Analysieren – Fehler finden, Qualität prüfen.`
+- **Thin community `Community 99`** (1 nodes): `Führt Aktionen AUSSCHLIESSLICH per element-index aus – nie per Pixel.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 101`** (1 nodes): `Phase 3: Fehlende Dokumente generieren (nur bei genug Daten).`
+- **Thin community `Community 100`** (1 nodes): `skylight-cli list-elements → Element mit Label finden.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 102`** (1 nodes): `Der Doktor – scannt, findet, fixrt, committed.`
+- **Thin community `Community 101`** (1 nodes): `Der komplette Live-Agent: Auge → Hirn → Hand in Echtzeit.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 103`** (1 nodes): `Hauptlauf: Alle Repos → Alle Lenses → Fixen → Report.`
+- **Thin community `Community 102`** (1 nodes): `Omni sagt Label → skylight-cli findet element_index → cua-driver clickt.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 104`** (1 nodes): `Lens 1: Finde + fixe veraltete Claims in ALLEN .md Dateien.`
+- **Thin community `Community 103`** (1 nodes): `Der komplette Live-Agent: Auge → Hirn → Hand in Echtzeit.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 105`** (1 nodes): `Lens 6: Finde API-Keys + Passwoerter in Docs.`
+- **Thin community `Community 104`** (1 nodes): `Live-Loop: Nur Änderungen verarbeiten, sonst nichts tun.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 106`** (1 nodes): `Lens 4: Prüfe welche SOTA Docs fehlen.`
+- **Thin community `Community 105`** (1 nodes): `Führt Aktionen aus basierend auf Omni-Entscheidungen.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 107`** (1 nodes): `Lens 2: Finde defekte Links via md-dead-link-check (wenn installiert).`
+- **Thin community `Community 106`** (1 nodes): `cua-driver click per element-index (Popup-sicher).`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 108`** (1 nodes): `Commit + Push in ALLEN Repos.`
+- **Thin community `Community 107`** (1 nodes): `Live-Loop: Nur Änderungen verarbeiten, sonst nichts tun.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 109`** (1 nodes): `Hybrid Loop: Screenshot (schnell) + Video (alle 5 Schritte temporal).`
+- **Thin community `Community 108`** (1 nodes): `Phase 1: Repo bis auf letzten Millimeter scannen.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 110`** (1 nodes): `Hybrid Loop: Screenshot (schnell) + Video (alle 5 Schritte temporal).`
+- **Thin community `Community 109`** (1 nodes): `Phase 2: Analysieren – Fehler finden, Qualität prüfen.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 110`** (1 nodes): `Phase 3: Fehlende Dokumente generieren (nur bei genug Daten).`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 111`** (1 nodes): `Der Doktor – scannt, findet, fixrt, committed.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 112`** (1 nodes): `Hauptlauf: Alle Repos → Alle Lenses → Fixen → Report.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 113`** (1 nodes): `Lens 1: Finde + fixe veraltete Claims in ALLEN .md Dateien.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 114`** (1 nodes): `Lens 6: Finde API-Keys + Passwoerter in Docs.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 115`** (1 nodes): `Lens 4: Prüfe welche SOTA Docs fehlen.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 116`** (1 nodes): `Lens 2: Finde defekte Links via md-dead-link-check (wenn installiert).`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 117`** (1 nodes): `Commit + Push in ALLEN Repos.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 118`** (1 nodes): `Hybrid Loop: Screenshot (schnell) + Video (alle 5 Schritte temporal).`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 119`** (1 nodes): `Hybrid Loop: Screenshot (schnell) + Video (alle 5 Schritte temporal).`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `ErrorCategory` connect `Community 7` to `Community 0`?**
-  _High betweenness centrality (0.086) - this node is a cross-community bridge._
-- **Why does `sin_survey_core – Aus dem A2A-SIN-Worker extrahierte Survey-Intelligenz.` connect `Community 7` to `Community 5`?**
-  _High betweenness centrality (0.081) - this node is a cross-community bridge._
-- **Why does `StealthExecutor` connect `Community 0` to `Community 8`, `Community 10`, `Community 2`, `Community 4`?**
+- **Why does `sin_survey_core – Aus dem A2A-SIN-Worker extrahierte Survey-Intelligenz.` connect `Community 10` to `Community 11`, `Community 5`?**
   _High betweenness centrality (0.076) - this node is a cross-community bridge._
+- **Why does `StealthExecutor` connect `Community 0` to `Community 8`, `Community 2`, `Community 4`?**
+  _High betweenness centrality (0.072) - this node is a cross-community bridge._
 - **Are the 18 inferred relationships involving `StealthExecutor` (e.g. with `BaseDriver` and `SkylightDriver`) actually correct?**
   _`StealthExecutor` has 18 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 10 inferred relationships involving `SurveyRunner` (e.g. with `stealth-runner – Orchestrator der Stealth-Triade v0.3.1.` and `StealthExecutor`) actually correct?**
@@ -766,3 +829,5 @@ _Questions this graph is uniquely positioned to answer:_
   _`LiveOmniMonitor` has 4 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 12 inferred relationships involving `AuditLog` (e.g. with `stealth-runner – Orchestrator der Stealth-Triade v0.3.1.` and `State`) actually correct?**
   _`AuditLog` has 12 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 9 inferred relationships involving `VisionClient` (e.g. with `.__init__()` and `main()`) actually correct?**
+  _`VisionClient` has 9 INFERRED edges - model-reasoned connections that need verification._
