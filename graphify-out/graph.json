@@ -1205,54 +1205,54 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L27",
-      "id": "runner_live_agent_rationale_27",
       "community": 1,
-      "norm_label": "omni sagt nur label, nie koordinaten."
+      "norm_label": "omni sagt nur label, nie koordinaten.",
+      "id": "runner_live_agent_rationale_27"
     },
     {
       "label": "Pixel-Diff via mss + OpenCV. Wie menschliche Netzhaut:     - mss: 2-8ms Capture",
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L37",
-      "id": "runner_live_agent_rationale_37",
       "community": 1,
-      "norm_label": "pixel-diff via mss + opencv. wie menschliche netzhaut:     - mss: 2-8ms capture"
+      "norm_label": "pixel-diff via mss + opencv. wie menschliche netzhaut:     - mss: 2-8ms capture",
+      "id": "runner_live_agent_rationale_37"
     },
     {
       "label": "mss capture: 2-8ms statt 50ms mit skylight-cli.",
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L51",
-      "id": "runner_live_agent_rationale_51",
       "community": 1,
-      "norm_label": "mss capture: 2-8ms statt 50ms mit skylight-cli."
+      "norm_label": "mss capture: 2-8ms statt 50ms mit skylight-cli.",
+      "id": "runner_live_agent_rationale_51"
     },
     {
       "label": "OpenCV-basierte Diff-Erkennung. Gibt ROI + Bounding Box zur\u00fcck.",
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L56",
-      "id": "runner_live_agent_rationale_56",
       "community": 1,
-      "norm_label": "opencv-basierte diff-erkennung. gibt roi + bounding box zuruck."
+      "norm_label": "opencv-basierte diff-erkennung. gibt roi + bounding box zuruck.",
+      "id": "runner_live_agent_rationale_56"
     },
     {
       "label": "Omni: sagt WAS zu tun ist, gibt LABEL zur\u00fcck.",
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L92",
-      "id": "runner_live_agent_rationale_92",
       "community": 1,
-      "norm_label": "omni: sagt was zu tun ist, gibt label zuruck."
+      "norm_label": "omni: sagt was zu tun ist, gibt label zuruck.",
+      "id": "runner_live_agent_rationale_92"
     },
     {
       "label": "Analysiert die Change-Region (b64 aus Retina.detect).",
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L99",
-      "id": "runner_live_agent_rationale_99",
       "community": 1,
-      "norm_label": "analysiert die change-region (b64 aus retina.detect)."
+      "norm_label": "analysiert die change-region (b64 aus retina.detect).",
+      "id": "runner_live_agent_rationale_99"
     },
     {
       "label": "Findet element_index im Popup via cua-driver + get_window_state.",
@@ -1268,18 +1268,18 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L148",
-      "id": "runner_live_agent_rationale_148",
       "community": 1,
-      "norm_label": "async subprocess run."
+      "norm_label": "async subprocess run.",
+      "id": "runner_live_agent_rationale_148"
     },
     {
       "label": "Skylight API call. KEIN --window-id (gibt's nicht!).",
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L154",
-      "id": "runner_live_agent_rationale_154",
       "community": 1,
-      "norm_label": "skylight api call. kein --window-id (gibt's nicht!)."
+      "norm_label": "skylight api call. kein --window-id (gibt's nicht!).",
+      "id": "runner_live_agent_rationale_154"
     },
     {
       "label": "cua-driver click per Koordinate (VISION-gesteuert, nicht geraten!).",

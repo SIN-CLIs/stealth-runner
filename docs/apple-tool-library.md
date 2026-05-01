@@ -124,6 +124,48 @@ python3 -c "import Quartz; print(dir(Quartz))" 2>&1 | grep -i surface
 
 ---
 
+## 🎯 Mapping: Framework → skylight-cli Source-Code
+
+| Framework | Quellcode-Datei | Funktion | Mausbewegung? |
+|-----------|----------------|----------|---------------|
+| `AXUIElementPerformAction(kAXPressAction)` | `SkyLightClicker.swift:12` | **`axPress()`** – Primärer Klick | ❌ **NEIN** ✅ |
+| `CGEvent.post(tap: .cghidEventTap)` | `SkyLightClicker.swift:36` | **`click(at:)`** – Fallback bei AX-Versagen | ⚠️ **JA** (HID Tap) |
+| `CGEvent(keyboardEventSource:)` | `SkyLightClicker.swift:23` | **`typeText()`** – Tastatureingabe | ❌ **NEIN** (Tastatur) |
+| `AXElementFinder.interactiveElements()` | `AXElementFinder.swift` | **`list-elements`** – Element-Scan | ❌ NEIN |
+| `WindowCapture.capture(pid:)` | `WindowCapture.swift` | **`screenshot`** – Bildschirmfoto | ❌ NEIN |
+
+### KRITISCHE ERKENNTNIS: Wann bewegt skylight-cli die Maus?
+
+```swift
+// SkyLightClicker.swift:137-150 – Der kritische Pfad
+if let el = resolvedElement {
+    usedAXPress = SkyLightClicker.axPress(element: el.axElement)  // AXPress = KEINE MAUS ✅
+}
+
+if !usedAXPress {
+    let result = SkyLightClicker.click(at: point, targetPID: pid, button: button)  // CGEvent = MAUS ⚠️
+}
+```
+
+**`skylight-cli click --element-index`** versucht ZUERST AXPress (keine Maus).  
+→ Wenn AXPress FEHLSCHLÄGT (z.B. bei Web-Content in Chrome), fallbackt es auf CGEvent → **MAUSBEWEGUNG!**
+
+### Konsequenz für unsere Architektur
+
+| Befehl | Mechanismus | Maus? | Safe? |
+|--------|------------|-------|-------|
+| `skylight-cli click --element-index N` | AXPress → ggf. CGEvent-Fallback | ❌ NEIN (AXPress) / ⚠️ JA (Fallback) | ✅ Primär |
+| `skylight-cli click --label "Weiter"` | AXPress (Label → Element → AXPress) | ❌ **NEIN** ✅ | ✅ Am besten! |
+| `skylight-cli click --x 100 --y 200` | CGEvent direkt | ⚠️ **JA** ❌ | ❌ BANNED |
+| `skylight-cli type --element-index N` | CGEvent Keyboard | ❌ NEIN | ✅ |
+| `cua-driver click --element-index` | SLEventPostToPid (privat) | ❌ **NEIN** (kein HID Tap) | ✅ Bester Fallback |
+| `cua-driver click --x --y` | SLEventPostToPid | ❌ **NEIN** (nur im Target-Prozess) | ✅ Aber Koordinaten raten ❌ |
+
+**Empfohlene Strategie:**
+1. **Primär:** `skylight-cli click --element-index` (AXPress, safe)
+2. **AX-Fallback:** `cua-driver click --element-index` (SLEventPostToPid, safe)  
+3. **Niemals:** `skylight-cli click --x --y` (CGEvent = Mausbewegung)
+
 ## 🔒 SIP-Status prüfen
 
 ```bash
