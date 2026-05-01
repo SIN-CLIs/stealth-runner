@@ -83,9 +83,12 @@ class SurveyRunner:
             self.state = State.RECOVERY
 
     async def _wait_ready(self):
-        for _ in range(5):
-            r = self.executor.run(["skylight-cli","screenshot","--pid",str(self.pid),"--mode","raw","--out","/tmp/wait_ready.png"])
-            if len(r.get("elements",[])) > 3: break
+        import anyio
+        for attempt in range(15):
+            try:
+                r = self.executor.run(["skylight-cli","get-window-state","--pid",str(self.pid)])
+                self.state = State.CAPTURE; return
+            except: pass
             await anyio.sleep(1)
         self.state = State.CAPTURE
 
