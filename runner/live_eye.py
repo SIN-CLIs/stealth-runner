@@ -56,12 +56,12 @@ class LiveOmniEye:
             b64 = base64.b64encode(buf.getvalue()).decode()
             r = self.http.post(NVIDIA_URL, headers={"Authorization": f"Bearer {NVIDIA_KEY}"},
                 json={"model": OMNI_MODEL, "messages": [{"role": "user", "content": [
-                    {"type": "text", "text": "Name this page. Is it heypiggy.com, the dashboard, or a Google sign-in popup?"},
+                    {"type": "text", "text": "What page is shown? Reply ONLY: heypiggy_page, google_popup, dashboard"},
                     {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}}]}],
                     "max_tokens": 80, "temperature": 0.0}, timeout=10)
             msg = r.json()["choices"][0]["message"]
             text = (msg.get("reasoning") or msg.get("content") or "").lower()
-            page = "dashboard" if "dashboard" in text else "heypiggy" if "heypiggy" in text else "google_popup" if "google" in text and "popup" not in text else "unknown"
+            page = "dashboard" if "dashboard" in text else "google_popup" if "accounts.google.com" in text else "heypiggy" if "heypiggy" in text else "unknown"
             return {"page": page, "action": "wait" if page in ("heypiggy", "dashboard") else "click",
                     "element_label": "Weiter" if page == "google_popup" else ""}
         except:
