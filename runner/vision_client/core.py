@@ -18,6 +18,22 @@ class VisionClient:
         self.logger = logging.getLogger("vision_client")
         self.max_retries = 3
         self.circuit_breaker_threshold = 5
+        self.circuit_breaker_timeout = 300  # 5 Minuten in Sekunden
+
+    def _parse_json(self, text: str) -> Dict[str, Any]:
+        """Extrahiert JSON aus Text (auch aus Codeblocks)."""
+        import re
+        
+        # JSON-Codeblock extrahieren
+        match = re.search(r"```(?:json)?\s*([^`]+)```", text, re.DOTALL)
+        if match:
+            text = match.group(1).strip()
+        
+        # JSON parsen
+        try:
+            return json.loads(text)
+        except json.JSONDecodeError:
+            return {"action": "wait", "reason": "invalid_json"}
         self.circuit_breaker_timeout = 300  # 5 Minuten
         self._load_config(config_path)
 

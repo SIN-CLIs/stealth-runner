@@ -14,11 +14,17 @@ def test_state_save_load():
 
 
 def test_state_corrupt_recovery():
+    # Bereinige alte Backups/States
+    import glob, os, shutil
+    for path in glob.glob("/tmp/stealth_step*.json"): os.remove(path)
+    shutil.rmtree("/tmp/stealth_backups", ignore_errors=True)
+
     # Korrupte State-Datei erstellen
     with open("/tmp/stealth_step.json", "w") as f:
         f.write("INVALID JSON {{}")
 
-    # Recovery testen
+    # Recovery testen (sollte Default-State zurückgeben, da kein Backup existiert)
+    from runner.state_manager import load_state
     state = load_state()
     assert state["step"] == 0
     assert state["eur"] == 0.0

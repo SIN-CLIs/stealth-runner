@@ -1,6 +1,7 @@
 """Tests für Vision-Client Error Handling."""
 import pytest
 from unittest.mock import patch, MagicMock
+from requests.exceptions import Timeout, RequestException
 from runner.vision_client import VisionClient
 
 
@@ -23,9 +24,10 @@ def test_circuit_breaker_activation():
 
 def test_retry_logic():
     # Reset Circuit Breaker für Test
-    from runner.vision_client.core import CIRCUIT_BROKEN, FAILURE_COUNT
+    from runner.vision_client.core import CIRCUIT_BROKEN, FAILURE_COUNT, LAST_FAILURE_TIME
     CIRCUIT_BROKEN = False
     FAILURE_COUNT = 0
+    LAST_FAILURE_TIME = 0  # Zeitstempel auf 0 setzen, um sofortige Ausführung zu erlauben
 
     client = VisionClient()
     call_count = 0

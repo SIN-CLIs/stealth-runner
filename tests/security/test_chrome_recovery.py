@@ -8,6 +8,8 @@ def test_chrome_health_check():
     pid = relaunch_chrome("https://example.com")
     # Haupt-PID wird zurückgegeben, auch wenn psutil sie nicht sofort findet
     assert pid is not None
+    import logging
+    logger = logging.getLogger(__name__)
     logger.info(f"Chrome gestartet mit PID {pid}")
 
     # Simuliere Crash (nur wenn PID existiert)
