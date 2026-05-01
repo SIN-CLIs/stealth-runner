@@ -1,11 +1,11 @@
 # Graph Report - stealth-runner  (2026-05-01)
 
 ## Corpus Check
-- 80 files · ~48,539 words
+- 80 files · ~48,562 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 600 nodes · 811 edges · 89 communities detected
+- 602 nodes · 811 edges · 89 communities detected
 - Extraction: 78% EXTRACTED · 22% INFERRED · 0% AMBIGUOUS · INFERRED: 178 edges (avg confidence: 0.68)
 - Token cost: 0 input · 0 output
 
@@ -45,11 +45,11 @@
 - [[_COMMUNITY_Community 32|Community 32]]
 - [[_COMMUNITY_Community 33|Community 33]]
 - [[_COMMUNITY_Community 34|Community 34]]
-- [[_COMMUNITY_Community 35|Community 35]]
+- [[_COMMUNITY_Community 36|Community 36]]
 - [[_COMMUNITY_Community 37|Community 37]]
 - [[_COMMUNITY_Community 38|Community 38]]
 - [[_COMMUNITY_Community 39|Community 39]]
-- [[_COMMUNITY_Community 40|Community 40]]
+- [[_COMMUNITY_Community 42|Community 42]]
 - [[_COMMUNITY_Community 43|Community 43]]
 - [[_COMMUNITY_Community 44|Community 44]]
 - [[_COMMUNITY_Community 45|Community 45]]
@@ -127,8 +127,8 @@
 ## Communities
 
 ### Community 0 - "Community 0"
-Cohesion: 0.08
-Nodes (12): AuditLog, AuditLog – Thread-safe JSONL trace mit Batched Writes., HumanProfile, HumanProfile – SOTA Behavioral Biometrics via scipy.stats PDFs., stealth-runner – Orchestrator der Stealth-Triade v0.3.1., State Machine — JEDER Schritt VISION (Omni-first, Multi-Frame)., State, StealthExecutor (+4 more)
+Cohesion: 0.06
+Nodes (15): AuditLog, AuditLog – Thread-safe JSONL trace mit Batched Writes., HumanProfile, HumanProfile – SOTA Behavioral Biometrics via scipy.stats PDFs., stealth-runner – Orchestrator der Stealth-Triade v0.3.1., State Machine — JEDER Schritt VISION (Omni-first, Multi-Frame)., State, StealthExecutor (+7 more)
 
 ### Community 1 - "Community 1"
 Cohesion: 0.09
@@ -159,40 +159,40 @@ Cohesion: 0.12
 Nodes (19): get_omni(), OmniClient, OmniError, _parse_json(), Nemotron 3 Nano Omni – Unified Video+Audio+Image+Text Client.  Ersetzt separate, Single multimodal client for video, audio, image, text., build_prompt(), prompt_kit – SYSTEM_PROMPT mit expliziten SoM-Referenzen. (+11 more)
 
 ### Community 8 - "Community 8"
-Cohesion: 0.15
-Nodes (7): classify_element(), _has_images(), prescan_dom(), dom_prescan – Vision-free Fast Path via unmask-cli DOM-Scan., Tests für dom_prescan – Vision-free Fast Path., TestClassifyElement, TestPrescanDom
+Cohesion: 0.11
+Nodes (15): Fehlerklassifikation für Umfrage-Abbrüche (4 Kategorien, mehrsprachig)., classify_error(), ErrorCategory, ErrorInfo, Fehlerklassifikation für Umfrage-Abbrüche — ErrorCategory Enum + ErrorInfo Datac, EarningsSummary, extract_earnings_summary(), extract_eur_from_text() (+7 more)
 
 ### Community 9 - "Community 9"
-Cohesion: 0.15
+Cohesion: 0.14
 Nodes (7): Typer CLI mit Rich Progress für den stealth-runner., run(), SurveyRunner, main(), test_max_recoveries_stops(), test_state_machine_initializes(), test_state_transition_idle_to_launch()
 
 ### Community 10 - "Community 10"
-Cohesion: 0.1
-Nodes (11): Fehlerklassifikation für Umfrage-Abbrüche (4 Kategorien, mehrsprachig)., classify_error(), ErrorCategory, ErrorInfo, Fehlerklassifikation für Umfrage-Abbrüche — ErrorCategory Enum + ErrorInfo Datac, ExtendedState, Erweiterte State Machine mit Exit-Code-Routing & Stealth-Scoring., sin_survey_core – Aus dem A2A-SIN-Worker extrahierte Survey-Intelligenz. (+3 more)
+Cohesion: 0.15
+Nodes (7): classify_element(), _has_images(), prescan_dom(), dom_prescan – Vision-free Fast Path via unmask-cli DOM-Scan., Tests für dom_prescan – Vision-free Fast Path., TestClassifyElement, TestPrescanDom
 
 ### Community 11 - "Community 11"
-Cohesion: 0.17
-Nodes (9): EarningsSummary, extract_earnings_summary(), extract_eur_from_text(), EUR-Betrag-Extraktion aus Umfrage-Seitentexten.  Verwendet vorkompilierte Regex-, Extrahiert den ersten EUR-Betrag aus einem beliebigen Text., Strukturierte EUR-Auszahlung aus einem Survey-Chunk., Extrahiert EUR-Betrag und gibt eine Zusammenfassung zurück., EUR-Betrag-Extraktion aus Umfrage-Seitentexten.  Bietet zwei Funktionen:  * :fun (+1 more)
-
-### Community 12 - "Community 12"
 Cohesion: 0.18
 Nodes (10): BaseModel, ClickAction, DoneAction, HoldAction, Pydantic V2-Modelle für strukturierte Vision-API-Antworten., ScrollAction, TypeAction, WaitAction (+2 more)
 
-### Community 13 - "Community 13"
+### Community 12 - "Community 12"
 Cohesion: 0.24
 Nodes (5): classify_error(), learn_from_error(), Anti-Learning Module — Error-to-Recovery Generator., store(), TestClassifyError
 
+### Community 13 - "Community 13"
+Cohesion: 0.17
+Nodes (4): ExtendedState, Erweiterte State Machine mit Exit-Code-Routing & Stealth-Scoring., Property-based Tests für Exit-Code-Handling., TestExitCodeRouting
+
 ### Community 14 - "Community 14"
+Cohesion: 0.23
+Nodes (4): LiveOmniEye, Alle 5s: Screenshot → Omni → Aktion. Plus pixel-diff für schnelle Changes., Schnellster Pfad: runterskaliertes Bild + 1 Wort Antwort + greedy., skylight-cli: find AXButton by label → click.
+
+### Community 15 - "Community 15"
 Cohesion: 0.25
 Nodes (9): chrome_health_check(), is_chrome_running(), Chrome Health-Check und Recovery., Prüft, ob Chrome-Prozess noch läuft., Startet Chrome neu und gibt Haupt-PID zurück., Führt Health-Check durch und startet Chrome neu falls nötig., relaunch_chrome(), Tests für Chrome Recovery. (+1 more)
 
-### Community 15 - "Community 15"
-Cohesion: 0.27
-Nodes (10): cua(), find_popup_windows(), get_popup_state(), omni_analyze_live(), cua-driver call mit JSON-Args., cua-driver list_windows → Popups erkennen., Nur Popup-Elemente sehen (nicht die Hauptseite)., Omni analysiert den Accessibility-Tree LIVE. (+2 more)
-
 ### Community 16 - "Community 16"
 Cohesion: 0.27
-Nodes (3): LiveOmniEye, Alle 5s: Screenshot → Omni → Aktion. Plus pixel-diff für schnelle Changes., skylight-cli: find AXButton by label → click.
+Nodes (10): cua(), find_popup_windows(), get_popup_state(), omni_analyze_live(), cua-driver call mit JSON-Args., cua-driver list_windows → Popups erkennen., Nur Popup-Elemente sehen (nicht die Hauptseite)., Omni analysiert den Accessibility-Tree LIVE. (+2 more)
 
 ### Community 17 - "Community 17"
 Cohesion: 0.25
@@ -215,76 +215,76 @@ Cohesion: 0.28
 Nodes (4): capture(), cleanup(), init(), nsec()
 
 ### Community 22 - "Community 22"
-Cohesion: 0.25
-Nodes (2): Thread-sichere Survey-Queue (SQLite + FileLock)., SurveyQueue
-
-### Community 23 - "Community 23"
 Cohesion: 0.29
 Nodes (2): FrameOptimizer, Frame-Diffing & ROI-Cropping für Vision-Token-Optimierung.
 
-### Community 24 - "Community 24"
+### Community 23 - "Community 23"
 Cohesion: 0.53
 Nodes (5): check_tools(), find_repos(), main(), NUR die 7 Haupt-Repos, nicht alle 143 in ~/dev/., run_doctor()
 
-### Community 25 - "Community 25"
+### Community 24 - "Community 24"
 Cohesion: 0.33
 Nodes (2): AuditLoggerSync, Crash-sicheres JSONL Audit-Log mit O_SYNC + fcntl.
 
-### Community 26 - "Community 26"
+### Community 25 - "Community 25"
 Cohesion: 0.33
 Nodes (2): ScreenFollowDriver – Bildschirmaufnahme via screen-follow CLI., ScreenFollowDriver
 
-### Community 27 - "Community 27"
+### Community 26 - "Community 26"
 Cohesion: 0.33
 Nodes (2): UnmaskDriver – DOM-Scan via unmask-cli für Vision-free Fast Path., UnmaskDriver
 
-### Community 28 - "Community 28"
+### Community 27 - "Community 27"
 Cohesion: 0.4
 Nodes (1): Behavioral Biometrics via scipy.stats PDFs.
 
-### Community 29 - "Community 29"
+### Community 28 - "Community 28"
 Cohesion: 0.4
 Nodes (1): Resilienz-Patterns: Retry, Circuit Breaker, Graceful Shutdown.
 
-### Community 30 - "Community 30"
+### Community 29 - "Community 29"
 Cohesion: 0.6
 Nodes (4): learn_from_session(), push_to_global_brain(), Skill Capture Loop — parst screen-follow Audit-Log (type: mouse_down, etc.)., update_registry()
 
-### Community 31 - "Community 31"
+### Community 30 - "Community 30"
 Cohesion: 0.5
 Nodes (2): Stealth-Scoring nach 6 Prüfvektoren mit gewichteten Thresholds., StealthResult
 
-### Community 32 - "Community 32"
+### Community 31 - "Community 31"
 Cohesion: 0.5
 Nodes (1): Semantic Vision Cache via diskcache.
 
-### Community 33 - "Community 33"
+### Community 32 - "Community 32"
 Cohesion: 0.67
 Nodes (3): load_brain_rules(), Strategy Evolution Module — wählt optimale Skill-Sequenz aus Brain-Daten., select_best_strategy()
 
-### Community 34 - "Community 34"
+### Community 33 - "Community 33"
 Cohesion: 0.67
 Nodes (1): Structured Logging mit structlog.
 
-### Community 35 - "Community 35"
+### Community 34 - "Community 34"
 Cohesion: 0.67
 Nodes (1): OpenTelemetry APM – Traces über alle States.
 
-### Community 37 - "Community 37"
+### Community 36 - "Community 36"
 Cohesion: 1.0
 Nodes (1): Zentrale Konfiguration – lädt .env und validiert alle Secrets.
 
-### Community 38 - "Community 38"
+### Community 37 - "Community 37"
 Cohesion: 1.0
 Nodes (1): pytest-Konfiguration für den stealth-runner.
 
-### Community 39 - "Community 39"
+### Community 38 - "Community 38"
 Cohesion: 1.0
 Nodes (1): Test-Suite für den stealth-runner. Führe mit: pytest tests/ -v
 
-### Community 40 - "Community 40"
+### Community 39 - "Community 39"
 Cohesion: 1.0
 Nodes (1): stealth-runner: Vision-driven CLI orchestrator for stealth survey automation.
+
+### Community 42 - "Community 42"
+Cohesion: 1.0
+Nodes (1): skylight-cli: find AXButton by label → click.
 
 ### Community 43 - "Community 43"
 Cohesion: 1.0
@@ -483,39 +483,39 @@ Cohesion: 1.0
 Nodes (1): Hybrid Loop: Screenshot (schnell) + Video (alle 5 Schritte temporal).
 
 ## Knowledge Gaps
-- **136 isolated node(s):** `FastAPI wrapper for stealth-runner – SaaS API (SOTA #14).`, `NUR die 7 Haupt-Repos, nicht alle 143 in ~/dev/.`, `State-File Management mit Backup & Recovery.`, `Lädt State mit Backup-Recovery.`, `Speichert State mit Backup.` (+131 more)
+- **138 isolated node(s):** `FastAPI wrapper for stealth-runner – SaaS API (SOTA #14).`, `NUR die 7 Haupt-Repos, nicht alle 143 in ~/dev/.`, `State-File Management mit Backup & Recovery.`, `Lädt State mit Backup-Recovery.`, `Speichert State mit Backup.` (+133 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **Thin community `Community 20`** (9 nodes): `config.py`, `current_model()`, `fallback_models()`, `max_tokens()`, `Vision-Client Konfiguration (YAML-basiert).`, `timeout()`, `VisionConfig`, `.__init__()`, `._load_config()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 22`** (8 nodes): `survey_queue.py`, `Thread-sichere Survey-Queue (SQLite + FileLock).`, `SurveyQueue`, `.claim_task()`, `.enqueue()`, `.__init__()`, `.mark_done()`, `.mark_failed()`
+- **Thin community `Community 22`** (7 nodes): `FrameOptimizer`, `.crop_roi()`, `.__init__()`, `.is_duplicate()`, `frame_optimizer.py`, `Frame-Diffing & ROI-Cropping für Vision-Token-Optimierung.`, `skipped_count()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 23`** (7 nodes): `FrameOptimizer`, `.crop_roi()`, `.__init__()`, `.is_duplicate()`, `frame_optimizer.py`, `Frame-Diffing & ROI-Cropping für Vision-Token-Optimierung.`, `skipped_count()`
+- **Thin community `Community 24`** (6 nodes): `AuditLoggerSync`, `.close()`, `.__init__()`, `.log()`, `audit_logger_sync.py`, `Crash-sicheres JSONL Audit-Log mit O_SYNC + fcntl.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 25`** (6 nodes): `AuditLoggerSync`, `.close()`, `.__init__()`, `.log()`, `audit_logger_sync.py`, `Crash-sicheres JSONL Audit-Log mit O_SYNC + fcntl.`
+- **Thin community `Community 25`** (6 nodes): `ScreenFollowDriver – Bildschirmaufnahme via screen-follow CLI.`, `ScreenFollowDriver`, `.get_status()`, `.start_recording()`, `.stop_recording()`, `screen_follow.py`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 26`** (6 nodes): `ScreenFollowDriver – Bildschirmaufnahme via screen-follow CLI.`, `ScreenFollowDriver`, `.get_status()`, `.start_recording()`, `.stop_recording()`, `screen_follow.py`
+- **Thin community `Community 26`** (6 nodes): `UnmaskDriver – DOM-Scan via unmask-cli für Vision-free Fast Path.`, `UnmaskDriver`, `.dom_scan()`, `.inspect()`, `.network_capture()`, `unmask.py`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 27`** (6 nodes): `UnmaskDriver – DOM-Scan via unmask-cli für Vision-free Fast Path.`, `UnmaskDriver`, `.dom_scan()`, `.inspect()`, `.network_capture()`, `unmask.py`
+- **Thin community `Community 27`** (5 nodes): `behavioral_biometrics.py`, `Behavioral Biometrics via scipy.stats PDFs.`, `sample_dwell_time()`, `sample_flight_time()`, `sample_typing_speed()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 28`** (5 nodes): `behavioral_biometrics.py`, `Behavioral Biometrics via scipy.stats PDFs.`, `sample_dwell_time()`, `sample_flight_time()`, `sample_typing_speed()`
+- **Thin community `Community 28`** (5 nodes): `install_shutdown_handlers()`, `resilience.py`, `Resilienz-Patterns: Retry, Circuit Breaker, Graceful Shutdown.`, `register_shutdown_handler()`, `vision_retry()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 29`** (5 nodes): `install_shutdown_handlers()`, `resilience.py`, `Resilienz-Patterns: Retry, Circuit Breaker, Graceful Shutdown.`, `register_shutdown_handler()`, `vision_retry()`
+- **Thin community `Community 30`** (4 nodes): `calculate_stealth_score()`, `stealth_scorer.py`, `Stealth-Scoring nach 6 Prüfvektoren mit gewichteten Thresholds.`, `StealthResult`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 31`** (4 nodes): `calculate_stealth_score()`, `stealth_scorer.py`, `Stealth-Scoring nach 6 Prüfvektoren mit gewichteten Thresholds.`, `StealthResult`
+- **Thin community `Community 31`** (4 nodes): `get_cached_action()`, `semantic_cache.py`, `Semantic Vision Cache via diskcache.`, `set_cached_action()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 32`** (4 nodes): `get_cached_action()`, `semantic_cache.py`, `Semantic Vision Cache via diskcache.`, `set_cached_action()`
+- **Thin community `Community 33`** (3 nodes): `get_logger()`, `logging_config.py`, `Structured Logging mit structlog.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 34`** (3 nodes): `get_logger()`, `logging_config.py`, `Structured Logging mit structlog.`
+- **Thin community `Community 34`** (3 nodes): `apm.py`, `OpenTelemetry APM – Traces über alle States.`, `start_trace()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 35`** (3 nodes): `apm.py`, `OpenTelemetry APM – Traces über alle States.`, `start_trace()`
+- **Thin community `Community 36`** (2 nodes): `config.py`, `Zentrale Konfiguration – lädt .env und validiert alle Secrets.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 37`** (2 nodes): `config.py`, `Zentrale Konfiguration – lädt .env und validiert alle Secrets.`
+- **Thin community `Community 37`** (2 nodes): `conftest.py`, `pytest-Konfiguration für den stealth-runner.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 38`** (2 nodes): `conftest.py`, `pytest-Konfiguration für den stealth-runner.`
+- **Thin community `Community 38`** (2 nodes): `__init__.py`, `Test-Suite für den stealth-runner. Führe mit: pytest tests/ -v`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 39`** (2 nodes): `__init__.py`, `Test-Suite für den stealth-runner. Führe mit: pytest tests/ -v`
+- **Thin community `Community 39`** (2 nodes): `__init__.py`, `stealth-runner: Vision-driven CLI orchestrator for stealth survey automation.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 40`** (2 nodes): `__init__.py`, `stealth-runner: Vision-driven CLI orchestrator for stealth survey automation.`
+- **Thin community `Community 42`** (1 nodes): `skylight-cli: find AXButton by label → click.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 43`** (1 nodes): `Pixel-Diff ≙ Menschliche Netzhaut – nur SIGNALE (Änderungen) senden.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
@@ -619,10 +619,12 @@ Nodes (1): Hybrid Loop: Screenshot (schnell) + Video (alle 5 Schritte temporal).
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `sin_survey_core – Aus dem A2A-SIN-Worker extrahierte Survey-Intelligenz.` connect `Community 10` to `Community 11`, `Community 5`?**
-  _High betweenness centrality (0.088) - this node is a cross-community bridge._
+- **Why does `ErrorCategory` connect `Community 8` to `Community 0`?**
+  _High betweenness centrality (0.093) - this node is a cross-community bridge._
+- **Why does `sin_survey_core – Aus dem A2A-SIN-Worker extrahierte Survey-Intelligenz.` connect `Community 8` to `Community 5`?**
+  _High betweenness centrality (0.087) - this node is a cross-community bridge._
 - **Why does `StealthExecutor` connect `Community 0` to `Community 9`, `Community 2`, `Community 4`, `Community 7`?**
-  _High betweenness centrality (0.083) - this node is a cross-community bridge._
+  _High betweenness centrality (0.082) - this node is a cross-community bridge._
 - **Are the 18 inferred relationships involving `StealthExecutor` (e.g. with `BaseDriver` and `SkylightDriver`) actually correct?**
   _`StealthExecutor` has 18 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 10 inferred relationships involving `SurveyRunner` (e.g. with `stealth-runner – Orchestrator der Stealth-Triade v0.3.1.` and `StealthExecutor`) actually correct?**
@@ -631,5 +633,3 @@ _Questions this graph is uniquely positioned to answer:_
   _`LiveOmniMonitor` has 4 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 12 inferred relationships involving `AuditLog` (e.g. with `stealth-runner – Orchestrator der Stealth-Triade v0.3.1.` and `State`) actually correct?**
   _`AuditLog` has 12 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 9 inferred relationships involving `VisionClient` (e.g. with `.__init__()` and `main()`) actually correct?**
-  _`VisionClient` has 9 INFERRED edges - model-reasoned connections that need verification._

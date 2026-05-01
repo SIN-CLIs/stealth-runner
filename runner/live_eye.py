@@ -48,24 +48,20 @@ class LiveOmniEye:
         return pct > 1.0
 
     def ask_omni(self, img: np.ndarray) -> dict:
-        """Schnellster Pfad: runterskaliertes Bild + 1 Wort Antwort + greedy."""
         try:
-            # Bild runterskalieren von 1920x1080 auf ~640x360 (Faktor 3) 
             h, w = img.shape[:2]
-            scale = 360 / h
-            small = cv2.resize(img, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+            small = cv2.resize(img, None, fx=540/h, fy=540/h, interpolation=cv2.INTER_AREA)
             buf = BytesIO()
             Image.fromarray(small).save(buf, format="PNG")
             b64 = base64.b64encode(buf.getvalue()).decode()
-
             r = self.http.post(NVIDIA_URL, headers={"Authorization": f"Bearer {NVIDIA_KEY}"},
                 json={"model": OMNI_MODEL, "messages": [{"role": "user", "content": [
-                    {"type": "text", "text": "1 word: heypiggy | google_popup | dashboard"},
+                    {"type": "text", "text": "Name this page. Is it heypiggy.com, the dashboard, or a Google sign-in popup?"},
                     {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}}]}],
-                    "max_tokens": 5, "temperature": 0.0}, timeout=10)
+                    "max_tokens": 80, "temperature": 0.0}, timeout=10)
             msg = r.json()["choices"][0]["message"]
             text = (msg.get("reasoning") or msg.get("content") or "").lower()
-            page = "heypiggy" if "heypiggy" in text else "google_popup" if "google" in text else "dashboard" if "dashboard" in text else "unknown"
+            page = "dashboard" if "dashboard" in text else "heypiggy" if "heypiggy" in text else "google_popup" if "google" in text and "popup" not in text else "unknown"
             return {"page": page, "action": "wait" if page in ("heypiggy", "dashboard") else "click",
                     "element_label": "Weiter" if page == "google_popup" else ""}
         except:
