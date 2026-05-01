@@ -13,16 +13,12 @@ KEY = os.getenv("NVIDIA_API_KEY", "")
 URL = "https://integrate.api.nvidia.com/v1/chat/completions"
 MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
 
-# gRPC (falls verfuegbar)
+# gRPC (fuer eigene NIM-Deployments)
+# Public Nemotron Omni: REST only (502 bei gRPC)
+# Eigener NIM + function-id = gRPC Bidirectional Streaming
 GRPC_HOST = "grpc.nvcf.nvidia.com:443"
+GRPC_FUNCTION_ID = "c4ed50ff-b5c3-409d-ab57-b79c33f5bb39"
 HAS_GRPC = False
-try:
-    import grpc as _grpc
-    _chan = _grpc.secure_channel(GRPC_HOST, _grpc.ssl_channel_credentials())
-    _grpc.channel_ready_future(_chan).result(timeout=3)
-    HAS_GRPC = True
-except:
-    pass
 FPS = 5
 BUFFER_SECS = 4
 MAX_FRAMES = FPS * BUFFER_SECS  # 20 Frames
