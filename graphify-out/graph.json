@@ -63,7 +63,7 @@
       "source_file": "main.py",
       "source_location": "L1",
       "id": "main_py",
-      "community": 9,
+      "community": 8,
       "norm_label": "main.py"
     },
     {
@@ -72,7 +72,7 @@
       "source_file": "main.py",
       "source_location": "L9",
       "id": "stealth_runner_main_main",
-      "community": 9,
+      "community": 8,
       "norm_label": "main()"
     },
     {
@@ -81,7 +81,7 @@
       "source_file": "runner/doctor_cli.py",
       "source_location": "L1",
       "id": "runner_doctor_cli_py",
-      "community": 24,
+      "community": 26,
       "norm_label": "doctor_cli.py"
     },
     {
@@ -90,7 +90,7 @@
       "source_file": "runner/doctor_cli.py",
       "source_location": "L27",
       "id": "runner_doctor_cli_check_tools",
-      "community": 24,
+      "community": 26,
       "norm_label": "check_tools()"
     },
     {
@@ -99,7 +99,7 @@
       "source_file": "runner/doctor_cli.py",
       "source_location": "L70",
       "id": "runner_doctor_cli_find_repos",
-      "community": 24,
+      "community": 26,
       "norm_label": "find_repos()"
     },
     {
@@ -108,7 +108,7 @@
       "source_file": "runner/doctor_cli.py",
       "source_location": "L82",
       "id": "runner_doctor_cli_run_doctor",
-      "community": 24,
+      "community": 26,
       "norm_label": "run_doctor()"
     },
     {
@@ -117,7 +117,7 @@
       "source_file": "runner/doctor_cli.py",
       "source_location": "L231",
       "id": "runner_doctor_cli_main",
-      "community": 24,
+      "community": 26,
       "norm_label": "main()"
     },
     {
@@ -216,7 +216,7 @@
       "source_file": "runner/safe_click.py",
       "source_location": "L1",
       "id": "runner_safe_click_py",
-      "community": 33,
+      "community": 35,
       "norm_label": "safe_click.py"
     },
     {
@@ -225,7 +225,7 @@
       "source_file": "runner/safe_click.py",
       "source_location": "L9",
       "id": "runner_safe_click_main",
-      "community": 33,
+      "community": 35,
       "norm_label": "main()"
     },
     {
@@ -270,7 +270,7 @@
       "source_file": "runner/config.py",
       "source_location": "L1",
       "id": "runner_config_py",
-      "community": 34,
+      "community": 36,
       "norm_label": "config.py"
     },
     {
@@ -278,7 +278,7 @@
       "file_type": "rationale",
       "source_file": "runner/config.py",
       "source_location": "L1",
-      "community": 34,
+      "community": 36,
       "norm_label": "zentrale konfiguration \u2013 ladt .env und validiert alle secrets.",
       "id": "runner_config_rationale_1"
     },
@@ -288,7 +288,7 @@
       "source_file": "runner/logging_config.py",
       "source_location": "L1",
       "id": "runner_logging_config_py",
-      "community": 31,
+      "community": 33,
       "norm_label": "logging_config.py"
     },
     {
@@ -297,7 +297,7 @@
       "source_file": "runner/logging_config.py",
       "source_location": "L11",
       "id": "runner_logging_config_get_logger",
-      "community": 31,
+      "community": 33,
       "norm_label": "get_logger()"
     },
     {
@@ -305,7 +305,7 @@
       "file_type": "rationale",
       "source_file": "runner/logging_config.py",
       "source_location": "L1",
-      "community": 31,
+      "community": 33,
       "norm_label": "structured logging mit structlog.",
       "id": "runner_logging_config_rationale_1"
     },
@@ -450,7 +450,7 @@
       "source_file": "runner/stealth_scorer.py",
       "source_location": "L1",
       "id": "runner_stealth_scorer_py",
-      "community": 28,
+      "community": 30,
       "norm_label": "stealth_scorer.py"
     },
     {
@@ -459,7 +459,7 @@
       "source_file": "runner/stealth_scorer.py",
       "source_location": "L6",
       "id": "runner_stealth_scorer_stealthresult",
-      "community": 28,
+      "community": 30,
       "norm_label": "stealthresult"
     },
     {
@@ -468,7 +468,7 @@
       "source_file": "runner/stealth_scorer.py",
       "source_location": "L11",
       "id": "runner_stealth_scorer_calculate_stealth_score",
-      "community": 28,
+      "community": 30,
       "norm_label": "calculate_stealth_score()"
     },
     {
@@ -476,9 +476,99 @@
       "file_type": "rationale",
       "source_file": "runner/stealth_scorer.py",
       "source_location": "L1",
-      "community": 28,
+      "community": 30,
       "norm_label": "stealth-scoring nach 6 prufvektoren mit gewichteten thresholds.",
       "id": "runner_stealth_scorer_rationale_1"
+    },
+    {
+      "label": "mac_eye_reader.py",
+      "file_type": "code",
+      "source_file": "runner/mac_eye_reader.py",
+      "source_location": "L1",
+      "id": "runner_mac_eye_reader_py",
+      "community": 18,
+      "norm_label": "mac_eye_reader.py"
+    },
+    {
+      "label": "MacEyeReader",
+      "file_type": "code",
+      "source_file": "runner/mac_eye_reader.py",
+      "source_location": "L17",
+      "id": "runner_mac_eye_reader_maceyereader",
+      "community": 18,
+      "norm_label": "maceyereader"
+    },
+    {
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "runner/mac_eye_reader.py",
+      "source_location": "L20",
+      "id": "runner_mac_eye_reader_maceyereader_init",
+      "community": 18,
+      "norm_label": ".__init__()"
+    },
+    {
+      "label": ".connect()",
+      "file_type": "code",
+      "source_file": "runner/mac_eye_reader.py",
+      "source_location": "L25",
+      "id": "runner_mac_eye_reader_maceyereader_connect",
+      "community": 18,
+      "norm_label": ".connect()"
+    },
+    {
+      "label": ".disconnect()",
+      "file_type": "code",
+      "source_file": "runner/mac_eye_reader.py",
+      "source_location": "L44",
+      "id": "runner_mac_eye_reader_maceyereader_disconnect",
+      "community": 18,
+      "norm_label": ".disconnect()"
+    },
+    {
+      "label": ".get()",
+      "file_type": "code",
+      "source_file": "runner/mac_eye_reader.py",
+      "source_location": "L48",
+      "id": "runner_mac_eye_reader_maceyereader_get",
+      "community": 18,
+      "norm_label": ".get()"
+    },
+    {
+      "label": ".pid()",
+      "file_type": "code",
+      "source_file": "runner/mac_eye_reader.py",
+      "source_location": "L61",
+      "id": "runner_mac_eye_reader_maceyereader_pid",
+      "community": 18,
+      "norm_label": ".pid()"
+    },
+    {
+      "label": "has_mac_eye()",
+      "file_type": "code",
+      "source_file": "runner/mac_eye_reader.py",
+      "source_location": "L65",
+      "id": "runner_mac_eye_reader_has_mac_eye",
+      "community": 18,
+      "norm_label": "has_mac_eye()"
+    },
+    {
+      "label": "MacEyeReader \u2013 Liest Framebuffer direkt aus Shared Memory (mac_eye.dylib). Erfor",
+      "file_type": "rationale",
+      "source_file": "runner/mac_eye_reader.py",
+      "source_location": "L1",
+      "id": "runner_mac_eye_reader_rationale_1",
+      "community": 18,
+      "norm_label": "maceyereader \u2013 liest framebuffer direkt aus shared memory (mac_eye.dylib). erfor"
+    },
+    {
+      "label": "Liest den Ringbuffer aus dem Shared Memory.",
+      "file_type": "rationale",
+      "source_file": "runner/mac_eye_reader.py",
+      "source_location": "L18",
+      "id": "runner_mac_eye_reader_rationale_18",
+      "community": 18,
+      "norm_label": "liest den ringbuffer aus dem shared memory."
     },
     {
       "label": "omni_survey_runner.py",
@@ -549,7 +639,7 @@
       "source_file": "runner/dom_prescan.py",
       "source_location": "L1",
       "id": "runner_dom_prescan_py",
-      "community": 8,
+      "community": 9,
       "norm_label": "dom_prescan.py"
     },
     {
@@ -558,7 +648,7 @@
       "source_file": "runner/dom_prescan.py",
       "source_location": "L21",
       "id": "runner_dom_prescan_has_images",
-      "community": 8,
+      "community": 9,
       "norm_label": "_has_images()"
     },
     {
@@ -567,7 +657,7 @@
       "source_file": "runner/dom_prescan.py",
       "source_location": "L30",
       "id": "runner_dom_prescan_classify_element",
-      "community": 8,
+      "community": 9,
       "norm_label": "classify_element()"
     },
     {
@@ -576,7 +666,7 @@
       "source_file": "runner/dom_prescan.py",
       "source_location": "L46",
       "id": "runner_dom_prescan_prescan_dom",
-      "community": 8,
+      "community": 9,
       "norm_label": "prescan_dom()"
     },
     {
@@ -584,7 +674,7 @@
       "file_type": "rationale",
       "source_file": "runner/dom_prescan.py",
       "source_location": "L1",
-      "community": 8,
+      "community": 9,
       "norm_label": "dom_prescan \u2013 vision-free fast path via unmask-cli dom-scan.",
       "id": "runner_dom_prescan_rationale_1"
     },
@@ -927,7 +1017,7 @@
       "source_file": "runner/frame_optimizer.py",
       "source_location": "L1",
       "id": "runner_frame_optimizer_py",
-      "community": 20,
+      "community": 22,
       "norm_label": "frame_optimizer.py"
     },
     {
@@ -936,7 +1026,7 @@
       "source_file": "runner/frame_optimizer.py",
       "source_location": "L8",
       "id": "runner_frame_optimizer_frameoptimizer",
-      "community": 20,
+      "community": 22,
       "norm_label": "frameoptimizer"
     },
     {
@@ -945,7 +1035,7 @@
       "source_file": "runner/frame_optimizer.py",
       "source_location": "L9",
       "id": "runner_frame_optimizer_frameoptimizer_init",
-      "community": 20,
+      "community": 22,
       "norm_label": ".__init__()"
     },
     {
@@ -954,7 +1044,7 @@
       "source_file": "runner/frame_optimizer.py",
       "source_location": "L14",
       "id": "runner_frame_optimizer_frameoptimizer_is_duplicate",
-      "community": 20,
+      "community": 22,
       "norm_label": ".is_duplicate()"
     },
     {
@@ -963,7 +1053,7 @@
       "source_file": "runner/frame_optimizer.py",
       "source_location": "L21",
       "id": "runner_frame_optimizer_frameoptimizer_crop_roi",
-      "community": 20,
+      "community": 22,
       "norm_label": ".crop_roi()"
     },
     {
@@ -972,7 +1062,7 @@
       "source_file": "runner/frame_optimizer.py",
       "source_location": "L27",
       "id": "runner_frame_optimizer_skipped_count",
-      "community": 20,
+      "community": 22,
       "norm_label": "skipped_count()"
     },
     {
@@ -980,7 +1070,7 @@
       "file_type": "rationale",
       "source_file": "runner/frame_optimizer.py",
       "source_location": "L1",
-      "community": 20,
+      "community": 22,
       "norm_label": "frame-diffing & roi-cropping fur vision-token-optimierung.",
       "id": "runner_frame_optimizer_rationale_1"
     },
@@ -1341,7 +1431,7 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L27",
       "id": "runner_state_machine_surveyrunner",
-      "community": 9,
+      "community": 8,
       "norm_label": "surveyrunner"
     },
     {
@@ -1368,7 +1458,7 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L61",
       "id": "runner_state_machine_surveyrunner_save_checkpoint",
-      "community": 9,
+      "community": 8,
       "norm_label": "._save_checkpoint()"
     },
     {
@@ -1377,7 +1467,7 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L70",
       "id": "runner_state_machine_surveyrunner_run",
-      "community": 9,
+      "community": 8,
       "norm_label": ".run()"
     },
     {
@@ -1386,7 +1476,7 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L86",
       "id": "runner_state_machine_surveyrunner_transition",
-      "community": 9,
+      "community": 8,
       "norm_label": "._transition()"
     },
     {
@@ -1395,7 +1485,7 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L107",
       "id": "runner_state_machine_surveyrunner_launch",
-      "community": 9,
+      "community": 8,
       "norm_label": "._launch()"
     },
     {
@@ -1404,7 +1494,7 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L116",
       "id": "runner_state_machine_surveyrunner_login",
-      "community": 9,
+      "community": 8,
       "norm_label": "._login()"
     },
     {
@@ -1413,7 +1503,7 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L143",
       "id": "runner_state_machine_surveyrunner_wait_ready",
-      "community": 9,
+      "community": 8,
       "norm_label": "._wait_ready()"
     },
     {
@@ -1422,7 +1512,7 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L152",
       "id": "runner_state_machine_surveyrunner_capture",
-      "community": 9,
+      "community": 8,
       "norm_label": "._capture()"
     },
     {
@@ -1431,7 +1521,7 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L164",
       "id": "runner_state_machine_surveyrunner_vision",
-      "community": 9,
+      "community": 8,
       "norm_label": "._vision()"
     },
     {
@@ -1440,7 +1530,7 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L187",
       "id": "runner_state_machine_surveyrunner_execute",
-      "community": 9,
+      "community": 8,
       "norm_label": "._execute()"
     },
     {
@@ -1449,7 +1539,7 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L216",
       "id": "runner_state_machine_surveyrunner_verify",
-      "community": 9,
+      "community": 8,
       "norm_label": "._verify()"
     },
     {
@@ -1458,7 +1548,7 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L226",
       "id": "runner_state_machine_surveyrunner_recover",
-      "community": 9,
+      "community": 8,
       "norm_label": "._recover()"
     },
     {
@@ -1512,7 +1602,7 @@
       "source_file": "runner/survey_queue.py",
       "source_location": "L1",
       "id": "runner_survey_queue_py",
-      "community": 19,
+      "community": 21,
       "norm_label": "survey_queue.py"
     },
     {
@@ -1521,7 +1611,7 @@
       "source_file": "runner/survey_queue.py",
       "source_location": "L7",
       "id": "runner_survey_queue_surveyqueue",
-      "community": 19,
+      "community": 21,
       "norm_label": "surveyqueue"
     },
     {
@@ -1530,7 +1620,7 @@
       "source_file": "runner/survey_queue.py",
       "source_location": "L8",
       "id": "runner_survey_queue_surveyqueue_init",
-      "community": 19,
+      "community": 21,
       "norm_label": ".__init__()"
     },
     {
@@ -1539,7 +1629,7 @@
       "source_file": "runner/survey_queue.py",
       "source_location": "L15",
       "id": "runner_survey_queue_surveyqueue_enqueue",
-      "community": 19,
+      "community": 21,
       "norm_label": ".enqueue()"
     },
     {
@@ -1548,7 +1638,7 @@
       "source_file": "runner/survey_queue.py",
       "source_location": "L20",
       "id": "runner_survey_queue_surveyqueue_claim_task",
-      "community": 19,
+      "community": 21,
       "norm_label": ".claim_task()"
     },
     {
@@ -1557,7 +1647,7 @@
       "source_file": "runner/survey_queue.py",
       "source_location": "L26",
       "id": "runner_survey_queue_surveyqueue_mark_done",
-      "community": 19,
+      "community": 21,
       "norm_label": ".mark_done()"
     },
     {
@@ -1566,7 +1656,7 @@
       "source_file": "runner/survey_queue.py",
       "source_location": "L29",
       "id": "runner_survey_queue_surveyqueue_mark_failed",
-      "community": 19,
+      "community": 21,
       "norm_label": ".mark_failed()"
     },
     {
@@ -1574,7 +1664,7 @@
       "file_type": "rationale",
       "source_file": "runner/survey_queue.py",
       "source_location": "L1",
-      "community": 19,
+      "community": 21,
       "norm_label": "thread-sichere survey-queue (sqlite + filelock).",
       "id": "runner_survey_queue_rationale_1"
     },
@@ -1584,7 +1674,7 @@
       "source_file": "runner/cli.py",
       "source_location": "L1",
       "id": "runner_cli_py",
-      "community": 9,
+      "community": 8,
       "norm_label": "cli.py"
     },
     {
@@ -1593,7 +1683,7 @@
       "source_file": "runner/cli.py",
       "source_location": "L15",
       "id": "runner_cli_run",
-      "community": 9,
+      "community": 8,
       "norm_label": "run()"
     },
     {
@@ -1602,7 +1692,7 @@
       "source_file": "runner/cli.py",
       "source_location": "L32",
       "id": "runner_cli_status",
-      "community": 9,
+      "community": 8,
       "norm_label": "status()"
     },
     {
@@ -1611,7 +1701,7 @@
       "source_file": "runner/cli.py",
       "source_location": "L39",
       "id": "runner_cli_main_cli",
-      "community": 9,
+      "community": 8,
       "norm_label": "main_cli()"
     },
     {
@@ -1619,7 +1709,7 @@
       "file_type": "rationale",
       "source_file": "runner/cli.py",
       "source_location": "L1",
-      "community": 9,
+      "community": 8,
       "norm_label": "typer cli mit rich progress fur den stealth-runner.",
       "id": "runner_cli_rationale_1"
     },
@@ -1737,7 +1827,7 @@
       "source_file": "runner/apm.py",
       "source_location": "L1",
       "id": "runner_apm_py",
-      "community": 32,
+      "community": 34,
       "norm_label": "apm.py"
     },
     {
@@ -1746,7 +1836,7 @@
       "source_file": "runner/apm.py",
       "source_location": "L10",
       "id": "runner_apm_start_trace",
-      "community": 32,
+      "community": 34,
       "norm_label": "start_trace()"
     },
     {
@@ -1754,7 +1844,7 @@
       "file_type": "rationale",
       "source_file": "runner/apm.py",
       "source_location": "L1",
-      "community": 32,
+      "community": 34,
       "norm_label": "opentelemetry apm \u2013 traces uber alle states.",
       "id": "runner_apm_rationale_1"
     },
@@ -1827,7 +1917,7 @@
       "source_file": "runner/semantic_cache.py",
       "source_location": "L1",
       "id": "runner_semantic_cache_py",
-      "community": 29,
+      "community": 31,
       "norm_label": "semantic_cache.py"
     },
     {
@@ -1836,7 +1926,7 @@
       "source_file": "runner/semantic_cache.py",
       "source_location": "L6",
       "id": "runner_semantic_cache_get_cached_action",
-      "community": 29,
+      "community": 31,
       "norm_label": "get_cached_action()"
     },
     {
@@ -1845,7 +1935,7 @@
       "source_file": "runner/semantic_cache.py",
       "source_location": "L7",
       "id": "runner_semantic_cache_set_cached_action",
-      "community": 29,
+      "community": 31,
       "norm_label": "set_cached_action()"
     },
     {
@@ -1853,7 +1943,7 @@
       "file_type": "rationale",
       "source_file": "runner/semantic_cache.py",
       "source_location": "L1",
-      "community": 29,
+      "community": 31,
       "norm_label": "semantic vision cache via diskcache.",
       "id": "runner_semantic_cache_rationale_1"
     },
@@ -1890,7 +1980,7 @@
       "source_file": "runner/behavioral_biometrics.py",
       "source_location": "L1",
       "id": "runner_behavioral_biometrics_py",
-      "community": 25,
+      "community": 27,
       "norm_label": "behavioral_biometrics.py"
     },
     {
@@ -1899,7 +1989,7 @@
       "source_file": "runner/behavioral_biometrics.py",
       "source_location": "L10",
       "id": "runner_behavioral_biometrics_sample_dwell_time",
-      "community": 25,
+      "community": 27,
       "norm_label": "sample_dwell_time()"
     },
     {
@@ -1908,7 +1998,7 @@
       "source_file": "runner/behavioral_biometrics.py",
       "source_location": "L11",
       "id": "runner_behavioral_biometrics_sample_flight_time",
-      "community": 25,
+      "community": 27,
       "norm_label": "sample_flight_time()"
     },
     {
@@ -1917,7 +2007,7 @@
       "source_file": "runner/behavioral_biometrics.py",
       "source_location": "L12",
       "id": "runner_behavioral_biometrics_sample_typing_speed",
-      "community": 25,
+      "community": 27,
       "norm_label": "sample_typing_speed()"
     },
     {
@@ -1925,7 +2015,7 @@
       "file_type": "rationale",
       "source_file": "runner/behavioral_biometrics.py",
       "source_location": "L1",
-      "community": 25,
+      "community": 27,
       "norm_label": "behavioral biometrics via scipy.stats pdfs.",
       "id": "runner_behavioral_biometrics_rationale_1"
     },
@@ -2340,7 +2430,7 @@
       "source_file": "runner/audit_logger_sync.py",
       "source_location": "L1",
       "id": "runner_audit_logger_sync_py",
-      "community": 21,
+      "community": 23,
       "norm_label": "audit_logger_sync.py"
     },
     {
@@ -2349,7 +2439,7 @@
       "source_file": "runner/audit_logger_sync.py",
       "source_location": "L8",
       "id": "runner_audit_logger_sync_auditloggersync",
-      "community": 21,
+      "community": 23,
       "norm_label": "auditloggersync"
     },
     {
@@ -2358,7 +2448,7 @@
       "source_file": "runner/audit_logger_sync.py",
       "source_location": "L9",
       "id": "runner_audit_logger_sync_auditloggersync_init",
-      "community": 21,
+      "community": 23,
       "norm_label": ".__init__()"
     },
     {
@@ -2367,7 +2457,7 @@
       "source_file": "runner/audit_logger_sync.py",
       "source_location": "L13",
       "id": "runner_audit_logger_sync_auditloggersync_log",
-      "community": 21,
+      "community": 23,
       "norm_label": ".log()"
     },
     {
@@ -2376,7 +2466,7 @@
       "source_file": "runner/audit_logger_sync.py",
       "source_location": "L20",
       "id": "runner_audit_logger_sync_auditloggersync_close",
-      "community": 21,
+      "community": 23,
       "norm_label": ".close()"
     },
     {
@@ -2384,7 +2474,7 @@
       "file_type": "rationale",
       "source_file": "runner/audit_logger_sync.py",
       "source_location": "L1",
-      "community": 21,
+      "community": 23,
       "norm_label": "crash-sicheres jsonl audit-log mit o_sync + fcntl.",
       "id": "runner_audit_logger_sync_rationale_1"
     },
@@ -2394,7 +2484,7 @@
       "source_file": "runner/resilience.py",
       "source_location": "L1",
       "id": "runner_resilience_py",
-      "community": 26,
+      "community": 28,
       "norm_label": "resilience.py"
     },
     {
@@ -2403,7 +2493,7 @@
       "source_file": "runner/resilience.py",
       "source_location": "L9",
       "id": "runner_resilience_vision_retry",
-      "community": 26,
+      "community": 28,
       "norm_label": "vision_retry()"
     },
     {
@@ -2412,7 +2502,7 @@
       "source_file": "runner/resilience.py",
       "source_location": "L15",
       "id": "runner_resilience_register_shutdown_handler",
-      "community": 26,
+      "community": 28,
       "norm_label": "register_shutdown_handler()"
     },
     {
@@ -2421,7 +2511,7 @@
       "source_file": "runner/resilience.py",
       "source_location": "L18",
       "id": "runner_resilience_install_shutdown_handlers",
-      "community": 26,
+      "community": 28,
       "norm_label": "install_shutdown_handlers()"
     },
     {
@@ -2429,7 +2519,7 @@
       "file_type": "rationale",
       "source_file": "runner/resilience.py",
       "source_location": "L1",
-      "community": 26,
+      "community": 28,
       "norm_label": "resilienz-patterns: retry, circuit breaker, graceful shutdown.",
       "id": "runner_resilience_rationale_1"
     },
@@ -2637,7 +2727,7 @@
       "source_file": "runner/drivers/screen_follow.py",
       "source_location": "L1",
       "id": "runner_drivers_screen_follow_py",
-      "community": 22,
+      "community": 24,
       "norm_label": "screen_follow.py"
     },
     {
@@ -2646,7 +2736,7 @@
       "source_file": "runner/drivers/screen_follow.py",
       "source_location": "L7",
       "id": "drivers_screen_follow_screenfollowdriver",
-      "community": 22,
+      "community": 24,
       "norm_label": "screenfollowdriver"
     },
     {
@@ -2655,7 +2745,7 @@
       "source_file": "runner/drivers/screen_follow.py",
       "source_location": "L8",
       "id": "drivers_screen_follow_screenfollowdriver_start_recording",
-      "community": 22,
+      "community": 24,
       "norm_label": ".start_recording()"
     },
     {
@@ -2664,7 +2754,7 @@
       "source_file": "runner/drivers/screen_follow.py",
       "source_location": "L22",
       "id": "drivers_screen_follow_screenfollowdriver_stop_recording",
-      "community": 22,
+      "community": 24,
       "norm_label": ".stop_recording()"
     },
     {
@@ -2673,7 +2763,7 @@
       "source_file": "runner/drivers/screen_follow.py",
       "source_location": "L31",
       "id": "drivers_screen_follow_screenfollowdriver_get_status",
-      "community": 22,
+      "community": 24,
       "norm_label": ".get_status()"
     },
     {
@@ -2681,7 +2771,7 @@
       "file_type": "rationale",
       "source_file": "runner/drivers/screen_follow.py",
       "source_location": "L1",
-      "community": 22,
+      "community": 24,
       "norm_label": "screenfollowdriver \u2013 bildschirmaufnahme via screen-follow cli.",
       "id": "drivers_screen_follow_rationale_1"
     },
@@ -2691,7 +2781,7 @@
       "source_file": "runner/drivers/__init__.py",
       "source_location": "L1",
       "id": "runner_drivers_init_py",
-      "community": 38,
+      "community": 40,
       "norm_label": "__init__.py"
     },
     {
@@ -2700,7 +2790,7 @@
       "source_file": "runner/drivers/unmask.py",
       "source_location": "L1",
       "id": "runner_drivers_unmask_py",
-      "community": 23,
+      "community": 25,
       "norm_label": "unmask.py"
     },
     {
@@ -2709,7 +2799,7 @@
       "source_file": "runner/drivers/unmask.py",
       "source_location": "L7",
       "id": "drivers_unmask_unmaskdriver",
-      "community": 23,
+      "community": 25,
       "norm_label": "unmaskdriver"
     },
     {
@@ -2718,7 +2808,7 @@
       "source_file": "runner/drivers/unmask.py",
       "source_location": "L8",
       "id": "drivers_unmask_unmaskdriver_dom_scan",
-      "community": 23,
+      "community": 25,
       "norm_label": ".dom_scan()"
     },
     {
@@ -2727,7 +2817,7 @@
       "source_file": "runner/drivers/unmask.py",
       "source_location": "L20",
       "id": "drivers_unmask_unmaskdriver_network_capture",
-      "community": 23,
+      "community": 25,
       "norm_label": ".network_capture()"
     },
     {
@@ -2736,7 +2826,7 @@
       "source_file": "runner/drivers/unmask.py",
       "source_location": "L32",
       "id": "drivers_unmask_unmaskdriver_inspect",
-      "community": 23,
+      "community": 25,
       "norm_label": ".inspect()"
     },
     {
@@ -2744,7 +2834,7 @@
       "file_type": "rationale",
       "source_file": "runner/drivers/unmask.py",
       "source_location": "L1",
-      "community": 23,
+      "community": 25,
       "norm_label": "unmaskdriver \u2013 dom-scan via unmask-cli fur vision-free fast path.",
       "id": "drivers_unmask_rationale_1"
     },
@@ -2799,7 +2889,7 @@
       "source_file": "runner/vision_client/config.py",
       "source_location": "L1",
       "id": "runner_vision_client_config_py",
-      "community": 18,
+      "community": 19,
       "norm_label": "config.py"
     },
     {
@@ -2808,7 +2898,7 @@
       "source_file": "runner/vision_client/config.py",
       "source_location": "L8",
       "id": "vision_client_config_visionconfig",
-      "community": 18,
+      "community": 19,
       "norm_label": "visionconfig"
     },
     {
@@ -2817,7 +2907,7 @@
       "source_file": "runner/vision_client/config.py",
       "source_location": "L9",
       "id": "vision_client_config_visionconfig_init",
-      "community": 18,
+      "community": 19,
       "norm_label": ".__init__()"
     },
     {
@@ -2826,7 +2916,7 @@
       "source_file": "runner/vision_client/config.py",
       "source_location": "L13",
       "id": "vision_client_config_visionconfig_load_config",
-      "community": 18,
+      "community": 19,
       "norm_label": "._load_config()"
     },
     {
@@ -2835,7 +2925,7 @@
       "source_file": "runner/vision_client/config.py",
       "source_location": "L18",
       "id": "vision_client_config_current_model",
-      "community": 18,
+      "community": 19,
       "norm_label": "current_model()"
     },
     {
@@ -2844,7 +2934,7 @@
       "source_file": "runner/vision_client/config.py",
       "source_location": "L22",
       "id": "vision_client_config_fallback_models",
-      "community": 18,
+      "community": 19,
       "norm_label": "fallback_models()"
     },
     {
@@ -2853,7 +2943,7 @@
       "source_file": "runner/vision_client/config.py",
       "source_location": "L26",
       "id": "vision_client_config_max_tokens",
-      "community": 18,
+      "community": 19,
       "norm_label": "max_tokens()"
     },
     {
@@ -2862,7 +2952,7 @@
       "source_file": "runner/vision_client/config.py",
       "source_location": "L30",
       "id": "vision_client_config_timeout",
-      "community": 18,
+      "community": 19,
       "norm_label": "timeout()"
     },
     {
@@ -2870,7 +2960,7 @@
       "file_type": "rationale",
       "source_file": "runner/vision_client/config.py",
       "source_location": "L1",
-      "community": 18,
+      "community": 19,
       "norm_label": "vision-client konfiguration (yaml-basiert).",
       "id": "vision_client_config_rationale_1"
     },
@@ -3330,7 +3420,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L1",
       "id": "tests_test_dom_prescan_py",
-      "community": 8,
+      "community": 9,
       "norm_label": "test_dom_prescan.py"
     },
     {
@@ -3339,7 +3429,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L7",
       "id": "tests_test_dom_prescan_testclassifyelement",
-      "community": 8,
+      "community": 9,
       "norm_label": "testclassifyelement"
     },
     {
@@ -3348,7 +3438,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L8",
       "id": "tests_test_dom_prescan_testclassifyelement_test_button_is_clickable",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_button_is_clickable()"
     },
     {
@@ -3357,7 +3447,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L11",
       "id": "tests_test_dom_prescan_testclassifyelement_test_link_is_clickable",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_link_is_clickable()"
     },
     {
@@ -3366,7 +3456,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L14",
       "id": "tests_test_dom_prescan_testclassifyelement_test_checkbox_is_clickable",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_checkbox_is_clickable()"
     },
     {
@@ -3375,7 +3465,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L17",
       "id": "tests_test_dom_prescan_testclassifyelement_test_text_field_is_text_input",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_text_field_is_text_input()"
     },
     {
@@ -3384,7 +3474,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L20",
       "id": "tests_test_dom_prescan_testclassifyelement_test_input_role_is_text_input",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_input_role_is_text_input()"
     },
     {
@@ -3393,7 +3483,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L23",
       "id": "tests_test_dom_prescan_testclassifyelement_test_question_text_detected",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_question_text_detected()"
     },
     {
@@ -3402,7 +3492,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L26",
       "id": "tests_test_dom_prescan_testclassifyelement_test_unknown_element",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_unknown_element()"
     },
     {
@@ -3411,7 +3501,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L29",
       "id": "tests_test_dom_prescan_testclassifyelement_test_div_with_text_is_clickable",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_div_with_text_is_clickable()"
     },
     {
@@ -3420,7 +3510,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L33",
       "id": "tests_test_dom_prescan_testprescandom",
-      "community": 8,
+      "community": 9,
       "norm_label": "testprescandom"
     },
     {
@@ -3429,7 +3519,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L34",
       "id": "tests_test_dom_prescan_testprescandom_test_empty_elements",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_empty_elements()"
     },
     {
@@ -3438,7 +3528,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L39",
       "id": "tests_test_dom_prescan_testprescandom_test_no_elements_key",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_no_elements_key()"
     },
     {
@@ -3447,7 +3537,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L43",
       "id": "tests_test_dom_prescan_testprescandom_test_single_clickable_returns_action",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_single_clickable_returns_action()"
     },
     {
@@ -3456,7 +3546,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L50",
       "id": "tests_test_dom_prescan_testprescandom_test_image_element_falls_back_to_vision",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_image_element_falls_back_to_vision()"
     },
     {
@@ -3465,7 +3555,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L58",
       "id": "tests_test_dom_prescan_testprescandom_test_unknown_elements_fall_back",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_unknown_elements_fall_back()"
     },
     {
@@ -3474,7 +3564,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L65",
       "id": "tests_test_dom_prescan_testprescandom_test_no_images_pure_text",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_no_images_pure_text()"
     },
     {
@@ -3482,7 +3572,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L1",
-      "community": 8,
+      "community": 9,
       "norm_label": "tests fur dom_prescan \u2013 vision-free fast path.",
       "id": "tests_test_dom_prescan_rationale_1"
     },
@@ -3492,7 +3582,7 @@
       "source_file": "tests/conftest.py",
       "source_location": "L1",
       "id": "tests_conftest_py",
-      "community": 35,
+      "community": 37,
       "norm_label": "conftest.py"
     },
     {
@@ -3500,7 +3590,7 @@
       "file_type": "rationale",
       "source_file": "tests/conftest.py",
       "source_location": "L1",
-      "community": 35,
+      "community": 37,
       "norm_label": "pytest-konfiguration fur den stealth-runner.",
       "id": "tests_conftest_rationale_1"
     },
@@ -3510,7 +3600,7 @@
       "source_file": "tests/test_state_machine.py",
       "source_location": "L1",
       "id": "tests_test_state_machine_py",
-      "community": 9,
+      "community": 8,
       "norm_label": "test_state_machine.py"
     },
     {
@@ -3519,7 +3609,7 @@
       "source_file": "tests/test_state_machine.py",
       "source_location": "L7",
       "id": "tests_test_state_machine_test_state_machine_initializes",
-      "community": 9,
+      "community": 8,
       "norm_label": "test_state_machine_initializes()"
     },
     {
@@ -3528,7 +3618,7 @@
       "source_file": "tests/test_state_machine.py",
       "source_location": "L13",
       "id": "tests_test_state_machine_test_state_transition_idle_to_launch",
-      "community": 9,
+      "community": 8,
       "norm_label": "test_state_transition_idle_to_launch()"
     },
     {
@@ -3537,7 +3627,7 @@
       "source_file": "tests/test_state_machine.py",
       "source_location": "L20",
       "id": "tests_test_state_machine_test_max_recoveries_stops",
-      "community": 9,
+      "community": 8,
       "norm_label": "test_max_recoveries_stops()"
     },
     {
@@ -3546,7 +3636,7 @@
       "source_file": "tests/__init__.py",
       "source_location": "L1",
       "id": "tests_init_py",
-      "community": 36,
+      "community": 38,
       "norm_label": "__init__.py"
     },
     {
@@ -3554,7 +3644,7 @@
       "file_type": "rationale",
       "source_file": "tests/__init__.py",
       "source_location": "L1",
-      "community": 36,
+      "community": 38,
       "norm_label": "test-suite fur den stealth-runner. fuhre mit: pytest tests/ -v",
       "id": "tests_init_rationale_1"
     },
@@ -4261,6 +4351,87 @@
       "id": "errors_templates_rationale_1"
     },
     {
+      "label": "mac_eye.c",
+      "file_type": "code",
+      "source_file": "mac_eye/mac_eye.c",
+      "source_location": "L1",
+      "id": "mac_eye_mac_eye_c",
+      "community": 20,
+      "norm_label": "mac_eye.c"
+    },
+    {
+      "label": "nanotime()",
+      "file_type": "code",
+      "source_file": "mac_eye/mac_eye.c",
+      "source_location": "L39",
+      "id": "mac_eye_mac_eye_nanotime",
+      "community": 20,
+      "norm_label": "nanotime()"
+    },
+    {
+      "label": "mac_eye_init()",
+      "file_type": "code",
+      "source_file": "mac_eye/mac_eye.c",
+      "source_location": "L46",
+      "id": "mac_eye_mac_eye_mac_eye_init",
+      "community": 20,
+      "norm_label": "mac_eye_init()"
+    },
+    {
+      "label": "mac_eye_cleanup()",
+      "file_type": "code",
+      "source_file": "mac_eye/mac_eye.c",
+      "source_location": "L75",
+      "id": "mac_eye_mac_eye_mac_eye_cleanup",
+      "community": 20,
+      "norm_label": "mac_eye_cleanup()"
+    },
+    {
+      "label": "capture_loop()",
+      "file_type": "code",
+      "source_file": "mac_eye/mac_eye.c",
+      "source_location": "L83",
+      "id": "mac_eye_mac_eye_capture_loop",
+      "community": 20,
+      "norm_label": "capture_loop()"
+    },
+    {
+      "label": "mac_eye_start_capture()",
+      "file_type": "code",
+      "source_file": "mac_eye/mac_eye.c",
+      "source_location": "L128",
+      "id": "mac_eye_mac_eye_mac_eye_start_capture",
+      "community": 20,
+      "norm_label": "mac_eye_start_capture()"
+    },
+    {
+      "label": "mac_eye_stop_capture()",
+      "file_type": "code",
+      "source_file": "mac_eye/mac_eye.c",
+      "source_location": "L136",
+      "id": "mac_eye_mac_eye_mac_eye_stop_capture",
+      "community": 20,
+      "norm_label": "mac_eye_stop_capture()"
+    },
+    {
+      "label": "mac_eye_get_shm()",
+      "file_type": "code",
+      "source_file": "mac_eye/mac_eye.c",
+      "source_location": "L139",
+      "id": "mac_eye_mac_eye_mac_eye_get_shm",
+      "community": 20,
+      "norm_label": "mac_eye_get_shm()"
+    },
+    {
+      "label": "mac_eye.h",
+      "file_type": "code",
+      "source_file": "mac_eye/mac_eye.h",
+      "source_location": "L1",
+      "id": "mac_eye_mac_eye_h",
+      "community": 41,
+      "norm_label": "mac_eye.h"
+    },
+    {
       "label": "config.py",
       "file_type": "code",
       "source_file": "src/stealth_runner/config.py",
@@ -4338,7 +4509,7 @@
       "source_file": "src/stealth_runner/__init__.py",
       "source_location": "L1",
       "id": "src_stealth_runner_init_py",
-      "community": 37,
+      "community": 39,
       "norm_label": "__init__.py"
     },
     {
@@ -4346,7 +4517,7 @@
       "file_type": "rationale",
       "source_file": "src/stealth_runner/__init__.py",
       "source_location": "L1",
-      "community": 37,
+      "community": 39,
       "norm_label": "stealth-runner: vision-driven cli orchestrator for stealth survey automation.",
       "id": "stealth_runner_init_rationale_1"
     },
@@ -4536,7 +4707,7 @@
       "source_file": "src/stealth_runner/audit_logger.py",
       "source_location": "L19",
       "id": "stealth_runner_audit_logger_auditlogger_close",
-      "community": 6,
+      "community": 20,
       "norm_label": ".close()"
     },
     {
@@ -4545,7 +4716,7 @@
       "source_file": "src/stealth_runner/learn.py",
       "source_location": "L1",
       "id": "src_stealth_runner_learn_py",
-      "community": 27,
+      "community": 29,
       "norm_label": "learn.py"
     },
     {
@@ -4554,7 +4725,7 @@
       "source_file": "src/stealth_runner/learn.py",
       "source_location": "L12",
       "id": "stealth_runner_learn_learn_from_session",
-      "community": 27,
+      "community": 29,
       "norm_label": "learn_from_session()"
     },
     {
@@ -4563,7 +4734,7 @@
       "source_file": "src/stealth_runner/learn.py",
       "source_location": "L81",
       "id": "stealth_runner_learn_update_registry",
-      "community": 27,
+      "community": 29,
       "norm_label": "update_registry()"
     },
     {
@@ -4572,7 +4743,7 @@
       "source_file": "src/stealth_runner/learn.py",
       "source_location": "L88",
       "id": "stealth_runner_learn_push_to_global_brain",
-      "community": 27,
+      "community": 29,
       "norm_label": "push_to_global_brain()"
     },
     {
@@ -4580,7 +4751,7 @@
       "file_type": "rationale",
       "source_file": "src/stealth_runner/learn.py",
       "source_location": "L1",
-      "community": 27,
+      "community": 29,
       "norm_label": "skill capture loop \u2014 parst screen-follow audit-log (type: mouse_down, etc.).",
       "id": "stealth_runner_learn_rationale_1"
     },
@@ -4608,7 +4779,7 @@
       "source_file": "src/stealth_runner/strategy_selector.py",
       "source_location": "L1",
       "id": "src_stealth_runner_strategy_selector_py",
-      "community": 30,
+      "community": 32,
       "norm_label": "strategy_selector.py"
     },
     {
@@ -4617,7 +4788,7 @@
       "source_file": "src/stealth_runner/strategy_selector.py",
       "source_location": "L9",
       "id": "stealth_runner_strategy_selector_select_best_strategy",
-      "community": 30,
+      "community": 32,
       "norm_label": "select_best_strategy()"
     },
     {
@@ -4626,7 +4797,7 @@
       "source_file": "src/stealth_runner/strategy_selector.py",
       "source_location": "L34",
       "id": "stealth_runner_strategy_selector_load_brain_rules",
-      "community": 30,
+      "community": 32,
       "norm_label": "load_brain_rules()"
     },
     {
@@ -4634,7 +4805,7 @@
       "file_type": "rationale",
       "source_file": "src/stealth_runner/strategy_selector.py",
       "source_location": "L1",
-      "community": 30,
+      "community": 32,
       "norm_label": "strategy evolution module \u2014 wahlt optimale skill-sequenz aus brain-daten.",
       "id": "stealth_runner_strategy_selector_rationale_1"
     },
@@ -4688,7 +4859,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L25",
-      "community": 39,
+      "community": 42,
       "norm_label": "pixel-diff \u2259 menschliche netzhaut \u2013 nur signale (anderungen) senden.",
       "id": "runner_live_agent_rationale_25"
     },
@@ -4697,7 +4868,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L35",
-      "community": 40,
+      "community": 43,
       "norm_label": "pixel-diff: nur veranderte pixel erkennen, 95% reduktion.",
       "id": "runner_live_agent_rationale_35"
     },
@@ -4706,7 +4877,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L71",
-      "community": 41,
+      "community": 44,
       "norm_label": "omni: sagt was zu tun ist, gibt label zuruck.",
       "id": "runner_live_agent_rationale_71"
     },
@@ -4715,7 +4886,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L118",
-      "community": 42,
+      "community": 45,
       "norm_label": "nur element-index, nie koordinaten.",
       "id": "runner_live_agent_rationale_118"
     },
@@ -4724,7 +4895,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L124",
-      "community": 43,
+      "community": 46,
       "norm_label": "skylight-cli mit fehlerbehandlung.",
       "id": "runner_live_agent_rationale_124"
     },
@@ -4733,7 +4904,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L130",
-      "community": 44,
+      "community": 47,
       "norm_label": "skylight api call. kein --window-id (gibt's nicht!).",
       "id": "runner_live_agent_rationale_130"
     },
@@ -4742,7 +4913,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L137",
-      "community": 45,
+      "community": 48,
       "norm_label": "skylight-cli list-elements \u2192 manuell label filtern.",
       "id": "runner_live_agent_rationale_137"
     },
@@ -4751,7 +4922,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L147",
-      "community": 46,
+      "community": 49,
       "norm_label": "cua-driver list_windows + get_window_state \u2192 popup-element finden.",
       "id": "runner_live_agent_rationale_147"
     },
@@ -4760,7 +4931,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L164",
-      "community": 47,
+      "community": 50,
       "norm_label": "popup-first \u2192 fallback. nur element-index.",
       "id": "runner_live_agent_rationale_164"
     },
@@ -4769,7 +4940,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L186",
-      "community": 48,
+      "community": 51,
       "norm_label": "auge \u2192 hirn \u2192 hand, 50 hz, <100ms reaktion.",
       "id": "runner_live_agent_rationale_186"
     },
@@ -4778,7 +4949,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L184",
-      "community": 49,
+      "community": 52,
       "norm_label": "auge \u2192 hirn \u2192 hand, 50 hz, <100ms reaktion.",
       "id": "runner_live_agent_rationale_184"
     },
@@ -4787,7 +4958,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L208",
-      "community": 50,
+      "community": 53,
       "norm_label": "screenshot mit workaround fur skylight-cli --output bug.",
       "id": "runner_live_agent_rationale_208"
     },
@@ -4796,7 +4967,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L132",
-      "community": 51,
+      "community": 54,
       "norm_label": "findet element_index fur ein label via skylight-cli list-elements.",
       "id": "runner_live_agent_rationale_132"
     },
@@ -4805,7 +4976,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L159",
-      "community": 52,
+      "community": 55,
       "norm_label": "nur element-index: popup-first \u2192 fallback skylight-cli.",
       "id": "runner_live_agent_rationale_159"
     },
@@ -4814,7 +4985,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L34",
-      "community": 53,
+      "community": 56,
       "norm_label": "cua-driver screenshot \u2192 numpy array.",
       "id": "runner_live_agent_rationale_34"
     },
@@ -4823,7 +4994,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L48",
-      "community": 54,
+      "community": 57,
       "norm_label": "fallback: cua-driver screenshot --raw gibt png-daten auf stdout.",
       "id": "runner_live_agent_rationale_48"
     },
@@ -4832,7 +5003,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L83",
-      "community": 55,
+      "community": 58,
       "norm_label": "omni \u2259 sehrinde \u2013 analysiert nur veranderungen, sagt was zu tun ist.",
       "id": "runner_live_agent_rationale_83"
     },
@@ -4841,7 +5012,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L90",
-      "community": 56,
+      "community": 59,
       "norm_label": "nur die change-region an omni schicken \u2192 label + action bekommen.",
       "id": "runner_live_agent_rationale_90"
     },
@@ -4850,7 +5021,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L123",
-      "community": 57,
+      "community": 60,
       "norm_label": "hande \u2259 skylight-cli + cua-driver \u2013 nur element-index, nie pixel.",
       "id": "runner_live_agent_rationale_123"
     },
@@ -4859,7 +5030,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L129",
-      "community": 58,
+      "community": 61,
       "norm_label": "findet element_index fur ein label \u2013 popup-first, fallback normales fenster.",
       "id": "runner_live_agent_rationale_129"
     },
@@ -4868,7 +5039,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L173",
-      "community": 59,
+      "community": 62,
       "norm_label": "fokussiert per click, tippt per skylight-cli type.",
       "id": "runner_live_agent_rationale_173"
     },
@@ -4877,7 +5048,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L187",
-      "community": 60,
+      "community": 63,
       "norm_label": "der komplette live-agent: auge \u2192 hirn \u2192 hand in einem loop.",
       "id": "runner_live_agent_rationale_187"
     },
@@ -4886,7 +5057,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L174",
-      "community": 61,
+      "community": 64,
       "norm_label": "fokussiert per click, tippt per skylight-cli type.",
       "id": "runner_live_agent_rationale_174"
     },
@@ -4895,7 +5066,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L22",
-      "community": 62,
+      "community": 65,
       "norm_label": "pixel-diff retina: nur veranderungen erkennen \u2013 wie menschliches auge.",
       "id": "runner_live_agent_rationale_22"
     },
@@ -4904,7 +5075,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L30",
-      "community": 63,
+      "community": 66,
       "norm_label": "cua-driver screenshot \u2192 numpy array.",
       "id": "runner_live_agent_rationale_30"
     },
@@ -4913,7 +5084,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L55",
-      "community": 64,
+      "community": 67,
       "norm_label": "vergleicht frame mit letztem \u2192 nur veranderung zuruck.",
       "id": "runner_live_agent_rationale_55"
     },
@@ -4922,7 +5093,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L107",
-      "community": 65,
+      "community": 68,
       "norm_label": "omni + uground: analysiert nur veranderte regionen.",
       "id": "runner_live_agent_rationale_107"
     },
@@ -4931,7 +5102,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L113",
-      "community": 66,
+      "community": 69,
       "norm_label": "omni analysiert die veranderung und sagt was zu tun ist.",
       "id": "runner_live_agent_rationale_113"
     },
@@ -4940,7 +5111,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L156",
-      "community": 67,
+      "community": 70,
       "norm_label": "fuhrt aktionen ausschliesslich per element-index aus \u2013 nie per pixel.",
       "id": "runner_live_agent_rationale_156"
     },
@@ -4949,7 +5120,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L162",
-      "community": 68,
+      "community": 71,
       "norm_label": "skylight-cli list-elements \u2192 element mit label finden.",
       "id": "runner_live_agent_rationale_162"
     },
@@ -4958,7 +5129,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L178",
-      "community": 69,
+      "community": 72,
       "norm_label": "der komplette live-agent: auge \u2192 hirn \u2192 hand in echtzeit.",
       "id": "runner_live_agent_rationale_178"
     },
@@ -4967,7 +5138,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L202",
-      "community": 70,
+      "community": 73,
       "norm_label": "omni sagt label \u2192 skylight-cli findet element_index \u2192 cua-driver clickt.",
       "id": "runner_live_agent_rationale_202"
     },
@@ -4976,7 +5147,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L226",
-      "community": 71,
+      "community": 74,
       "norm_label": "der komplette live-agent: auge \u2192 hirn \u2192 hand in echtzeit.",
       "id": "runner_live_agent_rationale_226"
     },
@@ -4985,7 +5156,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L237",
-      "community": 72,
+      "community": 75,
       "norm_label": "live-loop: nur anderungen verarbeiten, sonst nichts tun.",
       "id": "runner_live_agent_rationale_237"
     },
@@ -4994,7 +5165,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L155",
-      "community": 73,
+      "community": 76,
       "norm_label": "fuhrt aktionen aus basierend auf omni-entscheidungen.",
       "id": "runner_live_agent_rationale_155"
     },
@@ -5003,7 +5174,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L166",
-      "community": 74,
+      "community": 77,
       "norm_label": "cua-driver click per element-index (popup-sicher).",
       "id": "runner_live_agent_rationale_166"
     },
@@ -5012,7 +5183,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L189",
-      "community": 75,
+      "community": 78,
       "norm_label": "live-loop: nur anderungen verarbeiten, sonst nichts tun.",
       "id": "runner_live_agent_rationale_189"
     },
@@ -5021,7 +5192,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L60",
-      "community": 76,
+      "community": 79,
       "norm_label": "phase 1: repo bis auf letzten millimeter scannen.",
       "id": "runner_doctor_cli_rationale_60"
     },
@@ -5030,7 +5201,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L112",
-      "community": 77,
+      "community": 80,
       "norm_label": "phase 2: analysieren \u2013 fehler finden, qualitat prufen.",
       "id": "runner_doctor_cli_rationale_112"
     },
@@ -5039,7 +5210,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L194",
-      "community": 78,
+      "community": 81,
       "norm_label": "phase 3: fehlende dokumente generieren (nur bei genug daten).",
       "id": "runner_doctor_cli_rationale_194"
     },
@@ -5048,7 +5219,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L58",
-      "community": 79,
+      "community": 82,
       "norm_label": "der doktor \u2013 scannt, findet, fixrt, committed.",
       "id": "runner_doctor_cli_rationale_58"
     },
@@ -5057,7 +5228,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L66",
-      "community": 80,
+      "community": 83,
       "norm_label": "hauptlauf: alle repos \u2192 alle lenses \u2192 fixen \u2192 report.",
       "id": "runner_doctor_cli_rationale_66"
     },
@@ -5066,7 +5237,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L91",
-      "community": 81,
+      "community": 84,
       "norm_label": "lens 1: finde + fixe veraltete claims in allen .md dateien.",
       "id": "runner_doctor_cli_rationale_91"
     },
@@ -5075,7 +5246,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L125",
-      "community": 82,
+      "community": 85,
       "norm_label": "lens 6: finde api-keys + passwoerter in docs.",
       "id": "runner_doctor_cli_rationale_125"
     },
@@ -5084,7 +5255,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L165",
-      "community": 83,
+      "community": 86,
       "norm_label": "lens 4: prufe welche sota docs fehlen.",
       "id": "runner_doctor_cli_rationale_165"
     },
@@ -5093,7 +5264,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L184",
-      "community": 84,
+      "community": 87,
       "norm_label": "lens 2: finde defekte links via md-dead-link-check (wenn installiert).",
       "id": "runner_doctor_cli_rationale_184"
     },
@@ -5102,7 +5273,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L196",
-      "community": 85,
+      "community": 88,
       "norm_label": "commit + push in allen repos.",
       "id": "runner_doctor_cli_rationale_196"
     },
@@ -5111,7 +5282,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_omni_monitor.py",
       "source_location": "L278",
-      "community": 86,
+      "community": 89,
       "norm_label": "hybrid loop: screenshot (schnell) + video (alle 5 schritte temporal).",
       "id": "runner_live_omni_monitor_rationale_278"
     },
@@ -5120,7 +5291,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_omni_monitor.py",
       "source_location": "L258",
-      "community": 87,
+      "community": 90,
       "norm_label": "hybrid loop: screenshot (schnell) + video (alle 5 schritte temporal).",
       "id": "runner_live_omni_monitor_rationale_258"
     }
@@ -6360,6 +6531,150 @@
       "_tgt": "runner_stealth_scorer_py",
       "source": "runner_stealth_scorer_py",
       "target": "runner_stealth_scorer_rationale_1",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/mac_eye_reader.py",
+      "source_location": "L17",
+      "weight": 1.0,
+      "_src": "runner_mac_eye_reader_py",
+      "_tgt": "runner_mac_eye_reader_maceyereader",
+      "source": "runner_mac_eye_reader_py",
+      "target": "runner_mac_eye_reader_maceyereader",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/mac_eye_reader.py",
+      "source_location": "L65",
+      "weight": 1.0,
+      "_src": "runner_mac_eye_reader_py",
+      "_tgt": "runner_mac_eye_reader_has_mac_eye",
+      "source": "runner_mac_eye_reader_py",
+      "target": "runner_mac_eye_reader_has_mac_eye",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/mac_eye_reader.py",
+      "source_location": "L1",
+      "weight": 1.0,
+      "_src": "runner_mac_eye_reader_rationale_1",
+      "_tgt": "runner_mac_eye_reader_py",
+      "source": "runner_mac_eye_reader_py",
+      "target": "runner_mac_eye_reader_rationale_1",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/mac_eye_reader.py",
+      "source_location": "L20",
+      "weight": 1.0,
+      "_src": "runner_mac_eye_reader_maceyereader",
+      "_tgt": "runner_mac_eye_reader_maceyereader_init",
+      "source": "runner_mac_eye_reader_maceyereader",
+      "target": "runner_mac_eye_reader_maceyereader_init",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/mac_eye_reader.py",
+      "source_location": "L25",
+      "weight": 1.0,
+      "_src": "runner_mac_eye_reader_maceyereader",
+      "_tgt": "runner_mac_eye_reader_maceyereader_connect",
+      "source": "runner_mac_eye_reader_maceyereader",
+      "target": "runner_mac_eye_reader_maceyereader_connect",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/mac_eye_reader.py",
+      "source_location": "L44",
+      "weight": 1.0,
+      "_src": "runner_mac_eye_reader_maceyereader",
+      "_tgt": "runner_mac_eye_reader_maceyereader_disconnect",
+      "source": "runner_mac_eye_reader_maceyereader",
+      "target": "runner_mac_eye_reader_maceyereader_disconnect",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/mac_eye_reader.py",
+      "source_location": "L48",
+      "weight": 1.0,
+      "_src": "runner_mac_eye_reader_maceyereader",
+      "_tgt": "runner_mac_eye_reader_maceyereader_get",
+      "source": "runner_mac_eye_reader_maceyereader",
+      "target": "runner_mac_eye_reader_maceyereader_get",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/mac_eye_reader.py",
+      "source_location": "L61",
+      "weight": 1.0,
+      "_src": "runner_mac_eye_reader_maceyereader",
+      "_tgt": "runner_mac_eye_reader_maceyereader_pid",
+      "source": "runner_mac_eye_reader_maceyereader",
+      "target": "runner_mac_eye_reader_maceyereader_pid",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/mac_eye_reader.py",
+      "source_location": "L66",
+      "weight": 1.0,
+      "_src": "runner_mac_eye_reader_has_mac_eye",
+      "_tgt": "runner_mac_eye_reader_maceyereader",
+      "source": "runner_mac_eye_reader_maceyereader",
+      "target": "runner_mac_eye_reader_has_mac_eye",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/mac_eye_reader.py",
+      "source_location": "L18",
+      "weight": 1.0,
+      "_src": "runner_mac_eye_reader_rationale_18",
+      "_tgt": "runner_mac_eye_reader_maceyereader",
+      "source": "runner_mac_eye_reader_maceyereader",
+      "target": "runner_mac_eye_reader_rationale_18",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/mac_eye_reader.py",
+      "source_location": "L40",
+      "weight": 1.0,
+      "_src": "runner_mac_eye_reader_maceyereader_connect",
+      "_tgt": "runner_mac_eye_reader_maceyereader_disconnect",
+      "source": "runner_mac_eye_reader_maceyereader_connect",
+      "target": "runner_mac_eye_reader_maceyereader_disconnect",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/mac_eye_reader.py",
+      "source_location": "L67",
+      "weight": 1.0,
+      "_src": "runner_mac_eye_reader_has_mac_eye",
+      "_tgt": "runner_mac_eye_reader_maceyereader_connect",
+      "source": "runner_mac_eye_reader_maceyereader_connect",
+      "target": "runner_mac_eye_reader_has_mac_eye",
       "confidence_score": 1.0
     },
     {
@@ -13417,6 +13732,126 @@
       "source": "errors_templates_errorinfo",
       "target": "errors_templates_classify_error",
       "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mac_eye/mac_eye.c",
+      "source_location": "L39",
+      "weight": 1.0,
+      "_src": "mac_eye_mac_eye_c",
+      "_tgt": "mac_eye_mac_eye_nanotime",
+      "source": "mac_eye_mac_eye_c",
+      "target": "mac_eye_mac_eye_nanotime",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mac_eye/mac_eye.c",
+      "source_location": "L46",
+      "weight": 1.0,
+      "_src": "mac_eye_mac_eye_c",
+      "_tgt": "mac_eye_mac_eye_mac_eye_init",
+      "source": "mac_eye_mac_eye_c",
+      "target": "mac_eye_mac_eye_mac_eye_init",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mac_eye/mac_eye.c",
+      "source_location": "L75",
+      "weight": 1.0,
+      "_src": "mac_eye_mac_eye_c",
+      "_tgt": "mac_eye_mac_eye_mac_eye_cleanup",
+      "source": "mac_eye_mac_eye_c",
+      "target": "mac_eye_mac_eye_mac_eye_cleanup",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mac_eye/mac_eye.c",
+      "source_location": "L83",
+      "weight": 1.0,
+      "_src": "mac_eye_mac_eye_c",
+      "_tgt": "mac_eye_mac_eye_capture_loop",
+      "source": "mac_eye_mac_eye_c",
+      "target": "mac_eye_mac_eye_capture_loop",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mac_eye/mac_eye.c",
+      "source_location": "L128",
+      "weight": 1.0,
+      "_src": "mac_eye_mac_eye_c",
+      "_tgt": "mac_eye_mac_eye_mac_eye_start_capture",
+      "source": "mac_eye_mac_eye_c",
+      "target": "mac_eye_mac_eye_mac_eye_start_capture",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mac_eye/mac_eye.c",
+      "source_location": "L136",
+      "weight": 1.0,
+      "_src": "mac_eye_mac_eye_c",
+      "_tgt": "mac_eye_mac_eye_mac_eye_stop_capture",
+      "source": "mac_eye_mac_eye_c",
+      "target": "mac_eye_mac_eye_mac_eye_stop_capture",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "mac_eye/mac_eye.c",
+      "source_location": "L139",
+      "weight": 1.0,
+      "_src": "mac_eye_mac_eye_c",
+      "_tgt": "mac_eye_mac_eye_mac_eye_get_shm",
+      "source": "mac_eye_mac_eye_c",
+      "target": "mac_eye_mac_eye_mac_eye_get_shm",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "mac_eye/mac_eye.c",
+      "source_location": "L90",
+      "weight": 1.0,
+      "_src": "mac_eye_mac_eye_capture_loop",
+      "_tgt": "mac_eye_mac_eye_nanotime",
+      "source": "mac_eye_mac_eye_nanotime",
+      "target": "mac_eye_mac_eye_capture_loop",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "mac_eye/mac_eye.c",
+      "source_location": "L55",
+      "weight": 1.0,
+      "_src": "mac_eye_mac_eye_mac_eye_init",
+      "_tgt": "stealth_runner_audit_logger_auditlogger_close",
+      "source": "mac_eye_mac_eye_mac_eye_init",
+      "target": "stealth_runner_audit_logger_auditlogger_close"
+    },
+    {
+      "relation": "calls",
+      "confidence": "INFERRED",
+      "confidence_score": 0.8,
+      "source_file": "mac_eye/mac_eye.c",
+      "source_location": "L80",
+      "weight": 1.0,
+      "_src": "mac_eye_mac_eye_mac_eye_cleanup",
+      "_tgt": "stealth_runner_audit_logger_auditlogger_close",
+      "source": "mac_eye_mac_eye_mac_eye_cleanup",
+      "target": "stealth_runner_audit_logger_auditlogger_close"
     },
     {
       "relation": "contains",

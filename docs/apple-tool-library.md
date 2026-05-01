@@ -168,7 +168,9 @@ if !usedAXPress {
 
 ## 🧬 Advanced: mac_eye.dylib – DYLD-Injection (NUR mit SIP=off)
 
-**Status:** Dokumentiert, NICHT integriert (SIP=off ist produktionsuntauglich).
+**Status:** ❌ **NICHT BAUBAR auf macOS 15+** – `CGDisplayCreateImage` von Apple entfernt.
+Dateien existieren als Referenz (`mac_eye/`), aber Build scheitert an fehlender API.
+Erfordert Reverse Engineering von IOSurface/CGSConnection für macOS 15.
 
 | Eigenschaft | Standard (mss) | mac_eye.dylib (SIP=off) |
 |---|---|---|

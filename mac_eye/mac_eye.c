@@ -18,6 +18,7 @@
 #include <mach/mach_time.h>
 #include <sys/mman.h>
 #include <fcntl.h>
+#include <CoreGraphics/CoreGraphics.h>
 
 typedef int CGSConnectionID;
 extern CGSConnectionID CGSMainConnectionID(void);
