@@ -15,20 +15,19 @@
 | `banned-recovery-mode`                    | `recovery_mode: true`                                       | Omni macht ALLE Entscheidungen       |
 | `mandatory-playstealth-launch`            | Chrome direkt starten                                       | Muss via `playstealth launch`        |
 
-## ✅ EINZIG FUNKTIONIERENDE METHODE
+## ✅ TRIO LAYER (Live Auge-Hirn-Hand)
 
-```bash
-# 1. Chrome starten
-playstealth launch --url 'https://heypiggy.com/?page=dashboard'
+```python
+# 1. EYES: cua-driver list_windows → Popup erkennen
+cua("list_windows") → "Anmelden – Google Konten" (WindowID=30380)
 
-# 2. Vision (Nemotron Omni)
-#    model: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning
-#    endpoint: https://integrate.api.nvidia.com/v1/chat/completions
+# 2. BRAIN: cua-driver get_window_state → NUR Popup-Elemente
+cua("get_window_state", {"pid":42296, "window_id":30380})
+# → "Weiter" AXButton Index 35 (NUR im Popup, nicht auf Hauptseite!)
 
-# 3. Interaktion (nur skylight-cli)
-skylight-cli click --pid <PID> --element-index <N>
-skylight-cli type --pid <PID> --element-index <N> --text "wert"
+# 3. HANDS: cua-driver click → GARANTIERT im richtigen Fenster
+cua("click", {"pid":42296, "window_id":30380, "element_index":35})
 
-# 4. Live Monitor (Rolling Video + SSE)
-LiveOmniMonitor → capture → Omni → execute → loop
+# LIVE LOOP: 250ms Polling
+runner/trio_live.py start
 ```
