@@ -66,10 +66,27 @@ class SurveyRunner:
 
     async def _launch(self):
         print(f"→ Browser starten...", flush=True)
-        r = self.executor.run(["playstealth-cli","launch","--url",self.url,"--json"])
-        self.pid = r["pid"]; self.executor.pid = self.pid
-        print(f"✓ PID={self.pid}", flush=True)
-        self.state = State.WAIT_READY
+        import subprocess as _sp2
+        _sp2.Popen([
+            "open", "-na", "Google Chrome",
+            "--args", "--remote-debugging-port=9222",
+            "--user-data-dir=/tmp/heypiggy-bot",
+            "--new-window", self.url,
+        ])
+        await anyio.sleep(3)
+        try:
+            raw = _sp2.check_output(["pgrep", "-f", "Google Chrome.app/Contents/MacOS/Google Chrome"]).decode().strip()
+            pids = raw.split() if raw.strip() else []
+            self.pid = int(pids[0]) if pids else None
+        except Exception:
+            self.pid = None
+        if self.pid:
+            self.executor.pid = self.pid
+            print(f"✓ PID={self.pid}", flush=True)
+            self.state = State.WAIT_READY
+        else:
+            print(f"❌ Kein Chrome PID gefunden", flush=True)
+            self.state = State.RECOVERY
 
     async def _wait_ready(self):
         for _ in range(5):
