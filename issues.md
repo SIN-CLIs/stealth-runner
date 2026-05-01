@@ -1,4 +1,11 @@
-# issues.md — stealth-runner
+# issues.md — stealth-runner (Updated 2026-05-01)
+
+## ✅ SOTA-Fortschritt (Mai 2026)
+- [x] Cross-Repo-Integration: unmask/screen-follow/skylight/playstealth alle orchestriert
+- [x] Vision-free Fast Path: DOM prescan mit Confidence Gate 0.85
+- [x] CreepJS CI Gate bei 80% (playstealth-cli)
+- [x] CEO Strategic Verdict: docs/CEO_STRATEGIC_VERDICT_2026-05-01.md
+- [x] 7 SOTA-Pläne in docs/sota-plans/
 
 ## 🔴 PRIO 1 — EUR verdienen
 - [ ] Survey-Loop automatisieren (derzeit teilautomatisch)

@@ -1,13 +1,19 @@
-# brain.md — stealth-runner v0.3.1 (30. April 2026, 16:30)
+# brain.md — stealth-runner v0.3.1 (Updated 2026-05-01)
 
 > **Stealth Quad: playstealth → skylight → screen-follow ← unmask**
-> **Self-improving: learn.py + anti_learn.py + strategy_selector.py**
+> **SOTA Updates: Vision-free Fast Path + DOM_PRESCAN + CreepJS CI Gate**
+>
+> 🔗 SOTA-Pläne: `A2A-SIN-Worker-heypiggy/docs/sota-plans/` (7 Pläne, 970 Zeilen)
+> 🔗 Issues: [#168](https://github.com/OpenSIN-AI/A2A-SIN-Worker-heypiggy/issues/168) - [#171](https://github.com/OpenSIN-AI/A2A-SIN-Worker-heypiggy/issues/171)
+> 🔗 CEO Verdict: `docs/executive-analysis/`
 
 ## 1. Architecture
-State Machine (9 States) orchestrates atomic CLI calls:
+State Machine (10 States) orchestriert atomic CLI calls:
 ```
-IDLE → LAUNCH_BROWSER → WAIT_READY → CAPTURE → VISION → EXECUTE → VERIFY → DONE
-                                                                   ↕ RECOVERY
+IDLE → LAUNCH_BROWSER → WAIT_READY → CAPTURE → DOM_PRESCAN → VISION → EXECUTE → VERIFY → DONE
+                                                                                    ↕ RECOVERY
+```
+- **DOM_PRESCAN** (NEU): unmask-cli DOM Scan vor Vision. Bei Confidence ≥ 0.85 → Klick OHNE Vision.
 ```
 After DONE: `learn_from_session()` → Skill Capture + Global Brain.
 
