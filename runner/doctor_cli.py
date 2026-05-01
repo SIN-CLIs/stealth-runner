@@ -630,6 +630,241 @@ def run_doctor(repo: Path) -> dict:
     except Exception as e:
         print(f"      ⚠️ api.md: {e}", flush=True)
 
+    # ── usage.md: CLI-Nutzung ─────────────────────────────────
+    try:
+        usage = repo / "usage.md"
+        help_texts = []
+        for f in sorted(repo.rglob("*.py"))[:20]:
+            if ".git" in str(f) or ".doctor" in str(f) or "venv" in str(f):
+                continue
+            try:
+                content = f.read_text(encoding="utf-8", errors="replace")
+                if "argparse" in content:
+                    help_texts.append(f"  - `{f.relative_to(repo)}`: Python CLI (argparse)")
+                if "import click" in content or "from click" in content:
+                    help_texts.append(f"  - `{f.relative_to(repo)}`: Python CLI (click)")
+                if 'if __name__ == "__main__"' in content:
+                    help_texts.append(f"  - `{f.relative_to(repo)}`: Script Entry Point")
+            except:
+                continue
+        makefile = repo / "Makefile"
+        make_targets = []
+        if makefile.exists():
+            for line in makefile.read_text(encoding="utf-8").split("\n"):
+                if line and not line.startswith(".") and not line.startswith("\t") and ":" in line:
+                    target = line.split(":")[0].strip()
+                    if target and target != "all":
+                        make_targets.append(target)
+        entry = f"\n## {today}: CLI Usage\n\n"
+        if help_texts:
+            entry += "**Entry Points:**\n" + "\n".join(help_texts[:5]) + "\n"
+        if make_targets[:5]:
+            entry += f"**Make Targets:** {', '.join(make_targets[:5])}\n"
+        entry += f"\n**Quick Start:**\n  ```bash\n  python3 {repo.name}/main.py --help\n  ```\n"
+        if usage.exists():
+            old = usage.read_text(encoding="utf-8")
+            lines = old.split("\n")
+            inserted = False
+            for i, line in enumerate(lines):
+                if line.startswith("## ") and not inserted:
+                    lines.insert(i, entry)
+                    inserted = True
+                    break
+            if not inserted:
+                lines.append(entry)
+            usage.write_text("\n".join(lines), encoding="utf-8")
+        else:
+            header = f"# usage.md – {repo.name}\n\n_CLI usage, auto-dokumentiert_\n"
+            usage.write_text(header + entry, encoding="utf-8")
+        print(f"      📖 usage.md: {len(help_texts)} Entry Points dokumentiert", flush=True)
+        fixes += 1
+    except Exception as e:
+        print(f"      ⚠️ usage.md: {e}", flush=True)
+
+    # ── faq.md: Häufige Fragen + Muster ──────────────────────
+    try:
+        faq = repo / "faq.md"
+        unique_findings = list(dict.fromkeys([f.get("old", "")[:40] for f in findings if f.get("old") and "FEHLT" not in f.get("old", "")]))
+        entry = f"\n## {today}: Häufige Funde\n\n"
+        entry += f"**Pattern-Ersetzungen ({len(findings)}):**\n"
+        for f_text in unique_findings[:10]:
+            entry += f"- ❓ `{f_text}` → ersetzt\n"
+        if findings:
+            entry += f"\n**Credentials entfernt:** {len([f for f in findings if 'CREDENTIALS' in str(f.get('old', ''))])}\n"
+        if faq.exists():
+            old = faq.read_text(encoding="utf-8")
+            lines = old.split("\n")
+            inserted = False
+            for i, line in enumerate(lines):
+                if line.startswith("## ") and not inserted:
+                    lines.insert(i, entry)
+                    inserted = True
+                    break
+            if not inserted:
+                lines.append(entry)
+            faq.write_text("\n".join(lines), encoding="utf-8")
+        else:
+            header = f"# faq.md – {repo.name}\n\n_Häufige Fragen, auto-dokumentiert_\n"
+            faq.write_text(header + entry, encoding="utf-8")
+        print(f"      ❓ faq.md: {len(unique_findings)} Muster dokumentiert", flush=True)
+        fixes += 1
+    except Exception as e:
+        print(f"      ⚠️ faq.md: {e}", flush=True)
+
+    # ── benchmarks.md: Performance-Daten ─────────────────────
+    try:
+        bench = repo / "benchmarks.md"
+        py_count = len(list(repo.rglob("*.py")))
+        md_count = len(list(repo.rglob("*.md")))
+        test_count = len(test_files) if 'test_files' in dir() else len(list(repo.rglob("test_*.py")))
+        entry = f"\n## {today}: Code-Statistiken\n\n"
+        entry += f"| Metrik | Wert |\n|--------|------|\n"
+        entry += f"| Python-Dateien | {py_count} |\n"
+        entry += f"| Markdown-Dateien | {md_count} |\n"
+        entry += f"| Test-Dateien | {test_count} |\n"
+        entry += f"| Fixes dieser Session | {len(findings)} |\n"
+        if langs:
+            entry += f"| Hauptsprachen | {', '.join(langs[:3])} |\n"
+        if bench.exists():
+            old = bench.read_text(encoding="utf-8")
+            lines = old.split("\n")
+            inserted = False
+            for i, line in enumerate(lines):
+                if line.startswith("## ") and not inserted:
+                    lines.insert(i, entry)
+                    inserted = True
+                    break
+            if not inserted:
+                lines.append(entry)
+            bench.write_text("\n".join(lines), encoding="utf-8")
+        else:
+            header = f"# benchmarks.md – {repo.name}\n\n_Performance data, auto-dokumentiert_\n"
+            bench.write_text(header + entry, encoding="utf-8")
+        print(f"      📊 benchmarks.md: {py_count} Python, {test_count} Tests", flush=True)
+        fixes += 1
+    except Exception as e:
+        print(f"      ⚠️ benchmarks.md: {e}", flush=True)
+
+    # ── troubleshooting.md: Fehlerbehebung ────────────────────
+    try:
+        trouble = repo / "troubleshooting.md"
+        fix_by_file = {}
+        for f_text in findings:
+            file = f_text.get("file", "?")
+            if file not in fix_by_file:
+                fix_by_file[file] = 0
+            fix_by_file[file] += 1
+        entry = f"\n## {today}: Fix-Statistiken\n\n"
+        entry += f"**Änderungen pro Datei:**\n"
+        for file, count in sorted(fix_by_file.items(), key=lambda x: -x[1])[:10]:
+            entry += f"- `{file}`: {count} Fix(es)\n"
+        if trouble.exists():
+            old = trouble.read_text(encoding="utf-8")
+            lines = old.split("\n")
+            inserted = False
+            for i, line in enumerate(lines):
+                if line.startswith("## ") and not inserted:
+                    lines.insert(i, entry)
+                    inserted = True
+                    break
+            if not inserted:
+                lines.append(entry)
+            trouble.write_text("\n".join(lines), encoding="utf-8")
+        else:
+            header = f"# troubleshooting.md – {repo.name}\n\n_Known issues, auto-dokumentiert_\n"
+            trouble.write_text(header + entry, encoding="utf-8")
+        print(f"      🔧 troubleshooting.md: {len(fix_by_file)} Dateien betroffen", flush=True)
+        fixes += 1
+    except Exception as e:
+        print(f"      ⚠️ troubleshooting.md: {e}", flush=True)
+
+    # ── acknowledgments.md: Autoren ──────────────────────────
+    try:
+        ack = repo / "acknowledgments.md"
+        authors = subprocess.run(["git", "log", "--format=%aN", "--reverse"], capture_output=True, text=True, timeout=5, cwd=str(repo))
+        unique_authors = list(dict.fromkeys([a for a in authors.stdout.strip().split("\n") if a]))
+        entry = f"\n## {today}: Contributors\n\n"
+        for a in unique_authors:
+            entry += f"- {a}\n"
+        if ack.exists():
+            old = ack.read_text(encoding="utf-8")
+            if "## " not in old:
+                ack.write_text(old + entry, encoding="utf-8")
+        else:
+            header = f"# acknowledgments.md – {repo.name}\n\n_Contributors, auto-dokumentiert_\n"
+            ack.write_text(header + entry, encoding="utf-8")
+        print(f"      👏 acknowledgments.md: {len(unique_authors)} Autoren", flush=True)
+        fixes += 1
+    except Exception as e:
+        print(f"      ⚠️ acknowledgments.md: {e}", flush=True)
+
+    # ── SUPPORT.md: Support-Informationen ─────────────────────
+    try:
+        support = repo / "SUPPORT.md"
+        remote_url = subprocess.run(["git", "remote", "get-url", "origin"], capture_output=True, text=True, timeout=3, cwd=str(repo)).stdout.strip()
+        issues_url = remote_url.replace(".git", "/issues") if remote_url else "N/A"
+        entry = f"\n## {today}: Project Info\n\n"
+        entry += f"- **Remote:** {remote_url}\n"
+        entry += f"- **Issues:** {issues_url}\n"
+        entry += f"- **Sprachen:** {', '.join(langs) if langs else 'N/A'}\n"
+        if support.exists():
+            old = support.read_text(encoding="utf-8")
+            if "## " not in old:
+                support.write_text(old + entry, encoding="utf-8")
+        else:
+            header = f"# SUPPORT.md – {repo.name}\n\n_Support information_\n\n"
+            header += "## Community\n- GitHub Issues: [Issues Page](" + (issues_url or "#") + ")\n"
+            header += "## Security\n- Report vulnerabilities via SECURITY.md\n"
+            support.write_text(header + entry, encoding="utf-8")
+        print(f"      🆘 SUPPORT.md: dokumentiert", flush=True)
+        fixes += 1
+    except Exception as e:
+        print(f"      ⚠️ SUPPORT.md: {e}", flush=True)
+
+    # ── CODE_OF_CONDUCT.md: Standard-Vorlage ─────────────────
+    try:
+        coc = repo / "CODE_OF_CONDUCT.md"
+        if not coc.exists():
+            coc.write_text(f"# Code of Conduct – {repo.name}\n\n"
+                "## Our Pledge\n\nWe pledge to make participation in this project a harassment-free experience.\n\n"
+                "## Enforcement\n\nViolations can be reported to the project maintainers.\n", encoding="utf-8")
+            print(f"      📜 CODE_OF_CONDUCT.md: erstellt", flush=True)
+            fixes += 1
+    except Exception as e:
+        print(f"      ⚠️ CODE_OF_CONDUCT.md: {e}", flush=True)
+
+    # ── CONTRIBUTING.md: Beitragsrichtlinien ──────────────────
+    try:
+        contributing = repo / "CONTRIBUTING.md"
+        if not contributing.exists():
+            instructions = f"# Contributing to {repo.name}\n\n"
+            instructions += "## Development Setup\n"
+            if list(repo.rglob("Makefile")):
+                instructions += "```bash\nmake install\nmake test\n```\n"
+            instructions += "\n## Pull Request Process\n1. Fork the repo\n2. Create a feature branch\n3. Write tests\n4. Submit PR\n\n"
+            instructions += "## Code Style\n- Follow existing code patterns\n- Write meaningful commit messages\n"
+            contributing.write_text(instructions, encoding="utf-8")
+            print(f"      📝 CONTRIBUTING.md: erstellt", flush=True)
+            fixes += 1
+    except Exception as e:
+        print(f"      ⚠️ CONTRIBUTING.md: {e}", flush=True)
+
+    # ── SECURITY.md: Sicherheitsrichtlinien ───────────────────
+    try:
+        security = repo / "SECURITY.md"
+        if not security.exists():
+            remote_url = subprocess.run(["git", "remote", "get-url", "origin"], capture_output=True, text=True, timeout=3, cwd=str(repo)).stdout.strip()
+            security.write_text(
+                f"# Security Policy – {repo.name}\n\n"
+                "## Supported Versions\n\nUse the latest release.\n\n"
+                "## Reporting a Vulnerability\n\n"
+                f"Open an issue at {remote_url.replace('.git', '/issues') if remote_url else 'the repository'}\n"
+                "or contact the maintainers directly.\n", encoding="utf-8")
+            print(f"      🔒 SECURITY.md: erstellt", flush=True)
+            fixes += 1
+    except Exception as e:
+        print(f"      ⚠️ SECURITY.md: {e}", flush=True)
+
     # Essentielle Docs prüfen
     for doc in ["README.md", "LICENSE", "CONTRIBUTING.md", "SECURITY.md", "AGENTS.md", "brain.md", "goal.md"]:
         if not (repo / doc).exists():
