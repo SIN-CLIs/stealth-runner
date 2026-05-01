@@ -47,9 +47,9 @@
 - Graphify rebuild automatisch nach jedem Commit
 
 ## Credentials
-- Google: zukunftsorientierte.energie@gmail.com / ZOE.jerry2024
-- NVIDIA API Key: nvapi-... (Prefix)
-- Heypiggy Profil: profiles/jeremy.yaml
+- Google: Siehe `profiles/jeremy.yaml` (NICHT in Docs!)
+- NVIDIA API Key: `$NVIDIA_API_KEY` (env var, Prefix: `nvapi-...`)
+- Heypiggy Profil: `profiles/jeremy.yaml` (im .gitignore, nicht committed)
 
 ## Bugs gefixt
 - [FIXED] Model-Name: `nvidia/nvidia/` → `nvidia/` (doppelter Prefix → 404)
