@@ -125,9 +125,9 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L72",
-      "id": "runner_doctor_cli_rationale_72",
       "community": 23,
-      "norm_label": "nur die 7 haupt-repos, nicht alle 143 in ~/dev/."
+      "norm_label": "nur die 7 haupt-repos, nicht alle 143 in ~/dev/.",
+      "id": "runner_doctor_cli_rationale_72"
     },
     {
       "label": "state_manager.py",

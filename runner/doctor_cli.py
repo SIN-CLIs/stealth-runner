@@ -456,6 +456,180 @@ def run_doctor(repo: Path) -> dict:
     except Exception as e:
         print(f"      ⚠️ history.md: {e}", flush=True)
 
+    # ── architecture.md: Komponenten + Struktur ──────────────
+    try:
+        arch = repo / "architecture.md"
+        py_files = list(repo.rglob("*.py"))
+        js_files = list(repo.rglob("*.js"))
+        swift_files = list(repo.rglob("*.swift"))
+        dirs = sorted(set(f.parent.relative_to(repo) for f in py_files + js_files + swift_files
+                         if ".git" not in str(f) and "node_modules" not in str(f)))[:15]
+        entry = f"\n## {today}: Architecture Scan\n\n"
+        entry += f"**Komponenten ({len(dirs)} Module):**\n"
+        for d in dirs[:10]:
+            pys = len(list(repo.glob(f"{d}/*.py")))
+            entry += f"- `{d}/` ({pys} Python Dateien)\n"
+        entry += f"\n**Sprachen:** {', '.join(langs) if langs else 'N/A'}\n"
+        entry += f"\n**Total Dateien:** {total_files}\n"
+        if arch.exists():
+            old = arch.read_text(encoding="utf-8")
+            lines = old.split("\n")
+            inserted = False
+            for i, line in enumerate(lines):
+                if line.startswith("## ") and not inserted:
+                    lines.insert(i, entry)
+                    inserted = True
+                    break
+            if not inserted:
+                lines.append(entry)
+            arch.write_text("\n".join(lines), encoding="utf-8")
+        else:
+            header = f"# architecture.md – {repo.name}\n\n_Component overview, auto-dokumentiert_\n"
+            arch.write_text(header + entry, encoding="utf-8")
+        print(f"      🏗️ architecture.md: {len(dirs)} Module dokumentiert", flush=True)
+        fixes += 1
+    except Exception as e:
+        print(f"      ⚠️ architecture.md: {e}", flush=True)
+
+    # ── commands.md: CLI-Befehle aus dem Repo ────────────────
+    try:
+        cmds = repo / "commands.md"
+        entry_lines = [f"\n## {today}: CLI Entry Points\n"]
+        # Suche nach CLI-Einstiegspunkten
+        for pattern in ["cli.py", "main.py", "bin/*", "*.sh", "scripts/*.py", "Makefile"]:
+            for f in repo.glob(pattern):
+                if ".git" in str(f) or ".doctor" in str(f):
+                    continue
+                try:
+                    first = f.read_text(encoding="utf-8", errors="replace")[:200]
+                    if "cli" in first.lower() or "main" in first.lower() or "argparse" in first.lower():
+                        entry_lines.append(f"- `{f.relative_to(repo)}` — CLI Entry Point\n")
+                except:
+                    continue
+        if len(entry_lines) > 1:
+            entry = "".join(entry_lines)
+            if cmds.exists():
+                old = cmds.read_text(encoding="utf-8")
+                lines = old.split("\n")
+                inserted = False
+                for i, line in enumerate(lines):
+                    if line.startswith("## ") and not inserted:
+                        lines.insert(i, entry)
+                        inserted = True
+                        break
+                if not inserted:
+                    lines.append(entry)
+                cmds.write_text("\n".join(lines), encoding="utf-8")
+            else:
+                header = f"# commands.md – {repo.name}\n\n_CLI reference, auto-dokumentiert_\n"
+                cmds.write_text(header + entry, encoding="utf-8")
+            count = len(entry_lines) - 1
+            print(f"      ⌨️ commands.md: {count} CLI Entry Points dokumentiert", flush=True)
+            fixes += 1
+    except Exception as e:
+        print(f"      ⚠️ commands.md: {e}", flush=True)
+
+    # ── testing.md: Teststruktur + Ergebnisse ────────────────
+    try:
+        test_md = repo / "testing.md"
+        test_files = list(repo.rglob("test_*.py")) + list(repo.rglob("*_test.py")) + list(repo.rglob("tests/*.py"))
+        test_files = [f for f in test_files if ".git" not in str(f) and ".doctor" not in str(f)]
+        test_dirs = sorted(set(f.parent.relative_to(repo) for f in test_files))
+        entry = f"\n## {today}: Test Status\n\n"
+        entry += f"**Test-Dateien:** {len(test_files)}\n"
+        entry += f"**Test-Ordner:** {len(test_dirs)}\n"
+        if test_dirs:
+            entry += f"**Ordnern:**\n"
+            for d in test_dirs[:5]:
+                files_in = len(list(repo.glob(f"{d}/test_*.py")) + list(repo.glob(f"{d}/*_test.py")))
+                entry += f"- `{d}/` ({files_in} Tests)\n"
+        if test_md.exists():
+            old = test_md.read_text(encoding="utf-8")
+            lines = old.split("\n")
+            inserted = False
+            for i, line in enumerate(lines):
+                if line.startswith("## ") and not inserted:
+                    lines.insert(i, entry)
+                    inserted = True
+                    break
+            if not inserted:
+                lines.append(entry)
+            test_md.write_text("\n".join(lines), encoding="utf-8")
+        else:
+            header = f"# testing.md – {repo.name}\n\n_Test documentation, auto-dokumentiert_\n"
+            test_md.write_text(header + entry, encoding="utf-8")
+        print(f"      🧪 testing.md: {len(test_files)} Test-Dateien dokumentiert", flush=True)
+        fixes += 1
+    except Exception as e:
+        print(f"      ⚠️ testing.md: {e}", flush=True)
+
+    # ── goal.md: Repo-Ziele ──────────────────────────────────
+    try:
+        goal = repo / "goal.md"
+        remote = subprocess.run(["git", "remote", "get-url", "origin"], capture_output=True, text=True, timeout=3, cwd=str(repo))
+        readme = repo / "README.md"
+        purpose = "N/A"
+        if readme.exists():
+            first_line = readme.read_text(encoding="utf-8", errors="replace").split("\n")[0]
+            purpose = first_line.replace("#", "").strip()[:80]
+        entry = f"\n## {today}: Repository Status\n\n"
+        entry += f"**Repo:** {repo.name}\n"
+        entry += f"**Remote:** {remote.stdout.strip()[:80] if remote.stdout.strip() else 'N/A'}\n"
+        entry += f"**Purpose:** {purpose}\n"
+        entry += f"**Sprachen:** {', '.join(langs) if langs else 'N/A'}\n"
+        entry += f"**Letzte Commits:** {len(commits)}\n"
+        if goal.exists():
+            old = goal.read_text(encoding="utf-8")
+            lines = old.split("\n")
+            inserted = False
+            for i, line in enumerate(lines):
+                if line.startswith("## ") and not inserted:
+                    lines.insert(i, entry)
+                    inserted = True
+                    break
+            if not inserted:
+                lines.append(entry)
+            goal.write_text("\n".join(lines), encoding="utf-8")
+        else:
+            header = f"# goal.md – {repo.name}\n\n_Repository goals, auto-dokumentiert_\n"
+            goal.write_text(header + entry, encoding="utf-8")
+        print(f"      🎯 goal.md: {purpose[:40]}... dokumentiert", flush=True)
+        fixes += 1
+    except Exception as e:
+        print(f"      ⚠️ goal.md: {e}", flush=True)
+
+    # ── api.md: Python-Modul-Struktur ────────────────────────
+    try:
+        api = repo / "api.md"
+        py_modules = sorted(set(f.parent.relative_to(repo) for f in py_files
+                               if ".git" not in str(f) and ".doctor" not in str(f)
+                               and "__pycache__" not in str(f) and "venv" not in str(f)))[:20]
+        entry = f"\n## {today}: Python Modules\n\n"
+        for m in py_modules[:10]:
+            inits = list(repo.glob(f"{m}/__init__.py"))
+            py_count = len(list(repo.glob(f"{m}/*.py")))
+            status = "✅ package" if inits else f"📁 {py_count} files"
+            entry += f"- `{m}/` ({status})\n"
+        if api.exists():
+            old = api.read_text(encoding="utf-8")
+            lines = old.split("\n")
+            inserted = False
+            for i, line in enumerate(lines):
+                if line.startswith("## ") and not inserted:
+                    lines.insert(i, entry)
+                    inserted = True
+                    break
+            if not inserted:
+                lines.append(entry)
+            api.write_text("\n".join(lines), encoding="utf-8")
+        else:
+            header = f"# api.md – {repo.name}\n\n_Python module structure, auto-dokumentiert_\n"
+            api.write_text(header + entry, encoding="utf-8")
+        print(f"      📦 api.md: {len(py_modules)} Python Module dokumentiert", flush=True)
+        fixes += 1
+    except Exception as e:
+        print(f"      ⚠️ api.md: {e}", flush=True)
+
     # Essentielle Docs prüfen
     for doc in ["README.md", "LICENSE", "CONTRIBUTING.md", "SECURITY.md", "AGENTS.md", "brain.md", "goal.md"]:
         if not (repo / doc).exists():
