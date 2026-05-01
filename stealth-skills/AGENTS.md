@@ -3,6 +3,7 @@
 Diese Skills sind KEINE opencode-CLI-Skills. Sie sind Referenzdokumente für den Agenten, die im `stealth-runner`-Repo leben.
 
 Jeder Skill dokumentiert:
+
 - Exakte CLI-Befehle mit Argumenten
 - Element-Indizes & Suchmuster
 - Bekannte Fehler & Fixes
@@ -10,6 +11,6 @@ Jeder Skill dokumentiert:
 
 ## Verfügbare Skills
 
-| Skill | Beschreibung |
-|-------|-------------|
+| Skill          | Beschreibung                               |
+| -------------- | ------------------------------------------ |
 | `google-login` | Google OAuth Login/Logout auf heypiggy.com |

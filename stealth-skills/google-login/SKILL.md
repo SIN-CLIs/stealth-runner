@@ -6,6 +6,7 @@
 ---
 
 ## 🚀 Chrome starten (isoliert, KEIN Nutzer-Chrome)
+
 ```bash
 playstealth launch --url 'https://heypiggy.com/?page=dashboard'
 # → {"pid": 97228, "status": "ok"}
@@ -15,6 +16,7 @@ PID=97228
 ## 📋 LOGIN Flow
 
 ### Schritt 1: Google Login Button klicken
+
 ```bash
 GOOGLE_IDX=$(skylight-cli list-elements --pid $PID | \
   python3 -c "import json,sys; [print(e['index']) for e in json.load(sys.stdin)['elements'] if 'google' in (e.get('label','')or'').lower() and e['role']=='AXLink']")
@@ -23,6 +25,7 @@ sleep 5
 ```
 
 ### Schritt 2: E-Mail eingeben
+
 ```bash
 EMAIL_IDX=$(skylight-cli list-elements --pid $PID | python3 -c "
 import json,sys
@@ -35,6 +38,7 @@ sleep 3
 ```
 
 ### Schritt 3: Weiter klicken
+
 ```bash
 WEITER=$(skylight-cli list-elements --pid $PID | python3 -c "
 import json,sys
@@ -47,6 +51,7 @@ sleep 5
 ```
 
 ### Schritt 4: Passwort eingeben
+
 ```bash
 PW_IDX=$(skylight-cli list-elements --pid $PID | python3 -c "
 import json,sys
@@ -60,6 +65,7 @@ sleep 1
 ```
 
 ### Schritt 5: Weiter nach Passwort
+
 ```bash
 PW_WEITER=$(skylight-cli list-elements --pid $PID | python3 -c "
 import json,sys
@@ -72,15 +78,17 @@ sleep 5
 ```
 
 ## 🛠️ Tools (NUR diese!)
-| Tool | Befehl |
-|------|--------|
-| skylight-cli | `click --pid X --element-index N` |
+
+| Tool         | Befehl                                        |
+| ------------ | --------------------------------------------- |
+| skylight-cli | `click --pid X --element-index N`             |
 | skylight-cli | `type --pid X --element-index N --text "..."` |
-| skylight-cli | `list-elements --pid X` |
-| skylight-cli | `screenshot --pid X --mode som --out f.png` |
-| playstealth | `launch --url 'URL'` |
+| skylight-cli | `list-elements --pid X`                       |
+| skylight-cli | `screenshot --pid X --mode som --out f.png`   |
+| playstealth  | `launch --url 'URL'`                          |
 
 ## ❌ NIEMALS
+
 - skylight-cli MCP → BANNED
 - `--x`/`--y` raten → Apple-Menü (0,0)
 - `osascript` oder `open` → manipuliert Nutzer-Chrome
@@ -88,6 +96,7 @@ sleep 5
 - Ohne `sleep 5` nach Popup-Klick
 
 ## 🚨 Die 3 eisernen Regeln
+
 1. **NACH jedem Popup `list-elements` NEU abfragen** (Indizes ändern sich!)
 2. **Koordinaten-Prüfung**: y > 30 (kein Apple-Menü)
 3. **Label exakt matchen**: "E-Mail oder Telefonnummer" NICHT nur "E-Mail"

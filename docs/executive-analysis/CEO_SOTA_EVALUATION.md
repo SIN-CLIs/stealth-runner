@@ -4,7 +4,7 @@
 
 **Betreff:** stealth‑runner v0.3.1 – Marktreife, SOTA‑Status & strategische Ausrichtung  
 **Datum:** 2026‑04‑30  
-**Klassifikation:** STRENG VERTRAULICH  
+**Klassifikation:** STRENG VERTRAULICH
 
 ---
 
@@ -16,39 +16,39 @@
 
 ## 2. Zielerreichung – Abgleich mit den definierten OKRs
 
-| Ziel | Soll | Ist | Status |
-|------|------|-----|--------|
-| **Stealth‑Triade‑Integration** | playstealth + skylight + unmask als einziges Backend | ✅ 100 % | **Erreicht** |
-| **Zustandslose CLI‑Pipeline** | Kein MCP‑Server, atomare Aufrufe | ✅ 100 % | **Erreicht** |
-| **10‑State‑Machine mit Recovery** | Robuste Automatisierung mit Selbstheilung | ✅ 100 % | **Erreicht** |
-| **Vision‑First‑Interaktion** | SoM‑Screenshots + strukturierte LLM‑Antworten | ✅ 90 % | **Teilweise** |
-| **Human‑Profile** | Realistische Verhaltensmuster | ✅ 95 % | **Teilweise** |
-| **Captcha‑Kompetenz** | Turnstile, reCAPTCHA, hCaptcha | ✅ 88–92 % | **Erreicht** |
+| Ziel                              | Soll                                                 | Ist        | Status        |
+| --------------------------------- | ---------------------------------------------------- | ---------- | ------------- |
+| **Stealth‑Triade‑Integration**    | playstealth + skylight + unmask als einziges Backend | ✅ 100 %   | **Erreicht**  |
+| **Zustandslose CLI‑Pipeline**     | Kein MCP‑Server, atomare Aufrufe                     | ✅ 100 %   | **Erreicht**  |
+| **10‑State‑Machine mit Recovery** | Robuste Automatisierung mit Selbstheilung            | ✅ 100 %   | **Erreicht**  |
+| **Vision‑First‑Interaktion**      | SoM‑Screenshots + strukturierte LLM‑Antworten        | ✅ 90 %    | **Teilweise** |
+| **Human‑Profile**                 | Realistische Verhaltensmuster                        | ✅ 95 %    | **Teilweise** |
+| **Captcha‑Kompetenz**             | Turnstile, reCAPTCHA, hCaptcha                       | ✅ 88–92 % | **Erreicht**  |
 
 ---
 
 ## 3. SOTA‑Status – Benchmark gegen Wettbewerber
 
-| Kategorie | Unser Stand | Vorsprung |
-|-----------|-------------|-----------|
-| **Zero‑Cursor‑Stealing** | ✅ SkyLight.framework | **18–24 Monate** |
-| **Canvas/WebGL‑Tarnung** | ✅ playstealth‑cli | **12 Monate** |
-| **Strukturierte LLM‑Ausgabe** | ✅ Pydantic V2 | **Pari** |
-| **Resilienz** | ✅ tenacity + Graceful Shutdown | **Pari** |
-| **TLS/JA3‑Fingerprinting** | ❌ Nicht implementiert | **6 Monate Rückstand** |
-| **Behavioral Biometrics** | 🟡 Grundlegend | **3–6 Monate Rückstand** |
+| Kategorie                     | Unser Stand                     | Vorsprung                |
+| ----------------------------- | ------------------------------- | ------------------------ |
+| **Zero‑Cursor‑Stealing**      | ✅ SkyLight.framework           | **18–24 Monate**         |
+| **Canvas/WebGL‑Tarnung**      | ✅ playstealth‑cli              | **12 Monate**            |
+| **Strukturierte LLM‑Ausgabe** | ✅ Pydantic V2                  | **Pari**                 |
+| **Resilienz**                 | ✅ tenacity + Graceful Shutdown | **Pari**                 |
+| **TLS/JA3‑Fingerprinting**    | ❌ Nicht implementiert          | **6 Monate Rückstand**   |
+| **Behavioral Biometrics**     | 🟡 Grundlegend                  | **3–6 Monate Rückstand** |
 
 ---
 
 ## 4. Dringende Verbesserungen – Die 5 kritischsten Lücken
 
-| Prio | Lücke | Lösung |
-|------|-------|--------|
-| **P0** | TLS/JA3‑Fingerprinting | `curl_cffi` in `playstealth‑cli` |
-| **P0** | Biometrics‑Kalibrierung | `scipy.stats` PDF‑Sampler |
-| **P1** | Semantic Caching | `diskcache` + Embedding‑Similarity |
-| **P1** | OpenTelemetry APM | OTLP‑Exporter + Grafana |
-| **P2** | Cross‑Platform Abstraction | `drivers/`‑Interface |
+| Prio   | Lücke                      | Lösung                             |
+| ------ | -------------------------- | ---------------------------------- |
+| **P0** | TLS/JA3‑Fingerprinting     | `curl_cffi` in `playstealth‑cli`   |
+| **P0** | Biometrics‑Kalibrierung    | `scipy.stats` PDF‑Sampler          |
+| **P1** | Semantic Caching           | `diskcache` + Embedding‑Similarity |
+| **P1** | OpenTelemetry APM          | OTLP‑Exporter + Grafana            |
+| **P2** | Cross‑Platform Abstraction | `drivers/`‑Interface               |
 
 ---
 
@@ -63,24 +63,24 @@
 
 ## 6. Der 30‑Tage‑Plan
 
-| Woche | Fokus | Ergebnis |
-|-------|-------|----------|
-| **1** | TLS‑Fingerprinting + Biometrics | JA3‑Signatur Chrome‑konsistent |
-| **2** | Semantic Caching + OpenTelemetry | Vision‑Kosten –60 % |
-| **3** | Cross‑Platform Interface | SkyLight‑Driver als Referenz |
-| **4** | Enterprise‑Governance + Audit | SOC2‑Checkliste |
+| Woche | Fokus                            | Ergebnis                       |
+| ----- | -------------------------------- | ------------------------------ |
+| **1** | TLS‑Fingerprinting + Biometrics  | JA3‑Signatur Chrome‑konsistent |
+| **2** | Semantic Caching + OpenTelemetry | Vision‑Kosten –60 %            |
+| **3** | Cross‑Platform Interface         | SkyLight‑Driver als Referenz   |
+| **4** | Enterprise‑Governance + Audit    | SOC2‑Checkliste                |
 
 ---
 
 ## 7. Finanzielles
 
-| Maßnahme | Aufwand | Return |
-|----------|---------|--------|
-| TLS‑Fingerprinting | 1 Woche | Turnstile +8–12 % |
-| Biometrics | 2 Wochen | DataDome +15 % |
-| Semantic Caching | 1 Woche | Kosten –60 % |
-| OpenTelemetry | 2 Wochen | Debugging –80 % |
-| **Gesamt** | **6 Wochen** | **Vorsprung 18+ Monate** |
+| Maßnahme           | Aufwand      | Return                   |
+| ------------------ | ------------ | ------------------------ |
+| TLS‑Fingerprinting | 1 Woche      | Turnstile +8–12 %        |
+| Biometrics         | 2 Wochen     | DataDome +15 %           |
+| Semantic Caching   | 1 Woche      | Kosten –60 %             |
+| OpenTelemetry      | 2 Wochen     | Debugging –80 %          |
+| **Gesamt**         | **6 Wochen** | **Vorsprung 18+ Monate** |
 
 ---
 

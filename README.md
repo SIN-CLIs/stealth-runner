@@ -15,15 +15,15 @@
 
 ## 🔥 Features
 
-| Feature | Status | Beschreibung |
-|---------|--------|-------------|
-| **Google Login** | ✅ Automatisiert | playstealth → Google OAuth → Email → Passwort → Dashboard |
-| **Nemotron Omni Vision** | ✅ Produktion | Video+Audio+Bild+Text in EINEM NIM-Call, 9× effizienter |
-| **Rolling Video Buffer** | ✅ Live | screen-follow + ffmpeg + Conv3D für temporale Analyse |
-| **SSE Streaming** | ✅ Tokenweise | `stream: true` → Antwort kommt chunk-by-chunk |
-| **Graphify Graph** | ✅ 6 Repos | 4.820 Nodes, 10.860 Edges, 284 Communities |
-| **Semgrep Guard** | ✅ Pre-Commit | 11 Regeln blockieren BANNED Muster |
-| **screen-follow Video** | ✅ Daueraufnahme | MP4-Recording für Post-Mortem-Analyse |
+| Feature                  | Status           | Beschreibung                                              |
+| ------------------------ | ---------------- | --------------------------------------------------------- |
+| **Google Login**         | ✅ Automatisiert | playstealth → Google OAuth → Email → Passwort → Dashboard |
+| **Nemotron Omni Vision** | ✅ Produktion    | Video+Audio+Bild+Text in EINEM NIM-Call, 9× effizienter   |
+| **Rolling Video Buffer** | ✅ Live          | screen-follow + ffmpeg + Conv3D für temporale Analyse     |
+| **SSE Streaming**        | ✅ Tokenweise    | `stream: true` → Antwort kommt chunk-by-chunk             |
+| **Graphify Graph**       | ✅ 6 Repos       | 4.820 Nodes, 10.860 Edges, 284 Communities                |
+| **Semgrep Guard**        | ✅ Pre-Commit    | 11 Regeln blockieren BANNED Muster                        |
+| **screen-follow Video**  | ✅ Daueraufnahme | MP4-Recording für Post-Mortem-Analyse                     |
 
 ---
 
@@ -77,15 +77,15 @@ skylight-cli click --pid 12345 --element-index 43
 
 ### 🔗 Stealth-Quad (7 Repos)
 
-| Layer | Repo | Technologie |
-|-------|------|-------------|
-| **🧠 Orchestrator** | [stealth-runner](https://github.com/OpenSIN-AI/stealth-runner) | Python, State Machine, Omni Vision |
-| **🎭 HIDE** | [playstealth-cli](https://github.com/SIN-CLIs/playstealth-cli) | Python, Playwright, Fingerprint |
-| **🖱️ ACT** | [skylight-cli](https://github.com/SIN-CLIs/skylight-cli) | Swift, AXUIElementPerformAction |
-| **👁️ SENSE** | [unmask-cli](https://github.com/SIN-CLIs/unmask-cli) | TypeScript, CDP, JSON-RPC |
-| **📹 VERIFY** | [screen-follow](https://github.com/SIN-CLIs/screen-follow) | Swift, ScreenCaptureKit, MP4 |
-| **🤖 Vision** | [Nemotron Omni](https://build.nvidia.com/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning) | NVIDIA NIM, 30B-A3B MoE |
-| **📊 Graph** | [Graphify](https://github.com/safishamsi/graphify) | 6 Repos merged → 4820 Nodes |
+| Layer               | Repo                                                                                    | Technologie                        |
+| ------------------- | --------------------------------------------------------------------------------------- | ---------------------------------- |
+| **🧠 Orchestrator** | [stealth-runner](https://github.com/OpenSIN-AI/stealth-runner)                          | Python, State Machine, Omni Vision |
+| **🎭 HIDE**         | [playstealth-cli](https://github.com/SIN-CLIs/playstealth-cli)                          | Python, Playwright, Fingerprint    |
+| **🖱️ ACT**          | [skylight-cli](https://github.com/SIN-CLIs/skylight-cli)                                | Swift, AXUIElementPerformAction    |
+| **👁️ SENSE**        | [unmask-cli](https://github.com/SIN-CLIs/unmask-cli)                                    | TypeScript, CDP, JSON-RPC          |
+| **📹 VERIFY**       | [screen-follow](https://github.com/SIN-CLIs/screen-follow)                              | Swift, ScreenCaptureKit, MP4       |
+| **🤖 Vision**       | [Nemotron Omni](https://build.nvidia.com/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning) | NVIDIA NIM, 30B-A3B MoE            |
+| **📊 Graph**        | [Graphify](https://github.com/safishamsi/graphify)                                      | 6 Repos merged → 4820 Nodes        |
 
 ---
 
@@ -102,14 +102,14 @@ pip install semgrep graphifyy httpx diskcache pyyaml
 
 ### Voraussetzungen
 
-| Tool | Zweck | Install |
-|------|-------|---------|
-| `skylight-cli` | UI-Interaktion (Accessibility) | [SIN-CLIs/skylight-cli](https://github.com/SIN-CLIs/skylight-cli) |
-| `playstealth` | Isolierter Chrome-Start | [SIN-CLIs/playstealth-cli](https://github.com/SIN-CLIs/playstealth-cli) |
-| `screen-follow` | Video-Aufzeichnung | [SIN-CLIs/screen-follow](https://github.com/SIN-CLIs/screen-follow) |
-| `semgrep` | Architecture Guard | `pip3 install semgrep` |
-| `graphify` | Knowledge Graph | `pip3 install graphifyy` |
-| NVIDIA API Key | Vision AI | `export NVIDIA_API_KEY=nvapi-...` |
+| Tool            | Zweck                          | Install                                                                 |
+| --------------- | ------------------------------ | ----------------------------------------------------------------------- |
+| `skylight-cli`  | UI-Interaktion (Accessibility) | [SIN-CLIs/skylight-cli](https://github.com/SIN-CLIs/skylight-cli)       |
+| `playstealth`   | Isolierter Chrome-Start        | [SIN-CLIs/playstealth-cli](https://github.com/SIN-CLIs/playstealth-cli) |
+| `screen-follow` | Video-Aufzeichnung             | [SIN-CLIs/screen-follow](https://github.com/SIN-CLIs/screen-follow)     |
+| `semgrep`       | Architecture Guard             | `pip3 install semgrep`                                                  |
+| `graphify`      | Knowledge Graph                | `pip3 install graphifyy`                                                |
+| NVIDIA API Key  | Vision AI                      | `export NVIDIA_API_KEY=nvapi-...`                                       |
 
 ---
 
@@ -123,13 +123,13 @@ fallback_models:
 max_tokens: 300
 ```
 
-| Eigenschaft | Wert |
-|-------------|------|
-| Modell | `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` |
-| API | `POST https://integrate.api.nvidia.com/v1/chat/completions` |
-| Auth | `Authorization: Bearer $NVIDIA_API_KEY` |
-| Streaming | `stream: true` + `Accept: text/event-stream` |
-| Antwortfeld | `msg.get("reasoning") or msg.get("content")` |
+| Eigenschaft | Wert                                                        |
+| ----------- | ----------------------------------------------------------- |
+| Modell      | `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`             |
+| API         | `POST https://integrate.api.nvidia.com/v1/chat/completions` |
+| Auth        | `Authorization: Bearer $NVIDIA_API_KEY`                     |
+| Streaming   | `stream: true` + `Accept: text/event-stream`                |
+| Antwortfeld | `msg.get("reasoning") or msg.get("content")`                |
 
 ---
 
@@ -141,18 +141,18 @@ max_tokens: 300
 semgrep --config=.semgrep_rules.yaml .
 ```
 
-| Regel | Blockiert |
-|-------|-----------|
-| `banned-chrome-pgrep` | `playstealth launch (isolierte PID)` |
-| `banned-chrome-open` | `playstealth launch` |
+| Regel                                     | Blockiert                               |
+| ----------------------------------------- | --------------------------------------- |
+| `banned-chrome-pgrep`                     | `playstealth launch (isolierte PID)`    |
+| `banned-chrome-open`                      | `playstealth launch`                    |
 | `banned-NIEMALS – BANNED (semgrep Regel)` |
-| `banned-pyautogui` | `BANNED – niemand importiert pyautogui` |
-| `banned-pynput` | `BANNED – niemand importiert pynput` |
-| `banned-openai-client` | `httpx an NVIDIA NIM` |
-| `banned-coordinates-click` | `skylight-cli click --x` |
-| `banned-skylight-cli` | skylight-cli |
-| `banned-recovery-mode` | `recovery_mode: true` |
-| `mandatory-playstealth-launch` | Chrome direkt starten |
+| `banned-pyautogui`                        | `BANNED – niemand importiert pyautogui` |
+| `banned-pynput`                           | `BANNED – niemand importiert pynput`    |
+| `banned-openai-client`                    | `httpx an NVIDIA NIM`                   |
+| `banned-coordinates-click`                | `skylight-cli click --x`                |
+| `banned-skylight-cli`                     | skylight-cli                            |
+| `banned-recovery-mode`                    | `recovery_mode: true`                   |
+| `mandatory-playstealth-launch`            | Chrome direkt starten                   |
 
 ---
 
@@ -181,6 +181,7 @@ graphify update .        # AST-Rebuild nach Code-Änderungen
 ## 🎯 Anwendungsfälle
 
 ### Heypiggy.com Google Login (vollautomatisiert)
+
 ```bash
 playstealth launch --url 'https://heypiggy.com/?page=dashboard'
 bash cli/heypiggy-login <PID>
@@ -188,6 +189,7 @@ bash cli/heypiggy-login <PID>
 ```
 
 ### Post-Mortem Video-Analyse
+
 ```bash
 screen-follow record --video --output /tmp/session.mp4
 # ... Session durchlaufen ...
@@ -195,6 +197,7 @@ python3 -m runner.video_analyzer --last flow
 ```
 
 ### Live Omni Monitor
+
 ```bash
 python3 -c "
 from runner.live_omni_monitor import LiveOmniMonitor
@@ -219,18 +222,18 @@ m.run_continuous(max_steps=100)
 
 ## 📚 Dokumentation
 
-| Datei | Inhalt |
-|-------|--------|
-| [AGENTS.md](AGENTS.md) | Vollständige Agenten-Anleitung |
-| [brain.md](brain.md) | Systemwissen & Architektur |
-| [goal.md](goal.md) | Ziele & Meilensteine |
-| [fix.md](fix.md) | Bekannte Bugs & Fixes |
-| [learn.md](learn.md) | Session Learnings |
-| [anti-learn.md](anti-learn.md) | Anti-Patterns |
-| [successful.md](successful.md) | Was funktioniert |
-| [issues.md](issues.md) | Offene Issues |
-| [commands.md](commands.md) | Alle Befehle |
-| [HEALTH_REPORT.md](HEALTH_REPORT.md) | Doctor Audit |
+| Datei                                | Inhalt                         |
+| ------------------------------------ | ------------------------------ |
+| [AGENTS.md](AGENTS.md)               | Vollständige Agenten-Anleitung |
+| [brain.md](brain.md)                 | Systemwissen & Architektur     |
+| [goal.md](goal.md)                   | Ziele & Meilensteine           |
+| [fix.md](fix.md)                     | Bekannte Bugs & Fixes          |
+| [learn.md](learn.md)                 | Session Learnings              |
+| [anti-learn.md](anti-learn.md)       | Anti-Patterns                  |
+| [successful.md](successful.md)       | Was funktioniert               |
+| [issues.md](issues.md)               | Offene Issues                  |
+| [commands.md](commands.md)           | Alle Befehle                   |
+| [HEALTH_REPORT.md](HEALTH_REPORT.md) | Doctor Audit                   |
 
 ## 🔗 Verwandte Repos
 

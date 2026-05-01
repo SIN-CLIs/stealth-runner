@@ -1,6 +1,7 @@
 # issues.md - Aktuelle Issues (2026-05-01)
 
 ## P0 (Blocker)
+
 1. **Google Login abschließen**: Passwort-Seite nach Weiter erreichen
    - playstealth launch → Google Login → E-Mail → Weiter → **Passwort**
    - cli/heypiggy-login bereit, muss getestet werden
@@ -13,6 +14,7 @@
    - Nicht verwechseln mit `nvidia/nvidia/...` (gibt 404!)
 
 ## P1 (Wichtig)
+
 3. **Survey-Loop nach Login**
    - LiveOmniMonitor bereit (Rolling Video + SSE)
    - Muss getestet werden: capture → Omni → execute → loop
@@ -26,6 +28,7 @@
    - Dann `graphify merge-graphs` für alle 6 Repos
 
 ## P2 (Später)
+
 6. **Täglicher EUR-Canary**
    - Cron-Job via launchd
    - Automatischer Login → Survey → EUR-Check

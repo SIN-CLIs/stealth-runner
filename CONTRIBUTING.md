@@ -43,19 +43,23 @@
 ## 4. Code-Konventionen
 
 ### 4.1 Allgemein
+
 - Python 3.12+, Type-Hints auf allen public functions
 - `async/await` für alle Zustandsübergänge
 - Panel-Logik ausschließlich in `sin_survey_core`, nicht im Runner
 
 ### 4.2 State Machine
+
 - Neue Zustände brauchen eine `async`-Methode `_<state>()`
 - Nach jedem `EXECUTE` MUSS `VERIFY` folgen
 
 ### 4.3 StealthExecutor
+
 - Alle CLI-Aufrufe NUR über `self.run(cmd)`
 - JSON-Parsing von stdout, Fehler von stderr
 
 ### 4.4 VisionClient
+
 - `get_action(image_path, step)` — einzige öffentliche Methode
 - Fallback-Kaskade: CF → NVIDIA → Parse-Fallback → harter Fallback
 - Prompt-Änderungen in `runner/prompt_kit.py`
@@ -80,13 +84,13 @@ python tests/test_sin_survey_core.py
 
 ## 7. Dokumentation
 
-| Datei | Wann aktualisieren |
-|-------|-------------------|
-| `brain.md` | Architektur-Änderungen |
-| `architecture.md` | Neue/geänderte Komponenten |
-| `issues.md` | Issues gelöst/erstellt |
-| `banned.md` | Neue verbotene Patterns |
-| `fix.md` | Jeder Bugfix mit Commit-Hash |
+| Datei             | Wann aktualisieren           |
+| ----------------- | ---------------------------- |
+| `brain.md`        | Architektur-Änderungen       |
+| `architecture.md` | Neue/geänderte Komponenten   |
+| `issues.md`       | Issues gelöst/erstellt       |
+| `banned.md`       | Neue verbotene Patterns      |
+| `fix.md`          | Jeder Bugfix mit Commit-Hash |
 
 ---
 

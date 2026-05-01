@@ -2,7 +2,7 @@
 
 **Betreff:** stealth‑runner v0.3.1 – Produktreife, Marktführerschaft & strategische Roadmap  
 **Datum:** 2026‑04‑30  
-**Klassifikation:** STRENG VERTRAULICH – NUR FÜR DEN VORSTAND  
+**Klassifikation:** STRENG VERTRAULICH – NUR FÜR DEN VORSTAND
 
 ---
 
@@ -16,14 +16,14 @@ Der **stealth‑runner v0.3.1** ist das weltweit erste System, das Web‑Automat
 
 ## 2. Zielerreichung – OKR‑Review
 
-| Ziel | Status |
-|------|--------|
-| Vollständige Stealth‑Triade‑Integration | ✅ **Übertroffen** |
-| Zustandslose CLI‑Pipeline | ✅ |
-| 10‑State‑Maschine mit Recovery | ✅ |
-| Vision‑First‑Interaktion | ✅ 95 % |
-| Human‑Profile | ✅ 90 % |
-| Captcha‑Kompetenz (88–92 %) | ✅ **Marktführend** |
+| Ziel                                    | Status              |
+| --------------------------------------- | ------------------- |
+| Vollständige Stealth‑Triade‑Integration | ✅ **Übertroffen**  |
+| Zustandslose CLI‑Pipeline               | ✅                  |
+| 10‑State‑Maschine mit Recovery          | ✅                  |
+| Vision‑First‑Interaktion                | ✅ 95 %             |
+| Human‑Profile                           | ✅ 90 %             |
+| Captcha‑Kompetenz (88–92 %)             | ✅ **Marktführend** |
 
 ---
 
@@ -31,24 +31,24 @@ Der **stealth‑runner v0.3.1** ist das weltweit erste System, das Web‑Automat
 
 **Es existiert kein direkter Wettbewerber.** Unser Vorteil: **18–24 Monate Vorsprung.**
 
-| Wettbewerber | Schwäche |
-|--------------|----------|
-| Selenium/Playwright | CDP‑basiert, extrem leicht detektierbar |
-| Puppeteer Extra | Nur DOM‑Ebene |
-| Kommerzielle RPA | Kein Anti‑Bot‑Fokus |
-| Cloud‑Browser‑Startups | Keine macOS‑Tiefenintegration |
+| Wettbewerber           | Schwäche                                |
+| ---------------------- | --------------------------------------- |
+| Selenium/Playwright    | CDP‑basiert, extrem leicht detektierbar |
+| Puppeteer Extra        | Nur DOM‑Ebene                           |
+| Kommerzielle RPA       | Kein Anti‑Bot‑Fokus                     |
+| Cloud‑Browser‑Startups | Keine macOS‑Tiefenintegration           |
 
 ---
 
 ## 4. Die 5 CEO‑Prioritäten
 
-| # | Lücke | Aufwand |
-|---|-------|---------|
-| **P0‑1** | TLS/JA4‑Fingerprinting (`curl_cffi`) | 1 Wo. |
-| **P0‑2** | Behavioral Biometrics (`scipy.stats`) | 2 Wo. |
-| **P1‑3** | Semantic Vision Caching | 1 Wo. |
-| **P1‑4** | OpenTelemetry APM | 2 Wo. |
-| **P2‑5** | Cross‑Platform Abstraction | 4 Wo. |
+| #        | Lücke                                 | Aufwand |
+| -------- | ------------------------------------- | ------- |
+| **P0‑1** | TLS/JA4‑Fingerprinting (`curl_cffi`)  | 1 Wo.   |
+| **P0‑2** | Behavioral Biometrics (`scipy.stats`) | 2 Wo.   |
+| **P1‑3** | Semantic Vision Caching               | 1 Wo.   |
+| **P1‑4** | OpenTelemetry APM                     | 2 Wo.   |
+| **P2‑5** | Cross‑Platform Abstraction            | 4 Wo.   |
 
 **Investition: 10 Wochen. ROI: Marktführerschaft für 2+ Jahre.**
 
@@ -56,12 +56,12 @@ Der **stealth‑runner v0.3.1** ist das weltweit erste System, das Web‑Automat
 
 ## 5. Finanzprojektion
 
-| Phase | Umsatz |
-|-------|--------|
-| Q2 2026 (MVP) | Intern |
-| Q3 2026 (Enterprise) | €50k–200k |
-| Q4 2026 (Scale) | €500k–1M ARR |
-| 2027 (Marktführer) | €2–5M ARR |
+| Phase                | Umsatz       |
+| -------------------- | ------------ |
+| Q2 2026 (MVP)        | Intern       |
+| Q3 2026 (Enterprise) | €50k–200k    |
+| Q4 2026 (Scale)      | €500k–1M ARR |
+| 2027 (Marktführer)   | €2–5M ARR    |
 
 **Break‑Even: Q3 2026. Profitabel ab Q4 2026.**
 
@@ -70,6 +70,7 @@ Der **stealth‑runner v0.3.1** ist das weltweit erste System, das Web‑Automat
 ## 6. Finales Urteil
 
 **GO für:**
+
 1. Sofortige Umsetzung der 5 CEO‑Prioritäten
 2. Enterprise‑Launch Q3 2026
 3. Einstellung von 2 Senior‑Entwicklern

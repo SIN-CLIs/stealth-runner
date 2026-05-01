@@ -1,10 +1,12 @@
 # White-Label Architecture — stealth-runner (Engine) + stealth-skills (Platforms)
 
 ## Trennung
+
 - **stealth-runner** (öffentlich, MIT) → Generische Automatisierungs-Engine
 - **stealth-skills** (privat) → Plattform-spezifisches Wissen
 
 ## Engine (öffentlich)
+
 ```
 src/stealth_runner/
 ├── state_machine.py     → Core State Machine (keine Plattform-Logik)
@@ -15,6 +17,7 @@ src/stealth_runner/
 ```
 
 ## Skills (privat)
+
 ```
 SIN-CLIs/stealth-skills/platforms/
 ├── heypiggy/            → google-login, survey, modules
@@ -23,6 +26,7 @@ SIN-CLIs/stealth-skills/platforms/
 ```
 
 ## Runtime
+
 ```bash
 stealth-runner --skills-path ../stealth-skills --platform heypiggy
 ```

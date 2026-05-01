@@ -37,6 +37,7 @@
 ```
 
 ## Wichtige Erkenntnisse
+
 - Model-Name: `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` (OHNE doppeltes nvidia/)
 - Omni schreibt Antwort ins `reasoning`-Feld, nicht `content` (wenn thinking enabled)
 - SSE Streaming: `stream: true` + `Accept: text/event-stream` → tokenweise Antwort
@@ -47,11 +48,13 @@
 - Graphify rebuild automatisch nach jedem Commit
 
 ## Credentials
+
 - Google: Siehe `profiles/jeremy.yaml` (NICHT in Docs!)
 - NVIDIA API Key: `$NVIDIA_API_KEY` (env var, Prefix: `nvapi-...`)
 - Heypiggy Profil: `profiles/jeremy.yaml` (im .gitignore, nicht committed)
 
 ## Bugs gefixt
+
 - [FIXED] Model-Name: `nvidia/nvidia/` → `nvidia/` (doppelter Prefix → 404)
 - [FIXED] Omni reasoning-Feld Parsing (content ist null)
 - [FIXED] SkylightDriver pid optional → TypeError vermieden

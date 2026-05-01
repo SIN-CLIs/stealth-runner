@@ -91,17 +91,17 @@ ohne Chrome DevTools Protocol (CDP) und ohne DOM‑Zugriff.
            (loop CAPTURE → VISION → EXECUTE → VERIFY)
 ```
 
-| Zustand | Methode | Aktion |
-|---------|---------|--------|
-| `IDLE` | – | Einstieg, erkennt ob PID schon existiert |
-| `LAUNCH_BROWSER` | `_launch()` | `playstealth-cli launch --url <URL> --json` → PID |
-| `WAIT_READY` | `_wait_ready()` | `skylight-cli screenshot --mode raw` → Seite geladen? |
-| `CAPTURE` | `_capture()` | `skylight-cli screenshot --mode som --out step_N.png` |
-| `VISION` | `_vision()` | `VisionClient.get_action(image, prompt)` → JSON |
-| `EXECUTE` | `_execute()` | `skylight-cli click/type/scroll/drag/keypress` |
-| `VERIFY` | `_verify()` | `unmask-cli verify-stealth --pid <PID>` |
-| `RECOVERY` | `_recover()` | `playstealth-cli rotate-profile` → zurück zu `CAPTURE` |
-| `DONE` | – | Terminalzustand |
+| Zustand          | Methode         | Aktion                                                 |
+| ---------------- | --------------- | ------------------------------------------------------ |
+| `IDLE`           | –               | Einstieg, erkennt ob PID schon existiert               |
+| `LAUNCH_BROWSER` | `_launch()`     | `playstealth-cli launch --url <URL> --json` → PID      |
+| `WAIT_READY`     | `_wait_ready()` | `skylight-cli screenshot --mode raw` → Seite geladen?  |
+| `CAPTURE`        | `_capture()`    | `skylight-cli screenshot --mode som --out step_N.png`  |
+| `VISION`         | `_vision()`     | `VisionClient.get_action(image, prompt)` → JSON        |
+| `EXECUTE`        | `_execute()`    | `skylight-cli click/type/scroll/drag/keypress`         |
+| `VERIFY`         | `_verify()`     | `unmask-cli verify-stealth --pid <PID>`                |
+| `RECOVERY`       | `_recover()`    | `playstealth-cli rotate-profile` → zurück zu `CAPTURE` |
+| `DONE`           | –               | Terminalzustand                                        |
 
 **Implementierung:** `runner/state_machine.py` (55 Zeilen, Klasse `StealthRunner`).
 Jeder Zustand ist eine `async`-Methode. Bei einer Exception in einem beliebigen
@@ -112,24 +112,28 @@ Zustand fängt `run()` den Fehler und geht nach `RECOVERY`.
 ## 3. Datenfluss pro Aktion (der „Golden Loop")
 
 ### Schritt 1 – CAPTURE
+
 ```
 skylight-cli screenshot --pid 91048 --mode som --out /tmp/step_3.png
 → {"status":"ok","file":"/tmp/step_3.png"}
 ```
 
 ### Schritt 2 – VISION
+
 ```python
 VisionClient.get_action("/tmp/step_3.png", build_prompt(context, 3))
 → {"action": "click", "element_id": 7, "reasoning": "Start button"}
 ```
 
 ### Schritt 3 – EXECUTE
+
 ```
 skylight-cli click --pid 91048 --element-index 7
 → {"status":"ok","clicked":7}
 ```
 
 ### Schritt 4 – VERIFY
+
 ```
 unmask-cli verify-stealth --pid 91048
 → {"status":"ok","detected":false}
@@ -141,16 +145,16 @@ unmask-cli verify-stealth --pid 91048
 
 **Datei:** `runner/stealth_executor.py` (35 Zeilen)
 
-| Methode | CLI‑Aufruf |
-|---------|-----------|
-| `screenshot(out, mode)` | `skylight-cli screenshot --pid <PID> --mode som --out <path>` |
-| `click(element_index)` | `skylight-cli click --pid <PID> --element-index <N>` |
-| `click(x=x, y=y)` | `skylight-cli click --pid <PID> --x <X> --y <Y>` |
-| `type_text(text)` | `skylight-cli type --pid <PID> --text "..."` |
-| `scroll(direction)` | `skylight-cli scroll --pid <PID> --direction down` |
-| `list_elements()` | `skylight-cli click --pid <PID> --element-index 0 --dry-run` |
-| `get_window_state()` | `skylight-cli screenshot --pid <PID> --mode som --include-tree` |
-| `verify_stealth()` | `unmask-cli verify-stealth --pid <PID>` |
+| Methode                 | CLI‑Aufruf                                                      |
+| ----------------------- | --------------------------------------------------------------- |
+| `screenshot(out, mode)` | `skylight-cli screenshot --pid <PID> --mode som --out <path>`   |
+| `click(element_index)`  | `skylight-cli click --pid <PID> --element-index <N>`            |
+| `click(x=x, y=y)`       | `skylight-cli click --pid <PID> --x <X> --y <Y>`                |
+| `type_text(text)`       | `skylight-cli type --pid <PID> --text "..."`                    |
+| `scroll(direction)`     | `skylight-cli scroll --pid <PID> --direction down`              |
+| `list_elements()`       | `skylight-cli click --pid <PID> --element-index 0 --dry-run`    |
+| `get_window_state()`    | `skylight-cli screenshot --pid <PID> --mode som --include-tree` |
+| `verify_stealth()`      | `unmask-cli verify-stealth --pid <PID>`                         |
 
 ---
 
@@ -159,6 +163,7 @@ unmask-cli verify-stealth --pid 91048
 **Datei:** `runner/vision_client.py` (33 Zeilen)
 
 **Modell‑Kaskade:**
+
 1. Cloudflare Workers AI (`@cf/meta/llama-4-scout-17b-16e-instruct`)
 2. NVIDIA API (`mistralai/mistral-large-3-675b-instruct-2512`)
 3. Parse‑Fallback: `re.search(r'\{.*\}', text)` → letztes JSON
@@ -179,10 +184,10 @@ unmask-cli verify-stealth --pid 91048
 
 **Datei:** `runner/human_profile.py` (11 Zeilen)
 
-| Parameter | Bereich |
-|-----------|---------|
-| `min_delay` | 0.8–2.0s |
-| `max_delay` | 3.0–6.0s |
+| Parameter      | Bereich          |
+| -------------- | ---------------- |
+| `min_delay`    | 0.8–2.0s         |
+| `max_delay`    | 3.0–6.0s         |
 | `typing_speed` | 60–120 chars/min |
 
 ---
@@ -198,12 +203,15 @@ JSONL in `~/.stealth_runner/traces.jsonl`.
 ## 9. sin_survey_core
 
 ### 9.1 Panel‑Detektoren (`detectors.py`, 173 Zeilen)
+
 8 Provider: PureSpectrum, Dynata, Sapio, Cint, Lucid, HeyPiggy, MarketSight, Bilendi
 
 ### 9.2 Reward‑Extraktor (`extractor.py`, 10 Zeilen)
+
 6 Regex‑Patterns für EUR‑Beträge
 
 ### 9.3 Fehler‑Klassifikation (`templates.py`, 12 Zeilen)
+
 4 Kategorien: disqualified, quota_full, attention_failed, not_found
 
 ---
@@ -233,12 +241,12 @@ stealth-runner/
 
 ## 11. Recovery‑Strategie
 
-| Fehlerfall | Mechanismus |
-|-----------|------------|
-| Exception in Zustand | `try/except` → `RECOVERY` |
-| `detected: true` | `rotate-profile` → `CAPTURE` |
-| Vision ungültig | `re.search` Extraktion |
-| Vision ausgefallen | Harter Fallback `element_id=0` |
+| Fehlerfall           | Mechanismus                    |
+| -------------------- | ------------------------------ |
+| Exception in Zustand | `try/except` → `RECOVERY`      |
+| `detected: true`     | `rotate-profile` → `CAPTURE`   |
+| Vision ungültig      | `re.search` Extraktion         |
+| Vision ausgefallen   | Harter Fallback `element_id=0` |
 
 ---
 

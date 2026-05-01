@@ -1,17 +1,20 @@
 # commands.md - Korrekte Befehle (NUR DIESE NUTZEN)
 
 ## Chrome starten (isoliert, eigene PID)
+
 ```bash
 playstealth launch --url 'https://heypiggy.com/?page=dashboard'
 # Output: {"pid": 97228, "status": "ok"}
 ```
 
 ## Screenshot (VOR/NACH jedem Schritt)
+
 ```bash
 skylight-cli screenshot --pid <PID> --mode som --output /tmp/schritt_vor.png
 ```
 
 ## Elemente finden
+
 ```bash
 skylight-cli list-elements --pid <PID> | python3 -c "
 import json,sys
@@ -23,21 +26,25 @@ for e in json.load(sys.stdin)['elements']:
 ```
 
 ## Element klicken (NUR per Index)
+
 ```bash
 skylight-cli click --pid <PID> --element-index <N>
 ```
 
 ## Text eingeben (NUR per Index)
+
 ```bash
 skylight-cli type --pid <PID> --element-index <N> --text "wert"
 ```
 
 ## Google Login (automatisiert)
+
 ```bash
 bash cli/heypiggy-login <PID>
 ```
 
 ## Live Omni Monitor
+
 ```bash
 python3 -c "
 from runner.live_omni_monitor import LiveOmniMonitor
@@ -48,6 +55,7 @@ m.run_continuous(max_steps=100)
 ```
 
 ## Video-Analyse (post-mortem)
+
 ```bash
 # Letzte Aufnahme auf Fehler prüfen
 python3 -m runner.video_analyzer --last errors
@@ -63,6 +71,7 @@ python3 -m runner.video_analyzer --compare /tmp/step_3.png /tmp/step_4.png
 ```
 
 ## Graphify Knowledge Graph
+
 ```bash
 graphify query "Wie hängt X mit Y zusammen?"
 graphify path "ModulA" "ModulB"
@@ -72,6 +81,7 @@ graphify hook status                 # Prüfen ob Hooks aktiv
 ```
 
 ## Semgrep Architecture Guard
+
 ```bash
 # Manuell ausführen
 semgrep --config=.semgrep_rules.yaml .
@@ -81,6 +91,7 @@ semgrep --config=.semgrep_rules.yaml .
 ```
 
 ## System-Check
+
 ```bash
 # API testen (Nemotron Omni)
 curl -s -H "Authorization: Bearer $NVIDIA_API_KEY" \
@@ -97,6 +108,7 @@ curl -s -H "Authorization: Bearer $NVIDIA_API_KEY" \
 ```
 
 ## Schritt-Orchestrator
+
 ```bash
 python3 runner/step.py "https://heypiggy.com/?page=dashboard"
 ```

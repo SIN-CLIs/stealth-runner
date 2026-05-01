@@ -16,6 +16,10 @@ REPOS = [
     Path("/Users/jeremy/dev/screen-follow"),
     Path("/Users/jeremy/dev/unmask-cli"),
     Path("/Users/jeremy/dev/A2A-SIN-Worker-heypiggy"),
+    Path("/Users/jeremy/dev/infra-opencode-stack"),
+    Path("/Users/jeremy/dev/Infra-SIN-Dev-Setup"),
+    Path("/Users/jeremy/dev/OpenSIN-overview"),
+    Path("/Users/jeremy/dev/OpenSIN-documentation"),
 ]
 
 OUTDATED_PATTERNS = [

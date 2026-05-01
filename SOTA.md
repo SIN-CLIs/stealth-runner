@@ -9,6 +9,7 @@
 Die **Stealth-Triade** – `playstealth-cli`, `skylight-cli`, `unmask-cli` – in Verbindung mit dem **stealth-runner** ist die weltweit fortschrittlichste Umgehungsarchitektur für Anti-Bot-Systeme auf macOS. Sie kombiniert Betriebssystem-Interaktion auf Kernel-Ebene, spezialisierte Vision-Modelle und eine strikt zustandslose CLI-Pipeline zu einem System, das sich von kommerziellen Lösungen fundamental unterscheidet.
 
 **Kerninnovationen:**
+
 - **Kein DOM-Zugriff, kein CDP** – Alle Interaktionen via `AXUIElementPerformAction` (Accessibility‑API). `CGEventPostToPid` funktioniert NICHT auf Chrome 148.
 - **Unsichtbare Cursor-Steuerung** – Der physische Mauszeiger wird nie bewegt
 - **Canvas/WebGL-Fingerprint-Patching** – Vollständige Maskerade als legitimer Chrome
@@ -35,6 +36,7 @@ Die **Stealth-Triade** – `playstealth-cli`, `skylight-cli`, `unmask-cli` – i
 ```
 
 **State Machine:**
+
 ```
 IDLE → LAUNCH_BROWSER → WAIT_READY → CAPTURE → VISION → EXECUTE → VERIFY → (loop) → DONE
                                                                               ↘ RECOVERY
@@ -44,20 +46,20 @@ IDLE → LAUNCH_BROWSER → WAIT_READY → CAPTURE → VISION → EXECUTE → VE
 
 ## 3. SOTA-Kriterien & Erfüllungsgrad
 
-| Kriterium | Status |
-|-----------|--------|
-| Zero-Cursor-Stealing (`AXUIElementPerformAction`) | ✅ 100% |
-| Canvas/WebGL-Tarnung (playstealth-cli) | ✅ |
+| Kriterium                                                      | Status                 |
+| -------------------------------------------------------------- | ---------------------- |
+| Zero-Cursor-Stealing (`AXUIElementPerformAction`)              | ✅ 100%                |
+| Canvas/WebGL-Tarnung (playstealth-cli)                         | ✅                     |
 | AX-Tree-Resilienz (`_AXObserverAddNotificationAndCheckRemote`) | ✅ skylight-cli v0.2.0 |
-| Multi-Model-Vision (CF Llama 4 Scout + NVIDIA Mistral) | ✅ |
-| Captcha-Kompetenz (10-Punkt-Prompt) | ✅ |
-| Human-Profile (2-9s Delays, anyio, Bézier) | ✅ |
-| Async-Nonblocking (anyio.sleep) | ✅ 100% |
-| Thread-Sicherheit (Batched Writes) | ✅ |
-| Resume-Fähigkeit (JSONL AuditLog) | ✅ |
-| Profilrotation (RECOVERY-State) | ✅ |
-| Zustandslosigkeit (StealthExecutor) | ✅ |
-| Kein skylight-cli Fallback | ✅ |
+| Multi-Model-Vision (CF Llama 4 Scout + NVIDIA Mistral)         | ✅                     |
+| Captcha-Kompetenz (10-Punkt-Prompt)                            | ✅                     |
+| Human-Profile (2-9s Delays, anyio, Bézier)                     | ✅                     |
+| Async-Nonblocking (anyio.sleep)                                | ✅ 100%                |
+| Thread-Sicherheit (Batched Writes)                             | ✅                     |
+| Resume-Fähigkeit (JSONL AuditLog)                              | ✅                     |
+| Profilrotation (RECOVERY-State)                                | ✅                     |
+| Zustandslosigkeit (StealthExecutor)                            | ✅                     |
+| Kein skylight-cli Fallback                                     | ✅                     |
 
 ---
 
@@ -91,27 +93,27 @@ click_jitter_px: 2–6 px | hover_before_click_ms: 50–250
 
 ## 7. Verbotene Patterns
 
-| Pattern | Ersatz |
-|---------|--------|
-| `skylight-cli` | `skylight-cli` |
-| `open -na Chrome` | `playstealth-cli launch` |
-| AXStaticText klick | Nur interaktive Rollen |
-| Klick ohne Vision | `VisionClient.get_action()` |
-| CDP/DOM | `skylight-cli` |
-| Cursor-Stealing | `AXPress` (Accessibility API) |
+| Pattern            | Ersatz                        |
+| ------------------ | ----------------------------- |
+| `skylight-cli`     | `skylight-cli`                |
+| `open -na Chrome`  | `playstealth-cli launch`      |
+| AXStaticText klick | Nur interaktive Rollen        |
+| Klick ohne Vision  | `VisionClient.get_action()`   |
+| CDP/DOM            | `skylight-cli`                |
+| Cursor-Stealing    | `AXPress` (Accessibility API) |
 
 ---
 
 ## 8. Roadmap
 
-| Prio | Feature | Status |
-|------|---------|--------|
-| P0 | Human-Profile aktivieren | ✅ |
-| P0 | OCR-Fallback (Apple Vision) | ✅ skylight-cli |
-| P1 | track Live-Test Cloudflare Turnstile | Kalibrierung |
-| P1 | JA4 TLS-Fingerprinting | playstealth-cli |
-| P2 | Multi-PID Parallelisierung | Refaktor |
-| P2 | CI/CD macOS-Regressionstest | GitHub Actions |
+| Prio | Feature                              | Status          |
+| ---- | ------------------------------------ | --------------- |
+| P0   | Human-Profile aktivieren             | ✅              |
+| P0   | OCR-Fallback (Apple Vision)          | ✅ skylight-cli |
+| P1   | track Live-Test Cloudflare Turnstile | Kalibrierung    |
+| P1   | JA4 TLS-Fingerprinting               | playstealth-cli |
+| P2   | Multi-PID Parallelisierung           | Refaktor        |
+| P2   | CI/CD macOS-Regressionstest          | GitHub Actions  |
 
 ---
 
