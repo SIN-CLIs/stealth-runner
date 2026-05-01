@@ -112,6 +112,27 @@ graphify hook status        # Prüfen ob Git-Hooks aktiv sind
 - `post-checkout` Hook: Rebuild nach Branch-Wechsel
 - Nur AST (tree-sitter), kein LLM → keine Kosten
 
+## DOCTOR CLI (23 Tools)
+
+Der `/doctor` Skill nutzt 23 Open-Source-Tools für Code-Analyse, Doku-Generierung und Qualitätssicherung:
+
+| Kategorie | Tools |
+|-----------|-------|
+| Code-Statistiken | cloc, tokei |
+| Komplexität | lizard |
+| Abhängigkeiten | pydeps, pyreverse, code2flow, dependency-cruiser |
+| UML | plantuml |
+| Doku-Generierung | sphinx, mkdocs, pdoc, typedoc, doxygen, terraform-docs, pandoc |
+| Qualität | vale, standard-readme, prettier, repomix, gitingest |
+| CHANGELOG | git-cliff, conventional-changelog, auto-changelog |
+
+Siehe `docs/doctor-tool-library.md` für Details.
+
+```bash
+# Alle Tools prüfen
+python3 runner/doctor_cli.py
+```
+
 ## SEMGREP ARCHITECTURE GUARD (11 Regeln)
 
 Semgrep blockiert BANNED Muster VOR dem Commit:
