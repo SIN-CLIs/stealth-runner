@@ -148,27 +148,47 @@ class LiveOmniMonitor:
 
     def analyze_frame(self, frame: ScreenFrame, use_video: bool = False,
                       prompt: str | None = None) -> OmniObservation:
-        """Screenshot (schnell) oder Rolling-Video-Clip (temporal) an Omni."""
+        """Screenshot (schnell) oder Rolling-Video-Clip (temporal) an Omni.
+        Nutzt SSE (stream: true) für tokenweise Antwort – niedrigste Latenz.
+        """
         if prompt is None:
             prompt = self._default_prompt(use_video)
 
         messages = self._build_messages(frame, use_video, prompt)
 
         try:
-            r = self._session.post(
-                NVIDIA_URL,
-                headers={"Authorization": f"Bearer {NVIDIA_KEY}"},
-                json={
-                    "model": OMNI_MODEL,
-                    "messages": messages,
-                    "max_tokens": 300,
-                    "temperature": 0.1,
-                    "extra_body": {"media_io_kwargs": {"video": {"fps": 1.0, "num_frames": -1}}}
-                    if use_video else {},
+            payload = {
+                "model": OMNI_MODEL,
+                "messages": messages,
+                "max_tokens": 300,
+                "temperature": 0.1,
+                "stream": True,
+            }
+            if use_video:
+                payload["extra_body"] = {"media_io_kwargs": {"video": {"fps": 1.0, "num_frames": -1}}}
+
+            content = ""
+            with self._session.stream(
+                "POST", NVIDIA_URL,
+                headers={
+                    "Authorization": f"Bearer {NVIDIA_KEY}",
+                    "Accept": "text/event-stream",
+                    "Content-Type": "application/json",
                 },
+                json=payload,
                 timeout=60,
-            )
-            content = r.json()["choices"][0]["message"]["content"]
+            ) as response:
+                for line in response.iter_lines():
+                    if line.startswith("data: ") and not line.startswith("data: [DONE]"):
+                        try:
+                            import json as _j
+                            chunk = _j.loads(line[6:])
+                            delta = chunk.get("choices", [{}])[0].get("delta", {}).get("content", "")
+                            if delta:
+                                content += delta
+                        except Exception:
+                            continue
+
             result = json.loads(self._extract_json(content))
 
             obs = OmniObservation(
