@@ -1,141 +1,112 @@
-// mac_eye.c – DYLD-Library, injected in Chrome via DYLD_INSERT_LIBRARIES
-// Nutzt private Apple-Frameworks: IOSurface, CGSConnection, SkyLight
-// NUR mit SIP=off (Recovery Mode) moeglich.
-//
-// Build:
-//   clang -dynamiclib -framework Foundation -framework CoreGraphics
-//         -framework IOSurface -framework SkyLight -framework IOKit
-//         -F /System/Library/PrivateFrameworks
-//         -o mac_eye.dylib mac_eye.c
-
+// mac_eye.c – DYLD, IOSurface via dlsym (kein Linker-Symbol nötig)
 #include "mac_eye.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <unistd.h>
 #include <pthread.h>
-#include <mach/mach.h>
 #include <mach/mach_time.h>
 #include <sys/mman.h>
 #include <fcntl.h>
-#include <CoreGraphics/CoreGraphics.h>
+#include <dlfcn.h>
+#include <CoreFoundation/CoreFoundation.h>
 
-typedef int CGSConnectionID;
-extern CGSConnectionID CGSMainConnectionID(void);
-
-typedef struct __IOSurface *IOSurfaceRef;
-extern IOSurfaceRef IOSurfaceLookup(uint32_t surfaceID);
-extern kern_return_t IOSurfaceLock(IOSurfaceRef surface, uint32_t options, uint32_t *seed);
-extern kern_return_t IOSurfaceUnlock(IOSurfaceRef surface, uint32_t options, uint32_t *seed);
-extern void *IOSurfaceGetBaseAddress(IOSurfaceRef surface);
-extern size_t IOSurfaceGetBytesPerRow(IOSurfaceRef surface);
-
-extern void SLEventPostToPid(int pid, void *event);
+#define kLockRO 1
 
 static MacEyeSharedMemory *g_shm = NULL;
 static int g_shm_fd = -1;
-static pthread_t g_capture_thread;
-static volatile int g_running = 1;
+static pthread_t g_thr;
+static volatile int g_run = 1;
 
-static inline uint64_t nanotime(void) {
+static void *(*capture_surface)(int, unsigned int, unsigned int) = NULL;
+
+static uint64_t nsec(void) {
     static mach_timebase_info_data_t tb = {0};
     if (tb.denom == 0) mach_timebase_info(&tb);
-    uint64_t now = mach_absolute_time();
-    return now * tb.numer / tb.denom;
+    return mach_absolute_time() * tb.numer / tb.denom;
 }
 
 __attribute__((constructor))
-static void mac_eye_init(void) {
+static void init(void) {
     if (!getenv("MAC_EYE_ENABLE")) return;
-    fprintf(stderr, "[mac_eye] Initialisiere Shared Memory...\n");
-
-    int fd = shm_open(MAC_EYE_SHM_NAME, O_CREAT | O_RDWR, 0600);
-    if (fd < 0) { perror("[mac_eye] shm_open"); return; }
-
-    size_t sz = sizeof(MacEyeSharedMemory);
-    if (ftruncate(fd, sz) < 0) { perror("[mac_eye] ftruncate"); close(fd); return; }
-
-    void *ptr = mmap(NULL, sz, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
-    if (ptr == MAP_FAILED) { perror("[mac_eye] mmap"); close(fd); return; }
-
-    g_shm_fd = fd;
-    g_shm = (MacEyeSharedMemory *)ptr;
-
-    if (atomic_load(&g_shm->magic) != 0x4D414345) {
-        memset(g_shm, 0, sz);
-        atomic_store(&g_shm->magic, 0x4D414345);
-        atomic_store(&g_shm->version, 1);
-        atomic_store(&g_shm->target_pid, (int32_t)getpid());
-        atomic_store(&g_shm->display_id, (uint64_t)CGMainDisplayID());
-        atomic_store(&g_shm->running, 1);
+    // Symbol per dlsym aufloesen (kein Link-Time-Symbol)
+    capture_surface = dlsym(RTLD_DEFAULT, "CGSHWCaptureWindowImageToSurface");
+    if (!capture_surface) {
+        fprintf(stderr, "[mac_eye] CGSHWCaptureWindowImageToSurface nicht gefunden\n");
+        return;
     }
-
-    fprintf(stderr, "[mac_eye] Shared Memory bereit @ %p (PID=%d)\n", g_shm, getpid());
+    int fd = shm_open(MAC_EYE_SHM_NAME, O_CREAT|O_RDWR, 0600);
+    if (fd < 0) return;
+    size_t sz = sizeof(MacEyeSharedMemory);
+    ftruncate(fd, sz);
+    void *ptr = mmap(NULL, sz, PROT_READ|PROT_WRITE, MAP_SHARED, fd, 0);
+    if (ptr == MAP_FAILED) { close(fd); return; }
+    g_shm_fd = fd; g_shm = ptr;
+    if (g_shm->magic != 0x4D414345) {
+        memset(g_shm, 0, sz);
+        g_shm->magic = 0x4D414345; g_shm->version = 2;
+        g_shm->target_pid = (int32_t)getpid(); g_shm->running = 1;
+    }
 }
 
 __attribute__((destructor))
-static void mac_eye_cleanup(void) {
-    g_running = 0;
-    if (g_capture_thread) pthread_join(g_capture_thread, NULL);
-    if (g_shm) { atomic_store(&g_shm->running, 0); munmap(g_shm, sizeof(MacEyeSharedMemory)); g_shm = NULL; }
+static void cleanup(void) {
+    g_run = 0;
+    if (g_thr) pthread_join(g_thr, NULL);
+    if (g_shm) { g_shm->running = 0; munmap(g_shm, sizeof(MacEyeSharedMemory)); g_shm = NULL; }
     if (g_shm_fd >= 0) { close(g_shm_fd); g_shm_fd = -1; }
 }
 
-static void *capture_loop(void *arg) {
+static void *capture(void *arg) {
     (void)arg;
-    CGDirectDisplayID displayID = (CGDirectDisplayID)atomic_load(&g_shm->display_id);
-    uint32_t frame_counter = 0;
-    fprintf(stderr, "[mac_eye] Capture-Loop gestartet\n");
-
-    while (atomic_load(&g_shm->running) && g_running) {
-        uint64_t t0 = nanotime();
-        CGImageRef img = CGDisplayCreateImage(displayID);
-        if (!img) { usleep(16666); continue; }
-
-        CGDataProviderRef provider = CGImageGetDataProvider(img);
-        CFDataRef data = CGDataProviderCopyData(provider);
-        if (!data) { CGImageRelease(img); usleep(16666); continue; }
-
-        size_t width = CGImageGetWidth(img), height = CGImageGetHeight(img);
-        size_t bpr = CGImageGetBytesPerRow(img), dataLen = CFDataGetLength(data);
-
-        uint32_t write_idx = atomic_load(&g_shm->write_index);
-        uint32_t next_idx = (write_idx + 1) % MAC_EYE_MAX_FRAMES;
-        if (next_idx == atomic_load(&g_shm->read_index)) {
-            atomic_fetch_add(&g_shm->total_dropped, 1);
-            CFRelease(data); CGImageRelease(img); usleep(1); continue;
+    if (!capture_surface) return NULL;
+    // CGSConnection via dlsym
+    int (*get_conn)(void) = dlsym(RTLD_DEFAULT, "CGSMainConnectionID");
+    int conn = get_conn ? get_conn() : 0;
+    uint32_t fc = 0;
+    while (g_shm->running && g_run) {
+        uint64_t t0 = nsec();
+        void *sf = capture_surface(conn, 0, 0);
+        if (!sf) { usleep(16666); continue; }
+        // IOSurface-Funktionen via dlsym
+        int (*lock)(void*,unsigned int,void*) = dlsym(RTLD_DEFAULT, "IOSurfaceLock");
+        int (*unlock)(void*,unsigned int,void*) = dlsym(RTLD_DEFAULT, "IOSurfaceUnlock");
+        void* (*base)(void*) = dlsym(RTLD_DEFAULT, "IOSurfaceGetBaseAddress");
+        size_t (*get_w)(void*) = dlsym(RTLD_DEFAULT, "IOSurfaceGetWidth");
+        size_t (*get_h)(void*) = dlsym(RTLD_DEFAULT, "IOSurfaceGetHeight");
+        size_t (*get_bpr)(void*) = dlsym(RTLD_DEFAULT, "IOSurfaceGetBytesPerRow");
+        if (!lock || !unlock || !base || !get_w || !get_h || !get_bpr) {
+            CFRelease(sf); usleep(16666); continue;
         }
-
-        MacEyeFrame *frame = &g_shm->frames[write_idx];
-        size_t copy_len = dataLen < sizeof(frame->data) ? dataLen : sizeof(frame->data);
-        memcpy(frame->data, CFDataGetBytePtr(data), copy_len);
-        atomic_store(&frame->timestamp_ns, t0);
-        atomic_store(&frame->frame_index, ++frame_counter);
-        atomic_store(&frame->width, (uint32_t)width);
-        atomic_store(&frame->height, (uint32_t)height);
-        atomic_store(&frame->bytes_per_row, (uint32_t)bpr);
-        atomic_store(&frame->pixel_format, (uint32_t)0x42475241); // BGRA
-        atomic_store(&frame->dirty, 1);
-        atomic_store(&g_shm->write_index, next_idx);
-        atomic_fetch_add(&g_shm->total_frames, 1);
-
-        CFRelease(data); CGImageRelease(img);
-        uint64_t elapsed = nanotime() - t0;
+        lock(sf, kLockRO, NULL);
+        size_t w = get_w(sf), h = get_h(sf), bpr = get_bpr(sf);
+        void *ba = base(sf);
+        if (!ba) { unlock(sf, kLockRO, NULL); CFRelease(sf); usleep(16666); continue; }
+        uint32_t wi = g_shm->write_index, ni = (wi + 1) % MAC_EYE_MAX_FRAMES;
+        if (ni == g_shm->read_index) {
+            g_shm->total_dropped++; unlock(sf, kLockRO, NULL); CFRelease(sf); usleep(1); continue;
+        }
+        MacEyeFrame *f = &g_shm->frames[wi];
+        size_t cl = (h * bpr < sizeof(f->data)) ? h * bpr : sizeof(f->data);
+        memcpy(f->data, ba, cl);
+        f->timestamp_ns = t0; f->frame_index = ++fc;
+        f->width = (uint32_t)w; f->height = (uint32_t)h;
+        f->bytes_per_row = (uint32_t)bpr; f->pixel_format = 0x42475241;
+        f->dirty = 1; g_shm->write_index = ni; g_shm->total_frames++;
+        unlock(sf, kLockRO, NULL); CFRelease(sf);
+        uint64_t elapsed = nsec() - t0;
         if (elapsed < 16666666) usleep((16666666 - elapsed) / 1000);
     }
     return NULL;
 }
 
 __attribute__((visibility("default")))
-int mac_eye_start_capture(void) {
-    if (!g_shm || atomic_load(&g_shm->magic) != 0x4D414345) return -1;
-    atomic_store(&g_shm->running, 1); g_running = 1;
-    if (pthread_create(&g_capture_thread, NULL, capture_loop, NULL) != 0) return -2;
-    return 0;
+int mac_eye_start(void) {
+    if (!g_shm || g_shm->magic != 0x4D414345) return -1;
+    g_shm->running = 1; g_run = 1;
+    return pthread_create(&g_thr, NULL, capture, NULL) ? -2 : 0;
 }
-
 __attribute__((visibility("default")))
-int mac_eye_stop_capture(void) { g_running = 0; if (g_shm) atomic_store(&g_shm->running, 0); return 0; }
-
+int mac_eye_stop(void) { g_run = 0; if (g_shm) g_shm->running = 0; return 0; }
 __attribute__((visibility("default")))
-MacEyeSharedMemory *mac_eye_get_shm(void) { return g_shm; }
+MacEyeSharedMemory *mac_eye_get(void) { return g_shm; }
