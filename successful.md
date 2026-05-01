@@ -12,7 +12,7 @@
 ## Google Login (vollständig automatisiert)
 1. `playstealth launch --url 'https://heypiggy.com/?page=dashboard'` → PID
 2. Google Login-Symbol klicken (Index variiert)
-3. E-Mail eingeben (zukunftsorientierte.energie@gmail.com)
+3. E-Mail eingeben (EMAIL (ENTFERNT – siehe profiles/))
 4. Weiter klicken (Google prüft E-Mail)
 5. Passwort eingeben (ZOE.jerry2024)
 6. Weiter klicken (Google prüft Passwort)
@@ -43,6 +43,6 @@
 ## NICHT funktionierend
 - DOM-Prescan (ENTFERNT – klickte blind Element 1)
 - `CGEventPostToPid` (TOT auf Chrome 148)
-- webauto-nodriver MCP (BANNED – Profil-Konflikt)
-- pgrep Chrome (BANNED – Nutzer-Chrome)
+- **skylight-cli** MCP (BANNED – Profil-Konflikt)
+- **playstealth launch (isolierte PID)**)
 - openai-Client (BANNED – nur NVIDIA NIM httpx)

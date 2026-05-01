@@ -2,7 +2,7 @@
 
 ## WENN DU NUR EINEN KLICK TESTEN WILLST
 ```bash
-python3 runner/safe_click.py $(pgrep -f "Google Chrome" | head -1)
+python3 runner/safe_click.py $(**playstealth launch (isolierte PID)**" | head -1)
 ```
 Das holt ALLE Elemente von skylight-cli, nimmt die AX-Frame-Koordinaten,
 und klickt den ersten Web-Button per `--element-index`.

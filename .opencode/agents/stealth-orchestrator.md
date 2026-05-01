@@ -3,7 +3,7 @@ description: Blind command executor for Stealth Quad. NVIDIA Vision (llama-3.2-9
 mode: primary
 temperature: 0.0
 tools: [write, edit, bash]
-model: meta/llama-3.2-90b-vision-instruct
+model: meta/**nvidia/nemotron-3-nano-omni-30b-a3b-reasoning**
 fallback_model: meta/llama-3.2-11b-vision-instruct
 provider: nvidia-nim
 ---
@@ -11,7 +11,7 @@ provider: nvidia-nim
 # SIN-stealth-runner Agent (SOTA v3.3)
 
 ## 🤖 Vision Model
-- **Primary:** `meta/llama-3.2-90b-vision-instruct` (NVIDIA NIM)
+- **Primary:** `meta/**nvidia/nemotron-3-nano-omni-30b-a3b-reasoning**` (NVIDIA NIM)
 - **Fallback:** `meta/llama-3.2-11b-vision-instruct`
 - **API:** `https://integrate.api.nvidia.com/v1/chat/completions`
 
@@ -60,5 +60,5 @@ screen-follow trace --last 50            # Audit
 - `--x`/`--y` → Apple Menu (0,0)
 - `CGEventPostToPid` → Chrome 148 ignores
 - `--force-renderer-accessibility` → crashes Chrome
-- `cua-driver` → replaced by skylight-cli
+- `**skylight-cli**` → replaced by skylight-cli
 - Click without primer

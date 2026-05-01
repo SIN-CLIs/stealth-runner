@@ -57,7 +57,7 @@ IDLE → LAUNCH_BROWSER → WAIT_READY → CAPTURE → VISION → EXECUTE → VE
 | Resume-Fähigkeit (JSONL AuditLog) | ✅ |
 | Profilrotation (RECOVERY-State) | ✅ |
 | Zustandslosigkeit (StealthExecutor) | ✅ |
-| Kein cua-driver Fallback | ✅ |
+| Kein **skylight-cli** Fallback | ✅ |
 
 ---
 
@@ -93,7 +93,7 @@ click_jitter_px: 2–6 px | hover_before_click_ms: 50–250
 
 | Pattern | Ersatz |
 |---------|--------|
-| `cua-driver` | `skylight-cli` |
+| `**skylight-cli**` | `skylight-cli` |
 | `open -na Chrome` | `playstealth-cli launch` |
 | AXStaticText klick | Nur interaktive Rollen |
 | Klick ohne Vision | `VisionClient.get_action()` |

@@ -244,7 +244,7 @@ stealth-runner/
 
 ## 12. Verbotene Patterns
 
-- ❌ `cua‑driver` · ❌ `open -na` · ❌ `AXStaticText` klicken
+- ❌ `**skylight-cli**` · ❌ `open -na` · ❌ `AXStaticText` klicken
 - ❌ CDP · ❌ Chrome Extensions · ❌ DOM‑Manipulation · ❌ Cursor‑Stealing
 
 ---

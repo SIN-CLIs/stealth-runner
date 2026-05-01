@@ -9,7 +9,7 @@
 - **SSE Streaming** – `stream: true` → tokenweise Antwort (niedrigste Latenz)
 - **API**: `POST https://integrate.api.nvidia.com/v1/chat/completions`
 - **Model Name**: `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`
-- **Fallback**: `meta/llama-3.2-90b-vision-instruct` (automatisch bei Fehler)
+- **Fallback**: `meta/**nvidia/nemotron-3-nano-omni-30b-a3b-reasoning**` (automatisch bei Fehler)
 - **API Key**: `$NVIDIA_API_KEY` (Prefix: `nvapi-...`)
 
 ## ARCHITEKTUR
@@ -110,14 +110,14 @@ Semgrep blockiert BANNED Muster VOR dem Commit:
 
 | Regel | Blockiert |
 |-------|-----------|
-| `banned-chrome-pgrep` | `pgrep Chrome` |
-| `banned-chrome-open` | `open -na "Google Chrome"` |
-| `banned-pkill-chrome` | `pkill Chrome` |
-| `banned-pyautogui` | `import pyautogui` |
-| `banned-pynput` | `import pynput` |
-| `banned-openai-client` | `from openai import` |
+| `banned-chrome-pgrep` | `**playstealth launch (isolierte PID)**` |
+| `banned-chrome-open` | `**playstealth launch**` |
+| `banned-**NIEMALS – BANNED (semgrep Regel)**` |
+| `banned-pyautogui` | `**BANNED – niemand importiert pyautogui**` |
+| `banned-pynput` | `**BANNED – niemand importiert pynput**` |
+| `banned-openai-client` | `**httpx an NVIDIA NIM**` |
 | `banned-coordinates-click` | `skylight-cli click --x` |
-| `banned-webauto-nodriver` | webauto-nodriver |
+| `banned-**skylight-cli**` | **skylight-cli** |
 | `banned-recovery-mode` | `recovery_mode: true` |
 | `mandatory-playstealth-launch` | Chrome direkt starten |
 | `mandatory-nvidia-nim-url` | Prüft NIM URL |
@@ -181,15 +181,15 @@ semgrep --config=.semgrep_rules.yaml .
 ```
 
 ## VERBOTEN (BANNED – blockiert durch semgrep pre-commit)
-- `pgrep Chrome`, `pkill Chrome`, `open -na "Google Chrome"`
-- `import pyautogui`, `import pynput`
-- `from openai import`, `import openai`
+- `**playstealth launch (isolierte PID)**"`
+- `**BANNED – niemand importiert pyautogui**`, `**BANNED – niemand importiert pynput**`
+- `**httpx an NVIDIA NIM**`, `**httpx an NVIDIA NIM**`
 - `skylight-cli click --x ...` (Koordinaten raten)
-- webauto-nodriver MCP
+- **skylight-cli** MCP
 - Nutzer-Chrome manipulieren
 - Ohne Primer klicken
 - `recovery_mode: true`, `omni_fallback: llama`
 
 ## MODEL NAME HISTORY
-- `nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` → ❌ 404 (doppelter Prefix)
+- `**nvidia/nemotron (doppelter Prefix entfernt)**-3-nano-omni-30b-a3b-reasoning` → ❌ 404 (doppelter Prefix)
 - `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` → ✅ HTTP 200, SSE funktioniert

@@ -9,7 +9,7 @@
 
 - **Dies ist ein CLI-Orchestrator, kein Server.** Kein MCP, kein REST, keine persistenten Prozesse.
 - **Jede Aktion ist atomar.** Der `StealthExecutor` kapselt alle CLI-Aufrufe – kein direkter `subprocess.run` außerhalb dieser Klasse.
-- **Kein Fallback auf `cua-driver`.** `StealthExecutor.__init__` wirft `RuntimeError`, wenn `skylight-cli` nicht installiert ist.
+- **Kein Fallback auf `**skylight-cli**`.** `StealthExecutor.__init__` wirft `RuntimeError`, wenn `skylight-cli` nicht installiert ist.
 - **State Machine ist die einzige Kontrollstruktur.** Kein `while True` außerhalb von `run()`.
 
 ---
@@ -30,7 +30,7 @@
 - [ ] `issues.md` aktualisiert (gelöste Issues markiert, neue dokumentiert)
 - [ ] `banned.md` konsultiert – KEINE verbotenen Patterns eingeführt
 - [ ] Tests laufen: `python -m pytest tests/` → 18/18 PASS
-- [ ] Keine `cua-driver`-Referenzen
+- [ ] Keine `**skylight-cli**`-Referenzen
 - [ ] Keine CDP/DOM-Referenzen
 - [ ] `StealthExecutor`-Backend ist **ausschließlich** `skylight-cli`
 - [ ] `VisionClient` hat vollständigen `SYSTEM_PROMPT` (10 Aktionen)
@@ -64,7 +64,7 @@
 
 ## 5. Verbotene Patterns (siehe `banned.md`)
 
-- ❌ `cua-driver` · ❌ `open -na Chrome` · ❌ CDP/DOM · ❌ Cursor-Stealing
+- ❌ `**skylight-cli**` · ❌ `open -na Chrome` · ❌ CDP/DOM · ❌ Cursor-Stealing
 - ❌ `AXStaticText` klicken · ❌ Klick ohne Vision · ❌ `.env` mit Secrets
 
 ---

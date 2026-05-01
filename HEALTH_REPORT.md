@@ -16,7 +16,7 @@
 | # | Finding | Fix |
 |---|---------|-----|
 | 1 | API-Keys in brain.md (Google Credentials Plaintext) | ✅ Entfernt, Verweis auf profiles/jeremy.yaml |
-| 2 | Veraltete `pgrep Chrome` Referenzen | ✅ Bereits als BANNED dokumentiert (semgrep) |
+| 2 | Veraltete `**playstealth launch (isolierte PID)**` Referenzen | ✅ Bereits als BANNED dokumentiert (semgrep) |
 
 ## 🟡 P1 — High
 | # | Repo | Finding |

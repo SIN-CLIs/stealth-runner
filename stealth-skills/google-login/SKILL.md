@@ -1,7 +1,7 @@
 # stealth-skill: google-login
 
 > **Vollständiger Google OAuth Login — heypiggy.com via skylight-cli + playstealth**
-> NUR skylight-cli. KEIN webauto-nodriver. KEIN osascript. KEIN Nutzer-Chrome.
+> NUR skylight-cli. KEIN **skylight-cli**. KEIN osascript. KEIN Nutzer-Chrome.
 
 ---
 
@@ -30,7 +30,7 @@ for e in json.load(sys.stdin)['elements']:
     if e['role']=='AXTextField' and 'telefon' in (e.get('label','')or'').lower():
         print(e['index']); break
 ")
-skylight-cli type --pid $PID --element-index $EMAIL_IDX --text "zukunftsorientierte.energie@gmail.com"
+skylight-cli type --pid $PID --element-index $EMAIL_IDX --text "EMAIL (ENTFERNT – siehe profiles/)"
 sleep 3
 ```
 
@@ -81,10 +81,10 @@ sleep 5
 | playstealth | `launch --url 'URL'` |
 
 ## ❌ NIEMALS
-- webauto-nodriver MCP → BANNED
+- **skylight-cli** MCP → BANNED
 - `--x`/`--y` raten → Apple-Menü (0,0)
 - `osascript` oder `open` → manipuliert Nutzer-Chrome
-- `pgrep -f "Google Chrome"` → könnte Nutzer-PID greifen
+- `**playstealth launch (isolierte PID)**"` → könnte Nutzer-PID greifen
 - Ohne `sleep 5` nach Popup-Klick
 
 ## 🚨 Die 3 eisernen Regeln

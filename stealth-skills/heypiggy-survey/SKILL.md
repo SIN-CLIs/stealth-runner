@@ -1,7 +1,7 @@
 # stealth-skill: heypiggy-survey
 
 > **Autonome Umfrage-Durchführung auf HeyPiggy — Dashboard → Screening → Abschluss**
-> Nur skylight-cli + playstealth. KEIN webauto-nodriver.
+> Nur skylight-cli + playstealth. KEIN **skylight-cli**.
 
 ---
 
@@ -47,6 +47,6 @@ sleep 3
 | playstealth | launch --url |
 
 ## ❌ NIEMALS
-- webauto-nodriver → BANNED
+- **skylight-cli** → BANNED
 - osascript → BANNED
 - Nutzer-Chrome manipulieren → BANNED
