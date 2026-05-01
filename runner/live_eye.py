@@ -47,18 +47,27 @@ class LiveOmniEye:
         self.last_gray = gray
         return pct > 1.0
 
-    def ask_omni(self, b64: str) -> dict:
+    def ask_omni(self, img: np.ndarray) -> dict:
+        """Schnellster Pfad: runterskaliertes Bild + 1 Wort Antwort + greedy."""
         try:
+            # Bild runterskalieren von 1920x1080 auf ~640x360 (Faktor 3) 
+            h, w = img.shape[:2]
+            scale = 360 / h
+            small = cv2.resize(img, None, fx=scale, fy=scale, interpolation=cv2.INTER_AREA)
+            buf = BytesIO()
+            Image.fromarray(small).save(buf, format="PNG")
+            b64 = base64.b64encode(buf.getvalue()).decode()
+
             r = self.http.post(NVIDIA_URL, headers={"Authorization": f"Bearer {NVIDIA_KEY}"},
                 json={"model": OMNI_MODEL, "messages": [{"role": "user", "content": [
-                    {"type": "text", "text": f"What page is this? Say ONLY ONE WORD: heypiggy, google_popup, or dashboard"},
+                    {"type": "text", "text": "1 word: heypiggy | google_popup | dashboard"},
                     {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}}]}],
-                    "max_tokens": 50, "temperature": 0.01}, timeout=10)
+                    "max_tokens": 5, "temperature": 0.0}, timeout=10)
             msg = r.json()["choices"][0]["message"]
             text = (msg.get("reasoning") or msg.get("content") or "").lower()
             page = "heypiggy" if "heypiggy" in text else "google_popup" if "google" in text else "dashboard" if "dashboard" in text else "unknown"
-            action = "wait" if page in ("heypiggy", "dashboard") else "click"
-            return {"page": page, "action": action, "element_label": "Weiter" if page == "google_popup" else ""}
+            return {"page": page, "action": "wait" if page in ("heypiggy", "dashboard") else "click",
+                    "element_label": "Weiter" if page == "google_popup" else ""}
         except:
             return {"page": "unknown", "action": "wait", "element_label": ""}
 
@@ -83,10 +92,8 @@ class LiveOmniEye:
             frame = self.snap()
             changed = self.has_change(frame)
 
-            # Alle 3 Zyklen ODER bei Change: Omni analysieren
             if changed or i % 3 == 0:
-                b64 = self.to_b64(frame)
-                decision = self.ask_omni(b64)
+                decision = self.ask_omni(frame)
                 action = decision.get("action", "wait")
                 label = decision.get("element_label", "")
 
