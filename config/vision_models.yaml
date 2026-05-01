@@ -1,0 +1,6 @@
+current_model: meta/llama-3.2-90b-vision-instruct
+fallback_models:
+  - meta/llama-3.1-8b-instruct
+  - mistralai/mistral-7b-instruct
+max_tokens: 200
+timeout: 60

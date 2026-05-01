@@ -30,7 +30,7 @@ stealth-runner = "runner.cli:main_cli"
 [tool.pytest.ini_options]
 testpaths = ["tests"]
 asyncio_mode = "auto"
-addopts = ["-v", "--tb=short", "--cov=runner", "--cov=sin_survey_core", "--cov-report=term-missing"]
+addopts = ["-v", "--tb=short"]
 
 [tool.ruff]
 target-version = "py312"
