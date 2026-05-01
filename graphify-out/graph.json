@@ -863,45 +863,45 @@
       "file_type": "rationale",
       "source_file": "runner/trio_live.py",
       "source_location": "L19",
-      "id": "runner_trio_live_rationale_19",
       "community": 14,
-      "norm_label": "cua-driver call mit json-args."
+      "norm_label": "cua-driver call mit json-args.",
+      "id": "runner_trio_live_rationale_19"
     },
     {
       "label": "cua-driver list_windows \u2192 Popups erkennen.",
       "file_type": "rationale",
       "source_file": "runner/trio_live.py",
       "source_location": "L31",
-      "id": "runner_trio_live_rationale_31",
       "community": 14,
-      "norm_label": "cua-driver list_windows \u2192 popups erkennen."
+      "norm_label": "cua-driver list_windows \u2192 popups erkennen.",
+      "id": "runner_trio_live_rationale_31"
     },
     {
       "label": "Nur Popup-Elemente sehen (nicht die Hauptseite).",
       "file_type": "rationale",
       "source_file": "runner/trio_live.py",
       "source_location": "L45",
-      "id": "runner_trio_live_rationale_45",
       "community": 14,
-      "norm_label": "nur popup-elemente sehen (nicht die hauptseite)."
+      "norm_label": "nur popup-elemente sehen (nicht die hauptseite).",
+      "id": "runner_trio_live_rationale_45"
     },
     {
       "label": "Omni analysiert den Accessibility-Tree LIVE.",
       "file_type": "rationale",
       "source_file": "runner/trio_live.py",
       "source_location": "L51",
-      "id": "runner_trio_live_rationale_51",
       "community": 14,
-      "norm_label": "omni analysiert den accessibility-tree live."
+      "norm_label": "omni analysiert den accessibility-tree live.",
+      "id": "runner_trio_live_rationale_51"
     },
     {
       "label": "LIVE Loop: 250ms Polling \u2192 Popup-Erkennung \u2192 Omni \u2192 Click.",
       "file_type": "rationale",
       "source_file": "runner/trio_live.py",
       "source_location": "L78",
-      "id": "runner_trio_live_rationale_78",
       "community": 14,
-      "norm_label": "live loop: 250ms polling \u2192 popup-erkennung \u2192 omni \u2192 click."
+      "norm_label": "live loop: 250ms polling \u2192 popup-erkennung \u2192 omni \u2192 click.",
+      "id": "runner_trio_live_rationale_78"
     },
     {
       "label": "__init__.py",
@@ -1655,45 +1655,45 @@
       "file_type": "rationale",
       "source_file": "runner/trio_layer.py",
       "source_location": "L16",
-      "id": "runner_trio_layer_rationale_16",
       "community": 15,
-      "norm_label": "screen-follow screenshot \u2192 base64 fur omni."
+      "norm_label": "screen-follow screenshot \u2192 base64 fur omni.",
+      "id": "runner_trio_layer_rationale_16"
     },
     {
       "label": "Omni analysiert den Screen und sagt was zu tun ist.",
       "file_type": "rationale",
       "source_file": "runner/trio_layer.py",
       "source_location": "L33",
-      "id": "runner_trio_layer_rationale_33",
       "community": 15,
-      "norm_label": "omni analysiert den screen und sagt was zu tun ist."
+      "norm_label": "omni analysiert den screen und sagt was zu tun ist.",
+      "id": "runner_trio_layer_rationale_33"
     },
     {
       "label": "skylight-cli click \u2013 NUR mit element-index.",
       "file_type": "rationale",
       "source_file": "runner/trio_layer.py",
       "source_location": "L72",
-      "id": "runner_trio_layer_rationale_72",
       "community": 15,
-      "norm_label": "skylight-cli click \u2013 nur mit element-index."
+      "norm_label": "skylight-cli click \u2013 nur mit element-index.",
+      "id": "runner_trio_layer_rationale_72"
     },
     {
       "label": "skylight-cli type \u2013 NUR mit element-index.",
       "file_type": "rationale",
       "source_file": "runner/trio_layer.py",
       "source_location": "L82",
-      "id": "runner_trio_layer_rationale_82",
       "community": 15,
-      "norm_label": "skylight-cli type \u2013 nur mit element-index."
+      "norm_label": "skylight-cli type \u2013 nur mit element-index.",
+      "id": "runner_trio_layer_rationale_82"
     },
     {
       "label": "Trio Layer: screen-follow \u2192 Omni \u2192 skylight-cli.",
       "file_type": "rationale",
       "source_file": "runner/trio_layer.py",
       "source_location": "L92",
-      "id": "runner_trio_layer_rationale_92",
       "community": 15,
-      "norm_label": "trio layer: screen-follow \u2192 omni \u2192 skylight-cli."
+      "norm_label": "trio layer: screen-follow \u2192 omni \u2192 skylight-cli.",
+      "id": "runner_trio_layer_rationale_92"
     },
     {
       "label": "live_omni_monitor.py",
