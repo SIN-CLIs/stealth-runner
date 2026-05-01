@@ -115,6 +115,7 @@ class SurveyRunner:
         confidence = result.get("confidence", 0.0)
         action = result.get("action")
         path = result.get("path", "needs_vision")
+        reason = result.get("reason", "")
 
         if path == "vision_free" and action and confidence >= CONFIDENCE_THRESHOLD:
             self.pending_action = {
@@ -127,7 +128,10 @@ class SurveyRunner:
             self.vision_free_steps += 1
             self.state = State.EXECUTE
         else:
-            print(f"👁 DOM prescan: low confidence ({confidence:.2f}) → fallback to Vision", flush=True)
+            if reason and "image" in reason.lower():
+                print(f"🖼 DOM prescan: image content detected — Vision mandatory", flush=True)
+            else:
+                print(f"👁 DOM prescan: low confidence ({confidence:.2f}) → fallback to Vision", flush=True)
             self.state = State.VISION
 
     async def _vision(self):
