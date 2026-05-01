@@ -92,4 +92,36 @@ for e in json.load(sys.stdin)['elements']:
     fi
 fi
 
-echo "{\"status\":\"ok\",\"pid\":$PID,\"email\":\"$EMAIL\"}"
+# Verifikation: Ist das Google-Popup weg?
+echo '{"step":5,"action":"verify_popup_closed"}' >&2
+for i in 1 2 3; do
+    sleep 3
+    # cua-driver list_windows → Popup noch offen?
+    POPUP=$(cua-driver call list_windows 2>/dev/null | python3 -c "
+import json,sys
+for w in json.load(sys.stdin).get('windows',[]):
+    if w.get('pid') == $PID and 'anmelden' in w.get('title','').lower() and w.get('is_on_screen',False):
+        print(w['window_id']); break
+" 2>/dev/null)
+    if [ -z "$POPUP" ]; then
+        echo "{\"status\":\"ok\",\"pid\":$PID,\"email\":\"$EMAIL\"}"
+        exit 0
+    fi
+    echo "{\"step\":5.${i},\"action\":\"popup_noch_offen(WID=$POPUP)\"}" >&2
+    # Nochmal im Popup "Weiter" klicken
+    POPUP_WEITER=$(cua-driver call get_window_state "{\"pid\":$PID,\"window_id\":$POPUP}" 2>/dev/null | python3 -c "
+import json,sys
+tree = json.load(sys.stdin).get('tree_markdown','')
+for line in tree.split(chr(10)):
+    if 'Button' in line and 'Weiter' in line:
+        import re; m = re.search(r'\[(\d+)\]', line)
+        if m: print(m.group(1)); break
+" 2>/dev/null)
+    if [ -n "$POPUP_WEITER" ]; then
+        echo "{\"step\":5.${i},\"action\":\"click_weiter_in_popup(idx=$POPUP_WEITER)\"}" >&2
+        skylight click --pid "$PID" --element-index "$POPUP_WEITER"
+    fi
+done
+# Nach 3 Versuchen: Login fehlgeschlagen
+echo "{\"status\":\"error\",\"reason\":\"popup_still_open_after_3_attempts\",\"pid\":$PID,\"popup_window_id\":$POPUP}"
+exit 10
