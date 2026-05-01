@@ -1,76 +1,125 @@
 #!/usr/bin/env python3
-"""LiveEye v4 – PERMANENTER ffmpeg-Ringpuffer → video_url an Omni."""
+"""
+LiveEye v5 – MEMORY-RINGPUFFER + video_url an Omni.
+KEINE Disk-Writes. PyAV captured + encodiert in Echtzeit.
+"""
 from __future__ import annotations
-import base64, json, os, subprocess, time
-from pathlib import Path
-import httpx
+import asyncio, base64, collections, json, os, re, time
+from io import BytesIO
+import av, cv2, httpx, mss, numpy as np
+from PIL import Image
 
-KEY = os.getenv("NVIDIA_API_KEY","")
+KEY = os.getenv("NVIDIA_API_KEY", "")
 URL = "https://integrate.api.nvidia.com/v1/chat/completions"
 MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
-VIDEO = "/tmp/live_eye.mp4"
-CLIP = "/tmp/live_eye_clip.mp4"
+FPS = 5
+BUFFER_SECS = 4
+MAX_FRAMES = FPS * BUFFER_SECS  # 20 Frames
 
 
-def main(pid: int):
-    # ffmpeg permanent starten
-    for f in [VIDEO, CLIP]:
-        if Path(f).exists(): Path(f).unlink()
+class RingBuffer:
+    """Memory-Ringpuffer: Letzte N Frames im RAM, kein Disk I/O."""
     
-    # Bildschirm-Index finden
-    r = subprocess.run(["ffmpeg","-f","avfoundation","-list_devices","true","-i",""],
-                      capture_output=True, text=True, timeout=5)
-    idx = "1"
-    for line in r.stderr.split("\n"):
-        if "Capture screen" in line:
-            idx = line.split()[0].strip("[]")
-            break
-    print(f"Screen index: {idx}", flush=True)
+    def __init__(self, maxlen: int = MAX_FRAMES):
+        self.frames: collections.deque[bytes] = collections.deque(maxlen=maxlen)
+        self.sct = mss.mss()
+        self.mon = self.sct.monitors[1]
 
-    proc = subprocess.Popen(
-        ["ffmpeg","-f","avfoundation","-capture_cursor","1","-r","5",
-         "-video_size","1920x1080","-i",idx,
-         "-c:v","libx264","-preset","ultrafast","-crf","30","-y",VIDEO],
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    time.sleep(3)
-    print("🔴 Recording aktiv", flush=True)
+    def snap(self) -> np.ndarray:
+        """mss capture → numpy (3ms)."""
+        raw = np.array(self.sct.grab(self.mon))
+        return cv2.cvtColor(raw, cv2.COLOR_BGRA2BGR)
 
-    try:
-        for i in range(20):
-            time.sleep(5)
-            if not Path(VIDEO).exists() or Path(VIDEO).stat().st_size < 100000:
-                print(f"[{i}] Video zu kurz...", flush=True)
-                continue
+    def add_frame(self, frame: np.ndarray | None = None):
+        """Frame als PNG in den Ringpuffer (kein Disk I/O)."""
+        if frame is None:
+            frame = self.snap()
+        buf = BytesIO()
+        Image.fromarray(frame).save(buf, format="PNG")
+        self.frames.append(buf.getvalue())
 
-            # Letzte 4s extrahieren
-            if Path(CLIP).exists(): Path(CLIP).unlink()
-            subprocess.run(["ffmpeg","-sseof","-4","-i",VIDEO,"-c","copy","-y",CLIP],
-                          capture_output=True, timeout=10)
-            if not Path(CLIP).exists() or Path(CLIP).stat().st_size < 1000:
-                continue
+    def encode_video(self) -> bytes | None:
+        """Ringpuffer → mp4 im Speicher. Nur die letzten N Sekunden."""
+        if len(self.frames) < 5:
+            return None
+        try:
+            output = BytesIO()
+            output.name = "clip.mp4"
+            container = av.open(output, mode="w", format="mp4")
+            stream = container.add_stream("libx264", rate=min(FPS, len(self.frames)), options={"preset":"ultrafast","crf":"35"})
+            stream.width = 960
+            stream.height = 540
+            stream.pix_fmt = "yuv420p"
 
-            clip = base64.b64encode(Path(CLIP).read_bytes()).decode()
-            print(f"[{i}] Clip: {len(clip)//1024}KB an Omni...", flush=True)
+            for png_bytes in list(self.frames)[-MAX_FRAMES:]:
+                img = Image.open(BytesIO(png_bytes)).resize((960, 540))
+                frame = av.VideoFrame.from_image(img)
+                for packet in stream.encode(frame):
+                    container.mux(packet)
+            for packet in stream.encode():
+                container.mux(packet)
+            container.close()
+            return output.getvalue()
+        except Exception as e:
+            print(f"  ⚠️ Encode: {e}", flush=True)
+            return None
 
-            r = httpx.post(URL, headers={"Authorization":f"Bearer {KEY}"},
-                json={"model":MODEL, "messages":[{"role":"user","content":[
-                    {"type":"video_url","video_url":{"url":f"data:video/mp4;base64,{clip}"}},
-                    {"type":"text","text":"Watch this screen recording. What happened? What action next and WHERE?"}]}],
-                      "max_tokens":500,"temperature":0.0,
-                      "extra_body":{"media_io_kwargs":{"video":{"fps":1,"num_frames":-1}}}},
-                timeout=30)
-            msg = r.json()["choices"][0]["message"]
-            text = msg.get("reasoning") or msg.get("content") or ""
-            print(f"  → {text[:500]}", flush=True)
-    finally:
-        proc.terminate()
-        try: proc.wait(timeout=3)
-        except: proc.kill()
+
+class LiveEye:
+    """Live-Video-Auge: Ringbuffer → Omni → Aktion."""
+
+    def __init__(self, pid: int):
+        self.pid = pid
+        self.buf = RingBuffer()
+        self.http = httpx.AsyncClient(timeout=30)
+
+    async def analyze(self) -> dict | None:
+        """Video-Clip aus Ringbuffer → Omni → Entscheidung."""
+        mp4 = self.buf.encode_video()
+        if not mp4:
+            return None
+        
+        b64 = base64.b64encode(mp4).decode()
+        prompt = ("Watch this screen recording. What happened? Describe ALL windows. "
+                  "Is there a Google sign-in popup? What action next and in which window?")
+
+        r = await self.http.post(URL, headers={"Authorization": f"Bearer {KEY}"},
+            json={"model": MODEL, "messages": [{"role": "user", "content": [
+                {"type": "video_url", "video_url": {"url": f"data:video/mp4;base64,{b64}"}},
+                {"type": "text", "text": prompt}]}],
+                  "max_tokens": 500, "temperature": 0.0,
+                  "extra_body": {"media_io_kwargs": {"video": {"fps": 1, "num_frames": -1}}}},
+            timeout=30)
+        msg = r.json()["choices"][0]["message"]
+        text = msg.get("reasoning") or msg.get("content") or ""
+        return {"raw": text[:2000], "len": len(mp4)}
+
+    async def run(self, steps: int = 10):
+        """Live-Loop: capture → buffer → Omni → analyze → repeat."""
+        # Ringbuffer füllen
+        for _ in range(MAX_FRAMES):
+            self.buf.add_frame()
+            await asyncio.sleep(1.0 / FPS)
+
+        for i in range(steps):
+            # Neue Frames
+            for _ in range(FPS * 2):  # 2s neue Frames
+                self.buf.add_frame()
+                await asyncio.sleep(1.0 / FPS)
+
+            t0 = time.time()
+            result = await self.analyze()
+            t = time.time() - t0
+            if result:
+                print(f"[{i}] {t:.1f}s ({result['len']//1024}KB): {result['raw'][:200]}", flush=True)
+            else:
+                print(f"[{i}] Buffer zu kurz", flush=True)
+        await self.http.aclose()
 
 
 if __name__ == "__main__":
-    import sys
-    p = int(sys.argv[1]) if len(sys.argv)>1 else 0
+    import subprocess, sys
+    p = int(sys.argv[1]) if len(sys.argv) > 1 else 0
     if not p:
         r = subprocess.run(["playstealth","launch","--url","https://heypiggy.com/?page=dashboard"],
                           capture_output=True, text=True, timeout=30)
@@ -78,5 +127,4 @@ if __name__ == "__main__":
             try: p = json.loads(l).get("pid"); break
             except: pass
         print(f"PID={p}")
-        time.sleep(5)
-    main(p)
+    asyncio.run(LiveEye(p).run())
