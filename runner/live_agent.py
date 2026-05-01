@@ -1,17 +1,16 @@
 #!/usr/bin/env python3
 """
-LiveOmniAgent – Menschliches Auge für den stealth-runner.
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-RETINA (pixel-diff) → NUR Veränderungen erkennen
-CORTEX (Omni) → sagt WAS (Label), nicht WO (Pixel)
-HANDS (skylight-cli + cua-driver) → findet element_index + clickt
-━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-KEINE Pixel-Koordinaten für Aktionen! Nur AX-element-index.
+LiveOmniAgent – Auge+Hirn+Hand. Finale Version.
+- Retina: pixel-diff, nur Changes (95% Reduktion)
+- Cortex: Omni sagt LABEL (nie Koordinaten!)
+- Hands: skylight-cli + cua-driver, NUR element-index
 """
 from __future__ import annotations
-import asyncio, base64, json, os, re, subprocess, time
+import asyncio, base64, json, os, re, subprocess, time, shutil
+from dataclasses import dataclass
 from io import BytesIO
-from typing import Any, Callable
+from pathlib import Path
+from typing import Callable
 import httpx
 import numpy as np
 from PIL import Image
@@ -21,122 +20,132 @@ NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
 OMNI_MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
 
 
-class Retina:
-    """Pixel-Diff ≙ Menschliche Netzhaut – nur SIGNALE (Änderungen) senden."""
+@dataclass
+class MotionCommand:
+    """Omni sagt NUR Label, nie Koordinaten."""
+    action: str = "wait"
+    ax_label: str = ""
+    ax_role: str = ""
+    text: str = ""
+    reasoning: str = ""
+    confidence: float = 0.0
 
-    def __init__(self, pid: int, threshold: float = 3.0):
-        self.pid = pid
+
+class Retina:
+    """Pixel-Diff: nur veränderte Pixel erkennen, 95% Reduktion."""
+
+    def __init__(self, threshold: float = 3.0):
         self.threshold = threshold
         self.last_frame: np.ndarray | None = None
-        self.frame_count = 0
+        self._last_bounds = (0, 0, 0, 0)
 
-    def snap(self) -> np.ndarray:
-        """cua-driver screenshot → numpy array."""
-        r = subprocess.run(["cua-driver", "call", "screenshot", json.dumps({"pid": self.pid}),
-                           "--compact", "--no-daemon"], capture_output=True, text=True, timeout=15)
-        try:
-            d = json.loads(r.stdout)
-            b64 = d.get("screenshot_base64", "")
-            if b64: return np.array(Image.open(BytesIO(base64.b64decode(b64))))
-        except: pass
-        # Fallback: RAW PNG auf stdout
-        r = subprocess.run(["cua-driver", "call", "screenshot", json.dumps({"pid": self.pid}), "--raw"],
-                          capture_output=True, timeout=15)
-        return np.array(Image.open(BytesIO(r.stdout)))
-
-    def diff(self, frame: np.ndarray) -> dict | None:
-        """Vergleich: nur veränderte Pixel → 95% Datenreduktion."""
-        self.frame_count += 1
+    def detect(self, current: np.ndarray) -> np.ndarray | None:
         if self.last_frame is None:
-            self.last_frame = frame
-            return None
-        if frame.shape != self.last_frame.shape:
-            self.last_frame = frame; return None
+            self.last_frame = current.copy()
+            return current
+        diff = np.abs(current.astype(np.int16) - self.last_frame.astype(np.int16))
+        mask = np.max(diff, axis=2) > 25
+        ratio = 100.0 * np.sum(mask) / mask.size
+        if ratio >= self.threshold:
+            self.last_frame = current.copy()
+            return self._extract_roi(current, mask)
+        return None
 
-        diff = np.abs(frame.astype(np.int16) - self.last_frame.astype(np.int16))
-        mask = np.max(diff, axis=2) > 20
-        self.last_frame = frame
+    def _extract_roi(self, frame: np.ndarray, mask: np.ndarray) -> np.ndarray:
+        coords = np.argwhere(mask)
+        y0, x0 = coords.min(axis=0)
+        y1, x1 = coords.max(axis=0)
+        m = 15
+        y0 = max(0, y0-m); x0 = max(0, x0-m)
+        y1 = min(frame.shape[0], y1+m); x1 = min(frame.shape[1], x1+m)
+        self._last_bounds = (x0, y0, x1, y1)
+        return frame[y0:y1, x0:x1]
 
-        if not np.any(mask):
-            return {"changed": False, "pct": 0.0}
-
-        rows, cols = np.where(mask)
-        y0, y1 = int(rows.min()), int(rows.max())
-        x0, x1 = int(cols.min()), int(cols.max())
-        pct = round(100.0 * float(np.sum(mask)) / float(mask.size), 2)
-        m = 8
-        region = frame[max(0,y0-m):min(frame.shape[0],y1+m), max(0,x0-m):min(frame.shape[1],x1+m)]
-
-        return {"changed": True, "pct": pct, "bbox": (x0, y0, x1, y1),
-                "region": region, "b64": self._to_b64(region)}
-
-    def _to_b64(self, arr: np.ndarray) -> str:
+    @staticmethod
+    def to_png(arr: np.ndarray) -> bytes:
         buf = BytesIO(); Image.fromarray(arr).save(buf, format="PNG")
-        return base64.b64encode(buf.getvalue()).decode()
-
-    def full_b64(self, frame: np.ndarray) -> str:
-        buf = BytesIO(); Image.fromarray(frame).save(buf, format="PNG")
-        return base64.b64encode(buf.getvalue()).decode()
+        return buf.getvalue()
 
 
 class Cortex:
-    """Omni ≙ Sehrinde – analysiert NUR Veränderungen, sagt WAS zu tun ist."""
+    """Omni: sagt WAS zu tun ist, gibt LABEL zurück."""
 
     def __init__(self):
+        self.http = httpx.AsyncClient(timeout=15)
         self.context = ""
-        self.http = httpx.Client(timeout=15)
 
-    def analyze(self, diff_data: dict) -> dict:
-        """Nur die Change-Region an Omni schicken → Label + Action bekommen."""
-        if not diff_data or not diff_data.get("changed") or diff_data["pct"] < 0.5:
-            return {"action": "wait"}
-
-        prompt = f"""You see a CHANGED screen region ({diff_data['pct']}% of screen changed).
-Context: {self.context}
-
-What UI element appeared? Give me the EXACT visible text label.
-I will use Accessibility API to find and click it by LABEL.
-
-Output ONLY JSON:
-{{"action":"click|type|scroll|wait|done",
-  "element_label":"exact visible text (e.g. 'Weiter', 'E-Mail', 'Umfrage starten')",
-  "reasoning":"..."}}"""
-
+    async def analyze(self, roi: bytes) -> MotionCommand | None:
+        b64 = base64.b64encode(roi).decode()
+        prompt = (
+            'Du siehst einen veränderten Bildschirmausschnitt. '
+            'Erkenne das interaktive Element und gib sein Label zurück.\n'
+            'Antworte NUR mit JSON:\n'
+            '{"action":"click|type|wait|done",'
+            '"ax_label":"Sichtbarer Text (z.B. Weiter, E-Mail)",'
+            '"ax_role":"AXButton|AXTextField|AXLink",'
+            '"confidence":0.0-1.0,'
+            '"reasoning":"..."}'
+        )
         try:
-            r = self.http.post(NVIDIA_URL, headers={"Authorization": f"Bearer {NVIDIA_KEY}"},
-                              json={"model": OMNI_MODEL, "messages": [{"role": "user", "content": [
-                                  {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{diff_data['b64']}"}},
-                                  {"type": "text", "text": prompt}]}],
-                                    "max_tokens": 200, "temperature": 0.1})
+            r = await self.http.post(NVIDIA_URL,
+                headers={"Authorization": f"Bearer {NVIDIA_KEY}"},
+                json={"model": OMNI_MODEL, "messages": [
+                    {"role": "system", "content": prompt},
+                    {"role": "user", "content": [
+                        {"type": "text", "text": f"Context: {self.context}"},
+                        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}}
+                    ]}], "max_tokens": 200, "temperature": 0.1})
             text = r.json()["choices"][0]["message"]
             text = text.get("reasoning") or text.get("content") or "{}"
             m = re.search(r"\{.*\}", text, re.DOTALL)
-            result = json.loads(m.group()) if m else {"action": "wait"}
-            if result.get("action") != "wait":
-                self.context = result.get("reasoning", str(result)[:100])
-            return result
+            d = json.loads(m.group()) if m else {}
+            if d.get("action") not in ("wait", None):
+                self.context = d.get("reasoning", "")
+            return MotionCommand(
+                action=d.get("action", "wait"),
+                ax_label=d.get("ax_label", ""),
+                ax_role=d.get("ax_role", ""),
+                confidence=d.get("confidence", 0.0),
+                reasoning=d.get("reasoning", ""))
         except Exception as e:
-            return {"action": "wait", "reasoning": str(e)}
+            return None
+
+    async def close(self):
+        await self.http.aclose()
 
 
 class Hands:
-    """Hände ≙ skylight-cli + cua-driver – NUR element-index, nie Pixel."""
+    """NUR element-index, nie Koordinaten."""
 
     def __init__(self, pid: int):
         self.pid = pid
 
-    def find_anywhere(self, label: str, role: str = "AXButton") -> tuple | None:
-        """Findet element_index für ein Label – POPUP-FIRST, Fallback normales Fenster."""
-        # 1. Popup-Fenster durchsuchen (cua-driver get_window_state)
+    def _skylight(self, args: list[str]) -> dict | None:
+        """skylight-cli mit Fehlerbehandlung."""
+        try:
+            r = subprocess.run(["skylight-cli"] + args + ["--pid", str(self.pid)],
+                              capture_output=True, text=True, timeout=10)
+            return json.loads(r.stdout) if r.stdout.strip() else None
+        except: return None
+
+    def find_by_label(self, label: str, role: str | None = None) -> int | None:
+        """Findet element_index für ein Label via skylight-cli list-elements."""
+        data = self._skylight(["list-elements"])
+        if not data: return None
+        for e in data.get("elements", []):
+            if label.lower() in str(e.get("label", "")).lower():
+                if role is None or e.get("role") == role:
+                    return e.get("index")
+        return None
+
+    def find_in_popup(self, label: str) -> tuple[int, int] | None:
+        """Findet element_index im Popup via cua-driver + get_window_state."""
         try:
             r = subprocess.run(["cua-driver", "call", "list_windows"], capture_output=True, text=True, timeout=10)
-            windows = json.loads(r.stdout).get("windows", [])
-            for w in windows:
-                if w.get("pid") != self.pid or not w.get("is_on_screen", False):
-                    continue
+            for w in json.loads(r.stdout).get("windows", []):
+                if w.get("pid") != self.pid or not w.get("is_on_screen", False): continue
                 wid = w["window_id"]
-                r2 = subprocess.run(["cua-driver", "call", "get_window_state",
-                                    json.dumps({"pid": self.pid, "window_id": wid})],
+                r2 = subprocess.run(["cua-driver", "call", "get_window_state", json.dumps({"pid": self.pid, "window_id": wid})],
                                    capture_output=True, text=True, timeout=10)
                 tree = json.loads(r2.stdout).get("tree_markdown", "")
                 for line in tree.split("\n"):
@@ -144,122 +153,119 @@ class Hands:
                         m = re.search(r"\[(\d+)\]", line)
                         if m: return (wid, int(m.group(1)))
         except: pass
-
-        # 2. skylight-cli Fallback (1 Fenster)
-        try:
-            r = subprocess.run(["skylight-cli", "list-elements", "--pid", str(self.pid)],
-                              capture_output=True, text=True, timeout=10)
-            for e in json.loads(r.stdout).get("elements", []):
-                if label.lower() in str(e.get("label", "")).lower():
-                    return (0, e["index"])
-        except: pass
         return None
 
-    def click(self, label: str) -> bool:
-        """NUR element-index über skylight-cli (kein cua-driver, kein Daemon nötig)."""
-        found = self.find_anywhere(label, "AXButton")
-        if not found:
-            found = self.find_anywhere(label, "AXLink")
-        if found:
-            wid, idx = found
-            subprocess.run(["skylight-cli", "click", "--pid", str(self.pid), "--element-index", str(idx)],
-                          capture_output=True, timeout=10)
-            print(f"      🖱 Klick [{idx}] '{label}' (popup={bool(wid)})", flush=True)
+    async def click(self, label: str) -> bool:
+        """Popup-first → skylight-cli Fallback. NUR element-index."""
+        # 1. Popup
+        p = self.find_in_popup(label)
+        if p:
+            _, idx = p
+        else:
+            # 2. Normales Fenster
+            idx = self.find_by_label(label, "AXButton") or self.find_by_label(label, "AXLink")
+        if idx:
+            self._skylight(["click", "--element-index", str(idx)])
+            print(f"      🖱 [{idx}] '{label}'", flush=True)
             return True
         print(f"      ⚠️ '{label}' nicht gefunden", flush=True)
         return False
 
-    def type_text(self, label: str, text: str) -> bool:
-        """Fokussiert per click, tippt per skylight-cli type."""
-        found = self.find_anywhere(label, "AXTextField")
-        if not found:
-            found = self.find_anywhere(label, "AXTextArea")
-        if found:
-            wid, idx = found
-            subprocess.run(["skylight-cli", "type", "--pid", str(self.pid),
-                           "--element-index", str(idx), "--text", text], capture_output=True, timeout=10)
-            print(f"      ⌨ Getippt [{idx}] '{text[:20]}...'", flush=True)
+    async def type_text(self, label: str, text: str) -> bool:
+        idx = self.find_by_label(label, "AXTextField") or self.find_by_label(label)
+        if idx:
+            self._skylight(["type", "--element-index", str(idx), "--text", text])
+            print(f"      ⌨ [{idx}] '{text[:15]}...'", flush=True)
             return True
         return False
 
 
 class LiveOmniAgent:
-    """Der komplette Live-Agent: Auge → Hirn → Hand in einem Loop."""
+    """Auge → Hirn → Hand, 50 Hz, <100ms Reaktion."""
 
-    def __init__(self, pid: int, fps: float = 30, threshold: float = 3.0, profile_path: str = "profiles/jeremy.yaml"):
-        self.retina = Retina(pid, threshold)
+    def __init__(self, pid: int, threshold: float = 3.0, fps: float = 30):
+        self.retina = Retina(threshold)
         self.cortex = Cortex()
         self.hands = Hands(pid)
-        self.fps = fps
-        self.running = False
+        self.pid = pid
         self.interval = 1.0 / fps
-
-    async def start(self) -> None:
-        self.running = True
-        import yaml
-        p = Path(__file__).resolve().parent.parent / "profiles" / "jeremy.yaml"
-        if p.exists():
-            self.profile = yaml.safe_load(p.read_text())
-        else:
-            self.profile = {}
-        print(f"🧠 LiveOmniAgent PID={self.pid} {self.fps}fps threshold={self.retina.threshold}%", flush=True)
-
-    async def stop(self) -> None:
         self.running = False
 
-    async def run(self, callback: Callable | None = None) -> None:
+    async def start(self):
+        self.running = True
+        self.profile = {}
+        pf = Path(__file__).resolve().parent.parent / "profiles" / "jeremy.yaml"
+        if pf.exists():
+            import yaml
+            self.profile = yaml.safe_load(pf.read_text())
+        print(f"🧠 LiveOmniAgent PID={self.pid}", flush=True)
+
+    async def stop(self):
+        self.running = False
+        await self.cortex.close()
+
+    def _screenshot(self) -> np.ndarray | None:
+        """Screenshot mit Workaround für skylight-cli --output Bug."""
+        cwd = Path("skylight_screenshot.png")
+        if cwd.exists(): cwd.unlink()
+        self._skylight(["screenshot", "--mode", "som", "--output", "/tmp/live_frame.png"])
+        if cwd.exists():
+            shutil.copy2(str(cwd), "/tmp/live_frame.png")
+            cwd.unlink()
+        try:
+            return np.array(Image.open("/tmp/live_frame.png"))
+        except: return None
+
+    def _skylight(self, args: list[str]) -> dict | None:
+        try:
+            r = subprocess.run(["skylight-cli"] + args + ["--pid", str(self.pid)],
+                              capture_output=True, text=True, timeout=15)
+            return json.loads(r.stdout) if r.stdout.strip() else None
+        except: return None
+
+    async def run(self, callback: Callable | None = None):
         await self.start()
         frames = changes = 0
         t0 = time.time()
         try:
             while self.running:
-                loop_start = time.time()
-
-                # Auge: Frame erfassen + Diff
-                frame = self.retina.snap()
-                diff_data = self.retina.diff(frame)
+                t1 = time.time()
+                frame = self._screenshot()
+                if frame is None:
+                    await asyncio.sleep(self.interval)
+                    continue
                 frames += 1
-
-                if diff_data and diff_data.get("changed"):
+                roi = self.retina.detect(frame)
+                if roi is not None:
                     changes += 1
-                    # Hirn: Omni analysiert Change
-                    decision = self.cortex.analyze(diff_data)
-                    action = decision.get("action", "wait")
-                    label = decision.get("element_label", "")
-
-                    if action != "wait" and label:
-                        print(f"  👁 Change {changes}: {diff_data['pct']}% → '{label}' ({action})", flush=True)
-
-                        # Hand: Aktion via element-index (nie Pixel!)
-                        if action == "click":
-                            self.hands.click(label)
-                        elif action == "type":
-                            email = self.profile.get("google_email", "")
-                            pw = self.profile.get("google_password", "")
-                            t = email if "email" in label.lower() else pw
-                            if t:
-                                self.hands.type_text(label, t)
-                        elif action == "done":
-                            print(f"  ✅ Survey abgeschlossen!", flush=True)
-                            break
-
-                    if callback:
-                        callback(decision)
-
-                # 50 Hz Framerate
-                elapsed = time.time() - loop_start
-                remaining = self.interval - elapsed
-                if remaining > 0:
-                    await asyncio.sleep(remaining)
-
+                    cmd = await self.cortex.analyze(Retina.to_png(roi))
+                    if cmd and cmd.action not in ("wait", None) and cmd.confidence > 0.5:
+                        print(f"  👁 Change {changes}: {cmd.action} '{cmd.ax_label}' ({cmd.confidence:.0%})", flush=True)
+                        if cmd.action == "click":
+                            await self.hands.click(cmd.ax_label)
+                        elif cmd.action == "type":
+                            t = self.profile.get("google_email", "")
+                            if "passwort" in cmd.ax_label.lower() or "password" in cmd.ax_label.lower():
+                                t = self.profile.get("google_password", "")
+                            if t: await self.hands.type_text(cmd.ax_label, t)
+                        elif cmd.action == "done":
+                            print("  ✅ Fertig!", flush=True); break
+                    if callback: callback(cmd)
+                await asyncio.sleep(max(0, self.interval - (time.time() - t1)))
         finally:
             await self.stop()
-            dur = time.time() - t0
-            print(f"\n✅ Agent: {frames} frames, {changes} changes in {dur:.1f}s", flush=True)
+            print(f"\n✅ Agent: {frames} frames, {changes} changes in {time.time()-t0:.1f}s", flush=True)
+
+
+async def run_survey_session(url: str = "https://heypiggy.com/?page=dashboard"):
+    r = subprocess.run(["playstealth", "launch", "--url", url], capture_output=True, text=True, timeout=30)
+    for line in reversed(r.stdout.strip().split("\n")):
+        try: pid = json.loads(line).get("pid"); break
+        except: pass
+    if not pid: print("❌ playstealth failed"); return
+    print(f"🚀 Chrome PID={pid}", flush=True)
+    await LiveOmniAgent(pid).run()
 
 
 if __name__ == "__main__":
-    import sys
-    pid = int(sys.argv[1]) if len(sys.argv) > 1 else 0
-    if not pid: print("Usage: python live_agent.py <PID>"); sys.exit(1)
-    asyncio.run(LiveOmniAgent(pid).run())
+    asyncio.run(run_survey_session())

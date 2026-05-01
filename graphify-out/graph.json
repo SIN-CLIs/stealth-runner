@@ -1114,7 +1114,7 @@
       "label": ".type_text()",
       "file_type": "code",
       "source_file": "runner/live_agent.py",
-      "source_location": "L173",
+      "source_location": "L172",
       "id": "runner_live_agent_hands_type_text",
       "community": 6,
       "norm_label": ".type_text()"
@@ -1123,7 +1123,7 @@
       "label": "LiveOmniAgent",
       "file_type": "code",
       "source_file": "runner/live_agent.py",
-      "source_location": "L187",
+      "source_location": "L186",
       "id": "runner_live_agent_liveomniagent",
       "community": 6,
       "norm_label": "liveomniagent"
@@ -1132,7 +1132,7 @@
       "label": ".__init__()",
       "file_type": "code",
       "source_file": "runner/live_agent.py",
-      "source_location": "L190",
+      "source_location": "L189",
       "id": "runner_live_agent_liveomniagent_init",
       "community": 6,
       "norm_label": ".__init__()"
@@ -1141,7 +1141,7 @@
       "label": ".start()",
       "file_type": "code",
       "source_file": "runner/live_agent.py",
-      "source_location": "L198",
+      "source_location": "L197",
       "id": "runner_live_agent_liveomniagent_start",
       "community": 6,
       "norm_label": ".start()"
@@ -1150,7 +1150,7 @@
       "label": ".stop()",
       "file_type": "code",
       "source_file": "runner/live_agent.py",
-      "source_location": "L208",
+      "source_location": "L207",
       "id": "runner_live_agent_liveomniagent_stop",
       "community": 6,
       "norm_label": ".stop()"
@@ -1159,7 +1159,7 @@
       "label": ".run()",
       "file_type": "code",
       "source_file": "runner/live_agent.py",
-      "source_location": "L211",
+      "source_location": "L210",
       "id": "runner_live_agent_liveomniagent_run",
       "community": 6,
       "norm_label": ".run()"
@@ -1169,18 +1169,18 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L25",
-      "id": "runner_live_agent_rationale_25",
       "community": 6,
-      "norm_label": "pixel-diff \u2259 menschliche netzhaut \u2013 nur signale (anderungen) senden."
+      "norm_label": "pixel-diff \u2259 menschliche netzhaut \u2013 nur signale (anderungen) senden.",
+      "id": "runner_live_agent_rationale_25"
     },
     {
       "label": "cua-driver screenshot \u2192 numpy array.",
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L34",
-      "id": "runner_live_agent_rationale_34",
       "community": 6,
-      "norm_label": "cua-driver screenshot \u2192 numpy array."
+      "norm_label": "cua-driver screenshot \u2192 numpy array.",
+      "id": "runner_live_agent_rationale_34"
     },
     {
       "label": "Fallback: cua-driver screenshot --raw gibt PNG-Daten auf stdout.",
@@ -1196,52 +1196,52 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L83",
-      "id": "runner_live_agent_rationale_83",
       "community": 6,
-      "norm_label": "omni \u2259 sehrinde \u2013 analysiert nur veranderungen, sagt was zu tun ist."
+      "norm_label": "omni \u2259 sehrinde \u2013 analysiert nur veranderungen, sagt was zu tun ist.",
+      "id": "runner_live_agent_rationale_83"
     },
     {
       "label": "Nur die Change-Region an Omni schicken \u2192 Label + Action bekommen.",
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L90",
-      "id": "runner_live_agent_rationale_90",
       "community": 6,
-      "norm_label": "nur die change-region an omni schicken \u2192 label + action bekommen."
+      "norm_label": "nur die change-region an omni schicken \u2192 label + action bekommen.",
+      "id": "runner_live_agent_rationale_90"
     },
     {
       "label": "H\u00e4nde \u2259 skylight-cli + cua-driver \u2013 NUR element-index, nie Pixel.",
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L123",
-      "id": "runner_live_agent_rationale_123",
       "community": 6,
-      "norm_label": "hande \u2259 skylight-cli + cua-driver \u2013 nur element-index, nie pixel."
+      "norm_label": "hande \u2259 skylight-cli + cua-driver \u2013 nur element-index, nie pixel.",
+      "id": "runner_live_agent_rationale_123"
     },
     {
       "label": "Findet element_index f\u00fcr ein Label \u2013 POPUP-FIRST, Fallback normales Fenster.",
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L129",
-      "id": "runner_live_agent_rationale_129",
       "community": 6,
-      "norm_label": "findet element_index fur ein label \u2013 popup-first, fallback normales fenster."
+      "norm_label": "findet element_index fur ein label \u2013 popup-first, fallback normales fenster.",
+      "id": "runner_live_agent_rationale_129"
     },
     {
       "label": "NUR element-index: Popup-first \u2192 Fallback skylight-cli.",
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L159",
-      "id": "runner_live_agent_rationale_159",
       "community": 6,
-      "norm_label": "nur element-index: popup-first \u2192 fallback skylight-cli."
+      "norm_label": "nur element-index: popup-first \u2192 fallback skylight-cli.",
+      "id": "runner_live_agent_rationale_159"
     },
     {
       "label": "Fokussiert per click, tippt per skylight-cli type.",
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
-      "source_location": "L174",
-      "id": "runner_live_agent_rationale_174",
+      "source_location": "L173",
+      "id": "runner_live_agent_rationale_173",
       "community": 6,
       "norm_label": "fokussiert per click, tippt per skylight-cli type."
     },
@@ -1249,8 +1249,8 @@
       "label": "Der komplette Live-Agent: Auge \u2192 Hirn \u2192 Hand in einem Loop.",
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
-      "source_location": "L188",
-      "id": "runner_live_agent_rationale_188",
+      "source_location": "L187",
+      "id": "runner_live_agent_rationale_187",
       "community": 6,
       "norm_label": "der komplette live-agent: auge \u2192 hirn \u2192 hand in einem loop."
     },
@@ -4621,11 +4621,29 @@
       "norm_label": "run_cli_atomic()"
     },
     {
+      "label": "Fokussiert per click, tippt per skylight-cli type.",
+      "file_type": "rationale",
+      "source_file": "runner/live_agent.py",
+      "source_location": "L174",
+      "community": 39,
+      "norm_label": "fokussiert per click, tippt per skylight-cli type.",
+      "id": "runner_live_agent_rationale_174"
+    },
+    {
+      "label": "Der komplette Live-Agent: Auge \u2192 Hirn \u2192 Hand in einem Loop.",
+      "file_type": "rationale",
+      "source_file": "runner/live_agent.py",
+      "source_location": "L188",
+      "community": 40,
+      "norm_label": "der komplette live-agent: auge \u2192 hirn \u2192 hand in einem loop.",
+      "id": "runner_live_agent_rationale_188"
+    },
+    {
       "label": "Pixel-Diff Retina: Nur Ver\u00e4nderungen erkennen \u2013 wie menschliches Auge.",
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L22",
-      "community": 39,
+      "community": 41,
       "norm_label": "pixel-diff retina: nur veranderungen erkennen \u2013 wie menschliches auge.",
       "id": "runner_live_agent_rationale_22"
     },
@@ -4634,7 +4652,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L30",
-      "community": 40,
+      "community": 42,
       "norm_label": "cua-driver screenshot \u2192 numpy array.",
       "id": "runner_live_agent_rationale_30"
     },
@@ -4643,7 +4661,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L55",
-      "community": 41,
+      "community": 43,
       "norm_label": "vergleicht frame mit letztem \u2192 nur veranderung zuruck.",
       "id": "runner_live_agent_rationale_55"
     },
@@ -4652,7 +4670,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L107",
-      "community": 42,
+      "community": 44,
       "norm_label": "omni + uground: analysiert nur veranderte regionen.",
       "id": "runner_live_agent_rationale_107"
     },
@@ -4661,7 +4679,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L113",
-      "community": 43,
+      "community": 45,
       "norm_label": "omni analysiert die veranderung und sagt was zu tun ist.",
       "id": "runner_live_agent_rationale_113"
     },
@@ -4670,7 +4688,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L156",
-      "community": 44,
+      "community": 46,
       "norm_label": "fuhrt aktionen ausschliesslich per element-index aus \u2013 nie per pixel.",
       "id": "runner_live_agent_rationale_156"
     },
@@ -4679,7 +4697,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L162",
-      "community": 45,
+      "community": 47,
       "norm_label": "skylight-cli list-elements \u2192 element mit label finden.",
       "id": "runner_live_agent_rationale_162"
     },
@@ -4688,7 +4706,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L178",
-      "community": 46,
+      "community": 48,
       "norm_label": "der komplette live-agent: auge \u2192 hirn \u2192 hand in echtzeit.",
       "id": "runner_live_agent_rationale_178"
     },
@@ -4697,7 +4715,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L202",
-      "community": 47,
+      "community": 49,
       "norm_label": "omni sagt label \u2192 skylight-cli findet element_index \u2192 cua-driver clickt.",
       "id": "runner_live_agent_rationale_202"
     },
@@ -4706,7 +4724,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L226",
-      "community": 48,
+      "community": 50,
       "norm_label": "der komplette live-agent: auge \u2192 hirn \u2192 hand in echtzeit.",
       "id": "runner_live_agent_rationale_226"
     },
@@ -4715,7 +4733,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L237",
-      "community": 49,
+      "community": 51,
       "norm_label": "live-loop: nur anderungen verarbeiten, sonst nichts tun.",
       "id": "runner_live_agent_rationale_237"
     },
@@ -4724,7 +4742,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L155",
-      "community": 50,
+      "community": 52,
       "norm_label": "fuhrt aktionen aus basierend auf omni-entscheidungen.",
       "id": "runner_live_agent_rationale_155"
     },
@@ -4733,7 +4751,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L161",
-      "community": 51,
+      "community": 53,
       "norm_label": "cua-driver click per koordinate (vision-gesteuert, nicht geraten!).",
       "id": "runner_live_agent_rationale_161"
     },
@@ -4742,7 +4760,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L166",
-      "community": 52,
+      "community": 54,
       "norm_label": "cua-driver click per element-index (popup-sicher).",
       "id": "runner_live_agent_rationale_166"
     },
@@ -4751,7 +4769,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L171",
-      "community": 53,
+      "community": 55,
       "norm_label": "cua-driver set_value fur texteingabe.",
       "id": "runner_live_agent_rationale_171"
     },
@@ -4760,7 +4778,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L189",
-      "community": 54,
+      "community": 56,
       "norm_label": "live-loop: nur anderungen verarbeiten, sonst nichts tun.",
       "id": "runner_live_agent_rationale_189"
     },
@@ -4769,7 +4787,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L60",
-      "community": 55,
+      "community": 57,
       "norm_label": "phase 1: repo bis auf letzten millimeter scannen.",
       "id": "runner_doctor_cli_rationale_60"
     },
@@ -4778,7 +4796,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L112",
-      "community": 56,
+      "community": 58,
       "norm_label": "phase 2: analysieren \u2013 fehler finden, qualitat prufen.",
       "id": "runner_doctor_cli_rationale_112"
     },
@@ -4787,7 +4805,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L194",
-      "community": 57,
+      "community": 59,
       "norm_label": "phase 3: fehlende dokumente generieren (nur bei genug daten).",
       "id": "runner_doctor_cli_rationale_194"
     },
@@ -4796,7 +4814,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L58",
-      "community": 58,
+      "community": 60,
       "norm_label": "der doktor \u2013 scannt, findet, fixrt, committed.",
       "id": "runner_doctor_cli_rationale_58"
     },
@@ -4805,7 +4823,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L66",
-      "community": 59,
+      "community": 61,
       "norm_label": "hauptlauf: alle repos \u2192 alle lenses \u2192 fixen \u2192 report.",
       "id": "runner_doctor_cli_rationale_66"
     },
@@ -4814,7 +4832,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L91",
-      "community": 60,
+      "community": 62,
       "norm_label": "lens 1: finde + fixe veraltete claims in allen .md dateien.",
       "id": "runner_doctor_cli_rationale_91"
     },
@@ -4823,7 +4841,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L125",
-      "community": 61,
+      "community": 63,
       "norm_label": "lens 6: finde api-keys + passwoerter in docs.",
       "id": "runner_doctor_cli_rationale_125"
     },
@@ -4832,7 +4850,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L165",
-      "community": 62,
+      "community": 64,
       "norm_label": "lens 4: prufe welche sota docs fehlen.",
       "id": "runner_doctor_cli_rationale_165"
     },
@@ -4841,7 +4859,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L184",
-      "community": 63,
+      "community": 65,
       "norm_label": "lens 2: finde defekte links via md-dead-link-check (wenn installiert).",
       "id": "runner_doctor_cli_rationale_184"
     },
@@ -4850,7 +4868,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L196",
-      "community": 64,
+      "community": 66,
       "norm_label": "commit + push in allen repos.",
       "id": "runner_doctor_cli_rationale_196"
     },
@@ -4859,7 +4877,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_omni_monitor.py",
       "source_location": "L278",
-      "community": 65,
+      "community": 67,
       "norm_label": "hybrid loop: screenshot (schnell) + video (alle 5 schritte temporal).",
       "id": "runner_live_omni_monitor_rationale_278"
     },
@@ -4868,7 +4886,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_omni_monitor.py",
       "source_location": "L258",
-      "community": 66,
+      "community": 68,
       "norm_label": "hybrid loop: screenshot (schnell) + video (alle 5 schritte temporal).",
       "id": "runner_live_omni_monitor_rationale_258"
     }
@@ -7314,7 +7332,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L187",
+      "source_location": "L186",
       "weight": 1.0,
       "_src": "runner_live_agent_py",
       "_tgt": "runner_live_agent_liveomniagent",
@@ -7386,7 +7404,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L191",
+      "source_location": "L190",
       "weight": 1.0,
       "_src": "runner_live_agent_liveomniagent_init",
       "_tgt": "runner_live_agent_retina",
@@ -7410,7 +7428,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L220",
+      "source_location": "L219",
       "weight": 1.0,
       "_src": "runner_live_agent_liveomniagent_run",
       "_tgt": "runner_live_agent_retina_snap",
@@ -7446,7 +7464,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L221",
+      "source_location": "L220",
       "weight": 1.0,
       "_src": "runner_live_agent_liveomniagent_run",
       "_tgt": "runner_live_agent_retina_diff",
@@ -7494,7 +7512,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L192",
+      "source_location": "L191",
       "weight": 1.0,
       "_src": "runner_live_agent_liveomniagent_init",
       "_tgt": "runner_live_agent_cortex",
@@ -7518,7 +7536,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L227",
+      "source_location": "L226",
       "weight": 1.0,
       "_src": "runner_live_agent_liveomniagent_run",
       "_tgt": "runner_live_agent_cortex_analyze",
@@ -7578,7 +7596,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L173",
+      "source_location": "L172",
       "weight": 1.0,
       "_src": "runner_live_agent_hands",
       "_tgt": "runner_live_agent_hands_type_text",
@@ -7590,7 +7608,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L193",
+      "source_location": "L192",
       "weight": 1.0,
       "_src": "runner_live_agent_liveomniagent_init",
       "_tgt": "runner_live_agent_hands",
@@ -7638,7 +7656,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L175",
+      "source_location": "L174",
       "weight": 1.0,
       "_src": "runner_live_agent_hands_type_text",
       "_tgt": "runner_live_agent_hands_find_anywhere",
@@ -7662,7 +7680,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L236",
+      "source_location": "L235",
       "weight": 1.0,
       "_src": "runner_live_agent_liveomniagent_run",
       "_tgt": "runner_live_agent_hands_click",
@@ -7686,7 +7704,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L242",
+      "source_location": "L241",
       "weight": 1.0,
       "_src": "runner_live_agent_liveomniagent_run",
       "_tgt": "runner_live_agent_hands_type_text",
@@ -7698,19 +7716,19 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L174",
+      "source_location": "L173",
       "weight": 1.0,
-      "_src": "runner_live_agent_rationale_174",
+      "_src": "runner_live_agent_rationale_173",
       "_tgt": "runner_live_agent_hands_type_text",
       "source": "runner_live_agent_hands_type_text",
-      "target": "runner_live_agent_rationale_174",
+      "target": "runner_live_agent_rationale_173",
       "confidence_score": 1.0
     },
     {
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L190",
+      "source_location": "L189",
       "weight": 1.0,
       "_src": "runner_live_agent_liveomniagent",
       "_tgt": "runner_live_agent_liveomniagent_init",
@@ -7722,7 +7740,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L198",
+      "source_location": "L197",
       "weight": 1.0,
       "_src": "runner_live_agent_liveomniagent",
       "_tgt": "runner_live_agent_liveomniagent_start",
@@ -7734,7 +7752,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L208",
+      "source_location": "L207",
       "weight": 1.0,
       "_src": "runner_live_agent_liveomniagent",
       "_tgt": "runner_live_agent_liveomniagent_stop",
@@ -7746,7 +7764,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L211",
+      "source_location": "L210",
       "weight": 1.0,
       "_src": "runner_live_agent_liveomniagent",
       "_tgt": "runner_live_agent_liveomniagent_run",
@@ -7758,19 +7776,19 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L188",
+      "source_location": "L187",
       "weight": 1.0,
-      "_src": "runner_live_agent_rationale_188",
+      "_src": "runner_live_agent_rationale_187",
       "_tgt": "runner_live_agent_liveomniagent",
       "source": "runner_live_agent_liveomniagent",
-      "target": "runner_live_agent_rationale_188",
+      "target": "runner_live_agent_rationale_187",
       "confidence_score": 1.0
     },
     {
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L212",
+      "source_location": "L211",
       "weight": 1.0,
       "_src": "runner_live_agent_liveomniagent_run",
       "_tgt": "runner_live_agent_liveomniagent_start",
@@ -7782,7 +7800,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L257",
+      "source_location": "L256",
       "weight": 1.0,
       "_src": "runner_live_agent_liveomniagent_run",
       "_tgt": "runner_live_agent_liveomniagent_stop",
