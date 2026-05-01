@@ -1,6 +1,6 @@
 """State Machine – 10 Zustände mit Vision-free Fast Path."""
-from .security import Security
 from __future__ import annotations
+from .security import Security
 import json, sys, os
 from enum import StrEnum
 from pathlib import Path
@@ -67,10 +67,20 @@ class SurveyRunner:
 
     async def _launch(self):
         print(f"→ Browser starten...", flush=True)
-        r = self.executor.run(["playstealth-cli","launch","--url",self.url,"--json"])
-        self.pid = r["pid"]; self.executor.pid = self.pid
-        print(f"✓ PID={self.pid}", flush=True)
-        self.state = State.WAIT_READY
+        import subprocess
+        pw = None
+        try: pw = Security.get_keychain("heypiggy_password")
+        except: pass
+        if pw: os.environ["HEYPIGGY_PASSWORD"] = pw
+        result = self.executor.run(["playstealth","launch","--url",self.url])
+        self.pid = result.get("pid"); self.executor.pid = self.pid
+        if self.pid:
+            print(f"✓ PID={self.pid}", flush=True)
+            self.log.log("launch",pid=self.pid)
+            self.state = State.WAIT_READY
+        else:
+            print(f"❌ Launch failed: {result}", flush=True)
+            self.state = State.RECOVERY
 
     async def _wait_ready(self):
         for _ in range(5):
