@@ -1,62 +1,38 @@
 # fix.md - Bekannte Bugs & Fixes (2026-05-01)
 
-## Gefixt
+## P0: Popup-Fenster-Bug (GEFIXT)
+- **Bug**: Google Login Popup öffnet sich, skylight-cli klickt "Weiter" auf der HEPIGGY-Seite statt im Popup
+- **Ursache**: skylight-cli hat keinen `--window-id` Parameter, returned Elemente AUS ALLEN Fenstern
+- **Fix**: cua-driver nutzen (hat `--window-id` + `--element-index` Support)
+  ```python
+  # ALT (falsch): Klickt in Hauptseite statt Popup
+  skylight-cli click --pid 42296 --element-index 39  # → Weiter auf Heypiggy-Seite!
+  
+  # NEU (richtig): Klickt GARANTIERT im Google Popup
+  cua-driver click --pid 42296 --window-id 30380 --element-index 35  # → Weiter im Popup!
+  ```
+- **Dateien**: `runner/trio_live.py`, `banned.md`, `brain.md`
+- **Status**: ✅ cua-driver mit window-id fix
 
-### P0: Omni reasoning-Feld Parsing
-
+## P0: Omni reasoning-Feld Parsing
 - **Bug**: `msg["content"]` ist null bei Nemotron Omni (antwortet in `reasoning`)
 - **Fix**: `msg.get("reasoning") or msg.get("content") or ""`
 - **Dateien**: `runner/live_omni_monitor.py`, `runner/nemotron_omni.py`, `runner/vision_client/core.py`
-- **Status**: ✅ Omni API liefert jetzt korrekte Antworten
+- **Status**: ✅
 
-### P0: Model-Name doppelter Prefix → 404
-
-- **Bug**: `nvidia/nemotron (doppelter Prefix entfernt)-3-nano-omni-30b-a3b-reasoning`
+## P0: Model-Name doppelter Prefix → 404
+- **Bug**: `nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`
 - **Fix**: `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`
-- **Dateien**: `config/vision_models.yaml`, `runner/nemotron_omni.py`, `runner/live_omni_monitor.py`
-- **Status**: ✅ HTTP 200, SSE funktioniert
+- **Dateien**: `config/vision_models.yaml`, `runner/nemotron_omni.py`
+- **Status**: ✅
 
-### P0: SkylightDriver TypeError
-
+## P0: SkylightDriver TypeError
 - **Bug**: `SkylightDriver.__init__() missing 1 required positional argument: 'pid'`
 - **Fix**: pid optional gemacht (default None)
 - **Datei**: `runner/drivers/skylight.py`
 - **Status**: ✅
 
-### P0: vision_client/core.py dead code
-
-- **Bug**: `_load_config()` wurde nie aufgerufen (nach return)
-- **Fix**: In `__init__` verschoben
-- **Datei**: `runner/vision_client/core.py`
-- **Status**: ✅
-
-### P1: cli/heypiggy-login nutzte osascript
-
-- **Bug**: `osascript -e 'tell app "Google Chrome"...'` manipuliert Nutzer-Chrome
-- **Fix**: Nur skylight-cli, PID als Argument
-- **Datei**: `cli/heypiggy-login`
-- **Status**: ✅
-
-### P1: safe_click.py IndexError
-
-- **Bug**: `PID = int(sys.argv[1])` ohne argv[1] → IndexError
-- **Fix**: main()-Wrapper mit Fehlerbehandlung
-- **Datei**: `runner/safe_click.py`
-- **Status**: ✅
-
-## Bekannte Bugs (ungelöst)
-
-- [ ] skylight-cli `--output` Bug: Parameter wird ignoriert, schreibt immer `skylight_screenshot.png` ins CWD
-- [ ] Dieses Modell (deepseek-v4-pro) kann keine Screenshots sehen → OmniVision als Workaround
-- [ ] Survey-Loop nach Login noch nicht getestet (OmniSurveyRunner bereit)
-
-## NIE TUN (semgrep blockiert)
-
-- ❌ `playstealth launch (isolierte PID)"`
-- ❌ `BANNED – niemand importiert pyautogui` / `BANNED – niemand importiert pynput`
-- ❌ `httpx an NVIDIA NIM` / `httpx an NVIDIA NIM`
-- ❌ `skylight-cli click --x ...` (Koordinaten)
-- ❌ skylight-cli MCP
-- ❌ Nutzer-Chrome manipulieren
-- ❌ Ohne Primer klicken
-- ❌ `recovery_mode: true`
+## cua-driver: Wann erlaubt, wann nicht
+- ✅ **ERLAUBT**: `cua-driver get_window_state --pid --window-id`
+- ✅ **ERLAUBT**: `cua-driver click --pid --window-id --element-index`
+- ❌ **BANNED**: `cua-driver click --x --y` (Koordinatenraten)

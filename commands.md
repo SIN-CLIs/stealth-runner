@@ -1,114 +1,69 @@
-# commands.md - Korrekte Befehle (NUR DIESE NUTZEN)
+# commands.md - Korrekte Befehle
 
-## Chrome starten (isoliert, eigene PID)
+## TRIO LAYER (Live Auge-Hirn-Hand)
 
+### 1. Chrome starten
 ```bash
 playstealth launch --url 'https://heypiggy.com/?page=dashboard'
-# Output: {"pid": 97228, "status": "ok"}
+# → {"pid": 42296, "status": "ok"}
 ```
 
-## Screenshot (VOR/NACH jedem Schritt)
-
+### 2. EYES: Alle Fenster erkennen
 ```bash
-skylight-cli screenshot --pid <PID> --mode som --output /tmp/schritt_vor.png
-```
-
-## Elemente finden
-
-```bash
-skylight-cli list-elements --pid <PID> | python3 -c "
+cua-driver call list_windows | python3 -c "
 import json,sys
-for e in json.load(sys.stdin)['elements']:
-    label = e.get('label','').lower()
-    if 'google' in label or 'weiter' in label or 'telefon' in label:
-        print(f'Index={e[\"index\"]}, Label=\"{e.get(\"label\",\"\")}\"')
+for w in json.load(sys.stdin).get('windows',[]):
+    if w.get('pid') == 42296:
+        print(f'  WindowID={w[\"window_id\"]} \"{w.get(\"title\",\"\")[:60]}\" OnScreen={w.get(\"is_on_screen\")}')
 "
 ```
 
-## Element klicken (NUR per Index)
-
+### 3. BRAIN: Nur Popup-Elemente sehen
 ```bash
-skylight-cli click --pid <PID> --element-index <N>
+cua-driver call get_window_state '{"pid":42296,"window_id":30380}' | python3 -c "
+import json,sys
+tree = json.load(sys.stdin).get('tree_markdown','')
+for line in tree.split(chr(10)):
+    if 'Weiter' in line or 'E-Mail' in line or 'Passwort' in line or 'Button' in line:
+        print(line.strip()[:100])
+"
 ```
 
-## Text eingeben (NUR per Index)
-
+### 4. HANDS: Im Popup klicken (GARANTIERT richtiges Fenster!)
 ```bash
-skylight-cli type --pid <PID> --element-index <N> --text "wert"
+cua-driver call click '{"pid":42296,"window_id":30380,"element_index":35}'
 ```
 
-## Google Login (automatisiert)
-
+### 5. Text im Popup eingeben
 ```bash
+cua-driver call set_value '{"pid":42296,"window_id":30380,"element_index":25,"value":"test@email.com"}'
+```
+
+### 6. Live Trio Loop
+```bash
+python3 runner/trio_live.py <PID>
+```
+
+## GOOGLE LOGIN
+```bash
+# Komplett automatisiert
 bash cli/heypiggy-login <PID>
 ```
 
-## Live Omni Monitor
-
+## DOCTOR CLI
 ```bash
-python3 -c "
-from runner.live_omni_monitor import LiveOmniMonitor
-m = LiveOmniMonitor(fps=1.0, debug=True)
-m.start('https://heypiggy.com/?page=dashboard')
-m.run_continuous(max_steps=100)
-"
+# Alle 6 Repos scannen + fixen
+python3 runner/doctor_cli.py
 ```
 
-## Video-Analyse (post-mortem)
-
-```bash
-# Letzte Aufnahme auf Fehler prüfen
-python3 -m runner.video_analyzer --last errors
-
-# Kompletten Flow analysieren
-python3 -m runner.video_analyzer --last flow
-
-# Captcha-Prüfung
-python3 -m runner.video_analyzer --last captcha
-
-# Vorher/Nachher Vergleich
-python3 -m runner.video_analyzer --compare /tmp/step_3.png /tmp/step_4.png
-```
-
-## Graphify Knowledge Graph
-
+## GRAPHIFY
 ```bash
 graphify query "Wie hängt X mit Y zusammen?"
 graphify path "ModulA" "ModulB"
-graphify explain "Konzept"
-graphify update .                    # AST-Rebuild nach Code-Änderungen
-graphify hook status                 # Prüfen ob Hooks aktiv
+graphify update .
 ```
 
-## Semgrep Architecture Guard
-
+## SEMGREP
 ```bash
-# Manuell ausführen
 semgrep --config=.semgrep_rules.yaml .
-
-# Im Pre-Commit (automatisch)
-# → blockiert Commit wenn BANNED Muster gefunden
-```
-
-## System-Check
-
-```bash
-# API testen (Nemotron Omni)
-curl -s -H "Authorization: Bearer $NVIDIA_API_KEY" \
-  -H "Content-Type: application/json" \
-  -d '{"model":"nvidia/nemotron-3-nano-omni-30b-a3b-reasoning","messages":[{"role":"user","content":"say ok"}],"max_tokens":5}' \
-  "https://integrate.api.nvidia.com/v1/chat/completions"
-
-# SSE Streaming testen
-curl -s -H "Authorization: Bearer $NVIDIA_API_KEY" \
-  -H "Accept: text/event-stream" \
-  -H "Content-Type: application/json" \
-  -d '{"model":"nvidia/nemotron-3-nano-omni-30b-a3b-reasoning","messages":[{"role":"user","content":"say hello"}],"stream":true,"max_tokens":20}' \
-  "https://integrate.api.nvidia.com/v1/chat/completions"
-```
-
-## Schritt-Orchestrator
-
-```bash
-python3 runner/step.py "https://heypiggy.com/?page=dashboard"
 ```

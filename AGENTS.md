@@ -191,15 +191,21 @@ semgrep --config=.semgrep_rules.yaml .
 ```
 
 ## VERBOTEN (BANNED – blockiert durch semgrep pre-commit)
-
-- `playstealth launch (isolierte PID)"`
-- `BANNED – niemand importiert pyautogui`, `BANNED – niemand importiert pynput`
-- `httpx an NVIDIA NIM`, `httpx an NVIDIA NIM`
+- `pgrep Chrome`, `pkill Chrome`, `open -na "Google Chrome"`
+- `import pyautogui`, `import pynput`
+- `from openai import`, `import openai`
 - `skylight-cli click --x ...` (Koordinaten raten)
-- skylight-cli MCP
+- `cua-driver click --x --y` (Koordinatenraten – erlaubt ist NUR mit `--element-index`)
+- webauto-nodriver MCP
 - Nutzer-Chrome manipulieren
 - Ohne Primer klicken
 - `recovery_mode: true`, `omni_fallback: llama`
+
+## ERLAUBT (cua-driver mit window-id + element-index)
+- `cua-driver list_windows` → Popup-Erkennung (250ms live)
+- `cua-driver get_window_state --pid --window-id` → NUR Popup-Elemente
+- `cua-driver click --pid --window-id --element-index` → GARANTIERT richtiges Fenster
+- `cua-driver set_value --pid --window-id --element-index --value` → Text im Popup
 
 ## MODEL NAME HISTORY
 

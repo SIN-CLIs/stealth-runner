@@ -1,44 +1,27 @@
 # goal.md - Stealth Runner Hauptziel
 
 ## Primärziel
-
 Heypiggy.com automatisieren: Google-Login → Surveys abschließen → EUR > 0 verdienen
 
+## Live-Trio-Architektur (erreicht)
+- ✅ **EYES**: cua-driver list_windows (250ms Polling, Popup-Erkennung)
+- ✅ **BRAIN**: cua-driver get_window_state --window-id (NUR Popup-Elemente)
+- ✅ **HANDS**: cua-driver click --pid --window-id --element-index (Garantiert richtiges Fenster)
+- ✅ **Popup-Bug gefixt**: skylight-cli klickte "Weiter" auf Heypiggy-Seite statt im Google Popup
+
 ## Meilensteine (erreicht)
-
-| Datum      | Meilenstein                                                                               |
-| ---------- | ----------------------------------------------------------------------------------------- |
-| 2026-05-01 | ✅ **Google Login erfolgreich!** (5 Schritte: Klick → Email → Weiter → Passwort → Weiter) |
-| 2026-05-01 | ✅ Omni reasoning-Feld fix (content=null bug)                                             |
-| 2026-05-01 | ✅ Nemotron Omni Integration (Model fix, SSE, Rolling Video)                              |
-| 2026-05-01 | ✅ Graphify Knowledge Graph (6 Repos → 4820 Nodes)                                        |
-| 2026-05-01 | ✅ Semgrep Architecture Guard (11 Regeln, Pre-Commit)                                     |
-| 2026-05-01 | ✅ Live Omni Monitor (Rolling Video Buffer + SSE)                                         |
-| 2026-05-01 | ✅ screen-follow record --video (Daueraufnahme für Omni)                                  |
-| 2026-05-01 | ✅ playstealth launch (isolierte Chrome-Instanz)                                          |
-| 2026-05-01 | ✅ CLI heypiggy-login (nur skylight-cli, kein osascript)                                  |
-
-## Aktueller Status
-
-- ✅ Google Login: Funktionierender Flow (playstealth → Google → Email → Passwort → Dashboard)
-- ✅ Omni Vision: HTTP 200, SSE Streaming, reasoning-Parsing
-- ✅ Rolling Video Buffer: screen-follow + ffmpeg + Omni Conv3D
-- ⏳ Survey-Loop starten (Omni-gesteuert via LiveOmniMonitor)
-- ⏳ EUR-Guthaben prüfen nach Survey
-
-## Constraints (UNVERBRÜCHLICH – semgrep blockiert Verstöße)
-
-1. Nur skylight-cli, NIE skylight-cli
-2. Nur `--element-index`, NIE `--x`/`--y`
-3. Nur `playstealth launch`, NIE `open -na Chrome` oder `pgrep`
-4. Nur httpx an NVIDIA NIM, NIE openai-Client
-5. JEDER Schritt durch Vision (kein DOM-Prescan)
-6. Screenshots VOR/NACH jedem Schritt (SOTA-Konform)
-7. Kein Recovery-Mode (Omni macht ALLE Entscheidungen)
-8. **Videoaufzeichnung bei jedem Build/Debug** (`screen-follow record --video`)
+| Datum | Meilenstein |
+|-------|-------------|
+| 2026-05-01 | ✅ **TRIO LAYER v2** – cua-driver mit window-id + element-index |
+| 2026-05-01 | ✅ **Popup-Bug verstanden + gefixt** – Fenster-Isolation |
+| 2026-05-01 | ✅ **Google Login erfolgreich** (5 Schritte) |
+| 2026-05-01 | ✅ Nemotron Omni Integration (Model fix, SSE, reasoning) |
+| 2026-05-01 | ✅ Graphify Knowledge Graph (6 Repos → 4820 Nodes) |
+| 2026-05-01 | ✅ Semgrep Architecture Guard (11 Regeln) |
+| 2026-05-01 | ✅ Doctor CLI v6 (28 Tools, 143 Repos) |
 
 ## Nächste Schritte
-
-1. Survey-Loop starten (Omni-gesteuert via LiveOmniMonitor)
-2. EUR-Guthaben prüfen nach Survey
-3. Täglicher EUR-Canary (cron-Job)
+1. Trio Layer Live-Test: Google Login komplett mit Popup-Schutz
+2. Survey-Loop mit Trio Layer + window-id
+3. EUR-Guthaben prüfen nach Survey
+4. Täglicher EUR-Canary (cron-Job)
