@@ -40,9 +40,13 @@ class SurveyRunner:
         cp.write_text(json.dumps({"state":self.state.value,"pid":self.pid,"step":self.step,"context":self.context,"recoveries":self.recoveries}))
     async def run(self) -> dict:
         self.log.log("runner_start",url=self.url)
+        print(f"▶ Runner: {self.url}", flush=True)
         while self.state != State.DONE:
             try: await self._transition()
-            except Exception as e: self.log.log("error",error=str(e)); self._save_checkpoint(); self.state = State.RECOVERY
+            except Exception as e:
+                print(f"❌ {e}", flush=True)
+                self.log.log("error",error=str(e)); self._save_checkpoint(); self.state = State.RECOVERY
+        print(f"💰 EUR: {self.context.get('earnings_eur',0):.2f} | Steps: {self.step}", flush=True)
         self.log.log("runner_done",stats=self.context); self.log.close()
         return self.context
     async def _transition(self):
@@ -56,8 +60,10 @@ class SurveyRunner:
             case State.VERIFY: await self._verify()
             case State.RECOVERY: await self._recover()
     async def _launch(self):
+        print(f"→ Browser starten...", flush=True)
         result = self.executor.run(["playstealth","launch","--url",self.url])
         self.pid = result.get("pid"); self.executor.pid = self.pid
+        print(f"✓ PID={self.pid}", flush=True)
         self.log.log("launch",pid=self.pid); self.state = State.WAIT_READY
     async def _wait_ready(self):
         for _ in range(10):
@@ -68,19 +74,23 @@ class SurveyRunner:
         self.state = State.CAPTURE
     async def _capture(self):
         out = f"/tmp/step_{self.step}.png"
-        self.executor.screenshot(out_path=out, mode="som")
-        self.current_screenshot = out; self.log.log("capture",file=out)
+        self.executor.screenshot(out_path=out, mode="som"); self.current_screenshot = out
+        print(f"📸 Screenshot: step_{self.step}.png", flush=True)
+        self.log.log("capture",file=out)
         self.state = State.VISION
     async def _vision(self):
         self.pending_action = self.vision.get_action(self.current_screenshot, build_prompt(self.context,self.step))
+        a = self.pending_action.get("action","?")
+        print(f"👁 Vision → {a}", flush=True)
         self.log.log("vision",action=self.pending_action); self.state = State.EXECUTE
     async def _execute(self):
         act = self.pending_action or {}; atype = act.get("action","wait"); args = act.get("args",{}); eid = act.get("element_id")
         if atype=="click": self.executor.click(element_index=eid)
         elif atype=="type": self.executor.type_text(text=args.get("text",""), element_index=eid)
         elif atype=="scroll": self.executor.scroll(direction=args.get("direction","down"))
-        elif atype=="wait": await anyio.sleep(2)
-        elif atype=="done": self.state = State.DONE; return
+        elif atype=="wait": await anyio.sleep(2); print(f"⏳ wait", flush=True)
+        elif atype=="done": self.state = State.DONE; print(f"✅ done", flush=True); return
+        print(f"👆 {atype} [{eid}]", flush=True)
         self.step += 1; self.context["steps"] = self.step; self.log.log("execute",action=act,step=self.step)
         self.state = State.VERIFY
     async def _verify(self):
