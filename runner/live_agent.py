@@ -121,17 +121,18 @@ class VisualCortex:
         if pct < 0.1:
             return {"action": "wait"}
 
-        prompt = f"""You are a browser automation agent. You see a SCREEN REGION that JUST CHANGED ({(pct)}% of screen).
+        prompt = f"""You are a browser automation agent's EYES. You see a SCREEN REGION that JUST CHANGED.
 
 Context: {self.context}
+Change size: {(pct)}% of screen at [{bbox[0]},{bbox[1]} to {bbox[2]},{bbox[3]}].
 
-This changed region is at position [{bbox[0]},{bbox[1]} to {bbox[2]},{bbox[3]}].
+What happened? Name the UI element that appeared/changed.
+I will use an Accessibility API to find and click it by LABEL – so give me the EXACT visible text.
 
-What happened? What button appeared? What action is needed?
-Output ONLY valid JSON:
-{{"event":"popup_appeared|button_appeared|page_changed|text_changed|loading",
+Output ONLY JSON:
+{{"event":"popup|button|page|text|loading",
   "action":"click|type|scroll|wait|done",
-  "element_label":"...",
+  "element_label":"EXACT VISIBLE TEXT of the element (e.g. 'Weiter', 'E-Mail', 'Umfrage starten')",
   "reasoning":"..."}}"""
 
         try:
@@ -152,26 +153,73 @@ Output ONLY valid JSON:
 
 
 class Hands:
-    """Führt Aktionen aus basierend auf Omni-Entscheidungen."""
+    """Führt Aktionen AUSSCHLIESSLICH per element-index aus – nie per Pixel."""
 
     def __init__(self, pid: int):
         self.pid = pid
 
-    def click(self, x: int, y: int) -> None:
-        """cua-driver click per Koordinate (VISION-gesteuert, nicht geraten!)."""
-        subprocess.run(["cua-driver", "call", "click", json.dumps({"pid": self.pid, "x": x, "y": y})],
-                      capture_output=True, timeout=10)
+    def find_element(self, label: str, role: str = "AXButton") -> dict | None:
+        """skylight-cli list-elements → Element mit Label finden."""
+        r = subprocess.run(["skylight-cli", "list-elements", "--pid", str(self.pid)],
+                          capture_output=True, text=True, timeout=10)
+        try:
+            data = json.loads(r.stdout)
+            for e in data.get("elements", []):
+                el = str(e.get("label", "")).lower()
+                if label.lower() in el and e.get("role") == role:
+                    return e
+                if label.lower() in el and role is None:
+                    return e
+        except:
+            pass
+        return None
 
-    def click_index(self, window_id: int, index: int) -> None:
-        """cua-driver click per element-index (Popup-sicher)."""
-        subprocess.run(["cua-driver", "call", "click", json.dumps({"pid": self.pid, "window_id": window_id, "element_index": index})],
-                      capture_output=True, timeout=10)
+    def find_element_with_window(self, pid: int, label: str, role: str = "AXButton") -> tuple | None:
+        """cua-driver list_windows + get_window_state → Label in richtigem Fenster."""
+        r = subprocess.run(["cua-driver", "call", "list_windows"],
+                          capture_output=True, text=True, timeout=10)
+        try:
+            windows = json.loads(r.stdout).get("windows", [])
+            for w in windows:
+                if w.get("pid") != pid or not w.get("is_on_screen", False):
+                    continue
+                wid = w["window_id"]
+                r2 = subprocess.run(["cua-driver", "call", "get_window_state",
+                                    json.dumps({"pid": pid, "window_id": wid})],
+                                   capture_output=True, text=True, timeout=10)
+                tree = json.loads(r2.stdout).get("tree_markdown", "")
+                import re
+                for line in tree.split("\n"):
+                    if label.lower() in line.lower() and role in line:
+                        m = re.search(r"\[(\d+)\]", line)
+                        if m:
+                            return (wid, int(m.group(1)))
+        except:
+            pass
+        return None
 
-    def type_text(self, text: str, window_id: int = 0, index: int = 0) -> None:
-        """cua-driver set_value für Texteingabe."""
-        args = {"pid": self.pid, "window_id": window_id, "element_index": index, "value": text}
-        subprocess.run(["cua-driver", "call", "set_value", json.dumps(args)],
-                      capture_output=True, timeout=10)
+    def click_by_label(self, label: str, role: str = "AXButton") -> bool:
+        """Omni sagt Label → skylight-cli findet element_index → cua-driver clickt."""
+        # Erst im Popup suchen (cua-driver mit window-id)
+        result = self.find_element_with_window(self.pid, label, role)
+        if result:
+            wid, idx = result
+            subprocess.run(["cua-driver", "call", "click",
+                           json.dumps({"pid": self.pid, "window_id": wid, "element_index": idx})],
+                          capture_output=True, timeout=10)
+            print(f"      🖱 Popup-Klick: [{idx}] '{label}' in WindowID={wid}", flush=True)
+            return True
+
+        # Fallback: skylight-cli (1 Fenster)
+        elem = self.find_element(label, role)
+        if elem:
+            subprocess.run(["skylight-cli", "click", "--pid", str(self.pid), "--element-index", str(elem["index"])],
+                          capture_output=True, timeout=10)
+            print(f"      🖱 Klick: [{elem['index']}] '{label}'", flush=True)
+            return True
+
+        print(f"      ⚠️ '{label}' nicht gefunden", flush=True)
+        return False
 
 
 class LiveOmniAgent:
@@ -212,26 +260,26 @@ class LiveOmniAgent:
                 action = decision.get("action", "wait")
 
                 if action != "wait":
-                    print(f"  👁 Change {changes}: {pct}% bei {bbox} → {action}", flush=True)
+                    label = decision.get("element_label", "")
+                    print(f"  👁 Change {changes}: {pct}% → '{label}' ({action})", flush=True)
 
-                    # 3. HANDS: Aktion sofort ausführen
-                    if action == "click":
-                        # Versuche Element-Index aus get_window_state
-                        try:
-                            r = subprocess.run(["cua-driver", "call", "get_window_state",
-                                               json.dumps({"pid": self.pid})],
-                                              capture_output=True, text=True, timeout=10)
-                            # Finde "Weiter" Button im aktuellen Fenster
-                            tree = json.loads(r.stdout).get("tree_markdown", "")
-                            for line in tree.split("\n"):
-                                if "Button" in line and "Weiter" in line:
-                                    import re
-                                    m = re.search(r"\[(\d+)\]", line)
-                                    if m:
-                                        self.hands.click_index(0, int(m.group(1)))
-                                        break
-                        except:
-                            pass
+                    # 3. HANDS: Nur element-index, nie Pixel!
+                    if action == "click" and label:
+                        self.hands.click_by_label(label)
+                    elif action == "type" and label:
+                        self.hands.click_by_label(label)  # Fokussieren
+                        # Text eingeben via skylight-cli
+                        import subprocess as _sp
+                        elem = self.hands.find_element(label, "AXTextField")
+                        if elem:
+                            from runner.credentials import load_credentials
+                            creds = load_credentials()
+                            text = creds.get("email", "") if "email" in label.lower() else creds.get("password", "")
+                            if text:
+                                _sp.run(["skylight-cli", "type", "--pid", str(self.pid),
+                                        "--element-index", str(elem["index"]), "--text", text],
+                                       capture_output=True, timeout=10)
+                                print(f"      ⌨ Getippt: '{text[:20]}...'", flush=True)
                     elif action == "done":
                         print(f"  ✅ Fertig!", flush=True)
                         break
