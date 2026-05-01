@@ -30,15 +30,19 @@
 | **standard-readme** | README-Problem: Emoji im Titel | Terminal |
 | **repomix** | Repo-Komplettüberblick | Markdown |
 
-## ⏳ Inaktiv (sprachabhängig)
+## ✅ Neu aktiviert (11 → 20)
+| Tool | Ergebnis | Artefakt |
+|------|----------|----------|
+| **sphinx** | Python-API-Dokumentation | `/tmp/sphinx-docs/` |
+| **doxygen** | C-Code-Doku für mac_eye.c | `/tmp/doxygen/html/` |
+| **plantuml** | UML-Klassen+Packages-Diagramme | `*_stealth_runner.png` (2 Dateien) |
+| **code2flow** | Flussdiagramm | `/tmp/code2flow.png` |
+| **auto-changelog** | CHANGELOG aus Git-History | `/tmp/AUTO_CHANGELOG.md` |
+| **conventional-changelog** | CHANGELOG aus Angular-Commits | `/tmp/CONV_CHANGELOG.md` |
+
+## ⏳ Inaktiv (3 – benötigen JS/TS/Terraform-Projekt)
 | Tool | Grund |
 |------|-------|
-| **sphinx** | Für Python-Doc-Projekte (setup.py nötig) |
-| **mkdocs** | Für mkdocs.yml-konfigurierte Projekte |
-| **typedoc** | Für TypeScript-Projekte (tsconfig.json nötig) |
-| **doxygen** | Für C/C++-Projekte (Doxyfile nötig) |
-| **terraform-docs** | Für Terraform-Module |
-| **dependency-cruiser** | Für JS/TS-Projekte |
-| **plantuml** | Für .puml-Diagrammdateien |
-| **conventional-changelog** | Für Conventional Commits |
-| **auto-changelog** | Für Git-Tag-basierte Projekte |
+| **typedoc** | TypeScript-Projekt nötig |
+| **terraform-docs** | Terraform-Module nötig |
+| **dependency-cruiser** | JS-Dependencies (unmask-cli hat kein src/) |
