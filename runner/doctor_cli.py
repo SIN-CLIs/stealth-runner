@@ -1,30 +1,16 @@
 #!/usr/bin/env python3
 """
-Doctor CLI – All-in-One Documentation Fixer.
-Integriert 7 Lenses + 6 Open-Source Tools + Doc-Templates.
-SCANNT + FIXT + COMMITTED. Einmal aufrufen, alles erledigt.
+DOCTOR v5 – 10 Open-Source Tools. 3 Phasen. 1 Stunde. 100% Automatisch.
+Findet Repos selbst. KEINE Templates. Nur echte Daten aus Analyse.
 """
 from __future__ import annotations
-import json, os, re, subprocess, sys
+import json, os, re, subprocess, sys, shutil
 from pathlib import Path
-from typing import Any
 
-REPOS = [
-    Path("/Users/jeremy/dev/stealth-runner"),
-    Path("/Users/jeremy/dev/playstealth-cli"),
-    Path("/Users/jeremy/dev/skylight-cli"),
-    Path("/Users/jeremy/dev/screen-follow"),
-    Path("/Users/jeremy/dev/unmask-cli"),
-    Path("/Users/jeremy/dev/A2A-SIN-Worker-heypiggy"),
-    Path("/Users/jeremy/dev/infra-opencode-stack"),
-    Path("/Users/jeremy/dev/Infra-SIN-Dev-Setup"),
-    Path("/Users/jeremy/dev/OpenSIN-overview"),
-    Path("/Users/jeremy/dev/OpenSIN-documentation"),
-]
-
-OUTDATED_PATTERNS = [
+DEV_DIRS = [Path(os.environ.get("HOME", "/Users/jeremy")) / "dev"]
+OUTDATED = [
     (r"pgrep\s+.*[Cc]hrome", "playstealth launch (isolierte PID)"),
-    (r"pkill.*[Cc]hrome", "NIEMALS – BANNED (semgrep Regel)"),
+    (r"pkill.*[Cc]hrome", "NIEMALS – BANNED"),
     (r"open -na .Google Chrome.", "playstealth launch"),
     (r"import pyautogui|import pynput", "BANNED (Mausbewegung verboten)"),
     (r"webauto[._-]nodriver", "skylight-cli"),
@@ -34,122 +20,228 @@ OUTDATED_PATTERNS = [
     (r"cua[._-]driver", "skylight-cli"),
 ]
 
-SOTA_DOCS = {
-    "learn.md": "# learn.md\n## Session Learnings\n- \n",
-    "anti-learn.md": "# anti-learn.md\n## Anti-Patterns\n- \n",
-    "commands.md": "# commands.md\n## Befehle\n- \n",
-    "Makefile": ".PHONY: help\nhelp:\n\t@echo 'Commands:'\n",
-}
-
-DOC_TEMPLATES = {
-    "CODE_OF_CONDUCT.md": "# Code of Conduct\n\n## Unser Versprechen\nWir als Mitglieder verpflichten uns...\n",
-    "SUPPORT.md": "# Support\n\n## Wo bekomme ich Hilfe?\n- Issues: GitHub Issues\n",
-    "design.md": "# Design\n\n## Architektur\n- \n",
-    "api.md": "# API\n\n## Endpoints\n- \n",
-    "usage.md": "# Usage\n\n## Installation\n\ngit clone <repo>\n",
-    "faq.md": "# FAQ\n\n## Häufige Fragen\n- \n",
-    "troubleshooting.md": "# Troubleshooting\n\n## Bekannte Probleme\n- \n",
-    "testing.md": "# Testing\n\n## Tests ausführen\npytest tests/\n",
-    "benchmarks.md": "# Benchmarks\n\n## Performance\n- \n",
-}
+TOOLS = {}  # wird nach install-check befüllt
 
 
-class Doctor:
-    def __init__(self, dry_run: bool = False):
-        self.dry_run = dry_run
-        self.findings: list[dict] = []
-        self.fixes = 0
+def check_tools():
+    for name, info in {
+        "cloc": {"cmd": ["cloc", "--version"], "install": "brew install cloc"},
+        "git-cliff": {"cmd": ["git-cliff", "--version"], "install": "brew install git-cliff"},
+        "pandoc": {"cmd": ["pandoc", "--version"], "install": "brew install pandoc"},
+        "vale": {"cmd": ["vale", "--version"], "install": "brew install vale"},
+        "repomix": {"cmd": ["npx", "repomix", "--version"], "install": "npm install -g repomix"},
+        "pydeps": {"cmd": ["python3", "-m", "pydeps", "--version"], "install": "pip3 install pydeps"},
+        "gitingest": {"cmd": ["python3", "-m", "gitingest", "--help"], "install": "pip3 install gitingest"},
+        "pyreverse": {"cmd": ["pyreverse", "--version"], "install": "pip3 install pylint"},
+    }.items():
+        try:
+            r = subprocess.run(info["cmd"], capture_output=True, text=True, timeout=5)
+            TOOLS[name] = r.returncode == 0
+        except:
+            TOOLS[name] = False
+    print(f"🔧 Tools: {sum(TOOLS.values())}/{len(TOOLS)} verfügbar\n", flush=True)
+    for t, ok in TOOLS.items():
+        print(f"  {'✅' if ok else '❌'} {t}", flush=True)
 
-    def run(self) -> dict:
-        print("🔍 DOCTOR SCAN: 7 Lenses × 6 Repos\n", flush=True)
-        for repo in REPOS:
-            if not repo.exists():
-                print(f"  ⏭️  {repo.name}: nicht gefunden", flush=True)
-                continue
-            print(f"\n📁 {repo.name}:", flush=True)
-            self._fix_outdated_patterns(repo)
-            self._create_missing_docs(repo)
-            self._remove_credentials(repo)
-        if not self.dry_run and self.fixes > 0:
-            self._commit_all()
-        print(f"\n📊 REPORT: {self.fixes} Auto-Fixes in {len(self.findings)} Findings\n", flush=True)
-        return {"repos_scanned": len([r for r in REPOS if r.exists()]), "findings": len(self.findings), "auto_fixes": self.fixes}
 
-    def _fix_outdated_patterns(self, repo: Path) -> None:
-        for md_file in repo.rglob("*.md"):
-            if ".git" in str(md_file) or "node_modules" in str(md_file) or "graphify-out" in str(md_file):
-                continue
+def find_repos() -> list[Path]:
+    found = set()
+    for start in DEV_DIRS:
+        if not start.exists(): continue
+        for item in start.iterdir():
+            if item.is_dir() and (item / ".git").exists(): found.add(item)
+            if item.is_dir() and not item.name.startswith("."):
+                for sub in item.iterdir():
+                    if sub.is_dir() and (sub / ".git").exists(): found.add(sub)
+    return sorted(found, key=lambda p: p.name)
+
+
+def phase1_deep_scan(repo: Path) -> dict:
+    """Phase 1: Repo bis auf letzten Millimeter scannen."""
+    data = {"name": repo.name, "path": str(repo), "files": 0, "languages": {}, "structure": []}
+
+    # cloc: Language-Statistik (zeitbegrenzt, große Repos überspringen)
+    if TOOLS.get("cloc"):
+        try:
+            r = subprocess.run(["cloc", str(repo), "--json", "--quiet"], capture_output=True, text=True, timeout=30)
+            if r.returncode == 0:
+                try:
+                    d = json.loads(r.stdout)
+                    data["languages"] = {k: v for k, v in d.items() if k not in ("header", "SUM")}
+                    data["files"] = sum(v.get("nFiles", 0) for v in data["languages"].values())
+                except: pass
+        except subprocess.TimeoutExpired:
+            data["files"] = sum(1 for _ in repo.rglob("*"))
+
+    # .doctor/ Ordner für Analyse-Ergebnisse
+    doc_dir = repo / ".doctor"
+    doc_dir.mkdir(parents=True, exist_ok=True)
+    # .gitignore-Eintrag für .doctor/
+    gitignore = repo / ".gitignore"
+    if gitignore.exists() and ".doctor" not in gitignore.read_text():
+        with open(gitignore, "a") as f: f.write("\n.doctor/\n")
+
+    # repomix: Kompletten Code-Überblick (in Datei)
+    if TOOLS.get("repomix"):
+        try:
+            out = doc_dir / "repomix-output.md"
+            subprocess.run(["npx", "repomix", str(repo), "--style", "markdown", "-o", str(out)],
+                           capture_output=True, timeout=60, cwd=str(repo))
+        except: pass
+
+    # pydeps: Python-Abhängigkeiten (wenn Python-Repo)
+    if TOOLS.get("pydeps") and list(repo.rglob("*.py")):
+        try:
+            out = doc_dir / "deps.svg"
+            subprocess.run(["python3", "-m", "pydeps", str(repo), "-o", str(out), "--show-deps"],
+                           capture_output=True, timeout=60, cwd=str(repo))
+        except: pass
+
+    # gitingest: Git-Digest
+    if TOOLS.get("gitingest"):
+        try:
+            out = doc_dir / "digest.txt"
+            subprocess.run(["python3", "-m", "gitingest", str(repo), "-o", str(out)],
+                           capture_output=True, timeout=30, cwd=str(repo))
+        except: pass
+
+    return data
+
+
+def phase2_analyze(repo: Path, scan: dict) -> list:
+    """Phase 2: Analysieren – Fehler finden, Qualität prüfen."""
+    findings = []
+    fixes = 0
+
+    # 2a: Outdated Patterns fixen
+    for md_file in repo.rglob("*.md"):
+        if ".git" in str(md_file) or "node_modules" in str(md_file) or "graphify-out" in str(md_file) or "venv" in str(md_file) or ".doctor" in str(md_file):
+            continue
+        try:
+            content = md_file.read_text(encoding="utf-8")
+        except:
+            continue
+        changed = False
+        for pat, repl in OUTDATED:
+            if re.search(pat, content, re.IGNORECASE):
+                for m in re.finditer(pat, content, re.IGNORECASE):
+                    findings.append({"file": str(md_file.relative_to(repo)), "line": content[:m.start()].count("\n") + 1, "old": m.group()[:50], "new": repl[:50]})
+                    fixes += 1
+                content = re.sub(pat, repl, content, flags=re.IGNORECASE)
+                changed = True
+        if changed:
+            md_file.write_text(content, encoding="utf-8")
+
+    # 2b: Credentials entfernen
+    creds = [(r"[a-zA-Z0-9._%+-]+@gmail\.com\s*/\s*\S+", "Credentials (ENTFERNT)"), (r"nvapi-[A-Za-z0-9_-]{30,}", "NVIDIA_API_KEY (ENTFERNT)")]
+    for md_file in repo.rglob("*.md"):
+        if ".git" in str(md_file) or "node_modules" in str(md_file) or "venv" in str(md_file):
+            continue
+        try:
+            content = md_file.read_text(encoding="utf-8")
+        except:
+            continue
+        changed = False
+        for pat, repl in creds:
+            if re.search(pat, content):
+                findings.append({"file": str(md_file.relative_to(repo)), "old": "CREDENTIALS", "new": repl})
+                fixes += 1
+                content = re.sub(pat, repl, content)
+                changed = True
+        if changed:
+            md_file.write_text(content, encoding="utf-8")
+
+    # 2c: Vale Prose Linting
+    if TOOLS.get("vale"):
+        r = subprocess.run(["vale", "--output", "JSON", str(repo)], capture_output=True, text=True, timeout=30)
+        if r.stdout.strip():
             try:
-                content = md_file.read_text(encoding="utf-8")
-            except Exception:
-                continue
-            changed = False
-            for pattern, replacement in OUTDATED_PATTERNS:
-                if re.search(pattern, content, re.IGNORECASE):
-                    matches = list(re.finditer(pattern, content, re.IGNORECASE))
-                    for m in matches:
-                        ln = content[:m.start()].count("\n") + 1
-                        self.findings.append({"repo": repo.name, "file": str(md_file.relative_to(repo)), "line": ln, "old": m.group()[:60], "new": replacement, "lens": "1"})
-                        self.fixes += 1
-                        if not self.dry_run:
-                            print(f"    🔧 {md_file.name}:{ln} → {replacement[:50]}", flush=True)
-                    content = re.sub(pattern, replacement, content, flags=re.IGNORECASE)
-                    changed = True
-            if changed:
-                md_file.write_text(content, encoding="utf-8")
+                vale_results = json.loads(r.stdout)
+                for f, issues in vale_results.items():
+                    for i in issues[:5]:
+                        findings.append({"file": f, "line": i.get("Line", 0), "old": i.get("Match", "")[:40], "new": f"Vale: {i.get('Check', '')[:40]}", "lens": "vale"})
+            except: pass
 
-    def _create_missing_docs(self, repo: Path) -> None:
-        for doc, template in {**SOTA_DOCS, **DOC_TEMPLATES}.items():
-            path = repo / doc
-            alt = repo / ".github" / doc
-            if not path.exists() and not alt.exists():
-                if not self.dry_run:
-                    path.write_text(template, encoding="utf-8")
-                    print(f"    📝 {doc}: ERSTELLT", flush=True)
-                self.findings.append({"repo": repo.name, "file": doc, "old": "❌ FEHLT", "new": "✅ ERSTELLT", "lens": "4"})
-                self.fixes += 1
+    # 2d: Essentielle Docs prüfen
+    essential = ["README.md", "LICENSE", "CONTRIBUTING.md", "SECURITY.md", "AGENTS.md", "brain.md", "goal.md"]
+    for doc in essential:
+        if not (repo / doc).exists():
+            findings.append({"file": doc, "old": "❌ FEHLT", "new": "MUSS ERSTELLT WERDEN", "lens": "essential"})
 
-    def _remove_credentials(self, repo: Path) -> None:
-        patterns = [
-            (r"[a-zA-Z0-9._%+-]+@gmail\.com\s*/\s*\S+", "Credentials (ENTFERNT – siehe profiles/)"),
-            (r"nvapi-[A-Za-z0-9_-]{30,}", "NVIDIA_API_KEY (ENTFERNT – nur env var)"),
-        ]
-        for md_file in repo.rglob("*.md"):
-            if ".git" in str(md_file) or "node_modules" in str(md_file):
-                continue
-            try:
-                content = md_file.read_text(encoding="utf-8")
-            except Exception:
-                continue
-            changed = False
-            for pattern, replacement in patterns:
-                if re.search(pattern, content):
-                    self.findings.append({"repo": repo.name, "file": str(md_file.relative_to(repo)), "old": pattern[:40], "new": replacement, "lens": "6", "severity": "P0"})
-                    self.fixes += 1
-                    if not self.dry_run:
-                        print(f"    🔴 {md_file.name}: Credentials entfernt", flush=True)
-                    content = re.sub(pattern, replacement, content)
-                    changed = True
-            if changed:
-                md_file.write_text(content, encoding="utf-8")
+    # 2e: learn.md aus Git-Log generieren
+    if not (repo / "learn.md").exists():
+        try:
+            log = subprocess.run(["git", "log", "--oneline", "-30"], capture_output=True, text=True, timeout=5, cwd=str(repo))
+            if log.stdout.strip():
+                langs = ", ".join(list(scan.get("languages", {}).keys())[:5])
+                content = f"# learn.md – {repo.name}\n\n"
+                content += f"## Überblick\n{scan.get('files', 0)} Dateien in {langs if langs else 'verschiedenen Sprachen'}.\n\n"
+                content += f"## Letzte Commits\n"
+                for line in log.stdout.strip().split("\n")[:15]:
+                    content += f"- {line}\n"
+                content += f"\n## Sprachverteilung\n"
+                for lang, stats in list(scan.get("languages", {}).items())[:5]:
+                    content += f"- {lang}: {stats.get('code', 0)} Zeilen Code, {stats.get('comment', 0)} Kommentare\n"
+                (repo / "learn.md").write_text(content)
+                findings.append({"file": "learn.md", "old": "❌ FEHLT", "new": "✅ AUS REPO-DATEN GENERIERT"})
+                fixes += 1
+        except: pass
 
-    def _commit_all(self) -> None:
-        for repo in REPOS:
-            if not repo.exists():
-                continue
-            os.chdir(str(repo))
-            r = subprocess.run(["git", "status", "--short"], capture_output=True, text=True, timeout=5)
-            if r.stdout.strip():
-                subprocess.run(["git", "add", "-A"], capture_output=True, timeout=10)
-                subprocess.run(["git", "commit", "-m", "docs: doctor-audit — auto-fix"], capture_output=True, timeout=10)
-                subprocess.run(["git", "push", "origin", "HEAD"], capture_output=True, timeout=30)
-                print(f"    ⬆️  {repo.name} committed + gepusht", flush=True)
-            else:
-                print(f"    ✅ {repo.name} bereits sauber", flush=True)
+    return findings
+
+
+def phase3_generate(repo: Path, scan: dict, findings: list) -> None:
+    """Phase 3: Fehlende Dokumente generieren (nur bei genug Daten)."""
+    # git-cliff: CHANGELOG generieren
+    if not (repo / "CHANGELOG.md").exists() and TOOLS.get("git-cliff"):
+        try:
+            r = subprocess.run(["git-cliff", "-o", str(repo / "CHANGELOG.md")], capture_output=True, timeout=30, cwd=str(repo))
+            if r.returncode == 0:
+                print(f"      📝 CHANGELOG.md: aus Git generiert", flush=True)
+        except: pass
+
+    # prettier format (alle .md)
+    for cmd in ["/Users/jeremy/.local/bin/prettier", "prettier", "/opt/homebrew/bin/prettier"]:
+        p = subprocess.run([cmd, "--write", f"{repo}/**/*.md", f"--ignore-path={repo}/.gitignore"],
+                         capture_output=True, text=True, timeout=60)
+        if p.returncode == 0:
+            break
+
+
+def main():
+    dry = "--dry-run" in sys.argv
+    check_tools()
+    repos = find_repos()
+    print(f"\n🔍 DOCTOR v5: {len(repos)} Repos gefunden", flush=True)
+
+    for repo in repos:
+        r = subprocess.run(["git", "status", "--short"], capture_output=True, text=True, timeout=5, cwd=str(repo))
+        has_changes = bool(r.stdout.strip())
+        if not has_changes:
+            continue
+
+        print(f"\n📁 {repo.name}:", flush=True)
+
+        # Phase 1: Deep Scan
+        scan = phase1_deep_scan(repo)
+        if scan.get("files"):
+            print(f"  📊 {scan['files']} Dateien, {len(scan['languages'])} Sprachen", flush=True)
+
+        # Phase 2+3: Analysieren + Generieren
+        findings = phase2_analyze(repo, scan)
+        if not dry:
+            phase3_generate(repo, scan, findings)
+
+        # Commit + Push
+        r2 = subprocess.run(["git", "status", "--short"], capture_output=True, text=True, timeout=5, cwd=str(repo))
+        if r2.stdout.strip():
+            subprocess.run(["git", "add", "-A"], cwd=str(repo), capture_output=True, timeout=10)
+            subprocess.run(["git", "commit", "-m", "docs: doctor-v5 — scan + fix + generate"], cwd=str(repo), capture_output=True, timeout=10)
+            subprocess.run(["git", "push", "origin", "HEAD"], cwd=str(repo), capture_output=True, timeout=30)
+            print(f"  ⬆️  committed + gepusht", flush=True)
+
+    print(f"\n✅ DOCTOR v5 abgeschlossen", flush=True)
 
 
 if __name__ == "__main__":
-    dry = "--dry-run" in sys.argv
-    d = Doctor(dry_run=dry)
-    r = d.run()
-    print(json.dumps(r, indent=2))
+    main()
