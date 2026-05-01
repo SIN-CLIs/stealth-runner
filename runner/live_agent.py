@@ -156,16 +156,15 @@ class Hands:
         return None
 
     def click(self, label: str) -> bool:
-        """NUR element-index: Popup-first → Fallback skylight-cli."""
+        """NUR element-index über skylight-cli (kein cua-driver, kein Daemon nötig)."""
         found = self.find_anywhere(label, "AXButton")
         if not found:
             found = self.find_anywhere(label, "AXLink")
         if found:
             wid, idx = found
-            cmd = {"pid": self.pid, "element_index": idx}
-            if wid: cmd["window_id"] = wid
-            subprocess.run(["cua-driver", "call", "click", json.dumps(cmd)], capture_output=True, timeout=10)
-            print(f"      🖱 Klick [{idx}] '{label}' (WindowID={wid})", flush=True)
+            subprocess.run(["skylight-cli", "click", "--pid", str(self.pid), "--element-index", str(idx)],
+                          capture_output=True, timeout=10)
+            print(f"      🖱 Klick [{idx}] '{label}' (popup={bool(wid)})", flush=True)
             return True
         print(f"      ⚠️ '{label}' nicht gefunden", flush=True)
         return False

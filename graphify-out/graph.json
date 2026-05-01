@@ -63,7 +63,7 @@
       "source_file": "main.py",
       "source_location": "L1",
       "id": "main_py",
-      "community": 9,
+      "community": 8,
       "norm_label": "main.py"
     },
     {
@@ -72,7 +72,7 @@
       "source_file": "main.py",
       "source_location": "L9",
       "id": "stealth_runner_main_main",
-      "community": 9,
+      "community": 8,
       "norm_label": "main()"
     },
     {
@@ -315,7 +315,7 @@
       "source_file": "runner/stealth_executor.py",
       "source_location": "L1",
       "id": "runner_stealth_executor_py",
-      "community": 4,
+      "community": 3,
       "norm_label": "stealth_executor.py"
     },
     {
@@ -324,7 +324,7 @@
       "source_file": "runner/stealth_executor.py",
       "source_location": "L11",
       "id": "runner_stealth_executor_stealtherror",
-      "community": 4,
+      "community": 3,
       "norm_label": "stealtherror"
     },
     {
@@ -351,7 +351,7 @@
       "source_file": "runner/stealth_executor.py",
       "source_location": "L16",
       "id": "runner_stealth_executor_stealthexecutor_init",
-      "community": 4,
+      "community": 3,
       "norm_label": ".__init__()"
     },
     {
@@ -360,7 +360,7 @@
       "source_file": "runner/stealth_executor.py",
       "source_location": "L23",
       "id": "runner_stealth_executor_stealthexecutor_ensure_tls",
-      "community": 4,
+      "community": 3,
       "norm_label": ".ensure_tls()"
     },
     {
@@ -369,7 +369,7 @@
       "source_file": "runner/stealth_executor.py",
       "source_location": "L29",
       "id": "runner_stealth_executor_backend",
-      "community": 4,
+      "community": 3,
       "norm_label": "backend()"
     },
     {
@@ -432,7 +432,7 @@
       "source_file": "runner/stealth_executor.py",
       "source_location": "L63",
       "id": "runner_stealth_executor_stealthexecutor_run",
-      "community": 4,
+      "community": 3,
       "norm_label": ".run()"
     },
     {
@@ -440,7 +440,7 @@
       "file_type": "rationale",
       "source_file": "runner/stealth_executor.py",
       "source_location": "L1",
-      "community": 4,
+      "community": 3,
       "norm_label": "stealthexecutor \u2013 tls-gepruft, driver-basiert, omni-integriert.",
       "id": "runner_stealth_executor_rationale_1"
     },
@@ -549,7 +549,7 @@
       "source_file": "runner/dom_prescan.py",
       "source_location": "L1",
       "id": "runner_dom_prescan_py",
-      "community": 8,
+      "community": 9,
       "norm_label": "dom_prescan.py"
     },
     {
@@ -558,7 +558,7 @@
       "source_file": "runner/dom_prescan.py",
       "source_location": "L21",
       "id": "runner_dom_prescan_has_images",
-      "community": 8,
+      "community": 9,
       "norm_label": "_has_images()"
     },
     {
@@ -567,7 +567,7 @@
       "source_file": "runner/dom_prescan.py",
       "source_location": "L30",
       "id": "runner_dom_prescan_classify_element",
-      "community": 8,
+      "community": 9,
       "norm_label": "classify_element()"
     },
     {
@@ -576,7 +576,7 @@
       "source_file": "runner/dom_prescan.py",
       "source_location": "L46",
       "id": "runner_dom_prescan_prescan_dom",
-      "community": 8,
+      "community": 9,
       "norm_label": "prescan_dom()"
     },
     {
@@ -584,7 +584,7 @@
       "file_type": "rationale",
       "source_file": "runner/dom_prescan.py",
       "source_location": "L1",
-      "community": 8,
+      "community": 9,
       "norm_label": "dom_prescan \u2013 vision-free fast path via unmask-cli dom-scan.",
       "id": "runner_dom_prescan_rationale_1"
     },
@@ -990,278 +990,269 @@
       "source_file": "runner/live_agent.py",
       "source_location": "L1",
       "id": "runner_live_agent_py",
-      "community": 3,
+      "community": 6,
       "norm_label": "live_agent.py"
     },
     {
       "label": "Retina",
       "file_type": "code",
       "source_file": "runner/live_agent.py",
-      "source_location": "L21",
+      "source_location": "L24",
       "id": "runner_live_agent_retina",
-      "community": 3,
+      "community": 6,
       "norm_label": "retina"
     },
     {
       "label": ".__init__()",
       "file_type": "code",
       "source_file": "runner/live_agent.py",
-      "source_location": "L24",
+      "source_location": "L27",
       "id": "runner_live_agent_retina_init",
-      "community": 3,
+      "community": 6,
       "norm_label": ".__init__()"
     },
     {
-      "label": ".capture()",
+      "label": ".snap()",
       "file_type": "code",
       "source_file": "runner/live_agent.py",
-      "source_location": "L29",
-      "id": "runner_live_agent_retina_capture",
-      "community": 3,
-      "norm_label": ".capture()"
-    },
-    {
-      "label": ".frame_from_file()",
-      "file_type": "code",
-      "source_file": "runner/live_agent.py",
-      "source_location": "L47",
-      "id": "runner_live_agent_retina_frame_from_file",
-      "community": 3,
-      "norm_label": ".frame_from_file()"
+      "source_location": "L33",
+      "id": "runner_live_agent_retina_snap",
+      "community": 6,
+      "norm_label": ".snap()"
     },
     {
       "label": ".diff()",
       "file_type": "code",
       "source_file": "runner/live_agent.py",
-      "source_location": "L54",
+      "source_location": "L47",
       "id": "runner_live_agent_retina_diff",
-      "community": 3,
+      "community": 6,
       "norm_label": ".diff()"
     },
     {
-      "label": "._region_to_b64()",
+      "label": "._to_b64()",
       "file_type": "code",
       "source_file": "runner/live_agent.py",
-      "source_location": "L93",
-      "id": "runner_live_agent_retina_region_to_b64",
-      "community": 3,
-      "norm_label": "._region_to_b64()"
+      "source_location": "L73",
+      "id": "runner_live_agent_retina_to_b64",
+      "community": 6,
+      "norm_label": "._to_b64()"
     },
     {
-      "label": ".full_frame_b64()",
+      "label": ".full_b64()",
       "file_type": "code",
       "source_file": "runner/live_agent.py",
-      "source_location": "L99",
-      "id": "runner_live_agent_retina_full_frame_b64",
-      "community": 3,
-      "norm_label": ".full_frame_b64()"
+      "source_location": "L77",
+      "id": "runner_live_agent_retina_full_b64",
+      "community": 6,
+      "norm_label": ".full_b64()"
     },
     {
-      "label": "VisualCortex",
+      "label": "Cortex",
       "file_type": "code",
       "source_file": "runner/live_agent.py",
-      "source_location": "L106",
-      "id": "runner_live_agent_visualcortex",
-      "community": 3,
-      "norm_label": "visualcortex"
+      "source_location": "L82",
+      "id": "runner_live_agent_cortex",
+      "community": 6,
+      "norm_label": "cortex"
     },
     {
       "label": ".__init__()",
       "file_type": "code",
       "source_file": "runner/live_agent.py",
-      "source_location": "L109",
-      "id": "runner_live_agent_visualcortex_init",
-      "community": 3,
+      "source_location": "L85",
+      "id": "runner_live_agent_cortex_init",
+      "community": 6,
       "norm_label": ".__init__()"
     },
     {
-      "label": ".analyze_change()",
+      "label": ".analyze()",
       "file_type": "code",
       "source_file": "runner/live_agent.py",
-      "source_location": "L112",
-      "id": "runner_live_agent_visualcortex_analyze_change",
-      "community": 3,
-      "norm_label": ".analyze_change()"
+      "source_location": "L89",
+      "id": "runner_live_agent_cortex_analyze",
+      "community": 6,
+      "norm_label": ".analyze()"
     },
     {
       "label": "Hands",
       "file_type": "code",
       "source_file": "runner/live_agent.py",
-      "source_location": "L155",
+      "source_location": "L122",
       "id": "runner_live_agent_hands",
-      "community": 3,
+      "community": 6,
       "norm_label": "hands"
     },
     {
       "label": ".__init__()",
       "file_type": "code",
       "source_file": "runner/live_agent.py",
-      "source_location": "L158",
+      "source_location": "L125",
       "id": "runner_live_agent_hands_init",
-      "community": 3,
+      "community": 6,
       "norm_label": ".__init__()"
     },
     {
-      "label": ".find_element()",
+      "label": ".find_anywhere()",
       "file_type": "code",
       "source_file": "runner/live_agent.py",
-      "source_location": "L161",
-      "id": "runner_live_agent_hands_find_element",
-      "community": 3,
-      "norm_label": ".find_element()"
+      "source_location": "L128",
+      "id": "runner_live_agent_hands_find_anywhere",
+      "community": 6,
+      "norm_label": ".find_anywhere()"
     },
     {
-      "label": ".find_element_with_window()",
+      "label": ".click()",
       "file_type": "code",
       "source_file": "runner/live_agent.py",
-      "source_location": "L177",
-      "id": "runner_live_agent_hands_find_element_with_window",
-      "community": 3,
-      "norm_label": ".find_element_with_window()"
+      "source_location": "L158",
+      "id": "runner_live_agent_hands_click",
+      "community": 6,
+      "norm_label": ".click()"
     },
     {
-      "label": ".click_by_label()",
+      "label": ".type_text()",
       "file_type": "code",
       "source_file": "runner/live_agent.py",
-      "source_location": "L201",
-      "id": "runner_live_agent_hands_click_by_label",
-      "community": 3,
-      "norm_label": ".click_by_label()"
+      "source_location": "L173",
+      "id": "runner_live_agent_hands_type_text",
+      "community": 6,
+      "norm_label": ".type_text()"
     },
     {
       "label": "LiveOmniAgent",
       "file_type": "code",
       "source_file": "runner/live_agent.py",
-      "source_location": "L225",
+      "source_location": "L187",
       "id": "runner_live_agent_liveomniagent",
-      "community": 3,
+      "community": 6,
       "norm_label": "liveomniagent"
     },
     {
       "label": ".__init__()",
       "file_type": "code",
       "source_file": "runner/live_agent.py",
-      "source_location": "L228",
+      "source_location": "L190",
       "id": "runner_live_agent_liveomniagent_init",
-      "community": 3,
+      "community": 6,
       "norm_label": ".__init__()"
+    },
+    {
+      "label": ".start()",
+      "file_type": "code",
+      "source_file": "runner/live_agent.py",
+      "source_location": "L198",
+      "id": "runner_live_agent_liveomniagent_start",
+      "community": 6,
+      "norm_label": ".start()"
+    },
+    {
+      "label": ".stop()",
+      "file_type": "code",
+      "source_file": "runner/live_agent.py",
+      "source_location": "L208",
+      "id": "runner_live_agent_liveomniagent_stop",
+      "community": 6,
+      "norm_label": ".stop()"
     },
     {
       "label": ".run()",
       "file_type": "code",
       "source_file": "runner/live_agent.py",
-      "source_location": "L236",
+      "source_location": "L211",
       "id": "runner_live_agent_liveomniagent_run",
-      "community": 3,
+      "community": 6,
       "norm_label": ".run()"
     },
     {
-      "label": "Pixel-Diff Retina: Nur Ver\u00e4nderungen erkennen \u2013 wie menschliches Auge.",
+      "label": "Pixel-Diff \u2259 Menschliche Netzhaut \u2013 nur SIGNALE (\u00c4nderungen) senden.",
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
-      "source_location": "L22",
-      "community": 3,
-      "norm_label": "pixel-diff retina: nur veranderungen erkennen \u2013 wie menschliches auge.",
-      "id": "runner_live_agent_rationale_22"
+      "source_location": "L25",
+      "id": "runner_live_agent_rationale_25",
+      "community": 6,
+      "norm_label": "pixel-diff \u2259 menschliche netzhaut \u2013 nur signale (anderungen) senden."
     },
     {
       "label": "cua-driver screenshot \u2192 numpy array.",
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
-      "source_location": "L30",
-      "community": 3,
-      "norm_label": "cua-driver screenshot \u2192 numpy array.",
-      "id": "runner_live_agent_rationale_30"
+      "source_location": "L34",
+      "id": "runner_live_agent_rationale_34",
+      "community": 6,
+      "norm_label": "cua-driver screenshot \u2192 numpy array."
     },
     {
       "label": "Fallback: cua-driver screenshot --raw gibt PNG-Daten auf stdout.",
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L48",
-      "community": 3,
+      "community": 6,
       "norm_label": "fallback: cua-driver screenshot --raw gibt png-daten auf stdout.",
       "id": "runner_live_agent_rationale_48"
     },
     {
-      "label": "Vergleicht Frame mit letztem \u2192 nur Ver\u00e4nderung zur\u00fcck.",
+      "label": "Omni \u2259 Sehrinde \u2013 analysiert NUR Ver\u00e4nderungen, sagt WAS zu tun ist.",
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
-      "source_location": "L55",
-      "community": 3,
-      "norm_label": "vergleicht frame mit letztem \u2192 nur veranderung zuruck.",
-      "id": "runner_live_agent_rationale_55"
+      "source_location": "L83",
+      "id": "runner_live_agent_rationale_83",
+      "community": 6,
+      "norm_label": "omni \u2259 sehrinde \u2013 analysiert nur veranderungen, sagt was zu tun ist."
     },
     {
-      "label": "Omni + UGround: Analysiert nur ver\u00e4nderte Regionen.",
+      "label": "Nur die Change-Region an Omni schicken \u2192 Label + Action bekommen.",
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
-      "source_location": "L107",
-      "community": 3,
-      "norm_label": "omni + uground: analysiert nur veranderte regionen.",
-      "id": "runner_live_agent_rationale_107"
+      "source_location": "L90",
+      "id": "runner_live_agent_rationale_90",
+      "community": 6,
+      "norm_label": "nur die change-region an omni schicken \u2192 label + action bekommen."
     },
     {
-      "label": "Omni analysiert die Ver\u00e4nderung und sagt was zu tun ist.",
+      "label": "H\u00e4nde \u2259 skylight-cli + cua-driver \u2013 NUR element-index, nie Pixel.",
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
-      "source_location": "L113",
-      "community": 3,
-      "norm_label": "omni analysiert die veranderung und sagt was zu tun ist.",
-      "id": "runner_live_agent_rationale_113"
+      "source_location": "L123",
+      "id": "runner_live_agent_rationale_123",
+      "community": 6,
+      "norm_label": "hande \u2259 skylight-cli + cua-driver \u2013 nur element-index, nie pixel."
     },
     {
-      "label": "F\u00fchrt Aktionen AUSSCHLIESSLICH per element-index aus \u2013 nie per Pixel.",
+      "label": "Findet element_index f\u00fcr ein Label \u2013 POPUP-FIRST, Fallback normales Fenster.",
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
-      "source_location": "L156",
-      "id": "runner_live_agent_rationale_156",
-      "community": 3,
-      "norm_label": "fuhrt aktionen ausschliesslich per element-index aus \u2013 nie per pixel."
+      "source_location": "L129",
+      "id": "runner_live_agent_rationale_129",
+      "community": 6,
+      "norm_label": "findet element_index fur ein label \u2013 popup-first, fallback normales fenster."
     },
     {
-      "label": "skylight-cli list-elements \u2192 Element mit Label finden.",
+      "label": "NUR element-index: Popup-first \u2192 Fallback skylight-cli.",
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
-      "source_location": "L162",
-      "id": "runner_live_agent_rationale_162",
-      "community": 3,
-      "norm_label": "skylight-cli list-elements \u2192 element mit label finden."
+      "source_location": "L159",
+      "id": "runner_live_agent_rationale_159",
+      "community": 6,
+      "norm_label": "nur element-index: popup-first \u2192 fallback skylight-cli."
     },
     {
-      "label": "Der komplette Live-Agent: Auge \u2192 Hirn \u2192 Hand in Echtzeit.",
+      "label": "Fokussiert per click, tippt per skylight-cli type.",
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
-      "source_location": "L178",
-      "community": 3,
-      "norm_label": "der komplette live-agent: auge \u2192 hirn \u2192 hand in echtzeit.",
-      "id": "runner_live_agent_rationale_178"
+      "source_location": "L174",
+      "id": "runner_live_agent_rationale_174",
+      "community": 6,
+      "norm_label": "fokussiert per click, tippt per skylight-cli type."
     },
     {
-      "label": "Omni sagt Label \u2192 skylight-cli findet element_index \u2192 cua-driver clickt.",
+      "label": "Der komplette Live-Agent: Auge \u2192 Hirn \u2192 Hand in einem Loop.",
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
-      "source_location": "L202",
-      "id": "runner_live_agent_rationale_202",
-      "community": 3,
-      "norm_label": "omni sagt label \u2192 skylight-cli findet element_index \u2192 cua-driver clickt."
-    },
-    {
-      "label": "Der komplette Live-Agent: Auge \u2192 Hirn \u2192 Hand in Echtzeit.",
-      "file_type": "rationale",
-      "source_file": "runner/live_agent.py",
-      "source_location": "L226",
-      "id": "runner_live_agent_rationale_226",
-      "community": 3,
-      "norm_label": "der komplette live-agent: auge \u2192 hirn \u2192 hand in echtzeit."
-    },
-    {
-      "label": "Live-Loop: Nur \u00c4nderungen verarbeiten, sonst nichts tun.",
-      "file_type": "rationale",
-      "source_file": "runner/live_agent.py",
-      "source_location": "L237",
-      "id": "runner_live_agent_rationale_237",
-      "community": 3,
-      "norm_label": "live-loop: nur anderungen verarbeiten, sonst nichts tun."
+      "source_location": "L188",
+      "id": "runner_live_agent_rationale_188",
+      "community": 6,
+      "norm_label": "der komplette live-agent: auge \u2192 hirn \u2192 hand in einem loop."
     },
     {
       "label": "state_machine.py",
@@ -1287,7 +1278,7 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L27",
       "id": "runner_state_machine_surveyrunner",
-      "community": 9,
+      "community": 8,
       "norm_label": "surveyrunner"
     },
     {
@@ -1314,7 +1305,7 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L61",
       "id": "runner_state_machine_surveyrunner_save_checkpoint",
-      "community": 9,
+      "community": 8,
       "norm_label": "._save_checkpoint()"
     },
     {
@@ -1323,7 +1314,7 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L70",
       "id": "runner_state_machine_surveyrunner_run",
-      "community": 9,
+      "community": 8,
       "norm_label": ".run()"
     },
     {
@@ -1332,7 +1323,7 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L86",
       "id": "runner_state_machine_surveyrunner_transition",
-      "community": 9,
+      "community": 8,
       "norm_label": "._transition()"
     },
     {
@@ -1341,7 +1332,7 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L107",
       "id": "runner_state_machine_surveyrunner_launch",
-      "community": 9,
+      "community": 8,
       "norm_label": "._launch()"
     },
     {
@@ -1350,7 +1341,7 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L116",
       "id": "runner_state_machine_surveyrunner_login",
-      "community": 9,
+      "community": 8,
       "norm_label": "._login()"
     },
     {
@@ -1359,7 +1350,7 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L143",
       "id": "runner_state_machine_surveyrunner_wait_ready",
-      "community": 9,
+      "community": 8,
       "norm_label": "._wait_ready()"
     },
     {
@@ -1368,7 +1359,7 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L152",
       "id": "runner_state_machine_surveyrunner_capture",
-      "community": 9,
+      "community": 8,
       "norm_label": "._capture()"
     },
     {
@@ -1377,7 +1368,7 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L164",
       "id": "runner_state_machine_surveyrunner_vision",
-      "community": 9,
+      "community": 8,
       "norm_label": "._vision()"
     },
     {
@@ -1386,7 +1377,7 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L187",
       "id": "runner_state_machine_surveyrunner_execute",
-      "community": 9,
+      "community": 8,
       "norm_label": "._execute()"
     },
     {
@@ -1395,7 +1386,7 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L216",
       "id": "runner_state_machine_surveyrunner_verify",
-      "community": 9,
+      "community": 8,
       "norm_label": "._verify()"
     },
     {
@@ -1404,7 +1395,7 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L226",
       "id": "runner_state_machine_surveyrunner_recover",
-      "community": 9,
+      "community": 8,
       "norm_label": "._recover()"
     },
     {
@@ -1530,7 +1521,7 @@
       "source_file": "runner/cli.py",
       "source_location": "L1",
       "id": "runner_cli_py",
-      "community": 9,
+      "community": 8,
       "norm_label": "cli.py"
     },
     {
@@ -1539,7 +1530,7 @@
       "source_file": "runner/cli.py",
       "source_location": "L15",
       "id": "runner_cli_run",
-      "community": 9,
+      "community": 8,
       "norm_label": "run()"
     },
     {
@@ -1548,7 +1539,7 @@
       "source_file": "runner/cli.py",
       "source_location": "L32",
       "id": "runner_cli_status",
-      "community": 9,
+      "community": 8,
       "norm_label": "status()"
     },
     {
@@ -1557,7 +1548,7 @@
       "source_file": "runner/cli.py",
       "source_location": "L39",
       "id": "runner_cli_main_cli",
-      "community": 9,
+      "community": 8,
       "norm_label": "main_cli()"
     },
     {
@@ -1565,7 +1556,7 @@
       "file_type": "rationale",
       "source_file": "runner/cli.py",
       "source_location": "L1",
-      "community": 9,
+      "community": 8,
       "norm_label": "typer cli mit rich progress fur den stealth-runner.",
       "id": "runner_cli_rationale_1"
     },
@@ -1809,7 +1800,7 @@
       "source_file": "runner/prompt_kit.py",
       "source_location": "L1",
       "id": "runner_prompt_kit_py",
-      "community": 7,
+      "community": 0,
       "norm_label": "prompt_kit.py"
     },
     {
@@ -1818,7 +1809,7 @@
       "source_file": "runner/prompt_kit.py",
       "source_location": "L34",
       "id": "runner_prompt_kit_build_prompt",
-      "community": 7,
+      "community": 0,
       "norm_label": "build_prompt()"
     },
     {
@@ -1826,7 +1817,7 @@
       "file_type": "rationale",
       "source_file": "runner/prompt_kit.py",
       "source_location": "L1",
-      "community": 7,
+      "community": 0,
       "norm_label": "prompt_kit \u2013 system_prompt mit expliziten som-referenzen.",
       "id": "runner_prompt_kit_rationale_1"
     },
@@ -2214,7 +2205,7 @@
       "source_file": "runner/tls_fingerprint.py",
       "source_location": "L1",
       "id": "runner_tls_fingerprint_py",
-      "community": 4,
+      "community": 3,
       "norm_label": "tls_fingerprint.py"
     },
     {
@@ -2223,7 +2214,7 @@
       "source_file": "runner/tls_fingerprint.py",
       "source_location": "L6",
       "id": "runner_tls_fingerprint_get_ja4_fingerprint",
-      "community": 4,
+      "community": 3,
       "norm_label": "get_ja4_fingerprint()"
     },
     {
@@ -2231,7 +2222,7 @@
       "file_type": "rationale",
       "source_file": "runner/tls_fingerprint.py",
       "source_location": "L1",
-      "community": 4,
+      "community": 3,
       "norm_label": "tls-fingerprinting auf ja4-basis.",
       "id": "runner_tls_fingerprint_rationale_1"
     },
@@ -2502,7 +2493,7 @@
       "source_file": "runner/drivers/skylight.py",
       "source_location": "L1",
       "id": "runner_drivers_skylight_py",
-      "community": 4,
+      "community": 3,
       "norm_label": "skylight.py"
     },
     {
@@ -2511,7 +2502,7 @@
       "source_file": "runner/drivers/skylight.py",
       "source_location": "L6",
       "id": "drivers_skylight_skylightdriver",
-      "community": 4,
+      "community": 3,
       "norm_label": "skylightdriver"
     },
     {
@@ -2520,7 +2511,7 @@
       "source_file": "runner/drivers/skylight.py",
       "source_location": "L7",
       "id": "drivers_skylight_skylightdriver_init",
-      "community": 4,
+      "community": 3,
       "norm_label": ".__init__()"
     },
     {
@@ -2529,7 +2520,7 @@
       "source_file": "runner/drivers/skylight.py",
       "source_location": "L10",
       "id": "drivers_skylight_skylightdriver_click",
-      "community": 4,
+      "community": 3,
       "norm_label": ".click()"
     },
     {
@@ -2538,7 +2529,7 @@
       "source_file": "runner/drivers/skylight.py",
       "source_location": "L37",
       "id": "drivers_skylight_skylightdriver_type_text",
-      "community": 4,
+      "community": 3,
       "norm_label": ".type_text()"
     },
     {
@@ -2547,7 +2538,7 @@
       "source_file": "runner/drivers/skylight.py",
       "source_location": "L57",
       "id": "drivers_skylight_skylightdriver_screenshot",
-      "community": 4,
+      "community": 3,
       "norm_label": ".screenshot()"
     },
     {
@@ -2556,7 +2547,7 @@
       "source_file": "runner/drivers/skylight.py",
       "source_location": "L73",
       "id": "drivers_skylight_skylightdriver_inspect",
-      "community": 4,
+      "community": 3,
       "norm_label": ".inspect()"
     },
     {
@@ -2565,7 +2556,7 @@
       "source_file": "runner/drivers/skylight.py",
       "source_location": "L80",
       "id": "drivers_skylight_skylightdriver_list_elements",
-      "community": 4,
+      "community": 3,
       "norm_label": ".list_elements()"
     },
     {
@@ -2574,7 +2565,7 @@
       "source_file": "runner/drivers/skylight.py",
       "source_location": "L87",
       "id": "drivers_skylight_skylightdriver_find_element",
-      "community": 4,
+      "community": 3,
       "norm_label": ".find_element()"
     },
     {
@@ -2700,7 +2691,7 @@
       "source_file": "runner/drivers/base.py",
       "source_location": "L1",
       "id": "runner_drivers_base_py",
-      "community": 4,
+      "community": 3,
       "norm_label": "base.py"
     },
     {
@@ -2709,7 +2700,7 @@
       "source_file": "runner/drivers/base.py",
       "source_location": "L5",
       "id": "drivers_base_basedriver",
-      "community": 4,
+      "community": 3,
       "norm_label": "basedriver"
     },
     {
@@ -2718,7 +2709,7 @@
       "source_file": "",
       "source_location": "",
       "id": "abc",
-      "community": 4,
+      "community": 3,
       "norm_label": "abc"
     },
     {
@@ -2727,7 +2718,7 @@
       "source_file": "runner/drivers/base.py",
       "source_location": "L7",
       "id": "drivers_base_screenshot",
-      "community": 4,
+      "community": 3,
       "norm_label": "screenshot()"
     },
     {
@@ -2736,7 +2727,7 @@
       "source_file": "runner/drivers/base.py",
       "source_location": "L9",
       "id": "drivers_base_click",
-      "community": 4,
+      "community": 3,
       "norm_label": "click()"
     },
     {
@@ -2943,7 +2934,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L1",
       "id": "tests_test_sin_survey_core_py",
-      "community": 5,
+      "community": 4,
       "norm_label": "test_sin_survey_core.py"
     },
     {
@@ -2952,7 +2943,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L8",
       "id": "tests_test_sin_survey_core_testdetectpanel",
-      "community": 5,
+      "community": 4,
       "norm_label": "testdetectpanel"
     },
     {
@@ -2961,7 +2952,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L9",
       "id": "tests_test_sin_survey_core_testdetectpanel_test_heypiggy",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_heypiggy()"
     },
     {
@@ -2970,7 +2961,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L10",
       "id": "tests_test_sin_survey_core_testdetectpanel_test_purespectrum",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_purespectrum()"
     },
     {
@@ -2979,7 +2970,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L11",
       "id": "tests_test_sin_survey_core_testdetectpanel_test_dynata",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_dynata()"
     },
     {
@@ -2988,7 +2979,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L12",
       "id": "tests_test_sin_survey_core_testdetectpanel_test_cint",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_cint()"
     },
     {
@@ -2997,7 +2988,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L13",
       "id": "tests_test_sin_survey_core_testdetectpanel_test_unknown",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_unknown()"
     },
     {
@@ -3006,7 +2997,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L14",
       "id": "tests_test_sin_survey_core_testdetectpanel_test_sapio_body",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_sapio_body()"
     },
     {
@@ -3015,7 +3006,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L15",
       "id": "tests_test_sin_survey_core_testdetectpanel_test_lucid_body",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_lucid_body()"
     },
     {
@@ -3024,7 +3015,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L16",
       "id": "tests_test_sin_survey_core_testdetectpanel_test_panel_count",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_panel_count()"
     },
     {
@@ -3033,7 +3024,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L18",
       "id": "tests_test_sin_survey_core_testdetectpaneldq",
-      "community": 5,
+      "community": 4,
       "norm_label": "testdetectpaneldq"
     },
     {
@@ -3042,7 +3033,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L19",
       "id": "tests_test_sin_survey_core_testdetectpaneldq_test_dq_detected",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_dq_detected()"
     },
     {
@@ -3051,7 +3042,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L22",
       "id": "tests_test_sin_survey_core_testdetectpaneldq_test_no_dq",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_no_dq()"
     },
     {
@@ -3060,7 +3051,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L26",
       "id": "tests_test_sin_survey_core_testdetectqualitytrap",
-      "community": 5,
+      "community": 4,
       "norm_label": "testdetectqualitytrap"
     },
     {
@@ -3069,7 +3060,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L27",
       "id": "tests_test_sin_survey_core_testdetectqualitytrap_test_trap_detected",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_trap_detected()"
     },
     {
@@ -3078,7 +3069,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L30",
       "id": "tests_test_sin_survey_core_testdetectqualitytrap_test_no_trap",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_no_trap()"
     },
     {
@@ -3087,7 +3078,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L34",
       "id": "tests_test_sin_survey_core_testbuildpanelpromptblock",
-      "community": 5,
+      "community": 4,
       "norm_label": "testbuildpanelpromptblock"
     },
     {
@@ -3096,7 +3087,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L35",
       "id": "tests_test_sin_survey_core_testbuildpanelpromptblock_test_valid_panel",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_valid_panel()"
     },
     {
@@ -3105,7 +3096,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L39",
       "id": "tests_test_sin_survey_core_testbuildpanelpromptblock_test_none_panel",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_none_panel()"
     },
     {
@@ -3114,7 +3105,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L40",
       "id": "tests_test_sin_survey_core_testbuildpanelpromptblock_test_dq_in_block",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_dq_in_block()"
     },
     {
@@ -3266,7 +3257,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L1",
-      "community": 5,
+      "community": 4,
       "norm_label": "tests fur sin_survey_core \u2013 panel, eur, errors.",
       "id": "tests_test_sin_survey_core_rationale_1"
     },
@@ -3276,7 +3267,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L1",
       "id": "tests_test_dom_prescan_py",
-      "community": 8,
+      "community": 9,
       "norm_label": "test_dom_prescan.py"
     },
     {
@@ -3285,7 +3276,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L7",
       "id": "tests_test_dom_prescan_testclassifyelement",
-      "community": 8,
+      "community": 9,
       "norm_label": "testclassifyelement"
     },
     {
@@ -3294,7 +3285,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L8",
       "id": "tests_test_dom_prescan_testclassifyelement_test_button_is_clickable",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_button_is_clickable()"
     },
     {
@@ -3303,7 +3294,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L11",
       "id": "tests_test_dom_prescan_testclassifyelement_test_link_is_clickable",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_link_is_clickable()"
     },
     {
@@ -3312,7 +3303,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L14",
       "id": "tests_test_dom_prescan_testclassifyelement_test_checkbox_is_clickable",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_checkbox_is_clickable()"
     },
     {
@@ -3321,7 +3312,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L17",
       "id": "tests_test_dom_prescan_testclassifyelement_test_text_field_is_text_input",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_text_field_is_text_input()"
     },
     {
@@ -3330,7 +3321,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L20",
       "id": "tests_test_dom_prescan_testclassifyelement_test_input_role_is_text_input",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_input_role_is_text_input()"
     },
     {
@@ -3339,7 +3330,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L23",
       "id": "tests_test_dom_prescan_testclassifyelement_test_question_text_detected",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_question_text_detected()"
     },
     {
@@ -3348,7 +3339,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L26",
       "id": "tests_test_dom_prescan_testclassifyelement_test_unknown_element",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_unknown_element()"
     },
     {
@@ -3357,7 +3348,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L29",
       "id": "tests_test_dom_prescan_testclassifyelement_test_div_with_text_is_clickable",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_div_with_text_is_clickable()"
     },
     {
@@ -3366,7 +3357,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L33",
       "id": "tests_test_dom_prescan_testprescandom",
-      "community": 8,
+      "community": 9,
       "norm_label": "testprescandom"
     },
     {
@@ -3375,7 +3366,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L34",
       "id": "tests_test_dom_prescan_testprescandom_test_empty_elements",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_empty_elements()"
     },
     {
@@ -3384,7 +3375,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L39",
       "id": "tests_test_dom_prescan_testprescandom_test_no_elements_key",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_no_elements_key()"
     },
     {
@@ -3393,7 +3384,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L43",
       "id": "tests_test_dom_prescan_testprescandom_test_single_clickable_returns_action",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_single_clickable_returns_action()"
     },
     {
@@ -3402,7 +3393,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L50",
       "id": "tests_test_dom_prescan_testprescandom_test_image_element_falls_back_to_vision",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_image_element_falls_back_to_vision()"
     },
     {
@@ -3411,7 +3402,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L58",
       "id": "tests_test_dom_prescan_testprescandom_test_unknown_elements_fall_back",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_unknown_elements_fall_back()"
     },
     {
@@ -3420,7 +3411,7 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L65",
       "id": "tests_test_dom_prescan_testprescandom_test_no_images_pure_text",
-      "community": 8,
+      "community": 9,
       "norm_label": ".test_no_images_pure_text()"
     },
     {
@@ -3428,7 +3419,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L1",
-      "community": 8,
+      "community": 9,
       "norm_label": "tests fur dom_prescan \u2013 vision-free fast path.",
       "id": "tests_test_dom_prescan_rationale_1"
     },
@@ -3456,7 +3447,7 @@
       "source_file": "tests/test_state_machine.py",
       "source_location": "L1",
       "id": "tests_test_state_machine_py",
-      "community": 9,
+      "community": 8,
       "norm_label": "test_state_machine.py"
     },
     {
@@ -3465,7 +3456,7 @@
       "source_file": "tests/test_state_machine.py",
       "source_location": "L7",
       "id": "tests_test_state_machine_test_state_machine_initializes",
-      "community": 9,
+      "community": 8,
       "norm_label": "test_state_machine_initializes()"
     },
     {
@@ -3474,7 +3465,7 @@
       "source_file": "tests/test_state_machine.py",
       "source_location": "L13",
       "id": "tests_test_state_machine_test_state_transition_idle_to_launch",
-      "community": 9,
+      "community": 8,
       "norm_label": "test_state_transition_idle_to_launch()"
     },
     {
@@ -3483,7 +3474,7 @@
       "source_file": "tests/test_state_machine.py",
       "source_location": "L20",
       "id": "tests_test_state_machine_test_max_recoveries_stops",
-      "community": 9,
+      "community": 8,
       "norm_label": "test_max_recoveries_stops()"
     },
     {
@@ -3771,7 +3762,7 @@
       "source_file": "tests/test_revalidation.py",
       "source_location": "L1",
       "id": "tests_test_revalidation_py",
-      "community": 4,
+      "community": 3,
       "norm_label": "test_revalidation.py"
     },
     {
@@ -3780,7 +3771,7 @@
       "source_file": "tests/test_revalidation.py",
       "source_location": "L6",
       "id": "tests_test_revalidation_test_revalidation_after_type",
-      "community": 4,
+      "community": 3,
       "norm_label": "test_revalidation_after_type()"
     },
     {
@@ -3789,7 +3780,7 @@
       "source_file": "tests/test_axpath.py",
       "source_location": "L1",
       "id": "tests_test_axpath_py",
-      "community": 4,
+      "community": 3,
       "norm_label": "test_axpath.py"
     },
     {
@@ -3798,7 +3789,7 @@
       "source_file": "tests/test_axpath.py",
       "source_location": "L6",
       "id": "tests_test_axpath_test_click_with_axpath",
-      "community": 4,
+      "community": 3,
       "norm_label": "test_click_with_axpath()"
     },
     {
@@ -3807,7 +3798,7 @@
       "source_file": "tests/test_skylight_expected_label.py",
       "source_location": "L1",
       "id": "tests_test_skylight_expected_label_py",
-      "community": 4,
+      "community": 3,
       "norm_label": "test_skylight_expected_label.py"
     },
     {
@@ -3816,7 +3807,7 @@
       "source_file": "tests/test_skylight_expected_label.py",
       "source_location": "L6",
       "id": "tests_test_skylight_expected_label_test_click_with_expected_label_success",
-      "community": 4,
+      "community": 3,
       "norm_label": "test_click_with_expected_label_success()"
     },
     {
@@ -3825,7 +3816,7 @@
       "source_file": "tests/test_skylight_expected_label.py",
       "source_location": "L22",
       "id": "tests_test_skylight_expected_label_test_click_with_expected_label_mismatch",
-      "community": 4,
+      "community": 3,
       "norm_label": "test_click_with_expected_label_mismatch()"
     },
     {
@@ -3969,7 +3960,7 @@
       "source_file": "sin_survey_core/panels/__init__.py",
       "source_location": "L1",
       "id": "sin_survey_core_panels_init_py",
-      "community": 5,
+      "community": 4,
       "norm_label": "__init__.py"
     },
     {
@@ -3977,7 +3968,7 @@
       "file_type": "rationale",
       "source_file": "sin_survey_core/panels/__init__.py",
       "source_location": "L1",
-      "community": 5,
+      "community": 4,
       "norm_label": "panel-provider-erkennung fur umfrageplattformen.  provider (8): purespectrum, dy",
       "id": "panels_init_rationale_1"
     },
@@ -3987,7 +3978,7 @@
       "source_file": "sin_survey_core/panels/detectors.py",
       "source_location": "L1",
       "id": "sin_survey_core_panels_detectors_py",
-      "community": 5,
+      "community": 4,
       "norm_label": "detectors.py"
     },
     {
@@ -3996,7 +3987,7 @@
       "source_file": "sin_survey_core/panels/detectors.py",
       "source_location": "L8",
       "id": "panels_detectors_panelrules",
-      "community": 5,
+      "community": 4,
       "norm_label": "panelrules"
     },
     {
@@ -4005,7 +3996,7 @@
       "source_file": "sin_survey_core/panels/detectors.py",
       "source_location": "L28",
       "id": "panels_detectors_build_patterns",
-      "community": 5,
+      "community": 4,
       "norm_label": "_build_patterns()"
     },
     {
@@ -4014,7 +4005,7 @@
       "source_file": "sin_survey_core/panels/detectors.py",
       "source_location": "L34",
       "id": "panels_detectors_detect_panel",
-      "community": 5,
+      "community": 4,
       "norm_label": "detect_panel()"
     },
     {
@@ -4023,7 +4014,7 @@
       "source_file": "sin_survey_core/panels/detectors.py",
       "source_location": "L46",
       "id": "panels_detectors_detect_quality_trap",
-      "community": 5,
+      "community": 4,
       "norm_label": "detect_quality_trap()"
     },
     {
@@ -4032,7 +4023,7 @@
       "source_file": "sin_survey_core/panels/detectors.py",
       "source_location": "L53",
       "id": "panels_detectors_detect_panel_dq",
-      "community": 5,
+      "community": 4,
       "norm_label": "detect_panel_dq()"
     },
     {
@@ -4041,7 +4032,7 @@
       "source_file": "sin_survey_core/panels/detectors.py",
       "source_location": "L60",
       "id": "panels_detectors_build_panel_prompt_block",
-      "community": 5,
+      "community": 4,
       "norm_label": "build_panel_prompt_block()"
     },
     {
@@ -4049,7 +4040,7 @@
       "file_type": "rationale",
       "source_file": "sin_survey_core/panels/detectors.py",
       "source_location": "L1",
-      "community": 5,
+      "community": 4,
       "norm_label": "panel-provider-erkennung anhand von url- und text-mustern (8 provider).",
       "id": "panels_detectors_rationale_1"
     },
@@ -4212,7 +4203,7 @@
       "source_file": "src/stealth_runner/config.py",
       "source_location": "L1",
       "id": "src_stealth_runner_config_py",
-      "community": 6,
+      "community": 5,
       "norm_label": "config.py"
     },
     {
@@ -4221,7 +4212,7 @@
       "source_file": "src/stealth_runner/config.py",
       "source_location": "L8",
       "id": "stealth_runner_config_stealthconfig",
-      "community": 6,
+      "community": 5,
       "norm_label": "stealthconfig"
     },
     {
@@ -4230,7 +4221,7 @@
       "source_file": "",
       "source_location": "",
       "id": "basesettings",
-      "community": 6,
+      "community": 5,
       "norm_label": "basesettings"
     },
     {
@@ -4239,7 +4230,7 @@
       "source_file": "src/stealth_runner/config.py",
       "source_location": "L19",
       "id": "stealth_runner_config_surveyconfig",
-      "community": 6,
+      "community": 5,
       "norm_label": "surveyconfig"
     },
     {
@@ -4248,7 +4239,7 @@
       "source_file": "src/stealth_runner/config.py",
       "source_location": "L22",
       "id": "stealth_runner_config_from_yaml",
-      "community": 6,
+      "community": 5,
       "norm_label": "from_yaml()"
     },
     {
@@ -4257,7 +4248,7 @@
       "source_file": "src/stealth_runner/vision_client.py",
       "source_location": "L1",
       "id": "src_stealth_runner_vision_client_py",
-      "community": 6,
+      "community": 5,
       "norm_label": "vision_client.py"
     },
     {
@@ -4266,7 +4257,7 @@
       "source_file": "src/stealth_runner/vision_client.py",
       "source_location": "L11",
       "id": "stealth_runner_vision_client_visiondecision",
-      "community": 6,
+      "community": 5,
       "norm_label": "visiondecision"
     },
     {
@@ -4275,7 +4266,7 @@
       "source_file": "src/stealth_runner/vision_client.py",
       "source_location": "L16",
       "id": "stealth_runner_vision_client_call_vision_llm",
-      "community": 6,
+      "community": 5,
       "norm_label": "call_vision_llm()"
     },
     {
@@ -4347,7 +4338,7 @@
       "source_file": "src/stealth_runner/unmask_client.py",
       "source_location": "L1",
       "id": "src_stealth_runner_unmask_client_py",
-      "community": 6,
+      "community": 5,
       "norm_label": "unmask_client.py"
     },
     {
@@ -4356,7 +4347,7 @@
       "source_file": "src/stealth_runner/unmask_client.py",
       "source_location": "L10",
       "id": "stealth_runner_unmask_client_stealthstatus",
-      "community": 6,
+      "community": 5,
       "norm_label": "stealthstatus"
     },
     {
@@ -4365,7 +4356,7 @@
       "source_file": "src/stealth_runner/unmask_client.py",
       "source_location": "L13",
       "id": "stealth_runner_unmask_client_verify_stealth",
-      "community": 6,
+      "community": 5,
       "norm_label": "verify_stealth()"
     },
     {
@@ -4373,7 +4364,7 @@
       "file_type": "rationale",
       "source_file": "src/stealth_runner/unmask_client.py",
       "source_location": "L1",
-      "community": 6,
+      "community": 5,
       "norm_label": "unmask-cli json-rpc 2.0 client fur stealth-verifikation.",
       "id": "stealth_runner_unmask_client_rationale_1"
     },
@@ -4383,7 +4374,7 @@
       "source_file": "src/stealth_runner/state_machine.py",
       "source_location": "L1",
       "id": "src_stealth_runner_state_machine_py",
-      "community": 6,
+      "community": 5,
       "norm_label": "state_machine.py"
     },
     {
@@ -4392,7 +4383,7 @@
       "source_file": "src/stealth_runner/state_machine.py",
       "source_location": "L12",
       "id": "stealth_runner_state_machine_state",
-      "community": 6,
+      "community": 5,
       "norm_label": "state"
     },
     {
@@ -4401,7 +4392,7 @@
       "source_file": "src/stealth_runner/state_machine.py",
       "source_location": "L18",
       "id": "stealth_runner_state_machine_context",
-      "community": 6,
+      "community": 5,
       "norm_label": "context"
     },
     {
@@ -4410,7 +4401,7 @@
       "source_file": "src/stealth_runner/state_machine.py",
       "source_location": "L24",
       "id": "stealth_runner_state_machine_asyncstatemachine",
-      "community": 6,
+      "community": 5,
       "norm_label": "asyncstatemachine"
     },
     {
@@ -4419,7 +4410,7 @@
       "source_file": "src/stealth_runner/state_machine.py",
       "source_location": "L25",
       "id": "stealth_runner_state_machine_asyncstatemachine_init",
-      "community": 6,
+      "community": 5,
       "norm_label": ".__init__()"
     },
     {
@@ -4428,7 +4419,7 @@
       "source_file": "src/stealth_runner/state_machine.py",
       "source_location": "L27",
       "id": "stealth_runner_state_machine_asyncstatemachine_run",
-      "community": 6,
+      "community": 5,
       "norm_label": ".run()"
     },
     {
@@ -4437,7 +4428,7 @@
       "source_file": "src/stealth_runner/state_machine.py",
       "source_location": "L34",
       "id": "stealth_runner_state_machine_asyncstatemachine_transition",
-      "community": 6,
+      "community": 5,
       "norm_label": "._transition()"
     },
     {
@@ -4446,7 +4437,7 @@
       "source_file": "src/stealth_runner/audit_logger.py",
       "source_location": "L1",
       "id": "src_stealth_runner_audit_logger_py",
-      "community": 6,
+      "community": 5,
       "norm_label": "audit_logger.py"
     },
     {
@@ -4455,7 +4446,7 @@
       "source_file": "src/stealth_runner/audit_logger.py",
       "source_location": "L7",
       "id": "stealth_runner_audit_logger_auditlogger",
-      "community": 6,
+      "community": 5,
       "norm_label": "auditlogger"
     },
     {
@@ -4464,7 +4455,7 @@
       "source_file": "src/stealth_runner/audit_logger.py",
       "source_location": "L8",
       "id": "stealth_runner_audit_logger_auditlogger_init",
-      "community": 6,
+      "community": 5,
       "norm_label": ".__init__()"
     },
     {
@@ -4473,7 +4464,7 @@
       "source_file": "src/stealth_runner/audit_logger.py",
       "source_location": "L12",
       "id": "stealth_runner_audit_logger_auditlogger_log",
-      "community": 6,
+      "community": 5,
       "norm_label": ".log()"
     },
     {
@@ -4482,7 +4473,7 @@
       "source_file": "src/stealth_runner/audit_logger.py",
       "source_location": "L19",
       "id": "stealth_runner_audit_logger_auditlogger_close",
-      "community": 6,
+      "community": 5,
       "norm_label": ".close()"
     },
     {
@@ -4536,7 +4527,7 @@
       "source_file": "src/stealth_runner/__main__.py",
       "source_location": "L1",
       "id": "src_stealth_runner_main_py",
-      "community": 6,
+      "community": 5,
       "norm_label": "__main__.py"
     },
     {
@@ -4545,7 +4536,7 @@
       "source_file": "src/stealth_runner/__main__.py",
       "source_location": "L13",
       "id": "stealth_runner_main_run",
-      "community": 6,
+      "community": 5,
       "norm_label": "run()"
     },
     {
@@ -4590,7 +4581,7 @@
       "source_file": "src/stealth_runner/executor.py",
       "source_location": "L1",
       "id": "src_stealth_runner_executor_py",
-      "community": 6,
+      "community": 5,
       "norm_label": "executor.py"
     },
     {
@@ -4599,7 +4590,7 @@
       "source_file": "src/stealth_runner/executor.py",
       "source_location": "L5",
       "id": "stealth_runner_executor_stealthrunnererror",
-      "community": 6,
+      "community": 5,
       "norm_label": "stealthrunnererror"
     },
     {
@@ -4608,7 +4599,7 @@
       "source_file": "src/stealth_runner/executor.py",
       "source_location": "L6",
       "id": "stealth_runner_executor_retryableerror",
-      "community": 6,
+      "community": 5,
       "norm_label": "retryableerror"
     },
     {
@@ -4617,7 +4608,7 @@
       "source_file": "src/stealth_runner/executor.py",
       "source_location": "L7",
       "id": "stealth_runner_executor_fatalerror",
-      "community": 6,
+      "community": 5,
       "norm_label": "fatalerror"
     },
     {
@@ -4626,15 +4617,114 @@
       "source_file": "src/stealth_runner/executor.py",
       "source_location": "L9",
       "id": "stealth_runner_executor_run_cli_atomic",
-      "community": 6,
+      "community": 5,
       "norm_label": "run_cli_atomic()"
+    },
+    {
+      "label": "Pixel-Diff Retina: Nur Ver\u00e4nderungen erkennen \u2013 wie menschliches Auge.",
+      "file_type": "rationale",
+      "source_file": "runner/live_agent.py",
+      "source_location": "L22",
+      "community": 39,
+      "norm_label": "pixel-diff retina: nur veranderungen erkennen \u2013 wie menschliches auge.",
+      "id": "runner_live_agent_rationale_22"
+    },
+    {
+      "label": "cua-driver screenshot \u2192 numpy array.",
+      "file_type": "rationale",
+      "source_file": "runner/live_agent.py",
+      "source_location": "L30",
+      "community": 40,
+      "norm_label": "cua-driver screenshot \u2192 numpy array.",
+      "id": "runner_live_agent_rationale_30"
+    },
+    {
+      "label": "Vergleicht Frame mit letztem \u2192 nur Ver\u00e4nderung zur\u00fcck.",
+      "file_type": "rationale",
+      "source_file": "runner/live_agent.py",
+      "source_location": "L55",
+      "community": 41,
+      "norm_label": "vergleicht frame mit letztem \u2192 nur veranderung zuruck.",
+      "id": "runner_live_agent_rationale_55"
+    },
+    {
+      "label": "Omni + UGround: Analysiert nur ver\u00e4nderte Regionen.",
+      "file_type": "rationale",
+      "source_file": "runner/live_agent.py",
+      "source_location": "L107",
+      "community": 42,
+      "norm_label": "omni + uground: analysiert nur veranderte regionen.",
+      "id": "runner_live_agent_rationale_107"
+    },
+    {
+      "label": "Omni analysiert die Ver\u00e4nderung und sagt was zu tun ist.",
+      "file_type": "rationale",
+      "source_file": "runner/live_agent.py",
+      "source_location": "L113",
+      "community": 43,
+      "norm_label": "omni analysiert die veranderung und sagt was zu tun ist.",
+      "id": "runner_live_agent_rationale_113"
+    },
+    {
+      "label": "F\u00fchrt Aktionen AUSSCHLIESSLICH per element-index aus \u2013 nie per Pixel.",
+      "file_type": "rationale",
+      "source_file": "runner/live_agent.py",
+      "source_location": "L156",
+      "community": 44,
+      "norm_label": "fuhrt aktionen ausschliesslich per element-index aus \u2013 nie per pixel.",
+      "id": "runner_live_agent_rationale_156"
+    },
+    {
+      "label": "skylight-cli list-elements \u2192 Element mit Label finden.",
+      "file_type": "rationale",
+      "source_file": "runner/live_agent.py",
+      "source_location": "L162",
+      "community": 45,
+      "norm_label": "skylight-cli list-elements \u2192 element mit label finden.",
+      "id": "runner_live_agent_rationale_162"
+    },
+    {
+      "label": "Der komplette Live-Agent: Auge \u2192 Hirn \u2192 Hand in Echtzeit.",
+      "file_type": "rationale",
+      "source_file": "runner/live_agent.py",
+      "source_location": "L178",
+      "community": 46,
+      "norm_label": "der komplette live-agent: auge \u2192 hirn \u2192 hand in echtzeit.",
+      "id": "runner_live_agent_rationale_178"
+    },
+    {
+      "label": "Omni sagt Label \u2192 skylight-cli findet element_index \u2192 cua-driver clickt.",
+      "file_type": "rationale",
+      "source_file": "runner/live_agent.py",
+      "source_location": "L202",
+      "community": 47,
+      "norm_label": "omni sagt label \u2192 skylight-cli findet element_index \u2192 cua-driver clickt.",
+      "id": "runner_live_agent_rationale_202"
+    },
+    {
+      "label": "Der komplette Live-Agent: Auge \u2192 Hirn \u2192 Hand in Echtzeit.",
+      "file_type": "rationale",
+      "source_file": "runner/live_agent.py",
+      "source_location": "L226",
+      "community": 48,
+      "norm_label": "der komplette live-agent: auge \u2192 hirn \u2192 hand in echtzeit.",
+      "id": "runner_live_agent_rationale_226"
+    },
+    {
+      "label": "Live-Loop: Nur \u00c4nderungen verarbeiten, sonst nichts tun.",
+      "file_type": "rationale",
+      "source_file": "runner/live_agent.py",
+      "source_location": "L237",
+      "community": 49,
+      "norm_label": "live-loop: nur anderungen verarbeiten, sonst nichts tun.",
+      "id": "runner_live_agent_rationale_237"
     },
     {
       "label": "F\u00fchrt Aktionen aus basierend auf Omni-Entscheidungen.",
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L155",
-      "community": 39,
+      "community": 50,
       "norm_label": "fuhrt aktionen aus basierend auf omni-entscheidungen.",
       "id": "runner_live_agent_rationale_155"
     },
@@ -4643,7 +4733,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L161",
-      "community": 40,
+      "community": 51,
       "norm_label": "cua-driver click per koordinate (vision-gesteuert, nicht geraten!).",
       "id": "runner_live_agent_rationale_161"
     },
@@ -4652,7 +4742,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L166",
-      "community": 41,
+      "community": 52,
       "norm_label": "cua-driver click per element-index (popup-sicher).",
       "id": "runner_live_agent_rationale_166"
     },
@@ -4661,7 +4751,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L171",
-      "community": 42,
+      "community": 53,
       "norm_label": "cua-driver set_value fur texteingabe.",
       "id": "runner_live_agent_rationale_171"
     },
@@ -4670,7 +4760,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_agent.py",
       "source_location": "L189",
-      "community": 43,
+      "community": 54,
       "norm_label": "live-loop: nur anderungen verarbeiten, sonst nichts tun.",
       "id": "runner_live_agent_rationale_189"
     },
@@ -4679,7 +4769,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L60",
-      "community": 44,
+      "community": 55,
       "norm_label": "phase 1: repo bis auf letzten millimeter scannen.",
       "id": "runner_doctor_cli_rationale_60"
     },
@@ -4688,7 +4778,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L112",
-      "community": 45,
+      "community": 56,
       "norm_label": "phase 2: analysieren \u2013 fehler finden, qualitat prufen.",
       "id": "runner_doctor_cli_rationale_112"
     },
@@ -4697,7 +4787,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L194",
-      "community": 46,
+      "community": 57,
       "norm_label": "phase 3: fehlende dokumente generieren (nur bei genug daten).",
       "id": "runner_doctor_cli_rationale_194"
     },
@@ -4706,7 +4796,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L58",
-      "community": 47,
+      "community": 58,
       "norm_label": "der doktor \u2013 scannt, findet, fixrt, committed.",
       "id": "runner_doctor_cli_rationale_58"
     },
@@ -4715,7 +4805,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L66",
-      "community": 48,
+      "community": 59,
       "norm_label": "hauptlauf: alle repos \u2192 alle lenses \u2192 fixen \u2192 report.",
       "id": "runner_doctor_cli_rationale_66"
     },
@@ -4724,7 +4814,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L91",
-      "community": 49,
+      "community": 60,
       "norm_label": "lens 1: finde + fixe veraltete claims in allen .md dateien.",
       "id": "runner_doctor_cli_rationale_91"
     },
@@ -4733,7 +4823,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L125",
-      "community": 50,
+      "community": 61,
       "norm_label": "lens 6: finde api-keys + passwoerter in docs.",
       "id": "runner_doctor_cli_rationale_125"
     },
@@ -4742,7 +4832,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L165",
-      "community": 51,
+      "community": 62,
       "norm_label": "lens 4: prufe welche sota docs fehlen.",
       "id": "runner_doctor_cli_rationale_165"
     },
@@ -4751,7 +4841,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L184",
-      "community": 52,
+      "community": 63,
       "norm_label": "lens 2: finde defekte links via md-dead-link-check (wenn installiert).",
       "id": "runner_doctor_cli_rationale_184"
     },
@@ -4760,7 +4850,7 @@
       "file_type": "rationale",
       "source_file": "runner/doctor_cli.py",
       "source_location": "L196",
-      "community": 53,
+      "community": 64,
       "norm_label": "commit + push in allen repos.",
       "id": "runner_doctor_cli_rationale_196"
     },
@@ -4769,7 +4859,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_omni_monitor.py",
       "source_location": "L278",
-      "community": 54,
+      "community": 65,
       "norm_label": "hybrid loop: screenshot (schnell) + video (alle 5 schritte temporal).",
       "id": "runner_live_omni_monitor_rationale_278"
     },
@@ -4778,7 +4868,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_omni_monitor.py",
       "source_location": "L258",
-      "community": 55,
+      "community": 66,
       "norm_label": "hybrid loop: screenshot (schnell) + video (alle 5 schritte temporal).",
       "id": "runner_live_omni_monitor_rationale_258"
     }
@@ -7188,7 +7278,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L21",
+      "source_location": "L24",
       "weight": 1.0,
       "_src": "runner_live_agent_py",
       "_tgt": "runner_live_agent_retina",
@@ -7200,19 +7290,19 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L106",
+      "source_location": "L82",
       "weight": 1.0,
       "_src": "runner_live_agent_py",
-      "_tgt": "runner_live_agent_visualcortex",
+      "_tgt": "runner_live_agent_cortex",
       "source": "runner_live_agent_py",
-      "target": "runner_live_agent_visualcortex",
+      "target": "runner_live_agent_cortex",
       "confidence_score": 1.0
     },
     {
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L155",
+      "source_location": "L122",
       "weight": 1.0,
       "_src": "runner_live_agent_py",
       "_tgt": "runner_live_agent_hands",
@@ -7224,7 +7314,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L225",
+      "source_location": "L187",
       "weight": 1.0,
       "_src": "runner_live_agent_py",
       "_tgt": "runner_live_agent_liveomniagent",
@@ -7236,7 +7326,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L24",
+      "source_location": "L27",
       "weight": 1.0,
       "_src": "runner_live_agent_retina",
       "_tgt": "runner_live_agent_retina_init",
@@ -7248,12 +7338,12 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L29",
+      "source_location": "L33",
       "weight": 1.0,
       "_src": "runner_live_agent_retina",
-      "_tgt": "runner_live_agent_retina_capture",
+      "_tgt": "runner_live_agent_retina_snap",
       "source": "runner_live_agent_retina",
-      "target": "runner_live_agent_retina_capture",
+      "target": "runner_live_agent_retina_snap",
       "confidence_score": 1.0
     },
     {
@@ -7261,18 +7351,6 @@
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
       "source_location": "L47",
-      "weight": 1.0,
-      "_src": "runner_live_agent_retina",
-      "_tgt": "runner_live_agent_retina_frame_from_file",
-      "source": "runner_live_agent_retina",
-      "target": "runner_live_agent_retina_frame_from_file",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "method",
-      "confidence": "EXTRACTED",
-      "source_file": "runner/live_agent.py",
-      "source_location": "L54",
       "weight": 1.0,
       "_src": "runner_live_agent_retina",
       "_tgt": "runner_live_agent_retina_diff",
@@ -7284,31 +7362,31 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L93",
+      "source_location": "L73",
       "weight": 1.0,
       "_src": "runner_live_agent_retina",
-      "_tgt": "runner_live_agent_retina_region_to_b64",
+      "_tgt": "runner_live_agent_retina_to_b64",
       "source": "runner_live_agent_retina",
-      "target": "runner_live_agent_retina_region_to_b64",
+      "target": "runner_live_agent_retina_to_b64",
       "confidence_score": 1.0
     },
     {
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L99",
+      "source_location": "L77",
       "weight": 1.0,
       "_src": "runner_live_agent_retina",
-      "_tgt": "runner_live_agent_retina_full_frame_b64",
+      "_tgt": "runner_live_agent_retina_full_b64",
       "source": "runner_live_agent_retina",
-      "target": "runner_live_agent_retina_full_frame_b64",
+      "target": "runner_live_agent_retina_full_b64",
       "confidence_score": 1.0
     },
     {
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L229",
+      "source_location": "L191",
       "weight": 1.0,
       "_src": "runner_live_agent_liveomniagent_init",
       "_tgt": "runner_live_agent_retina",
@@ -7320,59 +7398,59 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L22",
+      "source_location": "L25",
       "weight": 1.0,
-      "_src": "runner_live_agent_rationale_22",
+      "_src": "runner_live_agent_rationale_25",
       "_tgt": "runner_live_agent_retina",
       "source": "runner_live_agent_retina",
-      "target": "runner_live_agent_rationale_22",
+      "target": "runner_live_agent_rationale_25",
       "confidence_score": 1.0
     },
     {
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L248",
+      "source_location": "L220",
       "weight": 1.0,
       "_src": "runner_live_agent_liveomniagent_run",
-      "_tgt": "runner_live_agent_retina_capture",
-      "source": "runner_live_agent_retina_capture",
+      "_tgt": "runner_live_agent_retina_snap",
+      "source": "runner_live_agent_retina_snap",
       "target": "runner_live_agent_liveomniagent_run",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "confidence": "EXTRACTED",
-      "source_file": "runner/live_agent.py",
-      "source_location": "L40",
-      "weight": 1.0,
-      "_src": "runner_live_agent_retina_capture",
-      "_tgt": "runner_live_agent_retina_frame_from_file",
-      "source": "runner_live_agent_retina_capture",
-      "target": "runner_live_agent_retina_frame_from_file",
       "confidence_score": 1.0
     },
     {
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L30",
+      "source_location": "L34",
       "weight": 1.0,
-      "_src": "runner_live_agent_rationale_30",
-      "_tgt": "runner_live_agent_retina_capture",
-      "source": "runner_live_agent_retina_capture",
-      "target": "runner_live_agent_rationale_30",
+      "_src": "runner_live_agent_rationale_34",
+      "_tgt": "runner_live_agent_retina_snap",
+      "source": "runner_live_agent_retina_snap",
+      "target": "runner_live_agent_rationale_34",
       "confidence_score": 1.0
     },
     {
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L49",
+      "source_location": "L71",
       "weight": 1.0,
-      "_src": "runner_live_agent_retina_frame_from_file",
-      "_tgt": "runner_live_agent_liveomniagent_run",
-      "source": "runner_live_agent_retina_frame_from_file",
+      "_src": "runner_live_agent_retina_diff",
+      "_tgt": "runner_live_agent_retina_to_b64",
+      "source": "runner_live_agent_retina_diff",
+      "target": "runner_live_agent_retina_to_b64",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/live_agent.py",
+      "source_location": "L221",
+      "weight": 1.0,
+      "_src": "runner_live_agent_liveomniagent_run",
+      "_tgt": "runner_live_agent_retina_diff",
+      "source": "runner_live_agent_retina_diff",
       "target": "runner_live_agent_liveomniagent_run",
       "confidence_score": 1.0
     },
@@ -7383,92 +7461,44 @@
       "source_location": "L48",
       "weight": 1.0,
       "_src": "runner_live_agent_rationale_48",
-      "_tgt": "runner_live_agent_retina_frame_from_file",
-      "source": "runner_live_agent_retina_frame_from_file",
+      "_tgt": "runner_live_agent_retina_diff",
+      "source": "runner_live_agent_retina_diff",
       "target": "runner_live_agent_rationale_48",
       "confidence_score": 1.0
     },
     {
-      "relation": "calls",
+      "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L90",
+      "source_location": "L85",
       "weight": 1.0,
-      "_src": "runner_live_agent_retina_diff",
-      "_tgt": "runner_live_agent_retina_region_to_b64",
-      "source": "runner_live_agent_retina_diff",
-      "target": "runner_live_agent_retina_region_to_b64",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "confidence": "EXTRACTED",
-      "source_file": "runner/live_agent.py",
-      "source_location": "L249",
-      "weight": 1.0,
-      "_src": "runner_live_agent_liveomniagent_run",
-      "_tgt": "runner_live_agent_retina_diff",
-      "source": "runner_live_agent_retina_diff",
-      "target": "runner_live_agent_liveomniagent_run",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "rationale_for",
-      "confidence": "EXTRACTED",
-      "source_file": "runner/live_agent.py",
-      "source_location": "L55",
-      "weight": 1.0,
-      "_src": "runner_live_agent_rationale_55",
-      "_tgt": "runner_live_agent_retina_diff",
-      "source": "runner_live_agent_retina_diff",
-      "target": "runner_live_agent_rationale_55",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "confidence": "EXTRACTED",
-      "source_file": "runner/live_agent.py",
-      "source_location": "L258",
-      "weight": 1.0,
-      "_src": "runner_live_agent_liveomniagent_run",
-      "_tgt": "runner_live_agent_retina_full_frame_b64",
-      "source": "runner_live_agent_retina_full_frame_b64",
-      "target": "runner_live_agent_liveomniagent_run",
+      "_src": "runner_live_agent_cortex",
+      "_tgt": "runner_live_agent_cortex_init",
+      "source": "runner_live_agent_cortex",
+      "target": "runner_live_agent_cortex_init",
       "confidence_score": 1.0
     },
     {
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L109",
+      "source_location": "L89",
       "weight": 1.0,
-      "_src": "runner_live_agent_visualcortex",
-      "_tgt": "runner_live_agent_visualcortex_init",
-      "source": "runner_live_agent_visualcortex",
-      "target": "runner_live_agent_visualcortex_init",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "method",
-      "confidence": "EXTRACTED",
-      "source_file": "runner/live_agent.py",
-      "source_location": "L112",
-      "weight": 1.0,
-      "_src": "runner_live_agent_visualcortex",
-      "_tgt": "runner_live_agent_visualcortex_analyze_change",
-      "source": "runner_live_agent_visualcortex",
-      "target": "runner_live_agent_visualcortex_analyze_change",
+      "_src": "runner_live_agent_cortex",
+      "_tgt": "runner_live_agent_cortex_analyze",
+      "source": "runner_live_agent_cortex",
+      "target": "runner_live_agent_cortex_analyze",
       "confidence_score": 1.0
     },
     {
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L230",
+      "source_location": "L192",
       "weight": 1.0,
       "_src": "runner_live_agent_liveomniagent_init",
-      "_tgt": "runner_live_agent_visualcortex",
-      "source": "runner_live_agent_visualcortex",
+      "_tgt": "runner_live_agent_cortex",
+      "source": "runner_live_agent_cortex",
       "target": "runner_live_agent_liveomniagent_init",
       "confidence_score": 1.0
     },
@@ -7476,23 +7506,23 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L107",
+      "source_location": "L83",
       "weight": 1.0,
-      "_src": "runner_live_agent_rationale_107",
-      "_tgt": "runner_live_agent_visualcortex",
-      "source": "runner_live_agent_visualcortex",
-      "target": "runner_live_agent_rationale_107",
+      "_src": "runner_live_agent_rationale_83",
+      "_tgt": "runner_live_agent_cortex",
+      "source": "runner_live_agent_cortex",
+      "target": "runner_live_agent_rationale_83",
       "confidence_score": 1.0
     },
     {
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L259",
+      "source_location": "L227",
       "weight": 1.0,
       "_src": "runner_live_agent_liveomniagent_run",
-      "_tgt": "runner_live_agent_visualcortex_analyze_change",
-      "source": "runner_live_agent_visualcortex_analyze_change",
+      "_tgt": "runner_live_agent_cortex_analyze",
+      "source": "runner_live_agent_cortex_analyze",
       "target": "runner_live_agent_liveomniagent_run",
       "confidence_score": 1.0
     },
@@ -7500,19 +7530,19 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L113",
+      "source_location": "L90",
       "weight": 1.0,
-      "_src": "runner_live_agent_rationale_113",
-      "_tgt": "runner_live_agent_visualcortex_analyze_change",
-      "source": "runner_live_agent_visualcortex_analyze_change",
-      "target": "runner_live_agent_rationale_113",
+      "_src": "runner_live_agent_rationale_90",
+      "_tgt": "runner_live_agent_cortex_analyze",
+      "source": "runner_live_agent_cortex_analyze",
+      "target": "runner_live_agent_rationale_90",
       "confidence_score": 1.0
     },
     {
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L158",
+      "source_location": "L125",
       "weight": 1.0,
       "_src": "runner_live_agent_hands",
       "_tgt": "runner_live_agent_hands_init",
@@ -7524,43 +7554,43 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L161",
+      "source_location": "L128",
       "weight": 1.0,
       "_src": "runner_live_agent_hands",
-      "_tgt": "runner_live_agent_hands_find_element",
+      "_tgt": "runner_live_agent_hands_find_anywhere",
       "source": "runner_live_agent_hands",
-      "target": "runner_live_agent_hands_find_element",
+      "target": "runner_live_agent_hands_find_anywhere",
       "confidence_score": 1.0
     },
     {
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L177",
+      "source_location": "L158",
       "weight": 1.0,
       "_src": "runner_live_agent_hands",
-      "_tgt": "runner_live_agent_hands_find_element_with_window",
+      "_tgt": "runner_live_agent_hands_click",
       "source": "runner_live_agent_hands",
-      "target": "runner_live_agent_hands_find_element_with_window",
+      "target": "runner_live_agent_hands_click",
       "confidence_score": 1.0
     },
     {
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L201",
+      "source_location": "L173",
       "weight": 1.0,
       "_src": "runner_live_agent_hands",
-      "_tgt": "runner_live_agent_hands_click_by_label",
+      "_tgt": "runner_live_agent_hands_type_text",
       "source": "runner_live_agent_hands",
-      "target": "runner_live_agent_hands_click_by_label",
+      "target": "runner_live_agent_hands_type_text",
       "confidence_score": 1.0
     },
     {
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L231",
+      "source_location": "L193",
       "weight": 1.0,
       "_src": "runner_live_agent_liveomniagent_init",
       "_tgt": "runner_live_agent_hands",
@@ -7572,59 +7602,23 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L156",
+      "source_location": "L123",
       "weight": 1.0,
-      "_src": "runner_live_agent_rationale_156",
+      "_src": "runner_live_agent_rationale_123",
       "_tgt": "runner_live_agent_hands",
       "source": "runner_live_agent_hands",
-      "target": "runner_live_agent_rationale_156",
+      "target": "runner_live_agent_rationale_123",
       "confidence_score": 1.0
     },
     {
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L273",
+      "source_location": "L132",
       "weight": 1.0,
-      "_src": "runner_live_agent_liveomniagent_run",
-      "_tgt": "runner_live_agent_hands_find_element",
-      "source": "runner_live_agent_hands_find_element",
-      "target": "runner_live_agent_liveomniagent_run",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "confidence": "EXTRACTED",
-      "source_file": "runner/live_agent.py",
-      "source_location": "L214",
-      "weight": 1.0,
-      "_src": "runner_live_agent_hands_click_by_label",
-      "_tgt": "runner_live_agent_hands_find_element",
-      "source": "runner_live_agent_hands_find_element",
-      "target": "runner_live_agent_hands_click_by_label",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "rationale_for",
-      "confidence": "EXTRACTED",
-      "source_file": "runner/live_agent.py",
-      "source_location": "L162",
-      "weight": 1.0,
-      "_src": "runner_live_agent_rationale_162",
-      "_tgt": "runner_live_agent_hands_find_element",
-      "source": "runner_live_agent_hands_find_element",
-      "target": "runner_live_agent_rationale_162",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "calls",
-      "confidence": "EXTRACTED",
-      "source_file": "runner/live_agent.py",
-      "source_location": "L179",
-      "weight": 1.0,
-      "_src": "runner_live_agent_hands_find_element_with_window",
+      "_src": "runner_live_agent_hands_find_anywhere",
       "_tgt": "runner_live_agent_liveomniagent_run",
-      "source": "runner_live_agent_hands_find_element_with_window",
+      "source": "runner_live_agent_hands_find_anywhere",
       "target": "runner_live_agent_liveomniagent_run",
       "confidence_score": 1.0
     },
@@ -7632,35 +7626,47 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L204",
+      "source_location": "L160",
       "weight": 1.0,
-      "_src": "runner_live_agent_hands_click_by_label",
-      "_tgt": "runner_live_agent_hands_find_element_with_window",
-      "source": "runner_live_agent_hands_find_element_with_window",
-      "target": "runner_live_agent_hands_click_by_label",
-      "confidence_score": 1.0
-    },
-    {
-      "relation": "rationale_for",
-      "confidence": "EXTRACTED",
-      "source_file": "runner/live_agent.py",
-      "source_location": "L178",
-      "weight": 1.0,
-      "_src": "runner_live_agent_rationale_178",
-      "_tgt": "runner_live_agent_hands_find_element_with_window",
-      "source": "runner_live_agent_hands_find_element_with_window",
-      "target": "runner_live_agent_rationale_178",
+      "_src": "runner_live_agent_hands_click",
+      "_tgt": "runner_live_agent_hands_find_anywhere",
+      "source": "runner_live_agent_hands_find_anywhere",
+      "target": "runner_live_agent_hands_click",
       "confidence_score": 1.0
     },
     {
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L268",
+      "source_location": "L175",
+      "weight": 1.0,
+      "_src": "runner_live_agent_hands_type_text",
+      "_tgt": "runner_live_agent_hands_find_anywhere",
+      "source": "runner_live_agent_hands_find_anywhere",
+      "target": "runner_live_agent_hands_type_text",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/live_agent.py",
+      "source_location": "L129",
+      "weight": 1.0,
+      "_src": "runner_live_agent_rationale_129",
+      "_tgt": "runner_live_agent_hands_find_anywhere",
+      "source": "runner_live_agent_hands_find_anywhere",
+      "target": "runner_live_agent_rationale_129",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/live_agent.py",
+      "source_location": "L236",
       "weight": 1.0,
       "_src": "runner_live_agent_liveomniagent_run",
-      "_tgt": "runner_live_agent_hands_click_by_label",
-      "source": "runner_live_agent_hands_click_by_label",
+      "_tgt": "runner_live_agent_hands_click",
+      "source": "runner_live_agent_hands_click",
       "target": "runner_live_agent_liveomniagent_run",
       "confidence_score": 1.0
     },
@@ -7668,19 +7674,43 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L202",
+      "source_location": "L159",
       "weight": 1.0,
-      "_src": "runner_live_agent_rationale_202",
-      "_tgt": "runner_live_agent_hands_click_by_label",
-      "source": "runner_live_agent_hands_click_by_label",
-      "target": "runner_live_agent_rationale_202",
+      "_src": "runner_live_agent_rationale_159",
+      "_tgt": "runner_live_agent_hands_click",
+      "source": "runner_live_agent_hands_click",
+      "target": "runner_live_agent_rationale_159",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/live_agent.py",
+      "source_location": "L242",
+      "weight": 1.0,
+      "_src": "runner_live_agent_liveomniagent_run",
+      "_tgt": "runner_live_agent_hands_type_text",
+      "source": "runner_live_agent_hands_type_text",
+      "target": "runner_live_agent_liveomniagent_run",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/live_agent.py",
+      "source_location": "L174",
+      "weight": 1.0,
+      "_src": "runner_live_agent_rationale_174",
+      "_tgt": "runner_live_agent_hands_type_text",
+      "source": "runner_live_agent_hands_type_text",
+      "target": "runner_live_agent_rationale_174",
       "confidence_score": 1.0
     },
     {
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L228",
+      "source_location": "L190",
       "weight": 1.0,
       "_src": "runner_live_agent_liveomniagent",
       "_tgt": "runner_live_agent_liveomniagent_init",
@@ -7692,7 +7722,31 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L236",
+      "source_location": "L198",
+      "weight": 1.0,
+      "_src": "runner_live_agent_liveomniagent",
+      "_tgt": "runner_live_agent_liveomniagent_start",
+      "source": "runner_live_agent_liveomniagent",
+      "target": "runner_live_agent_liveomniagent_start",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/live_agent.py",
+      "source_location": "L208",
+      "weight": 1.0,
+      "_src": "runner_live_agent_liveomniagent",
+      "_tgt": "runner_live_agent_liveomniagent_stop",
+      "source": "runner_live_agent_liveomniagent",
+      "target": "runner_live_agent_liveomniagent_stop",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/live_agent.py",
+      "source_location": "L211",
       "weight": 1.0,
       "_src": "runner_live_agent_liveomniagent",
       "_tgt": "runner_live_agent_liveomniagent_run",
@@ -7704,24 +7758,36 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L226",
+      "source_location": "L188",
       "weight": 1.0,
-      "_src": "runner_live_agent_rationale_226",
+      "_src": "runner_live_agent_rationale_188",
       "_tgt": "runner_live_agent_liveomniagent",
       "source": "runner_live_agent_liveomniagent",
-      "target": "runner_live_agent_rationale_226",
+      "target": "runner_live_agent_rationale_188",
       "confidence_score": 1.0
     },
     {
-      "relation": "rationale_for",
+      "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_agent.py",
-      "source_location": "L237",
+      "source_location": "L212",
       "weight": 1.0,
-      "_src": "runner_live_agent_rationale_237",
-      "_tgt": "runner_live_agent_liveomniagent_run",
-      "source": "runner_live_agent_liveomniagent_run",
-      "target": "runner_live_agent_rationale_237",
+      "_src": "runner_live_agent_liveomniagent_run",
+      "_tgt": "runner_live_agent_liveomniagent_start",
+      "source": "runner_live_agent_liveomniagent_start",
+      "target": "runner_live_agent_liveomniagent_run",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/live_agent.py",
+      "source_location": "L257",
+      "weight": 1.0,
+      "_src": "runner_live_agent_liveomniagent_run",
+      "_tgt": "runner_live_agent_liveomniagent_stop",
+      "source": "runner_live_agent_liveomniagent_stop",
+      "target": "runner_live_agent_liveomniagent_run",
       "confidence_score": 1.0
     },
     {
