@@ -159,10 +159,56 @@ semgrep --config=.semgrep_rules.yaml .
 # → blockiert Commit wenn BANNED Muster gefunden
 ```
 
+## LIVE EYE v6 – Memory-Ringbuffer + Omni Video
+
+`runner/live_eye.py` ist das **Live-Video-Auge**.
+Es läuft als eigener Prozess und streamt Echtzeit-Video an Nemotron Omni.
+
+### Architektur
+```
+mss capture (3ms, 5 FPS) → Ringbuffer (20 Frames, 4s)
+  → PyAV encode → MP4 (960x540, CRF 28-40)
+  → SSE Streaming → Nemotron Omni → JSON-Entscheidung
+```
+
+### Optimierungen (v7, 2026-05-01)
+1. **PNG→JPEG quality=50** (Zeile 69) → ~80% weniger Payload
+2. **SSE Streaming** (statt blocking POST) → erster Token in <1s
+3. **JSON-enforced Prompt** → strukturierte Antwort statt Prosa-Parsing
+4. **Adaptive FPS via Motion Detection** → CV2 absdiff frame comparison
+5. **Frame-Differencing** → statische Frames überspringen (MSE < 2.0)
+6. **Conv3D num_frames Optimierung** → weniger Tokens bei low motion (4 vs -1)
+7. **CRF Auto-Adjustment** → CRF 28 (motion) / 35 (mid) / 40 (static)
+
+### Motion Detection Details
+| Motion Class | MSE Threshold | CRF | Conv3D num_frames | Frame Skip |
+|-------------|---------------|-----|-------------------|------------|
+| **high**    | > 15.0        | 28  | -1 (auto)         | Nein      |
+| **mid**     | 2.0 - 15.0    | 35  | 8                 | Nein      |
+| **low**     | < 2.0         | 40  | 4                 | ✅ Ja (übersprungen) |
+
+### LiveEye vs LiveOmniMonitor
+| Aspekt | LiveEye (live_eye.py) | LiveOmniMonitor (live_omni_monitor.py) |
+|--------|----------------------|---------------------------------------|
+| Capture | mss (3ms/FPS) | skylight-cli screenshot |
+| Video | PyAV encode → MP4 | screen-follow + ffmpeg |
+| Streaming | ✅ SSE | ✅ SSE |
+| Screenshot | Nein (nur Video) | Ja (alle Steps) |
+| Execute | Nein (nur Analyse) | Ja (skylight click) |
+| JSON Prompt | ✅ v6 | ✅ vorhanden |
+
+### WICHTIG – NICHT VERGESSEN
+- **AKTIVES MODELL**: `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` (Zeile 14 in live_eye.py)
+- **NICHT** `meta/llama-3.2-11b-vision-instruct` (das ist der Legacy-Worker A2A-SIN-Worker-heypiggy)
+- **NICHT** `mistralai/mistral-large-3-675b-instruct-2512` (veralteter mcp_survey_runner.py)
+- **Aktiver Code**: `stealth-runner/runner/live_eye.py` + `live_omni_monitor.py`
+- **Archiviert**: A2A-SIN-Worker-heypiggy (BRAIN.md sagt "ARCHIVIERT")
+
 ## DATEIEN
 
 | Datei                            | Zweck                                      |
 | -------------------------------- | ------------------------------------------ |
+| `runner/live_eye.py`             | Live-Video-Ringbuffer → Omni (v6, SSE)     |
 | `runner/live_omni_monitor.py`    | Rolling Video + Screenshot + SSE Streaming |
 | `runner/nemotron_omni.py`        | OmniClient – Video/Audio/Bild/Text         |
 | `runner/vision_client/core.py`   | Vision-Client Omni-first + Fallback        |

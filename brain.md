@@ -23,6 +23,31 @@
 └──────────────────────────────────────────────────────────────┘
 ```
 
+## LIVE EYE v7 (runner/live_eye.py)
+- **Modell**: `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` (NICHT llama-3.2!)
+- **Capture**: mss (3ms pro Frame, 5 FPS)
+- **Ringbuffer**: 20 Frames (4 Sekunden), KEIN Disk I/O
+- **Video**: PyAV encode → MP4 (960x540, CRF 28-40 dynamisch)
+- **API**: httpx SSE Streaming → NVIDIA NIM (first token <1s)
+- **Optimierungen v6**: JPEG q=50, SSE Streaming, JSON-enforced Prompt
+- **Optimierungen v7**: Adaptive FPS, Frame-Differencing, Conv3D Optimierung, CRF Auto-Adjust
+- **Motion Detection**: MSE via cv2.absdiff → low/mid/high classes
+- **Frame Skip**: Statische Frames (MSE < 2.0) werden übersprungen
+- **CRF Dymanik**: CRF 28 (Bewegung) / 35 (normal) / 40 (Stillstand)
+- **Conv3D num_frames**: -1 (Bewegung) / 8 (normal) / 4 (Stillstand)
+- **Kein Execute** – reine Analyse, Entscheidung wird zurückgegeben
+
+## LIVE OMNI MONITOR (runner/live_omni_monitor.py)
+- **Hybrid**: Screenshot (schnell, jeder Step) + Rolling Video (alle 5 Steps)
+- **Streaming**: SSE tokenweise Antwort
+- **Execute**: skylight-cli click/type per element-index
+- **JSON Prompt**: Output ONLY JSON Format
+
+## AKTIVE CODEBASIS (NICHT VERGESSEN!)
+- **AKTIV**: `stealth-runner` (runner/live_eye.py, runner/live_omni_monitor.py)
+- **ARCHIVIERT**: `A2A-SIN-Worker-heypiggy` (BRAIN.md sagt "ARCHIVIERT")
+- **VERALTET**: `mcp_survey_runner.py` (Mistral, kein Nemotron)
+
 ## Wichtige Erkenntnisse
 - **cua-driver** hat `get_window_state` mit `--window-id` → zeigt NUR Elemente im Popup
 - **`click --pid --window-id --element-index`** → klickt GARANTIERT im richtigen Fenster

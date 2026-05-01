@@ -112,8 +112,18 @@ class LiveOmniMonitor:
 
     def capture_frame(self) -> ScreenFrame:
         ts = time.time()
-        out = TMP / f"omni_frame_{int(ts)}.png"
-        self._run_skylight(["screenshot", "--pid", str(self.pid), "--mode", "som", "--output", str(out)])
+        png_path = TMP / f"omni_frame_{int(ts)}.png"
+        self._run_skylight(["screenshot", "--pid", str(self.pid), "--mode", "som", "--output", str(png_path)])
+        # PNG → JPEG quality=50: ~80% weniger Payload bei gleicher Erkennungsqualität
+        jpg_path = TMP / f"omni_frame_{int(ts)}.jpg"
+        try:
+            from PIL import Image
+            img = Image.open(png_path).convert("RGB")
+            img.save(jpg_path, format="JPEG", quality=50)
+            png_path.unlink(missing_ok=True)
+            out = jpg_path
+        except Exception:
+            out = png_path  # Fallback auf PNG wenn PIL fehlt
         self._frame_count += 1
         if self.debug:
             print(f"📸 Frame {self._frame_count}: {out.name}", flush=True)
