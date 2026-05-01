@@ -1,33 +1,34 @@
-# BANNED.md - Gescheiterte Methoden
+# BANNED.md - Gescheiterte Methoden (Architektur-Regeln)
 
-## ❌ BANNED - NIE WIEDER NUTZEN:
+## ❌ BANNED (blockiert durch semgrep pre-commit)
 
-### 1. webauto-nodriver MCP
-- **Problem**: CDP-basiertes Tool das falschen Chrome-Prozess nutzt
-- **Bug**: Konflikt mit Nutzer-Chrome, Profil-Sperre, kein skylight-cli
-- **Status**: ❌ BANNED (permanent)
+| Regel | Muster | Warum |
+|-------|--------|-------|
+| `banned-chrome-pgrep` | `pgrep Chrome` | Greift Nutzer-Chrome statt isolierte Instanz |
+| `banned-chrome-open` | `open -na "Google Chrome"` | Manipuliert Nutzer-Browser |
+| `banned-pkill-chrome` | `pkill Chrome` | Killt Nutzer-Prozesse, Datenverlust |
+| `banned-pyautogui` | `import pyautogui` | Bewegt Nutzer-Maus |
+| `banned-pynput` | `import pynput` | Bewegt Nutzer-Maus |
+| `banned-openai-client` | `from openai import` | Nur httpx direkt an NVIDIA NIM |
+| `banned-coordinates-click` | `skylight-cli click --x` | Koordinaten raten → Apple-Menü (0,0) |
+| `banned-webauto-nodriver` | webauto-nodriver | Profil-Konflikt, falscher Chrome |
+| `banned-recovery-mode` | `recovery_mode: true` | Omni macht ALLE Entscheidungen |
+| `mandatory-playstealth-launch` | Chrome direkt starten | Muss via `playstealth launch` |
 
-### 2. Mausbewegung auf Host-System
-- **Problem**: Bewegt die Maus des Nutzers
-- **Bug**: Apple-Logo geklickt, Nutzer gestört
-- **Status**: ❌ BANNED
+## ✅ EINZIG FUNKTIONIERENDE METHODE
 
-### 3. Chrome-Prozesse killen
-- **Problem**: Killt wichtige Chrome-Prozesse des Nutzers
-- **Bug**: Datenverlust, laufende Arbeit zerstört
-- **Status**: ❌ BANNED
+```bash
+# 1. Chrome starten
+playstealth launch --url 'https://heypiggy.com/?page=dashboard'
 
-### 4. Skylight-CLI in falsches Fenster
-- **Problem**: PID zeigt auf fremdes/abgestürztes Fenster
-- **Bug**: window_not_found, falsche Element-Indizes
-- **Status**: ❌ BANNED
+# 2. Vision (Nemotron Omni)
+#    model: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning
+#    endpoint: https://integrate.api.nvidia.com/v1/chat/completions
 
-## ✅ EINZIG FUNKTIONIERENDE METHODE:
+# 3. Interaktion (nur skylight-cli)
+skylight-cli click --pid <PID> --element-index <N>
+skylight-cli type --pid <PID> --element-index <N> --text "wert"
 
-### skylight-cli mit playstealth launch
-- **Befehl**: `playstealth launch --url 'https://heypiggy.com/?page=dashboard'`
-- **Ergebnis**: Isolierte Chrome-Instanz mit eigener PID
-- **Interaktion**: `skylight-cli click --pid <PID> --element-index <N>`
-- **Vorteile**: AXFrame-Koordinaten absolut, kein Raten, keinen Nutzer-Chrome gestört
-- **Screen-Recognition**: `unmask-cli` + `screen-follow` da Modell keine Bilder sieht
-- **Status**: ✅ NUR DAS NUTZEN!
+# 4. Live Monitor (Rolling Video + SSE)
+LiveOmniMonitor → capture → Omni → execute → loop
+```

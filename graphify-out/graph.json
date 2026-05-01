@@ -1682,9 +1682,9 @@
       "file_type": "rationale",
       "source_file": "runner/live_omni_monitor.py",
       "source_location": "L278",
-      "id": "runner_live_omni_monitor_rationale_278",
       "community": 2,
-      "norm_label": "hybrid loop: screenshot (schnell) + video (alle 5 schritte temporal)."
+      "norm_label": "hybrid loop: screenshot (schnell) + video (alle 5 schritte temporal).",
+      "id": "runner_live_omni_monitor_rationale_278"
     },
     {
       "label": "tls_fingerprint.py",

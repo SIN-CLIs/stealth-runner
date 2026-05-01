@@ -1,18 +1,51 @@
-# fix.md - Bekannte Bugs & Fixes
+# fix.md - Bekannte Bugs & Fixes (2026-05-01)
 
 ## Gefixt
-- [x] BANNED.md korrigiert (skylight-cli ist OK, webauto-nodriver ist BANNED)
-- [x] playstealth launch funktioniert (isoliertes Chrome)
-- [x] Google Login Popup öffnet korrekt via skylight-cli element-index
+
+### P0: Model-Name doppelter Prefix → 404
+- **Bug**: `nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`
+- **Fix**: `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`
+- **Dateien**: `config/vision_models.yaml`, `runner/nemotron_omni.py`, `runner/live_omni_monitor.py`
+- **Status**: ✅ HTTP 200, SSE funktioniert
+
+### P0: SkylightDriver TypeError
+- **Bug**: `SkylightDriver.__init__() missing 1 required positional argument: 'pid'`
+- **Fix**: pid optional gemacht (default None)
+- **Datei**: `runner/drivers/skylight.py`
+- **Status**: ✅
+
+### P0: vision_client/core.py dead code
+- **Bug**: `_load_config()` wurde nie aufgerufen (nach return)
+- **Fix**: In `__init__` verschoben
+- **Datei**: `runner/vision_client/core.py`
+- **Status**: ✅
+
+### P1: cli/heypiggy-login nutzte osascript
+- **Bug**: `osascript -e 'tell app "Google Chrome"...'` manipuliert Nutzer-Chrome
+- **Fix**: Nur skylight-cli, PID als Argument
+- **Datei**: `cli/heypiggy-login`
+- **Status**: ✅
+
+### P1: safe_click.py IndexError
+- **Bug**: `PID = int(sys.argv[1])` ohne argv[1] → IndexError
+- **Fix**: main()-Wrapper mit Fehlerbehandlung
+- **Datei**: `runner/safe_click.py`
+- **Status**: ✅
 
 ## Offene Bugs
 - [ ] Dieses Modell (deepseek-v4-pro) kann keine Screenshots sehen
-  - Fix: unmask-cli + screen-follow für Screen-Erkennung nutzen
-- [ ] Nach Google Weiter → Passwort-Seite noch nicht automatisiert
+  - Workaround: OmniVision (Nemotron) + screen-follow
+- [ ] Google Login Passwort-Seite noch nicht automatisiert
+  - Nach Weiter-Klick muss Passwort-Feld identifiziert werden
 - [ ] Survey-Loop nach Login noch nicht getestet
+  - OmniSurveyRunner ist bereit, aber ungetestet
 
-## NIE TUN
-- ❌ webauto-nodriver MCP (falscher Chrome, Profil-Konflikt)
-- ❌ `--x`/`--y` Koordinaten raten (Apple-Menü bei 0,0!)
-- ❌ Fenster-Position mit Element-Position addieren (AX-Frame ist ABSOLUT)
-- ❌ Chrome-Prozesse des Nutzers killen
+## NIE TUN (semgrep blockiert)
+- ❌ `pgrep Chrome` / `pkill Chrome` / `open -na "Google Chrome"`
+- ❌ `import pyautogui` / `import pynput`
+- ❌ `from openai import` / `import openai`
+- ❌ `skylight-cli click --x ...` (Koordinaten)
+- ❌ webauto-nodriver MCP
+- ❌ Nutzer-Chrome manipulieren
+- ❌ Ohne Primer klicken
+- ❌ `recovery_mode: true`

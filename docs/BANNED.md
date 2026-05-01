@@ -1,28 +1,34 @@
-# BANNED.md - Gescheiterte Methoden
+# BANNED.md - Gescheiterte Methoden (Architektur-Regeln)
 
-## ❌ BANNED - NIE WIEDER NUTZEN:
+## ❌ BANNED (blockiert durch semgrep pre-commit)
 
-### 1. webauto-nodriver MCP
-- **Problem**: CDP-basiertes Tool, Profil-Konflikt, falscher Chrome
-- **Status**: ❌ BANNED (permanent)
+| Regel | Muster | Warum |
+|-------|--------|-------|
+| `banned-chrome-pgrep` | `pgrep Chrome` | Greift Nutzer-Chrome statt isolierte Instanz |
+| `banned-chrome-open` | `open -na "Google Chrome"` | Manipuliert Nutzer-Browser |
+| `banned-pkill-chrome` | `pkill Chrome` | Killt Nutzer-Prozesse, Datenverlust |
+| `banned-pyautogui` | `import pyautogui` | Bewegt Nutzer-Maus |
+| `banned-pynput` | `import pynput` | Bewegt Nutzer-Maus |
+| `banned-openai-client` | `from openai import` | Nur httpx direkt an NVIDIA NIM |
+| `banned-coordinates-click` | `skylight-cli click --x` | Koordinaten raten → Apple-Menü (0,0) |
+| `banned-webauto-nodriver` | webauto-nodriver | Profil-Konflikt, falscher Chrome |
+| `banned-recovery-mode` | `recovery_mode: true` | Omni macht ALLE Entscheidungen |
+| `mandatory-playstealth-launch` | Chrome direkt starten | Muss via `playstealth launch` |
 
-### 2. Mausbewegung auf Host-System
-- **Problem**: Bewegt die Maus des Nutzers (Apple-Logo geklickt)
-- **Status**: ❌ BANNED
+## ✅ EINZIG FUNKTIONIERENDE METHODE
 
-### 3. Chrome-Prozesse killen
-- **Problem**: Killt wichtige Chrome-Prozesse des Nutzers
-- **Status**: ❌ BANNED
+```bash
+# 1. Chrome starten
+playstealth launch --url 'https://heypiggy.com/?page=dashboard'
 
-### 4. Skylight-CLI in falsches Fenster
-- **Problem**: PID zeigt auf fremdes/abgestürztes Fenster
-- **Status**: ❌ BANNED
+# 2. Vision (Nemotron Omni)
+#    model: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning
+#    endpoint: https://integrate.api.nvidia.com/v1/chat/completions
 
-## ✅ EINZIG FUNKTIONIERENDE METHODE:
+# 3. Interaktion (nur skylight-cli)
+skylight-cli click --pid <PID> --element-index <N>
+skylight-cli type --pid <PID> --element-index <N> --text "wert"
 
-### skylight-cli mit playstealth launch + Nemotron Omni Vision
-- **Befehl**: `playstealth launch --url 'https://heypiggy.com/?page=dashboard'`
-- **Interaktion**: `skylight-cli click --pid <PID> --element-index <N>`
-- **Vision**: Nemotron 3 Nano Omni (Video+Audio+Bild+Text, 9× effizienter)
-- **Multi-Frame**: Letzte 2-5 Screenshots werden analysiert
-- **Status**: ✅ NUR DAS NUTZEN
+# 4. Live Monitor (Rolling Video + SSE)
+LiveOmniMonitor → capture → Omni → execute → loop
+```
