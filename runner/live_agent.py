@@ -12,6 +12,8 @@ from io import BytesIO
 from pathlib import Path
 from typing import Callable
 import httpx
+import cv2
+import mss
 import numpy as np
 from PIL import Image
 
@@ -32,39 +34,58 @@ class MotionCommand:
 
 
 class Retina:
-    """Pixel-Diff: nur veränderte Pixel erkennen, 95% Reduktion."""
+    """
+    Pixel-Diff via mss + OpenCV. Wie menschliche Netzhaut:
+    - mss: 2-8ms Capture (vs 50ms skylight-cli)
+    - OpenCV: robuste Diff-Erkennung + Kontur-Analyse
+    - ROI-Extraktion nur bei signifikanten Changes
+    """
 
     def __init__(self, threshold: float = 3.0):
         self.threshold = threshold
-        self.last_frame: np.ndarray | None = None
-        self._last_bounds = (0, 0, 0, 0)
+        self.last_gray: np.ndarray | None = None
+        self._sct = mss.mss()
+        self._monitor = self._sct.monitors[1]
 
-    def detect(self, current: np.ndarray) -> np.ndarray | None:
-        if self.last_frame is None:
-            self.last_frame = current.copy()
-            return current
-        diff = np.abs(current.astype(np.int16) - self.last_frame.astype(np.int16))
-        mask = np.max(diff, axis=2) > 25
-        ratio = 100.0 * np.sum(mask) / mask.size
-        if ratio >= self.threshold:
-            self.last_frame = current.copy()
-            return self._extract_roi(current, mask)
-        return None
+    def snap(self) -> np.ndarray:
+        """mss capture: 2-8ms statt 50ms mit skylight-cli."""
+        raw = np.array(self._sct.grab(self._monitor))
+        return cv2.cvtColor(raw, cv2.COLOR_BGRA2BGR)
 
-    def _extract_roi(self, frame: np.ndarray, mask: np.ndarray) -> np.ndarray:
-        coords = np.argwhere(mask)
-        y0, x0 = coords.min(axis=0)
-        y1, x1 = coords.max(axis=0)
+    def detect(self, frame: np.ndarray) -> dict | None:
+        """OpenCV-basierte Diff-Erkennung. Gibt ROI + Bounding Box zurück."""
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        gray = cv2.GaussianBlur(gray, (21, 21), 0)
+
+        if self.last_gray is None:
+            self.last_gray = gray
+            return None
+
+        diff = cv2.absdiff(self.last_gray, gray)
+        _, thresh = cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)
+        pct = 100.0 * np.sum(thresh > 0) / thresh.size
+        self.last_gray = gray
+
+        if pct < self.threshold:
+            return None
+
+        # Konturen → beste Bounding Box (ROI)
+        contours, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+        if not contours:
+            return None
+
+        biggest = max(contours, key=cv2.contourArea)
+        x, y, w, h = cv2.boundingRect(biggest)
         m = 15
-        y0 = max(0, y0-m); x0 = max(0, x0-m)
-        y1 = min(frame.shape[0], y1+m); x1 = min(frame.shape[1], x1+m)
-        self._last_bounds = (x0, y0, x1, y1)
-        return frame[y0:y1, x0:x1]
+        x = max(0, x-m); y = max(0, y-m)
+        w = min(frame.shape[1]-x, w+2*m); h = min(frame.shape[0]-y, h+2*m)
+        roi = frame[y:y+h, x:x+w]
 
-    @staticmethod
-    def to_png(arr: np.ndarray) -> bytes:
-        buf = BytesIO(); Image.fromarray(arr).save(buf, format="PNG")
-        return buf.getvalue()
+        buf = BytesIO()
+        Image.fromarray(roi).save(buf, format="PNG")
+
+        return {"roi": roi, "b64": base64.b64encode(buf.getvalue()).decode(),
+                "bbox": (x, y, x+w, y+h), "pct": round(pct, 2)}
 
 
 class Cortex:
@@ -74,8 +95,11 @@ class Cortex:
         self.http = httpx.AsyncClient(timeout=15)
         self.context = ""
 
-    async def analyze(self, roi: bytes) -> MotionCommand | None:
-        b64 = base64.b64encode(roi).decode()
+    async def analyze(self, diff_data: dict) -> MotionCommand | None:
+        """Analysiert die Change-Region (b64 aus Retina.detect)."""
+        if not diff_data or not diff_data.get("b64"):
+            return None
+        b64 = diff_data["b64"]
         prompt = (
             'Du siehst einen veränderten Bildschirmausschnitt. '
             'Erkenne das interaktive Element und gib sein Label zurück.\n'
@@ -206,18 +230,6 @@ class LiveOmniAgent:
         self.running = False
         await self.cortex.close()
 
-    async def _screenshot(self) -> np.ndarray | None:
-        """Async screenshot mit --output Bug Workaround."""
-        cwd = Path("skylight_screenshot.png")
-        if cwd.exists(): cwd.unlink()
-        await self.hands._run(["skylight-cli", "screenshot", "--pid", str(self.pid), "--mode", "som", "--output", "/tmp/live_frame.png"])
-        if cwd.exists():
-            shutil.copy2(str(cwd), "/tmp/live_frame.png")
-            cwd.unlink()
-        try:
-            return np.array(Image.open("/tmp/live_frame.png"))
-        except: return None
-
     async def run(self):
         await self.start()
         frames = changes = 0
@@ -225,15 +237,12 @@ class LiveOmniAgent:
         try:
             while self.running:
                 t1 = time.time()
-                frame = await self._screenshot()
-                if frame is None:
-                    await asyncio.sleep(self.interval)
-                    continue
                 frames += 1
-                roi = self.retina.detect(frame)
-                if roi is not None:
+                frame = self.retina.snap()
+                diff_data = self.retina.detect(frame)
+                if diff_data is not None:
                     changes += 1
-                    cmd = await self.cortex.analyze(Retina.to_png(roi))
+                    cmd = await self.cortex.analyze(diff_data)
                     if cmd and cmd.action not in ("wait", None) and cmd.confidence > 0.5:
                         print(f"  👁 Change {changes}: {cmd.action} '{cmd.ax_label}' ({cmd.confidence:.0%})", flush=True)
                         if cmd.action == "click":
