@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+    <key>com.apple.private.IOSurface</key>
+    <true/>
+    <key>com.apple.private.CoreGraphics.CGSConnection</key>
+    <true/>
+    <key>com.apple.private.SkyLight</key>
+    <true/>
+    <key>com.apple.private.accessibility.api</key>
+    <true/>
+    <key>com.apple.security.shared-preference.read-write</key>
+    <true/>
+    <key>com.apple.security.app-sandbox</key>
+    <false/>
+</dict>
+</plist>
