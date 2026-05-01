@@ -28,6 +28,12 @@ def main():
         result = executor.run(["playstealth", "launch", "--url", url])
         pid = result.get("pid"); executor.pid = pid
         state.update({"pid": pid, "url": url}); save_state(state)
+        # Google Login
+        import subprocess
+        try:
+            subprocess.run(["bash", "cli/heypiggy-login", str(pid)],
+                          cwd="/Users/jeremy/dev/stealth-runner", timeout=60)
+        except: pass
         print(json.dumps({"step": 0, "action": "launch", "pid": pid, "status": "ok"}))
         return
 
