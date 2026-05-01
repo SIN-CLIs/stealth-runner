@@ -115,22 +115,27 @@ class Cortex:
 
 
 class Hands:
-    """NUR element-index, nie Koordinaten."""
+    """NUR element-index, nie Koordinaten. Async subprocess."""
 
     def __init__(self, pid: int):
         self.pid = pid
 
-    def _skylight(self, args: list[str]) -> dict | None:
-        """skylight-cli mit Fehlerbehandlung."""
-        try:
-            r = subprocess.run(["skylight-cli"] + args + ["--pid", str(self.pid)],
-                              capture_output=True, text=True, timeout=10)
-            return json.loads(r.stdout) if r.stdout.strip() else None
+    async def _run(self, cmd: list[str]) -> str:
+        """Async subprocess run."""
+        p = await asyncio.create_subprocess_exec(*cmd, stdout=asyncio.subprocess.PIPE, stderr=asyncio.subprocess.PIPE)
+        out, _ = await p.communicate()
+        return out.decode() if p.returncode == 0 else ""
+
+    async def _api(self, tool: str, args: list[str] | None = None) -> dict | None:
+        """Skylight API call. KEIN --window-id (gibt's nicht!)."""
+        cmd = [tool] + (args or []) + ["--pid", str(self.pid)]
+        out = await self._run(cmd)
+        try: return json.loads(out) if out.strip() else None
         except: return None
 
-    def find_by_label(self, label: str, role: str | None = None) -> int | None:
-        """Findet element_index für ein Label via skylight-cli list-elements."""
-        data = self._skylight(["list-elements"])
+    async def find_by_label(self, label: str, role: str | None = None) -> int | None:
+        """skylight-cli list-elements → manuell label filtern."""
+        data = await self._api("skylight-cli", ["list-elements"])
         if not data: return None
         for e in data.get("elements", []):
             if label.lower() in str(e.get("label", "")).lower():
@@ -138,16 +143,16 @@ class Hands:
                     return e.get("index")
         return None
 
-    def find_in_popup(self, label: str) -> tuple[int, int] | None:
-        """Findet element_index im Popup via cua-driver + get_window_state."""
+    async def find_in_popup(self, label: str) -> tuple[int, int] | None:
+        """cua-driver list_windows + get_window_state → Popup-Element finden."""
+        out = await self._run(["cua-driver", "call", "list_windows"])
         try:
-            r = subprocess.run(["cua-driver", "call", "list_windows"], capture_output=True, text=True, timeout=10)
-            for w in json.loads(r.stdout).get("windows", []):
+            for w in json.loads(out).get("windows", []):
                 if w.get("pid") != self.pid or not w.get("is_on_screen", False): continue
                 wid = w["window_id"]
-                r2 = subprocess.run(["cua-driver", "call", "get_window_state", json.dumps({"pid": self.pid, "window_id": wid})],
-                                   capture_output=True, text=True, timeout=10)
-                tree = json.loads(r2.stdout).get("tree_markdown", "")
+                r2 = await self._run(["cua-driver", "call", "get_window_state", json.dumps({"pid": self.pid, "window_id": wid})])
+                if not r2: continue
+                tree = json.loads(r2).get("tree_markdown", "")
                 for line in tree.split("\n"):
                     if label.lower() in line.lower():
                         m = re.search(r"\[(\d+)\]", line)
@@ -156,16 +161,11 @@ class Hands:
         return None
 
     async def click(self, label: str) -> bool:
-        """Popup-first → skylight-cli Fallback. NUR element-index."""
-        # 1. Popup
-        p = self.find_in_popup(label)
-        if p:
-            _, idx = p
-        else:
-            # 2. Normales Fenster
-            idx = self.find_by_label(label, "AXButton") or self.find_by_label(label, "AXLink")
+        """Popup-first → Fallback. NUR element-index."""
+        p = await self.find_in_popup(label)
+        idx = p[1] if p else await self.find_by_label(label, "AXButton") or await self.find_by_label(label, "AXLink")
         if idx:
-            self._skylight(["click", "--element-index", str(idx)])
+            await self._run(["skylight-cli", "click", "--pid", str(self.pid), "--element-index", str(idx)])
             print(f"      🖱 [{idx}] '{label}'", flush=True)
             return True
         print(f"      ⚠️ '{label}' nicht gefunden", flush=True)
@@ -204,11 +204,11 @@ class LiveOmniAgent:
         self.running = False
         await self.cortex.close()
 
-    def _screenshot(self) -> np.ndarray | None:
-        """Screenshot mit Workaround für skylight-cli --output Bug."""
+    async def _screenshot(self) -> np.ndarray | None:
+        """Async screenshot mit --output Bug Workaround."""
         cwd = Path("skylight_screenshot.png")
         if cwd.exists(): cwd.unlink()
-        self._skylight(["screenshot", "--mode", "som", "--output", "/tmp/live_frame.png"])
+        await self.hands._run(["skylight-cli", "screenshot", "--pid", str(self.pid), "--mode", "som", "--output", "/tmp/live_frame.png"])
         if cwd.exists():
             shutil.copy2(str(cwd), "/tmp/live_frame.png")
             cwd.unlink()
@@ -216,21 +216,14 @@ class LiveOmniAgent:
             return np.array(Image.open("/tmp/live_frame.png"))
         except: return None
 
-    def _skylight(self, args: list[str]) -> dict | None:
-        try:
-            r = subprocess.run(["skylight-cli"] + args + ["--pid", str(self.pid)],
-                              capture_output=True, text=True, timeout=15)
-            return json.loads(r.stdout) if r.stdout.strip() else None
-        except: return None
-
-    async def run(self, callback: Callable | None = None):
+    async def run(self):
         await self.start()
         frames = changes = 0
         t0 = time.time()
         try:
             while self.running:
                 t1 = time.time()
-                frame = self._screenshot()
+                frame = await self._screenshot()
                 if frame is None:
                     await asyncio.sleep(self.interval)
                     continue
@@ -250,7 +243,6 @@ class LiveOmniAgent:
                             if t: await self.hands.type_text(cmd.ax_label, t)
                         elif cmd.action == "done":
                             print("  ✅ Fertig!", flush=True); break
-                    if callback: callback(cmd)
                 await asyncio.sleep(max(0, self.interval - (time.time() - t1)))
         finally:
             await self.stop()
