@@ -1,7 +1,9 @@
-"""FastAPI wrapper for stealth-runner (SOTA #14)."""
+"""FastAPI wrapper for stealth-runner – SaaS API (SOTA #14)."""
+from __future__ import annotations
+import json
+from pathlib import Path
 from fastapi import FastAPI
 from pydantic import BaseModel, Field
-from runner.state_machine import SurveyRunner
 import anyio
 
 app = FastAPI(title="stealth-runner API", version="0.1.0")
@@ -13,9 +15,11 @@ class SurveyRequest(BaseModel):
 @app.get("/health")
 async def health():
     try:
-        import subprocess; subprocess.run(["playstealth", "--version"], capture_output=True, timeout=5)
+        import subprocess
+        subprocess.run(["playstealth", "--version"], capture_output=True, timeout=5)
         return {"status": "ok", "deps": "all_available"}
-    except: return {"status": "degraded"}
+    except Exception:
+        return {"status": "degraded"}
 
 @app.get("/balance")
 async def balance():
@@ -23,9 +27,10 @@ async def balance():
     lines = log.read_text().strip().split("\n") if log.exists() else []
     eur = 0.0
     for line in lines[-5:]:
-        try: eur = max(eur, float(json.loads(line).get("context",{}).get("earnings_eur", 0)))
+        try: eur = max(eur, float(json.loads(line).get("context", {}).get("earnings_eur", 0)))
         except: pass
     return {"earnings_eur": eur, "scans": len(lines)}
 
 if __name__ == "__main__":
-    import uvicorn; uvicorn.run(app, host="127.0.0.1", port=8420)
+    import uvicorn
+    uvicorn.run(app, host="127.0.0.1", port=8420)
