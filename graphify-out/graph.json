@@ -53,9 +53,9 @@
       "file_type": "rationale",
       "source_file": "api_server.py",
       "source_location": "L1",
-      "id": "stealth_runner_api_server_rationale_1",
       "community": 11,
-      "norm_label": "fastapi wrapper for stealth-runner \u2013 saas api (sota #14)."
+      "norm_label": "fastapi wrapper for stealth-runner \u2013 saas api (sota #14).",
+      "id": "stealth_runner_api_server_rationale_1"
     },
     {
       "label": "main.py",
@@ -125,45 +125,45 @@
       "file_type": "rationale",
       "source_file": "runner/state_manager.py",
       "source_location": "L1",
-      "id": "runner_state_manager_rationale_1",
       "community": 14,
-      "norm_label": "state-file management mit backup & recovery."
+      "norm_label": "state-file management mit backup & recovery.",
+      "id": "runner_state_manager_rationale_1"
     },
     {
       "label": "L\u00e4dt State mit Backup-Recovery.",
       "file_type": "rationale",
       "source_file": "runner/state_manager.py",
       "source_location": "L18",
-      "id": "runner_state_manager_rationale_18",
       "community": 14,
-      "norm_label": "ladt state mit backup-recovery."
+      "norm_label": "ladt state mit backup-recovery.",
+      "id": "runner_state_manager_rationale_18"
     },
     {
       "label": "Speichert State mit Backup.",
       "file_type": "rationale",
       "source_file": "runner/state_manager.py",
       "source_location": "L34",
-      "id": "runner_state_manager_rationale_34",
       "community": 14,
-      "norm_label": "speichert state mit backup."
+      "norm_label": "speichert state mit backup.",
+      "id": "runner_state_manager_rationale_34"
     },
     {
       "label": "Versucht, State aus Backups wiederherzustellen.",
       "file_type": "rationale",
       "source_file": "runner/state_manager.py",
       "source_location": "L50",
-      "id": "runner_state_manager_rationale_50",
       "community": 14,
-      "norm_label": "versucht, state aus backups wiederherzustellen."
+      "norm_label": "versucht, state aus backups wiederherzustellen.",
+      "id": "runner_state_manager_rationale_50"
     },
     {
       "label": "Validiert State-Struktur.",
       "file_type": "rationale",
       "source_file": "runner/state_manager.py",
       "source_location": "L66",
-      "id": "runner_state_manager_rationale_66",
       "community": 14,
-      "norm_label": "validiert state-struktur."
+      "norm_label": "validiert state-struktur.",
+      "id": "runner_state_manager_rationale_66"
     },
     {
       "label": "safe_click.py",
@@ -215,9 +215,9 @@
       "file_type": "rationale",
       "source_file": "runner/state_machine_extended.py",
       "source_location": "L1",
-      "id": "runner_state_machine_extended_rationale_1",
       "community": 9,
-      "norm_label": "erweiterte state machine mit exit-code-routing & stealth-scoring."
+      "norm_label": "erweiterte state machine mit exit-code-routing & stealth-scoring.",
+      "id": "runner_state_machine_extended_rationale_1"
     },
     {
       "label": "config.py",
@@ -233,9 +233,9 @@
       "file_type": "rationale",
       "source_file": "runner/config.py",
       "source_location": "L1",
-      "id": "runner_config_rationale_1",
       "community": 30,
-      "norm_label": "zentrale konfiguration \u2013 ladt .env und validiert alle secrets."
+      "norm_label": "zentrale konfiguration \u2013 ladt .env und validiert alle secrets.",
+      "id": "runner_config_rationale_1"
     },
     {
       "label": "logging_config.py",
@@ -260,9 +260,9 @@
       "file_type": "rationale",
       "source_file": "runner/logging_config.py",
       "source_location": "L1",
-      "id": "runner_logging_config_rationale_1",
       "community": 27,
-      "norm_label": "structured logging mit structlog."
+      "norm_label": "structured logging mit structlog.",
+      "id": "runner_logging_config_rationale_1"
     },
     {
       "label": "stealth_executor.py",
@@ -395,9 +395,9 @@
       "file_type": "rationale",
       "source_file": "runner/stealth_executor.py",
       "source_location": "L1",
-      "id": "runner_stealth_executor_rationale_1",
       "community": 3,
-      "norm_label": "stealthexecutor \u2013 tls-gepruft, driver-basiert, omni-integriert."
+      "norm_label": "stealthexecutor \u2013 tls-gepruft, driver-basiert, omni-integriert.",
+      "id": "runner_stealth_executor_rationale_1"
     },
     {
       "label": "stealth_scorer.py",
@@ -431,9 +431,9 @@
       "file_type": "rationale",
       "source_file": "runner/stealth_scorer.py",
       "source_location": "L1",
-      "id": "runner_stealth_scorer_rationale_1",
       "community": 24,
-      "norm_label": "stealth-scoring nach 6 prufvektoren mit gewichteten thresholds."
+      "norm_label": "stealth-scoring nach 6 prufvektoren mit gewichteten thresholds.",
+      "id": "runner_stealth_scorer_rationale_1"
     },
     {
       "label": "omni_survey_runner.py",
@@ -485,18 +485,18 @@
       "file_type": "rationale",
       "source_file": "runner/omni_survey_runner.py",
       "source_location": "L17",
-      "id": "runner_omni_survey_runner_rationale_17",
       "community": 2,
-      "norm_label": "kompletter survey-durchlauf: login \u2192 loop \u2192 abschluss."
+      "norm_label": "kompletter survey-durchlauf: login \u2192 loop \u2192 abschluss.",
+      "id": "runner_omni_survey_runner_rationale_17"
     },
     {
       "label": "playstealth login + heypiggy-login CLI.",
       "file_type": "rationale",
       "source_file": "runner/omni_survey_runner.py",
       "source_location": "L65",
-      "id": "runner_omni_survey_runner_rationale_65",
       "community": 2,
-      "norm_label": "playstealth login + heypiggy-login cli."
+      "norm_label": "playstealth login + heypiggy-login cli.",
+      "id": "runner_omni_survey_runner_rationale_65"
     },
     {
       "label": "dom_prescan.py",
@@ -539,9 +539,9 @@
       "file_type": "rationale",
       "source_file": "runner/dom_prescan.py",
       "source_location": "L1",
-      "id": "runner_dom_prescan_rationale_1",
       "community": 7,
-      "norm_label": "dom_prescan \u2013 vision-free fast path via unmask-cli dom-scan."
+      "norm_label": "dom_prescan \u2013 vision-free fast path via unmask-cli dom-scan.",
+      "id": "runner_dom_prescan_rationale_1"
     },
     {
       "label": "security.py",
@@ -584,36 +584,36 @@
       "file_type": "rationale",
       "source_file": "runner/security.py",
       "source_location": "L1",
-      "id": "runner_security_rationale_1",
       "community": 13,
-      "norm_label": "chrome health-check und recovery."
+      "norm_label": "chrome health-check und recovery.",
+      "id": "runner_security_rationale_1"
     },
     {
       "label": "Pr\u00fcft, ob Chrome-Prozess noch l\u00e4uft.",
       "file_type": "rationale",
       "source_file": "runner/security.py",
       "source_location": "L19",
-      "id": "runner_security_rationale_19",
       "community": 13,
-      "norm_label": "pruft, ob chrome-prozess noch lauft."
+      "norm_label": "pruft, ob chrome-prozess noch lauft.",
+      "id": "runner_security_rationale_19"
     },
     {
       "label": "Startet Chrome neu und gibt Haupt-PID zur\u00fcck.",
       "file_type": "rationale",
       "source_file": "runner/security.py",
       "source_location": "L30",
-      "id": "runner_security_rationale_30",
       "community": 13,
-      "norm_label": "startet chrome neu und gibt haupt-pid zuruck."
+      "norm_label": "startet chrome neu und gibt haupt-pid zuruck.",
+      "id": "runner_security_rationale_30"
     },
     {
       "label": "F\u00fchrt Health-Check durch und startet Chrome neu falls n\u00f6tig.",
       "file_type": "rationale",
       "source_file": "runner/security.py",
       "source_location": "L62",
-      "id": "runner_security_rationale_62",
       "community": 13,
-      "norm_label": "fuhrt health-check durch und startet chrome neu falls notig."
+      "norm_label": "fuhrt health-check durch und startet chrome neu falls notig.",
+      "id": "runner_security_rationale_62"
     },
     {
       "label": "vision_models.py",
@@ -692,9 +692,9 @@
       "file_type": "rationale",
       "source_file": "runner/vision_models.py",
       "source_location": "L1",
-      "id": "runner_vision_models_rationale_1",
       "community": 11,
-      "norm_label": "pydantic v2-modelle fur strukturierte vision-api-antworten."
+      "norm_label": "pydantic v2-modelle fur strukturierte vision-api-antworten.",
+      "id": "runner_vision_models_rationale_1"
     },
     {
       "label": "human_profile.py",
@@ -755,9 +755,9 @@
       "file_type": "rationale",
       "source_file": "runner/human_profile.py",
       "source_location": "L1",
-      "id": "runner_human_profile_rationale_1",
       "community": 0,
-      "norm_label": "humanprofile \u2013 sota behavioral biometrics via scipy.stats pdfs."
+      "norm_label": "humanprofile \u2013 sota behavioral biometrics via scipy.stats pdfs.",
+      "id": "runner_human_profile_rationale_1"
     },
     {
       "label": "__init__.py",
@@ -773,9 +773,9 @@
       "file_type": "rationale",
       "source_file": "runner/__init__.py",
       "source_location": "L1",
-      "id": "runner_init_rationale_1",
       "community": 0,
-      "norm_label": "stealth-runner \u2013 orchestrator der stealth-triade v0.3.1."
+      "norm_label": "stealth-runner \u2013 orchestrator der stealth-triade v0.3.1.",
+      "id": "runner_init_rationale_1"
     },
     {
       "label": "frame_optimizer.py",
@@ -836,9 +836,9 @@
       "file_type": "rationale",
       "source_file": "runner/frame_optimizer.py",
       "source_location": "L1",
-      "id": "runner_frame_optimizer_rationale_1",
       "community": 17,
-      "norm_label": "frame-diffing & roi-cropping fur vision-token-optimierung."
+      "norm_label": "frame-diffing & roi-cropping fur vision-token-optimierung.",
+      "id": "runner_frame_optimizer_rationale_1"
     },
     {
       "label": "state_machine.py",
@@ -989,9 +989,9 @@
       "file_type": "rationale",
       "source_file": "runner/state_machine.py",
       "source_location": "L1",
-      "id": "runner_state_machine_rationale_1",
       "community": 0,
-      "norm_label": "state machine \u2014 jeder schritt vision (omni-first, multi-frame)."
+      "norm_label": "state machine \u2014 jeder schritt vision (omni-first, multi-frame).",
+      "id": "runner_state_machine_rationale_1"
     },
     {
       "label": "step.py",
@@ -1097,9 +1097,9 @@
       "file_type": "rationale",
       "source_file": "runner/survey_queue.py",
       "source_location": "L1",
-      "id": "runner_survey_queue_rationale_1",
       "community": 16,
-      "norm_label": "thread-sichere survey-queue (sqlite + filelock)."
+      "norm_label": "thread-sichere survey-queue (sqlite + filelock).",
+      "id": "runner_survey_queue_rationale_1"
     },
     {
       "label": "cli.py",
@@ -1142,9 +1142,9 @@
       "file_type": "rationale",
       "source_file": "runner/cli.py",
       "source_location": "L1",
-      "id": "runner_cli_rationale_1",
       "community": 8,
-      "norm_label": "typer cli mit rich progress fur den stealth-runner."
+      "norm_label": "typer cli mit rich progress fur den stealth-runner.",
+      "id": "runner_cli_rationale_1"
     },
     {
       "label": "nemotron_omni.py",
@@ -1241,18 +1241,18 @@
       "file_type": "rationale",
       "source_file": "runner/nemotron_omni.py",
       "source_location": "L1",
-      "id": "runner_nemotron_omni_rationale_1",
       "community": 6,
-      "norm_label": "nemotron 3 nano omni \u2013 unified video+audio+image+text client.  ersetzt separate"
+      "norm_label": "nemotron 3 nano omni \u2013 unified video+audio+image+text client.  ersetzt separate",
+      "id": "runner_nemotron_omni_rationale_1"
     },
     {
       "label": "Single multimodal client for video, audio, image, text.",
       "file_type": "rationale",
       "source_file": "runner/nemotron_omni.py",
       "source_location": "L32",
-      "id": "runner_nemotron_omni_rationale_32",
       "community": 6,
-      "norm_label": "single multimodal client for video, audio, image, text."
+      "norm_label": "single multimodal client for video, audio, image, text.",
+      "id": "runner_nemotron_omni_rationale_32"
     },
     {
       "label": "apm.py",
@@ -1277,9 +1277,9 @@
       "file_type": "rationale",
       "source_file": "runner/apm.py",
       "source_location": "L1",
-      "id": "runner_apm_rationale_1",
       "community": 28,
-      "norm_label": "opentelemetry apm \u2013 traces uber alle states."
+      "norm_label": "opentelemetry apm \u2013 traces uber alle states.",
+      "id": "runner_apm_rationale_1"
     },
     {
       "label": "async_executor.py",
@@ -1340,9 +1340,9 @@
       "file_type": "rationale",
       "source_file": "runner/async_executor.py",
       "source_location": "L1",
-      "id": "runner_async_executor_rationale_1",
       "community": 1,
-      "norm_label": "async cli-executor mit timeout, exit-code-mapping & zombie-cleanup."
+      "norm_label": "async cli-executor mit timeout, exit-code-mapping & zombie-cleanup.",
+      "id": "runner_async_executor_rationale_1"
     },
     {
       "label": "semantic_cache.py",
@@ -1376,9 +1376,9 @@
       "file_type": "rationale",
       "source_file": "runner/semantic_cache.py",
       "source_location": "L1",
-      "id": "runner_semantic_cache_rationale_1",
       "community": 25,
-      "norm_label": "semantic vision cache via diskcache."
+      "norm_label": "semantic vision cache via diskcache.",
+      "id": "runner_semantic_cache_rationale_1"
     },
     {
       "label": "prompt_kit.py",
@@ -1403,9 +1403,9 @@
       "file_type": "rationale",
       "source_file": "runner/prompt_kit.py",
       "source_location": "L1",
-      "id": "runner_prompt_kit_rationale_1",
       "community": 0,
-      "norm_label": "prompt_kit \u2013 system_prompt mit expliziten som-referenzen."
+      "norm_label": "prompt_kit \u2013 system_prompt mit expliziten som-referenzen.",
+      "id": "runner_prompt_kit_rationale_1"
     },
     {
       "label": "behavioral_biometrics.py",
@@ -1448,9 +1448,9 @@
       "file_type": "rationale",
       "source_file": "runner/behavioral_biometrics.py",
       "source_location": "L1",
-      "id": "runner_behavioral_biometrics_rationale_1",
       "community": 21,
-      "norm_label": "behavioral biometrics via scipy.stats pdfs."
+      "norm_label": "behavioral biometrics via scipy.stats pdfs.",
+      "id": "runner_behavioral_biometrics_rationale_1"
     },
     {
       "label": "live_omni_monitor.py",
@@ -1573,7 +1573,7 @@
       "label": "._build_messages()",
       "file_type": "code",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L195",
+      "source_location": "L215",
       "id": "runner_live_omni_monitor_liveomnimonitor_build_messages",
       "community": 2,
       "norm_label": "._build_messages()"
@@ -1582,7 +1582,7 @@
       "label": "._default_prompt()",
       "file_type": "code",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L215",
+      "source_location": "L235",
       "id": "runner_live_omni_monitor_liveomnimonitor_default_prompt",
       "community": 2,
       "norm_label": "._default_prompt()"
@@ -1591,7 +1591,7 @@
       "label": ".execute_action()",
       "file_type": "code",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L243",
+      "source_location": "L263",
       "id": "runner_live_omni_monitor_liveomnimonitor_execute_action",
       "community": 2,
       "norm_label": ".execute_action()"
@@ -1600,7 +1600,7 @@
       "label": ".run_continuous()",
       "file_type": "code",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L257",
+      "source_location": "L277",
       "id": "runner_live_omni_monitor_liveomnimonitor_run_continuous",
       "community": 2,
       "norm_label": ".run_continuous()"
@@ -1609,7 +1609,7 @@
       "label": "._run_skylight()",
       "file_type": "code",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L293",
+      "source_location": "L313",
       "id": "runner_live_omni_monitor_liveomnimonitor_run_skylight",
       "community": 2,
       "norm_label": "._run_skylight()"
@@ -1618,7 +1618,7 @@
       "label": "._run_cmd()",
       "file_type": "code",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L296",
+      "source_location": "L316",
       "id": "runner_live_omni_monitor_liveomnimonitor_run_cmd",
       "community": 2,
       "norm_label": "._run_cmd()"
@@ -1627,7 +1627,7 @@
       "label": "_extract_json()",
       "file_type": "code",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L311",
+      "source_location": "L331",
       "id": "runner_live_omni_monitor_extract_json",
       "community": 2,
       "norm_label": "_extract_json()"
@@ -1637,52 +1637,52 @@
       "file_type": "rationale",
       "source_file": "runner/live_omni_monitor.py",
       "source_location": "L1",
-      "id": "runner_live_omni_monitor_rationale_1",
       "community": 2,
-      "norm_label": "live omni screen monitor \u2013 rolling video buffer + screenshot hybrid.  architektu"
+      "norm_label": "live omni screen monitor \u2013 rolling video buffer + screenshot hybrid.  architektu",
+      "id": "runner_live_omni_monitor_rationale_1"
     },
     {
       "label": "Screenshot + Rolling Video Buffer \u2192 Omni \u2192 skylight-cli Execute.",
       "file_type": "rationale",
       "source_file": "runner/live_omni_monitor.py",
       "source_location": "L53",
-      "id": "runner_live_omni_monitor_rationale_53",
       "community": 2,
-      "norm_label": "screenshot + rolling video buffer \u2192 omni \u2192 skylight-cli execute."
+      "norm_label": "screenshot + rolling video buffer \u2192 omni \u2192 skylight-cli execute.",
+      "id": "runner_live_omni_monitor_rationale_53"
     },
     {
       "label": "screen-follow record --video im Hintergrund.",
       "file_type": "rationale",
       "source_file": "runner/live_omni_monitor.py",
       "source_location": "L88",
-      "id": "runner_live_omni_monitor_rationale_88",
       "community": 2,
-      "norm_label": "screen-follow record --video im hintergrund."
+      "norm_label": "screen-follow record --video im hintergrund.",
+      "id": "runner_live_omni_monitor_rationale_88"
     },
     {
       "label": "Extrahiert die letzten N Sekunden als base64-mp4.",
       "file_type": "rationale",
       "source_file": "runner/live_omni_monitor.py",
       "source_location": "L125",
-      "id": "runner_live_omni_monitor_rationale_125",
       "community": 2,
-      "norm_label": "extrahiert die letzten n sekunden als base64-mp4."
+      "norm_label": "extrahiert die letzten n sekunden als base64-mp4.",
+      "id": "runner_live_omni_monitor_rationale_125"
     },
     {
       "label": "Screenshot (schnell) oder Rolling-Video-Clip (temporal) an Omni.",
       "file_type": "rationale",
       "source_file": "runner/live_omni_monitor.py",
       "source_location": "L151",
-      "id": "runner_live_omni_monitor_rationale_151",
       "community": 2,
-      "norm_label": "screenshot (schnell) oder rolling-video-clip (temporal) an omni."
+      "norm_label": "screenshot (schnell) oder rolling-video-clip (temporal) an omni.",
+      "id": "runner_live_omni_monitor_rationale_151"
     },
     {
       "label": "Hybrid Loop: Screenshot (schnell) + Video (alle 5 Schritte temporal).",
       "file_type": "rationale",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L258",
-      "id": "runner_live_omni_monitor_rationale_258",
+      "source_location": "L278",
+      "id": "runner_live_omni_monitor_rationale_278",
       "community": 2,
       "norm_label": "hybrid loop: screenshot (schnell) + video (alle 5 schritte temporal)."
     },
@@ -1709,9 +1709,9 @@
       "file_type": "rationale",
       "source_file": "runner/tls_fingerprint.py",
       "source_location": "L1",
-      "id": "runner_tls_fingerprint_rationale_1",
       "community": 3,
-      "norm_label": "tls-fingerprinting auf ja4-basis."
+      "norm_label": "tls-fingerprinting auf ja4-basis.",
+      "id": "runner_tls_fingerprint_rationale_1"
     },
     {
       "label": "video_analyzer.py",
@@ -1808,9 +1808,9 @@
       "file_type": "rationale",
       "source_file": "runner/audit_logger_sync.py",
       "source_location": "L1",
-      "id": "runner_audit_logger_sync_rationale_1",
       "community": 18,
-      "norm_label": "crash-sicheres jsonl audit-log mit o_sync + fcntl."
+      "norm_label": "crash-sicheres jsonl audit-log mit o_sync + fcntl.",
+      "id": "runner_audit_logger_sync_rationale_1"
     },
     {
       "label": "resilience.py",
@@ -1853,9 +1853,9 @@
       "file_type": "rationale",
       "source_file": "runner/resilience.py",
       "source_location": "L1",
-      "id": "runner_resilience_rationale_1",
       "community": 22,
-      "norm_label": "resilienz-patterns: retry, circuit breaker, graceful shutdown."
+      "norm_label": "resilienz-patterns: retry, circuit breaker, graceful shutdown.",
+      "id": "runner_resilience_rationale_1"
     },
     {
       "label": "click_validator.py",
@@ -1889,9 +1889,9 @@
       "file_type": "rationale",
       "source_file": "runner/click_validator.py",
       "source_location": "L1",
-      "id": "runner_click_validator_rationale_1",
       "community": 1,
-      "norm_label": "strict click contract enforcement \u2014 blocks raw coordinates."
+      "norm_label": "strict click contract enforcement \u2014 blocks raw coordinates.",
+      "id": "runner_click_validator_rationale_1"
     },
     {
       "label": "audit_log.py",
@@ -1970,9 +1970,9 @@
       "file_type": "rationale",
       "source_file": "runner/audit_log.py",
       "source_location": "L1",
-      "id": "runner_audit_log_rationale_1",
       "community": 0,
-      "norm_label": "auditlog \u2013 thread-safe jsonl trace mit batched writes."
+      "norm_label": "auditlog \u2013 thread-safe jsonl trace mit batched writes.",
+      "id": "runner_audit_log_rationale_1"
     },
     {
       "label": "skylight.py",
@@ -2105,9 +2105,9 @@
       "file_type": "rationale",
       "source_file": "runner/drivers/screen_follow.py",
       "source_location": "L1",
-      "id": "drivers_screen_follow_rationale_1",
       "community": 19,
-      "norm_label": "screenfollowdriver \u2013 bildschirmaufnahme via screen-follow cli."
+      "norm_label": "screenfollowdriver \u2013 bildschirmaufnahme via screen-follow cli.",
+      "id": "drivers_screen_follow_rationale_1"
     },
     {
       "label": "__init__.py",
@@ -2168,9 +2168,9 @@
       "file_type": "rationale",
       "source_file": "runner/drivers/unmask.py",
       "source_location": "L1",
-      "id": "drivers_unmask_rationale_1",
       "community": 20,
-      "norm_label": "unmaskdriver \u2013 dom-scan via unmask-cli fur vision-free fast path."
+      "norm_label": "unmaskdriver \u2013 dom-scan via unmask-cli fur vision-free fast path.",
+      "id": "drivers_unmask_rationale_1"
     },
     {
       "label": "base.py",
@@ -2294,9 +2294,9 @@
       "file_type": "rationale",
       "source_file": "runner/vision_client/config.py",
       "source_location": "L1",
-      "id": "vision_client_config_rationale_1",
       "community": 15,
-      "norm_label": "vision-client konfiguration (yaml-basiert)."
+      "norm_label": "vision-client konfiguration (yaml-basiert).",
+      "id": "vision_client_config_rationale_1"
     },
     {
       "label": "__init__.py",
@@ -2411,9 +2411,9 @@
       "file_type": "rationale",
       "source_file": "runner/vision_client/core.py",
       "source_location": "L1",
-      "id": "vision_client_core_rationale_1",
       "community": 1,
-      "norm_label": "vision-client core mit retry-logik, circuit breaker und omni-fallback."
+      "norm_label": "vision-client core mit retry-logik, circuit breaker und omni-fallback.",
+      "id": "vision_client_core_rationale_1"
     },
     {
       "label": "test_sin_survey_core.py",
@@ -2744,9 +2744,9 @@
       "file_type": "rationale",
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L1",
-      "id": "tests_test_sin_survey_core_rationale_1",
       "community": 4,
-      "norm_label": "tests fur sin_survey_core \u2013 panel, eur, errors."
+      "norm_label": "tests fur sin_survey_core \u2013 panel, eur, errors.",
+      "id": "tests_test_sin_survey_core_rationale_1"
     },
     {
       "label": "test_dom_prescan.py",
@@ -2906,9 +2906,9 @@
       "file_type": "rationale",
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L1",
-      "id": "tests_test_dom_prescan_rationale_1",
       "community": 7,
-      "norm_label": "tests fur dom_prescan \u2013 vision-free fast path."
+      "norm_label": "tests fur dom_prescan \u2013 vision-free fast path.",
+      "id": "tests_test_dom_prescan_rationale_1"
     },
     {
       "label": "conftest.py",
@@ -2924,9 +2924,9 @@
       "file_type": "rationale",
       "source_file": "tests/conftest.py",
       "source_location": "L1",
-      "id": "tests_conftest_rationale_1",
       "community": 31,
-      "norm_label": "pytest-konfiguration fur den stealth-runner."
+      "norm_label": "pytest-konfiguration fur den stealth-runner.",
+      "id": "tests_conftest_rationale_1"
     },
     {
       "label": "test_state_machine.py",
@@ -2978,9 +2978,9 @@
       "file_type": "rationale",
       "source_file": "tests/__init__.py",
       "source_location": "L1",
-      "id": "tests_init_rationale_1",
       "community": 32,
-      "norm_label": "test-suite fur den stealth-runner. fuhre mit: pytest tests/ -v"
+      "norm_label": "test-suite fur den stealth-runner. fuhre mit: pytest tests/ -v",
+      "id": "tests_init_rationale_1"
     },
     {
       "label": "test_exit_codes.py",
@@ -3068,9 +3068,9 @@
       "file_type": "rationale",
       "source_file": "tests/test_exit_codes.py",
       "source_location": "L1",
-      "id": "tests_test_exit_codes_rationale_1",
       "community": 9,
-      "norm_label": "property-based tests fur exit-code-handling."
+      "norm_label": "property-based tests fur exit-code-handling.",
+      "id": "tests_test_exit_codes_rationale_1"
     },
     {
       "label": "test_runner.py",
@@ -3239,9 +3239,9 @@
       "file_type": "rationale",
       "source_file": "tests/test_runner.py",
       "source_location": "L1",
-      "id": "tests_test_runner_rationale_1",
       "community": 0,
-      "norm_label": "tests fur die kernmodule des stealth-runner."
+      "norm_label": "tests fur die kernmodule des stealth-runner.",
+      "id": "tests_test_runner_rationale_1"
     },
     {
       "label": "test_revalidation.py",
@@ -3347,9 +3347,9 @@
       "file_type": "rationale",
       "source_file": "tests/vision_client/test_error_handling.py",
       "source_location": "L1",
-      "id": "vision_client_test_error_handling_rationale_1",
       "community": 1,
-      "norm_label": "tests fur vision-client error handling."
+      "norm_label": "tests fur vision-client error handling.",
+      "id": "vision_client_test_error_handling_rationale_1"
     },
     {
       "label": "test_chrome_recovery.py",
@@ -3374,9 +3374,9 @@
       "file_type": "rationale",
       "source_file": "tests/security/test_chrome_recovery.py",
       "source_location": "L1",
-      "id": "security_test_chrome_recovery_rationale_1",
       "community": 13,
-      "norm_label": "tests fur chrome recovery."
+      "norm_label": "tests fur chrome recovery.",
+      "id": "security_test_chrome_recovery_rationale_1"
     },
     {
       "label": "test_state_recovery.py",
@@ -3419,9 +3419,9 @@
       "file_type": "rationale",
       "source_file": "tests/state_manager/test_state_recovery.py",
       "source_location": "L1",
-      "id": "state_manager_test_state_recovery_rationale_1",
       "community": 6,
-      "norm_label": "tests fur state-file recovery."
+      "norm_label": "tests fur state-file recovery.",
+      "id": "state_manager_test_state_recovery_rationale_1"
     },
     {
       "label": "__init__.py",
@@ -3437,9 +3437,9 @@
       "file_type": "rationale",
       "source_file": "sin_survey_core/__init__.py",
       "source_location": "L1",
-      "id": "sin_survey_core_init_rationale_1",
       "community": 9,
-      "norm_label": "sin_survey_core \u2013 aus dem a2a-sin-worker extrahierte survey-intelligenz."
+      "norm_label": "sin_survey_core \u2013 aus dem a2a-sin-worker extrahierte survey-intelligenz.",
+      "id": "sin_survey_core_init_rationale_1"
     },
     {
       "label": "__init__.py",
@@ -3455,9 +3455,9 @@
       "file_type": "rationale",
       "source_file": "sin_survey_core/panels/__init__.py",
       "source_location": "L1",
-      "id": "panels_init_rationale_1",
       "community": 4,
-      "norm_label": "panel-provider-erkennung fur umfrageplattformen.  provider (8): purespectrum, dy"
+      "norm_label": "panel-provider-erkennung fur umfrageplattformen.  provider (8): purespectrum, dy",
+      "id": "panels_init_rationale_1"
     },
     {
       "label": "detectors.py",
@@ -3527,9 +3527,9 @@
       "file_type": "rationale",
       "source_file": "sin_survey_core/panels/detectors.py",
       "source_location": "L1",
-      "id": "panels_detectors_rationale_1",
       "community": 4,
-      "norm_label": "panel-provider-erkennung anhand von url- und text-mustern (8 provider)."
+      "norm_label": "panel-provider-erkennung anhand von url- und text-mustern (8 provider).",
+      "id": "panels_detectors_rationale_1"
     },
     {
       "label": "__init__.py",
@@ -3545,9 +3545,9 @@
       "file_type": "rationale",
       "source_file": "sin_survey_core/rewards/__init__.py",
       "source_location": "L1",
-      "id": "rewards_init_rationale_1",
       "community": 10,
-      "norm_label": "eur-betrag-extraktion aus umfrage-seitentexten.  bietet zwei funktionen:  * :fun"
+      "norm_label": "eur-betrag-extraktion aus umfrage-seitentexten.  bietet zwei funktionen:  * :fun",
+      "id": "rewards_init_rationale_1"
     },
     {
       "label": "extractor.py",
@@ -3590,36 +3590,36 @@
       "file_type": "rationale",
       "source_file": "sin_survey_core/rewards/extractor.py",
       "source_location": "L1",
-      "id": "rewards_extractor_rationale_1",
       "community": 10,
-      "norm_label": "eur-betrag-extraktion aus umfrage-seitentexten.  verwendet vorkompilierte regex-"
+      "norm_label": "eur-betrag-extraktion aus umfrage-seitentexten.  verwendet vorkompilierte regex-",
+      "id": "rewards_extractor_rationale_1"
     },
     {
       "label": "Extrahiert den ersten EUR-Betrag aus einem beliebigen Text.",
       "file_type": "rationale",
       "source_file": "sin_survey_core/rewards/extractor.py",
       "source_location": "L25",
-      "id": "rewards_extractor_rationale_25",
       "community": 10,
-      "norm_label": "extrahiert den ersten eur-betrag aus einem beliebigen text."
+      "norm_label": "extrahiert den ersten eur-betrag aus einem beliebigen text.",
+      "id": "rewards_extractor_rationale_25"
     },
     {
       "label": "Strukturierte EUR-Auszahlung aus einem Survey-Chunk.",
       "file_type": "rationale",
       "source_file": "sin_survey_core/rewards/extractor.py",
       "source_location": "L37",
-      "id": "rewards_extractor_rationale_37",
       "community": 10,
-      "norm_label": "strukturierte eur-auszahlung aus einem survey-chunk."
+      "norm_label": "strukturierte eur-auszahlung aus einem survey-chunk.",
+      "id": "rewards_extractor_rationale_37"
     },
     {
       "label": "Extrahiert EUR-Betrag und gibt eine Zusammenfassung zur\u00fcck.",
       "file_type": "rationale",
       "source_file": "sin_survey_core/rewards/extractor.py",
       "source_location": "L43",
-      "id": "rewards_extractor_rationale_43",
       "community": 10,
-      "norm_label": "extrahiert eur-betrag und gibt eine zusammenfassung zuruck."
+      "norm_label": "extrahiert eur-betrag und gibt eine zusammenfassung zuruck.",
+      "id": "rewards_extractor_rationale_43"
     },
     {
       "label": "__init__.py",
@@ -3635,9 +3635,9 @@
       "file_type": "rationale",
       "source_file": "sin_survey_core/errors/__init__.py",
       "source_location": "L1",
-      "id": "errors_init_rationale_1",
       "community": 9,
-      "norm_label": "fehlerklassifikation fur umfrage-abbruche (4 kategorien, mehrsprachig)."
+      "norm_label": "fehlerklassifikation fur umfrage-abbruche (4 kategorien, mehrsprachig).",
+      "id": "errors_init_rationale_1"
     },
     {
       "label": "templates.py",
@@ -3680,9 +3680,9 @@
       "file_type": "rationale",
       "source_file": "sin_survey_core/errors/templates.py",
       "source_location": "L1",
-      "id": "errors_templates_rationale_1",
       "community": 9,
-      "norm_label": "fehlerklassifikation fur umfrage-abbruche \u2014 errorcategory enum + errorinfo datac"
+      "norm_label": "fehlerklassifikation fur umfrage-abbruche \u2014 errorcategory enum + errorinfo datac",
+      "id": "errors_templates_rationale_1"
     },
     {
       "label": "config.py",
@@ -3770,9 +3770,9 @@
       "file_type": "rationale",
       "source_file": "src/stealth_runner/__init__.py",
       "source_location": "L1",
-      "id": "stealth_runner_init_rationale_1",
       "community": 33,
-      "norm_label": "stealth-runner: vision-driven cli orchestrator for stealth survey automation."
+      "norm_label": "stealth-runner: vision-driven cli orchestrator for stealth survey automation.",
+      "id": "stealth_runner_init_rationale_1"
     },
     {
       "label": "anti_learn.py",
@@ -3815,9 +3815,9 @@
       "file_type": "rationale",
       "source_file": "src/stealth_runner/anti_learn.py",
       "source_location": "L1",
-      "id": "stealth_runner_anti_learn_rationale_1",
       "community": 12,
-      "norm_label": "anti-learning module \u2014 error-to-recovery generator."
+      "norm_label": "anti-learning module \u2014 error-to-recovery generator.",
+      "id": "stealth_runner_anti_learn_rationale_1"
     },
     {
       "label": "unmask_client.py",
@@ -3851,9 +3851,9 @@
       "file_type": "rationale",
       "source_file": "src/stealth_runner/unmask_client.py",
       "source_location": "L1",
-      "id": "stealth_runner_unmask_client_rationale_1",
       "community": 5,
-      "norm_label": "unmask-cli json-rpc 2.0 client fur stealth-verifikation."
+      "norm_label": "unmask-cli json-rpc 2.0 client fur stealth-verifikation.",
+      "id": "stealth_runner_unmask_client_rationale_1"
     },
     {
       "label": "state_machine.py",
@@ -4004,9 +4004,9 @@
       "file_type": "rationale",
       "source_file": "src/stealth_runner/learn.py",
       "source_location": "L1",
-      "id": "stealth_runner_learn_rationale_1",
       "community": 23,
-      "norm_label": "skill capture loop \u2014 parst screen-follow audit-log (type: mouse_down, etc.)."
+      "norm_label": "skill capture loop \u2014 parst screen-follow audit-log (type: mouse_down, etc.).",
+      "id": "stealth_runner_learn_rationale_1"
     },
     {
       "label": "__main__.py",
@@ -4058,9 +4058,9 @@
       "file_type": "rationale",
       "source_file": "src/stealth_runner/strategy_selector.py",
       "source_location": "L1",
-      "id": "stealth_runner_strategy_selector_rationale_1",
       "community": 26,
-      "norm_label": "strategy evolution module \u2014 wahlt optimale skill-sequenz aus brain-daten."
+      "norm_label": "strategy evolution module \u2014 wahlt optimale skill-sequenz aus brain-daten.",
+      "id": "stealth_runner_strategy_selector_rationale_1"
     },
     {
       "label": "executor.py",
@@ -4106,6 +4106,15 @@
       "id": "stealth_runner_executor_run_cli_atomic",
       "community": 5,
       "norm_label": "run_cli_atomic()"
+    },
+    {
+      "label": "Hybrid Loop: Screenshot (schnell) + Video (alle 5 Schritte temporal).",
+      "file_type": "rationale",
+      "source_file": "runner/live_omni_monitor.py",
+      "source_location": "L258",
+      "community": 35,
+      "norm_label": "hybrid loop: screenshot (schnell) + video (alle 5 schritte temporal).",
+      "id": "runner_live_omni_monitor_rationale_258"
     }
   ],
   "links": [
@@ -4475,11 +4484,11 @@
       "source_file": "tests/test_exit_codes.py",
       "source_location": "L5",
       "weight": 0.8,
-      "_src": "tests_test_exit_codes_testexitcoderouting",
-      "_tgt": "runner_state_machine_extended_extendedstate",
+      "_src": "runner_state_machine_extended_extendedstate",
+      "_tgt": "tests_test_exit_codes_testexitcoderouting",
+      "confidence_score": 0.5,
       "source": "runner_state_machine_extended_extendedstate",
-      "target": "tests_test_exit_codes_testexitcoderouting",
-      "confidence_score": 0.5
+      "target": "tests_test_exit_codes_testexitcoderouting"
     },
     {
       "relation": "uses",
@@ -4487,11 +4496,11 @@
       "source_file": "tests/test_exit_codes.py",
       "source_location": "L5",
       "weight": 0.8,
-      "_src": "tests_test_exit_codes_rationale_1",
-      "_tgt": "runner_state_machine_extended_extendedstate",
+      "_src": "runner_state_machine_extended_extendedstate",
+      "_tgt": "tests_test_exit_codes_rationale_1",
+      "confidence_score": 0.5,
       "source": "runner_state_machine_extended_extendedstate",
-      "target": "tests_test_exit_codes_rationale_1",
-      "confidence_score": 0.5
+      "target": "tests_test_exit_codes_rationale_1"
     },
     {
       "relation": "inherits",
@@ -4705,9 +4714,9 @@
       "weight": 0.8,
       "_src": "runner_stealth_executor_stealtherror",
       "_tgt": "drivers_base_basedriver",
+      "confidence_score": 0.5,
       "source": "runner_stealth_executor_stealtherror",
-      "target": "drivers_base_basedriver",
-      "confidence_score": 0.5
+      "target": "drivers_base_basedriver"
     },
     {
       "relation": "uses",
@@ -4717,9 +4726,9 @@
       "weight": 0.8,
       "_src": "runner_stealth_executor_stealtherror",
       "_tgt": "drivers_skylight_skylightdriver",
+      "confidence_score": 0.5,
       "source": "runner_stealth_executor_stealtherror",
-      "target": "drivers_skylight_skylightdriver",
-      "confidence_score": 0.5
+      "target": "drivers_skylight_skylightdriver"
     },
     {
       "relation": "uses",
@@ -4727,11 +4736,11 @@
       "source_file": "runner/__init__.py",
       "source_location": "L2",
       "weight": 0.8,
-      "_src": "runner_init_rationale_1",
-      "_tgt": "runner_stealth_executor_stealtherror",
+      "_src": "runner_stealth_executor_stealtherror",
+      "_tgt": "runner_init_rationale_1",
+      "confidence_score": 0.5,
       "source": "runner_stealth_executor_stealtherror",
-      "target": "runner_init_rationale_1",
-      "confidence_score": 0.5
+      "target": "runner_init_rationale_1"
     },
     {
       "relation": "inherits",
@@ -4812,8 +4821,8 @@
       "source_file": "runner/vision_client/core.py",
       "source_location": "L103",
       "weight": 1.0,
-      "_src": "vision_client_core_analyze_screenshot",
-      "_tgt": "exception",
+      "_src": "exception",
+      "_tgt": "vision_client_core_analyze_screenshot",
       "source": "exception",
       "target": "vision_client_core_analyze_screenshot"
     },
@@ -4824,8 +4833,8 @@
       "source_file": "runner/vision_client/core.py",
       "source_location": "L157",
       "weight": 1.0,
-      "_src": "vision_client_core_visionclient_nvidia_vision_call",
-      "_tgt": "exception",
+      "_src": "exception",
+      "_tgt": "vision_client_core_visionclient_nvidia_vision_call",
       "source": "exception",
       "target": "vision_client_core_visionclient_nvidia_vision_call"
     },
@@ -4836,8 +4845,8 @@
       "source_file": "tests/vision_client/test_error_handling.py",
       "source_location": "L12",
       "weight": 1.0,
-      "_src": "vision_client_test_error_handling_test_circuit_breaker_activation",
-      "_tgt": "exception",
+      "_src": "exception",
+      "_tgt": "vision_client_test_error_handling_test_circuit_breaker_activation",
       "source": "exception",
       "target": "vision_client_test_error_handling_test_circuit_breaker_activation"
     },
@@ -4848,8 +4857,8 @@
       "source_file": "tests/vision_client/test_error_handling.py",
       "source_location": "L51",
       "weight": 1.0,
-      "_src": "vision_client_test_error_handling_test_handle_vision_error",
-      "_tgt": "exception",
+      "_src": "exception",
+      "_tgt": "vision_client_test_error_handling_test_handle_vision_error",
       "source": "exception",
       "target": "vision_client_test_error_handling_test_handle_vision_error"
     },
@@ -4969,9 +4978,9 @@
       "weight": 0.8,
       "_src": "runner_stealth_executor_stealthexecutor",
       "_tgt": "drivers_base_basedriver",
+      "confidence_score": 0.5,
       "source": "runner_stealth_executor_stealthexecutor",
-      "target": "drivers_base_basedriver",
-      "confidence_score": 0.5
+      "target": "drivers_base_basedriver"
     },
     {
       "relation": "uses",
@@ -4981,9 +4990,9 @@
       "weight": 0.8,
       "_src": "runner_stealth_executor_stealthexecutor",
       "_tgt": "drivers_skylight_skylightdriver",
+      "confidence_score": 0.5,
       "source": "runner_stealth_executor_stealthexecutor",
-      "target": "drivers_skylight_skylightdriver",
-      "confidence_score": 0.5
+      "target": "drivers_skylight_skylightdriver"
     },
     {
       "relation": "uses",
@@ -4991,11 +5000,11 @@
       "source_file": "runner/__init__.py",
       "source_location": "L2",
       "weight": 0.8,
-      "_src": "runner_init_rationale_1",
-      "_tgt": "runner_stealth_executor_stealthexecutor",
+      "_src": "runner_stealth_executor_stealthexecutor",
+      "_tgt": "runner_init_rationale_1",
+      "confidence_score": 0.5,
       "source": "runner_stealth_executor_stealthexecutor",
-      "target": "runner_init_rationale_1",
-      "confidence_score": 0.5
+      "target": "runner_init_rationale_1"
     },
     {
       "relation": "uses",
@@ -5003,11 +5012,11 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L7",
       "weight": 0.8,
-      "_src": "runner_state_machine_state",
-      "_tgt": "runner_stealth_executor_stealthexecutor",
+      "_src": "runner_stealth_executor_stealthexecutor",
+      "_tgt": "runner_state_machine_state",
+      "confidence_score": 0.5,
       "source": "runner_stealth_executor_stealthexecutor",
-      "target": "runner_state_machine_state",
-      "confidence_score": 0.5
+      "target": "runner_state_machine_state"
     },
     {
       "relation": "uses",
@@ -5015,11 +5024,11 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L7",
       "weight": 0.8,
-      "_src": "runner_state_machine_surveyrunner",
-      "_tgt": "runner_stealth_executor_stealthexecutor",
+      "_src": "runner_stealth_executor_stealthexecutor",
+      "_tgt": "runner_state_machine_surveyrunner",
+      "confidence_score": 0.5,
       "source": "runner_stealth_executor_stealthexecutor",
-      "target": "runner_state_machine_surveyrunner",
-      "confidence_score": 0.5
+      "target": "runner_state_machine_surveyrunner"
     },
     {
       "relation": "uses",
@@ -5027,11 +5036,11 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L7",
       "weight": 0.8,
-      "_src": "runner_state_machine_rationale_1",
-      "_tgt": "runner_stealth_executor_stealthexecutor",
+      "_src": "runner_stealth_executor_stealthexecutor",
+      "_tgt": "runner_state_machine_rationale_1",
+      "confidence_score": 0.5,
       "source": "runner_stealth_executor_stealthexecutor",
-      "target": "runner_state_machine_rationale_1",
-      "confidence_score": 0.5
+      "target": "runner_state_machine_rationale_1"
     },
     {
       "relation": "uses",
@@ -5039,11 +5048,11 @@
       "source_file": "tests/test_runner.py",
       "source_location": "L6",
       "weight": 0.8,
-      "_src": "tests_test_runner_teststealthexecutor",
-      "_tgt": "runner_stealth_executor_stealthexecutor",
+      "_src": "runner_stealth_executor_stealthexecutor",
+      "_tgt": "tests_test_runner_teststealthexecutor",
+      "confidence_score": 0.5,
       "source": "runner_stealth_executor_stealthexecutor",
-      "target": "tests_test_runner_teststealthexecutor",
-      "confidence_score": 0.5
+      "target": "tests_test_runner_teststealthexecutor"
     },
     {
       "relation": "uses",
@@ -5051,11 +5060,11 @@
       "source_file": "tests/test_runner.py",
       "source_location": "L6",
       "weight": 0.8,
-      "_src": "tests_test_runner_testvisionclient",
-      "_tgt": "runner_stealth_executor_stealthexecutor",
+      "_src": "runner_stealth_executor_stealthexecutor",
+      "_tgt": "tests_test_runner_testvisionclient",
+      "confidence_score": 0.5,
       "source": "runner_stealth_executor_stealthexecutor",
-      "target": "tests_test_runner_testvisionclient",
-      "confidence_score": 0.5
+      "target": "tests_test_runner_testvisionclient"
     },
     {
       "relation": "uses",
@@ -5063,11 +5072,11 @@
       "source_file": "tests/test_runner.py",
       "source_location": "L6",
       "weight": 0.8,
-      "_src": "tests_test_runner_testauditlog",
-      "_tgt": "runner_stealth_executor_stealthexecutor",
+      "_src": "runner_stealth_executor_stealthexecutor",
+      "_tgt": "tests_test_runner_testauditlog",
+      "confidence_score": 0.5,
       "source": "runner_stealth_executor_stealthexecutor",
-      "target": "tests_test_runner_testauditlog",
-      "confidence_score": 0.5
+      "target": "tests_test_runner_testauditlog"
     },
     {
       "relation": "uses",
@@ -5075,11 +5084,11 @@
       "source_file": "tests/test_runner.py",
       "source_location": "L6",
       "weight": 0.8,
-      "_src": "tests_test_runner_testhumanprofile",
-      "_tgt": "runner_stealth_executor_stealthexecutor",
+      "_src": "runner_stealth_executor_stealthexecutor",
+      "_tgt": "tests_test_runner_testhumanprofile",
+      "confidence_score": 0.5,
       "source": "runner_stealth_executor_stealthexecutor",
-      "target": "tests_test_runner_testhumanprofile",
-      "confidence_score": 0.5
+      "target": "tests_test_runner_testhumanprofile"
     },
     {
       "relation": "uses",
@@ -5087,11 +5096,11 @@
       "source_file": "tests/test_runner.py",
       "source_location": "L6",
       "weight": 0.8,
-      "_src": "tests_test_runner_rationale_1",
-      "_tgt": "runner_stealth_executor_stealthexecutor",
+      "_src": "runner_stealth_executor_stealthexecutor",
+      "_tgt": "tests_test_runner_rationale_1",
+      "confidence_score": 0.5,
       "source": "runner_stealth_executor_stealthexecutor",
-      "target": "tests_test_runner_rationale_1",
-      "confidence_score": 0.5
+      "target": "tests_test_runner_rationale_1"
     },
     {
       "relation": "calls",
@@ -5100,8 +5109,8 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L34",
       "weight": 1.0,
-      "_src": "runner_state_machine_surveyrunner_init",
-      "_tgt": "runner_stealth_executor_stealthexecutor",
+      "_src": "runner_stealth_executor_stealthexecutor",
+      "_tgt": "runner_state_machine_surveyrunner_init",
       "source": "runner_stealth_executor_stealthexecutor",
       "target": "runner_state_machine_surveyrunner_init"
     },
@@ -5112,8 +5121,8 @@
       "source_file": "runner/step.py",
       "source_location": "L35",
       "weight": 1.0,
-      "_src": "runner_step_main",
-      "_tgt": "runner_stealth_executor_stealthexecutor",
+      "_src": "runner_stealth_executor_stealthexecutor",
+      "_tgt": "runner_step_main",
       "source": "runner_stealth_executor_stealthexecutor",
       "target": "runner_step_main"
     },
@@ -5124,8 +5133,8 @@
       "source_file": "tests/test_runner.py",
       "source_location": "L13",
       "weight": 1.0,
-      "_src": "tests_test_runner_teststealthexecutor_test_init",
-      "_tgt": "runner_stealth_executor_stealthexecutor",
+      "_src": "runner_stealth_executor_stealthexecutor",
+      "_tgt": "tests_test_runner_teststealthexecutor_test_init",
       "source": "runner_stealth_executor_stealthexecutor",
       "target": "tests_test_runner_teststealthexecutor_test_init"
     },
@@ -5136,8 +5145,8 @@
       "source_file": "tests/test_runner.py",
       "source_location": "L18",
       "weight": 1.0,
-      "_src": "tests_test_runner_teststealthexecutor_test_init_rejects_missing_skylight",
-      "_tgt": "runner_stealth_executor_stealthexecutor",
+      "_src": "runner_stealth_executor_stealthexecutor",
+      "_tgt": "tests_test_runner_teststealthexecutor_test_init_rejects_missing_skylight",
       "source": "runner_stealth_executor_stealthexecutor",
       "target": "tests_test_runner_teststealthexecutor_test_init_rejects_missing_skylight"
     },
@@ -5148,8 +5157,8 @@
       "source_file": "tests/test_runner.py",
       "source_location": "L21",
       "weight": 1.0,
-      "_src": "tests_test_runner_teststealthexecutor_test_pid_settable",
-      "_tgt": "runner_stealth_executor_stealthexecutor",
+      "_src": "runner_stealth_executor_stealthexecutor",
+      "_tgt": "tests_test_runner_teststealthexecutor_test_pid_settable",
       "source": "runner_stealth_executor_stealthexecutor",
       "target": "tests_test_runner_teststealthexecutor_test_pid_settable"
     },
@@ -5160,8 +5169,8 @@
       "source_file": "tests/test_runner.py",
       "source_location": "L24",
       "weight": 1.0,
-      "_src": "tests_test_runner_teststealthexecutor_test_click_requires_element_or_coords",
-      "_tgt": "runner_stealth_executor_stealthexecutor",
+      "_src": "runner_stealth_executor_stealthexecutor",
+      "_tgt": "tests_test_runner_teststealthexecutor_test_click_requires_element_or_coords",
       "source": "runner_stealth_executor_stealthexecutor",
       "target": "tests_test_runner_teststealthexecutor_test_click_requires_element_or_coords"
     },
@@ -5172,8 +5181,8 @@
       "source_file": "tests/test_runner.py",
       "source_location": "L28",
       "weight": 1.0,
-      "_src": "tests_test_runner_teststealthexecutor_test_type_text_builds_correct_command",
-      "_tgt": "runner_stealth_executor_stealthexecutor",
+      "_src": "runner_stealth_executor_stealthexecutor",
+      "_tgt": "tests_test_runner_teststealthexecutor_test_type_text_builds_correct_command",
       "source": "runner_stealth_executor_stealthexecutor",
       "target": "tests_test_runner_teststealthexecutor_test_type_text_builds_correct_command"
     },
@@ -5209,9 +5218,9 @@
       "weight": 0.8,
       "_src": "runner_stealth_executor_rationale_1",
       "_tgt": "drivers_base_basedriver",
+      "confidence_score": 0.5,
       "source": "runner_stealth_executor_rationale_1",
-      "target": "drivers_base_basedriver",
-      "confidence_score": 0.5
+      "target": "drivers_base_basedriver"
     },
     {
       "relation": "uses",
@@ -5221,9 +5230,9 @@
       "weight": 0.8,
       "_src": "runner_stealth_executor_rationale_1",
       "_tgt": "drivers_skylight_skylightdriver",
+      "confidence_score": 0.5,
       "source": "runner_stealth_executor_rationale_1",
-      "target": "drivers_skylight_skylightdriver",
-      "confidence_score": 0.5
+      "target": "drivers_skylight_skylightdriver"
     },
     {
       "relation": "contains",
@@ -5341,9 +5350,9 @@
       "weight": 0.8,
       "_src": "runner_omni_survey_runner_omnisurveyrunner",
       "_tgt": "runner_live_omni_monitor_liveomnimonitor",
+      "confidence_score": 0.5,
       "source": "runner_omni_survey_runner_omnisurveyrunner",
-      "target": "runner_live_omni_monitor_liveomnimonitor",
-      "confidence_score": 0.5
+      "target": "runner_live_omni_monitor_liveomnimonitor"
     },
     {
       "relation": "uses",
@@ -5353,9 +5362,9 @@
       "weight": 0.8,
       "_src": "runner_omni_survey_runner_omnisurveyrunner",
       "_tgt": "runner_live_omni_monitor_omniobservation",
+      "confidence_score": 0.5,
       "source": "runner_omni_survey_runner_omnisurveyrunner",
-      "target": "runner_live_omni_monitor_omniobservation",
-      "confidence_score": 0.5
+      "target": "runner_live_omni_monitor_omniobservation"
     },
     {
       "relation": "calls",
@@ -5401,9 +5410,9 @@
       "weight": 0.8,
       "_src": "runner_omni_survey_runner_rationale_17",
       "_tgt": "runner_live_omni_monitor_liveomnimonitor",
+      "confidence_score": 0.5,
       "source": "runner_omni_survey_runner_rationale_17",
-      "target": "runner_live_omni_monitor_liveomnimonitor",
-      "confidence_score": 0.5
+      "target": "runner_live_omni_monitor_liveomnimonitor"
     },
     {
       "relation": "uses",
@@ -5413,9 +5422,9 @@
       "weight": 0.8,
       "_src": "runner_omni_survey_runner_rationale_17",
       "_tgt": "runner_live_omni_monitor_omniobservation",
+      "confidence_score": 0.5,
       "source": "runner_omni_survey_runner_rationale_17",
-      "target": "runner_live_omni_monitor_omniobservation",
-      "confidence_score": 0.5
+      "target": "runner_live_omni_monitor_omniobservation"
     },
     {
       "relation": "uses",
@@ -5425,9 +5434,9 @@
       "weight": 0.8,
       "_src": "runner_omni_survey_runner_rationale_65",
       "_tgt": "runner_live_omni_monitor_liveomnimonitor",
+      "confidence_score": 0.5,
       "source": "runner_omni_survey_runner_rationale_65",
-      "target": "runner_live_omni_monitor_liveomnimonitor",
-      "confidence_score": 0.5
+      "target": "runner_live_omni_monitor_liveomnimonitor"
     },
     {
       "relation": "uses",
@@ -5437,9 +5446,9 @@
       "weight": 0.8,
       "_src": "runner_omni_survey_runner_rationale_65",
       "_tgt": "runner_live_omni_monitor_omniobservation",
+      "confidence_score": 0.5,
       "source": "runner_omni_survey_runner_rationale_65",
-      "target": "runner_live_omni_monitor_omniobservation",
-      "confidence_score": 0.5
+      "target": "runner_live_omni_monitor_omniobservation"
     },
     {
       "relation": "contains",
@@ -5520,8 +5529,8 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L9",
       "weight": 1.0,
-      "_src": "tests_test_dom_prescan_testclassifyelement_test_button_is_clickable",
-      "_tgt": "runner_dom_prescan_classify_element",
+      "_src": "runner_dom_prescan_classify_element",
+      "_tgt": "tests_test_dom_prescan_testclassifyelement_test_button_is_clickable",
       "source": "runner_dom_prescan_classify_element",
       "target": "tests_test_dom_prescan_testclassifyelement_test_button_is_clickable"
     },
@@ -5532,8 +5541,8 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L12",
       "weight": 1.0,
-      "_src": "tests_test_dom_prescan_testclassifyelement_test_link_is_clickable",
-      "_tgt": "runner_dom_prescan_classify_element",
+      "_src": "runner_dom_prescan_classify_element",
+      "_tgt": "tests_test_dom_prescan_testclassifyelement_test_link_is_clickable",
       "source": "runner_dom_prescan_classify_element",
       "target": "tests_test_dom_prescan_testclassifyelement_test_link_is_clickable"
     },
@@ -5544,8 +5553,8 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L15",
       "weight": 1.0,
-      "_src": "tests_test_dom_prescan_testclassifyelement_test_checkbox_is_clickable",
-      "_tgt": "runner_dom_prescan_classify_element",
+      "_src": "runner_dom_prescan_classify_element",
+      "_tgt": "tests_test_dom_prescan_testclassifyelement_test_checkbox_is_clickable",
       "source": "runner_dom_prescan_classify_element",
       "target": "tests_test_dom_prescan_testclassifyelement_test_checkbox_is_clickable"
     },
@@ -5556,8 +5565,8 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L18",
       "weight": 1.0,
-      "_src": "tests_test_dom_prescan_testclassifyelement_test_text_field_is_text_input",
-      "_tgt": "runner_dom_prescan_classify_element",
+      "_src": "runner_dom_prescan_classify_element",
+      "_tgt": "tests_test_dom_prescan_testclassifyelement_test_text_field_is_text_input",
       "source": "runner_dom_prescan_classify_element",
       "target": "tests_test_dom_prescan_testclassifyelement_test_text_field_is_text_input"
     },
@@ -5568,8 +5577,8 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L21",
       "weight": 1.0,
-      "_src": "tests_test_dom_prescan_testclassifyelement_test_input_role_is_text_input",
-      "_tgt": "runner_dom_prescan_classify_element",
+      "_src": "runner_dom_prescan_classify_element",
+      "_tgt": "tests_test_dom_prescan_testclassifyelement_test_input_role_is_text_input",
       "source": "runner_dom_prescan_classify_element",
       "target": "tests_test_dom_prescan_testclassifyelement_test_input_role_is_text_input"
     },
@@ -5580,8 +5589,8 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L24",
       "weight": 1.0,
-      "_src": "tests_test_dom_prescan_testclassifyelement_test_question_text_detected",
-      "_tgt": "runner_dom_prescan_classify_element",
+      "_src": "runner_dom_prescan_classify_element",
+      "_tgt": "tests_test_dom_prescan_testclassifyelement_test_question_text_detected",
       "source": "runner_dom_prescan_classify_element",
       "target": "tests_test_dom_prescan_testclassifyelement_test_question_text_detected"
     },
@@ -5592,8 +5601,8 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L27",
       "weight": 1.0,
-      "_src": "tests_test_dom_prescan_testclassifyelement_test_unknown_element",
-      "_tgt": "runner_dom_prescan_classify_element",
+      "_src": "runner_dom_prescan_classify_element",
+      "_tgt": "tests_test_dom_prescan_testclassifyelement_test_unknown_element",
       "source": "runner_dom_prescan_classify_element",
       "target": "tests_test_dom_prescan_testclassifyelement_test_unknown_element"
     },
@@ -5604,8 +5613,8 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L30",
       "weight": 1.0,
-      "_src": "tests_test_dom_prescan_testclassifyelement_test_div_with_text_is_clickable",
-      "_tgt": "runner_dom_prescan_classify_element",
+      "_src": "runner_dom_prescan_classify_element",
+      "_tgt": "tests_test_dom_prescan_testclassifyelement_test_div_with_text_is_clickable",
       "source": "runner_dom_prescan_classify_element",
       "target": "tests_test_dom_prescan_testclassifyelement_test_div_with_text_is_clickable"
     },
@@ -5616,8 +5625,8 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L35",
       "weight": 1.0,
-      "_src": "tests_test_dom_prescan_testprescandom_test_empty_elements",
-      "_tgt": "runner_dom_prescan_prescan_dom",
+      "_src": "runner_dom_prescan_prescan_dom",
+      "_tgt": "tests_test_dom_prescan_testprescandom_test_empty_elements",
       "source": "runner_dom_prescan_prescan_dom",
       "target": "tests_test_dom_prescan_testprescandom_test_empty_elements"
     },
@@ -5628,8 +5637,8 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L40",
       "weight": 1.0,
-      "_src": "tests_test_dom_prescan_testprescandom_test_no_elements_key",
-      "_tgt": "runner_dom_prescan_prescan_dom",
+      "_src": "runner_dom_prescan_prescan_dom",
+      "_tgt": "tests_test_dom_prescan_testprescandom_test_no_elements_key",
       "source": "runner_dom_prescan_prescan_dom",
       "target": "tests_test_dom_prescan_testprescandom_test_no_elements_key"
     },
@@ -5640,8 +5649,8 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L45",
       "weight": 1.0,
-      "_src": "tests_test_dom_prescan_testprescandom_test_single_clickable_returns_action",
-      "_tgt": "runner_dom_prescan_prescan_dom",
+      "_src": "runner_dom_prescan_prescan_dom",
+      "_tgt": "tests_test_dom_prescan_testprescandom_test_single_clickable_returns_action",
       "source": "runner_dom_prescan_prescan_dom",
       "target": "tests_test_dom_prescan_testprescandom_test_single_clickable_returns_action"
     },
@@ -5652,8 +5661,8 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L55",
       "weight": 1.0,
-      "_src": "tests_test_dom_prescan_testprescandom_test_image_element_falls_back_to_vision",
-      "_tgt": "runner_dom_prescan_prescan_dom",
+      "_src": "runner_dom_prescan_prescan_dom",
+      "_tgt": "tests_test_dom_prescan_testprescandom_test_image_element_falls_back_to_vision",
       "source": "runner_dom_prescan_prescan_dom",
       "target": "tests_test_dom_prescan_testprescandom_test_image_element_falls_back_to_vision"
     },
@@ -5664,8 +5673,8 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L62",
       "weight": 1.0,
-      "_src": "tests_test_dom_prescan_testprescandom_test_unknown_elements_fall_back",
-      "_tgt": "runner_dom_prescan_prescan_dom",
+      "_src": "runner_dom_prescan_prescan_dom",
+      "_tgt": "tests_test_dom_prescan_testprescandom_test_unknown_elements_fall_back",
       "source": "runner_dom_prescan_prescan_dom",
       "target": "tests_test_dom_prescan_testprescandom_test_unknown_elements_fall_back"
     },
@@ -5676,8 +5685,8 @@
       "source_file": "tests/test_dom_prescan.py",
       "source_location": "L71",
       "weight": 1.0,
-      "_src": "tests_test_dom_prescan_testprescandom_test_no_images_pure_text",
-      "_tgt": "runner_dom_prescan_prescan_dom",
+      "_src": "runner_dom_prescan_prescan_dom",
+      "_tgt": "tests_test_dom_prescan_testprescandom_test_no_images_pure_text",
       "source": "runner_dom_prescan_prescan_dom",
       "target": "tests_test_dom_prescan_testprescandom_test_no_images_pure_text"
     },
@@ -5796,8 +5805,8 @@
       "source_file": "tests/security/test_chrome_recovery.py",
       "source_location": "L8",
       "weight": 1.0,
-      "_src": "security_test_chrome_recovery_test_chrome_health_check",
-      "_tgt": "runner_security_relaunch_chrome",
+      "_src": "runner_security_relaunch_chrome",
+      "_tgt": "security_test_chrome_recovery_test_chrome_health_check",
       "source": "runner_security_relaunch_chrome",
       "target": "security_test_chrome_recovery_test_chrome_health_check"
     },
@@ -5820,8 +5829,8 @@
       "source_file": "tests/security/test_chrome_recovery.py",
       "source_location": "L28",
       "weight": 1.0,
-      "_src": "security_test_chrome_recovery_test_chrome_health_check",
-      "_tgt": "runner_security_chrome_health_check",
+      "_src": "runner_security_chrome_health_check",
+      "_tgt": "security_test_chrome_recovery_test_chrome_health_check",
       "source": "runner_security_chrome_health_check",
       "target": "security_test_chrome_recovery_test_chrome_health_check"
     },
@@ -6011,11 +6020,11 @@
       "source_file": "runner/__init__.py",
       "source_location": "L6",
       "weight": 0.8,
-      "_src": "runner_init_rationale_1",
-      "_tgt": "runner_human_profile_humanprofile",
+      "_src": "runner_human_profile_humanprofile",
+      "_tgt": "runner_init_rationale_1",
+      "confidence_score": 0.5,
       "source": "runner_human_profile_humanprofile",
-      "target": "runner_init_rationale_1",
-      "confidence_score": 0.5
+      "target": "runner_init_rationale_1"
     },
     {
       "relation": "uses",
@@ -6023,11 +6032,11 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L11",
       "weight": 0.8,
-      "_src": "runner_state_machine_state",
-      "_tgt": "runner_human_profile_humanprofile",
+      "_src": "runner_human_profile_humanprofile",
+      "_tgt": "runner_state_machine_state",
+      "confidence_score": 0.5,
       "source": "runner_human_profile_humanprofile",
-      "target": "runner_state_machine_state",
-      "confidence_score": 0.5
+      "target": "runner_state_machine_state"
     },
     {
       "relation": "uses",
@@ -6035,11 +6044,11 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L11",
       "weight": 0.8,
-      "_src": "runner_state_machine_surveyrunner",
-      "_tgt": "runner_human_profile_humanprofile",
+      "_src": "runner_human_profile_humanprofile",
+      "_tgt": "runner_state_machine_surveyrunner",
+      "confidence_score": 0.5,
       "source": "runner_human_profile_humanprofile",
-      "target": "runner_state_machine_surveyrunner",
-      "confidence_score": 0.5
+      "target": "runner_state_machine_surveyrunner"
     },
     {
       "relation": "uses",
@@ -6047,11 +6056,11 @@
       "source_file": "runner/state_machine.py",
       "source_location": "L11",
       "weight": 0.8,
-      "_src": "runner_state_machine_rationale_1",
-      "_tgt": "runner_human_profile_humanprofile",
+      "_src": "runner_human_profile_humanprofile",
+      "_tgt": "runner_state_machine_rationale_1",
+      "confidence_score": 0.5,
       "source": "runner_human_profile_humanprofile",
-      "target": "runner_state_machine_rationale_1",
-      "confidence_score": 0.5
+      "target": "runner_state_machine_rationale_1"
     },
     {
       "relation": "uses",
@@ -6059,11 +6068,11 @@
       "source_file": "tests/test_runner.py",
       "source_location": "L9",
       "weight": 0.8,
-      "_src": "tests_test_runner_teststealthexecutor",
-      "_tgt": "runner_human_profile_humanprofile",
+      "_src": "runner_human_profile_humanprofile",
+      "_tgt": "tests_test_runner_teststealthexecutor",
+      "confidence_score": 0.5,
       "source": "runner_human_profile_humanprofile",
-      "target": "tests_test_runner_teststealthexecutor",
-      "confidence_score": 0.5
+      "target": "tests_test_runner_teststealthexecutor"
     },
     {
       "relation": "uses",
@@ -6071,11 +6080,11 @@
       "source_file": "tests/test_runner.py",
       "source_location": "L9",
       "weight": 0.8,
-      "_src": "tests_test_runner_testvisionclient",
-      "_tgt": "runner_human_profile_humanprofile",
+      "_src": "runner_human_profile_humanprofile",
+      "_tgt": "tests_test_runner_testvisionclient",
+      "confidence_score": 0.5,
       "source": "runner_human_profile_humanprofile",
-      "target": "tests_test_runner_testvisionclient",
-      "confidence_score": 0.5
+      "target": "tests_test_runner_testvisionclient"
     },
     {
       "relation": "uses",
@@ -6083,11 +6092,11 @@
       "source_file": "tests/test_runner.py",
       "source_location": "L9",
       "weight": 0.8,
-      "_src": "tests_test_runner_testauditlog",
-      "_tgt": "runner_human_profile_humanprofile",
+      "_src": "runner_human_profile_humanprofile",
+      "_tgt": "tests_test_runner_testauditlog",
+      "confidence_score": 0.5,
       "source": "runner_human_profile_humanprofile",
-      "target": "tests_test_runner_testauditlog",
-      "confidence_score": 0.5
+      "target": "tests_test_runner_testauditlog"
     },
     {
       "relation": "uses",
@@ -6095,11 +6104,11 @@
       "source_file": "tests/test_runner.py",
       "source_location": "L9",
       "weight": 0.8,
-      "_src": "tests_test_runner_testhumanprofile",
-      "_tgt": "runner_human_profile_humanprofile",
+      "_src": "runner_human_profile_humanprofile",
+      "_tgt": "tests_test_runner_testhumanprofile",
+      "confidence_score": 0.5,
       "source": "runner_human_profile_humanprofile",
-      "target": "tests_test_runner_testhumanprofile",
-      "confidence_score": 0.5
+      "target": "tests_test_runner_testhumanprofile"
     },
     {
       "relation": "uses",
@@ -6107,11 +6116,11 @@
       "source_file": "tests/test_runner.py",
       "source_location": "L9",
       "weight": 0.8,
-      "_src": "tests_test_runner_rationale_1",
-      "_tgt": "runner_human_profile_humanprofile",
+      "_src": "runner_human_profile_humanprofile",
+      "_tgt": "tests_test_runner_rationale_1",
+      "confidence_score": 0.5,
       "source": "runner_human_profile_humanprofile",
-      "target": "tests_test_runner_rationale_1",
-      "confidence_score": 0.5
+      "target": "tests_test_runner_rationale_1"
     },
     {
       "relation": "rationale_for",
@@ -6133,9 +6142,9 @@
       "weight": 0.8,
       "_src": "runner_init_rationale_1",
       "_tgt": "runner_state_machine_surveyrunner",
+      "confidence_score": 0.5,
       "source": "runner_init_rationale_1",
-      "target": "runner_state_machine_surveyrunner",
-      "confidence_score": 0.5
+      "target": "runner_state_machine_surveyrunner"
     },
     {
       "relation": "uses",
@@ -6145,9 +6154,9 @@
       "weight": 0.8,
       "_src": "runner_init_rationale_1",
       "_tgt": "stealth_runner_state_machine_state",
+      "confidence_score": 0.5,
       "source": "runner_init_rationale_1",
-      "target": "stealth_runner_state_machine_state",
-      "confidence_score": 0.5
+      "target": "stealth_runner_state_machine_state"
     },
     {
       "relation": "uses",
@@ -6157,9 +6166,9 @@
       "weight": 0.8,
       "_src": "runner_init_rationale_1",
       "_tgt": "runner_audit_log_auditlog",
+      "confidence_score": 0.5,
       "source": "runner_init_rationale_1",
-      "target": "runner_audit_log_auditlog",
-      "confidence_score": 0.5
+      "target": "runner_audit_log_auditlog"
     },
     {
       "relation": "uses",
@@ -6169,9 +6178,9 @@
       "weight": 0.8,
       "_src": "runner_init_rationale_1",
       "_tgt": "runner_survey_queue_surveyqueue",
+      "confidence_score": 0.5,
       "source": "runner_init_rationale_1",
-      "target": "runner_survey_queue_surveyqueue",
-      "confidence_score": 0.5
+      "target": "runner_survey_queue_surveyqueue"
     },
     {
       "relation": "contains",
@@ -6325,9 +6334,9 @@
       "weight": 0.8,
       "_src": "runner_state_machine_state",
       "_tgt": "runner_audit_log_auditlog",
+      "confidence_score": 0.5,
       "source": "runner_state_machine_state",
-      "target": "runner_audit_log_auditlog",
-      "confidence_score": 0.5
+      "target": "runner_audit_log_auditlog"
     },
     {
       "relation": "method",
@@ -6493,9 +6502,9 @@
       "weight": 0.8,
       "_src": "runner_state_machine_surveyrunner",
       "_tgt": "runner_audit_log_auditlog",
+      "confidence_score": 0.5,
       "source": "runner_state_machine_surveyrunner",
-      "target": "runner_audit_log_auditlog",
-      "confidence_score": 0.5
+      "target": "runner_audit_log_auditlog"
     },
     {
       "relation": "uses",
@@ -6503,11 +6512,11 @@
       "source_file": "runner/cli.py",
       "source_location": "L9",
       "weight": 0.8,
-      "_src": "runner_cli_rationale_1",
-      "_tgt": "runner_state_machine_surveyrunner",
+      "_src": "runner_state_machine_surveyrunner",
+      "_tgt": "runner_cli_rationale_1",
+      "confidence_score": 0.5,
       "source": "runner_state_machine_surveyrunner",
-      "target": "runner_cli_rationale_1",
-      "confidence_score": 0.5
+      "target": "runner_cli_rationale_1"
     },
     {
       "relation": "calls",
@@ -6516,8 +6525,8 @@
       "source_file": "runner/cli.py",
       "source_location": "L24",
       "weight": 1.0,
-      "_src": "runner_cli_run",
-      "_tgt": "runner_state_machine_surveyrunner",
+      "_src": "runner_state_machine_surveyrunner",
+      "_tgt": "runner_cli_run",
       "source": "runner_state_machine_surveyrunner",
       "target": "runner_cli_run"
     },
@@ -6528,8 +6537,8 @@
       "source_file": "tests/test_state_machine.py",
       "source_location": "L8",
       "weight": 1.0,
-      "_src": "tests_test_state_machine_test_state_machine_initializes",
-      "_tgt": "runner_state_machine_surveyrunner",
+      "_src": "runner_state_machine_surveyrunner",
+      "_tgt": "tests_test_state_machine_test_state_machine_initializes",
       "source": "runner_state_machine_surveyrunner",
       "target": "tests_test_state_machine_test_state_machine_initializes"
     },
@@ -6540,8 +6549,8 @@
       "source_file": "tests/test_state_machine.py",
       "source_location": "L14",
       "weight": 1.0,
-      "_src": "tests_test_state_machine_test_state_transition_idle_to_launch",
-      "_tgt": "runner_state_machine_surveyrunner",
+      "_src": "runner_state_machine_surveyrunner",
+      "_tgt": "tests_test_state_machine_test_state_transition_idle_to_launch",
       "source": "runner_state_machine_surveyrunner",
       "target": "tests_test_state_machine_test_state_transition_idle_to_launch"
     },
@@ -6552,8 +6561,8 @@
       "source_file": "tests/test_state_machine.py",
       "source_location": "L21",
       "weight": 1.0,
-      "_src": "tests_test_state_machine_test_max_recoveries_stops",
-      "_tgt": "runner_state_machine_surveyrunner",
+      "_src": "runner_state_machine_surveyrunner",
+      "_tgt": "tests_test_state_machine_test_max_recoveries_stops",
       "source": "runner_state_machine_surveyrunner",
       "target": "tests_test_state_machine_test_max_recoveries_stops"
     },
@@ -6793,9 +6802,9 @@
       "weight": 0.8,
       "_src": "runner_state_machine_rationale_1",
       "_tgt": "runner_audit_log_auditlog",
+      "confidence_score": 0.5,
       "source": "runner_state_machine_rationale_1",
-      "target": "runner_audit_log_auditlog",
-      "confidence_score": 0.5
+      "target": "runner_audit_log_auditlog"
     },
     {
       "relation": "contains",
@@ -6852,8 +6861,8 @@
       "source_file": "tests/state_manager/test_state_recovery.py",
       "source_location": "L11",
       "weight": 1.0,
-      "_src": "state_manager_test_state_recovery_test_state_save_load",
-      "_tgt": "runner_step_load_state",
+      "_src": "runner_step_load_state",
+      "_tgt": "state_manager_test_state_recovery_test_state_save_load",
       "source": "runner_step_load_state",
       "target": "state_manager_test_state_recovery_test_state_save_load"
     },
@@ -6864,8 +6873,8 @@
       "source_file": "tests/state_manager/test_state_recovery.py",
       "source_location": "L28",
       "weight": 1.0,
-      "_src": "state_manager_test_state_recovery_test_state_corrupt_recovery",
-      "_tgt": "runner_step_load_state",
+      "_src": "runner_step_load_state",
+      "_tgt": "state_manager_test_state_recovery_test_state_corrupt_recovery",
       "source": "runner_step_load_state",
       "target": "state_manager_test_state_recovery_test_state_corrupt_recovery"
     },
@@ -6888,8 +6897,8 @@
       "source_file": "tests/state_manager/test_state_recovery.py",
       "source_location": "L8",
       "weight": 1.0,
-      "_src": "state_manager_test_state_recovery_test_state_save_load",
-      "_tgt": "runner_step_save_state",
+      "_src": "runner_step_save_state",
+      "_tgt": "state_manager_test_state_recovery_test_state_save_load",
       "source": "runner_step_save_state",
       "target": "state_manager_test_state_recovery_test_state_save_load"
     },
@@ -6900,8 +6909,8 @@
       "source_file": "tests/state_manager/test_state_recovery.py",
       "source_location": "L35",
       "weight": 1.0,
-      "_src": "state_manager_test_state_recovery_test_state_backup_creation",
-      "_tgt": "runner_step_save_state",
+      "_src": "runner_step_save_state",
+      "_tgt": "state_manager_test_state_recovery_test_state_backup_creation",
       "source": "runner_step_save_state",
       "target": "state_manager_test_state_recovery_test_state_backup_creation"
     },
@@ -7344,8 +7353,8 @@
       "source_file": "runner/video_analyzer.py",
       "source_location": "L20",
       "weight": 1.0,
-      "_src": "runner_video_analyzer_analyze_recording",
-      "_tgt": "runner_nemotron_omni_get_omni",
+      "_src": "runner_nemotron_omni_get_omni",
+      "_tgt": "runner_video_analyzer_analyze_recording",
       "source": "runner_nemotron_omni_get_omni",
       "target": "runner_video_analyzer_analyze_recording"
     },
@@ -7356,8 +7365,8 @@
       "source_file": "runner/video_analyzer.py",
       "source_location": "L63",
       "weight": 1.0,
-      "_src": "runner_video_analyzer_compare_frames",
-      "_tgt": "runner_nemotron_omni_get_omni",
+      "_src": "runner_nemotron_omni_get_omni",
+      "_tgt": "runner_video_analyzer_compare_frames",
       "source": "runner_nemotron_omni_get_omni",
       "target": "runner_video_analyzer_compare_frames"
     },
@@ -7368,8 +7377,8 @@
       "source_file": "runner/video_analyzer.py",
       "source_location": "L78",
       "weight": 1.0,
-      "_src": "runner_video_analyzer_predict_next_state",
-      "_tgt": "runner_nemotron_omni_get_omni",
+      "_src": "runner_nemotron_omni_get_omni",
+      "_tgt": "runner_video_analyzer_predict_next_state",
       "source": "runner_nemotron_omni_get_omni",
       "target": "runner_video_analyzer_predict_next_state"
     },
@@ -7617,7 +7626,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L311",
+      "source_location": "L331",
       "weight": 1.0,
       "_src": "runner_live_omni_monitor_py",
       "_tgt": "runner_live_omni_monitor_extract_json",
@@ -7653,7 +7662,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L174",
+      "source_location": "L194",
       "weight": 1.0,
       "_src": "runner_live_omni_monitor_liveomnimonitor_analyze_frame",
       "_tgt": "runner_live_omni_monitor_omniobservation",
@@ -7773,7 +7782,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L195",
+      "source_location": "L215",
       "weight": 1.0,
       "_src": "runner_live_omni_monitor_liveomnimonitor",
       "_tgt": "runner_live_omni_monitor_liveomnimonitor_build_messages",
@@ -7785,7 +7794,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L215",
+      "source_location": "L235",
       "weight": 1.0,
       "_src": "runner_live_omni_monitor_liveomnimonitor",
       "_tgt": "runner_live_omni_monitor_liveomnimonitor_default_prompt",
@@ -7797,7 +7806,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L243",
+      "source_location": "L263",
       "weight": 1.0,
       "_src": "runner_live_omni_monitor_liveomnimonitor",
       "_tgt": "runner_live_omni_monitor_liveomnimonitor_execute_action",
@@ -7809,7 +7818,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L257",
+      "source_location": "L277",
       "weight": 1.0,
       "_src": "runner_live_omni_monitor_liveomnimonitor",
       "_tgt": "runner_live_omni_monitor_liveomnimonitor_run_continuous",
@@ -7821,7 +7830,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L293",
+      "source_location": "L313",
       "weight": 1.0,
       "_src": "runner_live_omni_monitor_liveomnimonitor",
       "_tgt": "runner_live_omni_monitor_liveomnimonitor_run_skylight",
@@ -7833,7 +7842,7 @@
       "relation": "method",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L296",
+      "source_location": "L316",
       "weight": 1.0,
       "_src": "runner_live_omni_monitor_liveomnimonitor",
       "_tgt": "runner_live_omni_monitor_liveomnimonitor_run_cmd",
@@ -7893,7 +7902,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L289",
+      "source_location": "L309",
       "weight": 1.0,
       "_src": "runner_live_omni_monitor_liveomnimonitor_run_continuous",
       "_tgt": "runner_live_omni_monitor_liveomnimonitor_stop",
@@ -7929,7 +7938,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L264",
+      "source_location": "L284",
       "weight": 1.0,
       "_src": "runner_live_omni_monitor_liveomnimonitor_run_continuous",
       "_tgt": "runner_live_omni_monitor_liveomnimonitor_capture_frame",
@@ -7941,7 +7950,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L197",
+      "source_location": "L217",
       "weight": 1.0,
       "_src": "runner_live_omni_monitor_liveomnimonitor_build_messages",
       "_tgt": "runner_live_omni_monitor_liveomnimonitor_extract_video_clip",
@@ -7965,7 +7974,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L206",
+      "source_location": "L226",
       "weight": 1.0,
       "_src": "runner_live_omni_monitor_liveomnimonitor_build_messages",
       "_tgt": "runner_live_omni_monitor_liveomnimonitor_frame_to_b64",
@@ -7977,7 +7986,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L153",
+      "source_location": "L155",
       "weight": 1.0,
       "_src": "runner_live_omni_monitor_liveomnimonitor_analyze_frame",
       "_tgt": "runner_live_omni_monitor_liveomnimonitor_default_prompt",
@@ -7989,7 +7998,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L155",
+      "source_location": "L157",
       "weight": 1.0,
       "_src": "runner_live_omni_monitor_liveomnimonitor_analyze_frame",
       "_tgt": "runner_live_omni_monitor_liveomnimonitor_build_messages",
@@ -8001,7 +8010,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L172",
+      "source_location": "L192",
       "weight": 1.0,
       "_src": "runner_live_omni_monitor_liveomnimonitor_analyze_frame",
       "_tgt": "runner_live_omni_monitor_extract_json",
@@ -8013,7 +8022,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L268",
+      "source_location": "L288",
       "weight": 1.0,
       "_src": "runner_live_omni_monitor_liveomnimonitor_run_continuous",
       "_tgt": "runner_live_omni_monitor_liveomnimonitor_analyze_frame",
@@ -8037,7 +8046,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L247",
+      "source_location": "L267",
       "weight": 1.0,
       "_src": "runner_live_omni_monitor_liveomnimonitor_execute_action",
       "_tgt": "runner_live_omni_monitor_liveomnimonitor_run_skylight",
@@ -8049,7 +8058,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L275",
+      "source_location": "L295",
       "weight": 1.0,
       "_src": "runner_live_omni_monitor_liveomnimonitor_run_continuous",
       "_tgt": "runner_live_omni_monitor_liveomnimonitor_execute_action",
@@ -8061,19 +8070,19 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L258",
+      "source_location": "L278",
       "weight": 1.0,
-      "_src": "runner_live_omni_monitor_rationale_258",
+      "_src": "runner_live_omni_monitor_rationale_278",
       "_tgt": "runner_live_omni_monitor_liveomnimonitor_run_continuous",
       "source": "runner_live_omni_monitor_liveomnimonitor_run_continuous",
-      "target": "runner_live_omni_monitor_rationale_258",
+      "target": "runner_live_omni_monitor_rationale_278",
       "confidence_score": 1.0
     },
     {
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "runner/live_omni_monitor.py",
-      "source_location": "L294",
+      "source_location": "L314",
       "weight": 1.0,
       "_src": "runner_live_omni_monitor_liveomnimonitor_run_skylight",
       "_tgt": "runner_live_omni_monitor_liveomnimonitor_run_cmd",
@@ -8423,11 +8432,11 @@
       "source_file": "tests/test_runner.py",
       "source_location": "L8",
       "weight": 0.8,
-      "_src": "tests_test_runner_teststealthexecutor",
-      "_tgt": "runner_audit_log_auditlog",
+      "_src": "runner_audit_log_auditlog",
+      "_tgt": "tests_test_runner_teststealthexecutor",
+      "confidence_score": 0.5,
       "source": "runner_audit_log_auditlog",
-      "target": "tests_test_runner_teststealthexecutor",
-      "confidence_score": 0.5
+      "target": "tests_test_runner_teststealthexecutor"
     },
     {
       "relation": "uses",
@@ -8435,11 +8444,11 @@
       "source_file": "tests/test_runner.py",
       "source_location": "L8",
       "weight": 0.8,
-      "_src": "tests_test_runner_testvisionclient",
-      "_tgt": "runner_audit_log_auditlog",
+      "_src": "runner_audit_log_auditlog",
+      "_tgt": "tests_test_runner_testvisionclient",
+      "confidence_score": 0.5,
       "source": "runner_audit_log_auditlog",
-      "target": "tests_test_runner_testvisionclient",
-      "confidence_score": 0.5
+      "target": "tests_test_runner_testvisionclient"
     },
     {
       "relation": "uses",
@@ -8447,11 +8456,11 @@
       "source_file": "tests/test_runner.py",
       "source_location": "L8",
       "weight": 0.8,
-      "_src": "tests_test_runner_testauditlog",
-      "_tgt": "runner_audit_log_auditlog",
+      "_src": "runner_audit_log_auditlog",
+      "_tgt": "tests_test_runner_testauditlog",
+      "confidence_score": 0.5,
       "source": "runner_audit_log_auditlog",
-      "target": "tests_test_runner_testauditlog",
-      "confidence_score": 0.5
+      "target": "tests_test_runner_testauditlog"
     },
     {
       "relation": "uses",
@@ -8459,11 +8468,11 @@
       "source_file": "tests/test_runner.py",
       "source_location": "L8",
       "weight": 0.8,
-      "_src": "tests_test_runner_testhumanprofile",
-      "_tgt": "runner_audit_log_auditlog",
+      "_src": "runner_audit_log_auditlog",
+      "_tgt": "tests_test_runner_testhumanprofile",
+      "confidence_score": 0.5,
       "source": "runner_audit_log_auditlog",
-      "target": "tests_test_runner_testhumanprofile",
-      "confidence_score": 0.5
+      "target": "tests_test_runner_testhumanprofile"
     },
     {
       "relation": "uses",
@@ -8471,11 +8480,11 @@
       "source_file": "tests/test_runner.py",
       "source_location": "L8",
       "weight": 0.8,
-      "_src": "tests_test_runner_rationale_1",
-      "_tgt": "runner_audit_log_auditlog",
+      "_src": "runner_audit_log_auditlog",
+      "_tgt": "tests_test_runner_rationale_1",
+      "confidence_score": 0.5,
       "source": "runner_audit_log_auditlog",
-      "target": "tests_test_runner_rationale_1",
-      "confidence_score": 0.5
+      "target": "tests_test_runner_rationale_1"
     },
     {
       "relation": "calls",
@@ -8484,8 +8493,8 @@
       "source_file": "tests/test_runner.py",
       "source_location": "L52",
       "weight": 1.0,
-      "_src": "tests_test_runner_testauditlog_test_log_and_summary",
-      "_tgt": "runner_audit_log_auditlog",
+      "_src": "runner_audit_log_auditlog",
+      "_tgt": "tests_test_runner_testauditlog_test_log_and_summary",
       "source": "runner_audit_log_auditlog",
       "target": "tests_test_runner_testauditlog_test_log_and_summary"
     },
@@ -8496,8 +8505,8 @@
       "source_file": "tests/test_runner.py",
       "source_location": "L57",
       "weight": 1.0,
-      "_src": "tests_test_runner_testauditlog_test_multiple_events",
-      "_tgt": "runner_audit_log_auditlog",
+      "_src": "runner_audit_log_auditlog",
+      "_tgt": "tests_test_runner_testauditlog_test_multiple_events",
       "source": "runner_audit_log_auditlog",
       "target": "tests_test_runner_testauditlog_test_multiple_events"
     },
@@ -8640,8 +8649,8 @@
       "source_file": "tests/test_revalidation.py",
       "source_location": "L7",
       "weight": 1.0,
-      "_src": "tests_test_revalidation_test_revalidation_after_type",
-      "_tgt": "drivers_skylight_skylightdriver",
+      "_src": "drivers_skylight_skylightdriver",
+      "_tgt": "tests_test_revalidation_test_revalidation_after_type",
       "source": "drivers_skylight_skylightdriver",
       "target": "tests_test_revalidation_test_revalidation_after_type"
     },
@@ -8652,8 +8661,8 @@
       "source_file": "tests/test_axpath.py",
       "source_location": "L7",
       "weight": 1.0,
-      "_src": "tests_test_axpath_test_click_with_axpath",
-      "_tgt": "drivers_skylight_skylightdriver",
+      "_src": "drivers_skylight_skylightdriver",
+      "_tgt": "tests_test_axpath_test_click_with_axpath",
       "source": "drivers_skylight_skylightdriver",
       "target": "tests_test_axpath_test_click_with_axpath"
     },
@@ -8664,8 +8673,8 @@
       "source_file": "tests/test_skylight_expected_label.py",
       "source_location": "L7",
       "weight": 1.0,
-      "_src": "tests_test_skylight_expected_label_test_click_with_expected_label_success",
-      "_tgt": "drivers_skylight_skylightdriver",
+      "_src": "drivers_skylight_skylightdriver",
+      "_tgt": "tests_test_skylight_expected_label_test_click_with_expected_label_success",
       "source": "drivers_skylight_skylightdriver",
       "target": "tests_test_skylight_expected_label_test_click_with_expected_label_success"
     },
@@ -8676,8 +8685,8 @@
       "source_file": "tests/test_skylight_expected_label.py",
       "source_location": "L23",
       "weight": 1.0,
-      "_src": "tests_test_skylight_expected_label_test_click_with_expected_label_mismatch",
-      "_tgt": "drivers_skylight_skylightdriver",
+      "_src": "drivers_skylight_skylightdriver",
+      "_tgt": "tests_test_skylight_expected_label_test_click_with_expected_label_mismatch",
       "source": "drivers_skylight_skylightdriver",
       "target": "tests_test_skylight_expected_label_test_click_with_expected_label_mismatch"
     },
@@ -9132,8 +9141,8 @@
       "source_file": "tests/test_runner.py",
       "source_location": "L36",
       "weight": 1.0,
-      "_src": "tests_test_runner_testvisionclient_test_init_works",
-      "_tgt": "vision_client_core_visionclient",
+      "_src": "vision_client_core_visionclient",
+      "_tgt": "tests_test_runner_testvisionclient_test_init_works",
       "source": "vision_client_core_visionclient",
       "target": "tests_test_runner_testvisionclient_test_init_works"
     },
@@ -9144,8 +9153,8 @@
       "source_file": "tests/test_runner.py",
       "source_location": "L39",
       "weight": 1.0,
-      "_src": "tests_test_runner_testvisionclient_test_parse_json_plain",
-      "_tgt": "vision_client_core_visionclient",
+      "_src": "vision_client_core_visionclient",
+      "_tgt": "tests_test_runner_testvisionclient_test_parse_json_plain",
       "source": "vision_client_core_visionclient",
       "target": "tests_test_runner_testvisionclient_test_parse_json_plain"
     },
@@ -9156,8 +9165,8 @@
       "source_file": "tests/test_runner.py",
       "source_location": "L43",
       "weight": 1.0,
-      "_src": "tests_test_runner_testvisionclient_test_parse_json_codeblock",
-      "_tgt": "vision_client_core_visionclient",
+      "_src": "vision_client_core_visionclient",
+      "_tgt": "tests_test_runner_testvisionclient_test_parse_json_codeblock",
       "source": "vision_client_core_visionclient",
       "target": "tests_test_runner_testvisionclient_test_parse_json_codeblock"
     },
@@ -9168,8 +9177,8 @@
       "source_file": "tests/test_runner.py",
       "source_location": "L47",
       "weight": 1.0,
-      "_src": "tests_test_runner_testvisionclient_test_parse_json_hard_fallback",
-      "_tgt": "vision_client_core_visionclient",
+      "_src": "vision_client_core_visionclient",
+      "_tgt": "tests_test_runner_testvisionclient_test_parse_json_hard_fallback",
       "source": "vision_client_core_visionclient",
       "target": "tests_test_runner_testvisionclient_test_parse_json_hard_fallback"
     },
@@ -9180,8 +9189,8 @@
       "source_file": "tests/vision_client/test_error_handling.py",
       "source_location": "L9",
       "weight": 1.0,
-      "_src": "vision_client_test_error_handling_test_circuit_breaker_activation",
-      "_tgt": "vision_client_core_visionclient",
+      "_src": "vision_client_core_visionclient",
+      "_tgt": "vision_client_test_error_handling_test_circuit_breaker_activation",
       "source": "vision_client_core_visionclient",
       "target": "vision_client_test_error_handling_test_circuit_breaker_activation"
     },
@@ -9192,8 +9201,8 @@
       "source_file": "tests/vision_client/test_error_handling.py",
       "source_location": "L32",
       "weight": 1.0,
-      "_src": "vision_client_test_error_handling_test_retry_logic",
-      "_tgt": "vision_client_core_visionclient",
+      "_src": "vision_client_core_visionclient",
+      "_tgt": "vision_client_test_error_handling_test_retry_logic",
       "source": "vision_client_core_visionclient",
       "target": "vision_client_test_error_handling_test_retry_logic"
     },
@@ -9204,8 +9213,8 @@
       "source_file": "tests/vision_client/test_error_handling.py",
       "source_location": "L49",
       "weight": 1.0,
-      "_src": "vision_client_test_error_handling_test_handle_vision_error",
-      "_tgt": "vision_client_core_visionclient",
+      "_src": "vision_client_core_visionclient",
+      "_tgt": "vision_client_test_error_handling_test_handle_vision_error",
       "source": "vision_client_core_visionclient",
       "target": "vision_client_test_error_handling_test_handle_vision_error"
     },
@@ -10885,9 +10894,9 @@
       "weight": 0.8,
       "_src": "sin_survey_core_init_rationale_1",
       "_tgt": "panels_detectors_panelrules",
+      "confidence_score": 0.5,
       "source": "sin_survey_core_init_rationale_1",
-      "target": "panels_detectors_panelrules",
-      "confidence_score": 0.5
+      "target": "panels_detectors_panelrules"
     },
     {
       "relation": "uses",
@@ -10897,9 +10906,9 @@
       "weight": 0.8,
       "_src": "sin_survey_core_init_rationale_1",
       "_tgt": "rewards_extractor_earningssummary",
+      "confidence_score": 0.5,
       "source": "sin_survey_core_init_rationale_1",
-      "target": "rewards_extractor_earningssummary",
-      "confidence_score": 0.5
+      "target": "rewards_extractor_earningssummary"
     },
     {
       "relation": "uses",
@@ -10909,9 +10918,9 @@
       "weight": 0.8,
       "_src": "sin_survey_core_init_rationale_1",
       "_tgt": "errors_templates_errorcategory",
+      "confidence_score": 0.5,
       "source": "sin_survey_core_init_rationale_1",
-      "target": "errors_templates_errorcategory",
-      "confidence_score": 0.5
+      "target": "errors_templates_errorcategory"
     },
     {
       "relation": "uses",
@@ -10921,9 +10930,9 @@
       "weight": 0.8,
       "_src": "sin_survey_core_init_rationale_1",
       "_tgt": "errors_templates_errorinfo",
+      "confidence_score": 0.5,
       "source": "sin_survey_core_init_rationale_1",
-      "target": "errors_templates_errorinfo",
-      "confidence_score": 0.5
+      "target": "errors_templates_errorinfo"
     },
     {
       "relation": "rationale_for",
@@ -10945,9 +10954,9 @@
       "weight": 0.8,
       "_src": "panels_init_rationale_1",
       "_tgt": "panels_detectors_panelrules",
+      "confidence_score": 0.5,
       "source": "panels_init_rationale_1",
-      "target": "panels_detectors_panelrules",
-      "confidence_score": 0.5
+      "target": "panels_detectors_panelrules"
     },
     {
       "relation": "contains",
@@ -11077,9 +11086,9 @@
       "weight": 0.8,
       "_src": "rewards_init_rationale_1",
       "_tgt": "rewards_extractor_earningssummary",
+      "confidence_score": 0.5,
       "source": "rewards_init_rationale_1",
-      "target": "rewards_extractor_earningssummary",
-      "confidence_score": 0.5
+      "target": "rewards_extractor_earningssummary"
     },
     {
       "relation": "contains",
@@ -11209,9 +11218,9 @@
       "weight": 0.8,
       "_src": "errors_init_rationale_1",
       "_tgt": "errors_templates_errorcategory",
+      "confidence_score": 0.5,
       "source": "errors_init_rationale_1",
-      "target": "errors_templates_errorcategory",
-      "confidence_score": 0.5
+      "target": "errors_templates_errorcategory"
     },
     {
       "relation": "uses",
@@ -11221,9 +11230,9 @@
       "weight": 0.8,
       "_src": "errors_init_rationale_1",
       "_tgt": "errors_templates_errorinfo",
+      "confidence_score": 0.5,
       "source": "errors_init_rationale_1",
-      "target": "errors_templates_errorinfo",
-      "confidence_score": 0.5
+      "target": "errors_templates_errorinfo"
     },
     {
       "relation": "contains",
@@ -11375,11 +11384,11 @@
       "source_file": "src/stealth_runner/unmask_client.py",
       "source_location": "L5",
       "weight": 0.8,
-      "_src": "stealth_runner_unmask_client_stealthstatus",
-      "_tgt": "stealth_runner_config_stealthconfig",
+      "_src": "stealth_runner_config_stealthconfig",
+      "_tgt": "stealth_runner_unmask_client_stealthstatus",
+      "confidence_score": 0.5,
       "source": "stealth_runner_config_stealthconfig",
-      "target": "stealth_runner_unmask_client_stealthstatus",
-      "confidence_score": 0.5
+      "target": "stealth_runner_unmask_client_stealthstatus"
     },
     {
       "relation": "uses",
@@ -11387,11 +11396,11 @@
       "source_file": "src/stealth_runner/unmask_client.py",
       "source_location": "L5",
       "weight": 0.8,
-      "_src": "stealth_runner_unmask_client_rationale_1",
-      "_tgt": "stealth_runner_config_stealthconfig",
+      "_src": "stealth_runner_config_stealthconfig",
+      "_tgt": "stealth_runner_unmask_client_rationale_1",
+      "confidence_score": 0.5,
       "source": "stealth_runner_config_stealthconfig",
-      "target": "stealth_runner_unmask_client_rationale_1",
-      "confidence_score": 0.5
+      "target": "stealth_runner_unmask_client_rationale_1"
     },
     {
       "relation": "uses",
@@ -11399,11 +11408,11 @@
       "source_file": "src/stealth_runner/state_machine.py",
       "source_location": "L7",
       "weight": 0.8,
-      "_src": "stealth_runner_state_machine_state",
-      "_tgt": "stealth_runner_config_stealthconfig",
+      "_src": "stealth_runner_config_stealthconfig",
+      "_tgt": "stealth_runner_state_machine_state",
+      "confidence_score": 0.5,
       "source": "stealth_runner_config_stealthconfig",
-      "target": "stealth_runner_state_machine_state",
-      "confidence_score": 0.5
+      "target": "stealth_runner_state_machine_state"
     },
     {
       "relation": "uses",
@@ -11411,11 +11420,11 @@
       "source_file": "src/stealth_runner/state_machine.py",
       "source_location": "L7",
       "weight": 0.8,
-      "_src": "stealth_runner_state_machine_context",
-      "_tgt": "stealth_runner_config_stealthconfig",
+      "_src": "stealth_runner_config_stealthconfig",
+      "_tgt": "stealth_runner_state_machine_context",
+      "confidence_score": 0.5,
       "source": "stealth_runner_config_stealthconfig",
-      "target": "stealth_runner_state_machine_context",
-      "confidence_score": 0.5
+      "target": "stealth_runner_state_machine_context"
     },
     {
       "relation": "uses",
@@ -11423,11 +11432,11 @@
       "source_file": "src/stealth_runner/state_machine.py",
       "source_location": "L7",
       "weight": 0.8,
-      "_src": "stealth_runner_state_machine_asyncstatemachine",
-      "_tgt": "stealth_runner_config_stealthconfig",
+      "_src": "stealth_runner_config_stealthconfig",
+      "_tgt": "stealth_runner_state_machine_asyncstatemachine",
+      "confidence_score": 0.5,
       "source": "stealth_runner_config_stealthconfig",
-      "target": "stealth_runner_state_machine_asyncstatemachine",
-      "confidence_score": 0.5
+      "target": "stealth_runner_state_machine_asyncstatemachine"
     },
     {
       "relation": "calls",
@@ -11436,8 +11445,8 @@
       "source_file": "src/stealth_runner/__main__.py",
       "source_location": "L15",
       "weight": 1.0,
-      "_src": "stealth_runner_main_run",
-      "_tgt": "stealth_runner_config_stealthconfig",
+      "_src": "stealth_runner_config_stealthconfig",
+      "_tgt": "stealth_runner_main_run",
       "source": "stealth_runner_config_stealthconfig",
       "target": "stealth_runner_main_run"
     },
@@ -11459,11 +11468,11 @@
       "source_file": "src/stealth_runner/state_machine.py",
       "source_location": "L7",
       "weight": 0.8,
-      "_src": "stealth_runner_state_machine_state",
-      "_tgt": "stealth_runner_config_surveyconfig",
+      "_src": "stealth_runner_config_surveyconfig",
+      "_tgt": "stealth_runner_state_machine_state",
+      "confidence_score": 0.5,
       "source": "stealth_runner_config_surveyconfig",
-      "target": "stealth_runner_state_machine_state",
-      "confidence_score": 0.5
+      "target": "stealth_runner_state_machine_state"
     },
     {
       "relation": "uses",
@@ -11471,11 +11480,11 @@
       "source_file": "src/stealth_runner/state_machine.py",
       "source_location": "L7",
       "weight": 0.8,
-      "_src": "stealth_runner_state_machine_context",
-      "_tgt": "stealth_runner_config_surveyconfig",
+      "_src": "stealth_runner_config_surveyconfig",
+      "_tgt": "stealth_runner_state_machine_context",
+      "confidence_score": 0.5,
       "source": "stealth_runner_config_surveyconfig",
-      "target": "stealth_runner_state_machine_context",
-      "confidence_score": 0.5
+      "target": "stealth_runner_state_machine_context"
     },
     {
       "relation": "uses",
@@ -11483,11 +11492,11 @@
       "source_file": "src/stealth_runner/state_machine.py",
       "source_location": "L7",
       "weight": 0.8,
-      "_src": "stealth_runner_state_machine_asyncstatemachine",
-      "_tgt": "stealth_runner_config_surveyconfig",
+      "_src": "stealth_runner_config_surveyconfig",
+      "_tgt": "stealth_runner_state_machine_asyncstatemachine",
+      "confidence_score": 0.5,
       "source": "stealth_runner_config_surveyconfig",
-      "target": "stealth_runner_state_machine_asyncstatemachine",
-      "confidence_score": 0.5
+      "target": "stealth_runner_state_machine_asyncstatemachine"
     },
     {
       "relation": "calls",
@@ -11496,8 +11505,8 @@
       "source_file": "src/stealth_runner/__main__.py",
       "source_location": "L16",
       "weight": 1.0,
-      "_src": "stealth_runner_main_run",
-      "_tgt": "stealth_runner_config_surveyconfig",
+      "_src": "stealth_runner_config_surveyconfig",
+      "_tgt": "stealth_runner_main_run",
       "source": "stealth_runner_config_surveyconfig",
       "target": "stealth_runner_main_run"
     },
@@ -11569,9 +11578,9 @@
       "weight": 0.8,
       "_src": "stealth_runner_vision_client_visiondecision",
       "_tgt": "stealth_runner_executor_retryableerror",
+      "confidence_score": 0.5,
       "source": "stealth_runner_vision_client_visiondecision",
-      "target": "stealth_runner_executor_retryableerror",
-      "confidence_score": 0.5
+      "target": "stealth_runner_executor_retryableerror"
     },
     {
       "relation": "calls",
@@ -11580,8 +11589,8 @@
       "source_file": "src/stealth_runner/state_machine.py",
       "source_location": "L44",
       "weight": 1.0,
-      "_src": "stealth_runner_state_machine_asyncstatemachine_transition",
-      "_tgt": "stealth_runner_vision_client_call_vision_llm",
+      "_src": "stealth_runner_vision_client_call_vision_llm",
+      "_tgt": "stealth_runner_state_machine_asyncstatemachine_transition",
       "source": "stealth_runner_vision_client_call_vision_llm",
       "target": "stealth_runner_state_machine_asyncstatemachine_transition"
     },
@@ -11785,9 +11794,9 @@
       "weight": 0.8,
       "_src": "stealth_runner_state_machine_state",
       "_tgt": "stealth_runner_audit_logger_auditlogger",
+      "confidence_score": 0.5,
       "source": "stealth_runner_state_machine_state",
-      "target": "stealth_runner_audit_logger_auditlogger",
-      "confidence_score": 0.5
+      "target": "stealth_runner_audit_logger_auditlogger"
     },
     {
       "relation": "uses",
@@ -11797,9 +11806,9 @@
       "weight": 0.8,
       "_src": "stealth_runner_state_machine_state",
       "_tgt": "stealth_runner_executor_fatalerror",
+      "confidence_score": 0.5,
       "source": "stealth_runner_state_machine_state",
-      "target": "stealth_runner_executor_fatalerror",
-      "confidence_score": 0.5
+      "target": "stealth_runner_executor_fatalerror"
     },
     {
       "relation": "uses",
@@ -11809,9 +11818,9 @@
       "weight": 0.8,
       "_src": "stealth_runner_state_machine_state",
       "_tgt": "stealth_runner_executor_retryableerror",
+      "confidence_score": 0.5,
       "source": "stealth_runner_state_machine_state",
-      "target": "stealth_runner_executor_retryableerror",
-      "confidence_score": 0.5
+      "target": "stealth_runner_executor_retryableerror"
     },
     {
       "relation": "uses",
@@ -11821,9 +11830,9 @@
       "weight": 0.8,
       "_src": "stealth_runner_state_machine_context",
       "_tgt": "stealth_runner_audit_logger_auditlogger",
+      "confidence_score": 0.5,
       "source": "stealth_runner_state_machine_context",
-      "target": "stealth_runner_audit_logger_auditlogger",
-      "confidence_score": 0.5
+      "target": "stealth_runner_audit_logger_auditlogger"
     },
     {
       "relation": "uses",
@@ -11833,9 +11842,9 @@
       "weight": 0.8,
       "_src": "stealth_runner_state_machine_context",
       "_tgt": "stealth_runner_executor_fatalerror",
+      "confidence_score": 0.5,
       "source": "stealth_runner_state_machine_context",
-      "target": "stealth_runner_executor_fatalerror",
-      "confidence_score": 0.5
+      "target": "stealth_runner_executor_fatalerror"
     },
     {
       "relation": "uses",
@@ -11845,9 +11854,9 @@
       "weight": 0.8,
       "_src": "stealth_runner_state_machine_context",
       "_tgt": "stealth_runner_executor_retryableerror",
+      "confidence_score": 0.5,
       "source": "stealth_runner_state_machine_context",
-      "target": "stealth_runner_executor_retryableerror",
-      "confidence_score": 0.5
+      "target": "stealth_runner_executor_retryableerror"
     },
     {
       "relation": "calls",
@@ -11856,8 +11865,8 @@
       "source_file": "src/stealth_runner/__main__.py",
       "source_location": "L18",
       "weight": 1.0,
-      "_src": "stealth_runner_main_run",
-      "_tgt": "stealth_runner_state_machine_context",
+      "_src": "stealth_runner_state_machine_context",
+      "_tgt": "stealth_runner_main_run",
       "source": "stealth_runner_state_machine_context",
       "target": "stealth_runner_main_run"
     },
@@ -11905,9 +11914,9 @@
       "weight": 0.8,
       "_src": "stealth_runner_state_machine_asyncstatemachine",
       "_tgt": "stealth_runner_audit_logger_auditlogger",
+      "confidence_score": 0.5,
       "source": "stealth_runner_state_machine_asyncstatemachine",
-      "target": "stealth_runner_audit_logger_auditlogger",
-      "confidence_score": 0.5
+      "target": "stealth_runner_audit_logger_auditlogger"
     },
     {
       "relation": "uses",
@@ -11917,9 +11926,9 @@
       "weight": 0.8,
       "_src": "stealth_runner_state_machine_asyncstatemachine",
       "_tgt": "stealth_runner_executor_fatalerror",
+      "confidence_score": 0.5,
       "source": "stealth_runner_state_machine_asyncstatemachine",
-      "target": "stealth_runner_executor_fatalerror",
-      "confidence_score": 0.5
+      "target": "stealth_runner_executor_fatalerror"
     },
     {
       "relation": "uses",
@@ -11929,9 +11938,9 @@
       "weight": 0.8,
       "_src": "stealth_runner_state_machine_asyncstatemachine",
       "_tgt": "stealth_runner_executor_retryableerror",
+      "confidence_score": 0.5,
       "source": "stealth_runner_state_machine_asyncstatemachine",
-      "target": "stealth_runner_executor_retryableerror",
-      "confidence_score": 0.5
+      "target": "stealth_runner_executor_retryableerror"
     },
     {
       "relation": "calls",
@@ -11940,8 +11949,8 @@
       "source_file": "src/stealth_runner/__main__.py",
       "source_location": "L18",
       "weight": 1.0,
-      "_src": "stealth_runner_main_run",
-      "_tgt": "stealth_runner_state_machine_asyncstatemachine",
+      "_src": "stealth_runner_state_machine_asyncstatemachine",
+      "_tgt": "stealth_runner_main_run",
       "source": "stealth_runner_state_machine_asyncstatemachine",
       "target": "stealth_runner_main_run"
     },
@@ -12036,8 +12045,8 @@
       "source_file": "src/stealth_runner/__main__.py",
       "source_location": "L17",
       "weight": 1.0,
-      "_src": "stealth_runner_main_run",
-      "_tgt": "stealth_runner_audit_logger_auditlogger",
+      "_src": "stealth_runner_audit_logger_auditlogger",
+      "_tgt": "stealth_runner_main_run",
       "source": "stealth_runner_audit_logger_auditlogger",
       "target": "stealth_runner_main_run"
     },

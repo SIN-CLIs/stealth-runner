@@ -1,11 +1,11 @@
 # Graph Report - stealth-runner  (2026-05-01)
 
 ## Corpus Check
-- 72 files · ~28,968 words
+- 72 files · ~29,024 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 456 nodes · 680 edges · 33 communities detected
+- 457 nodes · 680 edges · 34 communities detected
 - Extraction: 74% EXTRACTED · 26% INFERRED · 0% AMBIGUOUS · INFERRED: 176 edges (avg confidence: 0.68)
 - Token cost: 0 input · 0 output
 
@@ -43,6 +43,7 @@
 - [[_COMMUNITY_Community 31|Community 31]]
 - [[_COMMUNITY_Community 32|Community 32]]
 - [[_COMMUNITY_Community 33|Community 33]]
+- [[_COMMUNITY_Community 35|Community 35]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `StealthExecutor` - 28 edges
@@ -59,14 +60,14 @@
 ## Surprising Connections (you probably didn't know these)
 - `main()` --calls--> `SurveyRunner`  [INFERRED]
   main.py → runner/state_machine.py
-- `TestVisionClient` --uses--> `StealthExecutor`  [INFERRED]
-  tests/test_runner.py → runner/stealth_executor.py
-- `TestVisionClient` --uses--> `HumanProfile`  [INFERRED]
-  tests/test_runner.py → runner/human_profile.py
+- `StealthExecutor` --uses--> `TestVisionClient`  [INFERRED]
+  runner/stealth_executor.py → tests/test_runner.py
+- `HumanProfile` --uses--> `TestVisionClient`  [INFERRED]
+  runner/human_profile.py → tests/test_runner.py
 - `stealth-runner – Orchestrator der Stealth-Triade v0.3.1.` --uses--> `State`  [INFERRED]
   runner/__init__.py → src/stealth_runner/state_machine.py
-- `test_state_machine_initializes()` --calls--> `SurveyRunner`  [INFERRED]
-  tests/test_state_machine.py → runner/state_machine.py
+- `SurveyRunner` --calls--> `test_state_machine_initializes()`  [INFERRED]
+  runner/state_machine.py → tests/test_state_machine.py
 
 ## Communities
 
@@ -202,8 +203,12 @@ Nodes (1): Test-Suite für den stealth-runner. Führe mit: pytest tests/ -v
 Cohesion: 1.0
 Nodes (1): stealth-runner: Vision-driven CLI orchestrator for stealth survey automation.
 
+### Community 35 - "Community 35"
+Cohesion: 1.0
+Nodes (1): Hybrid Loop: Screenshot (schnell) + Video (alle 5 Schritte temporal).
+
 ## Knowledge Gaps
-- **59 isolated node(s):** `FastAPI wrapper for stealth-runner – SaaS API (SOTA #14).`, `State-File Management mit Backup & Recovery.`, `Lädt State mit Backup-Recovery.`, `Speichert State mit Backup.`, `Versucht, State aus Backups wiederherzustellen.` (+54 more)
+- **60 isolated node(s):** `FastAPI wrapper for stealth-runner – SaaS API (SOTA #14).`, `State-File Management mit Backup & Recovery.`, `Lädt State mit Backup-Recovery.`, `Speichert State mit Backup.`, `Versucht, State aus Backups wiederherzustellen.` (+55 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **Thin community `Community 15`** (9 nodes): `config.py`, `current_model()`, `fallback_models()`, `max_tokens()`, `Vision-Client Konfiguration (YAML-basiert).`, `timeout()`, `VisionConfig`, `.__init__()`, `._load_config()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
@@ -237,12 +242,14 @@ Nodes (1): stealth-runner: Vision-driven CLI orchestrator for stealth survey aut
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 33`** (2 nodes): `__init__.py`, `stealth-runner: Vision-driven CLI orchestrator for stealth survey automation.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 35`** (1 nodes): `Hybrid Loop: Screenshot (schnell) + Video (alle 5 Schritte temporal).`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `sin_survey_core – Aus dem A2A-SIN-Worker extrahierte Survey-Intelligenz.` connect `Community 9` to `Community 10`, `Community 4`?**
-  _High betweenness centrality (0.148) - this node is a cross-community bridge._
+  _High betweenness centrality (0.147) - this node is a cross-community bridge._
 - **Why does `StealthExecutor` connect `Community 0` to `Community 8`, `Community 1`, `Community 3`, `Community 6`?**
   _High betweenness centrality (0.139) - this node is a cross-community bridge._
 - **Are the 18 inferred relationships involving `StealthExecutor` (e.g. with `BaseDriver` and `SkylightDriver`) actually correct?**

@@ -24,7 +24,7 @@ import httpx
 
 NVIDIA_KEY = os.environ.get("NVIDIA_API_KEY")
 NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
-OMNI_MODEL = "nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
+OMNI_MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
 TMP = Path("/tmp")
 VIDEO_BUF = TMP / "omni_rolling.mp4"
 VIDEO_CLIP = TMP / "omni_clip.mp4"

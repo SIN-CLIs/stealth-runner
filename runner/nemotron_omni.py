@@ -19,7 +19,7 @@ from diskcache import Cache
 
 NVIDIA_KEY = os.environ.get("NVIDIA_API_KEY")
 NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
-OMNI_MODEL = "nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
+OMNI_MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
 FALLBACK_MODEL = "meta/llama-3.2-90b-vision-instruct"
 _cache = Cache("/tmp/stealth_omni_cache")
 
