@@ -143,8 +143,8 @@ class Hands:
                     return e.get("index")
         return None
 
-    async def find_in_popup(self, label: str) -> tuple[int, int] | None:
-        """cua-driver list_windows + get_window_state → Popup-Element finden."""
+    async def find_in_popup(self, label: str, role_filter: str | None = "AXButton") -> tuple[int, int] | None:
+        """cua-driver list_windows + get_window_state. Nur Buttons/Links, kein StaticText."""
         out = await self._run(["cua-driver", "call", "list_windows"])
         try:
             for w in json.loads(out).get("windows", []):
@@ -154,16 +154,18 @@ class Hands:
                 if not r2: continue
                 tree = json.loads(r2).get("tree_markdown", "")
                 for line in tree.split("\n"):
-                    if label.lower() in line.lower():
+                    if label.lower() in line.lower() and "Button" in line:
                         m = re.search(r"\[(\d+)\]", line)
                         if m: return (wid, int(m.group(1)))
         except: pass
         return None
 
     async def click(self, label: str) -> bool:
-        """Popup-first → Fallback. NUR element-index."""
-        p = await self.find_in_popup(label)
-        idx = p[1] if p else await self.find_by_label(label, "AXButton") or await self.find_by_label(label, "AXLink")
+        """AXButton/AXLink first → Popup-Fallback. NUR element-index."""
+        idx = await self.find_by_label(label, "AXButton") or await self.find_by_label(label, "AXLink")
+        if not idx:
+            p = await self.find_in_popup(label)
+            idx = p[1] if p else None
         if idx:
             await self._run(["skylight-cli", "click", "--pid", str(self.pid), "--element-index", str(idx)])
             print(f"      🖱 [{idx}] '{label}'", flush=True)
