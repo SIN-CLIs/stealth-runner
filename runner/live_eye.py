@@ -12,6 +12,17 @@ from PIL import Image
 KEY = os.getenv("NVIDIA_API_KEY", "")
 URL = "https://integrate.api.nvidia.com/v1/chat/completions"
 MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
+
+# gRPC (falls verfuegbar)
+GRPC_HOST = "grpc.nvcf.nvidia.com:443"
+HAS_GRPC = False
+try:
+    import grpc as _grpc
+    _chan = _grpc.secure_channel(GRPC_HOST, _grpc.ssl_channel_credentials())
+    _grpc.channel_ready_future(_chan).result(timeout=3)
+    HAS_GRPC = True
+except:
+    pass
 FPS = 5
 BUFFER_SECS = 4
 MAX_FRAMES = FPS * BUFFER_SECS  # 20 Frames
