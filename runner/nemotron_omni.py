@@ -101,7 +101,8 @@ class OmniClient:
                            json={"model": self.model, "messages": messages,
                                  "max_tokens": max_tokens, "temperature": temperature},
                            timeout=90)
-            return r.json()["choices"][0]["message"]["content"]
+            msg = r.json()["choices"][0]["message"]
+            return msg.get("reasoning") or msg.get("content") or ""
         except Exception:
             if self.model != FALLBACK_MODEL:
                 try:
@@ -109,7 +110,8 @@ class OmniClient:
                                    json={"model": FALLBACK_MODEL, "messages": messages,
                                          "max_tokens": max_tokens, "temperature": temperature},
                                    timeout=60)
-                    return r.json()["choices"][0]["message"]["content"]
+                    msg = r.json()["choices"][0]["message"]
+                    return msg.get("reasoning") or msg.get("content") or ""
                 except Exception as e:
                     raise OmniError(f"API call failed: {e}") from e
             raise

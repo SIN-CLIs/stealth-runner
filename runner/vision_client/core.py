@@ -87,7 +87,8 @@ class VisionClient:
                 },
                 timeout=self.api_timeout,
             )
-            return r.json()["choices"][0]["message"]["content"]
+            msg = r.json()["choices"][0]["message"]
+            return msg.get("reasoning") or msg.get("content") or ""
         except Exception:
             return ""
 
@@ -149,7 +150,8 @@ class VisionClient:
             headers=headers, json=payload, timeout=self.api_timeout,
         )
         response.raise_for_status()
-        content = response.json()["choices"][0]["message"]["content"]
+        msg = response.json()["choices"][0]["message"]
+        content = msg.get("reasoning") or msg.get("content") or ""
         try:
             return json.loads(content)
         except json.JSONDecodeError:

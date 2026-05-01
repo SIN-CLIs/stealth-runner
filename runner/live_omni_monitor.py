@@ -179,13 +179,15 @@ class LiveOmniMonitor:
                 timeout=60,
             ) as response:
                 for line in response.iter_lines():
-                    if line.startswith("data: ") and not line.startswith("data: [DONE]"):
+                    if line.startswith("data: ") and "DONE" not in line:
                         try:
                             import json as _j
                             chunk = _j.loads(line[6:])
-                            delta = chunk.get("choices", [{}])[0].get("delta", {}).get("content", "")
-                            if delta:
-                                content += delta
+                            delta = chunk.get("choices", [{}])[0].get("delta", {})
+                            # Omni schreibt ins reasoning-Feld statt content
+                            tok = delta.get("content") or delta.get("reasoning") or ""
+                            if tok:
+                                content += tok
                         except Exception:
                             continue
 
