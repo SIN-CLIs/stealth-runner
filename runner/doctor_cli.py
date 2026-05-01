@@ -920,6 +920,47 @@ def run_doctor(repo: Path) -> dict:
     except:
         pass
 
+    # ── PHASE 5: GRAPHIFY SETUP ───────────────────────────────
+    try:
+        has_graphify = False
+        try:
+            r = subprocess.run(["python3", "-m", "graphify", "--version"], capture_output=True, text=True, timeout=5)
+            has_graphify = r.returncode == 0
+        except:
+            pass
+        if not has_graphify:
+            try:
+                subprocess.run(["pip3", "install", "graphifyy", "--break-system-packages", "-q"],
+                             capture_output=True, timeout=30)
+                has_graphify = True
+                print(f"      📦 graphifyy: installiert", flush=True)
+            except:
+                print(f"      ⚠️ graphifyy: Installation fehlgeschlagen", flush=True)
+        if has_graphify:
+            graph_out = repo / "graphify-out"
+            graph_exists = graph_out.exists()
+            r = subprocess.run(["python3", "-m", "graphify", "update", str(repo)],
+                             capture_output=True, text=True, timeout=120, cwd=str(repo))
+            if r.returncode == 0:
+                # Post-Commit Hook einrichten
+                hook = repo / ".git" / "hooks" / "post-commit"
+                if not hook.exists() or "graphify" not in hook.read_text() if hook.exists() else "":
+                    hook_content = """#!/bin/bash
+# Auto graphify rebuild after commit
+cd "$(dirname "$0")/../.."
+python3 -m graphify update . 2>/dev/null || true
+"""
+                    hook.write_text(hook_content)
+                    hook.chmod(0o755)
+                    print(f"      🔗 graphify post-commit hook: eingerichtet", flush=True)
+                status = "✅ rebuild" if graph_exists else "✅ initialisiert"
+                print(f"      📊 graphify: {status}", flush=True)
+                fixes += 1
+            else:
+                print(f"      ⚠️ graphify: update fehlgeschlagen ({r.stderr[:80]})", flush=True)
+    except Exception as e:
+        print(f"      ⚠️ graphify: {e}", flush=True)
+
     # Essentielle Docs prüfen
     for doc in ["README.md", "LICENSE", "CONTRIBUTING.md", "SECURITY.md", "AGENTS.md", "brain.md", "goal.md"]:
         if not (repo / doc).exists():
