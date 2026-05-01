@@ -11,7 +11,7 @@ from .audit_log import AuditLog
 from .human_profile import HumanProfile
 
 class State(StrEnum):
-    IDLE="idle"; LAUNCH_BROWSER="launch_browser"; WAIT_READY="wait_ready"
+    IDLE="idle"; LAUNCH_BROWSER="launch_browser"; LOGIN="login"; WAIT_READY="wait_ready"
     CAPTURE="capture"; VISION="vision"; EXECUTE="execute"; VERIFY="verify"
     DONE="done"; RECOVERY="recovery"
 
@@ -53,6 +53,7 @@ class SurveyRunner:
         match self.state:
             case State.IDLE: self.state = State.LAUNCH_BROWSER if not self.pid else State.CAPTURE
             case State.LAUNCH_BROWSER: await self._launch()
+            case State.LOGIN: await self._login()
             case State.WAIT_READY: await self._wait_ready()
             case State.CAPTURE: await self._capture()
             case State.VISION: await self._vision()
@@ -64,7 +65,30 @@ class SurveyRunner:
         result = self.executor.run(["playstealth","launch","--url",self.url])
         self.pid = result.get("pid"); self.executor.pid = self.pid
         print(f"✓ PID={self.pid}", flush=True)
-        self.log.log("launch",pid=self.pid); self.state = State.WAIT_READY
+        self.log.log("launch",pid=self.pid); self.state = State.LOGIN
+
+    async def _login(self):
+        import subprocess as _sp
+        profile = Path("profiles/jeremy.yaml")
+        email = os.environ.get("GOOGLE_EMAIL", "")
+        if profile.exists() and not email:
+            try:
+                import yaml; import os
+                data = yaml.safe_load(profile.read_text())
+                email = data.get("google_email", "")
+            except: pass
+        if email:
+            print(f"🔐 Login {email}...", flush=True)
+            try:
+                _sp.run(["bash", "cli/heypiggy-login", str(self.pid)],
+                        cwd=Path(__file__).parent.parent, timeout=60)
+                print(f"✅ Login ok", flush=True)
+            except Exception as e:
+                print(f"⚠️ Login: {e}", flush=True)
+        else:
+            print(f"⚠️ Kein Profil — ohne Login", flush=True)
+        self.state = State.WAIT_READY
+
     async def _wait_ready(self):
         for _ in range(10):
             try:

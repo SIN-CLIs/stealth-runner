@@ -19,3 +19,8 @@ AXPress (`AXUIElementPerformAction`) – einziger funktionierender Klick auf Chr
 - Koordinaten raten
 - `open -na Chrome`
 - `cua-driver`
+
+## LOGIN-Pipeline (NEU)
+Vor dem Survey-Loop läuft jetzt der LOGIN-State:
+LAUNCH -> LOGIN (cli/heypiggy-login) -> WAIT_READY -> CAPTURE -> VISION -> EXECUTE -> VERIFY -> repeat
+Profile: `profiles/jeremy.yaml` (nicht im Git, liefert Google-Email)

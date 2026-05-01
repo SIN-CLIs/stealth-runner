@@ -19,3 +19,7 @@ cd ~/dev/stealth-runner && python3 main.py "https://heypiggy.com/?page=dashboard
 - ❌ `cua-driver`
 - ❌ `open -na Chrome`
 - ❌ Koordinaten raten (`--x`, `--y`)
+
+## LOGIN (automatisch vor Survey-Loop)
+Der Runner loggt sich automatisch via `cli/heypiggy-login` ein.
+Credentials aus `profiles/jeremy.yaml` (Google Email).
