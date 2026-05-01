@@ -159,3 +159,6 @@ class SurveyRunner:
 def main():
     if len(sys.argv) != 2: print("Usage: python main.py <URL>"); sys.exit(1)
     anyio.run(SurveyRunner(sys.argv[1]).run)
+
+if __name__ == "__main__":
+    main()
