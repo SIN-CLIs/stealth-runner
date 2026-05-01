@@ -24,7 +24,7 @@ Heypiggy.com automatisieren: Google-Login → Surveys abschließen → EUR > 0 v
 - ⏳ EUR-Guthaben prüfen nach Survey
 
 ## Constraints (UNVERBRÜCHLICH – semgrep blockiert Verstöße)
-1. Nur skylight-cli, NIE **skylight-cli**
+1. Nur skylight-cli, NIE skylight-cli
 2. Nur `--element-index`, NIE `--x`/`--y`
 3. Nur `playstealth launch`, NIE `open -na Chrome` oder `pgrep`
 4. Nur httpx an NVIDIA NIM, NIE openai-Client

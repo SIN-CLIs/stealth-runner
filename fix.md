@@ -9,7 +9,7 @@
 - **Status**: ✅ Omni API liefert jetzt korrekte Antworten
 
 ### P0: Model-Name doppelter Prefix → 404
-- **Bug**: `**nvidia/nemotron (doppelter Prefix entfernt)**-3-nano-omni-30b-a3b-reasoning`
+- **Bug**: `nvidia/nemotron (doppelter Prefix entfernt)-3-nano-omni-30b-a3b-reasoning`
 - **Fix**: `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`
 - **Dateien**: `config/vision_models.yaml`, `runner/nemotron_omni.py`, `runner/live_omni_monitor.py`
 - **Status**: ✅ HTTP 200, SSE funktioniert
@@ -44,11 +44,11 @@
 - [ ] Survey-Loop nach Login noch nicht getestet (OmniSurveyRunner bereit)
 
 ## NIE TUN (semgrep blockiert)
-- ❌ `**playstealth launch (isolierte PID)**"`
-- ❌ `**BANNED – niemand importiert pyautogui**` / `**BANNED – niemand importiert pynput**`
-- ❌ `**httpx an NVIDIA NIM**` / `**httpx an NVIDIA NIM**`
+- ❌ `playstealth launch (isolierte PID)"`
+- ❌ `BANNED – niemand importiert pyautogui` / `BANNED – niemand importiert pynput`
+- ❌ `httpx an NVIDIA NIM` / `httpx an NVIDIA NIM`
 - ❌ `skylight-cli click --x ...` (Koordinaten)
-- ❌ **skylight-cli** MCP
+- ❌ skylight-cli MCP
 - ❌ Nutzer-Chrome manipulieren
 - ❌ Ohne Primer klicken
 - ❌ `recovery_mode: true`

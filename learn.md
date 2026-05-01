@@ -7,7 +7,7 @@
 - **Betrifft**: Alle NIM-API-Calls mit Nemotron Omni Modell
 
 ## 2. Model-Name ohne doppelten Prefix
-- **Problem**: `**nvidia/nemotron (doppelter Prefix entfernt)**-3-nano-omni-30b-a3b-reasoning` → 404
+- **Problem**: `nvidia/nemotron (doppelter Prefix entfernt)-3-nano-omni-30b-a3b-reasoning` → 404
 - **Gelernt**: Korrekter Name ist `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`
 - **Fix**: YAML + Code korrigiert
 

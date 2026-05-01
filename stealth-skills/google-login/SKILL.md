@@ -1,7 +1,7 @@
 # stealth-skill: google-login
 
 > **Vollständiger Google OAuth Login — heypiggy.com via skylight-cli + playstealth**
-> NUR skylight-cli. KEIN **skylight-cli**. KEIN osascript. KEIN Nutzer-Chrome.
+> NUR skylight-cli. KEIN skylight-cli. KEIN osascript. KEIN Nutzer-Chrome.
 
 ---
 
@@ -81,10 +81,10 @@ sleep 5
 | playstealth | `launch --url 'URL'` |
 
 ## ❌ NIEMALS
-- **skylight-cli** MCP → BANNED
+- skylight-cli MCP → BANNED
 - `--x`/`--y` raten → Apple-Menü (0,0)
 - `osascript` oder `open` → manipuliert Nutzer-Chrome
-- `**playstealth launch (isolierte PID)**"` → könnte Nutzer-PID greifen
+- `playstealth launch (isolierte PID)"` → könnte Nutzer-PID greifen
 - Ohne `sleep 5` nach Popup-Klick
 
 ## 🚨 Die 3 eisernen Regeln

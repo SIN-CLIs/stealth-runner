@@ -43,6 +43,6 @@
 ## NICHT funktionierend
 - DOM-Prescan (ENTFERNT – klickte blind Element 1)
 - `CGEventPostToPid` (TOT auf Chrome 148)
-- **skylight-cli** MCP (BANNED – Profil-Konflikt)
-- **playstealth launch (isolierte PID)**)
+- skylight-cli MCP (BANNED – Profil-Konflikt)
+- playstealth launch (isolierte PID))
 - openai-Client (BANNED – nur NVIDIA NIM httpx)

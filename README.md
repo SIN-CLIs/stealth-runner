@@ -119,7 +119,7 @@ pip install semgrep graphifyy httpx diskcache pyyaml
 # config/vision_models.yaml
 current_model: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning
 fallback_models:
-  - meta/**nvidia/nemotron-3-nano-omni-30b-a3b-reasoning**
+  - meta/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning
 max_tokens: 300
 ```
 
@@ -143,14 +143,14 @@ semgrep --config=.semgrep_rules.yaml .
 
 | Regel | Blockiert |
 |-------|-----------|
-| `banned-chrome-pgrep` | `**playstealth launch (isolierte PID)**` |
-| `banned-chrome-open` | `**playstealth launch**` |
-| `banned-**NIEMALS – BANNED (semgrep Regel)**` |
-| `banned-pyautogui` | `**BANNED – niemand importiert pyautogui**` |
-| `banned-pynput` | `**BANNED – niemand importiert pynput**` |
-| `banned-openai-client` | `**httpx an NVIDIA NIM**` |
+| `banned-chrome-pgrep` | `playstealth launch (isolierte PID)` |
+| `banned-chrome-open` | `playstealth launch` |
+| `banned-NIEMALS – BANNED (semgrep Regel)` |
+| `banned-pyautogui` | `BANNED – niemand importiert pyautogui` |
+| `banned-pynput` | `BANNED – niemand importiert pynput` |
+| `banned-openai-client` | `httpx an NVIDIA NIM` |
 | `banned-coordinates-click` | `skylight-cli click --x` |
-| `banned-**skylight-cli**` | **skylight-cli** |
+| `banned-skylight-cli` | skylight-cli |
 | `banned-recovery-mode` | `recovery_mode: true` |
 | `mandatory-playstealth-launch` | Chrome direkt starten |
 
@@ -208,9 +208,9 @@ m.run_continuous(max_steps=100)
 
 ## Golden Rules (UNVERBRÜCHLICH)
 
-1. **NUR `skylight-cli`** – NIE **skylight-cli**
+1. **NUR `skylight-cli`** – NIE skylight-cli
 2. **NUR `--element-index`** – NIE `--x`/`--y` Koordinaten
-3. **NUR `playstealth launch`** – NIE `**playstealth launch (isolierte PID)**` oder `open -na`
+3. **NUR `playstealth launch`** – NIE `playstealth launch (isolierte PID)` oder `open -na`
 4. **NUR NVIDIA NIM httpx** – NIE openai-Client
 5. **JEDER Schritt durch Vision** – Kein DOM-Prescan
 6. **Video bei jedem Build** – `screen-follow record --video`

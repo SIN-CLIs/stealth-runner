@@ -9,7 +9,7 @@
       "source_file": "api_server.py",
       "source_location": "L1",
       "id": "api_server_py",
-      "community": 11,
+      "community": 12,
       "norm_label": "api_server.py"
     },
     {
@@ -18,7 +18,7 @@
       "source_file": "api_server.py",
       "source_location": "L11",
       "id": "stealth_runner_api_server_surveyrequest",
-      "community": 11,
+      "community": 12,
       "norm_label": "surveyrequest"
     },
     {
@@ -27,7 +27,7 @@
       "source_file": "",
       "source_location": "",
       "id": "basemodel",
-      "community": 11,
+      "community": 12,
       "norm_label": "basemodel"
     },
     {
@@ -36,7 +36,7 @@
       "source_file": "api_server.py",
       "source_location": "L16",
       "id": "stealth_runner_api_server_health",
-      "community": 11,
+      "community": 12,
       "norm_label": "health()"
     },
     {
@@ -45,7 +45,7 @@
       "source_file": "api_server.py",
       "source_location": "L25",
       "id": "stealth_runner_api_server_balance",
-      "community": 11,
+      "community": 12,
       "norm_label": "balance()"
     },
     {
@@ -53,7 +53,7 @@
       "file_type": "rationale",
       "source_file": "api_server.py",
       "source_location": "L1",
-      "community": 11,
+      "community": 12,
       "norm_label": "fastapi wrapper for stealth-runner \u2013 saas api (sota #14).",
       "id": "stealth_runner_api_server_rationale_1"
     },
@@ -76,12 +76,156 @@
       "norm_label": "main()"
     },
     {
+      "label": "doctor_cli.py",
+      "file_type": "code",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L1",
+      "id": "runner_doctor_cli_py",
+      "community": 11,
+      "norm_label": "doctor_cli.py"
+    },
+    {
+      "label": "Doctor",
+      "file_type": "code",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L57",
+      "id": "runner_doctor_cli_doctor",
+      "community": 11,
+      "norm_label": "doctor"
+    },
+    {
+      "label": ".__init__()",
+      "file_type": "code",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L60",
+      "id": "runner_doctor_cli_doctor_init",
+      "community": 11,
+      "norm_label": ".__init__()"
+    },
+    {
+      "label": ".run()",
+      "file_type": "code",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L65",
+      "id": "runner_doctor_cli_doctor_run",
+      "community": 11,
+      "norm_label": ".run()"
+    },
+    {
+      "label": "._scan_outdated_patterns()",
+      "file_type": "code",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L90",
+      "id": "runner_doctor_cli_doctor_scan_outdated_patterns",
+      "community": 11,
+      "norm_label": "._scan_outdated_patterns()"
+    },
+    {
+      "label": "._scan_credentials()",
+      "file_type": "code",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L124",
+      "id": "runner_doctor_cli_doctor_scan_credentials",
+      "community": 11,
+      "norm_label": "._scan_credentials()"
+    },
+    {
+      "label": "._scan_sota_docs()",
+      "file_type": "code",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L164",
+      "id": "runner_doctor_cli_doctor_scan_sota_docs",
+      "community": 11,
+      "norm_label": "._scan_sota_docs()"
+    },
+    {
+      "label": "._scan_dead_links()",
+      "file_type": "code",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L183",
+      "id": "runner_doctor_cli_doctor_scan_dead_links",
+      "community": 11,
+      "norm_label": "._scan_dead_links()"
+    },
+    {
+      "label": "._commit_all()",
+      "file_type": "code",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L195",
+      "id": "runner_doctor_cli_doctor_commit_all",
+      "community": 11,
+      "norm_label": "._commit_all()"
+    },
+    {
+      "label": "Der Doktor \u2013 scannt, findet, fixrt, committed.",
+      "file_type": "rationale",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L58",
+      "id": "runner_doctor_cli_rationale_58",
+      "community": 11,
+      "norm_label": "der doktor \u2013 scannt, findet, fixrt, committed."
+    },
+    {
+      "label": "Hauptlauf: Alle Repos \u2192 Alle Lenses \u2192 Fixen \u2192 Report.",
+      "file_type": "rationale",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L66",
+      "id": "runner_doctor_cli_rationale_66",
+      "community": 11,
+      "norm_label": "hauptlauf: alle repos \u2192 alle lenses \u2192 fixen \u2192 report."
+    },
+    {
+      "label": "Lens 1: Finde + fixe veraltete Claims in ALLEN .md Dateien.",
+      "file_type": "rationale",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L91",
+      "id": "runner_doctor_cli_rationale_91",
+      "community": 11,
+      "norm_label": "lens 1: finde + fixe veraltete claims in allen .md dateien."
+    },
+    {
+      "label": "Lens 6: Finde API-Keys + Passwoerter in Docs.",
+      "file_type": "rationale",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L125",
+      "id": "runner_doctor_cli_rationale_125",
+      "community": 11,
+      "norm_label": "lens 6: finde api-keys + passwoerter in docs."
+    },
+    {
+      "label": "Lens 4: Pr\u00fcfe welche SOTA Docs fehlen.",
+      "file_type": "rationale",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L165",
+      "id": "runner_doctor_cli_rationale_165",
+      "community": 11,
+      "norm_label": "lens 4: prufe welche sota docs fehlen."
+    },
+    {
+      "label": "Lens 2: Finde defekte Links via md-dead-link-check (wenn installiert).",
+      "file_type": "rationale",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L184",
+      "id": "runner_doctor_cli_rationale_184",
+      "community": 11,
+      "norm_label": "lens 2: finde defekte links via md-dead-link-check (wenn installiert)."
+    },
+    {
+      "label": "Commit + Push in ALLEN Repos.",
+      "file_type": "rationale",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L196",
+      "id": "runner_doctor_cli_rationale_196",
+      "community": 11,
+      "norm_label": "commit + push in allen repos."
+    },
+    {
       "label": "state_manager.py",
       "file_type": "code",
       "source_file": "runner/state_manager.py",
       "source_location": "L1",
       "id": "runner_state_manager_py",
-      "community": 14,
+      "community": 15,
       "norm_label": "state_manager.py"
     },
     {
@@ -90,7 +234,7 @@
       "source_file": "runner/state_manager.py",
       "source_location": "L17",
       "id": "runner_state_manager_load_state",
-      "community": 14,
+      "community": 15,
       "norm_label": "load_state()"
     },
     {
@@ -99,7 +243,7 @@
       "source_file": "runner/state_manager.py",
       "source_location": "L33",
       "id": "runner_state_manager_save_state",
-      "community": 14,
+      "community": 15,
       "norm_label": "save_state()"
     },
     {
@@ -108,7 +252,7 @@
       "source_file": "runner/state_manager.py",
       "source_location": "L49",
       "id": "runner_state_manager_recover_state",
-      "community": 14,
+      "community": 15,
       "norm_label": "_recover_state()"
     },
     {
@@ -117,7 +261,7 @@
       "source_file": "runner/state_manager.py",
       "source_location": "L65",
       "id": "runner_state_manager_validate_state",
-      "community": 14,
+      "community": 15,
       "norm_label": "_validate_state()"
     },
     {
@@ -125,7 +269,7 @@
       "file_type": "rationale",
       "source_file": "runner/state_manager.py",
       "source_location": "L1",
-      "community": 14,
+      "community": 15,
       "norm_label": "state-file management mit backup & recovery.",
       "id": "runner_state_manager_rationale_1"
     },
@@ -134,7 +278,7 @@
       "file_type": "rationale",
       "source_file": "runner/state_manager.py",
       "source_location": "L18",
-      "community": 14,
+      "community": 15,
       "norm_label": "ladt state mit backup-recovery.",
       "id": "runner_state_manager_rationale_18"
     },
@@ -143,7 +287,7 @@
       "file_type": "rationale",
       "source_file": "runner/state_manager.py",
       "source_location": "L34",
-      "community": 14,
+      "community": 15,
       "norm_label": "speichert state mit backup.",
       "id": "runner_state_manager_rationale_34"
     },
@@ -152,7 +296,7 @@
       "file_type": "rationale",
       "source_file": "runner/state_manager.py",
       "source_location": "L50",
-      "community": 14,
+      "community": 15,
       "norm_label": "versucht, state aus backups wiederherzustellen.",
       "id": "runner_state_manager_rationale_50"
     },
@@ -161,7 +305,7 @@
       "file_type": "rationale",
       "source_file": "runner/state_manager.py",
       "source_location": "L66",
-      "community": 14,
+      "community": 15,
       "norm_label": "validiert state-struktur.",
       "id": "runner_state_manager_rationale_66"
     },
@@ -171,7 +315,7 @@
       "source_file": "runner/safe_click.py",
       "source_location": "L1",
       "id": "runner_safe_click_py",
-      "community": 29,
+      "community": 30,
       "norm_label": "safe_click.py"
     },
     {
@@ -180,7 +324,7 @@
       "source_file": "runner/safe_click.py",
       "source_location": "L9",
       "id": "runner_safe_click_main",
-      "community": 29,
+      "community": 30,
       "norm_label": "main()"
     },
     {
@@ -225,7 +369,7 @@
       "source_file": "runner/config.py",
       "source_location": "L1",
       "id": "runner_config_py",
-      "community": 30,
+      "community": 31,
       "norm_label": "config.py"
     },
     {
@@ -233,7 +377,7 @@
       "file_type": "rationale",
       "source_file": "runner/config.py",
       "source_location": "L1",
-      "community": 30,
+      "community": 31,
       "norm_label": "zentrale konfiguration \u2013 ladt .env und validiert alle secrets.",
       "id": "runner_config_rationale_1"
     },
@@ -243,7 +387,7 @@
       "source_file": "runner/logging_config.py",
       "source_location": "L1",
       "id": "runner_logging_config_py",
-      "community": 27,
+      "community": 28,
       "norm_label": "logging_config.py"
     },
     {
@@ -252,7 +396,7 @@
       "source_file": "runner/logging_config.py",
       "source_location": "L11",
       "id": "runner_logging_config_get_logger",
-      "community": 27,
+      "community": 28,
       "norm_label": "get_logger()"
     },
     {
@@ -260,7 +404,7 @@
       "file_type": "rationale",
       "source_file": "runner/logging_config.py",
       "source_location": "L1",
-      "community": 27,
+      "community": 28,
       "norm_label": "structured logging mit structlog.",
       "id": "runner_logging_config_rationale_1"
     },
@@ -405,7 +549,7 @@
       "source_file": "runner/stealth_scorer.py",
       "source_location": "L1",
       "id": "runner_stealth_scorer_py",
-      "community": 24,
+      "community": 25,
       "norm_label": "stealth_scorer.py"
     },
     {
@@ -414,7 +558,7 @@
       "source_file": "runner/stealth_scorer.py",
       "source_location": "L6",
       "id": "runner_stealth_scorer_stealthresult",
-      "community": 24,
+      "community": 25,
       "norm_label": "stealthresult"
     },
     {
@@ -423,7 +567,7 @@
       "source_file": "runner/stealth_scorer.py",
       "source_location": "L11",
       "id": "runner_stealth_scorer_calculate_stealth_score",
-      "community": 24,
+      "community": 25,
       "norm_label": "calculate_stealth_score()"
     },
     {
@@ -431,7 +575,7 @@
       "file_type": "rationale",
       "source_file": "runner/stealth_scorer.py",
       "source_location": "L1",
-      "community": 24,
+      "community": 25,
       "norm_label": "stealth-scoring nach 6 prufvektoren mit gewichteten thresholds.",
       "id": "runner_stealth_scorer_rationale_1"
     },
@@ -549,7 +693,7 @@
       "source_file": "runner/security.py",
       "source_location": "L1",
       "id": "runner_security_py",
-      "community": 13,
+      "community": 14,
       "norm_label": "security.py"
     },
     {
@@ -558,7 +702,7 @@
       "source_file": "runner/security.py",
       "source_location": "L18",
       "id": "runner_security_is_chrome_running",
-      "community": 13,
+      "community": 14,
       "norm_label": "is_chrome_running()"
     },
     {
@@ -567,7 +711,7 @@
       "source_file": "runner/security.py",
       "source_location": "L29",
       "id": "runner_security_relaunch_chrome",
-      "community": 13,
+      "community": 14,
       "norm_label": "relaunch_chrome()"
     },
     {
@@ -576,7 +720,7 @@
       "source_file": "runner/security.py",
       "source_location": "L61",
       "id": "runner_security_chrome_health_check",
-      "community": 13,
+      "community": 14,
       "norm_label": "chrome_health_check()"
     },
     {
@@ -584,7 +728,7 @@
       "file_type": "rationale",
       "source_file": "runner/security.py",
       "source_location": "L1",
-      "community": 13,
+      "community": 14,
       "norm_label": "chrome health-check und recovery.",
       "id": "runner_security_rationale_1"
     },
@@ -593,7 +737,7 @@
       "file_type": "rationale",
       "source_file": "runner/security.py",
       "source_location": "L19",
-      "community": 13,
+      "community": 14,
       "norm_label": "pruft, ob chrome-prozess noch lauft.",
       "id": "runner_security_rationale_19"
     },
@@ -602,7 +746,7 @@
       "file_type": "rationale",
       "source_file": "runner/security.py",
       "source_location": "L30",
-      "community": 13,
+      "community": 14,
       "norm_label": "startet chrome neu und gibt haupt-pid zuruck.",
       "id": "runner_security_rationale_30"
     },
@@ -611,7 +755,7 @@
       "file_type": "rationale",
       "source_file": "runner/security.py",
       "source_location": "L62",
-      "community": 13,
+      "community": 14,
       "norm_label": "fuhrt health-check durch und startet chrome neu falls notig.",
       "id": "runner_security_rationale_62"
     },
@@ -621,7 +765,7 @@
       "source_file": "runner/vision_models.py",
       "source_location": "L1",
       "id": "runner_vision_models_py",
-      "community": 11,
+      "community": 12,
       "norm_label": "vision_models.py"
     },
     {
@@ -630,7 +774,7 @@
       "source_file": "runner/vision_models.py",
       "source_location": "L6",
       "id": "runner_vision_models_clickaction",
-      "community": 11,
+      "community": 12,
       "norm_label": "clickaction"
     },
     {
@@ -639,7 +783,7 @@
       "source_file": "runner/vision_models.py",
       "source_location": "L11",
       "id": "runner_vision_models_typeaction",
-      "community": 11,
+      "community": 12,
       "norm_label": "typeaction"
     },
     {
@@ -648,7 +792,7 @@
       "source_file": "runner/vision_models.py",
       "source_location": "L16",
       "id": "runner_vision_models_scrollaction",
-      "community": 11,
+      "community": 12,
       "norm_label": "scrollaction"
     },
     {
@@ -657,7 +801,7 @@
       "source_file": "runner/vision_models.py",
       "source_location": "L20",
       "id": "runner_vision_models_holdaction",
-      "community": 11,
+      "community": 12,
       "norm_label": "holdaction"
     },
     {
@@ -666,7 +810,7 @@
       "source_file": "runner/vision_models.py",
       "source_location": "L25",
       "id": "runner_vision_models_waitaction",
-      "community": 11,
+      "community": 12,
       "norm_label": "waitaction"
     },
     {
@@ -675,7 +819,7 @@
       "source_file": "runner/vision_models.py",
       "source_location": "L29",
       "id": "runner_vision_models_doneaction",
-      "community": 11,
+      "community": 12,
       "norm_label": "doneaction"
     },
     {
@@ -684,7 +828,7 @@
       "source_file": "runner/vision_models.py",
       "source_location": "L35",
       "id": "runner_vision_models_validate_vision_response",
-      "community": 11,
+      "community": 12,
       "norm_label": "validate_vision_response()"
     },
     {
@@ -692,7 +836,7 @@
       "file_type": "rationale",
       "source_file": "runner/vision_models.py",
       "source_location": "L1",
-      "community": 11,
+      "community": 12,
       "norm_label": "pydantic v2-modelle fur strukturierte vision-api-antworten.",
       "id": "runner_vision_models_rationale_1"
     },
@@ -783,7 +927,7 @@
       "source_file": "runner/frame_optimizer.py",
       "source_location": "L1",
       "id": "runner_frame_optimizer_py",
-      "community": 17,
+      "community": 18,
       "norm_label": "frame_optimizer.py"
     },
     {
@@ -792,7 +936,7 @@
       "source_file": "runner/frame_optimizer.py",
       "source_location": "L8",
       "id": "runner_frame_optimizer_frameoptimizer",
-      "community": 17,
+      "community": 18,
       "norm_label": "frameoptimizer"
     },
     {
@@ -801,7 +945,7 @@
       "source_file": "runner/frame_optimizer.py",
       "source_location": "L9",
       "id": "runner_frame_optimizer_frameoptimizer_init",
-      "community": 17,
+      "community": 18,
       "norm_label": ".__init__()"
     },
     {
@@ -810,7 +954,7 @@
       "source_file": "runner/frame_optimizer.py",
       "source_location": "L14",
       "id": "runner_frame_optimizer_frameoptimizer_is_duplicate",
-      "community": 17,
+      "community": 18,
       "norm_label": ".is_duplicate()"
     },
     {
@@ -819,7 +963,7 @@
       "source_file": "runner/frame_optimizer.py",
       "source_location": "L21",
       "id": "runner_frame_optimizer_frameoptimizer_crop_roi",
-      "community": 17,
+      "community": 18,
       "norm_label": ".crop_roi()"
     },
     {
@@ -828,7 +972,7 @@
       "source_file": "runner/frame_optimizer.py",
       "source_location": "L27",
       "id": "runner_frame_optimizer_skipped_count",
-      "community": 17,
+      "community": 18,
       "norm_label": "skipped_count()"
     },
     {
@@ -836,7 +980,7 @@
       "file_type": "rationale",
       "source_file": "runner/frame_optimizer.py",
       "source_location": "L1",
-      "community": 17,
+      "community": 18,
       "norm_label": "frame-diffing & roi-cropping fur vision-token-optimierung.",
       "id": "runner_frame_optimizer_rationale_1"
     },
@@ -1035,7 +1179,7 @@
       "source_file": "runner/survey_queue.py",
       "source_location": "L1",
       "id": "runner_survey_queue_py",
-      "community": 16,
+      "community": 17,
       "norm_label": "survey_queue.py"
     },
     {
@@ -1044,7 +1188,7 @@
       "source_file": "runner/survey_queue.py",
       "source_location": "L7",
       "id": "runner_survey_queue_surveyqueue",
-      "community": 16,
+      "community": 17,
       "norm_label": "surveyqueue"
     },
     {
@@ -1053,7 +1197,7 @@
       "source_file": "runner/survey_queue.py",
       "source_location": "L8",
       "id": "runner_survey_queue_surveyqueue_init",
-      "community": 16,
+      "community": 17,
       "norm_label": ".__init__()"
     },
     {
@@ -1062,7 +1206,7 @@
       "source_file": "runner/survey_queue.py",
       "source_location": "L15",
       "id": "runner_survey_queue_surveyqueue_enqueue",
-      "community": 16,
+      "community": 17,
       "norm_label": ".enqueue()"
     },
     {
@@ -1071,7 +1215,7 @@
       "source_file": "runner/survey_queue.py",
       "source_location": "L20",
       "id": "runner_survey_queue_surveyqueue_claim_task",
-      "community": 16,
+      "community": 17,
       "norm_label": ".claim_task()"
     },
     {
@@ -1080,7 +1224,7 @@
       "source_file": "runner/survey_queue.py",
       "source_location": "L26",
       "id": "runner_survey_queue_surveyqueue_mark_done",
-      "community": 16,
+      "community": 17,
       "norm_label": ".mark_done()"
     },
     {
@@ -1089,7 +1233,7 @@
       "source_file": "runner/survey_queue.py",
       "source_location": "L29",
       "id": "runner_survey_queue_surveyqueue_mark_failed",
-      "community": 16,
+      "community": 17,
       "norm_label": ".mark_failed()"
     },
     {
@@ -1097,7 +1241,7 @@
       "file_type": "rationale",
       "source_file": "runner/survey_queue.py",
       "source_location": "L1",
-      "community": 16,
+      "community": 17,
       "norm_label": "thread-sichere survey-queue (sqlite + filelock).",
       "id": "runner_survey_queue_rationale_1"
     },
@@ -1260,7 +1404,7 @@
       "source_file": "runner/apm.py",
       "source_location": "L1",
       "id": "runner_apm_py",
-      "community": 28,
+      "community": 29,
       "norm_label": "apm.py"
     },
     {
@@ -1269,7 +1413,7 @@
       "source_file": "runner/apm.py",
       "source_location": "L10",
       "id": "runner_apm_start_trace",
-      "community": 28,
+      "community": 29,
       "norm_label": "start_trace()"
     },
     {
@@ -1277,7 +1421,7 @@
       "file_type": "rationale",
       "source_file": "runner/apm.py",
       "source_location": "L1",
-      "community": 28,
+      "community": 29,
       "norm_label": "opentelemetry apm \u2013 traces uber alle states.",
       "id": "runner_apm_rationale_1"
     },
@@ -1350,7 +1494,7 @@
       "source_file": "runner/semantic_cache.py",
       "source_location": "L1",
       "id": "runner_semantic_cache_py",
-      "community": 25,
+      "community": 26,
       "norm_label": "semantic_cache.py"
     },
     {
@@ -1359,7 +1503,7 @@
       "source_file": "runner/semantic_cache.py",
       "source_location": "L6",
       "id": "runner_semantic_cache_get_cached_action",
-      "community": 25,
+      "community": 26,
       "norm_label": "get_cached_action()"
     },
     {
@@ -1368,7 +1512,7 @@
       "source_file": "runner/semantic_cache.py",
       "source_location": "L7",
       "id": "runner_semantic_cache_set_cached_action",
-      "community": 25,
+      "community": 26,
       "norm_label": "set_cached_action()"
     },
     {
@@ -1376,7 +1520,7 @@
       "file_type": "rationale",
       "source_file": "runner/semantic_cache.py",
       "source_location": "L1",
-      "community": 25,
+      "community": 26,
       "norm_label": "semantic vision cache via diskcache.",
       "id": "runner_semantic_cache_rationale_1"
     },
@@ -1413,7 +1557,7 @@
       "source_file": "runner/behavioral_biometrics.py",
       "source_location": "L1",
       "id": "runner_behavioral_biometrics_py",
-      "community": 21,
+      "community": 22,
       "norm_label": "behavioral_biometrics.py"
     },
     {
@@ -1422,7 +1566,7 @@
       "source_file": "runner/behavioral_biometrics.py",
       "source_location": "L10",
       "id": "runner_behavioral_biometrics_sample_dwell_time",
-      "community": 21,
+      "community": 22,
       "norm_label": "sample_dwell_time()"
     },
     {
@@ -1431,7 +1575,7 @@
       "source_file": "runner/behavioral_biometrics.py",
       "source_location": "L11",
       "id": "runner_behavioral_biometrics_sample_flight_time",
-      "community": 21,
+      "community": 22,
       "norm_label": "sample_flight_time()"
     },
     {
@@ -1440,7 +1584,7 @@
       "source_file": "runner/behavioral_biometrics.py",
       "source_location": "L12",
       "id": "runner_behavioral_biometrics_sample_typing_speed",
-      "community": 21,
+      "community": 22,
       "norm_label": "sample_typing_speed()"
     },
     {
@@ -1448,7 +1592,7 @@
       "file_type": "rationale",
       "source_file": "runner/behavioral_biometrics.py",
       "source_location": "L1",
-      "community": 21,
+      "community": 22,
       "norm_label": "behavioral biometrics via scipy.stats pdfs.",
       "id": "runner_behavioral_biometrics_rationale_1"
     },
@@ -1764,7 +1908,7 @@
       "source_file": "runner/audit_logger_sync.py",
       "source_location": "L1",
       "id": "runner_audit_logger_sync_py",
-      "community": 18,
+      "community": 19,
       "norm_label": "audit_logger_sync.py"
     },
     {
@@ -1773,7 +1917,7 @@
       "source_file": "runner/audit_logger_sync.py",
       "source_location": "L8",
       "id": "runner_audit_logger_sync_auditloggersync",
-      "community": 18,
+      "community": 19,
       "norm_label": "auditloggersync"
     },
     {
@@ -1782,7 +1926,7 @@
       "source_file": "runner/audit_logger_sync.py",
       "source_location": "L9",
       "id": "runner_audit_logger_sync_auditloggersync_init",
-      "community": 18,
+      "community": 19,
       "norm_label": ".__init__()"
     },
     {
@@ -1791,7 +1935,7 @@
       "source_file": "runner/audit_logger_sync.py",
       "source_location": "L13",
       "id": "runner_audit_logger_sync_auditloggersync_log",
-      "community": 18,
+      "community": 19,
       "norm_label": ".log()"
     },
     {
@@ -1800,7 +1944,7 @@
       "source_file": "runner/audit_logger_sync.py",
       "source_location": "L20",
       "id": "runner_audit_logger_sync_auditloggersync_close",
-      "community": 18,
+      "community": 19,
       "norm_label": ".close()"
     },
     {
@@ -1808,7 +1952,7 @@
       "file_type": "rationale",
       "source_file": "runner/audit_logger_sync.py",
       "source_location": "L1",
-      "community": 18,
+      "community": 19,
       "norm_label": "crash-sicheres jsonl audit-log mit o_sync + fcntl.",
       "id": "runner_audit_logger_sync_rationale_1"
     },
@@ -1818,7 +1962,7 @@
       "source_file": "runner/resilience.py",
       "source_location": "L1",
       "id": "runner_resilience_py",
-      "community": 22,
+      "community": 23,
       "norm_label": "resilience.py"
     },
     {
@@ -1827,7 +1971,7 @@
       "source_file": "runner/resilience.py",
       "source_location": "L9",
       "id": "runner_resilience_vision_retry",
-      "community": 22,
+      "community": 23,
       "norm_label": "vision_retry()"
     },
     {
@@ -1836,7 +1980,7 @@
       "source_file": "runner/resilience.py",
       "source_location": "L15",
       "id": "runner_resilience_register_shutdown_handler",
-      "community": 22,
+      "community": 23,
       "norm_label": "register_shutdown_handler()"
     },
     {
@@ -1845,7 +1989,7 @@
       "source_file": "runner/resilience.py",
       "source_location": "L18",
       "id": "runner_resilience_install_shutdown_handlers",
-      "community": 22,
+      "community": 23,
       "norm_label": "install_shutdown_handlers()"
     },
     {
@@ -1853,7 +1997,7 @@
       "file_type": "rationale",
       "source_file": "runner/resilience.py",
       "source_location": "L1",
-      "community": 22,
+      "community": 23,
       "norm_label": "resilienz-patterns: retry, circuit breaker, graceful shutdown.",
       "id": "runner_resilience_rationale_1"
     },
@@ -2061,7 +2205,7 @@
       "source_file": "runner/drivers/screen_follow.py",
       "source_location": "L1",
       "id": "runner_drivers_screen_follow_py",
-      "community": 19,
+      "community": 20,
       "norm_label": "screen_follow.py"
     },
     {
@@ -2070,7 +2214,7 @@
       "source_file": "runner/drivers/screen_follow.py",
       "source_location": "L7",
       "id": "drivers_screen_follow_screenfollowdriver",
-      "community": 19,
+      "community": 20,
       "norm_label": "screenfollowdriver"
     },
     {
@@ -2079,7 +2223,7 @@
       "source_file": "runner/drivers/screen_follow.py",
       "source_location": "L8",
       "id": "drivers_screen_follow_screenfollowdriver_start_recording",
-      "community": 19,
+      "community": 20,
       "norm_label": ".start_recording()"
     },
     {
@@ -2088,7 +2232,7 @@
       "source_file": "runner/drivers/screen_follow.py",
       "source_location": "L22",
       "id": "drivers_screen_follow_screenfollowdriver_stop_recording",
-      "community": 19,
+      "community": 20,
       "norm_label": ".stop_recording()"
     },
     {
@@ -2097,7 +2241,7 @@
       "source_file": "runner/drivers/screen_follow.py",
       "source_location": "L31",
       "id": "drivers_screen_follow_screenfollowdriver_get_status",
-      "community": 19,
+      "community": 20,
       "norm_label": ".get_status()"
     },
     {
@@ -2105,7 +2249,7 @@
       "file_type": "rationale",
       "source_file": "runner/drivers/screen_follow.py",
       "source_location": "L1",
-      "community": 19,
+      "community": 20,
       "norm_label": "screenfollowdriver \u2013 bildschirmaufnahme via screen-follow cli.",
       "id": "drivers_screen_follow_rationale_1"
     },
@@ -2115,7 +2259,7 @@
       "source_file": "runner/drivers/__init__.py",
       "source_location": "L1",
       "id": "runner_drivers_init_py",
-      "community": 34,
+      "community": 35,
       "norm_label": "__init__.py"
     },
     {
@@ -2124,7 +2268,7 @@
       "source_file": "runner/drivers/unmask.py",
       "source_location": "L1",
       "id": "runner_drivers_unmask_py",
-      "community": 20,
+      "community": 21,
       "norm_label": "unmask.py"
     },
     {
@@ -2133,7 +2277,7 @@
       "source_file": "runner/drivers/unmask.py",
       "source_location": "L7",
       "id": "drivers_unmask_unmaskdriver",
-      "community": 20,
+      "community": 21,
       "norm_label": "unmaskdriver"
     },
     {
@@ -2142,7 +2286,7 @@
       "source_file": "runner/drivers/unmask.py",
       "source_location": "L8",
       "id": "drivers_unmask_unmaskdriver_dom_scan",
-      "community": 20,
+      "community": 21,
       "norm_label": ".dom_scan()"
     },
     {
@@ -2151,7 +2295,7 @@
       "source_file": "runner/drivers/unmask.py",
       "source_location": "L20",
       "id": "drivers_unmask_unmaskdriver_network_capture",
-      "community": 20,
+      "community": 21,
       "norm_label": ".network_capture()"
     },
     {
@@ -2160,7 +2304,7 @@
       "source_file": "runner/drivers/unmask.py",
       "source_location": "L32",
       "id": "drivers_unmask_unmaskdriver_inspect",
-      "community": 20,
+      "community": 21,
       "norm_label": ".inspect()"
     },
     {
@@ -2168,7 +2312,7 @@
       "file_type": "rationale",
       "source_file": "runner/drivers/unmask.py",
       "source_location": "L1",
-      "community": 20,
+      "community": 21,
       "norm_label": "unmaskdriver \u2013 dom-scan via unmask-cli fur vision-free fast path.",
       "id": "drivers_unmask_rationale_1"
     },
@@ -2223,7 +2367,7 @@
       "source_file": "runner/vision_client/config.py",
       "source_location": "L1",
       "id": "runner_vision_client_config_py",
-      "community": 15,
+      "community": 16,
       "norm_label": "config.py"
     },
     {
@@ -2232,7 +2376,7 @@
       "source_file": "runner/vision_client/config.py",
       "source_location": "L8",
       "id": "vision_client_config_visionconfig",
-      "community": 15,
+      "community": 16,
       "norm_label": "visionconfig"
     },
     {
@@ -2241,7 +2385,7 @@
       "source_file": "runner/vision_client/config.py",
       "source_location": "L9",
       "id": "vision_client_config_visionconfig_init",
-      "community": 15,
+      "community": 16,
       "norm_label": ".__init__()"
     },
     {
@@ -2250,7 +2394,7 @@
       "source_file": "runner/vision_client/config.py",
       "source_location": "L13",
       "id": "vision_client_config_visionconfig_load_config",
-      "community": 15,
+      "community": 16,
       "norm_label": "._load_config()"
     },
     {
@@ -2259,7 +2403,7 @@
       "source_file": "runner/vision_client/config.py",
       "source_location": "L18",
       "id": "vision_client_config_current_model",
-      "community": 15,
+      "community": 16,
       "norm_label": "current_model()"
     },
     {
@@ -2268,7 +2412,7 @@
       "source_file": "runner/vision_client/config.py",
       "source_location": "L22",
       "id": "vision_client_config_fallback_models",
-      "community": 15,
+      "community": 16,
       "norm_label": "fallback_models()"
     },
     {
@@ -2277,7 +2421,7 @@
       "source_file": "runner/vision_client/config.py",
       "source_location": "L26",
       "id": "vision_client_config_max_tokens",
-      "community": 15,
+      "community": 16,
       "norm_label": "max_tokens()"
     },
     {
@@ -2286,7 +2430,7 @@
       "source_file": "runner/vision_client/config.py",
       "source_location": "L30",
       "id": "vision_client_config_timeout",
-      "community": 15,
+      "community": 16,
       "norm_label": "timeout()"
     },
     {
@@ -2294,7 +2438,7 @@
       "file_type": "rationale",
       "source_file": "runner/vision_client/config.py",
       "source_location": "L1",
-      "community": 15,
+      "community": 16,
       "norm_label": "vision-client konfiguration (yaml-basiert).",
       "id": "vision_client_config_rationale_1"
     },
@@ -2664,7 +2808,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L54",
       "id": "tests_test_sin_survey_core_testclassifyerror",
-      "community": 12,
+      "community": 13,
       "norm_label": "testclassifyerror"
     },
     {
@@ -2673,7 +2817,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L55",
       "id": "tests_test_sin_survey_core_testclassifyerror_test_disqualified",
-      "community": 12,
+      "community": 13,
       "norm_label": ".test_disqualified()"
     },
     {
@@ -2682,7 +2826,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L57",
       "id": "tests_test_sin_survey_core_testclassifyerror_test_quota_full",
-      "community": 12,
+      "community": 13,
       "norm_label": ".test_quota_full()"
     },
     {
@@ -2691,7 +2835,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L59",
       "id": "tests_test_sin_survey_core_testclassifyerror_test_attention",
-      "community": 12,
+      "community": 13,
       "norm_label": ".test_attention()"
     },
     {
@@ -2700,7 +2844,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L61",
       "id": "tests_test_sin_survey_core_testclassifyerror_test_not_found",
-      "community": 12,
+      "community": 13,
       "norm_label": ".test_not_found()"
     },
     {
@@ -2709,7 +2853,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L63",
       "id": "tests_test_sin_survey_core_testclassifyerror_test_unknown",
-      "community": 12,
+      "community": 13,
       "norm_label": ".test_unknown()"
     },
     {
@@ -2718,7 +2862,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L64",
       "id": "tests_test_sin_survey_core_testclassifyerror_test_empty",
-      "community": 12,
+      "community": 13,
       "norm_label": ".test_empty()"
     },
     {
@@ -2727,7 +2871,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L65",
       "id": "tests_test_sin_survey_core_testclassifyerror_test_matched_marker",
-      "community": 12,
+      "community": 13,
       "norm_label": ".test_matched_marker()"
     },
     {
@@ -2736,7 +2880,7 @@
       "source_file": "tests/test_sin_survey_core.py",
       "source_location": "L67",
       "id": "tests_test_sin_survey_core_testclassifyerror_test_frozen",
-      "community": 12,
+      "community": 13,
       "norm_label": ".test_frozen()"
     },
     {
@@ -2916,7 +3060,7 @@
       "source_file": "tests/conftest.py",
       "source_location": "L1",
       "id": "tests_conftest_py",
-      "community": 31,
+      "community": 32,
       "norm_label": "conftest.py"
     },
     {
@@ -2924,7 +3068,7 @@
       "file_type": "rationale",
       "source_file": "tests/conftest.py",
       "source_location": "L1",
-      "community": 31,
+      "community": 32,
       "norm_label": "pytest-konfiguration fur den stealth-runner.",
       "id": "tests_conftest_rationale_1"
     },
@@ -2970,7 +3114,7 @@
       "source_file": "tests/__init__.py",
       "source_location": "L1",
       "id": "tests_init_py",
-      "community": 32,
+      "community": 33,
       "norm_label": "__init__.py"
     },
     {
@@ -2978,7 +3122,7 @@
       "file_type": "rationale",
       "source_file": "tests/__init__.py",
       "source_location": "L1",
-      "community": 32,
+      "community": 33,
       "norm_label": "test-suite fur den stealth-runner. fuhre mit: pytest tests/ -v",
       "id": "tests_init_rationale_1"
     },
@@ -3357,7 +3501,7 @@
       "source_file": "tests/security/test_chrome_recovery.py",
       "source_location": "L1",
       "id": "tests_security_test_chrome_recovery_py",
-      "community": 13,
+      "community": 14,
       "norm_label": "test_chrome_recovery.py"
     },
     {
@@ -3366,7 +3510,7 @@
       "source_file": "tests/security/test_chrome_recovery.py",
       "source_location": "L6",
       "id": "security_test_chrome_recovery_test_chrome_health_check",
-      "community": 13,
+      "community": 14,
       "norm_label": "test_chrome_health_check()"
     },
     {
@@ -3374,7 +3518,7 @@
       "file_type": "rationale",
       "source_file": "tests/security/test_chrome_recovery.py",
       "source_location": "L1",
-      "community": 13,
+      "community": 14,
       "norm_label": "tests fur chrome recovery.",
       "id": "security_test_chrome_recovery_rationale_1"
     },
@@ -3762,7 +3906,7 @@
       "source_file": "src/stealth_runner/__init__.py",
       "source_location": "L1",
       "id": "src_stealth_runner_init_py",
-      "community": 33,
+      "community": 34,
       "norm_label": "__init__.py"
     },
     {
@@ -3770,7 +3914,7 @@
       "file_type": "rationale",
       "source_file": "src/stealth_runner/__init__.py",
       "source_location": "L1",
-      "community": 33,
+      "community": 34,
       "norm_label": "stealth-runner: vision-driven cli orchestrator for stealth survey automation.",
       "id": "stealth_runner_init_rationale_1"
     },
@@ -3780,7 +3924,7 @@
       "source_file": "src/stealth_runner/anti_learn.py",
       "source_location": "L1",
       "id": "src_stealth_runner_anti_learn_py",
-      "community": 12,
+      "community": 13,
       "norm_label": "anti_learn.py"
     },
     {
@@ -3789,7 +3933,7 @@
       "source_file": "src/stealth_runner/anti_learn.py",
       "source_location": "L20",
       "id": "stealth_runner_anti_learn_learn_from_error",
-      "community": 12,
+      "community": 13,
       "norm_label": "learn_from_error()"
     },
     {
@@ -3798,7 +3942,7 @@
       "source_file": "src/stealth_runner/anti_learn.py",
       "source_location": "L46",
       "id": "stealth_runner_anti_learn_classify_error",
-      "community": 12,
+      "community": 13,
       "norm_label": "classify_error()"
     },
     {
@@ -3807,7 +3951,7 @@
       "source_file": "src/stealth_runner/anti_learn.py",
       "source_location": "L53",
       "id": "stealth_runner_anti_learn_store",
-      "community": 12,
+      "community": 13,
       "norm_label": "store()"
     },
     {
@@ -3815,7 +3959,7 @@
       "file_type": "rationale",
       "source_file": "src/stealth_runner/anti_learn.py",
       "source_location": "L1",
-      "community": 12,
+      "community": 13,
       "norm_label": "anti-learning module \u2014 error-to-recovery generator.",
       "id": "stealth_runner_anti_learn_rationale_1"
     },
@@ -3969,7 +4113,7 @@
       "source_file": "src/stealth_runner/learn.py",
       "source_location": "L1",
       "id": "src_stealth_runner_learn_py",
-      "community": 23,
+      "community": 24,
       "norm_label": "learn.py"
     },
     {
@@ -3978,7 +4122,7 @@
       "source_file": "src/stealth_runner/learn.py",
       "source_location": "L12",
       "id": "stealth_runner_learn_learn_from_session",
-      "community": 23,
+      "community": 24,
       "norm_label": "learn_from_session()"
     },
     {
@@ -3987,7 +4131,7 @@
       "source_file": "src/stealth_runner/learn.py",
       "source_location": "L81",
       "id": "stealth_runner_learn_update_registry",
-      "community": 23,
+      "community": 24,
       "norm_label": "update_registry()"
     },
     {
@@ -3996,7 +4140,7 @@
       "source_file": "src/stealth_runner/learn.py",
       "source_location": "L88",
       "id": "stealth_runner_learn_push_to_global_brain",
-      "community": 23,
+      "community": 24,
       "norm_label": "push_to_global_brain()"
     },
     {
@@ -4004,7 +4148,7 @@
       "file_type": "rationale",
       "source_file": "src/stealth_runner/learn.py",
       "source_location": "L1",
-      "community": 23,
+      "community": 24,
       "norm_label": "skill capture loop \u2014 parst screen-follow audit-log (type: mouse_down, etc.).",
       "id": "stealth_runner_learn_rationale_1"
     },
@@ -4032,7 +4176,7 @@
       "source_file": "src/stealth_runner/strategy_selector.py",
       "source_location": "L1",
       "id": "src_stealth_runner_strategy_selector_py",
-      "community": 26,
+      "community": 27,
       "norm_label": "strategy_selector.py"
     },
     {
@@ -4041,7 +4185,7 @@
       "source_file": "src/stealth_runner/strategy_selector.py",
       "source_location": "L9",
       "id": "stealth_runner_strategy_selector_select_best_strategy",
-      "community": 26,
+      "community": 27,
       "norm_label": "select_best_strategy()"
     },
     {
@@ -4050,7 +4194,7 @@
       "source_file": "src/stealth_runner/strategy_selector.py",
       "source_location": "L34",
       "id": "stealth_runner_strategy_selector_load_brain_rules",
-      "community": 26,
+      "community": 27,
       "norm_label": "load_brain_rules()"
     },
     {
@@ -4058,7 +4202,7 @@
       "file_type": "rationale",
       "source_file": "src/stealth_runner/strategy_selector.py",
       "source_location": "L1",
-      "community": 26,
+      "community": 27,
       "norm_label": "strategy evolution module \u2014 wahlt optimale skill-sequenz aus brain-daten.",
       "id": "stealth_runner_strategy_selector_rationale_1"
     },
@@ -4112,7 +4256,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_omni_monitor.py",
       "source_location": "L278",
-      "community": 35,
+      "community": 36,
       "norm_label": "hybrid loop: screenshot (schnell) + video (alle 5 schritte temporal).",
       "id": "runner_live_omni_monitor_rationale_278"
     },
@@ -4121,7 +4265,7 @@
       "file_type": "rationale",
       "source_file": "runner/live_omni_monitor.py",
       "source_location": "L258",
-      "community": 36,
+      "community": 37,
       "norm_label": "hybrid loop: screenshot (schnell) + video (alle 5 schritte temporal).",
       "id": "runner_live_omni_monitor_rationale_258"
     }
@@ -4294,6 +4438,246 @@
       "_tgt": "runner_state_machine_surveyrunner",
       "source": "stealth_runner_main_main",
       "target": "runner_state_machine_surveyrunner"
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L57",
+      "weight": 1.0,
+      "_src": "runner_doctor_cli_py",
+      "_tgt": "runner_doctor_cli_doctor",
+      "source": "runner_doctor_cli_py",
+      "target": "runner_doctor_cli_doctor",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L60",
+      "weight": 1.0,
+      "_src": "runner_doctor_cli_doctor",
+      "_tgt": "runner_doctor_cli_doctor_init",
+      "source": "runner_doctor_cli_doctor",
+      "target": "runner_doctor_cli_doctor_init",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L65",
+      "weight": 1.0,
+      "_src": "runner_doctor_cli_doctor",
+      "_tgt": "runner_doctor_cli_doctor_run",
+      "source": "runner_doctor_cli_doctor",
+      "target": "runner_doctor_cli_doctor_run",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L90",
+      "weight": 1.0,
+      "_src": "runner_doctor_cli_doctor",
+      "_tgt": "runner_doctor_cli_doctor_scan_outdated_patterns",
+      "source": "runner_doctor_cli_doctor",
+      "target": "runner_doctor_cli_doctor_scan_outdated_patterns",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L124",
+      "weight": 1.0,
+      "_src": "runner_doctor_cli_doctor",
+      "_tgt": "runner_doctor_cli_doctor_scan_credentials",
+      "source": "runner_doctor_cli_doctor",
+      "target": "runner_doctor_cli_doctor_scan_credentials",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L164",
+      "weight": 1.0,
+      "_src": "runner_doctor_cli_doctor",
+      "_tgt": "runner_doctor_cli_doctor_scan_sota_docs",
+      "source": "runner_doctor_cli_doctor",
+      "target": "runner_doctor_cli_doctor_scan_sota_docs",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L183",
+      "weight": 1.0,
+      "_src": "runner_doctor_cli_doctor",
+      "_tgt": "runner_doctor_cli_doctor_scan_dead_links",
+      "source": "runner_doctor_cli_doctor",
+      "target": "runner_doctor_cli_doctor_scan_dead_links",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "method",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L195",
+      "weight": 1.0,
+      "_src": "runner_doctor_cli_doctor",
+      "_tgt": "runner_doctor_cli_doctor_commit_all",
+      "source": "runner_doctor_cli_doctor",
+      "target": "runner_doctor_cli_doctor_commit_all",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L58",
+      "weight": 1.0,
+      "_src": "runner_doctor_cli_rationale_58",
+      "_tgt": "runner_doctor_cli_doctor",
+      "source": "runner_doctor_cli_doctor",
+      "target": "runner_doctor_cli_rationale_58",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L74",
+      "weight": 1.0,
+      "_src": "runner_doctor_cli_doctor_run",
+      "_tgt": "runner_doctor_cli_doctor_scan_outdated_patterns",
+      "source": "runner_doctor_cli_doctor_run",
+      "target": "runner_doctor_cli_doctor_scan_outdated_patterns",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L75",
+      "weight": 1.0,
+      "_src": "runner_doctor_cli_doctor_run",
+      "_tgt": "runner_doctor_cli_doctor_scan_sota_docs",
+      "source": "runner_doctor_cli_doctor_run",
+      "target": "runner_doctor_cli_doctor_scan_sota_docs",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L76",
+      "weight": 1.0,
+      "_src": "runner_doctor_cli_doctor_run",
+      "_tgt": "runner_doctor_cli_doctor_scan_credentials",
+      "source": "runner_doctor_cli_doctor_run",
+      "target": "runner_doctor_cli_doctor_scan_credentials",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L186",
+      "weight": 1.0,
+      "_src": "runner_doctor_cli_doctor_scan_dead_links",
+      "_tgt": "runner_doctor_cli_doctor_run",
+      "source": "runner_doctor_cli_doctor_run",
+      "target": "runner_doctor_cli_doctor_scan_dead_links",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "calls",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L201",
+      "weight": 1.0,
+      "_src": "runner_doctor_cli_doctor_commit_all",
+      "_tgt": "runner_doctor_cli_doctor_run",
+      "source": "runner_doctor_cli_doctor_run",
+      "target": "runner_doctor_cli_doctor_commit_all",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L66",
+      "weight": 1.0,
+      "_src": "runner_doctor_cli_rationale_66",
+      "_tgt": "runner_doctor_cli_doctor_run",
+      "source": "runner_doctor_cli_doctor_run",
+      "target": "runner_doctor_cli_rationale_66",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L91",
+      "weight": 1.0,
+      "_src": "runner_doctor_cli_rationale_91",
+      "_tgt": "runner_doctor_cli_doctor_scan_outdated_patterns",
+      "source": "runner_doctor_cli_doctor_scan_outdated_patterns",
+      "target": "runner_doctor_cli_rationale_91",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L125",
+      "weight": 1.0,
+      "_src": "runner_doctor_cli_rationale_125",
+      "_tgt": "runner_doctor_cli_doctor_scan_credentials",
+      "source": "runner_doctor_cli_doctor_scan_credentials",
+      "target": "runner_doctor_cli_rationale_125",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L165",
+      "weight": 1.0,
+      "_src": "runner_doctor_cli_rationale_165",
+      "_tgt": "runner_doctor_cli_doctor_scan_sota_docs",
+      "source": "runner_doctor_cli_doctor_scan_sota_docs",
+      "target": "runner_doctor_cli_rationale_165",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L184",
+      "weight": 1.0,
+      "_src": "runner_doctor_cli_rationale_184",
+      "_tgt": "runner_doctor_cli_doctor_scan_dead_links",
+      "source": "runner_doctor_cli_doctor_scan_dead_links",
+      "target": "runner_doctor_cli_rationale_184",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "runner/doctor_cli.py",
+      "source_location": "L196",
+      "weight": 1.0,
+      "_src": "runner_doctor_cli_rationale_196",
+      "_tgt": "runner_doctor_cli_doctor_commit_all",
+      "source": "runner_doctor_cli_doctor_commit_all",
+      "target": "runner_doctor_cli_rationale_196",
+      "confidence_score": 1.0
     },
     {
       "relation": "contains",

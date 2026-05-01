@@ -6,7 +6,7 @@
 
 ## Vier-Repository-Review
 - **playstealth-cli** (Canvas/WebGL-Tarnung) — ✅ SOTA
-- **skylight-cli** (SkyLight.framework, SLEventPostToPid) — ✅ SOTA v0.2.0
+- skylight-cli (SkyLight.framework, SLEventPostToPid) — ✅ SOTA v0.2.0
 - **unmask-cli** (X-Ray, Forensik, JSON-RPC) — ✅ SOTA
 - **stealth-runner** (Orchestrator v0.3.1) — ✅ SOTA, 0 orphaned modules
 
