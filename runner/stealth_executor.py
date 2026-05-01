@@ -50,5 +50,8 @@ class StealthExecutor:
         try: proc = subprocess.run(cmd, capture_output=True, text=True, timeout=timeout)
         except subprocess.TimeoutExpired: raise StealthError(f"Timeout: {' '.join(cmd)}")
         if proc.returncode != 0: raise StealthError(f"Exit {proc.returncode}: {proc.stderr.strip()[:500]}")
-        try: return json.loads(proc.stdout)
-        except json.JSONDecodeError: return {"raw_stdout": proc.stdout[:500]}
+        lines = proc.stdout.strip().split("\n")
+        for line in reversed(lines):
+            try: return json.loads(line)
+            except json.JSONDecodeError: continue
+        return {"raw_stdout": proc.stdout[:500]}
