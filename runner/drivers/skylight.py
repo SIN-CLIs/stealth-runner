@@ -57,8 +57,17 @@ class SkylightDriver:
     def screenshot(self, mode: str = "som", output: str = "/tmp/screenshot.png") -> Dict:
         if not self.pid:
             return {"status": "error", "reason": "no_pid"}
+        # Workaround: skylight-cli v0.2.0 ignoriert --output, schreibt immer skylight_screenshot.png ins CWD
+        import os, shutil
+        cwd_file = Path("skylight_screenshot.png")
+        if cwd_file.exists():
+            cwd_file.unlink()
         cmd = ["skylight-cli", "screenshot", "--pid", str(self.pid), "--mode", mode, "--output", output]
         result = subprocess.run(cmd, capture_output=True, text=True)
+        # Workaround: Datei aus CWD an Zielort kopieren
+        if cwd_file.exists():
+            shutil.copy2(str(cwd_file), output)
+            cwd_file.unlink()
         return json.loads(result.stdout)
 
     def inspect(self, element_index: int) -> Dict:

@@ -2,6 +2,12 @@
 
 ## Gefixt
 
+### P0: Omni reasoning-Feld Parsing
+- **Bug**: `msg["content"]` ist null bei Nemotron Omni (antwortet in `reasoning`)
+- **Fix**: `msg.get("reasoning") or msg.get("content") or ""`
+- **Dateien**: `runner/live_omni_monitor.py`, `runner/nemotron_omni.py`, `runner/vision_client/core.py`
+- **Status**: ✅ Omni API liefert jetzt korrekte Antworten
+
 ### P0: Model-Name doppelter Prefix → 404
 - **Bug**: `nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`
 - **Fix**: `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`
@@ -32,13 +38,10 @@
 - **Datei**: `runner/safe_click.py`
 - **Status**: ✅
 
-## Offene Bugs
-- [ ] Dieses Modell (deepseek-v4-pro) kann keine Screenshots sehen
-  - Workaround: OmniVision (Nemotron) + screen-follow
-- [ ] Google Login Passwort-Seite noch nicht automatisiert
-  - Nach Weiter-Klick muss Passwort-Feld identifiziert werden
-- [ ] Survey-Loop nach Login noch nicht getestet
-  - OmniSurveyRunner ist bereit, aber ungetestet
+## Bekannte Bugs (ungelöst)
+- [ ] skylight-cli `--output` Bug: Parameter wird ignoriert, schreibt immer `skylight_screenshot.png` ins CWD
+- [ ] Dieses Modell (deepseek-v4-pro) kann keine Screenshots sehen → OmniVision als Workaround
+- [ ] Survey-Loop nach Login noch nicht getestet (OmniSurveyRunner bereit)
 
 ## NIE TUN (semgrep blockiert)
 - ❌ `pgrep Chrome` / `pkill Chrome` / `open -na "Google Chrome"`
