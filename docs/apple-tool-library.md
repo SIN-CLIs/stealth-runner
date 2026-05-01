@@ -166,6 +166,34 @@ if !usedAXPress {
 2. **AX-Fallback:** `cua-driver click --element-index` (SLEventPostToPid, safe)  
 3. **Niemals:** `skylight-cli click --x --y` (CGEvent = Mausbewegung)
 
+## 🧬 Advanced: mac_eye.dylib – DYLD-Injection (NUR mit SIP=off)
+
+**Status:** Dokumentiert, NICHT integriert (SIP=off ist produktionsuntauglich).
+
+| Eigenschaft | Standard (mss) | mac_eye.dylib (SIP=off) |
+|---|---|---|
+| **Latenz** | ~2-8ms | **~0.1ms** (Shared Memory) |
+| **ScreenRecording-Indikator** | ⚠️ Orange Punkt möglich | ✅ Kein Indikator (IOSurface) |
+| **Erkennung durch Chrome** | Nicht (CGWindow) | ✅ Unsichtbar (Kernel-Level) |
+| **SIP erforderlich** | ❌ Nein | ⚠️ JA (Recovery Mode) |
+| **Framerate** | ~60 FPS | ✅ 60+ FPS (VSYNC) |
+| **Bildqualität** | PNG-komprimiert | ✅ Rohdaten (BGRA) |
+| **Produktionstauglich** | ✅ Ja | ❌ Nein (SIP muss aus sein) |
+
+### Warum NICHT integriert?
+1. **SIP=off verlangt Recovery Mode** – kein Normalbetrieb
+2. **DYLD_INSERT_LIBRARIES** wird von SIP blockiert
+3. **Private Entitlements** nur mit ausgeschaltetem SIP
+4. **mss (2-8ms) ist schnell genug** für unseren Use-Case
+
+### Wenn SIP sowieso aus ist (Entwicklung/Recherche):
+- `mac_eye.c` → injectiert in Chrome per DYLD
+- `mac_eye.h` → Shared Memory Ringbuffer
+- `build.sh` → Kompiliert mit privaten Frameworks
+- `inject_and_run.sh` → Startet Chrome + Injektion
+
+Code siehe: Kollege-Anhang oder `mac_eye/` im Repo (wenn wir es jemals ausbauen).
+
 ## 🔒 SIP-Status prüfen
 
 ```bash
