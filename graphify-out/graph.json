@@ -1664,9 +1664,9 @@
       "file_type": "rationale",
       "source_file": "runner/live_eye.py",
       "source_location": "L71",
-      "id": "runner_live_eye_rationale_71",
       "community": 16,
-      "norm_label": "skylight-cli: find axbutton by label \u2192 click."
+      "norm_label": "skylight-cli: find axbutton by label \u2192 click.",
+      "id": "runner_live_eye_rationale_71"
     },
     {
       "label": "step.py",

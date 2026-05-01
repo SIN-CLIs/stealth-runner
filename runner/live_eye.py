@@ -1,121 +1,82 @@
 #!/usr/bin/env python3
-"""
-LiveOmniEye – REGELMÄSSIG Omni-Analyse, nicht nur bei pixel-diff.
-Wie ein Mensch: schaut alle paar Sekunden auf den Bildschirm.
-"""
+"""LiveEye v4 – PERMANENTER ffmpeg-Ringpuffer → video_url an Omni."""
 from __future__ import annotations
-import asyncio, base64, json, os, re, subprocess, time
-from io import BytesIO
+import base64, json, os, subprocess, time
 from pathlib import Path
-import cv2, httpx, mss, numpy as np
-from PIL import Image
+import httpx
 
-NVIDIA_KEY = os.getenv("NVIDIA_API_KEY", "")
-NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
-OMNI_MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
+KEY = os.getenv("NVIDIA_API_KEY","")
+URL = "https://integrate.api.nvidia.com/v1/chat/completions"
+MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
+VIDEO = "/tmp/live_eye.mp4"
+CLIP = "/tmp/live_eye_clip.mp4"
 
 
-class LiveOmniEye:
-    """Alle 5s: Screenshot → Omni → Aktion. Plus pixel-diff für schnelle Changes."""
+def main(pid: int):
+    # ffmpeg permanent starten
+    for f in [VIDEO, CLIP]:
+        if Path(f).exists(): Path(f).unlink()
+    
+    # Bildschirm-Index finden
+    r = subprocess.run(["ffmpeg","-f","avfoundation","-list_devices","true","-i",""],
+                      capture_output=True, text=True, timeout=5)
+    idx = "1"
+    for line in r.stderr.split("\n"):
+        if "Capture screen" in line:
+            idx = line.split()[0].strip("[]")
+            break
+    print(f"Screen index: {idx}", flush=True)
 
-    def __init__(self, pid: int):
-        self.pid = pid
-        self.sct = mss.mss()
-        self.mon = self.sct.monitors[1]
-        self.last_gray = None
-        self.http = httpx.Client(timeout=15)
-        self.context = ""
+    proc = subprocess.Popen(
+        ["ffmpeg","-f","avfoundation","-capture_cursor","1","-r","5",
+         "-video_size","1920x1080","-i",idx,
+         "-c:v","libx264","-preset","ultrafast","-crf","30","-y",VIDEO],
+        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    time.sleep(3)
+    print("🔴 Recording aktiv", flush=True)
 
-    def snap(self) -> np.ndarray:
-        raw = np.array(self.sct.grab(self.mon))
-        return cv2.cvtColor(raw, cv2.COLOR_BGRA2BGR)
+    try:
+        for i in range(20):
+            time.sleep(5)
+            if not Path(VIDEO).exists() or Path(VIDEO).stat().st_size < 100000:
+                print(f"[{i}] Video zu kurz...", flush=True)
+                continue
 
-    def to_b64(self, img: np.ndarray) -> str:
-        buf = BytesIO()
-        Image.fromarray(img).save(buf, format="PNG")
-        return base64.b64encode(buf.getvalue()).decode()
+            # Letzte 4s extrahieren
+            if Path(CLIP).exists(): Path(CLIP).unlink()
+            subprocess.run(["ffmpeg","-sseof","-4","-i",VIDEO,"-c","copy","-y",CLIP],
+                          capture_output=True, timeout=10)
+            if not Path(CLIP).exists() or Path(CLIP).stat().st_size < 1000:
+                continue
 
-    def has_change(self, frame: np.ndarray) -> bool:
-        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-        gray = cv2.GaussianBlur(gray, (21, 21), 0)
-        if self.last_gray is None:
-            self.last_gray = gray
-            return True
-        diff = cv2.absdiff(self.last_gray, gray)
-        _, thresh = cv2.threshold(diff, 25, 255, cv2.THRESH_BINARY)
-        pct = 100.0 * np.sum(thresh > 0) / thresh.size
-        self.last_gray = gray
-        return pct > 1.0
+            clip = base64.b64encode(Path(CLIP).read_bytes()).decode()
+            print(f"[{i}] Clip: {len(clip)//1024}KB an Omni...", flush=True)
 
-    def ask_omni(self, img: np.ndarray) -> dict:
-        try:
-            h, w = img.shape[:2]
-            small = cv2.resize(img, None, fx=540/h, fy=540/h, interpolation=cv2.INTER_AREA)
-            buf = BytesIO()
-            Image.fromarray(small).save(buf, format="PNG")
-            b64 = base64.b64encode(buf.getvalue()).decode()
-            r = self.http.post(NVIDIA_URL, headers={"Authorization": f"Bearer {NVIDIA_KEY}"},
-                json={"model": OMNI_MODEL, "messages": [{"role": "user", "content": [
-                    {"type": "text", "text": "What page is shown? Reply ONLY: heypiggy_page, google_popup, dashboard"},
-                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}}]}],
-                    "max_tokens": 80, "temperature": 0.0}, timeout=10)
+            r = httpx.post(URL, headers={"Authorization":f"Bearer {KEY}"},
+                json={"model":MODEL, "messages":[{"role":"user","content":[
+                    {"type":"video_url","video_url":{"url":f"data:video/mp4;base64,{clip}"}},
+                    {"type":"text","text":"Watch this screen recording. What happened? What action next and WHERE?"}]}],
+                      "max_tokens":500,"temperature":0.0,
+                      "extra_body":{"media_io_kwargs":{"video":{"fps":1,"num_frames":-1}}}},
+                timeout=30)
             msg = r.json()["choices"][0]["message"]
-            text = (msg.get("reasoning") or msg.get("content") or "").lower()
-            page = "dashboard" if "dashboard" in text else "google_popup" if "accounts.google.com" in text else "heypiggy" if "heypiggy" in text else "unknown"
-            return {"page": page, "action": "wait" if page in ("heypiggy", "dashboard") else "click",
-                    "element_label": "Weiter" if page == "google_popup" else ""}
-        except:
-            return {"page": "unknown", "action": "wait", "element_label": ""}
-
-    def click_label(self, label: str) -> bool:
-        """skylight-cli: find AXButton by label → click."""
-        r = subprocess.run(["skylight-cli", "list-elements", "--pid", str(self.pid)],
-                          capture_output=True, text=True, timeout=10)
-        try:
-            for e in json.loads(r.stdout).get("elements", []):
-                if label.lower() in str(e.get("label", "")).lower() and e.get("role") in ("AXButton", "AXLink"):
-                    idx = e["index"]
-                    subprocess.run(["skylight-cli", "click", "--pid", str(self.pid), "--element-index", str(idx)],
-                                  capture_output=True, timeout=10)
-                    print(f"      🖱 [{idx}] '{label}'", flush=True)
-                    return True
-        except: pass
-        print(f"      ⚠️ '{label}' nicht gefunden", flush=True)
-        return False
-
-    def run(self, cycles: int = 20):
-        for i in range(cycles):
-            frame = self.snap()
-            changed = self.has_change(frame)
-
-            if changed or i % 3 == 0:
-                decision = self.ask_omni(frame)
-                action = decision.get("action", "wait")
-                label = decision.get("element_label", "")
-
-                print(f"  👁 [{i}] {decision.get('page','?')} popup={decision.get('popup')} → {action} '{label}'", flush=True)
-
-                if action == "click" and label:
-                    self.click_label(label)
-                elif action == "done":
-                    print("  ✅ Fertig!", flush=True)
-                    break
-                elif action == "wait":
-                    pass
-
-            time.sleep(2)
+            text = msg.get("reasoning") or msg.get("content") or ""
+            print(f"  → {text[:500]}", flush=True)
+    finally:
+        proc.terminate()
+        try: proc.wait(timeout=3)
+        except: proc.kill()
 
 
 if __name__ == "__main__":
     import sys
-    pid = int(sys.argv[1]) if len(sys.argv) > 1 else 0
-    if not pid:
-        # playstealth launch
-        r = subprocess.run(["playstealth", "launch", "--url", "https://heypiggy.com/?page=dashboard"],
+    p = int(sys.argv[1]) if len(sys.argv)>1 else 0
+    if not p:
+        r = subprocess.run(["playstealth","launch","--url","https://heypiggy.com/?page=dashboard"],
                           capture_output=True, text=True, timeout=30)
-        for line in reversed(r.stdout.strip().split("\n")):
-            try: pid = json.loads(line).get("pid"); break
+        for l in reversed(r.stdout.strip().split("\n")):
+            try: p = json.loads(l).get("pid"); break
             except: pass
-        print(f"PID={pid}")
-        subprocess.run(["bash", "cli/heypiggy-login", str(pid)], timeout=60)
-    LiveOmniEye(pid).run()
+        print(f"PID={p}")
+        time.sleep(5)
+    main(p)
