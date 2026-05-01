@@ -1,13 +1,23 @@
-# goal.md – OKRs für stealth-runner
+# goal.md - Stealth Runner Hauptziel
 
-## Q2 2026
-1. **EUR verdienen** – Erster vollautomatischer Survey-Durchlauf mit EUR > 0
-2. **50 Surveys ohne Detektion** – Anti-Bot-Systeme umgehen
-3. **Crash-Recovery 100%** – Jeder Crash ist resumable
-4. **Vision-Only-Loop** – Kein DOM-Prescan, jeder Schritt durch Vision-LLM ✅
+## Primärziel
+Heypiggy.com automatisieren: Google-Login → Surveys abschließen → EUR > 0 verdienen
 
-## Status
-- [x] Vision-Only-Loop (DOM-Prescan entfernt)
-- [ ] EUR verdienen
-- [ ] 50 Surveys ohne Detektion
-- [ ] Crash-Recovery 100%
+## Aktueller Status
+- ✅ playstealth launch funktioniert (isoliertes Chrome)
+- ✅ skylight-cli mit element-index funktioniert
+- ✅ Google-Login Popup öffnet korrekt
+- ⏳ Google-Login abschließen (Passwort-Seite)
+- ⏳ Survey-Loop starten
+
+## Constraints (UNVERBRÜCHLICH)
+- NUR skylight-cli, NIE webauto-nodriver oder andere Tools
+- NUR `--element-index`, NIE `--x`/`--y` raten
+- NUR AX-Frame-Koordinaten (absolut), nie Fenster-Position addieren
+- Screenshots VOR/NACH jedem Schritt
+- Alle Fehler dokumentieren in BANNED.md
+
+## Nächste Schritte
+1. Google Login Popup: Passwort eingeben + Weiter klicken
+2. Nach erfolgreichem Login: Survey-Teilnahme starten
+3. EUR-Guthaben prüfen

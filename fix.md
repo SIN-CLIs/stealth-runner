@@ -1,17 +1,18 @@
-# fix.md – Alle Bugs gefixed
+# fix.md - Bekannte Bugs & Fixes
 
-| # | Bug | Symptom | Fix | Commit |
-|---|-----|---------|-----|--------|
-| 1 | `cua-driver` | Agent nutzt altes Tool | Alle refs entfernt, `skylight-cli` only | `efd363f` |
-| 2 | `open -na Chrome` | Kein Stealth-Browser | `playstealth-cli launch` in StateMachine | `efd363f` |
-| 3 | `AXStaticText` click | Klick löst nichts aus | Prompt verbietet, nur Button/Link/RadioButton | `efd363f` |
-| 4 | Kein Vision vor Klick | Blindes Raten | `VisionClient.get_action()` vor execute | `efd363f` |
-| 5 | Kein `unmask-cli` | Keine Verification | `verify_stealth()` in VERIFY state | `77581cf` |
-| 6 | `ask_vision()` hängt | Keine Koordinaten | `ask_vision_text()` intern | `0b72d2e` |
-| 7 | Lesezeichen-Klicks | Chrome-UI geklickt | `validate_click_coordinates()` | `987e862` |
-| 8 | AX-Tree-Kollaps | 0 Elemente | `_AXObserverAddNotificationAndCheckRemote` | `2ea1ee6` |
-| 9 | Canvas-UIs | 70–80 % Präzision | `VNRecognizeTextRequest` (OCR) | `f7b1f31` |
-| 10 | `.env` mit echten Secrets | Credentials-Leak | `.env` gelöscht, `.env.example` erstellt | `78c4672` |
-| 11 | DOM-Prescan als "Fast-Path" | Klickte IMMER Element 1, nie Vision | DOM-Prescan ENTFERNT – JEDER Schritt geht durch Vision-LLM | `07ee992` |
+## Gefixt
+- [x] BANNED.md korrigiert (skylight-cli ist OK, webauto-nodriver ist BANNED)
+- [x] playstealth launch funktioniert (isoliertes Chrome)
+- [x] Google Login Popup öffnet korrekt via skylight-cli element-index
 
-## Status: JEDER Schritt Vision-LLM. Kein DOM-Prescan.
+## Offene Bugs
+- [ ] Dieses Modell (deepseek-v4-pro) kann keine Screenshots sehen
+  - Fix: unmask-cli + screen-follow für Screen-Erkennung nutzen
+- [ ] Nach Google Weiter → Passwort-Seite noch nicht automatisiert
+- [ ] Survey-Loop nach Login noch nicht getestet
+
+## NIE TUN
+- ❌ webauto-nodriver MCP (falscher Chrome, Profil-Konflikt)
+- ❌ `--x`/`--y` Koordinaten raten (Apple-Menü bei 0,0!)
+- ❌ Fenster-Position mit Element-Position addieren (AX-Frame ist ABSOLUT)
+- ❌ Chrome-Prozesse des Nutzers killen

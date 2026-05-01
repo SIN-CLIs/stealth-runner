@@ -1,15 +1,85 @@
-from pathlib import Path
-from typing import Any
-from .base import BaseDriver
-import subprocess, json
+import subprocess
+import json
+from typing import Optional, Dict
 
-class SkyLightDriver(BaseDriver):
-    def screenshot(self, pid, mode, out):
-        res = subprocess.run(["skylight-cli", "screenshot", "--pid", str(pid), "--mode", mode, "--out", str(out)], capture_output=True, text=True)
-        if res.returncode != 0: raise RuntimeError(f"skylight-cli failed: {res.stderr}")
-        return json.loads(res.stdout)
 
-    def click(self, pid, idx):
-        res = subprocess.run(["skylight-cli", "click", "--pid", str(pid), "--element-index", str(idx)], capture_output=True, text=True)
-        if res.returncode != 0: raise RuntimeError(f"skylight-cli failed: {res.stderr}")
-        return json.loads(res.stdout)
+class SkylightDriver:
+    def __init__(self, pid: Optional[int] = None):
+        self.pid = pid
+
+    def click(
+        self,
+        element_index: Optional[int] = None,
+        axpath: Optional[str] = None,
+        expected_label: Optional[str] = None,
+        expected_role: Optional[str] = None,
+        post_delay: int = 0,
+    ) -> Dict:
+        if not self.pid:
+            return {"status": "error", "reason": "no_pid"}
+        if axpath:
+            cmd = ["skylight-cli", "click", "--pid", str(self.pid), "--axpath", axpath]
+        elif element_index is not None:
+            cmd = ["skylight-cli", "click", "--pid", str(self.pid), "--element-index", str(element_index)]
+        else:
+            raise ValueError("Either axpath or element_index must be provided.")
+
+        if expected_label:
+            cmd.extend(["--expected-label", expected_label])
+        if expected_role:
+            cmd.extend(["--expected-role", expected_role])
+        if post_delay:
+            cmd.extend(["--post-delay", str(post_delay)])
+
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        return json.loads(result.stdout)
+
+    def type_text(
+        self,
+        element_index: int,
+        text: str,
+        post_delay: int = 0,
+    ) -> Dict:
+        if not self.pid:
+            return {"status": "error", "reason": "no_pid"}
+        cmd = [
+            "skylight-cli",
+            "type",
+            "--pid", str(self.pid),
+            "--element-index", str(element_index),
+            "--text", text,
+        ]
+        if post_delay:
+            cmd.extend(["--post-delay", str(post_delay)])
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        return json.loads(result.stdout)
+
+    def screenshot(self, mode: str = "som", output: str = "/tmp/screenshot.png") -> Dict:
+        if not self.pid:
+            return {"status": "error", "reason": "no_pid"}
+        cmd = ["skylight-cli", "screenshot", "--pid", str(self.pid), "--mode", mode, "--output", output]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        return json.loads(result.stdout)
+
+    def inspect(self, element_index: int) -> Dict:
+        if not self.pid:
+            return {"status": "error", "reason": "no_pid"}
+        cmd = ["skylight-cli", "inspect", "--pid", str(self.pid), "--element-index", str(element_index)]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        return json.loads(result.stdout)
+
+    def list_elements(self) -> Dict:
+        if not self.pid:
+            return {"status": "error", "reason": "no_pid", "elements": []}
+        cmd = ["skylight-cli", "list-elements", "--pid", str(self.pid)]
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        return json.loads(result.stdout)
+
+    def find_element(self, label_contains: str, role: Optional[str] = None) -> Optional[Dict]:
+        data = self.list_elements()
+        for e in data.get("elements", []):
+            el_label = str(e.get("label", "")).lower()
+            if label_contains.lower() in el_label:
+                if role is None or e.get("role") == role:
+                    return e
+        return None

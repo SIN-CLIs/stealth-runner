@@ -15,8 +15,10 @@ HEYPIGGY_EMAIL = os.getenv("HEYPIGGY_EMAIL", "")
 HEYPIGGY_PASSWORD = os.getenv("HEYPIGGY_PASSWORD", "")
 
 MISSING: list[str] = []
-if not CF_API_TOKEN: MISSING.append("CF_TOKEN")
-if not NVIDIA_API_KEY: MISSING.append("NVIDIA_API_KEY (optional)")
+if not CF_API_TOKEN:
+    MISSING.append("CF_TOKEN")
+if not NVIDIA_API_KEY:
+    MISSING.append("NVIDIA_API_KEY (optional)")
 if MISSING:
     raise EnvironmentError(
         "Fehlende Umgebungsvariablen:\n" + "\n".join(f"  - {m}" for m in MISSING)
