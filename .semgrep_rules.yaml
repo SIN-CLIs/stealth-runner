@@ -1,0 +1,103 @@
+# Semgrep Policy – Architecture Rules aus AGENTS.md + banned.md
+# Install: pip3 install semgrep
+# Run:    semgrep --config=.semgrep_rules.yaml
+# CI:     semgrep --config=.semgrep_rules.yaml --error
+
+rules:
+  - id: banned-chrome-pgrep
+    pattern: pgrep ...Chrome
+    paths:
+      exclude:
+        - "*.md"
+    message: "❌ BANNED: pgrep Chrome greift Nutzer-Chrome. Nutze playstealth launch --url"
+    languages: [python, bash]
+    severity: ERROR
+
+  - id: banned-chrome-open
+    pattern: |
+      open -na "Google Chrome"
+    paths:
+      exclude:
+        - "*.md"
+    message: "❌ BANNED: open -na Chrome manipuliert Nutzer-Chrome. Nutze playstealth launch"
+    languages: [bash, sh]
+    severity: ERROR
+
+  - id: banned-pkill-chrome
+    pattern: pkill ...Chrome
+    message: "❌ BANNED: Chrome-Prozesse killen zerstört Nutzer-Daten"
+    languages: [bash, sh]
+    severity: ERROR
+
+  - id: banned-pyautogui
+    pattern: |
+      import pyautogui
+    message: "❌ BANNED: pyautogui bewegt Nutzer-Maus. Nutze skylight-cli --element-index"
+    languages: [python]
+    severity: ERROR
+
+  - id: banned-pynput
+    pattern: |
+      import pynput
+    message: "❌ BANNED: pynput bewegt Nutzer-Maus. Nutze skylight-cli --element-index"
+    languages: [python]
+    severity: ERROR
+
+  - id: banned-openai-client
+    patterns:
+      - pattern: |
+          from openai import ...
+      - pattern: |
+          import openai
+    message: "❌ BANNED: openai-Client. Nutze httpx direkt an NVIDIA NIM"
+    languages: [python]
+    severity: ERROR
+
+  - id: banned-coordinates-click
+    pattern: |
+      skylight-cli click ...--x ...
+    message: "❌ BANNED: --x Koordinaten raten. Nutze --element-index"
+    languages: [bash, sh, python]
+    severity: ERROR
+
+  - id: mandatory-playstealth-launch
+    patterns:
+      - pattern-either:
+          - pattern: |
+              subprocess.run(...Google Chrome...)
+          - pattern: |
+              subprocess.Popen(...Google Chrome...)
+          - pattern: |
+              os.system(...Google Chrome...)
+      - pattern-not: |
+          ...playstealth launch...
+    message: "❌ Chrome muss via playstealth launch gestartet werden (nicht direkt)"
+    languages: [python]
+    severity: ERROR
+
+  - id: mandatory-nvidia-nim-url
+    pattern: |
+      https://integrate.api.nvidia.com/v1/chat/completions
+    paths:
+      include:
+        - "*.py"
+    message: "✅ NVIDIA NIM URL korrekt. Nur diesen Endpoint nutzen."
+    languages: [python]
+    severity: INFO
+
+  - id: banned-webauto-nodriver
+    pattern: |
+      webauto-nodriver
+    message: "❌ BANNED: webauto-nodriver. Nur skylight-cli"
+    languages: [python, yaml]
+    severity: ERROR
+
+  - id: banned-recovery-mode
+    patterns:
+      - pattern: |
+          recovery_mode: true
+      - pattern: |
+          omni_fallback: llama
+    message: "❌ BANNED: Recovery-Mode. Omni macht ALLE Entscheidungen"
+    languages: [yaml]
+    severity: ERROR

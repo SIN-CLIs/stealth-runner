@@ -1,18 +1,22 @@
-"""Live Omni Screen Monitor – NVIDIA NIM httpx + playstealth launch + skylight-cli.
+"""Live Omni Screen Monitor – Rolling Video Buffer + Screenshot Hybrid.
 
 ARCHITEKTUR-KONFORM:
 - httpx direkt an NVIDIA NIM (kein OpenAI-Client)
-- playstealth launch für isolierte Chrome-Instanz (nie Nutzer-Chrome)
+- playstealth launch für isolierte Chrome-Instanz
 - skylight-cli --element-index (nie Mauskoordinaten)
+
+ZWEI ANALYSE-MODI:
+1. Screenshot-Modus (schnell, für sofortige Entscheidungen)
+2. Rolling-Video-Buffer (temporal, erkennt Seitenübergänge)
 """
 from __future__ import annotations
-import asyncio
 import base64
 import json
 import os
 import re
+import subprocess
 import time
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
@@ -22,6 +26,8 @@ NVIDIA_KEY = os.environ.get("NVIDIA_API_KEY")
 NVIDIA_URL = "https://integrate.api.nvidia.com/v1/chat/completions"
 OMNI_MODEL = "nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
 TMP = Path("/tmp")
+VIDEO_BUF = TMP / "omni_rolling.mp4"
+VIDEO_CLIP = TMP / "omni_clip.mp4"
 
 
 @dataclass
@@ -40,49 +46,98 @@ class OmniObservation:
     label: str = ""
     confidence: float = 0.0
     reasoning: str = ""
+    temporal: bool = False
 
 
 class LiveOmniMonitor:
-    """Capture → Omni Vision → skylight-cli Execute in Echtzeit."""
+    """Screenshot + Rolling Video Buffer → Omni → skylight-cli Execute."""
 
-    def __init__(self, fps: float = 1.0, debug: bool = False):
+    def __init__(self, fps: float = 1.0, buffer_seconds: int = 4, debug: bool = False):
         if not NVIDIA_KEY:
             raise RuntimeError("NVIDIA_API_KEY not set")
         self.fps = fps
+        self.buffer_seconds = buffer_seconds
         self.debug = debug
         self.pid: int | None = None
         self.running = False
         self.observations: list[OmniObservation] = []
         self._session = httpx.Client(timeout=60)
+        self._video_proc: subprocess.Popen | None = None
+        self._frame_count = 0
 
     # ── Lifecycle ───────────────────────────────────────────────
 
     def start(self, url: str = "https://heypiggy.com/?page=dashboard") -> None:
-        """playstealth launch → eigene isolierte Chrome-Instanz."""
         result = self._run_cmd(["playstealth", "launch", "--url", url])
         self.pid = result.get("pid")
         if not self.pid:
             raise RuntimeError(f"playstealth launch failed: {result}")
+        self._start_video_recording()
         self.running = True
         if self.debug:
-            print(f"🔴 Monitor gestartet: PID={self.pid}", flush=True)
+            print(f"🔴 Monitor PID={self.pid}, Video={VIDEO_BUF}", flush=True)
 
     def stop(self) -> None:
         self.running = False
         self._session.close()
+        self._stop_video_recording()
         if self.debug:
             print("⏹ Monitor gestoppt", flush=True)
 
-    # ── Capture ─────────────────────────────────────────────────
+    def _start_video_recording(self) -> None:
+        """screen-follow record --video im Hintergrund."""
+        import subprocess
+        if VIDEO_BUF.exists():
+            VIDEO_BUF.unlink()
+        try:
+            self._video_proc = subprocess.Popen(
+                ["screen-follow", "record", "--video", "--output", str(VIDEO_BUF)],
+                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
+            )
+            time.sleep(1)
+        except FileNotFoundError:
+            if self.debug:
+                print("⚠️ screen-follow nicht gefunden – Video deaktiviert", flush=True)
+
+    def _stop_video_recording(self) -> None:
+        if self._video_proc:
+            self._video_proc.terminate()
+            try:
+                self._video_proc.wait(timeout=3)
+            except Exception:
+                self._video_proc.kill()
+            self._video_proc = None
+
+    # ── Capture (Screenshot) ────────────────────────────────────
 
     def capture_frame(self) -> ScreenFrame:
-        """skylight-cli screenshot → Temp-Datei → Base64."""
         ts = time.time()
         out = TMP / f"omni_frame_{int(ts)}.png"
         self._run_skylight(["screenshot", "--pid", str(self.pid), "--mode", "som", "--output", str(out)])
+        self._frame_count += 1
         if self.debug:
-            print(f"📸 Frame: {out.name}", flush=True)
+            print(f"📸 Frame {self._frame_count}: {out.name}", flush=True)
         return ScreenFrame(timestamp=ts, image_path=str(out))
+
+    # ── Rolling Video Buffer ────────────────────────────────────
+
+    def _extract_video_clip(self) -> str | None:
+        """Extrahiert die letzten N Sekunden als base64-mp4."""
+        if not VIDEO_BUF.exists() or VIDEO_BUF.stat().st_size < 10000:
+            return None
+        if VIDEO_CLIP.exists():
+            VIDEO_CLIP.unlink()
+        try:
+            subprocess.run(
+                ["ffmpeg", "-sseof", f"-{self.buffer_seconds}", "-i", str(VIDEO_BUF),
+                 "-c", "copy", "-y", str(VIDEO_CLIP)],
+                capture_output=True, text=True, timeout=10,
+            )
+            if VIDEO_CLIP.exists() and VIDEO_CLIP.stat().st_size > 1000:
+                return base64.b64encode(VIDEO_CLIP.read_bytes()).decode()
+        except Exception:
+            pass
+        return None
 
     def _frame_to_b64(self, frame: ScreenFrame) -> str:
         if not frame.image_base64:
@@ -91,36 +146,27 @@ class LiveOmniMonitor:
 
     # ── Omni Vision ─────────────────────────────────────────────
 
-    def analyze_frame(self, frame: ScreenFrame, prompt: str | None = None) -> OmniObservation:
-        """NVIDIA NIM httpx Call – 1 Call statt 3 (Vision+OCR+LLM)."""
-        b64 = self._frame_to_b64(frame)
+    def analyze_frame(self, frame: ScreenFrame, use_video: bool = False,
+                      prompt: str | None = None) -> OmniObservation:
+        """Screenshot (schnell) oder Rolling-Video-Clip (temporal) an Omni."""
         if prompt is None:
-            prompt = (
-                "You are a survey automation agent. Analyze this screenshot. "
-                "Output ONLY JSON:\n"
-                '{"page_type":"survey|consent|trap|dashboard|payout",'
-                '"action":"click|type|scroll|wait|done",'
-                '"element_index":<int>,'
-                '"label":"...",'
-                '"confidence":0.0-1.0,'
-                '"reasoning":"..."}'
-            )
+            prompt = self._default_prompt(use_video)
+
+        messages = self._build_messages(frame, use_video, prompt)
+
         try:
             r = self._session.post(
                 NVIDIA_URL,
                 headers={"Authorization": f"Bearer {NVIDIA_KEY}"},
                 json={
                     "model": OMNI_MODEL,
-                    "messages": [{
-                        "role": "user",
-                        "content": [
-                            {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}},
-                            {"type": "text", "text": prompt},
-                        ],
-                    }],
+                    "messages": messages,
                     "max_tokens": 300,
                     "temperature": 0.1,
+                    "extra_body": {"media_io_kwargs": {"video": {"fps": 1.0, "num_frames": -1}}}
+                    if use_video else {},
                 },
+                timeout=60,
             )
             content = r.json()["choices"][0]["message"]["content"]
             result = json.loads(self._extract_json(content))
@@ -133,10 +179,12 @@ class LiveOmniMonitor:
                 label=result.get("label", ""),
                 confidence=result.get("confidence", 0.0),
                 reasoning=result.get("reasoning", ""),
+                temporal=use_video,
             )
             self.observations.append(obs)
+            mode = "🎬" if use_video else "📸"
             if self.debug:
-                print(f"👁 Omni → {obs.action} [{obs.element_index}] ({obs.confidence:.2f})", flush=True)
+                print(f"{mode} Omni → {obs.action} [{obs.element_index}] ({obs.confidence:.2f})", flush=True)
             return obs
 
         except Exception as e:
@@ -144,10 +192,55 @@ class LiveOmniMonitor:
                 print(f"⚠️ Omni: {e}", flush=True)
             return OmniObservation(frame=frame, reasoning=str(e))
 
+    def _build_messages(self, frame: ScreenFrame, use_video: bool, prompt: str) -> list:
+        if use_video:
+            clip = self._extract_video_clip()
+            if clip:
+                return [{
+                    "role": "user",
+                    "content": [
+                        {"type": "video_url", "video_url": {"url": f"data:video/mp4;base64,{clip}"}},
+                        {"type": "text", "text": prompt},
+                    ],
+                }]
+        b64 = self._frame_to_b64(frame)
+        return [{
+            "role": "user",
+            "content": [
+                {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}},
+                {"type": "text", "text": prompt},
+            ],
+        }]
+
+    def _default_prompt(self, use_video: bool) -> str:
+        if use_video:
+            return (
+                "You are a survey automation agent. This is a short video clip "
+                "of the last few seconds of screen activity. "
+                "Did the page transition? Is there a new element? "
+                "Output ONLY JSON:\n"
+                '{"page_type":"survey|consent|trap|dashboard|payout",'
+                '"action":"click|type|scroll|wait|done",'
+                '"element_index":<int>,'
+                '"label":"...",'
+                '"page_changed":true|false,'
+                '"confidence":0.0-1.0,'
+                '"reasoning":"..."}'
+            )
+        return (
+            "You are a survey automation agent. Analyze this screenshot. "
+            "Output ONLY JSON:\n"
+            '{"page_type":"survey|consent|trap|dashboard|payout",'
+            '"action":"click|type|scroll|wait|done",'
+            '"element_index":<int>,'
+            '"label":"...",'
+            '"confidence":0.0-1.0,'
+            '"reasoning":"..."}'
+        )
+
     # ── Execute ─────────────────────────────────────────────────
 
     def execute_action(self, obs: OmniObservation) -> None:
-        """skylight-cli click/type – keine Mausbewegung."""
         if not self.pid:
             return
         if obs.action == "click" and obs.element_index >= 0:
@@ -162,26 +255,30 @@ class LiveOmniMonitor:
     # ── Continuous Loop ─────────────────────────────────────────
 
     def run_continuous(self, max_steps: int = 100, on_action: Callable | None = None) -> None:
-        """Capture → Omni → Execute in Endlosschleife (oder bis done/max_steps)."""
+        """Hybrid Loop: Screenshot (schnell) + Video (alle 5 Schritte temporal)."""
         interval = 1.0 / self.fps
         step = 0
         try:
             while self.running and step < max_steps:
                 t0 = time.time()
                 frame = self.capture_frame()
-                obs = self.analyze_frame(frame)
+
+                # Alle 5 Schritte: Video-Clip für temporales Verständnis
+                use_video = (step > 0 and step % 5 == 0)
+                obs = self.analyze_frame(frame, use_video=use_video)
 
                 if obs.action == "done":
-                    print("✅ Omni sagt: done – Survey abgeschlossen", flush=True)
+                    print("✅ Omni: Survey abgeschlossen", flush=True)
                     break
 
-                if obs.confidence >= 0.6:
+                if obs.confidence >= 0.5:
                     self.execute_action(obs)
                     if on_action:
                         on_action(obs)
                 else:
                     if self.debug:
-                        print(f"⏳ niedrige confidence ({obs.confidence:.2f}) – warte", flush=True)
+                        print(f"⏳ confidence={obs.confidence:.2f}", flush=True)
+                    time.sleep(1)
 
                 elapsed = time.time() - t0
                 remaining = interval - elapsed
@@ -194,11 +291,9 @@ class LiveOmniMonitor:
     # ── Internals ───────────────────────────────────────────────
 
     def _run_skylight(self, cmd: list[str]) -> dict[str, Any]:
-        full = ["skylight-cli"] + cmd
-        return self._run_cmd(full)
+        return self._run_cmd(["skylight-cli"] + cmd)
 
     def _run_cmd(self, cmd: list[str]) -> dict[str, Any]:
-        import subprocess
         try:
             r = subprocess.run(cmd, capture_output=True, text=True, timeout=30)
         except subprocess.TimeoutExpired:
