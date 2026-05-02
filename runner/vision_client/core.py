@@ -35,24 +35,29 @@ class VisionClient:
         self.api_timeout = config.get("timeout", 60)
 
     def _parse_json(self, text: str) -> dict[str, Any]:
+        # Try code blocks first (common in Llama models)
         match = re.search(r"```(?:json)?\s*([^`]+)```", text, re.DOTALL)
         if match:
             text = match.group(1).strip()
+        else:
+            # Nemotron Omni writes reasoning then JSON at the end.
+            # Find the LAST JSON object in the text (using DOTALL for multi-line).
+            m = re.search(r"\{.*\}", text, re.DOTALL)
+            if m:
+                text = m.group(0)
         try:
             return json.loads(text)
         except json.JSONDecodeError:
             return {"action": "wait", "reason": "invalid_json"}
 
     def get_action(self, image_path: str, prompt: str) -> dict:
-        with open(image_path, "rb") as f:
-            raw = f.read()
         import hashlib
-        img_hash = hashlib.sha256(raw).hexdigest()
+        img_hash = hashlib.sha256(Path(image_path).read_bytes()).hexdigest()
         cached = _cache.get(img_hash)
         if cached:
             return cached
-        import base64
-        b64 = base64.b64encode(raw).decode()
+        # Convert to JPEG for smaller payload (same method as _nvidia_vision_call)
+        b64 = self._image_to_jpeg_b64(image_path)
         full_prompt = f"System: {prompt}\nOutput ONLY valid JSON."
 
         text = self._call_model(self.current_model, b64, full_prompt)
@@ -88,7 +93,12 @@ class VisionClient:
                 timeout=self.api_timeout,
             )
             msg = r.json()["choices"][0]["message"]
-            return msg.get("reasoning") or msg.get("content") or ""
+            # Nemotron Omni: JSON answer is in 'content', reasoning text in 'reasoning'.
+            # Priority: content (final answer) over reasoning (chain-of-thought).
+            txt = msg.get("content") or ""
+            if not txt or not txt.strip():
+                txt = msg.get("reasoning") or ""
+            return txt
         except Exception:
             return ""
 
@@ -128,10 +138,29 @@ class VisionClient:
             "No explanations, no markdown, just valid JSON."
         )
 
+    def _image_to_jpeg_b64(self, image_path: str, quality: int = 40) -> str:
+        """Convert PNG to JPEG for ~90% smaller API payload. Uses disk cache."""
+        import base64
+        from PIL import Image
+        from io import BytesIO
+        # Try cache first (based on file mtime + path)
+        cache_key = f"{image_path}:{Path(image_path).stat().st_mtime}:{quality}"
+        import hashlib
+        ck = hashlib.md5(cache_key.encode()).hexdigest()
+        if ck in _cache:
+            return _cache[ck]
+        img = Image.open(image_path).convert("RGB")
+        buf = BytesIO()
+        img.save(buf, format="JPEG", quality=quality)
+        jpg_bytes = buf.getvalue()
+        b64 = base64.b64encode(jpg_bytes).decode()
+        _cache.set(ck, b64, expire=3600)
+        return b64
+
     def _nvidia_vision_call(self, prompt: str, image_path: str) -> dict:
         import base64
         import requests
-        image_data = base64.b64encode(Path(image_path).read_bytes()).decode()
+        image_data = self._image_to_jpeg_b64(image_path)
         api_key = os.environ.get("NVIDIA_API_KEY", "")
         headers = {"Authorization": f"Bearer {api_key}"}
         payload = {
@@ -140,7 +169,7 @@ class VisionClient:
                 "role": "user",
                 "content": [
                     {"type": "text", "text": prompt},
-                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{image_data}"}},
+                    {"type": "image_url", "image_url": {"url": f"data:image/jpeg;base64,{image_data}"}},
                 ],
             }],
             "max_tokens": self.max_tokens,

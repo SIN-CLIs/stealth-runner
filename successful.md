@@ -41,3 +41,18 @@ Oh-My-OpenCode Background Agents, Claude Code Multi-Agent).
 - 23 Context-Writer Docs (CHANGELOG.md + ROADMAP.md neu)
 - Graphify Setup + Post-Commit Hook
 - Cleanup Phase
+## ✅ 2026-05-02 – SURVEY LOOP AUTONOMOUS (DURCHBRUCH!)
+
+**Erfolg**: Erster autonomer Survey-Durchlauf via Nemotron Omni Vision!
+
+**Flow**:
+1. Screenshot → Omni Vision → `{"action":"click","element_id":43}` → "🔥27" Survey
+2. Screenshot → Omni Vision → `{"action":"click","element_id":80}` → "0.09 €"
+3. Screenshot → Omni Vision → `{"action":"click","element_id":67}` → "Umfrage starten"
+4. Screenshot → Omni Vision → `{"action":"click","element_id":37}` → "Go to next question"
+
+**Erkannte Patterns**:
+- Omni erkennt Survey-Links, Checkboxen, Radio-Buttons, Textfelder
+- JSON-Kommunikation via `reasoning`→Natursprache + `content`→JSON
+- JPEG Qualität=40: ~90% Payload-Reduktion → kein Timeout mehr
+- `max_tokens=1000` nötig für Reasoning+JSON

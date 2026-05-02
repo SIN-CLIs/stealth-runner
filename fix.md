@@ -58,6 +58,13 @@ aber `SkylightDriver.screenshot()` erwartet `(self, mode, output)` ohne PID.
 **Problem**: `MOTION_HIGH_THRESH=15.0` zu sensitiv, `MOTION_LOW_THRESH=2.0` zu strikt.
 **Gelöst**: `MOTION_HIGH_THRESH=20.0`, `MOTION_LOW_THRESH=3.0` in `live_eye.py`
 
+## 🔧 2026-05-02 – PNG→JPEG in VisionClient (API-Timeout-Fix)
+**Problem**: `vision_client/core.py` sendet rohe PNG-Dateien (300KB+) an Nemotron Omni.
+API timed out nach 30s wegen zu großer Payload.
+
+**Gelöst**: `_image_to_jpeg_b64()` konvertiert PNG→JPEG quality=40 VOR dem base64-Encoding.
+90% kleinere Payload (~30KB statt 300KB). Zusätzlich DiskCache für wiederholte Screenshots.
+
 ## 🔧 2026-05-02 – JPEG Quality reduziert
 **Problem**: `quality=50` in `live_omni_monitor.py` → Payload zu groß für schnelle API-Calls.
 **Gelöst**: `quality=40` → ~90% kleinere Payload bei gleicher Erkennungsqualität.
