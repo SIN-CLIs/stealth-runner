@@ -100,6 +100,10 @@ def classify(question_text: str, element_list: list[dict] | None = None) -> str:
     if re.search(r"(wie alt|alter|geboren|geschlecht|wohn|plz|einkommen|beruf|bildung)", q):
         return "demographic"
     
+    # Free text keywords (question text indicates text answer regardless of elements)
+    if re.search(r"(beschreibe|erzähle|erkläre|berichte|schildere|in \w+ sätzen|in \w+ worten)", q):
+        return "free_text"
+    
     # Check if free text (no options, has textarea)
     if element_list:
         has_textarea = any(e.get("role") == "AXTextArea" for e in element_list)
