@@ -1,39 +1,40 @@
 # anti-learn.md – Anti-Patterns (was NIEMALS tun)
 
+## ❌ Nur klicken ohne Texteingabe
+
+Wenn eine Umfrage ein TEXTFELD zeigt (Einkommen, Alter, PLZ), DARF nicht einfach
+"Go to next question" geklickt werden. Die Seite bleibt hängen, weil die Antwort fehlt.
+
+**Korrekt**: Omni fragen: "Describe what you see. Any text fields?" → `type` Action ausführen.
+
 ## ❌ skylight-cli in Popup-Fenstern
 
-**NIEMALS** `skylight-cli click --pid X --element-index Y` wenn ein Popup offen ist.
-`skylight-cli` sieht NUR das Hauptfenster. Die Element-Indices beziehen sich auf
-Hauptfenster-Elemente, NICHT auf Popup-Buttons.
+skylight sieht NUR Hauptfenster. Popup-Element-Indices sind INVALID.
 
-**Korrekt**: `cua-driver call click '{"pid":X,"window_id":W,"element_index":Y}'`
+**Korrekt**: cua-driver mit `window_id`.
 
-## ❌ bash mit `&` für Hintergrund-Prozesse
+## ❌ PNG direkt an Omni senden (kein Resize)
 
-**NIEMALS** `bash("command &")` – blockiert trotzdem die Shell und der Agent hängt.
+1200×1006 PNG = 300KB → API timeout.
 
-**Korrekt**: `interactive_bash(tmux_command="new-session -d ...")`
+**Korrekt**: `img.thumbnail((960,960))` + JPEG quality=40.
 
-## ❌ playstealth launch --json am Ende
+## ❌ content ignorieren, nur reasoning lesen
 
-**NIEMALS** `playstealth launch --url X --json` – `--json` muss VOR `launch`.
+Nemotron Omni schreibt JSON in `content`, Reasoning in `reasoning`.
 
-**Korrekt**: `playstealth --json launch --url X`
+**Korrekt**: Content priority vor reasoning.
 
-## ❌ asyncio.get_event_loop() in Python 3.14+
+## ❌ max_tokens=300 für Reasoning-Models
 
-**NIEMALS** `asyncio.get_event_loop()` – deprecated, wirft Errors.
+Reasoning braucht Tokens zum Denken. JSON kommt DANACH.
 
-**Korrekt**: `asyncio.new_event_loop()` + `asyncio.set_event_loop(loop)`
+**Korrekt**: `max_tokens: 1000` in `config/vision_models.yaml`.
 
-## ❌ OpenAI-Client für NVIDIA NIM
+## ❌ bash mit & für Hintergrund-Prozesse
 
-**NIEMALS** `import openai` oder `from openai import OpenAI`.
-
-**Korrekt**: `import httpx; httpx.post('https://integrate.api.nvidia.com/v1/chat/completions', ...)`
+**Korrekt**: tmux `new-session -d` + `send-keys`.
 
 ## ❌ call_omo_agent (TOOL BROKEN)
 
-**NIEMALS** `call_omo_agent` – Tool timed out auf ALLEN 9 Versuchen (30min timeout).
-
-**Korrekt**: Direkte Tool-Nutzung (grep, ast-grep, lsp) oder Oh-My-OpenCode `task(run_in_background=true)`
+9/9 Timeouts. Niemals nutzen.

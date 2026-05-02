@@ -1,31 +1,28 @@
-# learn.md – Heutige Learnings (FINAL)
+# learn.md – KRITISCHE Learnings (2026-05-02)
 
-## 2026-05-02 – SURVEY AUTOMATION DURCHBRUCH
+## 🔑 Survey Questions Need TEXT Answers Too!
 
-### ✅ WAS FUNKTIONIERT
+**NIEMALS** nur klicken. Umfragen haben Textfelder (Einkommen, Alter, PLZ).
+Omni zuerst fragen: "Describe EXACTLY what you see. What question? What answer format?"
+Dann die passende Action ausführen: `type` (Textfeld) ODER `click` (Radio/Button).
 
-1. **cua-driver Popup-Interaktion** – Google OAuth komplett automatisiert
-   - skylight-cli sieht NUR Hauptfenster. Popups via cua-driver mit window_id
-   - PID 31710: Login in 5 Schritten, KEIN Passwort nötig dank bestehender Cookies
+## 🔑 Image Resize Before API (thumbnail 50%)
+1200×1006 → 960×805 = ~67KB JPEG statt 300KB PNG. Kein API-Timeout mehr.
+`Image.thumbnail((960, 960), Image.LANCZOS)` in `_image_to_jpeg_b64()`.
 
-2. **Nemotron Omni Survey-Steuerung**
-   - `max_tokens=1000` (war 300 – viel zu klein für Reasoning-Model)
-   - `content`-Feld = JSON-Antwort (NICHT reasoning wie vorher angenommen)
-   - JPEG quality=40 für 90% kleinere Payload
-   - Modell erkennt Survey-Elemente und gibt korrekte element_id zurück
+## 🔑 Nemotron Omni: content > reasoning
+Der Model schreibt JSON in `msg["content"]`, Reasoning-Text in `msg["reasoning"]`.
+Content MUSS Priority haben.
 
-3. **Survey-Flow verifiziert**: click 43→80→67→37 (Start → Guthaben → Umfrage → Next Question)
+## 🔑 max_tokens: 300→1000 für Reasoning-Models
+Reasoning braucht Tokens zum Denken. JSON kommt ERST danach.
+300 Tokens = JSON abgeschnitten → parse-fail → "wait".
 
-### ❌ WAS NICHT FUNKTIONIERT
+## 🔑 Page Detection via skylight-cli
+AXWebArea-Label zeigt Seitentitel: "HeyPiggy" vs "PureSpectrum" vs "Google".
+In state speichern → an prompt übergeben → Model passt sich an.
 
-1. **Omni API Timeouts** – intermittierend bei großen Screenshots (300KB PNG → 150KB JPEG noch zu groß)
-2. **Page-Change Detection** – Browser wechselt zu PureSpectrum/Google ohne dass step.py es merkt
-3. **Prompt-Qualität** – Modell gibt manchmal falsche element_id (1=Titelgruppe statt 80=Guthaben)
-4. **Autonomer Loop** – step.py läuft nur EIN Schritt pro Aufruf, kein echter autonomer Loop
-
-### 🔑 NÄCHSTE CRITICAL FIXES
-
-1. **Screen resizen** vor Omni-Call: 1920→960 Breite halbieren → 4× kleinere JPEG
-2. **Page-change detection**: URL/title prüfen nach jedem Click
-3. **Prompt verbessern**: "You are on [PAGE]. Find the [OBJECTIVE] element"
-4. **Voiceover + Screen-Follow** permanent aktivieren (tmux)
+## 🔑 cua-driver für Popups, skylight für Hauptfenster
+Popup = `cua-driver call click "{...\"window_id\":WID,...}"`
+Hauptfenster = `skylight-cli click --pid X --element-index Y`
+NIE mischen!
