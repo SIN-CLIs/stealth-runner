@@ -1,3 +1,4 @@
+# DEPRECATED — use doctor_tools.py instead. KEINE automatischen Änderungen mehr!
 #!/usr/bin/env python3
 """
 DOCTOR v6 – ALLE 35 Tools aus der Recherche. Automatisch. 143 Repos.
