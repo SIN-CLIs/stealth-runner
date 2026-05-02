@@ -1,54 +1,24 @@
-# issues.md - Aktuelle Issues (2026-05-01)
+# issues.md – Offene Issues & Known Bugs
 
-## 2026-05-02: Doctor Scan
+## 🔴 KRITISCH – call_omo_agent BROKEN (9/9 Timeouts)
+- Alle 9 `call_omo_agent` Tasks timed out nach 30min
+- explore, librarian, oracle – ALLE betroffen
+- Workaround: Direkte Tool-Nutzung (grep, ast-grep, lsp, bash)
 
-**Gefixt:** 86 veraltete Muster/Kredentials
+## 🟡 Google OAuth 2FA – Manuelle Intervention nötig
+- Bei Accounts mit aktivierter 2FA kann cua-driver den zweiten Faktor nicht lösen
+- Passkey-Abfrage (Touch ID) nicht automatisierbar
+- Lösung: Consent-Flow nutzen (Email reicht bei bestehenden Cookies)
 
-**Fehlende Docs (2):**
+## 🟡 skylight-cli v0.2.0 Bug: --output ignoriert
+- `skylight-cli screenshot --output /tmp/x.png` schreibt nach `./skylight_screenshot.png`
+- Workaround: `_screenshot_with_workaround()` in `skylight.py`
 
-- [ ] `ROADMAP.md`
-- [ ] `Dockerfile`
+## 🟢 Survey Loop nach Login
+- Login funktioniert jetzt via cua-driver
+- Survey-Automation muss getestet werden
+- `PYTHONPATH=. python3 runner/step.py "https://heypiggy.com/?page=dashboard"`
 
-**Offene Findings:** 86
-
-## P0 (Blocker)
-
-1. **Google Login abschließen**: Passwort-Seite nach Weiter erreichen
-   - playstealth launch → Google Login → E-Mail → Weiter → **Passwort**
-   - cli/heypiggy-login bereit, muss getestet werden
-   - PID über playstealth launch (nie pgrep!)
-
-2. **NVIDIA API Key Doku**
-   - Key Prefix: `nvapi-...`
-   - Endpoint: `https://integrate.api.nvidia.com/v1/chat/completions`
-   - Model: `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`
-   - Nicht verwechseln mit `nvidia/nvidia/...` (gibt 404!)
-
-## P1 (Wichtig)
-
-3. **Survey-Loop nach Login**
-   - LiveOmniMonitor bereit (Rolling Video + SSE)
-   - Muss getestet werden: capture → Omni → execute → loop
-
-4. **EUR-Guthaben prüfen**
-   - Nach Survey-Teilnahme EUR-Stand auslesen
-   - unmask-cli oder skylight-cli für Texterkennung
-
-5. **Graphify merged graph regenerieren**
-   - Nach Code-Änderungen `graphify update .` in jedem Repo
-   - Dann `graphify merge-graphs` für alle 6 Repos
-
-## P2 (Später)
-
-6. **Täglicher EUR-Canary**
-   - Cron-Job via launchd
-   - Automatischer Login → Survey → EUR-Check
-   - Bei 3 konsekutiven Erfolgen: KR1 erreicht
-
-7. **Mehrere Survey-Profile parallel**
-   - Unterschiedliche Profile für verschiedene Plattformen
-   - Profile in `profiles/` ablegen
-
-8. **Proxy-Rotation**
-   - Für IP-Verschleierung
-   - playstealth launch mit Proxy-Support
+## 🟢 Motion Detection Tuning validieren
+- Neue Thresholds (20.0/3.0) müssen mit echten Surveys getestet werden
+- JPEG quality=40 muss auf Survey-Bildern validiert werden

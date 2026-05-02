@@ -1,70 +1,43 @@
-# successful.md – Was funktioniert (SOTA 2026-05-01)
+# successful.md – Erfolgreich implementierte Features & Fixes
 
-## 2026-05-02: Doctor Scan Results
+## ✅ 2026-05-02 – cua-driver Popup-Interaktion (DURCHBRUCH!)
 
-**Verfügbare Tools (23):**
+**Erfolg**: Google OAuth Login VOLLSTÄNDIG automatisiert via `cua-driver` Popup-Steuerung.
 
-- ✅ cloc
-- ✅ tokei
-- ✅ lizard
-- ✅ pydeps
-- ✅ pyreverse
-- ✅ dependency-cruiser
-- ✅ code2flow
-- ✅ plantuml
-- ✅ sphinx
-- ✅ mkdocs
+**Ablauf** (verifiziert mit PID 31710, WID 33673):
+1. `skylight-cli click --pid 31710 --element-index 33` → Google Login Button (Hauptfenster)
+2. `cua-driver call list_windows` → Popup finden: WID=33673 "Anmelden – Google Konten"
+3. `cua-driver call get_window_state` → Popup-Elemente laden
+4. `cua-driver call set_value [25]` → Email: zukunftsorientierte.energie@gmail.com
+5. `cua-driver call click [35]` → "Weiter" im Popup
+6. Consent-Screen: `cua-driver call click [65]` → "Fortfahren"
+7. Final: `cua-driver call click [41]` → "Weiter"
+8. ✅ **EINGELOGGT!** Kein Popup mehr, nur noch HeyPiggy Dashboard
 
-**Scan-Ergebnisse:**
+**Key Insight**: Bestehende Google-Cookies aus früheren Chrome-Profilen machten
+Passwort-Eingabe ÜBERFLÜSSIG. Google erkannte die Email und forderte nur Consent-Flow.
 
-- Code-Statistiken: 2689 Dateien in TypeScript, JSON, JavaScript
-- Fixes: 86 Muster aktualisiert
+## ✅ 2026-05-02 – SOTA tmux Non-Blocking Workflow
 
-## TRIO LAYER (Live Auge-Hirn-Hand)
+**Erfolg**: Screen-follow Recording + Survey Loop parallel in tmux-Panes ohne Blocking.
+Dokumentiert in `docs/TMUX-BACKGROUND-WORKFLOW.md` mit Web-Recherche (OpenCode #6929,
+Oh-My-OpenCode Background Agents, Claude Code Multi-Agent).
 
-```
-EYES:  skylight-cli list_windows → Popup erkannt ✅
-BRAIN: skylight-cli get_window_state --window-id → Nur Popup-Elemente ✅
-HANDS: skylight-cli click --pid --window-id --element-index → RICHTIGES Fenster ✅
-```
+## ✅ 2026-05-02 – LiveEye v7 Motion Detection & CRF Tuning
 
-- **Popup-Erkennung** funktioniert (Google Login Popup wird erkannt: WindowID=30380)
-- **Element-Index im Popup** funktioniert (Weiter=Index 35, E-Mail=Index 25)
-- **Live 250ms Polling** für Echtzeit-Erkennung
+**Erfolg**: Adaptive FPS funktioniert mit optimierten Thresholds:
+- MOTION_HIGH_THRESH=20.0, MOTION_LOW_THRESH=3.0
+- CRF Auto-Adjust: 28 (high) / 35 (mid) / 40 (low)
+- Conv3D num_frames: -1 / 8 / 4 je nach Motion
 
-## Google Login (vollständig automatisiert)
+## ✅ 2026-05-01 – Pre-existing Bugfixes (5 Stück)
+- `Path` Import in `skylight.py`
+- `asyncio.get_event_loop()` → `new_event_loop()` Python 3.14
+- `playstealth --json` Argument-Reihenfolge
+- `screenshot()` Aufruf in `stealth_executor.py`
+- `step.py` ModuleNotFoundError (__init__.py fehlte)
 
-1. `playstealth launch --url 'https://heypiggy.com/?page=dashboard'` → PID
-2. Google Login-Symbol klicken (Index variiert)
-3. E-Mail eingeben (zukunftsorientierte.energie@gmail.com)
-4. Weiter klicken (Google prüft E-Mail)
-5. Passwort eingeben (ZOE.jerry2024)
-6. Weiter klicken (Google prüft Passwort)
-7. ✅ Eingeloggt auf heypiggy.com Dashboard
-
-## Core-Loop
-
-1. Browser starten → `playstealth launch` ✅
-2. Popup-Erkennung → `skylight-cli list_windows` ✅
-3. Elemente im Popup → `skylight-cli get_window_state --window-id` ✅
-4. Vision-Entscheidung → Nemotron Omni (`reasoning`-Feld) ✅
-5. Unsichtbarer Klick → `skylight-cli click --element-index` ✅
-6. SSE Streaming → `stream: true` + `Accept: text/event-stream` ✅
-7. Rolling Video Buffer → screen-follow + ffmpeg + Omni Conv3D ✅
-
-## Doctor CLI v6 (28 Tools)
-
-| Kategorie      | Tools                                                          |
-| -------------- | -------------------------------------------------------------- |
-| Deep Analysis  | cloc, tokei, lizard, pydeps, pyreverse                         |
-| Deps & Flow    | dependency-cruiser, code2flow, plantuml                        |
-| Doc Generation | sphinx, mkdocs, pdoc, typedoc, doxygen, terraform-docs, pandoc |
-| Quality        | vale, standard-readme, prettier, repomix, gitingest            |
-| Changelog      | git-cliff, conventional-changelog, auto-changelog              |
-
-## NICHT funktionierend
-
-- skylight-cli OHNE window-id bei Popups (klickt ins falsche Fenster)
-- DOM-Prescan (ENTFERNT – klickte blind Element 1)
-- `CGEventPostToPid` (TOT auf Chrome 148)
-- `skylight-cli --x --y` (BANNED – Koordinatenraten)
+## ✅ 2026-05-01 – /doctor Skill erweitert
+- 23 Context-Writer Docs (CHANGELOG.md + ROADMAP.md neu)
+- Graphify Setup + Post-Commit Hook
+- Cleanup Phase

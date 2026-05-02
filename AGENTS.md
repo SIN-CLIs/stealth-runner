@@ -262,6 +262,31 @@ graphify explain "Konzept"
 semgrep --config=.semgrep_rules.yaml .
 ```
 
+## 🔑 POPUP-INTERAKTION (CRITICAL: cua-driver, NIE skylight!)
+
+**skylight-cli kann KEINE Popup-Fenster sehen!** Alle Popup-Elemente (Google OAuth, Consent-Dialoge)
+müssen via **cua-driver** mit `window_id` targetiert werden:
+
+```bash
+# 1. Daemon starten (einmalig)
+cua-driver serve &
+
+# 2. Popup finden
+POPUP_WID=$(cua-driver call list_windows '{}' | python3 -c "...")
+
+# 3. Popup-Elemente LADEN (cached für window_id)
+cua-driver call get_window_state "{\"pid\":$PID,\"window_id\":$POPUP_WID}"
+
+# 4. Im Popup klicken/tippen
+cua-driver call click '{"pid":$PID,"window_id":$POPUP_WID,"element_index":$IDX,"action":"press"}'
+cua-driver call set_value '{"pid":$PID,"window_id":$POPUP_WID,"element_index":$IDX,"value":"text"}'
+```
+
+**Verifiziert mit PID 31710**: Google OAuth Login komplett via cua-driver – 0 Passwort nötig
+dank bestehender Cookies aus früheren Chrome-Profilen.
+
+Siehe `docs/cua-driver-popup-pattern.md` für vollständige Doku.
+
 ## VERBOTEN (BANNED – blockiert durch semgrep pre-commit)
 
 - `playstealth launch (isolierte PID)"`
@@ -269,17 +294,22 @@ semgrep --config=.semgrep_rules.yaml .
 - `httpx an NVIDIA NIM`, `httpx an NVIDIA NIM`
 - `skylight-cli click --x ...` (Koordinaten raten)
 - `skylight-cli click --x --y` (Koordinatenraten – erlaubt ist NUR mit `--element-index`)
+- `skylight-cli click --pid X --element-index Y` **in Popups** → klickt FALSCHES Element!
 - skylight-cli MCP
 - Nutzer-Chrome manipulieren
 - Ohne Primer klicken
 - `recovery_mode: true`, `omni_fallback: llama`
 
-## ERLAUBT (skylight-cli mit window-id + element-index)
+## ERLAUBT (cua-driver für Popups, skylight-cli für Hauptfenster)
 
-- `skylight-cli list_windows` → Popup-Erkennung (250ms live)
-- `skylight-cli get_window_state --pid --window-id` → NUR Popup-Elemente
-- `skylight-cli click --pid --window-id --element-index` → GARANTIERT richtiges Fenster
-- `skylight-cli set_value --pid --window-id --element-index --value` → Text im Popup
+| Kontext | Tool | Befehl |
+|---------|------|--------|
+| Hauptfenster | `skylight-cli` | `click --pid X --element-index Y` |
+| Hauptfenster | `skylight-cli` | `list-elements --pid X` |
+| **Popup-Fenster** | **`cua-driver`** | `call click '{"pid":X,"window_id":W,"element_index":Y}'` |
+| **Popup-Fenster** | **`cua-driver`** | `call get_window_state '{"pid":X,"window_id":W}'` |
+| **Popup-Fenster** | **`cua-driver`** | `call set_value '{"pid":X,"window_id":W,"element_index":Y,"value":"text"}'` |
+| Window-Liste | `cua-driver` | `call list_windows '{}'` |
 
 ## MODEL NAME HISTORY
 

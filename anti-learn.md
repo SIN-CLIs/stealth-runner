@@ -1,65 +1,39 @@
-# anti-learn.md - Anti-Patterns (NIE WIEDER)
+# anti-learn.md – Anti-Patterns (was NIEMALS tun)
 
-## 2026-05-02: Ersetzte Muster
+## ❌ skylight-cli in Popup-Fenstern
 
-- ❌ `nvidia/nvidia/nemotron` — ersetzt durch SOTA-Äquivalent
-- ❌ `cua-driver` — ersetzt durch SOTA-Äquivalent
-- ❌ `pgrep Chrome` | Greift Nutzer-Chrome statt isolier` — ersetzt durch SOTA-Äquivalent
-- ❌ `pkill Chrome` | Killt Nutzer-Prozesse, Datenverlus` — ersetzt durch SOTA-Äquivalent
-- ❌ `open -na "Google Chrome"` — ersetzt durch SOTA-Äquivalent
-- ❌ `import pyautogui` — ersetzt durch SOTA-Äquivalent
-- ❌ `import pynput` — ersetzt durch SOTA-Äquivalent
-- ❌ `webauto-nodriver` — ersetzt durch SOTA-Äquivalent
-- ❌ `from openai import` — ersetzt durch SOTA-Äquivalent
-- ❌ `pgrep Chrome`, `pkill Chrome`, `open -na "Google C` — ersetzt durch SOTA-Äquivalent
+**NIEMALS** `skylight-cli click --pid X --element-index Y` wenn ein Popup offen ist.
+`skylight-cli` sieht NUR das Hauptfenster. Die Element-Indices beziehen sich auf
+Hauptfenster-Elemente, NICHT auf Popup-Buttons.
 
-## ❌ GEBANNTE METHODEN
+**Korrekt**: `cua-driver call click '{"pid":X,"window_id":W,"element_index":Y}'`
 
-### 1. skylight-cli MCP
+## ❌ bash mit `&` für Hintergrund-Prozesse
 
-- **Anti-Pattern**: CDP-basiertes Tool für Browser-Automation
-- **Warum**: Profil-Konflikt mit Nutzer-Chrome, falscher Prozess
-- **Ersatz**: `skylight-cli` + `playstealth launch`
-- **Status**: 🔴 PERMANENT BANNED
+**NIEMALS** `bash("command &")` – blockiert trotzdem die Shell und der Agent hängt.
 
-### 2. playstealth launch (isolierte PID)
+**Korrekt**: `interactive_bash(tmux_command="new-session -d ...")`
 
-- **Anti-Pattern**: `playstealth launch (isolierte PID)"` für PID finden
-- **Warum**: Greift Nutzer-Chrome statt isolierte Instanz
-- **Ersatz**: `playstealth launch` → eigene PID aus JSON-Output
-- **Status**: 🔴 BANNED (semgrep Regel: `banned-chrome-pgrep`)
+## ❌ playstealth launch --json am Ende
 
-### 3. NIEMALS – BANNED (semgrep Regel)
+**NIEMALS** `playstealth launch --url X --json` – `--json` muss VOR `launch`.
 
-- **Anti-Pattern**: `NIEMALS – BANNED (semgrep Regel)"`
-- **Warum**: Killt Nutzer-Prozesse, Datenverlust
-- **Ersatz**: Nie Chrome-Prozesse des Nutzers anfassen
-- **Status**: 🔴 BANNED (semgrep Regel: `banned-NIEMALS – BANNED (semgrep Regel)`)
+**Korrekt**: `playstealth --json launch --url X`
 
-### 4. Mauskoordinaten raten
+## ❌ asyncio.get_event_loop() in Python 3.14+
 
-- **Anti-Pattern**: `skylight-cli click --x 500 --y 600`
-- **Warum**: Apple-Menü ist bei (0,0), AX-Frames sind absolut
-- **Ersatz**: `skylight-cli click --element-index <N>`
-- **Status**: 🔴 BANNED (semgrep Regel: `banned-coordinates-click`)
+**NIEMALS** `asyncio.get_event_loop()` – deprecated, wirft Errors.
 
-### 5. openai-Client
+**Korrekt**: `asyncio.new_event_loop()` + `asyncio.set_event_loop(loop)`
 
-- **Anti-Pattern**: `httpx an NVIDIA NIM OpenAI`
-- **Warum**: Zusätzlicher HTTP-Client, falscher Endpoint
-- **Ersatz**: `httpx.post("https://integrate.api.nvidia.com/v1/...")`
-- **Status**: 🔴 BANNED (semgrep Regel: `banned-openai-client`)
+## ❌ OpenAI-Client für NVIDIA NIM
 
-### 6. pyautogui / pynput
+**NIEMALS** `import openai` oder `from openai import OpenAI`.
 
-- **Anti-Pattern**: `BANNED – niemand importiert pyautogui` für Mausbewegungen
-- **Warum**: Bewegt Nutzer-Maus, stört User
-- **Ersatz**: AXPress via skylight-cli (keine Mausbewegung)
-- **Status**: 🔴 BANNED (semgrep Regeln: `banned-pyautogui`, `banned-pynput`)
+**Korrekt**: `import httpx; httpx.post('https://integrate.api.nvidia.com/v1/chat/completions', ...)`
 
-### 7. Recovery-Mode
+## ❌ call_omo_agent (TOOL BROKEN)
 
-- **Anti-Pattern**: `recovery_mode: true` als Fallback
-- **Warum**: Omni soll ALLE Entscheidungen treffen
-- **Ersatz**: Omni macht 100% der Entscheidungen
-- **Status**: 🔴 BANNED (semgrep Regel: `banned-recovery-mode`)
+**NIEMALS** `call_omo_agent` – Tool timed out auf ALLEN 9 Versuchen (30min timeout).
+
+**Korrekt**: Direkte Tool-Nutzung (grep, ast-grep, lsp) oder Oh-My-OpenCode `task(run_in_background=true)`

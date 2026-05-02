@@ -1,83 +1,86 @@
-# commands.md - Korrekte Befehle
+# commands.md – Alle wichtigen Befehle
 
-## 2026-05-02: CLI Entry Points
-
-- `main.py` — CLI Entry Point
-
-## TRIO LAYER (Live Auge-Hirn-Hand)
-
-### 1. Chrome starten
+## Google Login (cua-driver Popup-Methode – 2026-05-02)
 
 ```bash
-playstealth launch --url 'https://heypiggy.com/?page=dashboard'
-# → {"pid": 42296, "status": "ok"}
+# 1. Chrome starten
+playstealth --json launch --url 'https://heypiggy.com/?page=dashboard'
+
+# 2. cua-driver daemon (einmalig)
+cua-driver serve &
+
+# 3. Google Login Button klicken (Hauptfenster via skylight)
+skylight-cli click --pid <PID> --element-index 33
+
+# 4. Popup Window-ID finden
+cua-driver call list_windows '{}' | python3 -c "import sys,json;[print(w['window_id']) for w in json.load(sys.stdin).get('windows',[]) if w.get('pid')==<PID> and 'anmelden' in (w.get('title','')or'').lower()]"
+
+# 5. Email im Popup eintippen
+cua-driver call set_value '{"pid":<PID>,"window_id":<WID>,"element_index":25,"value":"zukunftsorientierte.energie@gmail.com"}'
+
+# 6. Weiter im Popup klicken
+cua-driver call click '{"pid":<PID>,"window_id":<WID>,"element_index":35,"action":"press"}'
+
+# 7. Consent "Fortfahren" klicken
+cua-driver call click '{"pid":<PID>,"window_id":<WID>,"element_index":65,"action":"press"}'
+
+# 8. Finales "Weiter" klicken → LOGGED IN
+cua-driver call click '{"pid":<PID>,"window_id":<WID>,"element_index":41,"action":"press"}'
 ```
 
-### 2. EYES: Alle Fenster erkennen
+## Survey Automation
 
 ```bash
-skylight-cli call list_windows | python3 -c "
-import json,sys
-for w in json.load(sys.stdin).get('windows',[]):
-    if w.get('pid') == 42296:
-        print(f'  WindowID={w[\"window_id\"]} \"{w.get(\"title\",\"\")[:60]}\" OnScreen={w.get(\"is_on_screen\")}')
-"
+# Live Omni Monitor (Screenshot + Video + Voice)
+python3 run_survey_with_voice.py
+
+# Schritt-Orchestrator (ein Schritt pro Aufruf)
+PYTHONPATH=. python3 runner/step.py "https://heypiggy.com/?page=dashboard"
+
+# Live Eye v7 (Motion Detection)
+PYTHONPATH=. python3 runner/live_eye.py
 ```
 
-### 3. BRAIN: Nur Popup-Elemente sehen
+## Video & Analysis
 
 ```bash
-skylight-cli call get_window_state '{"pid":42296,"window_id":30380}' | python3 -c "
-import json,sys
-tree = json.load(sys.stdin).get('tree_markdown','')
-for line in tree.split(chr(10)):
-    if 'Weiter' in line or 'E-Mail' in line or 'Passwort' in line or 'Button' in line:
-        print(line.strip()[:100])
-"
+# Screen recording (in tmux)
+screen-follow record --video --output /tmp/session.mp4
+
+# Video-Analyse mit Nemotron Omni
+python3 -m runner.video_analyzer --last flow
+
+# Screenshot + Omni Vision
+skylight-cli screenshot --pid <PID> --mode som
+cp skylight_screenshot.png /tmp/page.png
+python3 -c "from runner.nemotron_omni import get_omni; print(get_omni().analyze_image('/tmp/page.png'))"
 ```
 
-### 4. HANDS: Im Popup klicken (GARANTIERT richtiges Fenster!)
+## Knowledge Graph
 
 ```bash
-skylight-cli call click '{"pid":42296,"window_id":30380,"element_index":35}'
-```
-
-### 5. Text im Popup eingeben
-
-```bash
-skylight-cli call set_value '{"pid":42296,"window_id":30380,"element_index":25,"value":"test@email.com"}'
-```
-
-### 6. Live Trio Loop
-
-```bash
-python3 runner/trio_live.py <PID>
-```
-
-## GOOGLE LOGIN
-
-```bash
-# Komplett automatisiert
-bash cli/heypiggy-login <PID>
-```
-
-## DOCTOR CLI
-
-```bash
-# Alle 6 Repos scannen + fixen
-python3 runner/doctor_cli.py
-```
-
-## GRAPHIFY
-
-```bash
-graphify query "Wie hängt X mit Y zusammen?"
-graphify path "ModulA" "ModulB"
+graphify query "Wie hängen skylight-cli und stealth-runner zusammen?"
+graphify path "StealthExecutor" "LiveOmniMonitor"
+graphify explain "SkylightDriver"
 graphify update .
 ```
 
-## SEMGREP
+## /doctor
 
 ```bash
-semgrep --config=.semgrep_rules.yaml .
+python3 runner/doctor_cli.py           # Full scan + fix + commit
+python3 runner/doctor_cli.py --dry-run # Report only
+```
+
+## tmux Background
+
+```bash
+# Session erstellen
+tmux new-session -d -s mysession -c ~/dev/stealth-runner
+
+# Command in Pane senden (non-blocking)
+tmux send-keys -t mysession "command" Enter
+
+# Logs lesen (non-blocking)
+tmux capture-pane -t mysession -p -S -50
 ```

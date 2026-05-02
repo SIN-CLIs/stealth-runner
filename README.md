@@ -180,13 +180,19 @@ graphify update .        # AST-Rebuild nach Code-Änderungen
 
 ## 🎯 Anwendungsfälle
 
-### Heypiggy.com Google Login (vollautomatisiert)
+### Heypiggy.com Google Login (vollautomatisiert via cua-driver)
 
 ```bash
 playstealth launch --url 'https://heypiggy.com/?page=dashboard'
 bash cli/heypiggy-login <PID>
-# → 5 Schritte: Google Klick → Email → Weiter → Passwort → Weiter
+# → Nutzt cua-driver für Popup-Interaktion (skylight-cli sieht NUR Hauptfenster!)
+# → 5 Schritte: Google Klick → Email → Weiter → Consent "Fortfahren" → Weiter
+# → Bei bestehenden Google-Cookies KEINE Passwort-Eingabe nötig!
 ```
+
+> **⚠️ WICHTIG**: Popup-Buttons werden via `cua-driver` geklickt, NICHT `skylight-cli`.  
+> `skylight-cli` sieht nur das Hauptfenster – Popup-Element-Indices sind INVALID.  
+> Siehe `docs/cua-driver-popup-pattern.md` für Details.
 
 ### Post-Mortem Video-Analyse
 

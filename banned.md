@@ -2,6 +2,36 @@
 
 ## ❌ BANNED (NIEMALS NUTZEN)
 
+### Popup-Interaktion via skylight-cli
+```bash
+# ❌ FALSCH – klickt Hauptfenster-Element, NICHT den Popup-Button!
+skylight-cli click --pid 26897 --element-index 35
+# → Klickte "Geld sparen, Geld verdienen" statt "Weiter" im Google-Popup!
+```
+**Korrekt**: `cua-driver call click '{"pid":26897,"window_id":33508,"element_index":35}'`
+
+### Hintergrund-Prozesse via bash mit `&`
+```bash
+# ❌ FALSCH – blockiert trotzdem die Shell!
+bash(command="screen-follow record --video --output /tmp/file.mp4 &")
+```
+**Korrekt**: `interactive_bash(tmux_command="new-session -d -s mysession")`
+
+### playstealth --json Argument-Reihenfolge
+```bash
+# ❌ FALSCH
+playstealth launch --url X --json
+# → "unrecognized arguments: --json"
+```
+**Korrekt**: `playstealth --json launch --url X`
+
+### asyncio.get_event_loop() in Python 3.14+
+```python
+# ❌ FALSCH – deprecated!
+loop = asyncio.get_event_loop()
+```
+**Korrekt**: `loop = asyncio.new_event_loop(); asyncio.set_event_loop(loop)`
+
 | Muster                                     | Warum                                           | semgrep-Regel              |
 | ------------------------------------------ | ----------------------------------------------- | -------------------------- |
 | `playstealth launch (isolierte PID)-pgrep` |
