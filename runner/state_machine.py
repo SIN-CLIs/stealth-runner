@@ -6,9 +6,11 @@ from pathlib import Path
 import anyio
 from .stealth_executor import StealthExecutor
 from .vision_client import VisionClient
-from .prompt_kit import build_prompt
+from .prompt_kit import build_vision_prompt, build_logic_prompt
+from .model_router import ModelRouter, Task, get_router
 from .audit_log import AuditLog
 from .human_profile import HumanProfile
+from .answer_logic import PERSONA
 
 
 class State(StrEnum):
@@ -164,7 +166,8 @@ class SurveyRunner:
     async def _vision(self):
         from .nemotron_omni import get_omni
 
-        prompt = build_prompt(self.context, self.step)
+        prompt = build_vision_prompt(self.context, self.step)
+        router = get_router()
 
         # Multi-Frame Context wenn verfuegbar
         if len(self.frame_history) >= 2:
@@ -178,6 +181,39 @@ class SurveyRunner:
                 self.pending_action = self.vision.get_action(self.current_screenshot, prompt)
         else:
             self.pending_action = self.vision.get_action(self.current_screenshot, prompt)
+
+        # Mistral Persona (task=persona) bei erkannter Frage
+        question_text = self.pending_action.get("question_text") or self.pending_action.get("reason", "")
+        if question_text and len(question_text) > 10:
+            try:
+                import json as _json
+                profile_str = _json.dumps(PERSONA, indent=2, ensure_ascii=False)
+                pp = (
+                    f"Du bist ein Persona-basierter Survey-Assistent.\n\n"
+                    f"BENUTZERPROFIL:\n{profile_str}\n\n"
+                    f"FRAGE: {question_text}\n"
+                    f"Seite: {self.context.get('page', 'unknown')}\n\n"
+                    "Finde die passende Antwort aus dem Profil.\n"
+                    "Antworte NUR mit JSON:\n"
+                    '{"has_match":true/false,"answer":"...","element_id":<int>,"reason":"..."}'
+                )
+                resp = router.call(Task.PERSONA, pp)
+                pr = ModelRouter.extract_json(resp)
+                if pr.get("has_match"):
+                    self.pending_action["persona_answer"] = pr
+            except Exception:
+                pass
+
+        # Mistral Logic (task=logic) bei unsicherer Aktion
+        if self.pending_action.get("action") in ("wait", None):
+            try:
+                lp = build_logic_prompt(self.context, self.step)
+                resp = router.call(Task.LOGIC, lp)
+                lr = ModelRouter.extract_json(resp)
+                if lr.get("action") and lr["action"] != "wait":
+                    self.pending_action = {**self.pending_action, **lr}
+            except Exception:
+                pass
 
         a = self.pending_action.get("action", "?")
         print(f"👁 Omni → {a}", flush=True)

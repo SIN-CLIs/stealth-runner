@@ -1,0 +1,100 @@
+#!/usr/bin/env python3
+"""
+popup — cua-driver Wrapper für sichere Popup-Interaktion.
+
+Tool-Registry:
+  popup list-windows <PID>               → Alle Popup-Fenster eines PIDs
+  popup get-elements <PID> <WINDOW_ID>   → Elemente im Popup via AX-Tree
+  popup click <PID> <WINDOW_ID> <INDEX>  → Klick via AXPress (keine Maus!)
+  popup type   <PID> <WINDOW_ID> <INDEX> <TEXT> → Text in Popup-Feld
+  popup close  <PID> <WINDOW_ID>         → Prüft ob Popup noch offen
+  popup daemon start                     → cua-driver Daemon starten
+
+REGLN (banned.md):
+  - NUR cua-driver für Popups (skylight-cli OHNE --window-id = BANNED!)
+  - KEINE Mauskoordinaten (--x/--y = BANNED!)
+  - cua-driver Daemon MUSS laufen vor element-index Klicks
+"""
+import json, subprocess, sys, time
+
+CUA = "cua-driver"
+
+
+def cua(cmd: str, args: str = "{}") -> dict:
+    r = subprocess.run([CUA, "call", cmd, args], capture_output=True, text=True, timeout=15)
+    stdout = r.stdout.strip() or r.stderr.strip()
+    if stdout.startswith("{"):
+        return json.loads(stdout)
+    return {"status": "error", "raw": stdout[:200]}
+
+
+def cmd_list_windows(pid: int) -> list[dict]:
+    data = cua("list_windows")
+    return [w for w in data.get("windows", []) if w.get("pid") == pid and w.get("is_on_screen") and w["bounds"].get("width", 0) > 300]
+
+
+def cmd_get_elements(pid: int, wid: int) -> list[dict]:
+    data = cua("get_window_state", json.dumps({"pid": pid, "window_id": wid}))
+    tree = data.get("tree_markdown", "")
+    import re
+    elems = []
+    for m in re.finditer(r'\[(\d+)\]\s+(AX\w+)\s+\"([^\"]+)\"', tree):
+        elems.append({"index": int(m.group(1)), "role": m.group(2), "label": m.group(3)})
+    return elems
+
+
+def cmd_click(pid: int, wid: int, idx: int):
+    return cua("click", json.dumps({"pid": pid, "window_id": wid, "element_index": idx, "action": "press"}))
+
+
+def cmd_type(pid: int, wid: int, idx: int, text: str):
+    return cua("set_value", json.dumps({"pid": pid, "window_id": wid, "element_index": idx, "value": text}))
+
+
+def cmd_close(pid: int, wid: int) -> bool:
+    data = cua("list_windows")
+    for w in data.get("windows", []):
+        if w.get("pid") == pid and w.get("window_id") == wid and w.get("is_on_screen"):
+            return False
+    return True
+
+
+def cmd_daemon_start():
+    subprocess.run([CUA, "serve"], capture_output=True, timeout=5)
+    time.sleep(2)
+    return {"status": "ok"}
+
+
+def main():
+    if len(sys.argv) < 2:
+        print(__doc__)
+        return
+
+    cmd = sys.argv[1]
+    try:
+        if cmd == "list-windows":
+            result = cmd_list_windows(int(sys.argv[2]))
+            print(json.dumps(result, indent=2))
+        elif cmd == "get-elements":
+            result = cmd_get_elements(int(sys.argv[2]), int(sys.argv[3]))
+            print(json.dumps(result, indent=2))
+        elif cmd == "click":
+            result = cmd_click(int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4]))
+            print(json.dumps(result))
+        elif cmd == "type":
+            result = cmd_type(int(sys.argv[2]), int(sys.argv[3]), int(sys.argv[4]), sys.argv[5])
+            print(json.dumps(result))
+        elif cmd == "close":
+            gone = cmd_close(int(sys.argv[2]), int(sys.argv[3]))
+            print(json.dumps({"closed": gone}))
+        elif cmd == "daemon" and sys.argv[2] == "start":
+            result = cmd_daemon_start()
+            print(json.dumps(result))
+        else:
+            print(json.dumps({"error": f"unknown command: {cmd}"}))
+    except Exception as e:
+        print(json.dumps({"error": str(e)[:200]}))
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,56 @@
+# =============================================================================
+# Model-Routing-Konfiguration — Welches LLM für welche Aufgabe?
+# =============================================================================
+# Provider:
+#   nvidia  → NVIDIA NIM (integrate.api.nvidia.com) – Vision + Text
+#   mistral → Mistral API direkt (api.mistral.ai) – Text only
+#
+# Vision / Eye / Video  → nvidia  (Nemotron Omni)
+# CAPTCHA               → nvidia  (Nemotron Omni)
+# Persona               → mistral (mistral-small-latest)
+# Logic                 → mistral (mistral-medium-2604)
+# =============================================================================
+
+version: 1
+
+defaults:
+  temperature: 0.0
+
+models:
+
+  # === VISION (Screenshot / Video / Eye) ===================================
+  vision:
+    provider: nvidia
+    model: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
+    fallback:
+      - "meta/llama-3.2-90b-vision-instruct"
+    max_tokens: 1000
+    timeout: 60
+
+  # === CAPTCHA (separates Vision-Modell) ===================================
+  captcha:
+    provider: nvidia
+    model: "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
+    fallback: []
+    max_tokens: 500
+    timeout: 30
+
+  # === PERSONA (schnelle Text-Abfragen → Mistral API direkt) ===============
+  persona:
+    provider: mistral
+    api_base: "https://api.mistral.ai/v1/chat/completions"
+    model: "mistral-small-latest"
+    fallback:
+      - "open-mistral-nemo"
+    max_tokens: 300
+    timeout: 30
+
+  # === LOGIC (Reasoning → Mistral API direkt) ==============================
+  logic:
+    provider: mistral
+    api_base: "https://api.mistral.ai/v1/chat/completions"
+    model: "mistral-medium-latest"
+    fallback:
+      - "mistral-small-latest"
+    max_tokens: 500
+    timeout: 30

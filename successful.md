@@ -56,3 +56,6 @@ Oh-My-OpenCode Background Agents, Claude Code Multi-Agent).
 - JSON-Kommunikation via `reasoning`→Natursprache + `content`→JSON
 - JPEG Qualität=40: ~90% Payload-Reduktion → kein Timeout mehr
 - `max_tokens=1000` nötig für Reasoning+JSON
+
+## ✅ 2026-05-02 — Login 2× verifiziert
+PID 72395, WID 34672: cua-driver [35] Weiter → [62] Fortfahren → [41] Weiter → Dashboard +0.65€

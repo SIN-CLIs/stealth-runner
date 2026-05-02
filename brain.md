@@ -49,3 +49,6 @@ MOTION_NUM_FRAMES_MAP = {"high": -1, "mid": 8, "low": 4}
 
 ## JPEG QUALITY
 `live_omni_monitor.py`: `quality=40` → 90% Payload-Reduktion
+## 🔑 cua-driver Daemon (2026-05-02, CRITICAL)
+cua-driver Daemon MUSS laufen (`cua-driver serve &`) vor allen element-index Klicks.
+Ohne Daemon: "No cached AX state" → Klick schlägt fehl.

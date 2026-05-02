@@ -1,14 +1,26 @@
 #!/usr/bin/env python3
-"""EIN Schritt: Capture → Omni Vision → Execute → Verify → Print."""
+"""EIN Schritt: Capture → Omni Vision → Execute → Verify → Print.
+
+Model-Routing:
+  - Vision/Screenshot → Nemotron Omni (nvidia/...omni...)
+  - Persona-Matching  → Mistral Small (mistral/mistral-small-latest)
+  - Logic/Entscheidung → Mistral Medium (mistral/mistral-medium-2604)
+  - CAPTCHA           → Nemotron Omni (gleiches Vision-Modell)
+"""
 from __future__ import annotations
 import json
+import logging
 import subprocess
 import sys
 from pathlib import Path
 
 from runner.stealth_executor import StealthExecutor
 from runner.vision_client import VisionClient
-from runner.prompt_kit import build_prompt
+from runner.prompt_kit import build_prompt, build_logic_prompt, build_vision_prompt
+from runner.model_router import ModelRouter, Task, get_router
+from runner.answer_logic import PERSONA
+
+logger = logging.getLogger("step")
 
 STEP_FILE = Path("/tmp/stealth_step.json")
 
@@ -90,21 +102,63 @@ def main():
         images = images[-5:]
     state["images"] = images
 
-    # Omni Vision mit Multi-Frame Context wenn verfuegbar
+    # ── Omni Vision (Nemotron) ──────────────────────────────────────────
+    vision_prompt = build_vision_prompt(state, step)
     if len(images) >= 2:
         from runner.nemotron_omni import get_omni
         try:
             omni = get_omni()
             action = omni.analyze_frame_sequence(
                 images[-2:],
-                prompt=build_prompt(state, step),
+                prompt=vision_prompt,
             )
             if action.get("action") == "wait" and action.get("reasoning") == "parse_failed":
-                action = vision.get_action(out, build_prompt(state, step))
+                action = vision.get_action(out, vision_prompt)
         except Exception:
-            action = vision.get_action(out, build_prompt(state, step))
+            action = vision.get_action(out, vision_prompt)
     else:
-        action = vision.get_action(out, build_prompt(state, step))
+        action = vision.get_action(out, vision_prompt)
+
+    # ── Mistral Persona (task=persona) ──────────────────────────────────
+    # Mistral Small bekommt das komplette Persona-Profil + Frage + Optionen
+    # und matched die beste Antwort.
+    router = get_router()
+    question_text = action.get("question_text") or action.get("reason", "")
+    persona_answer = None
+    if question_text and len(question_text) > 10:
+        try:
+            profile_str = json.dumps(PERSONA, indent=2, ensure_ascii=False)
+            persona_prompt = (
+                f"Du bist ein Persona-basierter Survey-Assistent.\n\n"
+                f"BENUTZERPROFIL:\n{profile_str}\n\n"
+                f"FRAGE: {question_text}\n"
+                f"Seite: {state.get('page', 'unknown')}\n\n"
+                f"Finde die passende Antwort aus dem Profil.\n"
+                "Antworte NUR mit JSON:\n"
+                '{"has_match":true/false,"answer":"...","element_id":<int>,"reason":"..."}'
+            )
+            resp = router.call(Task.PERSONA, persona_prompt)
+            persona_result = ModelRouter.extract_json(resp)
+            if persona_result.get("has_match"):
+                persona_answer = persona_result
+                action["persona_answer"] = persona_answer
+                print(f"🧑 Persona (Mistral): {persona_answer.get('answer','')}", flush=True)
+        except Exception as e:
+            logger.debug(f"Persona-LLM skipped: {e}")
+
+    # ── Mistral Logic (task=logic) ──────────────────────────────────────
+    # Wenn die Vision-Aktion unklar ist (wait/low confidence), fragen wir
+    # das Reasoning-Modell (Mistral Medium) für eine bessere Entscheidung.
+    if action.get("action") in ("wait", None) or action.get("confidence", 1.0) < 0.5:
+        try:
+            logic_prompt = build_logic_prompt(state, step)
+            resp = router.call(Task.LOGIC, logic_prompt)
+            logic_result = ModelRouter.extract_json(resp)
+            if logic_result.get("action") and logic_result.get("action") != "wait":
+                action = {**action, **logic_result}
+                print(f"🧠 Logic (Mistral): {logic_result.get('action','')}", flush=True)
+        except Exception as e:
+            logger.debug(f"Logic-LLM skipped: {e}")
 
     # Execute
     atype = action.get("action", "wait")

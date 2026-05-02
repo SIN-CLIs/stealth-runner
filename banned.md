@@ -86,3 +86,20 @@ BRAIN: Omni analysiert → "Weiter" Button Index 35 im Google Popup
 HANDS: skylight-cli click --pid 42296 --window-id 30380 --element-index 35
        → GARANTIERT im Popup, nicht auf Hauptseite!
 ```
+
+## 🛠️ POPUP-TOOLS (MCP + CLI, 2026-05-02)
+
+```bash
+# Popup-MCP (7 tools via cua-driver)
+python cli/popup-mcp.py
+# Tools: popup_list_windows, popup_get_elements, popup_click, popup_type,
+#        popup_find_button, popup_is_closed, popup_daemon_start
+
+# Google Login MCP
+python cli/heypiggy-google-login-mcp.py  # → heypiggy_login(pid)
+
+# CLI-Wrapper
+cli/popup list-windows <PID>              # Alle Popup-Fenster
+cli/popup click <PID> <WID> <INDEX>       # Klick via cua-driver AXPress
+cli/heypiggy-login <PID>                  # Vollständiger Login
+```

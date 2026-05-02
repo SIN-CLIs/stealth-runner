@@ -8,6 +8,13 @@ import json, os, re, subprocess, sys, textwrap
 from pathlib import Path
 from datetime import datetime
 
+# ── Gatekeeper: Session-Kontext via Vercel AI Gateway ──
+try:
+    from doctor_session_reader import gatekeeper_check as _gatekeeper_llm
+    _HAS_GATEKEEPER = True
+except ImportError:
+    _HAS_GATEKEEPER = False
+
 HOME = os.environ.get("HOME", "/Users/jeremy")
 DEV = Path(HOME) / "dev"
 
@@ -21,8 +28,15 @@ OUTDATED = [
     (r"from openai import|import openai", "httpx an NVIDIA NIM"),
     (r"llama-3\.2-90b-vision-instruct(?!.*fallback)", "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"),
     (r"nvidia/nvidia/nemotron", "nvidia/nemotron"),
-    (r"cua[._-]driver", "skylight-cli"),
+    # GELÖSCHT: (r"cua[._-]driver", "skylight-cli") — cua-driver ist NICHT outdated!
 ]
+
+# NEVER modify these doc files with pattern replacements (they document banned patterns as-is)
+NEVER_MODIFY_DOCS = {"banned.md", "brain.md", "learn.md", "anti-learn.md", "fix.md", "successful.md", "AGENTS.md", "commands.md", "goal.md", "api.md", "usage.md", "faq.md", "architecture.md", "testing.md", "benchmarks.md", "troubleshooting.md", "SUPPORT.md", "SECURITY.md", "CODE_OF_CONDUCT.md", "CONTRIBUTING.md", "CHANGELOG.md", "acknowledgments.md", "README.md"}
+
+def _is_protected_doc(path: Path) -> bool:
+    """Schütze Architektur-Docs vor blinden Text-Replacements."""
+    return path.name in NEVER_MODIFY_DOCS or path.suffix != ".md"
 
 
 def check_tools():
@@ -170,14 +184,15 @@ def run_doctor(repo: Path) -> dict:
         except:
             continue
         changed = False
-        # Outdated Patterns
-        for pat, repl in OUTDATED:
-            if re.search(pat, content, re.IGNORECASE):
-                for m in re.finditer(pat, content, re.IGNORECASE):
-                    findings.append({"file": str(md_file.relative_to(repo)), "line": content[:m.start()].count("\n") + 1, "old": m.group()[:50], "new": repl[:50]})
-                    fixes += 1
-                content = re.sub(pat, repl, content, flags=re.IGNORECASE)
-                changed = True
+        # Outdated Patterns — NUR für Source-Code, NIE für geschützte Docs!
+        if not _is_protected_doc(md_file):
+            for pat, repl in OUTDATED:
+                if re.search(pat, content, re.IGNORECASE):
+                    for m in re.finditer(pat, content, re.IGNORECASE):
+                        findings.append({"file": str(md_file.relative_to(repo)), "line": content[:m.start()].count("\n") + 1, "old": m.group()[:50], "new": repl[:50]})
+                        fixes += 1
+                    content = re.sub(pat, repl, content, flags=re.IGNORECASE)
+                    changed = True
         # Credentials
         for pat, repl in [(r"[a-zA-Z0-9._%+-]+@gmail\.com\s*/\s*\S+", "Credentials (ENTFERNT)"), (r"nvapi-[A-Za-z0-9_-]{30,}", "NVIDIA_API_KEY (ENTFERNT)")]:
             if re.search(pat, content):
@@ -234,10 +249,8 @@ def run_doctor(repo: Path) -> dict:
                 entry += f"- {line}\n"
         if brain.exists():
             old = brain.read_text(encoding="utf-8")
-            if "# Repository Overview" not in old:
-                lines = old.split("\n")
-                lines.insert(1 if lines[0].startswith("#") else 0, entry)
-                brain.write_text("\n".join(lines), encoding="utf-8")
+            if "# Repository Overview" not in old and "## Repository Overview" not in old:
+                brain.write_text(old.rstrip() + "\n\n" + entry, encoding="utf-8")
         else:
             brain.write_text(entry, encoding="utf-8")
         print(f"      🧠 brain.md: {len(langs)} Sprachen, {total_files} Dateien", flush=True)
@@ -259,16 +272,7 @@ def run_doctor(repo: Path) -> dict:
             entry += f"- … und {len(pattern_fixes) - 10} weitere\n"
         if fix_file.exists():
             old = fix_file.read_text(encoding="utf-8")
-            lines = old.split("\n")
-            inserted = False
-            for i, line in enumerate(lines):
-                if line.startswith("## ") and not inserted:
-                    lines.insert(i, entry)
-                    inserted = True
-                    break
-            if not inserted:
-                lines.append(entry)
-            fix_file.write_text("\n".join(lines), encoding="utf-8")
+            fix_file.write_text(old.rstrip() + "\n" + entry, encoding="utf-8")
         else:
             header = f"# fix.md – {repo.name}\n\n_Bekannte Fixes, auto-dokumentiert_\n"
             fix_file.write_text(header + entry, encoding="utf-8")
@@ -298,16 +302,7 @@ def run_doctor(repo: Path) -> dict:
         entry += f"\n**Offene Findings:** {len(findings)}\n"
         if issues.exists():
             old = issues.read_text(encoding="utf-8")
-            lines = old.split("\n")
-            inserted = False
-            for i, line in enumerate(lines):
-                if line.startswith("## ") and not inserted:
-                    lines.insert(i, entry)
-                    inserted = True
-                    break
-            if not inserted:
-                lines.append(entry)
-            issues.write_text("\n".join(lines), encoding="utf-8")
+            issues.write_text(old.rstrip() + "\n" + entry, encoding="utf-8")
         else:
             header = f"# issues.md – {repo.name}\n\n_Offene Punkte, auto-dokumentiert_\n"
             issues.write_text(header + entry, encoding="utf-8")
@@ -331,16 +326,7 @@ def run_doctor(repo: Path) -> dict:
             entry += f"- Fixes: {len(findings)} Muster aktualisiert\n"
         if successful.exists():
             old = successful.read_text(encoding="utf-8")
-            lines = old.split("\n")
-            inserted = False
-            for i, line in enumerate(lines):
-                if line.startswith("## ") and not inserted:
-                    lines.insert(i, entry)
-                    inserted = True
-                    break
-            if not inserted:
-                lines.append(entry)
-            successful.write_text("\n".join(lines), encoding="utf-8")
+            successful.write_text(old.rstrip() + "\n" + entry, encoding="utf-8")
         else:
             header = f"# successful.md – {repo.name}\n\n_Was funktioniert, auto-dokumentiert_\n"
             successful.write_text(header + entry, encoding="utf-8")
@@ -360,16 +346,7 @@ def run_doctor(repo: Path) -> dict:
         if learn.exists():
             old = learn.read_text(encoding="utf-8")
             if f"## {today}" not in old:
-                lines = old.split("\n")
-                inserted = False
-                for i, line in enumerate(lines):
-                    if line.startswith("## ") and not inserted:
-                        lines.insert(i, entry)
-                        inserted = True
-                        break
-                if not inserted:
-                    lines.append(entry)
-                learn.write_text("\n".join(lines), encoding="utf-8")
+                learn.write_text(old.rstrip() + "\n" + entry, encoding="utf-8")
         else:
             header = f"# learn.md – {repo.name}\n\n_Knowledge base, auto-dokumentiert_\n"
             learn.write_text(header + entry, encoding="utf-8")
@@ -394,16 +371,7 @@ def run_doctor(repo: Path) -> dict:
             entry += f"- ✅ Keine veralteten Muster gefunden\n"
         if anti.exists():
             old = anti.read_text(encoding="utf-8")
-            lines = old.split("\n")
-            inserted = False
-            for i, line in enumerate(lines):
-                if line.startswith("## ") and not inserted:
-                    lines.insert(i, entry)
-                    inserted = True
-                    break
-            if not inserted:
-                lines.append(entry)
-            anti.write_text("\n".join(lines), encoding="utf-8")
+            anti.write_text(old.rstrip() + "\n" + entry, encoding="utf-8")
         else:
             header = f"# anti-learn.md – {repo.name}\n\n_Vermeidenswerte Muster, auto-dokumentiert_\n"
             anti.write_text(header + entry, encoding="utf-8")
@@ -438,16 +406,8 @@ def run_doctor(repo: Path) -> dict:
             entry += f"- … und {len(changes) - 10} weitere\n"
         if history.exists():
             old = history.read_text(encoding="utf-8")
-            lines = old.split("\n")
-            inserted = False
-            for i, line in enumerate(lines):
-                if line.startswith("## ") and not inserted:
-                    lines.insert(i, entry)
-                    inserted = True
-                    break
-            if not inserted:
-                lines.append(entry)
-            history.write_text("\n".join(lines), encoding="utf-8")
+        history.write_text(old.rstrip() + "
+" + entry, encoding="utf-8")
         else:
             header = f"# history.md — Development History\n\n_Auto-generated by doctor-cli_\n"
             history.write_text(header + entry, encoding="utf-8")
@@ -473,16 +433,8 @@ def run_doctor(repo: Path) -> dict:
         entry += f"\n**Total Dateien:** {total_files}\n"
         if arch.exists():
             old = arch.read_text(encoding="utf-8")
-            lines = old.split("\n")
-            inserted = False
-            for i, line in enumerate(lines):
-                if line.startswith("## ") and not inserted:
-                    lines.insert(i, entry)
-                    inserted = True
-                    break
-            if not inserted:
-                lines.append(entry)
-            arch.write_text("\n".join(lines), encoding="utf-8")
+        arch.write_text(old.rstrip() + "
+" + entry, encoding="utf-8")
         else:
             header = f"# architecture.md – {repo.name}\n\n_Component overview, auto-dokumentiert_\n"
             arch.write_text(header + entry, encoding="utf-8")
@@ -510,16 +462,8 @@ def run_doctor(repo: Path) -> dict:
             entry = "".join(entry_lines)
             if cmds.exists():
                 old = cmds.read_text(encoding="utf-8")
-                lines = old.split("\n")
-                inserted = False
-                for i, line in enumerate(lines):
-                    if line.startswith("## ") and not inserted:
-                        lines.insert(i, entry)
-                        inserted = True
-                        break
-                if not inserted:
-                    lines.append(entry)
-                cmds.write_text("\n".join(lines), encoding="utf-8")
+        cmds.write_text(old.rstrip() + "
+" + entry, encoding="utf-8")
             else:
                 header = f"# commands.md – {repo.name}\n\n_CLI reference, auto-dokumentiert_\n"
                 cmds.write_text(header + entry, encoding="utf-8")
@@ -545,16 +489,8 @@ def run_doctor(repo: Path) -> dict:
                 entry += f"- `{d}/` ({files_in} Tests)\n"
         if test_md.exists():
             old = test_md.read_text(encoding="utf-8")
-            lines = old.split("\n")
-            inserted = False
-            for i, line in enumerate(lines):
-                if line.startswith("## ") and not inserted:
-                    lines.insert(i, entry)
-                    inserted = True
-                    break
-            if not inserted:
-                lines.append(entry)
-            test_md.write_text("\n".join(lines), encoding="utf-8")
+        test_md.write_text(old.rstrip() + "
+" + entry, encoding="utf-8")
         else:
             header = f"# testing.md – {repo.name}\n\n_Test documentation, auto-dokumentiert_\n"
             test_md.write_text(header + entry, encoding="utf-8")
@@ -580,16 +516,8 @@ def run_doctor(repo: Path) -> dict:
         entry += f"**Letzte Commits:** {len(commits)}\n"
         if goal.exists():
             old = goal.read_text(encoding="utf-8")
-            lines = old.split("\n")
-            inserted = False
-            for i, line in enumerate(lines):
-                if line.startswith("## ") and not inserted:
-                    lines.insert(i, entry)
-                    inserted = True
-                    break
-            if not inserted:
-                lines.append(entry)
-            goal.write_text("\n".join(lines), encoding="utf-8")
+        goal.write_text(old.rstrip() + "
+" + entry, encoding="utf-8")
         else:
             header = f"# goal.md – {repo.name}\n\n_Repository goals, auto-dokumentiert_\n"
             goal.write_text(header + entry, encoding="utf-8")
@@ -612,16 +540,8 @@ def run_doctor(repo: Path) -> dict:
             entry += f"- `{m}/` ({status})\n"
         if api.exists():
             old = api.read_text(encoding="utf-8")
-            lines = old.split("\n")
-            inserted = False
-            for i, line in enumerate(lines):
-                if line.startswith("## ") and not inserted:
-                    lines.insert(i, entry)
-                    inserted = True
-                    break
-            if not inserted:
-                lines.append(entry)
-            api.write_text("\n".join(lines), encoding="utf-8")
+        api.write_text(old.rstrip() + "
+" + entry, encoding="utf-8")
         else:
             header = f"# api.md – {repo.name}\n\n_Python module structure, auto-dokumentiert_\n"
             api.write_text(header + entry, encoding="utf-8")
@@ -663,16 +583,8 @@ def run_doctor(repo: Path) -> dict:
         entry += f"\n**Quick Start:**\n  ```bash\n  python3 {repo.name}/main.py --help\n  ```\n"
         if usage.exists():
             old = usage.read_text(encoding="utf-8")
-            lines = old.split("\n")
-            inserted = False
-            for i, line in enumerate(lines):
-                if line.startswith("## ") and not inserted:
-                    lines.insert(i, entry)
-                    inserted = True
-                    break
-            if not inserted:
-                lines.append(entry)
-            usage.write_text("\n".join(lines), encoding="utf-8")
+        usage.write_text(old.rstrip() + "
+" + entry, encoding="utf-8")
         else:
             header = f"# usage.md – {repo.name}\n\n_CLI usage, auto-dokumentiert_\n"
             usage.write_text(header + entry, encoding="utf-8")
@@ -693,16 +605,8 @@ def run_doctor(repo: Path) -> dict:
             entry += f"\n**Credentials entfernt:** {len([f for f in findings if 'CREDENTIALS' in str(f.get('old', ''))])}\n"
         if faq.exists():
             old = faq.read_text(encoding="utf-8")
-            lines = old.split("\n")
-            inserted = False
-            for i, line in enumerate(lines):
-                if line.startswith("## ") and not inserted:
-                    lines.insert(i, entry)
-                    inserted = True
-                    break
-            if not inserted:
-                lines.append(entry)
-            faq.write_text("\n".join(lines), encoding="utf-8")
+        faq.write_text(old.rstrip() + "
+" + entry, encoding="utf-8")
         else:
             header = f"# faq.md – {repo.name}\n\n_Häufige Fragen, auto-dokumentiert_\n"
             faq.write_text(header + entry, encoding="utf-8")
@@ -727,16 +631,8 @@ def run_doctor(repo: Path) -> dict:
             entry += f"| Hauptsprachen | {', '.join(langs[:3])} |\n"
         if bench.exists():
             old = bench.read_text(encoding="utf-8")
-            lines = old.split("\n")
-            inserted = False
-            for i, line in enumerate(lines):
-                if line.startswith("## ") and not inserted:
-                    lines.insert(i, entry)
-                    inserted = True
-                    break
-            if not inserted:
-                lines.append(entry)
-            bench.write_text("\n".join(lines), encoding="utf-8")
+        bench.write_text(old.rstrip() + "
+" + entry, encoding="utf-8")
         else:
             header = f"# benchmarks.md – {repo.name}\n\n_Performance data, auto-dokumentiert_\n"
             bench.write_text(header + entry, encoding="utf-8")
@@ -760,16 +656,8 @@ def run_doctor(repo: Path) -> dict:
             entry += f"- `{file}`: {count} Fix(es)\n"
         if trouble.exists():
             old = trouble.read_text(encoding="utf-8")
-            lines = old.split("\n")
-            inserted = False
-            for i, line in enumerate(lines):
-                if line.startswith("## ") and not inserted:
-                    lines.insert(i, entry)
-                    inserted = True
-                    break
-            if not inserted:
-                lines.append(entry)
-            trouble.write_text("\n".join(lines), encoding="utf-8")
+        trouble.write_text(old.rstrip() + "
+" + entry, encoding="utf-8")
         else:
             header = f"# troubleshooting.md – {repo.name}\n\n_Known issues, auto-dokumentiert_\n"
             trouble.write_text(header + entry, encoding="utf-8")
@@ -992,6 +880,20 @@ def main():
 
     total_fixes = 0
     for repo in repos:
+        print(f"\n📁 {repo.name}:", flush=True)
+        
+        # ── GATEKEEPER: Session-Kontext via LLM vor Änderungen prüfen ──
+        if _HAS_GATEKEEPER:
+            try:
+                gk = _gatekeeper_llm(str(repo))
+                if not gk.get("can_proceed", True):
+                    print(f"      🛑 GATEKEEPER BLOCKED: {gk.get('reason','')}", flush=True)
+                    print(f"      Geschützte Docs: {gk.get('protected_docs',[])}", flush=True)
+                    continue
+                print(f"      🟢 Gatekeeper OK: {gk.get('reason','')}", flush=True)
+            except Exception as e:
+                print(f"      ⚠️ Gatekeeper skipped: {e}", flush=True)
+        
         r = subprocess.run(["git", "status", "--short"], capture_output=True, text=True, timeout=5, cwd=str(repo))
         if not r.stdout.strip():
             continue

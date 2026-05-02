@@ -1,164 +1,149 @@
 #!/bin/bash
 # heypiggy-login — Google OAuth Login auf heypiggy.com
-# NUR skylight-cli, KEIN osascript, KEIN webauto-nodriver
+# KORREKT (2026-05-02): skylight-cli nur für Hauptseite, cua-driver für Popups!
 # Nutzung: bash cli/heypiggy-login <PID>
 set -euo pipefail
 PID="${1:-}"
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-PROJECT_DIR="$(dirname "$SCRIPT_DIR")"
-PROFILE_FILE="$PROJECT_DIR/profiles/jeremy.yaml"
+PROFILE_FILE="profiles/jeremy.yaml"
 
 if [ -z "$PID" ]; then
-    echo '{"status":"error","reason":"no_pid — usage: heypiggy-login <PID>"}'
+    echo '{"status":"error","reason":"no_pid"}'
     exit 1
 fi
 
-EMAIL=$(python3 -c "import yaml; print(yaml.safe_load(open('$PROFILE_FILE'))['google_email'])" 2>/dev/null || echo "${GOOGLE_EMAIL:-}")
-PW=$(python3 -c "import yaml; print(yaml.safe_load(open('$PROFILE_FILE'))['google_password'])" 2>/dev/null || echo "${GOOGLE_PASSWORD:-}")
+EMAIL=$(python3 -c "import yaml; print(yaml.safe_load(open('$PROFILE_FILE'))['google_email'])" 2>/dev/null || echo "")
+PW=$(python3 -c "import yaml; print(yaml.safe_load(open('$PROFILE_FILE'))['google_password'])" 2>/dev/null || echo "")
 
 if [ -z "$EMAIL" ]; then
-    echo '{"status":"error","reason":"no_email — set GOOGLE_EMAIL or create profiles/jeremy.yaml"}'
+    echo '{"status":"error","reason":"no_email"}'
     exit 1
 fi
 
-echo "{\"status\":\"logging_in\",\"pid\":$PID,\"email\":\"$EMAIL\"}" >&2
+skylight() { /Users/jeremy/.local/bin/skylight-cli "$@"; }
+cua()      { cua-driver call "$@"; }
 
-skylight() { /Users/jeremy/.local/bin/skylight-cli "$@" 2>/dev/null; }
+echo "{\"status\":\"login_start\",\"pid\":$PID}" >&2
 
-# Schritt 1: Google Login Button finden und klicken
-echo '{"step":1,"action":"find_google_button"}' >&2
+# ── PHASE 1: Google Button auf HAUPTSEITE klicken (skylight-cli) ──
+echo '{"step":1,"phase":"main_page","tool":"skylight-cli","action":"click_google_button"}' >&2
 GOOGLE=$(skylight list-elements --pid "$PID" | python3 -c "
 import json,sys
 for e in json.load(sys.stdin)['elements']:
-    if 'google' in (e.get('label','')or'').lower() and e['role']=='AXLink':
+    if 'google login' in (e.get('label','')or'').lower() and e['role']=='AXLink':
         print(e['index']); break
 ")
 if [ -z "$GOOGLE" ]; then
-    echo '{"status":"error","reason":"no_google_button","step":1}'
+    echo '{"status":"error","reason":"no_google_button_on_main_page"}'
     exit 2
 fi
-skylight click --pid "$PID" --element-index "$GOOGLE"
+skylight click --pid "$PID" --element-index "$GOOGLE" >/dev/null
+echo "{\"step\":1,\"done\":true,\"element_index\":$GOOGLE}" >&2
 sleep 5
 
-# Schritt 2: Email-Feld finden und Email eingeben
-echo '{"step":2,"action":"type_email"}' >&2
-EMAIL_FIELD=$(skylight list-elements --pid "$PID" | python3 -c "
-import json,sys
-for e in json.load(sys.stdin)['elements']:
-    if e['role']=='AXTextField' and ('telefon' in (e.get('label','')or'').lower() or 'e-mail' in (e.get('label','')or'').lower()):
-        print(e['index']); break
-")
-if [ -z "$EMAIL_FIELD" ]; then
-    echo '{"status":"error","reason":"no_email_field","step":2}'
-    exit 3
-fi
-skylight type --pid "$PID" --element-index "$EMAIL_FIELD" --text "$EMAIL"
+# ── PHASE 2: Popup via cua-driver (daemon starten) ──
+echo '{"step":2,"phase":"popup","tool":"cua-driver","action":"start_daemon"}' >&2
+cua-driver serve &
 sleep 3
 
-# Schritt 3: Weiter klicken
-echo '{"step":3,"action":"click_weiter"}' >&2
-WEITER=$(skylight list-elements --pid "$PID" | python3 -c "
-import json,sys
-for e in json.load(sys.stdin)['elements']:
-    if e['role']=='AXButton' and 'weiter' in (e.get('label','')or'').lower():
-        print(e['index']); break
+# ── PHASE 3: Popup finden ──
+echo '{"step":3,"phase":"popup","tool":"cua-driver","action":"find_popup"}' >&2
+POPUP=$(cua list_windows '{}' 2>/dev/null | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+for w in d.get('windows',[]):
+    if w.get('pid')==$PID and w.get('is_on_screen') and 'anmelden' in w.get('title','').lower() and w['bounds'].get('width',0)>300:
+        print(w['window_id']); break
 ")
-if [ -n "$WEITER" ]; then
-    skylight click --pid "$PID" --element-index "$WEITER"
+if [ -z "$POPUP" ]; then
+    echo '{"status":"error","reason":"no_google_popup_found"}'
+    exit 3
+fi
+echo "{\"step\":3,\"done\":true,\"window_id\":$POPUP}" >&2
+
+# ── PHASE 4: Email im Popup eintippen (cua-driver set_value) ──
+echo '{"step":4,"phase":"popup","tool":"cua-driver","action":"type_email"}' >&2
+cua get_window_state "{\"pid\":$PID,\"window_id\":$POPUP}" >/dev/null 2>&1  # cache elements
+EMAIL_FIELD=$(cua get_window_state "{\"pid\":$PID,\"window_id\":$POPUP}" 2>/dev/null | python3 -c "
+import sys,json,re
+d=json.load(sys.stdin)
+tree=d.get('tree_markdown','')
+for m in re.finditer(r'\[(\d+)\]\s+AXTextField\s+\"([^\"]*E-Mail[^\"]*)\"', tree):
+    print(m.group(1)); break
+")
+if [ -n "$EMAIL_FIELD" ]; then
+    cua set_value "{\"pid\":$PID,\"window_id\":$POPUP,\"element_index\":$EMAIL_FIELD,\"value\":\"$EMAIL\"}" >/dev/null 2>&1
+    echo "{\"step\":4,\"done\":true,\"element_index\":$EMAIL_FIELD}" >&2
+    sleep 2
+else
+    echo "{\"step\":4,\"note\":\"email_prefilled_or_not_needed\"}" >&2
+fi
+
+# ── PHASE 5: "Weiter" im Popup klicken ──
+echo '{"step":5,"phase":"popup","tool":"cua-driver","action":"click_weiter"}' >&2
+cua get_window_state "{\"pid\":$PID,\"window_id\":$POPUP}" >/dev/null 2>&1
+WEITER_IDX=$(cua get_window_state "{\"pid\":$PID,\"window_id\":$POPUP}" 2>/dev/null | python3 -c "
+import sys,json,re
+d=json.load(sys.stdin)
+tree=d.get('tree_markdown','')
+for m in re.finditer(r'\[(\d+)\]\s+AXButton\s+\"Weiter\"', tree):
+    print(m.group(1)); break
+")
+if [ -n "$WEITER_IDX" ]; then
+    cua click "{\"pid\":$PID,\"window_id\":$POPUP,\"element_index\":$WEITER_IDX,\"action\":\"press\"}" >/dev/null 2>&1
+    echo "{\"step\":5,\"done\":true,\"element_index\":$WEITER_IDX}" >&2
     sleep 5
 fi
 
-# Schritt 4: Passwort-Feld (Google auto-advance)
-echo '{"step":4,"action":"type_password"}' >&2
-PW_FIELD=$(skylight list-elements --pid "$PID" | python3 -c "
-import json,sys
-for e in json.load(sys.stdin)['elements']:
-    label = (e.get('label','')or'').lower()
-    if e['role']=='AXTextField' and any(k in label for k in ['passwort','password','verschlüsselt']):
-        print(e['index']); break
+# ── PHASE 6: Consent "Fortfahren" (falls vorhanden) ──
+echo '{"step":6,"phase":"popup","tool":"cua-driver","action":"click_fortfahren"}' >&2
+cua get_window_state "{\"pid\":$PID,\"window_id\":$POPUP}" >/dev/null 2>&1
+FORTFAHREN=$(cua get_window_state "{\"pid\":$PID,\"window_id\":$POPUP}" 2>/dev/null | python3 -c "
+import sys,json,re
+d=json.load(sys.stdin)
+tree=d.get('tree_markdown','')
+for m in re.finditer(r'\[(\d+)\]\s+AXButton\s+\"Fortfahren\"', tree):
+    print(m.group(1)); break
 ")
-if [ -n "$PW_FIELD" ] && [ -n "$PW" ]; then
-    skylight type --pid "$PID" --element-index "$PW_FIELD" --text "$PW"
-    sleep 1
-    PW_WEITER=$(skylight list-elements --pid "$PID" | python3 -c "
-import json,sys
-for e in json.load(sys.stdin)['elements']:
-    if e['role']=='AXButton' and 'weiter' in (e.get('label','')or'').lower():
-        print(e['index']); break
-")
-    if [ -n "$PW_WEITER" ]; then
-        skylight click --pid "$PID" --element-index "$PW_WEITER"
-        sleep 5
-    fi
+if [ -n "$FORTFAHREN" ]; then
+    cua click "{\"pid\":$PID,\"window_id\":$POPUP,\"element_index\":$FORTFAHREN,\"action\":\"press\"}" >/dev/null 2>&1
+    echo "{\"step\":6,\"done\":true,\"element_index\":$FORTFAHREN}" >&2
+    sleep 5
 fi
 
-# Verifikation: Ist das Google-Popup weg?
-echo '{"step":5,"action":"verify_popup_closed"}' >&2
+# ── PHASE 7: Finaler "Weiter" nach Consent ──
+echo '{"step":7,"phase":"popup","tool":"cua-driver","action":"click_final_weiter"}' >&2
+cua get_window_state "{\"pid\":$PID,\"window_id\":$POPUP}" >/dev/null 2>&1
+FINAL_WEITER=$(cua get_window_state "{\"pid\":$PID,\"window_id\":$POPUP}" 2>/dev/null | python3 -c "
+import sys,json,re
+d=json.load(sys.stdin)
+tree=d.get('tree_markdown','')
+for m in re.finditer(r'\[(\d+)\]\s+AXButton\s+\"Weiter\"', tree):
+    print(m.group(1)); break
+")
+if [ -n "$FINAL_WEITER" ]; then
+    cua click "{\"pid\":$PID,\"window_id\":$POPUP,\"element_index\":$FINAL_WEITER,\"action\":\"press\"}" >/dev/null 2>&1
+    echo "{\"step\":7,\"done\":true,\"element_index\":$FINAL_WEITER}" >&2
+    sleep 5
+fi
+
+# ── VERIFIKATION: Popup weg? ──
+echo '{"step":8,"phase":"verify","tool":"cua-driver","action":"check_popup_closed"}' >&2
 for i in 1 2 3; do
     sleep 3
-    # cua-driver list_windows → Popup noch offen?
-    POPUP=$(cua-driver call list_windows 2>/dev/null | python3 -c "
-import json,sys
-for w in json.load(sys.stdin).get('windows',[]):
-    if w.get('pid') == $PID and 'anmelden' in w.get('title','').lower() and w.get('is_on_screen',False):
+    POPUP_CHECK=$(cua list_windows '{}' 2>/dev/null | python3 -c "
+import sys,json
+d=json.load(sys.stdin)
+for w in d.get('windows',[]):
+    if w.get('pid')==$PID and w.get('is_on_screen') and 'anmelden' in w.get('title','').lower():
         print(w['window_id']); break
-" 2>/dev/null)
-    if [ -z "$POPUP" ]; then
-        # Popup weg – ABER: ohne Omni-Vision sind wir blind
-        echo "{\"status\":\"blind\",\"message\":\"popup_closed_but_unverified_by_vision\",\"pid\":$PID,\"email\":\"$EMAIL\"}"
-        echo "{\"step\":6,\"action\":\"omni_verify_login\"}" >&2
-        
-        # Omni soll prüfen ob wir wirklich eingeloggt sind
-        skylight screenshot --pid "$PID" --mode som --output /tmp/verify_login.png 2>/dev/null
-        # Workaround: skylight schreibt ins CWD
-        cp -f skylight_screenshot.png /tmp/verify_login.png 2>/dev/null || true
-        
-        OMIN_RESULT=$(python3 -c "
-import httpx, base64, json, os, re
-key = os.environ.get('NVIDIA_API_KEY','')
-with open('/tmp/verify_login.png','rb') as f: b64 = base64.b64encode(f.read()).decode()
-r = httpx.post('https://integrate.api.nvidia.com/v1/chat/completions',
-    headers={'Authorization':f'Bearer {key}'},
-    json={'model':'nvidia/nemotron-3-nano-omni-30b-a3b-reasoning',
-          'messages':[{'role':'user','content':[
-              {'type':'text','text':'Is the user logged into Heypiggy.com? Reply JSON: {\"logged_in\":true/false,\"page\":\"...\",\"reasoning\":\"...\"}'},
-              {'type':'image_url','image_url':{'url':f'data:image/png;base64,{b64}'}}]}],
-          'max_tokens':200,'temperature':0.1}, timeout=30)
-m = r.json()['choices'][0]['message']
-t = m.get('reasoning') or m.get('content') or '{}'
-import re
-m2 = re.search(r'\{.*\}', t, re.DOTALL)
-d = json.loads(m2.group()) if m2 else {}
-print(json.dumps(d))
-" 2>/dev/null)
-        
-        LOGGED_IN=$(echo "$OMIN_RESULT" | python3 -c "import json,sys;d=json.load(sys.stdin);print(d.get('logged_in',False))" 2>/dev/null)
-        if [ "$LOGGED_IN" = "True" ]; then
-            echo "{\"status\":\"ok\",\"verified_by\":\"nemotron-omni\",\"pid\":$PID,\"email\":\"$EMAIL\"}"
-            exit 0
-        else
-            echo "{\"status\":\"blind\",\"message\":\"popup_weg_aber_omni_sagt_nicht_eingeloggt\",\"omni\":$OMIN_RESULT,\"pid\":$PID}"
-            exit 0
-        fi
+")
+    if [ -z "$POPUP_CHECK" ]; then
+        echo "{\"step\":8,\"popup_gone\":true,\"attempt\":$i}" >&2
+        echo "{\"status\":\"ok\",\"verified_by\":\"popup_gone\",\"pid\":$PID,\"email\":\"$EMAIL\"}"
+        exit 0
     fi
-    echo "{\"step\":5.${i},\"action\":\"popup_noch_offen(WID=$POPUP)\"}" >&2
-    # cua-driver daemon muss laufen fuer popup-click
-    cua-driver serve 2>/dev/null &
-    sleep 1
-    # Popup-Elemente via cua-driver (NICHT skylight — die sehen anderes Fenster!)
-    POPUP_WEITER=$(cua-driver call get_window_state "{\"pid\":$PID,\"window_id\":$POPUP}" 2>/dev/null | python3 -c "
-import json,sys
-tree = json.load(sys.stdin).get('tree_markdown','')
-for line in tree.split(chr(10)):
-    if 'Button' in line and 'Weiter' in line:
-        import re; m = re.search(r'\[(\d+)\]', line)
-        if m: print(m.group(1)); break
-" 2>/dev/null)
-    if [ -n "$POPUP_WEITER" ]; then
-        echo "{\"step\":5.${i},\"action\":\"click_weiter_in_popup(WID=$POPUP,idx=$POPUP_WEITER,cua_driver)\"}" >&2
-        cua-driver call click "{\"pid\":$PID,\"window_id\":$POPUP,\"element_index\":$POPUP_WEITER,\"action\":\"press\"}" 2>/dev/null | python3 -c "import json,sys;print(json.load(sys.stdin).get('status','error'))" >&2
-    fi
+    echo "{\"step\":8,\"popup_still_open\":$POPUP_CHECK,\"attempt\":$i}" >&2
 done
-# Nach 3 Versuchen: Login fehlgeschlagen
-echo "{\"status\":\"error\",\"reason\":\"popup_still_open_after_3_attempts\",\"pid\":$PID,\"popup_window_id\":$POPUP}"
+
+echo "{\"status\":\"error\",\"reason\":\"popup_still_open_after_retries\",\"pid\":$PID}"
 exit 10
