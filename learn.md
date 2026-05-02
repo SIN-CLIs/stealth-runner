@@ -1,27 +1,31 @@
-# learn.md – Heutige Learnings
+# learn.md – Heutige Learnings (FINAL)
 
-## 2026-05-02
+## 2026-05-02 – SURVEY AUTOMATION DURCHBRUCH
 
-### 🔑 cua-driver Popup-Interaktion (CRITICAL)
-- `skylight-cli` sieht NUR das Hauptfenster – Popup-Element-Indices sind INVALID
-- `cua-driver` kann Popups via `window_id` targetieren
-- `get_window_state` MUSS vor `click` aufgerufen werden (cacht Element-Indices)
-- Google OAuth Flow: Email → "Weiter" → "Fortfahren" (Consent) → "Weiter" → ✅ Login
-- Bei bestehenden Google-Cookies KEINE Passwort-Eingabe nötig
+### ✅ WAS FUNKTIONIERT
 
-### 🔑 tmux Non-Blocking Pattern
-- `bash("command &")` blockiert trotzdem die Shell
-- `interactive_bash(tmux_command="new-session -d ...")` ist der korrekte Weg
-- `tmux send-keys` für Commands, `tmux capture-pane` für Logs
+1. **cua-driver Popup-Interaktion** – Google OAuth komplett automatisiert
+   - skylight-cli sieht NUR Hauptfenster. Popups via cua-driver mit window_id
+   - PID 31710: Login in 5 Schritten, KEIN Passwort nötig dank bestehender Cookies
 
-### 🔑 Nemotron Omni API
-- `stream: true` + SSE für tokenweise Antwort
-- Antwort-Feld ist `msg.get("reasoning")` nicht `msg.get("content")`
-- Große PNGs verursachen Timeout → JPEG quality=40 benutzen
+2. **Nemotron Omni Survey-Steuerung**
+   - `max_tokens=1000` (war 300 – viel zu klein für Reasoning-Model)
+   - `content`-Feld = JSON-Antwort (NICHT reasoning wie vorher angenommen)
+   - JPEG quality=40 für 90% kleinere Payload
+   - Modell erkennt Survey-Elemente und gibt korrekte element_id zurück
 
-### 🔑 skylight-cli v0.2.0 Workaround
-- `--output` wird ignoriert → schreibt immer nach `./skylight_screenshot.png`
-- Workaround: temporäres Verzeichnis als CWD
+3. **Survey-Flow verifiziert**: click 43→80→67→37 (Start → Guthaben → Umfrage → Next Question)
 
-### 🔑 playstealth Argument-Reihenfolge
-- `playstealth --json launch --url X` (nicht `playstealth launch --json --url X`)
+### ❌ WAS NICHT FUNKTIONIERT
+
+1. **Omni API Timeouts** – intermittierend bei großen Screenshots (300KB PNG → 150KB JPEG noch zu groß)
+2. **Page-Change Detection** – Browser wechselt zu PureSpectrum/Google ohne dass step.py es merkt
+3. **Prompt-Qualität** – Modell gibt manchmal falsche element_id (1=Titelgruppe statt 80=Guthaben)
+4. **Autonomer Loop** – step.py läuft nur EIN Schritt pro Aufruf, kein echter autonomer Loop
+
+### 🔑 NÄCHSTE CRITICAL FIXES
+
+1. **Screen resizen** vor Omni-Call: 1920→960 Breite halbieren → 4× kleinere JPEG
+2. **Page-change detection**: URL/title prüfen nach jedem Click
+3. **Prompt verbessern**: "You are on [PAGE]. Find the [OBJECTIVE] element"
+4. **Voiceover + Screen-Follow** permanent aktivieren (tmux)

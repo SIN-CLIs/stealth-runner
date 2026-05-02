@@ -139,17 +139,15 @@ class VisionClient:
         )
 
     def _image_to_jpeg_b64(self, image_path: str, quality: int = 40) -> str:
-        """Convert PNG to JPEG for ~90% smaller API payload. Uses disk cache."""
-        import base64
+        import base64, hashlib
         from PIL import Image
         from io import BytesIO
-        # Try cache first (based on file mtime + path)
         cache_key = f"{image_path}:{Path(image_path).stat().st_mtime}:{quality}"
-        import hashlib
         ck = hashlib.md5(cache_key.encode()).hexdigest()
         if ck in _cache:
             return _cache[ck]
         img = Image.open(image_path).convert("RGB")
+        img.thumbnail((960, 960), Image.LANCZOS)
         buf = BytesIO()
         img.save(buf, format="JPEG", quality=quality)
         jpg_bytes = buf.getvalue()

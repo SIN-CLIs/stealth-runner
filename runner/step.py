@@ -58,10 +58,30 @@ def main():
 
     executor.pid = pid
 
-    # Capture
+    # Capture screenshot
     out = f"/tmp/step_{step}.png"
     executor.screenshot(out_path=out, mode="som")
     print(f"📸 Screenshot: step_{step}.png", flush=True)
+
+    # Detect current page
+    page = "unknown"
+    try:
+        elements = json.loads(subprocess.run(
+            ["skylight-cli", "list-elements", "--pid", str(pid)],
+            capture_output=True, text=True, timeout=10
+        ).stdout)
+        for e in elements.get("elements", []):
+            if e["role"] == "AXWebArea":
+                page = e["label"]
+            elif e["role"] == "AXRadioButton" and page == "unknown":
+                page = e["label"]
+        if "PureSpectrum" in page:
+            page = "PureSpectrum"
+        elif "HeyPiggy" in page:
+            page = "HeyPiggy"
+    except Exception:
+        pass
+    state["page"] = page
 
     # Multi-Frame Context (letzte 5)
     images = state.get("images", [])
