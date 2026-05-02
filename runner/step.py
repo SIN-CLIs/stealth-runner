@@ -37,7 +37,7 @@ def main():
 
     if pid is None:
         print("→ Browser starten...", flush=True)
-        result = executor.run(["playstealth", "launch", "--url", url, "--json"])
+        result = executor.run(["playstealth", "--json", "launch", "--url", url])
         pid = result.get("pid")
         executor.pid = pid
         state["pid"] = pid

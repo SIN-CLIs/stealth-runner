@@ -282,7 +282,7 @@ def run_doctor(repo: Path) -> dict:
         issues = repo / "issues.md"
         missing_docs = []
         for doc in ["README.md", "LICENSE", "CONTRIBUTING.md", "SECURITY.md", "SUPPORT.md", "CODEOWNERS",
-                     "CHANGELOG.md", "AGENTS.md", "brain.md", "fix.md", "successful.md", "anti-learn.md",
+                     "CHANGELOG.md", "ROADMAP.md", "AGENTS.md", "brain.md", "fix.md", "successful.md", "anti-learn.md",
                      "goal.md", "architecture.md", "usage.md", "faq.md", "testing.md", "benchmarks.md",
                      "Makefile", ".env.example", "Dockerfile"]:
             if not (repo / doc).exists():

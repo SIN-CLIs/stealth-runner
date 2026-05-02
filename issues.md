@@ -1,5 +1,16 @@
 # issues.md - Aktuelle Issues (2026-05-01)
 
+## 2026-05-02: Doctor Scan
+
+**Gefixt:** 86 veraltete Muster/Kredentials
+
+**Fehlende Docs (2):**
+
+- [ ] `ROADMAP.md`
+- [ ] `Dockerfile`
+
+**Offene Findings:** 86
+
 ## P0 (Blocker)
 
 1. **Google Login abschließen**: Passwort-Seite nach Weiter erreichen

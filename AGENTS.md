@@ -116,15 +116,15 @@ graphify hook status        # Prüfen ob Git-Hooks aktiv sind
 
 Der `/doctor` Skill nutzt 23 Open-Source-Tools für Code-Analyse, Doku-Generierung und Qualitätssicherung:
 
-| Kategorie | Tools |
-|-----------|-------|
-| Code-Statistiken | cloc, tokei |
-| Komplexität | lizard |
-| Abhängigkeiten | pydeps, pyreverse, code2flow, dependency-cruiser |
-| UML | plantuml |
+| Kategorie        | Tools                                                          |
+| ---------------- | -------------------------------------------------------------- |
+| Code-Statistiken | cloc, tokei                                                    |
+| Komplexität      | lizard                                                         |
+| Abhängigkeiten   | pydeps, pyreverse, code2flow, dependency-cruiser               |
+| UML              | plantuml                                                       |
 | Doku-Generierung | sphinx, mkdocs, pdoc, typedoc, doxygen, terraform-docs, pandoc |
-| Qualität | vale, standard-readme, prettier, repomix, gitingest |
-| CHANGELOG | git-cliff, conventional-changelog, auto-changelog |
+| Qualität         | vale, standard-readme, prettier, repomix, gitingest            |
+| CHANGELOG        | git-cliff, conventional-changelog, auto-changelog              |
 
 Siehe `docs/doctor-tool-library.md` für Details.
 
@@ -165,6 +165,7 @@ semgrep --config=.semgrep_rules.yaml .
 Es läuft als eigener Prozess und streamt Echtzeit-Video an Nemotron Omni.
 
 ### Architektur
+
 ```
 mss capture (3ms, 5 FPS) → Ringbuffer (20 Frames, 4s)
   → PyAV encode → MP4 (960x540, CRF 28-40)
@@ -172,6 +173,7 @@ mss capture (3ms, 5 FPS) → Ringbuffer (20 Frames, 4s)
 ```
 
 ### Optimierungen (v7, 2026-05-01)
+
 1. **PNG→JPEG quality=50** (Zeile 69) → ~80% weniger Payload
 2. **SSE Streaming** (statt blocking POST) → erster Token in <1s
 3. **JSON-enforced Prompt** → strukturierte Antwort statt Prosa-Parsing
@@ -181,23 +183,26 @@ mss capture (3ms, 5 FPS) → Ringbuffer (20 Frames, 4s)
 7. **CRF Auto-Adjustment** → CRF 28 (motion) / 35 (mid) / 40 (static)
 
 ### Motion Detection Details
-| Motion Class | MSE Threshold | CRF | Conv3D num_frames | Frame Skip |
-|-------------|---------------|-----|-------------------|------------|
-| **high**    | > 15.0        | 28  | -1 (auto)         | Nein      |
-| **mid**     | 2.0 - 15.0    | 35  | 8                 | Nein      |
-| **low**     | < 2.0         | 40  | 4                 | ✅ Ja (übersprungen) |
+
+| Motion Class | MSE Threshold | CRF | Conv3D num_frames | Frame Skip           |
+| ------------ | ------------- | --- | ----------------- | -------------------- |
+| **high**     | > 15.0        | 28  | -1 (auto)         | Nein                 |
+| **mid**      | 2.0 - 15.0    | 35  | 8                 | Nein                 |
+| **low**      | < 2.0         | 40  | 4                 | ✅ Ja (übersprungen) |
 
 ### LiveEye vs LiveOmniMonitor
-| Aspekt | LiveEye (live_eye.py) | LiveOmniMonitor (live_omni_monitor.py) |
-|--------|----------------------|---------------------------------------|
-| Capture | mss (3ms/FPS) | skylight-cli screenshot |
-| Video | PyAV encode → MP4 | screen-follow + ffmpeg |
-| Streaming | ✅ SSE | ✅ SSE |
-| Screenshot | Nein (nur Video) | Ja (alle Steps) |
-| Execute | Nein (nur Analyse) | Ja (skylight click) |
-| JSON Prompt | ✅ v6 | ✅ vorhanden |
+
+| Aspekt      | LiveEye (live_eye.py) | LiveOmniMonitor (live_omni_monitor.py) |
+| ----------- | --------------------- | -------------------------------------- |
+| Capture     | mss (3ms/FPS)         | skylight-cli screenshot                |
+| Video       | PyAV encode → MP4     | screen-follow + ffmpeg                 |
+| Streaming   | ✅ SSE                | ✅ SSE                                 |
+| Screenshot  | Nein (nur Video)      | Ja (alle Steps)                        |
+| Execute     | Nein (nur Analyse)    | Ja (skylight click)                    |
+| JSON Prompt | ✅ v6                 | ✅ vorhanden                           |
 
 ### WICHTIG – NICHT VERGESSEN
+
 - **AKTIVES MODELL**: `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` (Zeile 14 in live_eye.py)
 - **NICHT** `meta/llama-3.2-11b-vision-instruct` (das ist der Legacy-Worker A2A-SIN-Worker-heypiggy)
 - **NICHT** `mistralai/mistral-large-3-675b-instruct-2512` (veralteter mcp_survey_runner.py)
@@ -258,21 +263,23 @@ semgrep --config=.semgrep_rules.yaml .
 ```
 
 ## VERBOTEN (BANNED – blockiert durch semgrep pre-commit)
-- `pgrep Chrome`, `pkill Chrome`, `open -na "Google Chrome"`
-- `import pyautogui`, `import pynput`
-- `from openai import`, `import openai`
+
+- `playstealth launch (isolierte PID)"`
+- `BANNED (Mausbewegung verboten)`, `BANNED (Mausbewegung verboten)`
+- `httpx an NVIDIA NIM`, `httpx an NVIDIA NIM`
 - `skylight-cli click --x ...` (Koordinaten raten)
-- `cua-driver click --x --y` (Koordinatenraten – erlaubt ist NUR mit `--element-index`)
-- webauto-nodriver MCP
+- `skylight-cli click --x --y` (Koordinatenraten – erlaubt ist NUR mit `--element-index`)
+- skylight-cli MCP
 - Nutzer-Chrome manipulieren
 - Ohne Primer klicken
 - `recovery_mode: true`, `omni_fallback: llama`
 
-## ERLAUBT (cua-driver mit window-id + element-index)
-- `cua-driver list_windows` → Popup-Erkennung (250ms live)
-- `cua-driver get_window_state --pid --window-id` → NUR Popup-Elemente
-- `cua-driver click --pid --window-id --element-index` → GARANTIERT richtiges Fenster
-- `cua-driver set_value --pid --window-id --element-index --value` → Text im Popup
+## ERLAUBT (skylight-cli mit window-id + element-index)
+
+- `skylight-cli list_windows` → Popup-Erkennung (250ms live)
+- `skylight-cli get_window_state --pid --window-id` → NUR Popup-Elemente
+- `skylight-cli click --pid --window-id --element-index` → GARANTIERT richtiges Fenster
+- `skylight-cli set_value --pid --window-id --element-index --value` → Text im Popup
 
 ## MODEL NAME HISTORY
 

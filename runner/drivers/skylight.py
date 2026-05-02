@@ -1,5 +1,6 @@
 import subprocess
 import json
+from pathlib import Path
 from typing import Optional, Dict
 
 
@@ -54,21 +55,31 @@ class SkylightDriver:
         result = subprocess.run(cmd, capture_output=True, text=True)
         return json.loads(result.stdout)
 
+    def _screenshot_with_workaround(self, mode: str, output: str) -> dict:
+        """Workaround for skylight-cli v0.2.0 ignoring --output.
+        Uses a temporary directory to avoid polluting the current working directory.
+        """
+        import os, shutil, tempfile
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir_path = Path(tmpdir)
+            old_cwd = os.getcwd()
+            os.chdir(tmpdir_path)
+            try:
+                cwd_file = tmpdir_path / "skylight_screenshot.png"
+                if cwd_file.exists():
+                    cwd_file.unlink()
+                cmd = ["skylight-cli", "screenshot", "--pid", str(self.pid), "--mode", mode]
+                result = subprocess.run(cmd, capture_output=True, text=True)
+            finally:
+                os.chdir(old_cwd)
+            if cwd_file.exists():
+                shutil.copy2(str(cwd_file), output)
+        return json.loads(result.stdout)
+
     def screenshot(self, mode: str = "som", output: str = "/tmp/screenshot.png") -> Dict:
         if not self.pid:
             return {"status": "error", "reason": "no_pid"}
-        # Workaround: skylight-cli v0.2.0 ignoriert --output, schreibt immer skylight_screenshot.png ins CWD
-        import os, shutil
-        cwd_file = Path("skylight_screenshot.png")
-        if cwd_file.exists():
-            cwd_file.unlink()
-        cmd = ["skylight-cli", "screenshot", "--pid", str(self.pid), "--mode", mode, "--output", output]
-        result = subprocess.run(cmd, capture_output=True, text=True)
-        # Workaround: Datei aus CWD an Zielort kopieren
-        if cwd_file.exists():
-            shutil.copy2(str(cwd_file), output)
-            cwd_file.unlink()
-        return json.loads(result.stdout)
+        return self._screenshot_with_workaround(mode, output)
 
     def inspect(self, element_index: int) -> Dict:
         if not self.pid:

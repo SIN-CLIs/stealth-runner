@@ -1,5 +1,20 @@
 # learn.md - Session Learnings (2026-05-01)
 
+## 2026-05-02: Neue Commits
+
+- `b571372 feat: doctor graphify setup — install, update, post-commit hook`
+- `77f95fd feat: doctor cleanup phase — AST-Cache, __pycache__, alte Chrome-Profile, alte Artefakte`
+- `7fd1df3 feat: doctor context writer für usage.md, faq.md, benchmarks.md, troubleshooting.md, acknowledgments.md, SUPPORT.md, CODE_OF_CONDUCT.md, CONTRIBUTING.md, SECURITY.md`
+- `04172ca feat: doctor context writer für architecture.md, commands.md, testing.md, goal.md, api.md`
+- `c67bf78 docs: SKILL.md — context writer für alle 7 SOTA-Docs dokumentiert`
+- `57b019d feat: doctor context writer für brain.md, fix.md, issues.md, successful.md, learn.md, anti-learn.md, history.md`
+- `8b6edbb feat: doctor history.md context writer — auto-generates history entries from git log + diff`
+- `616432d docs: history.md — LiveEye v7 Changelog`
+- `9940e05 feat: LiveEye v7 optimizations + docs + agent cleanup`
+- `7ce191b feat: gRPC Function-ID gefunden + Dual-Mode vorbereitet`
+
+**Sprachen:** TypeScript, JSON, JavaScript, Markdown, Python
+
 ## 1. Nemotron Omni reasoning-Feld
 
 - **Problem**: `response["choices"][0]["message"]["content"]` ist null

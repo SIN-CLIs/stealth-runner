@@ -1,5 +1,24 @@
 # architecture.md – TRIO LAYER
 
+## 2026-05-02: Architecture Scan
+
+**Komponenten (15 Module):**
+
+- `./` (4 Python Dateien)
+- `.opencode/plugins/` (0 Python Dateien)
+- `.venv/bin/` (1 Python Dateien)
+- `.venv/lib/python3.12/site-packages/` (1 Python Dateien)
+- `runner/` (38 Python Dateien)
+- `runner/drivers/` (5 Python Dateien)
+- `runner/vision_client/` (3 Python Dateien)
+- `sin_survey_core/` (1 Python Dateien)
+- `sin_survey_core/errors/` (2 Python Dateien)
+- `sin_survey_core/panels/` (2 Python Dateien)
+
+**Sprachen:** TypeScript, JSON, JavaScript, Markdown, Python
+
+**Total Dateien:** 2689
+
 ## Live Auge-Hirn-Hand Architektur
 
 ```
@@ -19,7 +38,7 @@
               │             │             │
               ▼             ▼             ▼
       ┌──────────────────────────────────────────┐
-      │           cua-driver (macOS)             │
+      │           skylight-cli (macOS)             │
       │  list_windows | get_window_state | click  │
       │  mit --pid --window-id --element-index   │
       └──────────────────────────────────────────┘
@@ -33,6 +52,7 @@
 ```
 
 ## Fenster-Isolation
+
 ```
 PID 42296 (playstealth Chrome):
 ├── WindowID=30380  "Anmelden – Google Konten"   ← Popup
@@ -43,10 +63,11 @@ PID 42296 (playstealth Chrome):
 ```
 
 ## Tools
-| Layer | Tool | Befehl |
-|-------|------|--------|
-| EYES | cua-driver | `list_windows' -- 250ms Polling |
-| BRAIN | cua-driver | `get_window_state --pid --window-id` |
-| BRAIN | Nemotron Omni | `POST https://integrate.api.nvidia.com/v1` |
-| HANDS | cua-driver | `click --pid --window-id --element-index` |
-| LAUNCH | playstealth | `launch --url 'https://heypiggy.com/?page=dashboard'` |
+
+| Layer  | Tool          | Befehl                                                |
+| ------ | ------------- | ----------------------------------------------------- |
+| EYES   | skylight-cli  | `list_windows' -- 250ms Polling                       |
+| BRAIN  | skylight-cli  | `get_window_state --pid --window-id`                  |
+| BRAIN  | Nemotron Omni | `POST https://integrate.api.nvidia.com/v1`            |
+| HANDS  | skylight-cli  | `click --pid --window-id --element-index`             |
+| LAUNCH | playstealth   | `launch --url 'https://heypiggy.com/?page=dashboard'` |

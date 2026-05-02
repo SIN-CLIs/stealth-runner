@@ -38,8 +38,8 @@ BUFFER_SECS = 4
 MAX_FRAMES = FPS * BUFFER_SECS  # 20 Frames
 
 # Motion Detection Constants
-MOTION_HIGH_THRESH = 15.0   # MSE threshold for "high motion" (scrolling, page transitions)
-MOTION_LOW_THRESH = 2.0     # Below this = virtually identical frames
+MOTION_HIGH_THRESH = 20.0 # MSE threshold for "high motion" (scrolling, page transitions)
+MOTION_LOW_THRESH = 3.0 # Below this = virtually identical frames → more tolerant
 MOTION_CRF_MAP = {
     "high": 28,   # High motion → more quality, lower CRF
     "mid":  35,   # Default

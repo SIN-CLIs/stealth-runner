@@ -1,5 +1,18 @@
 # anti-learn.md - Anti-Patterns (NIE WIEDER)
 
+## 2026-05-02: Ersetzte Muster
+
+- ❌ `nvidia/nvidia/nemotron` — ersetzt durch SOTA-Äquivalent
+- ❌ `cua-driver` — ersetzt durch SOTA-Äquivalent
+- ❌ `pgrep Chrome` | Greift Nutzer-Chrome statt isolier` — ersetzt durch SOTA-Äquivalent
+- ❌ `pkill Chrome` | Killt Nutzer-Prozesse, Datenverlus` — ersetzt durch SOTA-Äquivalent
+- ❌ `open -na "Google Chrome"` — ersetzt durch SOTA-Äquivalent
+- ❌ `import pyautogui` — ersetzt durch SOTA-Äquivalent
+- ❌ `import pynput` — ersetzt durch SOTA-Äquivalent
+- ❌ `webauto-nodriver` — ersetzt durch SOTA-Äquivalent
+- ❌ `from openai import` — ersetzt durch SOTA-Äquivalent
+- ❌ `pgrep Chrome`, `pkill Chrome`, `open -na "Google C` — ersetzt durch SOTA-Äquivalent
+
 ## ❌ GEBANNTE METHODEN
 
 ### 1. skylight-cli MCP

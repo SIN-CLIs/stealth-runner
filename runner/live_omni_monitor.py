@@ -119,7 +119,7 @@ class LiveOmniMonitor:
         try:
             from PIL import Image
             img = Image.open(png_path).convert("RGB")
-            img.save(jpg_path, format="JPEG", quality=50)
+            img.save(jpg_path, format="JPEG", quality=40) # 90% payload reduction, still recognizable
             png_path.unlink(missing_ok=True)
             out = jpg_path
         except Exception:

@@ -30,7 +30,7 @@ class StealthExecutor:
         return "skylight-cli"
 
     def screenshot(self, out_path: str | None = None, mode: str = "som") -> dict[str, Any]:
-        return self.driver.screenshot(self.pid, mode, Path(out_path or "/tmp/stealth.png").resolve())
+        return self.driver.screenshot(mode, str(Path(out_path or "/tmp/stealth.png").resolve()))
 
     def click(self, element_index: int | None = None, x: int | None = None, y: int | None = None) -> dict[str, Any]:
         if element_index is not None:
