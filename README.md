@@ -1,7 +1,7 @@
 # stealth-runner 🕵️
 
-> **Autonome Survey-Automation mit KI-Vision.**  
-> Orchestriert Google Login → Umfrage-Teilnahme → EUR-Verdienst via NVIDIA Nemotron 3 Nano Omni.  
+> **Autonome Survey-Automation mit KI-Vision.**
+> Orchestriert Google Login → Umfrage-Teilnahme → EUR-Verdienst via NVIDIA Nemotron 3 Nano Omni.
 > **100% skylight-cli – keine Mausbewegung, kein Nutzer-Chrome.**
 
 [![CI](https://github.com/OpenSIN-AI/stealth-runner/actions/workflows/ci.yml/badge.svg)](https://github.com/OpenSIN-AI/stealth-runner/actions/workflows/ci.yml)
@@ -35,19 +35,14 @@
 playstealth launch --url 'https://heypiggy.com/?page=dashboard'
 # → {"pid": 12345, "status": "ok"}
 
-# 2. Google Login (automatisiert)
-bash cli/heypiggy-login 12345
+# 2. CUA-ONLY Login (7 Schritte)
+# → list_windows → get_window_state → click[Index] → set_value → "fortfahren" → admin → "entsperren"
 
 # 3. Screenshot + Omni Vision
-skylight-cli screenshot --pid 12345 --mode som --output /tmp/page.png
-python3 -c "
-from runner.nemotron_omni import get_omni
-action = get_omni().analyze_image('/tmp/page.png', 'What button to click?')
-print(action)  # → {'action': 'click', 'element_index': 43}
-"
+echo '{"pid": 12345, "window_id": WID}' | cua-driver call screenshot 2>/dev/null
 
-# 4. Unsichtbarer Klick
-skylight-cli click --pid 12345 --element-index 43
+# 4. Survey Loop: CUA-ONLY Klicks
+echo '{"pid": 12345, "window_id": WID, "element_index": N}' | cua-driver call click
 ```
 
 ---
@@ -185,19 +180,23 @@ graphify update .        # AST-Rebuild nach Code-Änderungen
 
 ## 🎯 Anwendungsfälle
 
-### Heypiggy.com Google Login (vollautomatisiert via cua-driver)
+### Heypiggy.com Google Login (CUA-only, 7 Schritte)
 
 ```bash
-playstealth launch --url 'https://heypiggy.com/?page=dashboard'
-bash cli/heypiggy-login <PID>
-# → Nutzt cua-driver für Popup-Interaktion (skylight-cli sieht NUR Hauptfenster!)
-# → 5 Schritte: Google Klick → Email → Weiter → Consent "Fortfahren" → Weiter
-# → Bei bestehenden Google-Cookies KEINE Passwort-Eingabe nötig!
+# EIGENE Chrome-Instanz via playstealth launch!
+playstealth launch --url 'https://heypiggy.com'
+# → PID + WID → CUA-ONLY Flow:
+# 1. Click Google Login-Symbol [Index]
+# 2. Enter email in AXTextField [Index]
+# 3. Click "fortfahren" [Index]
+# 4. Wait 2s → macOS Keychain Dialog
+# 5. Enter "admin" in Password Field
+# 6. Click "entsperren" [Index]
+# 7. Wait 3s → Dashboard
 ```
 
-> **⚠️ WICHTIG**: Popup-Buttons werden via `cua-driver` geklickt, NICHT `skylight-cli`.  
-> `skylight-cli` sieht nur das Hauptfenster – Popup-Element-Indices sind INVALID.  
-> Siehe `docs/cua-driver-popup-pattern.md` für Details.
+> **⚠️ WICHTIG**: KEIN pkill, killall, oder grep auf User Chrome!
+> NUR eigenes Chrome via `playstealth launch` starten.
 
 ### Post-Mortem Video-Analyse
 
@@ -262,25 +261,8 @@ MIT – siehe [LICENSE](LICENSE)
 ---
 ## 🔗 Stealth Suite
 
-Part of the **SIN-CLIs Stealth Suite** — 16 Komponenten für autonome Browser-Automation:
+Part of the **SIN-CLIs Stealth Suite** — 18 Komponenten:
 
-| Layer | Repo | Technologie |
-|-------|------|-------------|
-| 🧠 Orchestrator | [stealth-runner](https://github.com/SIN-CLIs/stealth-runner) | Python |
-| 🖱️ ACT (CUA-ONLY) | [cua-touch](https://github.com/SIN-CLIs/cua-touch) | Python + Swift |
-| 🎭 HIDE | [playstealth-cli](https://github.com/SIN-CLIs/playstealth-cli) | Python |
-| 👁️ SENSE | [unmask-cli](https://github.com/SIN-CLIs/unmask-cli) | TypeScript |
-| 📹 VERIFY | [screen-follow](https://github.com/SIN-CLIs/screen-follow) | Swift |
-| 🔍 SCAN | [macos-ax-cli](https://github.com/SIN-CLIs/macos-ax-cli) | Swift |
-| 🐙 AX-INDEXER | [ax-graph](https://github.com/SIN-CLIs/ax-graph) | Swift |
-| 🔒 CAPTCHA | [stealth-captcha](https://github.com/SIN-CLIs/stealth-captcha) | Python |
-| 🧩 SKILLS | [stealth-skills](https://github.com/SIN-CLIs/stealth-skills) | TS/Python |
+| 🔬 SOTA | [stealth-sota](https://github.com/SIN-CLIs/stealth-sota) | Python |
 | 🧱 CORE | [stealth-core](https://github.com/SIN-CLIs/stealth-core) | Python |
-| 🧠 MIND | [stealth-mind](https://github.com/SIN-CLIs/stealth-mind) | Python |
-| 🛡️ GUARDIAN | [stealth-guardian](https://github.com/SIN-CLIs/stealth-guardian) | Python |
-| 🔄 SYNC | [stealth-sync](https://github.com/SIN-CLIs/stealth-sync) | Python |
-| ⚡ SESSION | [stealth-session](https://github.com/SIN-CLIs/stealth-session) | Python |
-| 💀 LEGACY | [skylight-cli](https://github.com/SIN-CLIs/skylight-cli) | Swift |
-| 💀 LEGACY | [computer-use-mcp](https://github.com/SIN-CLIs/computer-use-mcp) | TypeScript |
-
----
+| 🎯 DYNAMIC | [stealth-dynamic](https://github.com/SIN-CLIs/stealth-dynamic) | Python |

@@ -25,7 +25,7 @@ heypiggy Dashboard
 | Layer | Tool | Zweck |
 |-------|------|-------|
 | LAUNCH | `playstealth` | Chrome starten |
-| LOGIN | `heypiggy_login_box.py` | Google OAuth (FLOW A/B) |
+| LOGIN | CUA-only (7 Steps) | Google OAuth via macOS Keychain |
 | SURVEY | `survey_runner.py` | Survey Start + Antworten |
 | AUDIO | `audio_box.py` | BlackHole + ffmpeg + Omni |
 | CUA | `cua-driver` | AX-Interaktionen |

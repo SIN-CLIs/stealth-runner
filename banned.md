@@ -214,13 +214,12 @@ python cli/popup-mcp.py
 # Tools: popup_list_windows, popup_get_elements, popup_click, popup_type,
 #        popup_find_button, popup_is_closed, popup_daemon_start
 
-# Google Login MCP
-python cli/heypiggy-google-login-mcp.py  # → heypiggy_login(pid)
+# HeyPiggy Login: CUA-only 7-Schritt-Flow (siehe brain.md)
+# KEIN heypiggy_login_box.py mehr!
 
 # CLI-Wrapper
 cli/popup list-windows <PID>              # Alle Popup-Fenster
 cli/popup click <PID> <WID> <INDEX>       # Klick via cua-driver AXPress
-cli/heypiggy-login <PID>                  # Vollständiger Login
 
 ## ❌ Audio via JS aus blob: URL extrahieren (2026-05-04)
 

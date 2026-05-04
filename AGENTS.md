@@ -4,6 +4,29 @@
 > **← [brain.md](brain.md) dokumentiert die CUA-ONLY Architektur im Detail.**
 > **CDP + skylight-cli + webauto-nodriver sind ALLE BANNED.**
 
+---
+
+## 🚨 EXPLICITE VERBOTE (UNVERBRÜCHLICH)
+
+### NIEMALS user Chrome/Prozesse töten!
+**REGEL: ICH DARF NIEMALS — UNTER KEINEN UMSTÄNDEN — USER CHROME, USER OPENCODE SITZUNGEN ODER ANDERE USER-PROZESSE BEENDEN**
+
+- ❌ `pkill -f "Google Chrome"` — VERBOTEN
+- ❌ `killall Google Chrome` — VERBOTEN
+- ❌ `kill <pid>` auf USER Chrome PIDs — VERBOTEN
+- ❌ `ps aux | grep Chrome | kill` — VERBOTEN
+- ❌ Chrome-Prozesse über grep/kill beenden — VERBOTEN
+
+**NUR ERLAUBT:**
+- ✅ Eigene Launched Chrome-Instanzen beenden (via `playstealth launch` gestartet, eigene PID)
+- ✅ Eigenen Code in `/tmp/` starten und dort beenden
+- ✅ Chrome mit `--user-data-dir=/tmp/heypiggy-bot-XXXXX` (isoliertes Profil)
+
+**WENN Chrome neu gestartet werden muss:**
+- Eigenes isoliertes Profil nutzen: `playstealth launch --url '...'` → NEUE PID
+- Niemals existierende User-Chrome-Instanzen touchen
+- Bei Konflikt: Frisches Profil in `/tmp/` starten
+
 ## VISION-MODELL: Nemotron 3 Nano Omni (PRIMARY)
 
 - **30B-A3B Mixture-of-Experts** – Video + Audio + Bild + Text in EINEM Modell
@@ -191,50 +214,6 @@ handle_captcha_in_survey(pid, page_url)
 # → Automatische Captcha-Erkennung + Lösung
 ```
 
-## LOGIN BOX (CUA-ONLY, 2026-05-04)
-
-### heypiggy Google Login als Box
-```python
-from cli.modules.heypiggy_login_box import heypiggy_login
-
-# EIN Aufruf für den kompletten Login!
-# FLOW A: Frischer Browser → Email → Passkey bypass → Password → Consent
-# FLOW B: Gecachte Cookies → Konto klicken → Consent
-# Automatische Erkennung + Fallback
-heypiggy_login(pid=2674, cdp_port=55983)
-# → True wenn eingeloggt
-```
-
-### Features der Box
-- ✅ CUA-only (KEIN skylight, KEIN CDP für Navigation)
-- ✅ Findet Google OAuth Popup automatisch (via Fenster-Titel)
-- ✅ Passkey-Bypass ("Andere Option wählen" → Passwort)
-- ✅ 2FA-Erkennung + Warteschleife für Smartphone-Bestätigung
-- ✅ macOS System-Dialog ("Fortfahren") Erkennung + Klick
-- ✅ Consent-Handling ("Fortfahren", "Als Jeremy fortfahren")
-- ✅ Dashboard-verify nach Login
-
-## BEFEHLE
-
-```bash
-# Chrome starten (liefert cdp_port!)
-playstealth launch --url 'https://accounts.google.com/ServiceLogin'
-# → {"pid": 48403, "cdp_port": 61934, ...}
-
-# KOMPLETT: heypiggy Login in EINEM Befehl
-python3 -c "
-from cli.modules.heypiggy_login_box import heypiggy_login
-heypiggy_login(pid=2674, cdp_port=55983)
-"
-
-# Detailschritte (nur falls Box fehlschlägt):
-# - Email: cua click set_value
-# - Weiter: cua click
-# - Andere Option: cua click
-# - Passwort: cua click set_value
-# - macOS Dialog: cua click (anderes Fenster)
-```
-
 ## SURVEY FLOW (2026-05-04, VERIFIZIERT)
 
 ### Kompletter Ablauf
@@ -342,9 +321,186 @@ stealth-exec cua-touch --action click --label "Männlich" --json-params '{"verif
 ❌ Survey disqualifiziert, 30min verschwendet
 ```
 
-### Mit Verify  
+### Mit Verify
 ```
 ✅ Agent kriegt `success: false` + Fehlermeldung
 ✅ Agent kann SOFORT reagieren (Retry/Fallback)
 ✅ Kein Blindflug mehr
 ```
+
+---
+
+## 🏭 COMPILED FLOW ENGINE (2026-05-04)
+
+**Pattern: Agent denkt NICHT mehr. Er macht exakt EINEN Tool-Call.**
+
+### Das Problem
+Agenten machen 10-50 individuelle Schritte, vergessen Dinge, kombinieren Tools frei → Fehler, Token-Verschwendung, Instabilität.
+
+### Die Lösung: FCTES — Flow Compilation & Tool Enforcement System
+
+```
+LEARNING (unsicher) → 10x Success → COMPILE → TOOL REGISTRY → DISPATCHER (nur noch 1 Call)
+```
+
+### Architektur
+
+```
+app/
+├── flows/learning/         # Unsichere, flexible Flows (Agent baut hier)
+│   └── survey_heypiggy.py  # Survey-Loop mit CUA-only Logik
+├── flows/compiled/         # NACH 10x Erfolg: frozen, versioniert
+│   └── survey_heypiggy_v1746400000.py
+├── core/
+│   ├── tracker.py          # Success-Counter → Threshold-Check
+│   ├── registry.py         # Source of Truth: welcher Flow ist frozen?
+│   ├── compiler.py         # Copy learning → compiled + Version + Hash
+│   ├── tool_builder.py     # Registriert Tool in opencode.json
+│   ├── executor.py         # Führt frozen Flow aus (importlib)
+│   ├── dispatcher.py       # Hard Enforcement: NUR versionierte Tools
+│   └── orchestrator.py     # Entscheidet: learning oder compiled?
+└── run_survey.py           # SINGLE ENTRY POINT ← Agent ruft NUR das auf
+```
+
+### Hard Enforcement Regeln
+
+```
+╔══════════════════════════════════════════════════════════════════╗
+║  REGEL 1: Agent ist NUR ein Trigger                              ║
+║  ─────────────────────────────────────────────────────────────── ║
+║  ✅ RICHTIG:  python run_survey.py                               ║
+║  ❌ FALSCH:   Agent klickt Survey-Cards manuell                  ║
+║  ❌ FALSCH:   Agent baut eigene CUA-Befehle                      ║
+║  ❌ FALSCH:   Agent zerlegt Flow in Einzelschritte               ║
+╚══════════════════════════════════════════════════════════════════╝
+
+╔══════════════════════════════════════════════════════════════════╗
+║  REGEL 2: KEINE Freiheit bei Tool-Wahl                           ║
+║  ─────────────────────────────────────────────────────────────── ║
+║  ✅ RICHTIG:  dispatch("survey_heypiggy_v1746400000", payload)  ║
+║  ❌ FALSCH:   Agent entscheidet "nehme ich skylight oder cua?"   ║
+║  ❌ FALSCH:   Agent kombiniert mehrere Tools                     ║
+╚══════════════════════════════════════════════════════════════════╝
+
+╔══════════════════════════════════════════════════════════════════╗
+║  REGEL 3: Freeze nach 10 Erfolgen                                ║
+║  ─────────────────────────────────────────────────────────────── ║
+║  tracker.record("survey_heypiggy")  # nach jedem OK-Run          ║
+║  → wenn count >= 10: compiler.compile() → neues Tool             ║
+║  → ab jetzt NUR noch das frozen Tool                             ║
+╚══════════════════════════════════════════════════════════════════╝
+```
+
+### Tool Registration (opencode.json)
+
+```json
+{
+  "tools": [
+    {
+      "name": "survey_heypiggy_v1746400000",
+      "description": "Frozen deterministic survey flow: CUA-only, 15 Frage-Runs, Forward-Button-Loop",
+      "strict": true,
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "radio_hints": {"type": "array", "items": {"type": "string"}},
+          "checkbox_hints": {"type": "array", "items": {"type": "string"}},
+          "textarea_value": {"type": "string"}
+        },
+        "additionalProperties": true
+      },
+      "frozen_at": 1746400000,
+      "source": "FCTES-compiler"
+    }
+  ]
+}
+```
+
+### Single Entry Point (Was der Agent NUR tun darf)
+
+```bash
+# ✅ EINZIGER Befehl für Survey-Loop:
+python3 run_survey.py
+
+# ✅ Oder intern:
+from app.core.orchestrator import run
+from app.flows.learning import survey_heypiggy
+result = run("survey_heypiggy", survey_heypiggy.execute, {
+    "radio_hints": ["Berlin", "männlich", "Angestellter", "Deutsch"],
+    "checkbox_hints": ["Keine"],
+    "textarea_value": "Ja"
+})
+```
+
+### Neue Flows hinzufügen (Learning Phase)
+
+1. Flow in `app/flows/learning/` bauen (mit `execute(payload)` Funktion)
+2. Testen bis 10× erfolgreich
+3. `compiler.compile("flow_name")` →자동으로:
+   - Copy nach `app/flows/compiled/flow_v{TIMESTAMP}.py`
+   - `registry.save()` → Source of Truth
+   - `tool_builder.register()` → opencode.json
+   - `dispatcher.dispatch()` → ab jetzt erlaubt
+
+### Dashboard-Survey starten (Hard-Coded Persona)
+
+Der frozen flow nutzt Persona-Daten direkt im Code:
+```python
+PAYLOAD = {
+    "radio_hints": ["Berlin", "männlich", "Angestellter", "Meister", "Deutsch"],
+    "checkbox_hints": ["Keine"],
+    "textarea_value": "Ja"
+}
+# Persona: Berlin, Kurfürstenstraße 124, 10785, männlich, 42, 
+# Anstellung (unbefristet), 2-Personen-Haushalt, Meister_in
+```
+
+---
+
+## 🔴 KRITISCHES PROBLEM: Chrome CDP WebSocket Block (2026-05-04)
+
+### Das Problem
+Chrome blockiert eingehende CDP WebSocket Verbindungen:
+```
+WebSocketBadStatusException: Handshake status 403 Forbidden
+Rejected an incoming WebSocket connection from the http://localhost:XXXXX origin.
+Use --remote-allow-origins=* to allow connections from this origin.
+```
+
+### Lösung
+Chrome MUSS mit `--remote-allow-origins=*` gestartet werden:
+```bash
+playstealth launch --url '...'  # playstealth setzt das automatisch
+```
+
+**ABER**: Selbst mit playstealth kann der Origin-Check noch aktiv sein.
+Dann: Chrome neu starten oder `--disable-web-security` testen.
+
+### AX-Tree leer? Checkliste
+Wenn `cua-driver call get_window_state` **0 Children** zurückgibt:
+1. **Accessibility prüfen**: System Settings → Accessibility → Screen bei Bedarf AN
+2. **Chrome Accessibility Flag**: playstealth startet mit `--force-renderer-accessibility`
+3. **Window wählen**: Nicht WID 0 (Menüleiste), sondern WID mit `height > 100` und `depth > 5`
+4. **Page laden**: Seite muss vollständig geladen sein (5s warten)
+5. **CUA-Daemon**: `cua-driver serve` muss als Daemon laufen
+
+### Fallback wenn CUA komplett leer ist
+```bash
+# macOS System-Info checken
+python3 -c "
+import subprocess
+result = subprocess.run(['system_profiler', 'SPAccessibilityDataType', '-json'], 
+    capture_output=True, text=True)
+import json
+data = json.loads(result.stdout)
+print('AX Enabled:', data.get('spAccessibilityDataType', {}).get('AXEnhancedAccessibility', '?'))
+"
+```
+
+### Dokumentierte Symptome
+| Symptom | Ursache | Fix |
+|---------|---------|-----|
+| `get_window_state` → 0 children | Accessibility nicht aktiv | System Settings → Accessibility einschalten |
+| CDP WS 403 Forbidden | Chrome Origin check | Chrome neu starten (playstealth setzt flags) |
+| Alle Windows height=0 | Falsches Window | WID mit height>100 suchen |
+| AXButton/AXLink nicht gefunden | depth<5 filter | Apple-Menüleiste hat depth 1-4 |

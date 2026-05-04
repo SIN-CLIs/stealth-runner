@@ -1,0 +1,21 @@
+{
+  "tools": [
+    {
+      "name": "survey_heypiggy_v1746400000",
+      "description": "Frozen deterministic flow: survey_heypiggy",
+      "strict": true,
+      "input_schema": {
+        "type": "object",
+        "properties": {
+          "survey_url": {
+            "type": "string"
+          }
+        },
+        "additionalProperties": true
+      },
+      "frozen_at": 1746400000,
+      "source": "FCTES-compiler"
+    }
+  ],
+  "flows": []
+}

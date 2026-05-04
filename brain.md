@@ -51,85 +51,74 @@ cua-driver call   → ALLE Interaktionen
 
 ---
 
-## 🔥 CDP+AX TRINITY — Die fusionierte Architektur (2026-05-03)
+## 🔥 CUA-ONLY STACK (2026-05-04, AKTIV)
 
 ### Das Problem
-`skylight-cli list-elements` returned **flachen AX-Baum**: Browser-Chrome + Web-Content in einem Array.
-Der Index verschiebt sich während Page-Load → Klick trifft Browser-Icon statt "Weiter".
+CDP+AX Trinity ist OBSOLET: Chrome blockiert CDP WebSocket (origin check).
+skylight-cli mischt Browser-Chrome + Web-Content in einem flachen Array.
+skylight-cli element-index ist NICHT stabil.
 
-**Root Cause (120+ Quellen analysiert):**
-- Chromium baut AX-Tree NUR bei aktivem Screenreader
-- Browser-Chrome und Web-Content sind GEMISCHT
-- Flache Indices sind NICHT stabil
-
-### Die Lösung: 3 Forschungsansätze → 1 fusionierte Architektur
+### Die Lösung: CUA-ONLY Trinity (2026-05-04)
 
 ```
 ┌────────────────────────────────────────────────────────────────────┐
-│                    CDP+AX TRINITY                                   │
+│                    CUA-ONLY TRINITY                                │
 │                                                                     │
-│  ┌─────────────────────┐  ┌──────────────────┐  ┌───────────────┐  │
-│  │ CDP (Chrome Prot.)  │  │ AX (macOS Acc.)  │  │ Legacy Tools  │  │
-│  │                     │  │                  │  │               │  │
-│  │ queryAXTree()       │  │ CopyElementAtPos │  │ skylight-cli  │  │
-│  │ → NUR Web-Content   │  │ → Position-stabil│  │ → Hauptfenster│  │
-│  │ → kein Browser-     │  │ → kein Index     │  │ → Fallback    │  │
-│  │   Chrome            │  │ → kein Mouse-Move│  │               │  │
-│  │                     │  │                  │  │ cua-driver    │  │
-│  │ getContentQuads()   │  │ AXPress          │  │ → Popups      │  │
-│  │ → bounding box      │  │ → echter Klick   │  │ → Sheets      │  │
-│  │                     │  │                  │  │               │  │
-│  │ AXEnhancedUI=true   │  │                  │  │ macos-ax-cli  │  │
-│  │ → voller AX-Tree    │  │                  │  │ → System-Scan │  │
-│  └─────────┬───────────┘  └────────┬─────────┘  └───────┬───────┘  │
-│            │                       │                     │          │
-│            └───────────┬───────────┴──────────┬──────────┘          │
-│                        │                      │                     │
-│              FIND + LOCATE               CLICK/ACT                  │
-│         (CDP: Nur Web-Inhalt)    (AXPress: Position-basiert)       │
+│  playstealth launch → cdp_port (NUR Chrome Start!)                 │
+│       │                                                             │
+│       ▼                                                             │
+│  ┌──────────────────────────────────────────────────────────────┐  │
+│  │ DAEMON (nohup): nohup cua-driver serve > /tmp/cua-daemon.log │  │
+│  │ → OHNE Daemon: kein Session-Cache → keine Clicks!            │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+│       │                                                             │
+│       ▼                                                             │
+│  ┌──────────────────────────────────────────────────────────────┐  │
+│  │ WINDOW FINDEN: cua-driver call list_windows                  │  │
+│  │ → depth > 5 FILTERN (Apple-Menüleiste ignorieren!)           │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+│       │                                                             │
+│       ▼                                                             │
+│  ┌──────────────────────────────────────────────────────────────┐  │
+│  │ STATE CACHEN: cua-driver call get_window_state               │  │
+│  │ → AX-Tree mit element_index + @(x,y,w,h) Positionen          │  │
+│  │ → IMMER fresh scannen (Indices sind NICHT stabil!)           │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+│       │                                                             │
+│       ▼                                                             │
+│  ┌──────────────────────────────────────────────────────────────┐  │
+│  │ INTERAKTION: cua-driver call click (PRIMARY!)                │  │
+│  │ → 30s Timeout + 3x Retry bei kAXErrorCannotComplete          │  │
+│  │ → set_value für Textfelder                                   │  │
+│  │ → press_key für Enter/Tab                                    │  │
+│  └──────────────────────────────────────────────────────────────┘  │
+│                                                                     │
+│  ⚠️ CDP JS evaluate: NUR für DOM LESEN + Button-Antworten         │
+│     CDP Navigation: VERBOTEN                                       │
+│     skylight-cli index-Klicks: VERBOTEN                            │
+│     webauto-nodriver: ABSOLUT VERBOTEN                             │
+│                                                                     │
 └────────────────────────────────────────────────────────────────────┘
 ```
 
-### Der Drei-Schritt-Klick (fusioniert)
+### Tool-Separation
 
-```
-SCHRITT 1: FIND (CDP)
-  Accessibility.queryAXTree(accessibleName="Weiter", role="button")
-  → backendDOMNodeId + bounds {x, y, w, h}
-  → NUR Web-Content (kein Browser-Chrome!)
-  → CDP-Port kommt von playstealth: {"cdp_port": 61934}
+| Tool | For | NEVER For |
+|------|-----|-----------|
+| **cua-driver** | ALLE Interaktionen (PRIMARY) | — |
+| **CDP Runtime.evaluate** | DOM lesen, Button-Antworten | Navigation, Klicks |
+| **macos-ax-cli** | Systemweites SCANNEN (NUR Finden!) | Klicken |
+| **playstealth** | Chrome Launch | Interaktion |
 
-SCHRITT 2: LOCATE (CDP)
-  DOM.getContentQuads({backendNodeId})
-  → [{"quad": [x1,y1, x2,y2, x3,y3, x4,y4]}]
-  → center = (x1+x3)/2, (y1+y3)/2
+### Warum das funktioniert
 
-SCHRITT 3: CLICK (AX — kein Index!)
-  AXUIElementCopyElementAtPosition(chrome_app, center_x, center_y)
-  → AXUIElement-Ref (direkt an Position)
-  AXUIElementPerformAction(element, kAXPressAction)
-  → ✅ Echter Klick, keine Mausbewegung, kein Focus-Steal
-```
-
-### Fallback-Kette
-
-```
-Primary:   CDP queryAXTree → AXUIElementCopyElementAtPosition → AXPress
-Fallback1: skylight-cli find_by_label → click (Hauptfenster, label-basiert)
-Fallback2: cua-driver get_window_state → click (Popup, window-id)
-Fallback3: macos-ax-cli find → Text-Suche (nur Scan, kein Klick!)
-```
-
-### Warum das funktioniert (und vorher nicht)
-
-| Aspekt | ALT (skylight index) | NEU (CDP+AX Trinity) |
-|--------|---------------------|---------------------|
-| Element-Quelle | Flacher AX-Baum (Chrome+Web gemischt) | CDP queryAXTree (NUR Web) |
-| Identifikation | Globaler Index (instabil) | accessibleName + role (stabil) |
-| Klick-Mechanismus | AXPress per Index | AXPress per Position |
-| Index-Stabilität | ❌ Verschiebt sich bei Page-Load | ✅ Position ist deterministisch |
-| Browser-Chrome | ❌ Enthalten | ✅ Nie enthalten |
-| Google-Detection | ⚠️ --disable-blink-features | ✅ Kein JS-Klick, nur AXPress |
+| Aspekt | ALT (CDP+AX) | NEU (CUA-ONLY) |
+|--------|-------------|----------------|
+| Chrome-Kompatibilität | ❌ Origin check blockiert CDP | ✅ Kein CDP WebSocket nötig |
+| Index-Stabilität | ❌ Flacher Baum, Browser+Web gemischt | ✅ CUA Window-spezifisch |
+| Session-Cache | ⚠️ Unzuverlässig | ✅ Daemon-basiert (nohup) |
+| Browser-Chrome | ❌ Enthalten | ✅ depth > 5 filtert Menüleisten |
+| Google-Detection | ⚠️ --disable-blink-features | ✅ AXPress via CUA |
 
 ---
 
@@ -194,41 +183,30 @@ Google(43) → Konto klicken(Label) → Weiter(Label) → Dashboard
 
 ---
 
-## 🔥 GOOGLE LOGIN FLOW — VERIFIZIERT MIT CDP+AX (PID 51212, 2026-05-03)
+## 🔥 HEYPIGGY GOOGLE LOGIN — KORREKTER FLOW (2026-05-04)
 
-**Erfolgreicher 7-Step Flow zum Google Account Dashboard:**
+**Eigene Chrome-Instanz via playstealth launch! KEIN User Chrome touchieren!**
 
 ```
-1. Email tippen          → skylight.click(label="E-Mail oder Telefonnummer")  → index 20  ✅
-2. Weiter klicken        → skylight.click(label="Weiter")                     → index 29  ✅
-3. Andere Option wählen  → skylight.click(label="Andere Option wählen")       → index 24  ✅
-4. Passkey verwenden     → skylight.click(label="Passkey verwenden")          → index 24  ✅
-5. Weiter (FaceID triggern) → skylight.click(label="Weiter")                 → index 25  ✅
-6. Fortfahren (AXSheet)  → cua.click(window_id=42951, element=79)             → Sheet ✅
-7. Als Jeremy fortfahren  → cua.click(window_id=42951, element=239)           → Sync ✅
-→ GOOGLE ACCOUNT DASHBOARD 🎉
+1. playstealth launch --url 'https://heypiggy.com'  → PID + WID
+2. list_windows → HeyPiggy WID finden
+3. get_window_state → AX-Tree scannen
+4. Click Google Login-Symbol link [index]
+5. Wait 3s → Google OAuth Popup WID finden
+6. get_window_state → AX-Tree scannen
+7. Enter email in AXTextField [index]
+8. Click "fortfahren" Button [index]
+9. Wait 2s → macOS Keychain Dialog erscheint
+10. Enter "admin" in Keychain Password Field
+11. Click "entsperren" Button
+12. Wait 3s → Dashboard prüfen
 ```
 
-**Kernerkenntnisse:**
-- Word-Boundary Fix (\b) verhindert Fehlmatches ("Weiter" ≠ "Weitere Informationen")
-- Passkey-Sheet = cua-driver (AXSheet im Chrome-Fenster, element 79 = Fortfahren)
-- Nach erfolgreichem Passkey: "Als Jeremy fortfahren" für Chrome-Sync
-- **8. Schritt fehlt noch**: HeyPiggy Dashboard mit Google-Session laden
-
-## 🔑 Google Login: google-login-google Flow (2026-05-03)
-
-**Google ZWINGT Passkey für zukunftsorientierte.energie@gmail.com.**
-→ Lösung: Google-Login-in-Google — erst in Google einloggen, dann HeyPiggy mit Session.
-
-**Flow:**
-```
-1. accounts.google.com/signin
-2. Email → Weiter
-3. "Andere Option wählen" ×2 → "Passwort eingeben"
-4. Passwort → Weiter
-5. "Fortfahren" (FaceID) via CUA
-6. "Als Jeremy fortfahren" → Google eingeloggt ✅
-```
+**WICHTIG:**
+- NUR eigenes Chrome via playstealth launch starten
+- KEIN pkill, killall, oder grep auf User Chrome
+- Fresh Profile: `/tmp/heypiggy-bot-XXXXX`
+- MAC_PASSWORD="admin" für Keychain Dialog
 
 ---
 
@@ -253,41 +231,37 @@ cua-driver Daemon MUSS laufen (`cua-driver serve &`) vor allen element-index Kli
 
 ---
 
-## 🔥 HEYPIGGY LOGIN BOX (2026-05-04)
+## 🔥 HEYPIGGY LOGIN — KORREKTER FLOW (2026-05-04)
+
+**Eigene Chrome-Instanz via playstealth launch! KEIN User Chrome touchieren!**
 
 ### Aufruf
-```python
-from cli.modules.heypiggy_login_box import heypiggy_login
-heypiggy_login(pid=2674, cdp_port=55983)
+```
+playstealth launch --url 'https://heypiggy.com'
+# → PID + CDP_PORT + Profil
 ```
 
-### FLOW A — Frischer Browser
+### Korrekter Flow
 ```
-1. Navigiere zu heypiggy.com
-2. Klicke Google Login Link (AXLink "Google Login-Symbol")
-3. Warte auf Google OAuth Popup
-4. Email eingeben + Weiter klicken
-5. Passkey bypass: "Andere Option wählen" → "Passwort eingeben"
-6. Passwort eingeben + Weiter
-7. 2FA erkennen + warten auf Smartphone-Bestätigung
-8. macOS "Fortfahren" Dialog finden + klicken
-9. Consent "Fortfahren" im Chrome Popup
-10. Navigiere zu Dashboard → verify "Abmelden" Link
-```
-
-### FLOW B — Bereits eingeloggt
-```
-1. Prüfe AX-Tree auf "Abmelden" → sofort True
+1. playstealth launch → PID 48437, WID 52623 (HeyPiggy Dashboard)
+2. get_window_state → AX-Tree scannen
+3. Click Google Login-Symbol link [Index]
+4. Wait 3s → Google OAuth Popup WID finden
+5. get_window_state → AX-Tree scannen
+6. Enter email in AXTextField [Index]
+7. Click "fortfahren" Button [Index]
+8. Wait 2s → macOS Keychain Dialog erscheint
+9. Enter "admin" in Keychain Password Field
+10. Click "entsperren" Button
+11. Wait 3s → Dashboard prüfen (kein "Anmelden oder Registrieren")
 ```
 
-### Features
-- ✅ Kein skylight (CUA-only)
-- ✅ Automatische Popup-Erkennung (Fenstertitel "Anmelden – Google Konten")
-- ✅ Passkey-Bypass via "Andere Option wählen" Kette
-- ✅ 2FA-Warteschleife für manuelle Smartphone-Bestätigung
-- ✅ macOS System-Dialog Erkennung (Fortfahren/Passkey)
-- ✅ Consent-Handling (Fortfahren, Jeremy)
-- ✅ Dashboard-Verifikation nach Login
+**WICHTIG:**
+- NUR eigenes Chrome via playstealth launch
+- KEIN pkill, killall, oder grep auf User Chrome
+- Fresh Profile: `/tmp/heypiggy-bot-XXXXX`
+- MAC_PASSWORD="admin" für Keychain Dialog
+- 7 SCHRITTE: Click → Email → Fortfahren → admin → Entsperren → Weiter → Dashboard
 
 ---
 
@@ -484,3 +458,1116 @@ Agent (OpenCode)
 │     → Trackt Fenster in Echtzeit │
 └──────────────────────────────────┘
 ```
+## login_ok — 2026-05-04T17:16:18.406812
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:18.408376
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:18.455571
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:18.515476
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:18.591222
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:18.598055
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:18.638465
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:18.639376
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:18.640038
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:18.640494
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:18.650488
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:18.823316
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:19.118998
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:19.120208
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:19.120574
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:19.193310
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:19.211375
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:19.232763
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:19.236897
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:19.324322
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:19.354705
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:19.368658
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:19.387104
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:19.411837
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:19.459394
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:19.479395
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:19.513774
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:19.525288
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:19.528708
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:20.459618
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:20.480097
+Login-Box funktioniert.
+---
+## survey_started — 2026-05-04T17:16:20.482916
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:20.510328
+Survey erfolgreich gestartet.
+---
+## login_ok — 2026-05-04T17:16:20.518522
+Login-Box funktioniert.
+---
+## survey_started — 2026-05-04T17:16:20.523157
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:20.526242
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:20.532947
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:20.533462
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:20.534057
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:20.534711
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:20.535488
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:20.538609
+Survey erfolgreich gestartet.
+---
+## login_ok — 2026-05-04T17:16:20.545801
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:20.600242
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:20.618439
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:20.624555
+Login-Box funktioniert.
+---
+## survey_done — 2026-05-04T17:16:20.710101
+Umfrage vollständig abgeschlossen.
+---
+## login_ok — 2026-05-04T17:16:20.715859
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:20.733467
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:20.735351
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:20.741102
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:20.752238
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:20.758001
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:21.033435
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:21.047197
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:21.139909
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:21.377783
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:21.820316
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:21.855443
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:21.890544
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:22.002535
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:22.008018
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:22.020479
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:22.246909
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:22.318280
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:22.387457
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:22.390781
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:22.414393
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:22.478911
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:22.517075
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:22.522969
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:22.527349
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:22.613338
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:22.871217
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:22.973861
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:23.013598
+Login-Box funktioniert.
+---
+## survey_done — 2026-05-04T17:16:23.471259
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:16:23.621220
+Umfrage vollständig abgeschlossen.
+---
+## login_ok — 2026-05-04T17:16:23.748609
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:23.862567
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:23.914451
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:24.033607
+Login-Box funktioniert.
+---
+## survey_done — 2026-05-04T17:16:24.130882
+Umfrage vollständig abgeschlossen.
+---
+## login_ok — 2026-05-04T17:16:24.390915
+Login-Box funktioniert.
+---
+## survey_done — 2026-05-04T17:16:24.447511
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:16:24.453322
+Umfrage vollständig abgeschlossen.
+---
+## login_ok — 2026-05-04T17:16:24.483877
+Login-Box funktioniert.
+---
+## survey_done — 2026-05-04T17:16:24.738760
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:16:24.957999
+Umfrage vollständig abgeschlossen.
+---
+## login_ok — 2026-05-04T17:16:24.973350
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:24.977835
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:24.979067
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:25.126765
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:26.006573
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:26.168080
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:27.055222
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:27.381522
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:27.382462
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:27.793398
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:27.818048
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:27.820237
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:27.827647
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:27.828633
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:27.831898
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:27.833922
+Login-Box funktioniert.
+---
+## survey_started — 2026-05-04T17:16:27.845134
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:27.845760
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:27.846637
+Survey erfolgreich gestartet.
+---
+## login_ok — 2026-05-04T17:16:27.878623
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:27.927513
+Login-Box funktioniert.
+---
+## survey_done — 2026-05-04T17:16:28.131721
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:16:28.137755
+Umfrage vollständig abgeschlossen.
+---
+## login_ok — 2026-05-04T17:16:28.177131
+Login-Box funktioniert.
+---
+## survey_done — 2026-05-04T17:16:28.208862
+Umfrage vollständig abgeschlossen.
+---
+## login_ok — 2026-05-04T17:16:28.345400
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:28.350999
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:28.352041
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:28.353162
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:28.355823
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:28.359978
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:28.368784
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:28.372148
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:28.372826
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:28.373520
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:28.373789
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:28.374917
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:28.376649
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:28.378852
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:28.380967
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:28.384666
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:28.434990
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:28.438298
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:28.463950
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:28.464770
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:28.466207
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:28.467191
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:28.614351
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:28.634085
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:28.639881
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:28.642156
+Login-Box funktioniert.
+---
+## survey_started — 2026-05-04T17:16:28.764741
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:28.767615
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:28.778052
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:28.784806
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:28.798615
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:28.799056
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:28.799771
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:28.805413
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:28.808700
+Survey erfolgreich gestartet.
+---
+## login_ok — 2026-05-04T17:16:28.809290
+Login-Box funktioniert.
+---
+## survey_started — 2026-05-04T17:16:28.831349
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:28.833281
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:28.833609
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:28.838295
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:28.853215
+Survey erfolgreich gestartet.
+---
+## login_ok — 2026-05-04T17:16:28.914952
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:28.941232
+Login-Box funktioniert.
+---
+## survey_started — 2026-05-04T17:16:28.985741
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:29.036304
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:29.046618
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:29.151782
+Survey erfolgreich gestartet.
+---
+## login_ok — 2026-05-04T17:16:29.199182
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:29.208216
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:29.230299
+Login-Box funktioniert.
+---
+## survey_started — 2026-05-04T17:16:29.300805
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:29.321951
+Survey erfolgreich gestartet.
+---
+## login_ok — 2026-05-04T17:16:29.323039
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:29.324640
+Login-Box funktioniert.
+---
+## survey_done — 2026-05-04T17:16:29.341750
+Umfrage vollständig abgeschlossen.
+---
+## survey_started — 2026-05-04T17:16:29.346192
+Survey erfolgreich gestartet.
+---
+## survey_done — 2026-05-04T17:16:29.351180
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:16:29.351704
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:16:29.370166
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:16:29.415161
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:16:29.480314
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:16:29.521539
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:16:29.525088
+Umfrage vollständig abgeschlossen.
+---
+## login_ok — 2026-05-04T17:16:29.530080
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:29.531094
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:29.545890
+Login-Box funktioniert.
+---
+## survey_done — 2026-05-04T17:16:29.557897
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:16:29.608693
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:16:29.609530
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:16:29.610344
+Umfrage vollständig abgeschlossen.
+---
+## login_ok — 2026-05-04T17:16:29.621015
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:29.621295
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:29.621539
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:29.621775
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:29.622072
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:29.622490
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:29.623331
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:29.623841
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:29.624077
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:29.624301
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:29.625385
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:29.660294
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:29.661335
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:29.703323
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:29.791104
+Login-Box funktioniert.
+---
+## survey_done — 2026-05-04T17:16:29.792225
+Umfrage vollständig abgeschlossen.
+---
+## login_ok — 2026-05-04T17:16:30.092175
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:30.094374
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:30.219430
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:30.303591
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:30.304390
+Login-Box funktioniert.
+---
+## survey_done — 2026-05-04T17:16:30.307531
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:16:30.308518
+Umfrage vollständig abgeschlossen.
+---
+## login_ok — 2026-05-04T17:16:30.310376
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:30.364952
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:30.415442
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:30.552754
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:30.733263
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:30.747335
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:30.753994
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:30.775290
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:30.859228
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:30.878494
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:30.882379
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:30.886728
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:30.888678
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:30.903061
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:30.905040
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:30.906711
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:30.907385
+Login-Box funktioniert.
+---
+## survey_started — 2026-05-04T17:16:30.909400
+Survey erfolgreich gestartet.
+---
+## login_ok — 2026-05-04T17:16:30.925138
+Login-Box funktioniert.
+---
+## survey_done — 2026-05-04T17:16:30.935789
+Umfrage vollständig abgeschlossen.
+---
+## login_ok — 2026-05-04T17:16:31.005357
+Login-Box funktioniert.
+---
+## survey_done — 2026-05-04T17:16:31.145819
+Umfrage vollständig abgeschlossen.
+---
+## login_ok — 2026-05-04T17:16:31.165815
+Login-Box funktioniert.
+---
+## survey_started — 2026-05-04T17:16:31.166659
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:31.167870
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:31.168971
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:31.169548
+Survey erfolgreich gestartet.
+---
+## login_ok — 2026-05-04T17:16:31.183506
+Login-Box funktioniert.
+---
+## survey_done — 2026-05-04T17:16:31.313291
+Umfrage vollständig abgeschlossen.
+---
+## login_ok — 2026-05-04T17:16:31.314375
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:31.314667
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:31.341964
+Login-Box funktioniert.
+---
+## survey_started — 2026-05-04T17:16:31.350252
+Survey erfolgreich gestartet.
+---
+## login_ok — 2026-05-04T17:16:31.359957
+Login-Box funktioniert.
+---
+## survey_done — 2026-05-04T17:16:31.365750
+Umfrage vollständig abgeschlossen.
+---
+## login_ok — 2026-05-04T17:16:31.373075
+Login-Box funktioniert.
+---
+## survey_started — 2026-05-04T17:16:31.375041
+Survey erfolgreich gestartet.
+---
+## login_ok — 2026-05-04T17:16:31.380841
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T17:16:31.392313
+Login-Box funktioniert.
+---
+## survey_started — 2026-05-04T17:16:31.396743
+Survey erfolgreich gestartet.
+---
+## login_ok — 2026-05-04T17:16:31.539492
+Login-Box funktioniert.
+---
+## survey_started — 2026-05-04T17:16:31.541268
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:31.542215
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T17:16:31.641228
+Survey erfolgreich gestartet.
+---
+## login_ok — 2026-05-04T17:16:31.651438
+Login-Box funktioniert.
+---
+## survey_done — 2026-05-04T17:16:31.653281
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:16:31.654087
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:16:31.659782
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:57:43.263965
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:57:48.432837
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:57:53.600549
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:57:58.772534
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:58:03.941067
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:58:09.109106
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:58:14.275234
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:58:19.446926
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:58:24.614881
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:58:30.781044
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:58:35.951418
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:58:41.122891
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:58:46.290600
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:58:51.462835
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:58:57.623696
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:59:02.792785
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:59:07.964546
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:59:13.136607
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:59:19.307245
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:59:24.477073
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:59:29.710172
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:59:34.879257
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:59:40.047932
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:59:45.218123
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:59:50.409011
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T17:59:55.612663
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:00:00.953014
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:00:06.119446
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:00:11.288947
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:00:16.459078
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:00:21.627912
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:00:27.471146
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:00:33.629230
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:00:38.799822
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:00:43.990758
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:00:50.107677
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:00:55.295444
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:01:00.486790
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:01:05.656485
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:01:10.886230
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:01:16.129708
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:01:21.300328
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:01:26.471193
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:01:31.642025
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:01:36.813461
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:01:41.971974
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:01:47.141734
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:01:52.310705
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:01:57.479168
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:02:02.646633
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:02:07.816827
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:02:12.987290
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:02:18.159771
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:02:23.332514
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:02:28.508883
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:02:33.683866
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:02:38.857041
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:02:44.032992
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:02:49.208160
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:02:54.381702
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:03:00.579398
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:03:05.783424
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:03:11.065551
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:03:17.531464
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:03:22.722192
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:03:27.896374
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:03:33.117155
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:03:38.283963
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:03:43.443248
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:03:48.610208
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:03:53.777024
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:03:58.928597
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:09:34.821297
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:09:40.013472
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:09:45.184467
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:09:50.353595
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:09:55.587309
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:10:00.754883
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:10:06.935319
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:10:12.220233
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:10:17.381733
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:10:23.577883
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:10:28.881659
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:10:34.174140
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:10:40.239872
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:10:45.556960
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:10:51.554672
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:10:56.930284
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:11:02.128806
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:11:07.380433
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:11:12.551878
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:11:17.725313
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:11:22.932862
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:11:28.102410
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:11:33.255405
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T18:11:39.341649
+Umfrage vollständig abgeschlossen.
+---
+## survey_started — 2026-05-04T18:55:02.983681
+Survey erfolgreich gestartet.
+---
+## survey_started — 2026-05-04T18:56:21.585418
+Survey erfolgreich gestartet.
+---
+## login_ok — 2026-05-04T19:16:24.426819
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T19:16:30.499352
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T19:17:47.867713
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T19:17:53.028859
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T19:17:58.180533
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T19:18:03.332683
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T19:22:18.670421
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T19:22:23.828849
+Login-Box funktioniert.
+---
+## survey_started — 2026-05-04T19:40:29.812056
+Survey erfolgreich gestartet.
+---
+## login_ok — 2026-05-04T20:01:09.334566
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T20:01:15.881560
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T20:01:15.882147
+Login-Box funktioniert.
+---
+## login_ok — 2026-05-04T20:01:21.126197
+Login-Box funktioniert.
+---
+## survey_done — 2026-05-04T20:11:00.621906
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T20:15:40.707889
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T20:15:58.023070
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T20:16:03.187455
+Umfrage vollständig abgeschlossen.
+---
+## survey_done — 2026-05-04T20:16:08.370445
+Umfrage vollständig abgeschlossen.
+---
