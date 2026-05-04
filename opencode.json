@@ -16,6 +16,10 @@
     "flow_sign": true,
     "flow_verify": true,
     "sync_poll_events": true,
-    "survey_5_fragen_v1777929926": true
+    "survey_5_fragen_v1777929926": true,
+    "run_smart_survey": true,
+    "graphify_query": true,
+    "graphify_path": true,
+    "graphify_update": true
   }
 }
