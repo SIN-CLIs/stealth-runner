@@ -12,3 +12,4 @@
 | [SR-16](issues/ISSUE-SR-16.md) | ✅ COMPLETED | 🟡 Medium | Error Recovery — Disqualification, Modal Error, Timeout |
 | [SR-17](issues/ISSUE-SR-17.md) | ✅ COMPLETED | 🔴 Critical | CUA-ONLY Migration — skylight-cli → cua-driver |
 | [SR-18](issues/ISSUE-SR-18.md) | ✅ COMPLETED | 🔴 Critical | stealth-session — Warm Daemon für <50ms Command Execution |
+| [SR-19](issues/ISSUE-SR-19.md) | ✅ COMPLETED | 🔴 Critical | stealth-axiom — 3-Tier Hierarchical Model Router |
