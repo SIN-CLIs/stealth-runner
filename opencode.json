@@ -1,138 +1,14 @@
 {
-  "tools": [
-    {
-      "name": "guardian_request_action",
-      "description": "Prüft ob der 5-Fragen-Zyklus vollständig ist. MUST call before ANY agent action. Returns allowed=true/false. Blockiert den Agenten, wenn learn.md/brain.md nicht aktualisiert.",
-      "strict": true,
-      "input_schema": {
-        "type": "object",
-        "properties": {},
-        "additionalProperties": true
-      },
-      "frozen_at": 1746400000,
-      "source": "SIN-daemon-gatekeeper"
-    },
-    {
-      "name": "guardian_wait_for_clearance",
-      "description": "Blockiert bis der 5-Fragen-Zyklus vollständig abgeschlossen ist. Timeout 300s. Nutze NACH einem blockierten request_action() um auf stealth-memory zu warten.",
-      "strict": true,
-      "input_schema": {
-        "type": "object",
-        "properties": {
-          "timeout": {
-            "type": "integer",
-            "description": "Max seconds to wait (default: 300)",
-            "default": 300
-          }
-        },
-        "additionalProperties": true
-      },
-      "frozen_at": 1746400000,
-      "source": "SIN-daemon-gatekeeper"
-    },
-    {
-      "name": "guardian_status",
-      "description": "Gibt den aktuellen Gatekeeper-Status zurück: can_proceed, reason, last_intent, last_verdict. Nutze für Debugging wenn request_action() blockiert.",
-      "strict": true,
-      "input_schema": {
-        "type": "object",
-        "properties": {},
-        "additionalProperties": true
-      },
-      "frozen_at": 1746400000,
-      "source": "SIN-daemon-gatekeeper"
-    },
-    {
-      "name": "memory_start_intent",
-      "description": "Startet einen neuen Intent vor einer Aktion. Speichert intent_id + goal + context in ~/.stealth/intents.jsonl. Muss VOR jeder Agent-Aktion aufgerufen werden.",
-      "strict": true,
-      "input_schema": {
-        "type": "object",
-        "properties": {
-          "goal": {
-            "type": "string",
-            "description": "Was will ich mit dieser Aktion erreichen?"
-          },
-          "context": {
-            "type": "object",
-            "description": "Zusätzlicher Kontext: tool, session_id, step"
-          }
-        },
-        "required": ["goal"],
-        "additionalProperties": true
-      },
-      "frozen_at": 1746400000,
-      "source": "SIN-daemon-memory"
-    },
-    {
-      "name": "memory_verify_and_record",
-      "description": "Prüft Ergebnis einer Aktion und schreibt Soll-Ist-Vergleich. Verdict: success_direct | success_with_workaround | failed | failed_despite_workaround. Schreibt nach learn.md und brain.md.",
-      "strict": true,
-      "input_schema": {
-        "type": "object",
-        "properties": {
-          "exit_code": {"type": "integer"},
-          "stdout": {"type": "string"},
-          "stderr": {"type": "string"},
-          "workaround_used": {"type": "boolean"}
-        },
-        "additionalProperties": true
-      },
-      "frozen_at": 1746400000,
-      "source": "SIN-daemon-memory"
-    },
-    {
-      "name": "memory_check_cycle",
-      "description": "Prüft ob der vollständige 5-Fragen-Zyklus durchlaufen wurde. Nutze zum Debugging: check_intent_cycle + check_verdict_complete + check_learn_updated + check_brain_if_workaround.",
-      "strict": true,
-      "input_schema": {
-        "type": "object",
-        "properties": {},
-        "additionalProperties": true
-      },
-      "frozen_at": 1746400000,
-      "source": "SIN-daemon-memory"
-    },
-    {
-      "name": "sync_poll_events",
-      "description": "Pollt die opencode.db part-Tabelle und emittiert action_start/action_complete Events nach ~/.stealth/sync_events.jsonl. Wird vom stealth-sync Daemon automatisch aufgerufen (10s Intervall).",
-      "strict": false,
-      "input_schema": {
-        "type": "object",
-        "properties": {},
-        "additionalProperties": true
-      },
-      "frozen_at": 1746400000,
-      "source": "SIN-daemon-sync"
-    },
-    {
-      "name": "flow_compile",
-      "description": "Kompiliert einen Survey-Flow aus learn.md Pattern zu opencode.json Tool-Entry. Nur nach 10 fehlerfrei-dokumentierten Durchläufen. Nutze: compile('survey_heypiggy')",
-      "strict": false,
-      "input_schema": {
-        "type": "object",
-        "properties": {
-          "flow_name": {
-            "type": "string",
-            "description": "Name des zu kompilierenden Flows"
-          }
-        },
-        "required": ["flow_name"],
-        "additionalProperties": true
-      },
-      "frozen_at": 1746400000,
-      "source": "FCTES-compiler"
-    }
-  ],
-  "flows": {
-    "survey_heypiggy_v1746400000": {
-      "steps": [
-        "guardian_request_action",
-        "memory_start_intent",
-        "survey_heypiggy_cua_only",
-        "memory_verify_and_record",
-        "guardian_request_action"
-      ]
-    }
+  "$schema": "https://opencode.ai/config.json",
+  "tools": {
+    "guardian_request_action": true,
+    "guardian_wait_for_clearance": true,
+    "guardian_status": true,
+    "memory_start_intent": true,
+    "memory_verify_and_record": true,
+    "memory_check_cycle": true,
+    "sync_poll_events": true,
+    "flow_compile": true,
+    "survey_5_fragen_v1777929926": true
   }
 }

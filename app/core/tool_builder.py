@@ -1,4 +1,4 @@
-import json
+import json, os
 from app.config import OPENCODE_JSON
 
 def register(flow_name, version):
@@ -19,6 +19,10 @@ def register(flow_name, version):
 
 def list_tools():
     return _load().get("tools", [])
+
+def is_registered(flow_name):
+    tools = _load().get("tools", [])
+    return any(t["name"].startswith(f"{flow_name}_v") for t in tools)
 
 def _load():
     if not os.path.exists(OPENCODE_JSON):
