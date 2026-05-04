@@ -313,3 +313,38 @@ flows/history/      → JSONL pro Flow (letzte 100 executions)
 Jeder Klick/jede Texteingabe SOLLTE `"verify": true` enthalten.
 Der Daemon prüft SOFORT ob der Zustand wirklich erreicht wurde.
 Ohne Verify: Agent wird belogen (cua-driver sagt "Performed" obwohl nichts passierte).
+
+## 🛡️ VERIFY-BOX: Nie wieder falsches `success: true` (2026-05-04)
+
+### Problem
+Der Agent klickt "Männlich". CUA sagt `Performed`. Agent glaubt es. Aber Radio-Button wurde NICHT selektiert — JS-Event-Listener hat nicht gefeuert.
+
+### Lösung: Verify-Box
+Der Agent hängt EIN Wort an seinen Befehl: `"verify": true`
+
+```bash
+stealth-exec cua-touch --action click --label "Männlich" --json-params '{"verify": true}'
+```
+
+### Was passiert dann
+1. CUA-Klick auf "Männlich" ausführen
+2. AX-Tree NEU scannen (gleiches Fenster)
+3. Element suchen und ZUSTAND prüfen:
+   - AXRadioButton → `selected=true`?
+   - AXCheckBox → `checked=true`?
+   - AXTextField → enthält Text?
+4. NUR WENN ZUSTAND ERREICHT: `success: true`
+
+### Ohne Verify
+```
+❌ Agent wird belogen — CUA sagt "Performed", aber nichts passiert
+❌ Agent macht 10 Schritte blind weiter
+❌ Survey disqualifiziert, 30min verschwendet
+```
+
+### Mit Verify  
+```
+✅ Agent kriegt `success: false` + Fehlermeldung
+✅ Agent kann SOFORT reagieren (Retry/Fallback)
+✅ Kein Blindflug mehr
+```
