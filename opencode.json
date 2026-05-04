@@ -1,21 +1,14 @@
 {
-  "tools": [
-    {
-      "name": "survey_heypiggy_v1746400000",
-      "description": "Frozen deterministic flow: survey_heypiggy",
-      "strict": true,
-      "input_schema": {
-        "type": "object",
-        "properties": {
-          "survey_url": {
-            "type": "string"
-          }
-        },
-        "additionalProperties": true
-      },
-      "frozen_at": 1746400000,
-      "source": "FCTES-compiler"
-    }
-  ],
-  "flows": []
+  "$schema": "https://opencode.ai/config.json",
+  "tools": {
+    "guardian_request_action": true,
+    "guardian_wait_for_clearance": true,
+    "guardian_status": true,
+    "memory_start_intent": true,
+    "memory_verify_and_record": true,
+    "memory_check_cycle": true,
+    "sync_poll_events": true,
+    "flow_compile": true,
+    "survey_5_fragen_v1777929926": true
+  }
 }

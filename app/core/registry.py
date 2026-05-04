@@ -1,26 +1,25 @@
 import json, os
 from app.config import STATE_DIR
+REGISTRY_FILE = STATE_DIR + "/registry.json"
 
-REGISTRY_FILE = STATE_DIR / "registry.json"
-
-def save(flow_name: str, version: int, path: str) -> None:
+def save(flow_name, version, path):
     data = _load()
     data[flow_name] = {"version": version, "path": str(path), "frozen": True}
     _save(data)
-    print(f"[REGISTRY] {flow_name} → v{version} @ {path}")
+    print(f"[REGISTRY] {flow_name} → v{version}")
 
-def get(flow_name: str) -> dict | None:
+def get(flow_name):
     return _load().get(flow_name)
 
-def is_frozen(flow_name: str) -> bool:
+def is_frozen(flow_name):
     entry = get(flow_name)
     return entry is not None and entry.get("frozen", False)
 
-def _load() -> dict:
-    if not REGISTRY_FILE.exists():
+def _load():
+    if not os.path.exists(REGISTRY_FILE):
         return {}
-    return json.loads(REGISTRY_FILE.read_text())
+    return json.loads(open(REGISTRY_FILE).read())
 
-def _save(data: dict) -> None:
-    STATE_DIR.mkdir(parents=True, exist_ok=True)
-    REGISTRY_FILE.write_text(json.dumps(data, indent=2))
+def _save(data):
+    os.makedirs(STATE_DIR, exist_ok=True)
+    open(REGISTRY_FILE, "w").write(json.dumps(data, indent=2))
