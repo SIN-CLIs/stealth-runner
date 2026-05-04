@@ -1,0 +1,94 @@
+# Jeremy Schulze — Complete Survey Persona
+username: "jeremy"
+full_name: "Jeremy Schulze"
+first_name: "Jeremy"
+last_name: "Schulze"
+
+# Google Login
+google_email: "zukunftsorientierte.energie@gmail.com"
+google_password: "ZOE.jerry2024"
+phone: "+49 174 5779566"
+
+# Demografie (verified across surveys)
+date_of_birth: "1993-11-13"
+age: 32
+gender: "male"
+country: "DE"
+country_name: "Deutschland"
+region: "Berlin"
+city: "Berlin"
+postal_code: "10115"
+language_primary: "de"
+languages_spoken: ["de", "en"]
+
+# Haushalt
+marital_status: "single"
+household_size: 1
+children_count: 0
+children_ages: []
+pets:
+  - "katze_16w_schwarz"
+  - "katze_6w_grau_weiss"
+  - "kater_8m_weiss"
+  - "kater_8m_weiss"
+
+# Beruf / Bildung
+employment_status: "employed"
+occupation: "Softwareentwickler"
+industry: "IT/Technologie"
+education_level: "mittlere_reife"
+work_hours_per_week: 40
+
+# Einkommen
+income_monthly_net_eur: 3750
+income_monthly_gross_eur: 5500
+income_yearly_gross_eur: 66000
+household_income_monthly_eur: 3750
+
+# Wohnen
+housing_type: "apartment_rented"
+rooms_in_dwelling: 3
+car_ownership: "none"
+cars_in_household: 0
+
+# Lifestyle
+smoking: "daily"
+alcohol_consumption: "weekly"
+sports_per_week_hours: 2
+
+# Konsum
+hobbies: ["programmieren", "gaming", "fitness"]
+interests: ["technologie", "ki", "gaming", "finanzen"]
+shopping_habits:
+  groceries: "online"
+  electronics: "online"
+  clothes: "in-store"
+  general: "enjoys_shopping"
+brand_preferences:
+  tech: ["apple", "samsung"]
+  food: ["rewe", "lidl"]
+  streaming: ["netflix", "spotify"]
+social_media_platforms: ["instagram", "youtube", "reddit"]
+streaming_services: ["netflix", "spotify", "youtube"]
+news_sources: ["spiegel_online", "heise", "reddit"]
+
+# Sensibel
+political_leaning: "neutral"
+religion: "none"
+sexual_orientation: "heterosexual"
+health_conditions: []
+
+# Zusatz-Fakten (für spezifische Survey-Fragen)
+extra_facts:
+  cigarettes_per_day: "100+"
+  pet_count: 4
+  pet_types: ["katze"]
+  home_office: true
+  height_cm: 176
+  weight_kg: 70
+  coffee_cups_per_day: "10+"
+  tea_per_month: 2
+  allergies: "hausstauballergie"
+  has_garden: false
+  has_balcony: true
+  gaming_platforms: ["xbox", "pc", "playstation"]
