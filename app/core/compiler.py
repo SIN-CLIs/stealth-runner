@@ -4,6 +4,7 @@ from typing import Dict, Any, Optional
 
 from app.config import FLOW_DIR, COMPILED_DIR, STATE_DIR
 from app.core import registry, tool_builder
+from app.core.signing import sign_flow
 
 LEARN_PATH = Path.home() / ".stealth" / "learn.md"
 FLOWS_DIR = Path(__file__).parent.parent.parent / "app" / "flows"
@@ -160,6 +161,12 @@ class FlowCompiler:
 
         registry.save(flow_name, version, str(yaml_path))
         tool_builder.register(flow_name, version)
+
+        sig = sign_flow(yaml_path)
+        if sig:
+            print(f"[SIGNATURE] {sig}")
+        else:
+            print("[SIGNATURE] skipped (cryptography unavailable)")
 
         print(f"[COMPILED] {flow_name} → v{version} (PRODUCTION)")
         print(f"           {len(tool_entry['steps'])} Steps, tool: {tool_entry['name']}")

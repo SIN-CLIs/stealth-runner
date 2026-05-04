@@ -4,11 +4,18 @@
     "guardian_request_action": true,
     "guardian_wait_for_clearance": true,
     "guardian_status": true,
+    "guardian_approve_brain_rule": true,
+    "guardian_reject_brain_rule": true,
+    "guardian_pending_brain_rules": true,
     "memory_start_intent": true,
     "memory_verify_and_record": true,
     "memory_check_cycle": true,
-    "sync_poll_events": true,
+    "memory_verify_with_confidence": true,
+    "audit_verify_chain": true,
     "flow_compile": true,
+    "flow_sign": true,
+    "flow_verify": true,
+    "sync_poll_events": true,
     "survey_5_fragen_v1777929926": true
   }
 }
