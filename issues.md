@@ -15,3 +15,4 @@
 | [SR-19](issues/ISSUE-SR-19.md) | ✅ COMPLETED | 🔴 Critical | stealth-axiom — 3-Tier Hierarchical Model Router |
 | [SR-20](issues/ISSUE-SR-20.md) | ✅ COMPLETED | 🔴 Critical | RecursiveMAS — RecursiveLink + Survey MAS Pipeline |
 | [SR-21](issues/ISSUE-SR-21.md) | ✅ COMPLETED | 🔴 Critical | stealth-sota — Chaos/Security/Healing/Observability/Determinism |
+| [SR-22](issues/ISSUE-SR-22.md) | ✅ COMPLETED | 🔴 Critical | stealth-core + stealth-dynamic — Basis-Klassen + Dynamische Engine |
