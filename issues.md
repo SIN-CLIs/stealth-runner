@@ -14,3 +14,4 @@
 | [SR-18](issues/ISSUE-SR-18.md) | ✅ COMPLETED | 🔴 Critical | stealth-session — Warm Daemon für <50ms Command Execution |
 | [SR-19](issues/ISSUE-SR-19.md) | ✅ COMPLETED | 🔴 Critical | stealth-axiom — 3-Tier Hierarchical Model Router |
 | [SR-20](issues/ISSUE-SR-20.md) | ✅ COMPLETED | 🔴 Critical | RecursiveMAS — RecursiveLink + Survey MAS Pipeline |
+| [SR-21](issues/ISSUE-SR-21.md) | ✅ COMPLETED | 🔴 Critical | stealth-sota — Chaos/Security/Healing/Observability/Determinism |
