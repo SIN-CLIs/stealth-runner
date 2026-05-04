@@ -1,0 +1,9 @@
+THRESHOLD = 10
+ROOT_DIR = "/Users/jeremy/dev/stealth-runner"
+FLOW_DIR = ROOT_DIR + "/app/flows/learning"
+COMPILED_DIR = ROOT_DIR + "/app/flows/compiled"
+STATE_DIR = ROOT_DIR + "/app/state"
+OPENCODE_JSON = ROOT_DIR + "/opencode.json"
+PLAYSTEALTH_PID = 48437
+CHROME_WID = 52623
+CDP_PORT = 50015

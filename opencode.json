@@ -1,0 +1,14 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "tools": {
+    "guardian_request_action": true,
+    "guardian_wait_for_clearance": true,
+    "guardian_status": true,
+    "memory_start_intent": true,
+    "memory_verify_and_record": true,
+    "memory_check_cycle": true,
+    "sync_poll_events": true,
+    "flow_compile": true,
+    "survey_5_fragen_v1777929926": true
+  }
+}

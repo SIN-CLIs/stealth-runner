@@ -1,0 +1,46 @@
+rules:
+  - id: banned-chrome-pgrep
+    pattern: pkill -f "Google Chrome"
+    message: "BANNED – pkill -f 'Google Chrome' kills user sessions"
+    severity: ERROR
+    languages: [bash]
+
+  - id: banned-chrome-open
+    pattern: "open -na Google Chrome"
+    message: "BANNED – open -na Chrome bypasses playstealth"
+    severity: ERROR
+    languages: [bash]
+
+  - id: banned-pyautogui
+    pattern: import pyautogui
+    message: "BANNED – pyautogui uses mouse movement"
+    severity: ERROR
+    languages: [python]
+
+  - id: banned-pynput
+    pattern: import pynput
+    message: "BANNED – pynput uses direct input"
+    severity: ERROR
+    languages: [python]
+
+  - id: banned-coordinates-click
+    pattern: skylight-cli click --x
+    message: "BANNED – skylight-cli coordinates instead of --element-index"
+    severity: ERROR
+    languages: [bash]
+
+  - id: banned-recovery-mode
+    pattern: "'recovery_mode: true'"
+    message: "BANNED – recovery_mode: true"
+    severity: ERROR
+    languages: [python, yaml]
+
+  - id: mandatory-playstealth-launch
+    pattern: |
+      app(
+        "Google Chrome",
+        url=...
+      )
+    message: "Use playstealth launch instead of app('Google Chrome')"
+    severity: WARNING
+    languages: [python]
