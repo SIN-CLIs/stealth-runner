@@ -461,3 +461,26 @@ Wenn `clickSurvey(id)` aufgerufen wird, passiert folgendes:
 2. **Wrong page detection**: `_get_page_id()` sucht falschen Tab
 3. **survey_runner sucht in neuem Tab** → Survey kommt In-Page, nicht in neuem Tab!
 4. **Keine In-Page Modal-Erkennung nach clickSurvey()**
+
+## 🔥 stealth-session Architektur (2026-05-04)
+
+```
+Agent (OpenCode)
+  │ stealth-exec
+  ▼
+┌──────────────────────────────────┐
+│  stealth-session Daemon          │
+│                                  │
+│  1. IdiotProofGuard              │
+│     → Prüft/repariert Befehle   │
+│                                  │
+│  2. WarmExecutor                 │
+│     → Führt aus (<50ms)         │
+│                                  │
+│  3. Verify-Box                   │
+│     → Prüft Ergebnis             │
+│                                  │
+│  4. WindowManager                │
+│     → Trackt Fenster in Echtzeit │
+└──────────────────────────────────┘
+```

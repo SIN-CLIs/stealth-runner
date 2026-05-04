@@ -299,3 +299,26 @@ stealth-exec cua-touch --action click --label "Männlich" -j '{"verify": true}'
 # - set_value Text → Text im Feld?
 # - cdp-js → Rückgabewert existiert?
 ```
+
+## 🛡️ stealth-session (Daemon)
+
+```bash
+# Daemon starten
+stealth-session start
+
+# Befehle mit Verify (AUTOMATISCH validiert)
+stealth-exec cua-touch --action click --label "Männlich" --verify
+stealth-exec cua-touch --action set_value --label "E-Mail" -j '{"value":"test@mail.com","verify":true}'
+
+# Kontext abfragen (WindowManager)
+stealth-exec context --action get_all
+stealth-exec context --action get_oauth
+stealth-exec context --action get_heypiggy
+
+# IdiotProofGuard schützt automatisch vor:
+# - Falsche PID/WID → Reparatur
+# - CDP-JS dispatchEvent → Block
+# - time.sleep(≥4) → Block
+# - Kein verify → Automatisch
+# - 3 Fehler → STOP
+```
