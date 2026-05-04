@@ -289,3 +289,27 @@ flows/history/      → JSONL pro Flow (letzte 100 executions)
 | Popup-Fenster | `cua-driver` | `call click '{"pid":X,"window_id":W,"element_index":Y}'` |
 | System-Scan | `macos-ax-cli` | `find "Text"`, `windows list` |
 | Audio Capture | `audio_capture.py` | `python3 -m cli.modules.audio_capture --capture --analyze` |
+
+## 🚨 GOLDENE REGEL: NACH JEDER AKTION STATUS PRÜFEN (2026-05-04)
+**NIE blind nach einer Aktion weitermachen!** Immer prüfen:
+1. `list_windows` → hat sich die WID geändert?
+2. `get_window_state` → sind neue Elemente sichtbar?
+3. `document.body.innerText` → hat sich der Seiteninhalt geändert?
+4. Button DISABLED oder ENABLED?
+
+## 📋 KORREKTER ABLAUF PRO SURVEY-SCHRITT
+```
+1. list_windows    → WID finden (niemals hartcodieren!)
+2. get_window_state → AX-Tree laden
+3. depth > 5 FILTER → NUR Web-Content Elemente
+4. Element finden   → per Label + Rolle im Tree
+5. click/set_value  → Aktion ausführen
+6. list_windows    → WID noch gültig?
+7. get_window_state → Hat sich was geändert?
+8. Weiter mit 2.    → oder fertig
+```
+
+## 🛡️ VERIFY-BOX REGEL (2026-05-04)
+Jeder Klick/jede Texteingabe SOLLTE `"verify": true` enthalten.
+Der Daemon prüft SOFORT ob der Zustand wirklich erreicht wurde.
+Ohne Verify: Agent wird belogen (cua-driver sagt "Performed" obwohl nichts passierte).

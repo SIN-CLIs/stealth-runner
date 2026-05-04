@@ -209,3 +209,93 @@ start_survey(pid, surveys[0]["id"])
 # Voraussetzung: BlackHole installiert (SIP deaktiviert)
 python3 -m cli.modules.audio_capture --check
 python3 -m cli.modules.audio_capture --capture --duration 6 --analyze
+
+## 🔄 CUA-ONLY SURVEY LOOP (2026-05-04)
+
+### Vor jeder Aktion
+```bash
+# Fenster frisch finden (NIE hartcodiert!)
+cua-driver call list_windows | grep "PID\|title"
+
+# AX-Tree laden mit depth>5 Filter
+cua-driver call get_window_state '{"pid":PID,"window_id":WID}'
+```
+
+### Klicken (NUR depth>5 Elemente!)
+```bash
+# Button finden: AXButton mit Label im Tree suchen, depth prüfen
+cua-driver call click '{"pid":PID,"window_id":WID,"element_index":IDX,"action":"press"}'
+```
+
+### Text eingeben
+```bash
+# Erst klicken (fokussieren), dann set_value
+cua-driver call click '{"pid":PID,"window_id":WID,"element_index":IDX,"action":"press"}'
+cua-driver call set_value '{"pid":PID,"window_id":WID,"element_index":IDX,"value":"TEXT"}'
+```
+
+### Nach jeder Aktion: Status-Check
+```bash
+# Hat sich der Seiteninhalt geändert?
+cua-driver call get_window_state '{"pid":PID,"window_id":WID}'
+
+# Sind neue Fenster/Tabs offen?
+cua-driver call list_windows
+
+# Button DISABLED? → warten, andere Felder prüfen
+# Button ENABLED?  → klicken
+```
+
+### Wann welcher Befehl?
+| Befehl | Wann | Warum |
+|--------|------|-------|
+| list_windows | Vor JEDEM Schritt | WID kann sich ändern |
+| get_window_state | Vor JEDEM Klick | Indices sind instabil |
+| depth > 5 FILTER | IMMER | Filtert Browser-Chrome |
+| click | Nur wenn ENABLED | DISABLED = andere Felder fehlen |
+| set_value | Nach click auf Feld | Erst fokussieren, dann schreiben |
+
+## 🔒 Captcha lösen (NVIDIA Vision)
+
+```bash
+# Captcha-Bild auslesen + NVIDIA Omni lösen
+cd /Users/jeremy/dev/stealth-runner && source .env
+
+# Captcha-Refresh + Solve + Type + Next in einem
+python3 -c "
+import ..., httpx, subprocess
+# Captcha-Bild aus Seite holen → base64
+# NVIDIA API: nemotron-3-nano-omni
+# max_tokens=20, temperature=0
+# Antwort aus reasoning oder content extrahieren
+# cua-driver set_value + click Go to next question
+"
+```
+
+## ⚡ stealth-exec (schnelle Befehle über Daemon)
+
+```bash
+# Daemon starten
+stealth-session start
+
+# Befehle (<50ms Antwortzeit)
+stealth-exec cua-touch --action click --label "Männlich"
+stealth-exec context --action get_all
+stealth-exec context --action get_oauth
+stealth-exec cua-touch --action get_state
+stealth-exec cdp-js --expression "document.title"
+```
+
+## 🔒 Verify-Box (Aktion verifizieren)
+
+```bash
+# Nach jeder Aktion mit verify: true prüfen
+stealth-exec cua-touch --action click --label "Männlich" -j '{"verify": true}'
+# → {"success": true/false, "verify": {"success": bool, "details": "selected/not selected"}}
+
+# Was die Verify-Box prüft:
+# - click RadioButton → AXSelected = true?
+# - click CheckBox → checked state?
+# - set_value Text → Text im Feld?
+# - cdp-js → Rückgabewert existiert?
+```
