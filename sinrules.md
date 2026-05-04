@@ -179,3 +179,19 @@ cli/modules/
 3. **CDP-Port kommt von playstealth launch** → `cdp_port` aus JSON-Output
 4. **Jeder Klick = FIND + LOCATE + CLICK** → nie blind klicken
 5. **Fallback-Kette immer bereit** → CDP → skylight → cua → macos-ax
+
+## §7 — stealth-session + Verify-Box (2026-05-04)
+
+### R7: JEDER Befehl mit verify:true ausführen!
+```
+stealth-exec cua-touch --action click --label "Männlich" --verify
+→ Nur success:true wenn AXRadioButton.selected == true
+```
+
+### R8: IdiotProofGuard blockiert automatisch
+- Falsche PID/WID → Reparatur
+- CDP-JS dispatchEvent → Block
+- time.sleep(≥4) → Block
+- MD überschreiben → Block
+- 3 Fehler → STOP
+- Verify fehlt → Einfügen

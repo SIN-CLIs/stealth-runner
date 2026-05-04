@@ -108,3 +108,70 @@ PID 42296 (playstealth Chrome):
 | BRAIN  | Nemotron Omni | `POST https://integrate.api.nvidia.com/v1`            |
 | HANDS  | skylight-cli  | `click --pid --window-id --element-index`             |
 | LAUNCH | playstealth   | `launch --url 'https://heypiggy.com/?page=dashboard'` |
+
+
+## Architecture Decision Records (ADRs)
+
+### ADR-001: Tiered Cloud Provider Strategy
+
+**Status:** Accepted ✅
+**Date:** 2026-05-04
+
+The OpenSIN/sincode stealth-runner platform adopts a tiered cloud provider strategy:
+
+- **Tier 1 (AI Vision):** NVIDIA NIM (`nvidia/nemotron-3-nano-omni-30b-a3b-reasoning`)
+  - Single API for Video+Audio+Image+Text
+  - 256K context, 30B-A3B MoE architecture
+  - Cost: $0.50 per 1M tokens
+
+- **Tier 2 (Orchestration):** OpenCode Stack (self-hosted)
+  - Python state machines, Redis, Diskcache
+  - CUA-ONLY Trinity architecture (no CDP, no user Chrome)
+  - Cost: ~$50/month (amortized)
+
+- **Tier 3 (Optional):** Antigravity/Cloudflare
+  - Image generation and CDN services
+  - Pay-as-you-go model
+
+**Rationale:** Balances performance, cost, and reliability while maintaining CUA-ONLY principles.
+
+**Document:** [docs/architecture/adr-001-cloud-provider-strategy.md](docs/architecture/adr-001-cloud-provider-strategy.md)
+
+---
+
+**See Also:**
+- [CUA-ONLY Trinity Architecture](brain.md)
+- [AGENTS.md: Architecture Guard](AGENTS.md)
+
+## 2026-05-04: stealth-session Architektur
+
+```
+OpenCode LLM → stealth-exec
+    │
+    ▼
+┌──────────────────────────────────┐
+│  stealth-session Daemon          │
+│  (Unix-Socket, /tmp/stealth-     │
+│   session.sock)                  │
+│                                  │
+│  1. IdiotProofGuard              │
+│     → 8 Schutzmuster            │
+│     → Blockiert/Repariert       │
+│                                  │
+│  2. WarmExecutor                 │
+│     → CUA-Only, <50ms           │
+│     → Auto PID/WID aus Cache    │
+│                                  │
+│  3. Verify-Box                   │
+│     → Prüft nach jedem Klick    │
+│     → selected? checked? wert?   │
+│                                  │
+│  4. WindowManager                │
+│     → CDP Target-Domain         │
+│     → Trackt Popups in Echtzeit │
+│                                  │
+│  5. SessionWatchdog              │
+│     → Chrome mit accessibility  │
+│     → Auto-Neustart bei Crash   │
+└──────────────────────────────────┘
+```
