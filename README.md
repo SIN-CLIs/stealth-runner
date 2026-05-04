@@ -252,6 +252,8 @@ m.run_continuous(max_steps=100)
 - [SIN-CLIs/skylight-cli](https://github.com/SIN-CLIs/skylight-cli) – Accessibility Klick
 - [SIN-CLIs/screen-follow](https://github.com/SIN-CLIs/screen-follow) – Screen Recording
 - [SIN-CLIs/unmask-cli](https://github.com/SIN-CLIs/unmask-cli) – DOM/NET/Console X-Ray
+- [SIN-CLIs/stealth-memory](https://github.com/SIN-CLIs/stealth-memory) – 5-Fragen-Cycle + Intent-Tracking
+- [SIN-CLIs/stealth-guardian](https://github.com/SIN-CLIs/stealth-guardian) – Security Ring Review
 - [OpenSIN-AI/A2A-SIN-Worker-heypiggy](https://github.com/OpenSIN-AI/A2A-SIN-Worker-heypiggy) – Legacy Worker
 
 ## Lizenz
@@ -261,8 +263,31 @@ MIT – siehe [LICENSE](LICENSE)
 ---
 ## 🔗 Stealth Suite
 
-Part of the **SIN-CLIs Stealth Suite** — 18 Komponenten:
+Part of the **SIN-CLIs Stealth Suite** — 27 Komponenten für autonomes Survey-Automation:
 
-| 🔬 SOTA | [stealth-sota](https://github.com/SIN-CLIs/stealth-sota) | Python |
-| 🧱 CORE | [stealth-core](https://github.com/SIN-CLIs/stealth-core) | Python |
-| 🎯 DYNAMIC | [stealth-dynamic](https://github.com/SIN-CLIs/stealth-dynamic) | Python |
+### 🧠 Memory & Learning
+| Repo | Beschreibung |
+|------|-------------|
+| [stealth-memory](https://github.com/SIN-CLIs/stealth-memory) | 5-Fragen-Cycle, Intent-Tracking, Hash-Chain-Audit |
+| [stealth-guardian](https://github.com/SIN-CLIs/stealth-guardian) | Ring 2 Brain-Rule Review, Training-Blockade |
+| [stealth-axiom](https://github.com/SIN-CLIs/stealth-axiom) | 3-Tier Router + Adapter-Registry + 5-Strategien Pipeline |
+
+### 💰 SOTA Cost Optimizer (5 Strategien)
+| Repo | Strategie | Impact |
+|------|-----------|--------|
+| [stealth-config](https://github.com/SIN-CLIs/stealth-config) | Central ConfigManager + config.yaml | Basis |
+| [stealth-cache](https://github.com/SIN-CLIs/stealth-cache) | Semantic Cache (HNSWlib + sentence-transformers) | **-86% API-Calls** |
+| [stealth-compressor](https://github.com/SIN-CLIs/stealth-compressor) | Prompt-Kompression (regex-Redundanz) | **-30-50% Tokens** |
+| [stealth-optimizer](https://github.com/SIN-CLIs/stealth-optimizer) | Output-Limiter (micro:32, mid:128, heavy:512) | **-33% Output** |
+| [stealth-batch](https://github.com/SIN-CLIs/stealth-batch) | Batch-Client (eligible Tasks → Fireworks Batch) | **-50% Kosten** |
+| [stealth-cost](https://github.com/SIN-CLIs/stealth-cost) | SOTAOptimizer Orchestrator | Unified Pipeline |
+| [stealth-lora](https://github.com/SIN-CLIs/stealth-lora) | LoRA-Training + KeyPoolManager (10-fail rotation) | Auto-Rotation |
+
+### ⚙️ Infrastructure
+| Repo | Beschreibung |
+|------|-------------|
+| [stealth-runner](https://github.com/SIN-CLIs/stealth-runner) | Orchestrator + CUA-ONLY Trinity |
+| [playstealth-cli](https://github.com/SIN-CLIs/playstealth-cli) | Isolierter Chrome-Start |
+| [skylight-cli](https://github.com/SIN-CLIs/skylight-cli) | AXUIElement-PerformAction |
+| [screen-follow](https://github.com/SIN-CLIs/screen-follow) | ScreenRecording + Conv3D |
+| [unmask-cli](https://github.com/SIN-CLIs/unmask-cli) | DOM/NET/Console X-Ray |
