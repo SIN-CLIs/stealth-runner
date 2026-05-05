@@ -17,3 +17,51 @@
 | [SR-21](issues/ISSUE-SR-21.md) | ✅ COMPLETED | 🔴 Critical | stealth-sota — Chaos/Security/Healing/Observability/Determinism |
 | [SR-22](issues/ISSUE-SR-22.md) | ✅ COMPLETED | 🔴 Critical | stealth-core + stealth-dynamic — Basis-Klassen + Dynamische Engine |
 | [SR-23](issues/ISSUE-SR-23.md) | ✅ COMPLETED | 🔴 Critical | stealth-memory — Ewiges Gedächtnis (opencode.db Poller) | ✅ COMPLETED | 🔴 Critical | stealth-core + stealth-dynamic — Basis-Klassen + Dynamische Engine |
+
+---
+
+## 🔴 CRITICAL — orchestrator.py importiert gelöschte Datei — 2026-05-05
+
+| Feld | Wert |
+|------|------|
+| Status | ✅ FIXED |
+| Priority | 🔴 Critical |
+| Gefunden | 2026-05-05 |
+| Gefixt | 2026-05-05 |
+
+### Problem
+`heypiggy_login_box.py` gelöscht aber `orchestrator.py` (line 90) importiert noch davon:
+```python
+from cli.modules.heypiggy_login_box import heypiggy_login  # ImportError!
+```
+
+### Fix
+`orchestrator.py` → `from cli.modules.auto_google_login import execute as auto_google_login`
+
+### Betroffene Files
+- `/Users/jeremy/dev/stealth-runner/app/core/orchestrator.py` → FIXED ✅
+- `/Users/jeremy/dev/stealth-runner/AGENTS.md` → FIXED ✅
+
+---
+
+## 🟠 HIGH — BOT Chrome vs USER Chrome Verwechslung — 2026-05-05
+
+| Feld | Wert |
+|------|------|
+| Status | ✅ DOCUMENTED |
+| Priority | 🟠 High |
+| Gefunden | 2026-05-05 |
+
+### Problem
+Bei mehreren Chrome-Instanzen: BOT Chrome (`heypiggy-bot-*`) von USER Chrome unterscheiden.
+
+### Lösung
+```bash
+ps aux | grep "user-data-dir"
+# BOT: /tmp/heypiggy-bot-XXXXXXXX
+# USER: /Users/jeremy/Library/Application Support/Google/Chrome/...
+```
+
+### Regel
+- NUR Chrome mit `heypiggy-bot-XXXXXXXX` in user-data-dir → INTERAGIEREN
+- ALLE ANDEREN Chrome → IGNORIEREN

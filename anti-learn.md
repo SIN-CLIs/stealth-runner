@@ -1,5 +1,24 @@
 # anti-learn.md – Anti-Patterns (was NIEMALS tun)
 
+| 2026-05-05 | NIE Maus-Tools oder CDP-Interaktion für Drag-Puzzles | [incidents/2026-05-05-1430.md](incidents/2026-05-05-1430.md) |
+
+## ❌ Doc-System-Ausbau ohne Flow-Re-Test (2026-05-05, SESSION-FATAL)
+**NIEMALS** Dokumentations-Infrastruktur priorisieren während ein kritischer Flow-Test aussteht.
+- ❌ Persona gefixt, aber keinen Survey-Re-Test gemacht → Fix unverifiziert
+- ❌ 890 Docs generiert, aber 0 erfolgreiche Surveys → Dokumentation ohne Wirkung
+- ✅ NACH jedem Fix den betroffenen Flow ERNEUT TESTEN
+- ✅ Erst wenn Flow funktioniert → Dokumentation als Abschluss
+**Grund**: Der User will funktionierende Survey-Automation. Docs sind Beifang. Der Fehlercheck
+wurde getriggert weil der Agent den Survey-Test nie abschloss.
+
+## ❌ Hartcodiertes Alter verwenden (2026-05-05, SESSION-FATAL)
+**NIEMALS** ein Alter in Code oder Config hartcodieren. Das Alter MUSS aus `date_of_birth` berechnet werden.
+- ❌ `PAYLOAD = {..., "age": 42}` → führt zu Disqualifikation
+- ❌ `DEFAULT_PERSONA = {"age": 34}` → Alter veraltet in 1 Jahr
+- ✅ `persona.age` → berechnet aus `date_of_birth` (IMMER korrekt)
+- ✅ `resolve_answer(persona, question, options)` → liefert Matching-Option
+**Grund**: Jeremy Schulze, geb. 13.11.1993, ist 32 Jahre alt (2026-05-05). "42" führte zu einer Survey-Disqualifikation. Das `persona.py`-System berechnet das Alter dynamisch — muss VOR jeder Demografie-Frage aufgerufen werden.
+
 ## ❌ Nur klicken ohne Texteingabe
 
 Wenn eine Umfrage ein TEXTFELD zeigt (Einkommen, Alter, PLZ), DARF nicht einfach
@@ -108,3 +127,25 @@ Der Survey-Content erscheint im Dashboard (showTypeOkay/data).
 - Warten auf API-Response (3-8s)
 - AX-Tree rescanen nach In-Page Content
 - Nach "Starten", ">>", "Weiter", "Umfrage starten" Buttons suchen
+
+## ❌ DATEI LÖSCHEN ABER REFERENCES NICHT AKTUALISIEREN — 2026-05-05
+
+### Anti-Pattern (NEU!)
+Wenn eine Datei gelöscht wird (z.B. `heypiggy_login_box.py`):
+1. NICHT NUR die Datei löschen
+2. SOFORT `grep "dateiname"` ausführen
+3. ALLE References in ANDEREN Dateien aktualisieren
+4. Syntax-Check machen
+
+### Falsch:
+rm heypiggy_login_box.py
+→ orchestrator.py importiert noch davon → ImportError bei runtime!
+
+### Richtig:
+rm heypiggy_login_box.py
+grep "heypiggy_login_box" .
+→ orchestrator.py, AGENTS.md, etc. finden
+→ Alle References aktualisieren
+→ Syntax-Check machen
+
+### Regel: NIE Datei löschen ohne Reference-Check davor!

@@ -10,13 +10,13 @@
 ```bash
 # Chrome starten (liefert cdp_port!)
 playstealth launch --url 'https://accounts.google.com/ServiceLogin'
-# → {"pid": 48403, "cdp_port": 61934, "cdp_ws": "ws://127.0.0.1:61934"}
+# → {"pid": DYNAMIC_PID, "cdp_port": DYNAMIC_PORT, "cdp_ws": "ws://127.0.0.1:DYNAMIC_PORT"}
 
 # Email-Feld finden + tippen (cdp_click)
 python3 -c "
 from cli.modules.cdp_click import click_by_label, type_by_label
 import asyncio
-asyncio.run(type_by_label(pid=48403, cdp_port=61934,
+asyncio.run(type_by_label(pid=DYNAMIC_PID, cdp_port=DYNAMIC_PORT,
     label='E-Mail oder Telefonnummer', text='zukunftsorientierte.energie@gmail.com'))
 "
 
@@ -24,7 +24,7 @@ asyncio.run(type_by_label(pid=48403, cdp_port=61934,
 python3 -c "
 from cli.modules.cdp_click import click_by_label
 import asyncio
-asyncio.run(click_by_label(pid=48403, cdp_port=61934,
+asyncio.run(click_by_label(pid=DYNAMIC_PID, cdp_port=DYNAMIC_PORT,
     label='Weiter', role='button'))
 "
 ```
@@ -189,11 +189,9 @@ tmux capture-pane -p -t captcha -S -5
 
 ```python
 # clickSurvey öffnet IN-PAGE (kein neuer Tab!)
-from cli.modules.heypiggy_login_box import heypiggy_login
 from cli.modules.survey_runner import scan_surveys, start_survey
 
 # 1. Login
-heypiggy_login(pid=2674, cdp_port=55983)
 
 # 2. Survey scannen + starten
 surveys = scan_surveys(pid)  # Findet Tab mit .survey-item

@@ -1,8 +1,24 @@
-# AGENTS.md – Stealth-Runner mit CUA-ONLY Trinity (2026-05-03)
+# AGENTS.md – Stealth-Runner mit CUA-ONLY Trinity (2026-05-05)
 
 > **← [sinrules.md](sinrules.md) ist das zentrale Regelwerk. Alle Golden Rules sind DORT.**
 > **← [brain.md](brain.md) dokumentiert die CUA-ONLY Architektur im Detail.**
-> **CDP + skylight-cli + webauto-nodriver sind ALLE BANNED.**
+> **← [registry.md](registry.md) ist der Master Command Index.**
+>
+> **BAN REGELN** (siehe [sinrules.md#6](sinrules.md) für Details):
+> - `webauto-nodriver` = ABSOLUT BANNED
+> - `skylight-cli` = DEPRECATED (nur macOS-Menü-Fallback)
+> - CDP = NUR für JS execute/evaluate, BANNED für Navigation/Klicks
+>
+> **PFLICHT-REGELN** (vor JEDER Session lesen): sinrules.md, brain.md, fix.md, learn.md, anti-learn.md, banned.md, issues.md
+> **DOC-HEALTH**: `python3 scripts/check_doc_health.py` → prüft alle 23 Repos auf Pflichtdateien
+> **DOC-GENERATE**: `python3 scripts/generate_missing_docs.py` → erstellt fehlende Pflichtdateien in allen Repos
+>
+> **SYSTEM PROMPT** (wird via `.opencode/opencode.json` geladen):
+> Jede Session beginnt mit Laden aller context_files. Der Agent MUSS vor jeder Aktion
+> sinrules, brain, fix, learn, anti-learn, banned prüfen. Bei Fehlern: Universal-Fehlercheck.
+>
+> **FEHLERCHECK**: Bei Abweichung → 10-Punkte-Analyse (Root-Cause, Befehls-Prüfung, Session-Abgleich,
+> Cross-Repo, Registry, W-Fragen, Pipeline, Memory, Doku-Update, Vollständigkeits-Check)
 
 ---
 
@@ -26,6 +42,57 @@
 - Eigenes isoliertes Profil nutzen: `playstealth launch --url '...'` → NEUE PID
 - Niemals existierende User-Chrome-Instanzen touchen
 - Bei Konflikt: Frisches Profil in `/tmp/` starten
+
+### /commands Verzeichnis (2026-05-05) — COMMAND DOCUMENTATION
+
+**Governance**: `/commands/cmd-rules.md` — alle Regeln zu /commands.
+
+**Provider-Struktur** (2026-05-05): Sobald >1 Command zu Provider → Subdirectory.
+
+```
+/commands/
+├── cmd-rules.md                       ← ALLE Regeln zu /commands
+│
+├── cua-driver/          (8 commands)
+│   ├── click.md, click-survey-card.md, set-value.md
+│   ├── list-windows.md, get-window-state.md
+│   ├── find-element-index.md, find-pid-wid.md, navigate-url.md
+│
+├── heypiggy/            (1 command)
+│   └── credentials.md
+│
+├── infisical/           (2 commands)
+│   ├── login.md, secrets.md
+│
+├── google/              (1 command)
+│   └── login-flow.md
+│
+├── bot-chrome/          (5 commands: 2 verified + 3 banned)
+│   ├── kill-bot-chrome.md, find-bot-pids.md
+│   ├── banned-pkill-heypiggy-bot.md, banned-killall-chrome.md
+│   └── banned-hardcoded-pids.md
+│
+├── playstealth/         (1 command)
+│   └── launch.md
+│
+├── session-manager/     (1 command)
+│   └── launch.md
+│
+└── [root]               (9 commands: 1 verified + 8 banned)
+    ├── macos-recovery-mode.md
+    ├── banned-pyautogui.md, banned-pynput.md
+    ├── banned-coordinates-click.md, banned-applescript-chrome.md
+    ├── banned-skylight-cli.md, banned-webauto-nodriver.md
+    ├── banned-cdp-commands.md, banned-recovery-mode.md (DEPRECATED)
+```
+
+### Chrome Kill Regeln (UNVERBRÜCHLICH)
+- ❌ PIDs NIEMALS hardcodieren (71104, 70293, etc.) → PIDs ändern sich!
+- ❌ `pkill -f "heypiggy-bot"` → killt ALLE Chrome-Instanzen inkl. USER Chrome
+- ❌ `killall Google Chrome` → killt ALLE Chrome-Instanzen (USER + BOT!)
+- ✅ NUR Main-Prozesse killen: Pattern `/Contents/MacOS/Google Chrome` + `/tmp/heypiggy-bot-`
+- ✅ Registry leeren: `rm -f ~/.stealth/sessions.json`
+- ✅ SOTA: `SessionManager.close_all()` → killt + leert Registry automatisch
 
 ## VISION-MODELL: Nemotron 3 Nano Omni (PRIMARY)
 
@@ -258,13 +325,20 @@ flows/history/      → JSONL pro Flow (letzte 100 executions)
 - skylight-cli MCP, Nutzer-Chrome manipulieren
 - `recovery_mode: true`, `omni_fallback: llama`
 - Mausbewegung, Koordinaten raten
+- **`pkill -f "heypiggy-bot"`** → killt ALLE Chrome (USER + BOT!)
+- **`killall Google Chrome`** → killt ALLE Chrome-Instanzen!
+- **Hardcoded PIDs** (71104, 70293, etc.) → PIDs sind dynamisch!
+- Commands-Verzeichnis: `/commands/banned-*.md` → alle verbotenen Commands dokumentiert
 
 ## ERLAUBT
 
 | Kontext | Tool | Befehl |
 |---------|------|--------|
-| Web-Content | **cdp_click** (NEU) | `cdp_click.label(pid, port, "Weiter", "button")` |
-| Hauptfenster | `skylight-cli` | `click --pid X --element-index Y` |
+| Chrome Kill | `SessionManager.close_all()` | `sm.close_all()` → killt BOT + leert Registry |
+| Chrome Kill | Python Script | `/commands/kill-bot-chrome.md` |
+| BOT PIDs finden | Python Script | `/commands/find-bot-pids.md` |
+| Chrome Launch | `playstealth` | `playstealth launch --url '...'` |
+| Web-Content | **cua-driver** | `call click/set_value/press_key` |
 | Popup-Fenster | `cua-driver` | `call click '{"pid":X,"window_id":W,"element_index":Y}'` |
 | System-Scan | `macos-ax-cli` | `find "Text"`, `windows list` |
 | Audio Capture | `audio_capture.py` | `python3 -m cli.modules.audio_capture --capture --analyze` |
@@ -442,18 +516,25 @@ result = run("survey_heypiggy", survey_heypiggy.execute, {
    - `tool_builder.register()` → opencode.json
    - `dispatcher.dispatch()` → ab jetzt erlaubt
 
-### Dashboard-Survey starten (Hard-Coded Persona)
+### Dashboard-Survey starten (Persona aus Profil-System)
 
-Der frozen flow nutzt Persona-Daten direkt im Code:
+⚠️ **NIE Alter hartcodieren!** Das Alter wird aus `date_of_birth` im Profil berechnet.
+Das Profil-System ist in `A2A-SIN-Worker-heypiggy/persona.py` implementiert.
+
 ```python
-PAYLOAD = {
-    "radio_hints": ["Berlin", "männlich", "Angestellter", "Meister", "Deutsch"],
-    "checkbox_hints": ["Keine"],
-    "textarea_value": "Ja"
-}
-# Persona: Berlin, Kurfürstenstraße 124, 10785, männlich, 42, 
-# Anstellung (unbefristet), 2-Personen-Haushalt, Meister_in
+# ❌ FALSCH: Hartcodiertes Alter führt zu Disqualifikation!
+# PAYLOAD = {"age": 42}  # ← DAS WAR DER FEHLER (2026-05-05)
+# Persona: Berlin, Kurfürstenstraße 124, 10785, männlich, 42,
+
+# ✅ RICHTIG: Profil laden, Alter aus date_of_birth berechnen
+from persona import load_persona, resolve_answer
+persona = load_persona("jeremy_schulze")
+# → date_of_birth="1993-11-13" → age=32 (berechnet, IMMER aktuell)
+answer = resolve_answer(persona, "What is your age?", ["Under 16", "16-25", "26-39", "40+"])
+# → matched_option="26-39" (32 fällt in dieses Bracket)
 ```
+
+**Aktuelles Profil**: Jeremy Schulze, geb. 13.11.1993 (32 Jahre), Berlin, männlich, Angestellter, Meister, 2-Personen-Haushalt
 
 ---
 
@@ -504,3 +585,94 @@ print('AX Enabled:', data.get('spAccessibilityDataType', {}).get('AXEnhancedAcce
 | CDP WS 403 Forbidden | Chrome Origin check | Chrome neu starten (playstealth setzt flags) |
 | Alle Windows height=0 | Falsches Window | WID mit height>100 suchen |
 | AXButton/AXLink nicht gefunden | depth<5 filter | Apple-Menüleiste hat depth 1-4 |
+
+
+## 🔑 GOOGLE LOGIN — AUTORITATIVER FLOW (CUA-ONLY, 6 STEPS)
+
+**Datei:** `cli/modules/auto_google_login.py`  
+**Funktion:** `execute(pid=None, url="https://heypiggy.com/?page=dashboard")`  
+**Return:** `{"status": "ok", "pid": X, "wid": Y}` oder `{"status": "error", "reason": "..."}`  
+**Methode:** CUA-ONLY via `cua-driver` CLI — KEIN skylight, KEIN CDP, KEIN webauto
+
+### Shell Commands (learning-by-doing, live dokumentiert 2026-05-05)
+
+```bash
+# STEP 1: Chrome starten
+playstealth launch --url 'https://heypiggy.com/?page=dashboard'
+→ BOT PID=71104, profile=/tmp/heypiggy-bot-1777981361
+
+# STEP 2: Windows finden
+cua-driver call list_windows | python3 -c "..."
+→ WID=56640 PID=71104 Title=HeyPiggy Dashboard
+
+# STEP 3: AX-Tree lesen → Google Login-Symbol finden
+echo '{"pid": 71104, "window_id": 56640}' | cua-driver call get_window_state
+→ [54] AXLink (Google Login-Symbol) @(731,651,132,41)
+
+# STEP 4: Google Login klicken
+echo '{"pid": 71104, "window_id": 56640, "element_index": 54}' | cua-driver call click
+→ ✅ Performed AXPress on [54] AXLink
+→ wait 5s → NEUE WID 56658 (Google OAuth)
+
+# STEP 5: Email eintragen + Weiter
+echo '{"pid": 71104, "window_id": 56658, "element_index": 25, "value": "zukunftsorientierte.energie@gmail.com"}' | cua-driver call set_value
+→ [25] AXTextField (E-Mail oder Telefonnummer) @(735,549,450,54)
+echo '{"pid": 71104, "window_id": 56658, "element_index": 35}' | cua-driver call click
+→ [35] AXButton "Weiter" @(1095,706,91,40)
+→ wait 5s → Keychain Auto-Fill → "Jeremy Schulze"
+
+# STEP 6: Fortfahren + Final Weiter
+echo '{"pid": 71104, "window_id": 56658, "element_index": 62}' | cua-driver call click
+→ [62] AXButton "Fortfahren" @(1090,689,94,30)
+→ wait 5s
+echo '{"pid": 71104, "window_id": 56658, "element_index": 41}' | cua-driver call click
+→ [41] AXButton "Weiter" @(966,786,220,40)
+→ wait 5s → Login Complete! Dashboard eingeloggt!
+```
+
+### Ablauf (6 Steps, LIVE GETESTET 2026-05-05 PID=71104)
+
+| Step | Element | Index | AXRole | Aktion |
+|------|---------|-------|--------|--------|
+| 1 | Google Login-Symbol | 54 | AXLink | click |
+| 2 | Email-Feld | 25 | AXTextField | set_value |
+| 2b | Weiter | 35 | AXButton | click |
+| 3 | Fortfahren | 62 | AXButton | click (Keychain Auto-Fill!) |
+| 4 | Weiter (Final) | 41 | AXButton | click |
+
+### Rückgabe
+- `{"status": "ok", "pid": X, "wid": Y}` wenn "abmelden"/"umfragen" im Dashboard sichtbar
+- `{"status": "error", "reason": "..."}` sonst
+
+### Voraussetzung
+- `playstealth launch` startet Chrome (oder pid übergeben wenn schon offen)
+- cua-driver Daemon muss laufen (`cua-driver serve` als Daemon)
+
+### Beispiel
+```python
+from cli.modules.auto_google_login import execute as auto_google_login
+
+result = auto_google_login()
+if result.get("status") == "ok":
+    print(f"✅ Login OK: pid={result['pid']} wid={result['wid']}")
+else:
+    print(f"❌ Login failed: {result.get('reason')}")
+```
+
+### Keychain Auto-Fill Discovery (KRITISCH!)
+- Email eintragen → "Weiter" → Keychain füllt automatisch Credentials aus
+- "Jeremy Schulze" Konto vorausgewählt → NUR "Fortfahren" klicken
+- KEIN Passwort-Feld wenn Keychain aktiv!
+
+### BOT Chrome PIDs (NIEMALS USER Chrome beenden!)
+- PID=DYNAMIC = heypiggy-bot-1777981361 (AKTUELL)
+- PID=DYNAMIC = heypiggy-bot-1777981087 (geschlossen)
+- PID=DYNAMIC = heypiggy-bot-1777979455 (geschlossen)
+- USER Chrome: Dynamischer PID (find via ps aux | grep "user-data-dir") (localhost, DeepSeek) → NIEMALS TOUCHEN!
+
+### BANNED (niemals verwenden)
+- ❌ skylight-cli (BANNED seit CUA-ONLY Trinity)
+- ❌ CDP / webauto-nodriver (BANNED)
+- ❌ Hardcoded PIDs (48437, 51212, etc.)
+- ❌ devjerro@gmail.com (NUR zukunftsorientierte.energie@gmail.com)
+- ❌ Alle anderen Login-Implementierungen (A2A-Worker, stealth-skills, etc. — GELÖSCHT)

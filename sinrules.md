@@ -2,8 +2,10 @@
 
 > **Letztes Update**: 2026-05-03 | **Gültig für**: Alle SIN-CLIs Repos
 >
-> **CUA-ONLY AKTIV**: cua-driver ist DAS EINZIGE Tool für Interaktion.
-> CDP + skylight-cli + webauto-nodriver sind ALLE BANNED.
+> **CUA-ONLY AKTIV**: cua-driver ist DAS EINZIGE Tool für Browser-Interaktion.
+> - `webauto-nodriver` = ABSOLUT BANNED (keine CDP MCP Server nutzen!)
+> - `skylight-cli` = DEPRECATED (nur noch für macOS-Menü wenn cua-driver komplett versagt)
+> - CDP = BANNED für Navigation, NUR erlaubt für JS execute/evaluate (nicht click/navigate)
 >
 > Diese Datei ist DAS zentrale Regelwerk. ALLE anderen md-Dateien verweisen hierher.
 
@@ -163,7 +165,6 @@ cli/modules/
 ├── cua_popup.py                cua-driver Popup-Wrapper
 ├── skylight_main.py            skylight-cli Hauptfenster (Fallback)
 ├── ax_scan.py                  macos-ax-cli System-Scan
-├── google_login_google.py      Google-Login-in-Google Flow
 ├── google_email.py             Email-Eingabe
 ├── passkey_popup.py            Passkey-Erkennung
 ├── consent_screen.py           Consent-Screen
@@ -174,11 +175,12 @@ cli/modules/
 
 ## §6 — KRITISCHE REGELN
 
-1. **NIE `skylight-cli click --element-index` für Web-Content** → CDP+AX nutzen!
-2. **NIE `label in el_label`** → `\b` word-boundary regex nutzen!
+1. **NUR `cua-driver`** für Web-Content Interaktion (click, set_value, press_key)
+2. **NIE Koordinaten-basiertes Klicken** (`--x --y`) → NUR element_index
+3. **NIE `label in el_label`** → `\b` word-boundary regex nutzen!
 3. **CDP-Port kommt von playstealth launch** → `cdp_port` aus JSON-Output
 4. **Jeder Klick = FIND + LOCATE + CLICK** → nie blind klicken
-5. **Fallback-Kette immer bereit** → CDP → skylight → cua → macos-ax
+5. **Fallback-Kette immer bereit** → AXPress → Koordinaten-Click → CDP (nur Navigation!)
 
 ## §7 — stealth-session + Verify-Box (2026-05-04)
 
@@ -195,3 +197,28 @@ stealth-exec cua-touch --action click --label "Männlich" --verify
 - MD überschreiben → Block
 - 3 Fehler → STOP
 - Verify fehlt → Einfügen
+
+## §8 — Commands Verzeichnis (2026-05-05)
+
+### R9: Jeder verifizierte Command → /commands/<name>.md
+Alle funktionierenden, getesteten Commands kommen als separate MD-Datei in `/commands/`:
+```
+/commands/kill-bot-chrome.md    ✅ VERIFIED
+/commands/find-bot-pids.md      ✅ VERIFIED
+```
+
+### R10: Jeder fehlgeschlagener Command → /commands/banned-<name>.md
+Alle verbotenen, kaputten Commands kommen als `banned-*` Datei:
+```
+/commands/banned-pkill-heypiggy-bot.md   ❌ BANNED
+/commands/banned-killall-chrome.md       ❌ BANNED
+/commands/banned-hardcoded-pids.md       ❌ BANNED
+```
+
+### R11: Chrome Kill Regeln (UNVERBRÜCHLICH)
+- ❌ `pkill -f "heypiggy-bot"` → killt ALLE Chrome-Instanzen (USER + BOT!)
+- ❌ `killall Google Chrome` → killt ALLE Chrome (USER + BOT!)
+- ❌ Hardcoded PIDs (71104, 70293, etc.) → PIDs sind dynamisch!
+- ✅ NUR Main-Prozesse killen die `/Contents/MacOS/Google Chrome` + `/tmp/heypiggy-bot-` haben
+- ✅ Registry leeren: `rm -f ~/.stealth/sessions.json`
+- ✅ SessionManager.close_all() nutzen (SOTA Alternative)

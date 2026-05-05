@@ -1,0 +1,19 @@
+#!/bin/bash
+# captcha-crashtest — CLI Wrapper für Captcha CrashTests
+# Usage: cli/captcha-crashtest <PID> [cycles]
+# Example: cli/captcha-crashtest 12345 3
+# Results saved to: $CAPTCHA_RESULT_DIR oder /tmp/stealth-captcha-results/
+
+PID="${1:?Usage: captcha-crashtest <PID> [cycles]}"
+CYCLES="${2:-3}"
+OUTDIR="${CAPTCHA_RESULT_DIR:-/tmp/stealth-captcha-results}"
+mkdir -p "$OUTDIR"
+export CAPTCHA_RESULT_DIR="$OUTDIR"
+
+cd "$(dirname "$0")/.."
+exec python3 -c "
+import sys, os
+sys.path.insert(0, '.')
+from cli.modules.captcha_crashtest import run
+run(pid=int('$PID'), cycles=int('$CYCLES'))
+"

@@ -87,13 +87,16 @@ def _dispatch_step(tool, params, payload):
         return result
 
     if tool == "heypiggy_login":
-        from cli.modules.heypiggy_login_box import heypiggy_login
-        pid = payload.get("pid")
-        cdp = payload.get("cdp_port")
-        if pid and cdp:
-            ok = heypiggy_login(pid=pid, cdp_port=cdp)
-            result["exit_code"] = 0 if ok else 1
-            result["stdout"] = "logged in" if ok else "login failed"
+        from cli.modules.auto_google_login import execute as auto_google_login
+        login_result = auto_google_login()
+        if login_result.get("status") == "ok":
+            result["exit_code"] = 0
+            result["stdout"] = f"logged in pid={login_result.get('pid')} wid={login_result.get('wid')}"
+            payload["pid"] = login_result.get("pid")
+            payload["wid"] = login_result.get("wid")
+        else:
+            result["exit_code"] = 1
+            result["stdout"] = f"login failed: {login_result.get('reason', 'unknown')}"
     elif tool == "survey_heypiggy_cua_only":
         from app.flows.learning.survey_heypiggy import execute_survey_step
         pid = payload.get("pid")

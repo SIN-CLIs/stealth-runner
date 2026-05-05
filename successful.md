@@ -1,163 +1,8 @@
+| 2026-05-05 | CaptchaSolver: Slide-Captcha 8/8 via cua-driver drag | [cli/modules/captcha_solver.py](cli/modules/captcha_solver.py) |
+| 2026-05-05 | Koordinaten-Bug: dynamisch statt hardcoded Window-Position | [commands/captcha/solve-slide.md](commands/captcha/solve-slide.md) |
+| 2026-05-05 | pixtral-large: Text-Captcha QXem34 korrekt gelesen | [commands/captcha/solve-text.md](commands/captcha/solve-text.md) |
+
 # successful.md – Erfolgreich implementierte Features & Fixes
-
-## ✅ 2026-05-03 – Cookie-Modal-Logik: VISION + CDP+AX Trinity
-
-**Erfolg**: Cookie-Modals automatisch erkennen, klicken, und verifizieren.
-
-**Module**: `cli/modules/cookie_modal.py` — atomar, kein Monolith.
-
-**API (5 public functions)**:
-| Funktion | Beschreibung | Status |
-|----------|-------------|--------|
-| `detect(pid)` | Vision-Check: Cookie-Modal da? | ✅ NVIDIA erkennt "Wir schätzen Ihre Privatsphäre" |
-| `accept(pid)` | "Alle akzeptieren" via CDP+AX Trinity klicken | ✅ Deterministic, kein Index |
-| `verify_gone(pid)` | Vision: Modal WIRKLICH verschwunden? | ✅ True/False |
-| `handle(pid)` | Blackbox: detect+accept+verify | ✅ <5s |
-| `handle_with_reload(pid)` | Aggressiv mit Reload | ✅ Max 3 Versuche |
-
-**Test-Ergebnisse (PID 51212, PureSpectrum Modal)**:
-- `detect()` → `{"has_cookie_modal": true, "accept_button_text": "Alle akzeptieren"}`
-- `accept()` → `True` (Button via CDP queryAXTree + AX Press geklickt)
-- `verify_gone()` → `True` (NVIDIA bestätigt: kein Modal mehr)
-- `handle()` → `True` (Black Box <5s)
-
-**Integration in `survey_runner.py`**:
-- `prequalify()` → `cookie_modal.handle(pid)` vor Vision-Check
-- `complete_survey()` → `cookie_modal.handle(pid)` nach Tab-Wechsel
-
-**Key Insights:**
-- Vision Gate sagt WAS zu klicken ist (Button-Label)
-- CDP+AX Trinity klickt es (position-basiert, deterministisch)
-- Vision Verify prüft ob es WIRKLICH geklappt hat
-- NIEMALS JS-Injection für Cookies (detectable!)
-- NIEMALS Blind-Click ohne Vision
-
----
-
-## ✅ 2026-05-04 – Survey In-Page Flow verstanden + korrigiert
-
-**Erfolg**: clickSurvey() öffnet Surveys korrekt IN-PAGE im Dashboard.
-
-**Falsche Diagnose korrigiert:**
-- clickSurvey macht fetch zu CPX-API → funktioniert!
-- handleSurveyResponse() zeigt Modal im Dashboard (showTypeOkay)
-- "Willkommensbonus-Strecke" war erfolgreicher Survey-Content!
-- Habe nach neuen Tabs gesucht statt AX-Tree zu rescanen → ❌
-
-**Korrekte Vorgehen:**
-1. clickSurvey(id) aufrufen
-2. 8s warten auf API-Response
-3. AX-Tree rescanen nach neuen Buttons ("Starten", ">>", "Umfrage starten")
-4. Buttons klicken → Provider-Tab öffnet sich
-
-**Neue Module**:
-- `heypiggy_login_box.py` — Google Login als Box ✅
-- `audio_box.py` — Audio-Analyse via BlackHole + Omni ✅
-
-## ✅ 2026-05-03 – Simple Text Captcha gelöst (NVIDIA Reasoning)
-
-**Erfolg**: Erstes Captcha erfolgreich gelöst auf 2captcha.com/de/demo/normal.
-**Captcha-Text:** "W9H5K" ✅ "Captcha wurde erfolgreich bestanden!"
-
-**Methode:**
-1. Playwright öffnet Captcha-Seite (tmux: Browser offen lassen)
-2. Full Page Scan → Input-Feld `#simple-captcha-field` + Submit Button finden
-3. Screenshot → NVIDIA Nemotron Vision (reasoning-Feld parsen)
-4. Captcha-Text per Regex `"([A-Z0-9]+)"` aus reasoning extrahieren
-5. `page.fill("#id", text)` → Antwort eintragen
-6. `page.click("button[type=submit]")` → Submit
-
-**Key Insights:**
-- NVIDIA Nemotron: content=None, Captcha steht im **reasoning** Feld
-- **Browser muss OFFEN bleiben** (tmux) — neues Captcha bei Reload
-- **Full Page Scan** vor jeder Aktion (Elemente ändern sich)
-- **Playwright** für DOM-Interaktion (CUA sieht Input-Felder nicht immer)
-- Skill: `skills/opencode-captcha-simple-text-skill/SKILL.md`
-
----
-
-## ✅ 2026-05-03 – Lemin Puzzle Captcha: Drag-Meilenstein
-
-**Erfolg:** Puzzle-Stück erfolgreich mit Maus-Drag bewegt!
-**Noch offen:** Korrekte X-Position für die Lücke (Gap) finden.
-
-### Erkannte Elemente
-| Element | ID | Position |
-|---------|-----|----------|
-| Checkbox | "I'm Human" Text | — |
-| Puzzle Area | `#aFSwvffdpiece-area` | (438,522) 392x127 |
-| Verify Button | `#aFSwvffdverify-button` | (745,571) 70x30 |
-
-### Drag-Methode (funktioniert!)
-```python
-box = page.locator("#aFSwvffdpiece-area").bounding_box()
-page.mouse.move(box['x'] + box['width']/2, box['y'] + box['height']/2)
-page.mouse.down()
-for s in range(0, int(abs(dx)), 5):
-    page.mouse.move(box['x'] + box['width']/2 + step, target_y)
-    time.sleep(0.003)
-page.mouse.up()
-```
-
-### Gap-Findung (zu optimieren)
-- **Farberkennung:** Gelbe Pixel = Puzzle-Stücke + Lücke via OpenCV
-- **Problem:** Die genaue X-Position der Lücke muss bestimmt werden
-- **Lösungsansätze:**
-  1. Template Matching zwischen Puzzle-Stück und Hintergrund
-  2. NVIDIA Vision: Gap-Position aus reasoning extrahieren
-  3. Brute Force: Verschiedene X-Positionen durchprobieren
-
-### Quellen
-- `stealth-captcha/lemin_solver.py`
-- `stealth-captcha/solvers/lemin_solver.py`
-
----
-
-## ✅ 2026-05-03 – CDP+AX Trinity Forschungs-Durchbruch
-
-**Erfolg**: Nach 120+ analysierten Webseiten die ultimative Lösung gefunden.
-
-**Problem gelöst**: `skylight-cli list-elements` mischt Browser-Chrome + Web-Content.
-Element-Index verschiebt sich → Klick trifft Browser-Icon statt "Weiter".
-
-**Fusionierte Lösung aus 3 Forschungsansätzen:**
-1. **CDP `queryAXTree`** — NUR Web-Content (kein Browser-Chrome)
-2. **CDP `getContentQuads`** — Bounding Box des Elements
-3. **`AXUIElementCopyElementAtPosition` + `AXPress`** — Klick per Position (kein Index)
-
-**Key Insights:**
-- Chromium braucht `AXEnhancedUserInterface=true` für vollen AX-Tree
-- CDP returned IMMER nur Web-Content
-- Position-basiert ist deterministisch (Index ist instabil)
-- `agent-native`'s Priority-Chain bestätigt: CDP → AX → Keyboard → Screenshot
-
-**Dokumentiert in:** `brain.md`, `issues.md`, `AGENTS.md`, `plan.md`, `fix.md`, `learn.md`, `sinrules.md`, `commands.md`
-
----
-
-## ✅ 2026-05-03 – CDP+AX Google Login PID 51212 (DURCHBRUCH!)
-
-**Erfolg**: Google Login KOMPLETT automatisiert bis zum Account Dashboard.
-7 Steps, 2 Tools (skylight + cua), 0 Fehlklicks.
-
-**Verifizierter Flow:**
-| Step | Action | Tool | Element | Status |
-|------|--------|------|---------|--------|
-| 1 | Email tippen | skylight | index 20 | ✅ |
-| 2 | Weiter klicken | skylight | index 29 | ✅ |
-| 3 | Andere Option wählen | skylight | index 24 | ✅ |
-| 4 | Passkey verwenden | skylight | index 24 | ✅ |
-| 5 | Weiter (FaceID) | skylight | index 25 | ✅ |
-| 6 | Fortfahren (Sheet) | cua | element 79 | ✅ |
-| 7 | Jeremy fortfahren | cua | element 239 | ✅ |
-| **8** | **Google Account Dashboard** | — | — | ✅🎉 |
-
-**Key Insights:**
-- Word-Boundary Fix (\b) essentiell für korrektes Label-Matching
-- Passkey-Sheet via cua-driver (element 79 = Fortfahren)
-- Chrome-Sync-Bestätigung ("Als Jeremy fortfahren") nötig nach Passkey
-
----
 
 ## ✅ 2026-05-03 – Word-Boundary Label Fix
 
@@ -170,11 +15,7 @@ Element-Index verschiebt sich → Klick trifft Browser-Icon statt "Weiter".
 
 ## ✅ 2026-05-02 – cua-driver Popup-Interaktion (DURCHBRUCH!)
 **Erfolg**: Google OAuth Login VOLLSTÄNDIG automatisiert via `cua-driver` Popup-Steuerung.
-PID 31710: Email → Weiter → Fortfahren → Weiter → Dashboard ✅
-
-## ✅ 2026-05-02 – SURVEY LOOP AUTONOMOUS
-**Erfolg**: Erster autonomer Survey-Durchlauf via Nemotron Omni Vision!
-Omni erkennt Survey-Links, Checkboxen, Radio-Buttons, Textfelder.
+DYNAMIC_PID, Checkboxen, Radio-Buttons, Textfelder.
 
 ## ✅ 2026-05-01 – Pre-existing Bugfixes (5 Stück)
 - `Path` Import in `skylight.py`
@@ -182,3 +23,39 @@ Omni erkennt Survey-Links, Checkboxen, Radio-Buttons, Textfelder.
 - `playstealth --json` Argument-Reihenfolge
 - `screenshot()` Aufruf in `stealth_executor.py`
 - `step.py` ModuleNotFoundError (__init__.py fehlte)
+
+---
+
+## ✅ 2026-05-05 — CUA-ONLY GOOGLE LOGIN VOLLSTÄNDIG (DYNAMIC_PID)
+
+**Erfolg**: Vollständiger 6-Step Login via `cua-driver` CLI — `playstealth launch` → Dashboard eingeloggt!
+
+### Flow dokumentiert:
+```bash
+playstealth launch → PID=DYNAMIC, WID 56640
+click [54] Google Login-Symbol → WID 56658 Google OAuth
+set_value [25] Email → click [35] Weiter
+→ Keychain Auto-Fill! → "Jeremy Schulze" Konto
+click [62] Fortfahren → click [41] Weiter
+→ Login Complete! Dashboard zeigt "Umfragen", "Auszahlung", "Abmelden"
+```
+
+### Keychain Auto-Fill Discovery:
+- Nach Email + "Weiter" → Keychain füllt Credentials automatisch aus
+- KEIN Passwort-Feld nötig wenn Keychain aktiv
+- → NUR "Fortfahren" + final "Weiter" klicken
+
+### Neue Dateien (MIT EXTENSIVEN KOMMENTAREN):
+- `cli/modules/auto_google_login.py` → 463 Zeilen, 6-Step CUA-ONLY
+- `app/flows/learning/survey_heypiggy.py` → 416 Zeilen, auto_google_login Import
+- `run_survey.py` → 110 Zeilen, Single Entry Point
+
+### Gelöscht:
+- `cli/modules/heypiggy_login_box.py` → ersetzt durch auto_google_login.py
+
+### BOT Chrome PIDs (LIVE):
+| PID | Profile | Status |
+|-----|---------|--------|
+| 71104 | heypiggy-bot-1777981361 | AKTUELL |
+| 70293 | heypiggy-bot-1777981087 | geschlossen |
+| 68317 | heypiggy-bot-1777979455 | geschlossen |

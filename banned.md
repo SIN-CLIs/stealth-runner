@@ -287,3 +287,17 @@ ffmpeg -f avfoundation -i ":BlackHole 2ch" -t 6 -acodec pcm_s16le -ar 44100 -ac 
 # 4. Zurückschalten
 SwitchAudioSource -t output -s "$ORIG"
 ```
+# BANNED EMAIL: devjerro@gmail.com — NUR zukunftsorientierte.energie@gmail.com
+
+| 2026-05-05 | cliclick + CDP dispatchEvent BANNED | [incidents/2026-05-05-1430.md](incidents/2026-05-05-1430.md) |
+
+## 🔴 cliclick — ABSOLUT BANNED (2026-05-05)
+- **Grund**: Mausbewegung! Verstößt gegen CUA-ONLY Architektur.
+- **Warum**: cliclick simuliert Mausbewegung — genau wie pyautogui/pynput.
+- **Konsequenz**: CUA-ONLY = NUR cua-driver AXPress. KEINE Maus.
+- **Ersatz**: `cua-driver call drag` (AX-basiert) oder Survey abbrechen.
+
+## 🔴 CDP dispatchEvent — ABSOLUT BANNED (2026-05-05)
+- **Grund**: CDP für Interaktion verwendet. CUA-ONLY Architektur.
+- **Warum**: dispatchEvent ist CDP-JS-Injection zur Interaktion.
+- **Konsequenz**: NUR cua-driver für ALLE Interaktionen. Kein CDP-JS.

@@ -1,0 +1,10 @@
+{
+  "$schema": "https://opencode.ai/config.json",
+  "tools": {
+    "cua-driver": true,
+    "playstealth": true
+  },
+  "instructions": [
+    "sinrules.md"
+  ]
+}
