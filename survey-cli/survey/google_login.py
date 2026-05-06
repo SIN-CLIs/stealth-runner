@@ -60,7 +60,9 @@ def _verify_invariants():
         data = json.loads(r.stdout)
         chrome_found = False
         for w in data.get("windows", []):
-            if "chrome" in str(w.get("owner", "")).lower():
+            title = str(w.get("title", "")).lower()
+            # Chrome windows identified by title, not owner (owner is often empty)
+            if "heypiggy" in title or "verdienen" in title or "google" in title:
                 chrome_found = True
                 pid = w.get("pid")
                 wid = w.get("window_id")
@@ -71,9 +73,9 @@ def _verify_invariants():
                 if state.get("element_count", 0) > 100:
                     break
         if not chrome_found:
-            errors.append("Chrome window not found in cua-driver list_windows")
+            errors.append("Chrome/HeyPiggy window not found in cua-driver list_windows")
         elif state.get("element_count", 0) < 100:
-            errors.append(f"Chrome AX-Tree has only {state.get('element_count',0)} elements. Accessibility NOT enabled. System Settings → Privacy → Accessibility → Chrome AN")
+            errors.append(f"Chrome AX-Tree has only {state.get('element_count',0)} elements. Accessibility NOT enabled.")
     except Exception as e:
         errors.append(f"Cannot verify Accessibility: {e}")
     
