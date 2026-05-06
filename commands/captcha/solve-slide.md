@@ -1,12 +1,25 @@
-# captcha-solve-slide.md — Slide-Captcha via cua-driver drag + AppleEvents JS ✅
+# captcha-solve-slide.md — Slide-Captcha via cua-driver drag + AppleEvents JS ❌
 
 ## Status
-**VERIFIED** — 2026-05-05, GoCaptcha Slide Captcha gelöst
+**DEPRECATED** — 2026-05-06, cua-driver drag funktioniert NICHT für Chromium DOM-Content.
+Siehe [captcha-solve-slide-cdp.md](captcha-solve-slide-cdp.md) für die funktionierende Lösung.
 
-## Prinzip
-cua-driver `drag` postet ECHTE CGEvent-Mausbewegungen. Diese generieren DOM-Events mit `isTrusted: true`.
-Captcha-Bibliotheken (GoCaptcha, PureSpectrum) akzeptieren nur `isTrusted: true` Events.
-JavaScript `dispatchEvent` erzeugt `isTrusted: false` → wird abgelehnt.
+## ⚠️ WICHTIG: cua-driver drag Limitierung
+cua-driver `drag` erzeugt CGEvent-Mausbewegungen (pid-routed backgrounded / cghidEventTap frontmost).
+Diese Events werden von Chromium's sandboxed Renderer NICHT in DOM-MouseEvents übersetzt.
+GoCaptcha's JS-Handler liest `e.clientX` aus DOM-MouseEvents — ohne diese bleibt das Puzzle-Teil stehen.
+
+**Getestet und fehlgeschlagen:**
+- ❌ cua-driver drag backgrounded (pid-routed) — Block+Tile unbewegt
+- ❌ cua-driver drag frontmost (cghidEventTap) — Block+Tile unbewegt
+
+**Funktionierende Alternative:**
+- ✅ CDP `Input.dispatchMouseEvent` — erzeugt DOM-MouseEvents mit korrektem `clientX`
+- ✅ Block: 0px → 218px, Tile: 11px → 236px
+- Siehe [captcha-solve-slide-cdp.md](captcha-solve-slide-cdp.md)
+
+## Altes Prinzip (DEPRECATED)
+cua-driver `drag` postet CGEvent-Mausbewegungen. Diese erzeugen NICHT die benötigten DOM-MouseEvents in Chromium.
 
 ## Command (3 Schritte)
 
@@ -64,6 +77,6 @@ echo '{"pid":47022,"from_x":519,"from_y":641,"to_x":735,"to_y":641,"speed":80,"s
 - cua-driver Daemon läuft
 
 ## Zugehörige Commands
+- [captcha-solve-slide-cdp.md](captcha-solve-slide-cdp.md) — ✅ FUNKTIONIEREND: GoCaptcha via CDP dispatchMouseEvent
 - [captcha-solve-text.md](captcha-solve-text.md) — Text Captcha
 - [captcha-solve-drag.md](captcha-solve-drag.md) — Drag & Drop Captcha
-- [cua-driver/drag reference] — cua-driver call drag
