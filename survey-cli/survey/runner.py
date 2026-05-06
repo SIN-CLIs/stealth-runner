@@ -394,6 +394,13 @@ class SurveyRunner:
             if i >= self.config.max_surveys:
                 break
 
+            # Prioritize OK surveys over pre-qualifiers (pre-qualifiers require
+            # browser-based answering which is complex — skip for now)
+            if survey.get("provider") == "pre_qualifier":
+                if self.config.debug:
+                    print(f"[LOOP] Skipping pre-qualifier {survey['id']} (browser-based)")
+                continue
+
             # Check balance target
             balance = read_balance(self.config.cdp_port)
             if balance >= self.config.balance_target:
