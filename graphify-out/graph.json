@@ -7280,99 +7280,99 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey.py",
       "source_location": "L39",
-      "id": "survey_cli_survey_rationale_39",
       "community": 1,
-      "norm_label": "login to heypiggy via google oauth."
+      "norm_label": "login to heypiggy via google oauth.",
+      "id": "survey_cli_survey_rationale_39"
     },
     {
       "label": "Scan dashboard for surveys.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey.py",
       "source_location": "L50",
-      "id": "survey_cli_survey_rationale_50",
       "community": 1,
-      "norm_label": "scan dashboard for surveys."
+      "norm_label": "scan dashboard for surveys.",
+      "id": "survey_cli_survey_rationale_50"
     },
     {
       "label": "Continuous poller: scan \u2192 run \u2192 wait \u2192 repeat.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey.py",
       "source_location": "L111",
-      "id": "survey_cli_survey_rationale_111",
       "community": 1,
-      "norm_label": "continuous poller: scan \u2192 run \u2192 wait \u2192 repeat."
+      "norm_label": "continuous poller: scan \u2192 run \u2192 wait \u2192 repeat.",
+      "id": "survey_cli_survey_rationale_111"
     },
     {
       "label": "Show current balance + summary.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey.py",
       "source_location": "L157",
-      "id": "survey_cli_survey_rationale_157",
       "community": 1,
-      "norm_label": "show current balance + summary."
+      "norm_label": "show current balance + summary.",
+      "id": "survey_cli_survey_rationale_157"
     },
     {
       "label": "Check Chrome + login + NIM status.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey.py",
       "source_location": "L172",
-      "id": "survey_cli_survey_rationale_172",
       "community": 1,
-      "norm_label": "check chrome + login + nim status."
+      "norm_label": "check chrome + login + nim status.",
+      "id": "survey_cli_survey_rationale_172"
     },
     {
       "label": "Full self-diagnostic.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey.py",
       "source_location": "L219",
-      "id": "survey_cli_survey_rationale_219",
       "community": 1,
-      "norm_label": "full self-diagnostic."
+      "norm_label": "full self-diagnostic.",
+      "id": "survey_cli_survey_rationale_219"
     },
     {
       "label": "Safely kill bot Chrome only.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey.py",
       "source_location": "L268",
-      "id": "survey_cli_survey_rationale_268",
       "community": 1,
-      "norm_label": "safely kill bot chrome only."
+      "norm_label": "safely kill bot chrome only.",
+      "id": "survey_cli_survey_rationale_268"
     },
     {
       "label": "Generate earnings summary.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey.py",
       "source_location": "L278",
-      "id": "survey_cli_survey_rationale_278",
       "community": 1,
-      "norm_label": "generate earnings summary."
+      "norm_label": "generate earnings summary.",
+      "id": "survey_cli_survey_rationale_278"
     },
     {
       "label": "Delegate a coding task to opencode cli.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey.py",
       "source_location": "L286",
-      "id": "survey_cli_survey_rationale_286",
       "community": 1,
-      "norm_label": "delegate a coding task to opencode cli."
+      "norm_label": "delegate a coding task to opencode cli.",
+      "id": "survey_cli_survey_rationale_286"
     },
     {
       "label": "Show current profile.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey.py",
       "source_location": "L304",
-      "id": "survey_cli_survey_rationale_304",
       "community": 1,
-      "norm_label": "show current profile."
+      "norm_label": "show current profile.",
+      "id": "survey_cli_survey_rationale_304"
     },
     {
       "label": "Pretty-print a survey result.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey.py",
       "source_location": "L317",
-      "id": "survey_cli_survey_rationale_317",
       "community": 1,
-      "norm_label": "pretty-print a survey result."
+      "norm_label": "pretty-print a survey result.",
+      "id": "survey_cli_survey_rationale_317"
     },
     {
       "label": "runner.py",
@@ -7505,90 +7505,90 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L1",
-      "id": "survey_runner_rationale_1",
       "community": 1,
-      "norm_label": "nemo survey runner \u2014 the core execution engine.  loop per page:   1. compact sna"
+      "norm_label": "nemo survey runner \u2014 the core execution engine.  loop per page:   1. compact sna",
+      "id": "survey_runner_rationale_1"
     },
     {
       "label": "NEMO survey execution engine.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L56",
-      "id": "survey_runner_rationale_56",
       "community": 1,
-      "norm_label": "nemo survey execution engine."
+      "norm_label": "nemo survey execution engine.",
+      "id": "survey_runner_rationale_56"
     },
     {
       "label": "Run a single survey from ID to completion.          Args:             survey_id:",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L67",
-      "id": "survey_runner_rationale_67",
       "community": 1,
-      "norm_label": "run a single survey from id to completion.          args:             survey_id:"
+      "norm_label": "run a single survey from id to completion.          args:             survey_id:",
+      "id": "survey_runner_rationale_67"
     },
     {
       "label": "Auto-loop: scan \u2192 filter \u2192 run \u2192 repeat.          Args:             max_surveys:",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L216",
-      "id": "survey_runner_rationale_216",
       "community": 1,
-      "norm_label": "auto-loop: scan \u2192 filter \u2192 run \u2192 repeat.          args:             max_surveys:"
+      "norm_label": "auto-loop: scan \u2192 filter \u2192 run \u2192 repeat.          args:             max_surveys:",
+      "id": "survey_runner_rationale_216"
     },
     {
       "label": "Create a new browser tab via CDP Target.createTarget.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L284",
-      "id": "survey_runner_rationale_284",
       "community": 1,
-      "norm_label": "create a new browser tab via cdp target.createtarget."
+      "norm_label": "create a new browser tab via cdp target.createtarget.",
+      "id": "survey_runner_rationale_284"
     },
     {
       "label": "Detect provider from URL.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L313",
-      "id": "survey_runner_rationale_313",
       "community": 1,
-      "norm_label": "detect provider from url."
+      "norm_label": "detect provider from url.",
+      "id": "survey_runner_rationale_313"
     },
     {
       "label": "Check page text for completion markers.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L318",
-      "id": "survey_runner_rationale_318",
       "community": 1,
-      "norm_label": "check page text for completion markers."
+      "norm_label": "check page text for completion markers.",
+      "id": "survey_runner_rationale_318"
     },
     {
       "label": "Rate completed survey for +0.01\u20ac bonus.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L323",
-      "id": "survey_runner_rationale_323",
       "community": 1,
-      "norm_label": "rate completed survey for +0.01\u20ac bonus."
+      "norm_label": "rate completed survey for +0.01\u20ac bonus.",
+      "id": "survey_runner_rationale_323"
     },
     {
       "label": "Simple auto-pilot when NIM not available.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L348",
-      "id": "survey_runner_rationale_348",
       "community": 1,
-      "norm_label": "simple auto-pilot when nim not available."
+      "norm_label": "simple auto-pilot when nim not available.",
+      "id": "survey_runner_rationale_348"
     },
     {
       "label": "Load profile from JSON file or fallback.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L365",
-      "id": "survey_runner_rationale_365",
       "community": 1,
-      "norm_label": "load profile from json file or fallback."
+      "norm_label": "load profile from json file or fallback.",
+      "id": "survey_runner_rationale_365"
     },
     {
       "label": "scanner.py",
@@ -7667,72 +7667,72 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/scanner.py",
       "source_location": "L1",
-      "id": "survey_scanner_rationale_1",
       "community": 1,
-      "norm_label": "dashboard scanner \u2014 survey id extraction + provider detection.  uses cdp js to e"
+      "norm_label": "dashboard scanner \u2014 survey id extraction + provider detection.  uses cdp js to e",
+      "id": "survey_scanner_rationale_1"
     },
     {
       "label": "Detect survey provider from URL.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/scanner.py",
       "source_location": "L28",
-      "id": "survey_scanner_rationale_28",
       "community": 1,
-      "norm_label": "detect survey provider from url."
+      "norm_label": "detect survey provider from url.",
+      "id": "survey_scanner_rationale_28"
     },
     {
       "label": "Extract survey IDs from dashboard via CDP.      Returns:         List of survey",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/scanner.py",
       "source_location": "L40",
-      "id": "survey_scanner_rationale_40",
       "community": 1,
-      "norm_label": "extract survey ids from dashboard via cdp.      returns:         list of survey"
+      "norm_label": "extract survey ids from dashboard via cdp.      returns:         list of survey",
+      "id": "survey_scanner_rationale_40"
     },
     {
       "label": "Filter surveys via CPX API.      Args:         survey_ids: List of IDs to check",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/scanner.py",
       "source_location": "L76",
-      "id": "survey_scanner_rationale_76",
       "community": 1,
-      "norm_label": "filter surveys via cpx api.      args:         survey_ids: list of ids to check"
+      "norm_label": "filter surveys via cpx api.      args:         survey_ids: list of ids to check",
+      "id": "survey_scanner_rationale_76"
     },
     {
       "label": "Pretty-print filtered survey results.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/scanner.py",
       "source_location": "L120",
-      "id": "survey_scanner_rationale_120",
       "community": 1,
-      "norm_label": "pretty-print filtered survey results."
+      "norm_label": "pretty-print filtered survey results.",
+      "id": "survey_scanner_rationale_120"
     },
     {
       "label": "Full scan: connect \u2192 extract IDs \u2192 filter \u2192 print.      Returns:         List of",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/scanner.py",
       "source_location": "L146",
-      "id": "survey_scanner_rationale_146",
       "community": 1,
-      "norm_label": "full scan: connect \u2192 extract ids \u2192 filter \u2192 print.      returns:         list of"
+      "norm_label": "full scan: connect \u2192 extract ids \u2192 filter \u2192 print.      returns:         list of",
+      "id": "survey_scanner_rationale_146"
     },
     {
       "label": "Read page innerText via CDP.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/scanner.py",
       "source_location": "L174",
-      "id": "survey_scanner_rationale_174",
       "community": 1,
-      "norm_label": "read page innertext via cdp."
+      "norm_label": "read page innertext via cdp.",
+      "id": "survey_scanner_rationale_174"
     },
     {
       "label": "Read current balance from dashboard.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/scanner.py",
       "source_location": "L191",
-      "id": "survey_scanner_rationale_191",
       "community": 1,
-      "norm_label": "read current balance from dashboard."
+      "norm_label": "read current balance from dashboard.",
+      "id": "survey_scanner_rationale_191"
     },
     {
       "label": "execute.py",
@@ -7811,54 +7811,54 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/execute.py",
       "source_location": "L1",
-      "id": "survey_execute_rationale_1",
       "community": 1,
-      "norm_label": "cdp batch executor \u2014 execute survey actions via websocket.  translates high-leve"
+      "norm_label": "cdp batch executor \u2014 execute survey actions via websocket.  translates high-leve",
+      "id": "survey_execute_rationale_1"
     },
     {
       "label": "Execute batched survey actions via CDP WebSocket.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/execute.py",
       "source_location": "L94",
-      "id": "survey_execute_rationale_94",
       "community": 1,
-      "norm_label": "execute batched survey actions via cdp websocket."
+      "norm_label": "execute batched survey actions via cdp websocket.",
+      "id": "survey_execute_rationale_94"
     },
     {
       "label": "Execute batch of actions.          Args:             actions: List of action dic",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/execute.py",
       "source_location": "L102",
-      "id": "survey_execute_rationale_102",
       "community": 1,
-      "norm_label": "execute batch of actions.          args:             actions: list of action dic"
+      "norm_label": "execute batch of actions.          args:             actions: list of action dic",
+      "id": "survey_execute_rationale_102"
     },
     {
       "label": "Execute single action.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/execute.py",
       "source_location": "L128",
-      "id": "survey_execute_rationale_128",
       "community": 1,
-      "norm_label": "execute single action."
+      "norm_label": "execute single action.",
+      "id": "survey_execute_rationale_128"
     },
     {
       "label": "Build CDP JS string for action.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/execute.py",
       "source_location": "L159",
-      "id": "survey_execute_rationale_159",
       "community": 1,
-      "norm_label": "build cdp js string for action."
+      "norm_label": "build cdp js string for action.",
+      "id": "survey_execute_rationale_159"
     },
     {
       "label": "Read page text for completion check.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/execute.py",
       "source_location": "L188",
-      "id": "survey_execute_rationale_188",
       "community": 37,
-      "norm_label": "read page text for completion check."
+      "norm_label": "read page text for completion check.",
+      "id": "survey_execute_rationale_188"
     },
     {
       "label": "__init__.py",
@@ -7874,9 +7874,9 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/__init__.py",
       "source_location": "L1",
-      "id": "survey_init_rationale_1",
       "community": 15,
-      "norm_label": "survey-cli \u2014 standalone survey automation cli (nvidia nim + cdp).  not a coding"
+      "norm_label": "survey-cli \u2014 standalone survey automation cli (nvidia nim + cdp).  not a coding",
+      "id": "survey_init_rationale_1"
     },
     {
       "label": "nim.py",
@@ -7964,63 +7964,63 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/nim.py",
       "source_location": "L1",
-      "id": "survey_nim_rationale_1",
       "community": 1,
-      "norm_label": "nvidia nim client \u2014 nemotron 3 omni survey decisions.  reuses openai-compatible"
+      "norm_label": "nvidia nim client \u2014 nemotron 3 omni survey decisions.  reuses openai-compatible",
+      "id": "survey_nim_rationale_1"
     },
     {
       "label": "Build token-efficient prompt for Nemotron.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/nim.py",
       "source_location": "L51",
-      "id": "survey_nim_rationale_51",
       "community": 1,
-      "norm_label": "build token-efficient prompt for nemotron."
+      "norm_label": "build token-efficient prompt for nemotron.",
+      "id": "survey_nim_rationale_51"
     },
     {
       "label": "Parse LLM response into action list.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/nim.py",
       "source_location": "L98",
-      "id": "survey_nim_rationale_98",
       "community": 1,
-      "norm_label": "parse llm response into action list."
+      "norm_label": "parse llm response into action list.",
+      "id": "survey_nim_rationale_98"
     },
     {
       "label": "NVIDIA Nemotron 3 Omni client for survey decisions.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/nim.py",
       "source_location": "L130",
-      "id": "survey_nim_rationale_130",
       "community": 1,
-      "norm_label": "nvidia nemotron 3 omni client for survey decisions."
+      "norm_label": "nvidia nemotron 3 omni client for survey decisions.",
+      "id": "survey_nim_rationale_130"
     },
     {
       "label": "Decide next batch actions.          Args:             snapshot: Dict from snapsh",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/nim.py",
       "source_location": "L149",
-      "id": "survey_nim_rationale_149",
       "community": 1,
-      "norm_label": "decide next batch actions.          args:             snapshot: dict from snapsh"
+      "norm_label": "decide next batch actions.          args:             snapshot: dict from snapsh",
+      "id": "survey_nim_rationale_149"
     },
     {
       "label": "Simple auto-pilot fallback.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/nim.py",
       "source_location": "L202",
-      "id": "survey_nim_rationale_202",
       "community": 1,
-      "norm_label": "simple auto-pilot fallback."
+      "norm_label": "simple auto-pilot fallback.",
+      "id": "survey_nim_rationale_202"
     },
     {
       "label": "Get or create default NIM client.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/nim.py",
       "source_location": "L237",
-      "id": "survey_nim_rationale_237",
       "community": 1,
-      "norm_label": "get or create default nim client."
+      "norm_label": "get or create default nim client.",
+      "id": "survey_nim_rationale_237"
     },
     {
       "label": "opencode_bridge.py",
@@ -8063,36 +8063,36 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/opencode_bridge.py",
       "source_location": "L1",
-      "id": "survey_opencode_bridge_rationale_1",
       "community": 17,
-      "norm_label": "opencode cli bridge \u2014 delegate coding tasks to opencode.  survey-cli is not a co"
+      "norm_label": "opencode cli bridge \u2014 delegate coding tasks to opencode.  survey-cli is not a co",
+      "id": "survey_opencode_bridge_rationale_1"
     },
     {
       "label": "Delegate a coding task to opencode cli.      Creates a temporary task file and i",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/opencode_bridge.py",
       "source_location": "L21",
-      "id": "survey_opencode_bridge_rationale_21",
       "community": 17,
-      "norm_label": "delegate a coding task to opencode cli.      creates a temporary task file and i"
+      "norm_label": "delegate a coding task to opencode cli.      creates a temporary task file and i",
+      "id": "survey_opencode_bridge_rationale_21"
     },
     {
       "label": "Check for pending tasks that were dispatched.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/opencode_bridge.py",
       "source_location": "L84",
-      "id": "survey_opencode_bridge_rationale_84",
       "community": 17,
-      "norm_label": "check for pending tasks that were dispatched."
+      "norm_label": "check for pending tasks that were dispatched.",
+      "id": "survey_opencode_bridge_rationale_84"
     },
     {
       "label": "Submit a GitHub issue via gh CLI.      Used to report bugs or request features d",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/opencode_bridge.py",
       "source_location": "L99",
-      "id": "survey_opencode_bridge_rationale_99",
       "community": 17,
-      "norm_label": "submit a github issue via gh cli.      used to report bugs or request features d"
+      "norm_label": "submit a github issue via gh cli.      used to report bugs or request features d",
+      "id": "survey_opencode_bridge_rationale_99"
     },
     {
       "label": "chrome.py",
@@ -8198,99 +8198,99 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L1",
-      "id": "survey_chrome_rationale_1",
       "community": 1,
-      "norm_label": "chrome lifecycle \u2014 launch, connect, identify, kill.  rules: - never kill user ch"
+      "norm_label": "chrome lifecycle \u2014 launch, connect, identify, kill.  rules: - never kill user ch",
+      "id": "survey_chrome_rationale_1"
     },
     {
       "label": "Find ALL Chrome processes with bot profiles (safe).",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L39",
-      "id": "survey_chrome_rationale_39",
       "community": 1,
-      "norm_label": "find all chrome processes with bot profiles (safe)."
+      "norm_label": "find all chrome processes with bot profiles (safe).",
+      "id": "survey_chrome_rationale_39"
     },
     {
       "label": "Find all tabs in bot Chrome.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L56",
-      "id": "survey_chrome_rationale_56",
       "community": 1,
-      "norm_label": "find all tabs in bot chrome."
+      "norm_label": "find all tabs in bot chrome.",
+      "id": "survey_chrome_rationale_56"
     },
     {
       "label": "Find WebSocket URL for a heypiggy dashboard tab.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L67",
-      "id": "survey_chrome_rationale_67",
       "community": 1,
-      "norm_label": "find websocket url for a heypiggy dashboard tab."
+      "norm_label": "find websocket url for a heypiggy dashboard tab.",
+      "id": "survey_chrome_rationale_67"
     },
     {
       "label": "Find first non-dashboard survey tab.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L79",
-      "id": "survey_chrome_rationale_79",
       "community": 1,
-      "norm_label": "find first non-dashboard survey tab."
+      "norm_label": "find first non-dashboard survey tab.",
+      "id": "survey_chrome_rationale_79"
     },
     {
       "label": "Get WebSocket URL for a specific tab ID.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L88",
-      "id": "survey_chrome_rationale_88",
       "community": 1,
-      "norm_label": "get websocket url for a specific tab id."
+      "norm_label": "get websocket url for a specific tab id.",
+      "id": "survey_chrome_rationale_88"
     },
     {
       "label": "Check if bot Chrome is running with CDP enabled.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L96",
-      "id": "survey_chrome_rationale_96",
       "community": 1,
-      "norm_label": "check if bot chrome is running with cdp enabled."
+      "norm_label": "check if bot chrome is running with cdp enabled.",
+      "id": "survey_chrome_rationale_96"
     },
     {
       "label": "Launch Chrome via playstealth or raw subprocess.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L105",
-      "id": "survey_chrome_rationale_105",
       "community": 1,
-      "norm_label": "launch chrome via playstealth or raw subprocess."
+      "norm_label": "launch chrome via playstealth or raw subprocess.",
+      "id": "survey_chrome_rationale_105"
     },
     {
       "label": "Safely kill ONLY bot Chrome processes.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L145",
-      "id": "survey_chrome_rationale_145",
       "community": 1,
-      "norm_label": "safely kill only bot chrome processes."
+      "norm_label": "safely kill only bot chrome processes.",
+      "id": "survey_chrome_rationale_145"
     },
     {
       "label": "Get survey URL from CPX API.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L162",
-      "id": "survey_chrome_rationale_162",
       "community": 1,
-      "norm_label": "get survey url from cpx api."
+      "norm_label": "get survey url from cpx api.",
+      "id": "survey_chrome_rationale_162"
     },
     {
       "label": "Get full survey details from CPX API.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L175",
-      "id": "survey_chrome_rationale_175",
       "community": 1,
-      "norm_label": "get full survey details from cpx api."
+      "norm_label": "get full survey details from cpx api.",
+      "id": "survey_chrome_rationale_175"
     },
     {
       "label": "login.py",
@@ -8333,36 +8333,36 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/login.py",
       "source_location": "L1",
-      "id": "survey_login_rationale_1",
       "community": 15,
-      "norm_label": "google oauth login via cdp websocket.  uses keychain auto-fill. no passwords sto"
+      "norm_label": "google oauth login via cdp websocket.  uses keychain auto-fill. no passwords sto",
+      "id": "survey_login_rationale_1"
     },
     {
       "label": "Execute full Google OAuth login flow.      Returns:         {\"status\": \"ok\", \"pi",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/login.py",
       "source_location": "L14",
-      "id": "survey_login_rationale_14",
       "community": 15,
-      "norm_label": "execute full google oauth login flow.      returns:         {\"status\": \"ok\", \"pi"
+      "norm_label": "execute full google oauth login flow.      returns:         {\"status\": \"ok\", \"pi",
+      "id": "survey_login_rationale_14"
     },
     {
       "label": "Check if logged in to heypiggy dashboard.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/login.py",
       "source_location": "L124",
-      "id": "survey_login_rationale_124",
       "community": 15,
-      "norm_label": "check if logged in to heypiggy dashboard."
+      "norm_label": "check if logged in to heypiggy dashboard.",
+      "id": "survey_login_rationale_124"
     },
     {
       "label": "Navigate to URL and wait for page load.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/login.py",
       "source_location": "L151",
-      "id": "survey_login_rationale_151",
       "community": 15,
-      "norm_label": "navigate to url and wait for page load."
+      "norm_label": "navigate to url and wait for page load.",
+      "id": "survey_login_rationale_151"
     },
     {
       "label": "snapshot.py",
@@ -8432,54 +8432,54 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/snapshot.py",
       "source_location": "L1",
-      "id": "survey_snapshot_rationale_1",
       "community": 1,
-      "norm_label": "compact dom snapshot \u2014 @en token-efficient element references.  extracts interac"
+      "norm_label": "compact dom snapshot \u2014 @en token-efficient element references.  extracts interac",
+      "id": "survey_snapshot_rationale_1"
     },
     {
       "label": "Compact DOM snapshot for LLM consumption.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/snapshot.py",
       "source_location": "L17",
-      "id": "survey_snapshot_rationale_17",
       "community": 1,
-      "norm_label": "compact dom snapshot for llm consumption."
+      "norm_label": "compact dom snapshot for llm consumption.",
+      "id": "survey_snapshot_rationale_17"
     },
     {
       "label": "Generate compact snapshot from CDP WebSocket URL.      Args:         ws_url: CDP",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/snapshot.py",
       "source_location": "L106",
-      "id": "survey_snapshot_rationale_106",
       "community": 1,
-      "norm_label": "generate compact snapshot from cdp websocket url.      args:         ws_url: cdp"
+      "norm_label": "generate compact snapshot from cdp websocket url.      args:         ws_url: cdp",
+      "id": "survey_snapshot_rationale_106"
     },
     {
       "label": "Extract question texts.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/snapshot.py",
       "source_location": "L178",
-      "id": "survey_snapshot_rationale_178",
       "community": 1,
-      "norm_label": "extract question texts."
+      "norm_label": "extract question texts.",
+      "id": "survey_snapshot_rationale_178"
     },
     {
       "label": "Detect survey progress.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/snapshot.py",
       "source_location": "L189",
-      "id": "survey_snapshot_rationale_189",
       "community": 1,
-      "norm_label": "detect survey progress."
+      "norm_label": "detect survey progress.",
+      "id": "survey_snapshot_rationale_189"
     },
     {
       "label": "Check if survey is completed based on page text.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/snapshot.py",
       "source_location": "L198",
-      "id": "survey_snapshot_rationale_198",
       "community": 1,
-      "norm_label": "check if survey is completed based on page text."
+      "norm_label": "check if survey is completed based on page text.",
+      "id": "survey_snapshot_rationale_198"
     },
     {
       "label": "autodoc.py",
@@ -8567,81 +8567,81 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/autodoc.py",
       "source_location": "L1",
-      "id": "survey_autodoc_rationale_1",
       "community": 1,
-      "norm_label": "auto-documentation engine \u2014 append-only jsonl logs.  no llm writes documentation"
+      "norm_label": "auto-documentation engine \u2014 append-only jsonl logs.  no llm writes documentation",
+      "id": "survey_autodoc_rationale_1"
     },
     {
       "label": "Ensure logs directory exists.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/autodoc.py",
       "source_location": "L30",
-      "id": "survey_autodoc_rationale_30",
       "community": 1,
-      "norm_label": "ensure logs directory exists."
+      "norm_label": "ensure logs directory exists.",
+      "id": "survey_autodoc_rationale_30"
     },
     {
       "label": "Get daily log file path.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/autodoc.py",
       "source_location": "L35",
-      "id": "survey_autodoc_rationale_35",
       "community": 1,
-      "norm_label": "get daily log file path."
+      "norm_label": "get daily log file path.",
+      "id": "survey_autodoc_rationale_35"
     },
     {
       "label": "Log survey earnings (append-only).      Args:         survey_id: CPX survey ID o",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/autodoc.py",
       "source_location": "L44",
-      "id": "survey_autodoc_rationale_44",
       "community": 1,
-      "norm_label": "log survey earnings (append-only).      args:         survey_id: cpx survey id o"
+      "norm_label": "log survey earnings (append-only).      args:         survey_id: cpx survey id o",
+      "id": "survey_autodoc_rationale_44"
     },
     {
       "label": "Log an error (append-only).      Captures full stack trace automatically.      A",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/autodoc.py",
       "source_location": "L74",
-      "id": "survey_autodoc_rationale_74",
       "community": 1,
-      "norm_label": "log an error (append-only).      captures full stack trace automatically.      a"
+      "norm_label": "log an error (append-only).      captures full stack trace automatically.      a",
+      "id": "survey_autodoc_rationale_74"
     },
     {
       "label": "Log a session event (append-only).      Args:         action: e.g. 'scan', 'run'",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/autodoc.py",
       "source_location": "L103",
-      "id": "survey_autodoc_rationale_103",
       "community": 1,
-      "norm_label": "log a session event (append-only).      args:         action: e.g. 'scan', 'run'"
+      "norm_label": "log a session event (append-only).      args:         action: e.g. 'scan', 'run'",
+      "id": "survey_autodoc_rationale_103"
     },
     {
       "label": "Log a NEMO decision (for debugging/analysis).      Args:         snapshot_elemen",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/autodoc.py",
       "source_location": "L127",
-      "id": "survey_autodoc_rationale_127",
       "community": 1,
-      "norm_label": "log a nemo decision (for debugging/analysis).      args:         snapshot_elemen"
+      "norm_label": "log a nemo decision (for debugging/analysis).      args:         snapshot_elemen",
+      "id": "survey_autodoc_rationale_127"
     },
     {
       "label": "Generate a summary of recent activity.      Args:         days: Number of days t",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/autodoc.py",
       "source_location": "L158",
-      "id": "survey_autodoc_rationale_158",
       "community": 1,
-      "norm_label": "generate a summary of recent activity.      args:         days: number of days t"
+      "norm_label": "generate a summary of recent activity.      args:         days: number of days t",
+      "id": "survey_autodoc_rationale_158"
     },
     {
       "label": "Print a formatted summary.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/autodoc.py",
       "source_location": "L211",
-      "id": "survey_autodoc_rationale_211",
       "community": 1,
-      "norm_label": "print a formatted summary."
+      "norm_label": "print a formatted summary.",
+      "id": "survey_autodoc_rationale_211"
     },
     {
       "label": "strat7.py",
@@ -8657,9 +8657,9 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/strat7.py",
       "source_location": "L1",
-      "id": "providers_strat7_rationale_1",
       "community": 28,
-      "norm_label": "strat7 audiences provider patterns.  key patterns:   - .bsbutton grid for consen"
+      "norm_label": "strat7 audiences provider patterns.  key patterns:   - .bsbutton grid for consen",
+      "id": "providers_strat7_rationale_1"
     },
     {
       "label": "qualtrics.py",
@@ -8684,18 +8684,18 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/qualtrics.py",
       "source_location": "L1",
-      "id": "providers_qualtrics_rationale_1",
       "community": 23,
-      "norm_label": "qualtrics provider patterns.  key differences from other providers:   - .nextbut"
+      "norm_label": "qualtrics provider patterns.  key differences from other providers:   - .nextbut",
+      "id": "providers_qualtrics_rationale_1"
     },
     {
       "label": "Match a question to profile data.      Returns:         {\"index\": int, \"value\":",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/qualtrics.py",
       "source_location": "L31",
-      "id": "providers_qualtrics_rationale_31",
       "community": 23,
-      "norm_label": "match a question to profile data.      returns:         {\"index\": int, \"value\":"
+      "norm_label": "match a question to profile data.      returns:         {\"index\": int, \"value\":",
+      "id": "providers_qualtrics_rationale_31"
     },
     {
       "label": "__init__.py",
@@ -8711,9 +8711,9 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/__init__.py",
       "source_location": "L1",
-      "id": "providers_init_rationale_1",
       "community": 29,
-      "norm_label": "provider-specific survey patterns.  each provider module exports:   - detect(pag"
+      "norm_label": "provider-specific survey patterns.  each provider module exports:   - detect(pag",
+      "id": "providers_init_rationale_1"
     },
     {
       "label": "purespectrum.py",
@@ -8729,9 +8729,9 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
       "source_location": "L1",
-      "id": "providers_purespectrum_rationale_1",
       "community": 30,
-      "norm_label": "purespectrum provider patterns \u2014 captcha blocked.  all current purespectrum surv"
+      "norm_label": "purespectrum provider patterns \u2014 captcha blocked.  all current purespectrum surv",
+      "id": "providers_purespectrum_rationale_1"
     },
     {
       "label": "toluna.py",
@@ -8747,9 +8747,9 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/toluna.py",
       "source_location": "L1",
-      "id": "providers_toluna_rationale_1",
       "community": 31,
-      "norm_label": "tolunastart provider patterns.  key patterns:   - .cf-radio for single select (u"
+      "norm_label": "tolunastart provider patterns.  key patterns:   - .cf-radio for single select (u",
+      "id": "providers_toluna_rationale_1"
     },
     {
       "label": "db_poller.py",
@@ -32665,9 +32665,9 @@
       "weight": 0.8,
       "_src": "survey_cli_survey_rationale_39",
       "_tgt": "survey_runner_surveyrunner",
+      "confidence_score": 0.5,
       "source": "survey_cli_survey_rationale_39",
-      "target": "survey_runner_surveyrunner",
-      "confidence_score": 0.5
+      "target": "survey_runner_surveyrunner"
     },
     {
       "relation": "uses",
@@ -32677,9 +32677,9 @@
       "weight": 0.8,
       "_src": "survey_cli_survey_rationale_39",
       "_tgt": "survey_runner_runnerconfig",
+      "confidence_score": 0.5,
       "source": "survey_cli_survey_rationale_39",
-      "target": "survey_runner_runnerconfig",
-      "confidence_score": 0.5
+      "target": "survey_runner_runnerconfig"
     },
     {
       "relation": "uses",
@@ -32689,9 +32689,9 @@
       "weight": 0.8,
       "_src": "survey_cli_survey_rationale_50",
       "_tgt": "survey_runner_surveyrunner",
+      "confidence_score": 0.5,
       "source": "survey_cli_survey_rationale_50",
-      "target": "survey_runner_surveyrunner",
-      "confidence_score": 0.5
+      "target": "survey_runner_surveyrunner"
     },
     {
       "relation": "uses",
@@ -32701,9 +32701,9 @@
       "weight": 0.8,
       "_src": "survey_cli_survey_rationale_50",
       "_tgt": "survey_runner_runnerconfig",
+      "confidence_score": 0.5,
       "source": "survey_cli_survey_rationale_50",
-      "target": "survey_runner_runnerconfig",
-      "confidence_score": 0.5
+      "target": "survey_runner_runnerconfig"
     },
     {
       "relation": "uses",
@@ -32713,9 +32713,9 @@
       "weight": 0.8,
       "_src": "survey_cli_survey_rationale_111",
       "_tgt": "survey_runner_surveyrunner",
+      "confidence_score": 0.5,
       "source": "survey_cli_survey_rationale_111",
-      "target": "survey_runner_surveyrunner",
-      "confidence_score": 0.5
+      "target": "survey_runner_surveyrunner"
     },
     {
       "relation": "uses",
@@ -32725,9 +32725,9 @@
       "weight": 0.8,
       "_src": "survey_cli_survey_rationale_111",
       "_tgt": "survey_runner_runnerconfig",
+      "confidence_score": 0.5,
       "source": "survey_cli_survey_rationale_111",
-      "target": "survey_runner_runnerconfig",
-      "confidence_score": 0.5
+      "target": "survey_runner_runnerconfig"
     },
     {
       "relation": "uses",
@@ -32737,9 +32737,9 @@
       "weight": 0.8,
       "_src": "survey_cli_survey_rationale_157",
       "_tgt": "survey_runner_surveyrunner",
+      "confidence_score": 0.5,
       "source": "survey_cli_survey_rationale_157",
-      "target": "survey_runner_surveyrunner",
-      "confidence_score": 0.5
+      "target": "survey_runner_surveyrunner"
     },
     {
       "relation": "uses",
@@ -32749,9 +32749,9 @@
       "weight": 0.8,
       "_src": "survey_cli_survey_rationale_157",
       "_tgt": "survey_runner_runnerconfig",
+      "confidence_score": 0.5,
       "source": "survey_cli_survey_rationale_157",
-      "target": "survey_runner_runnerconfig",
-      "confidence_score": 0.5
+      "target": "survey_runner_runnerconfig"
     },
     {
       "relation": "uses",
@@ -32761,9 +32761,9 @@
       "weight": 0.8,
       "_src": "survey_cli_survey_rationale_172",
       "_tgt": "survey_runner_surveyrunner",
+      "confidence_score": 0.5,
       "source": "survey_cli_survey_rationale_172",
-      "target": "survey_runner_surveyrunner",
-      "confidence_score": 0.5
+      "target": "survey_runner_surveyrunner"
     },
     {
       "relation": "uses",
@@ -32773,9 +32773,9 @@
       "weight": 0.8,
       "_src": "survey_cli_survey_rationale_172",
       "_tgt": "survey_runner_runnerconfig",
+      "confidence_score": 0.5,
       "source": "survey_cli_survey_rationale_172",
-      "target": "survey_runner_runnerconfig",
-      "confidence_score": 0.5
+      "target": "survey_runner_runnerconfig"
     },
     {
       "relation": "uses",
@@ -32785,9 +32785,9 @@
       "weight": 0.8,
       "_src": "survey_cli_survey_rationale_219",
       "_tgt": "survey_runner_surveyrunner",
+      "confidence_score": 0.5,
       "source": "survey_cli_survey_rationale_219",
-      "target": "survey_runner_surveyrunner",
-      "confidence_score": 0.5
+      "target": "survey_runner_surveyrunner"
     },
     {
       "relation": "uses",
@@ -32797,9 +32797,9 @@
       "weight": 0.8,
       "_src": "survey_cli_survey_rationale_219",
       "_tgt": "survey_runner_runnerconfig",
+      "confidence_score": 0.5,
       "source": "survey_cli_survey_rationale_219",
-      "target": "survey_runner_runnerconfig",
-      "confidence_score": 0.5
+      "target": "survey_runner_runnerconfig"
     },
     {
       "relation": "uses",
@@ -32809,9 +32809,9 @@
       "weight": 0.8,
       "_src": "survey_cli_survey_rationale_268",
       "_tgt": "survey_runner_surveyrunner",
+      "confidence_score": 0.5,
       "source": "survey_cli_survey_rationale_268",
-      "target": "survey_runner_surveyrunner",
-      "confidence_score": 0.5
+      "target": "survey_runner_surveyrunner"
     },
     {
       "relation": "uses",
@@ -32821,9 +32821,9 @@
       "weight": 0.8,
       "_src": "survey_cli_survey_rationale_268",
       "_tgt": "survey_runner_runnerconfig",
+      "confidence_score": 0.5,
       "source": "survey_cli_survey_rationale_268",
-      "target": "survey_runner_runnerconfig",
-      "confidence_score": 0.5
+      "target": "survey_runner_runnerconfig"
     },
     {
       "relation": "uses",
@@ -32833,9 +32833,9 @@
       "weight": 0.8,
       "_src": "survey_cli_survey_rationale_278",
       "_tgt": "survey_runner_surveyrunner",
+      "confidence_score": 0.5,
       "source": "survey_cli_survey_rationale_278",
-      "target": "survey_runner_surveyrunner",
-      "confidence_score": 0.5
+      "target": "survey_runner_surveyrunner"
     },
     {
       "relation": "uses",
@@ -32845,9 +32845,9 @@
       "weight": 0.8,
       "_src": "survey_cli_survey_rationale_278",
       "_tgt": "survey_runner_runnerconfig",
+      "confidence_score": 0.5,
       "source": "survey_cli_survey_rationale_278",
-      "target": "survey_runner_runnerconfig",
-      "confidence_score": 0.5
+      "target": "survey_runner_runnerconfig"
     },
     {
       "relation": "uses",
@@ -32857,9 +32857,9 @@
       "weight": 0.8,
       "_src": "survey_cli_survey_rationale_286",
       "_tgt": "survey_runner_surveyrunner",
+      "confidence_score": 0.5,
       "source": "survey_cli_survey_rationale_286",
-      "target": "survey_runner_surveyrunner",
-      "confidence_score": 0.5
+      "target": "survey_runner_surveyrunner"
     },
     {
       "relation": "uses",
@@ -32869,9 +32869,9 @@
       "weight": 0.8,
       "_src": "survey_cli_survey_rationale_286",
       "_tgt": "survey_runner_runnerconfig",
+      "confidence_score": 0.5,
       "source": "survey_cli_survey_rationale_286",
-      "target": "survey_runner_runnerconfig",
-      "confidence_score": 0.5
+      "target": "survey_runner_runnerconfig"
     },
     {
       "relation": "uses",
@@ -32881,9 +32881,9 @@
       "weight": 0.8,
       "_src": "survey_cli_survey_rationale_304",
       "_tgt": "survey_runner_surveyrunner",
+      "confidence_score": 0.5,
       "source": "survey_cli_survey_rationale_304",
-      "target": "survey_runner_surveyrunner",
-      "confidence_score": 0.5
+      "target": "survey_runner_surveyrunner"
     },
     {
       "relation": "uses",
@@ -32893,9 +32893,9 @@
       "weight": 0.8,
       "_src": "survey_cli_survey_rationale_304",
       "_tgt": "survey_runner_runnerconfig",
+      "confidence_score": 0.5,
       "source": "survey_cli_survey_rationale_304",
-      "target": "survey_runner_runnerconfig",
-      "confidence_score": 0.5
+      "target": "survey_runner_runnerconfig"
     },
     {
       "relation": "uses",
@@ -32905,9 +32905,9 @@
       "weight": 0.8,
       "_src": "survey_cli_survey_rationale_317",
       "_tgt": "survey_runner_surveyrunner",
+      "confidence_score": 0.5,
       "source": "survey_cli_survey_rationale_317",
-      "target": "survey_runner_surveyrunner",
-      "confidence_score": 0.5
+      "target": "survey_runner_surveyrunner"
     },
     {
       "relation": "uses",
@@ -32917,9 +32917,9 @@
       "weight": 0.8,
       "_src": "survey_cli_survey_rationale_317",
       "_tgt": "survey_runner_runnerconfig",
+      "confidence_score": 0.5,
       "source": "survey_cli_survey_rationale_317",
-      "target": "survey_runner_runnerconfig",
-      "confidence_score": 0.5
+      "target": "survey_runner_runnerconfig"
     },
     {
       "relation": "imports_from",
@@ -33061,9 +33061,9 @@
       "weight": 0.8,
       "_src": "survey_runner_surveyresult",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_surveyresult",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -33073,9 +33073,9 @@
       "weight": 0.8,
       "_src": "survey_runner_surveyresult",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_surveyresult",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -33085,9 +33085,9 @@
       "weight": 0.8,
       "_src": "survey_runner_surveyresult",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_surveyresult",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "calls",
@@ -33109,9 +33109,9 @@
       "weight": 0.8,
       "_src": "survey_runner_runnerconfig",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_runnerconfig",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -33121,9 +33121,9 @@
       "weight": 0.8,
       "_src": "survey_runner_runnerconfig",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_runnerconfig",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -33133,9 +33133,9 @@
       "weight": 0.8,
       "_src": "survey_runner_runnerconfig",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_runnerconfig",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "method",
@@ -33277,9 +33277,9 @@
       "weight": 0.8,
       "_src": "survey_runner_surveyrunner",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_surveyrunner",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -33289,9 +33289,9 @@
       "weight": 0.8,
       "_src": "survey_runner_surveyrunner",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_surveyrunner",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -33301,9 +33301,9 @@
       "weight": 0.8,
       "_src": "survey_runner_surveyrunner",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_surveyrunner",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "calls",
@@ -33661,9 +33661,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -33673,9 +33673,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -33685,9 +33685,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "uses",
@@ -33697,9 +33697,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_56",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_56",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -33709,9 +33709,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_56",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_56",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -33721,9 +33721,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_56",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_56",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "uses",
@@ -33733,9 +33733,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_67",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_67",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -33745,9 +33745,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_67",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_67",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -33757,9 +33757,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_67",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_67",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "uses",
@@ -33769,9 +33769,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_216",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_216",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -33781,9 +33781,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_216",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_216",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -33793,9 +33793,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_216",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_216",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "uses",
@@ -33805,9 +33805,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_284",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_284",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -33817,9 +33817,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_284",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_284",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -33829,9 +33829,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_284",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_284",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "uses",
@@ -33841,9 +33841,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_313",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_313",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -33853,9 +33853,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_313",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_313",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -33865,9 +33865,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_313",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_313",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "uses",
@@ -33877,9 +33877,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_318",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_318",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -33889,9 +33889,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_318",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_318",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -33901,9 +33901,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_318",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_318",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "uses",
@@ -33913,9 +33913,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_323",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_323",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -33925,9 +33925,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_323",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_323",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -33937,9 +33937,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_323",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_323",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "uses",
@@ -33949,9 +33949,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_348",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_348",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -33961,9 +33961,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_348",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_348",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -33973,9 +33973,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_348",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_348",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "uses",
@@ -33985,9 +33985,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_365",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_365",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -33997,9 +33997,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_365",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_365",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -34009,9 +34009,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_365",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_365",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "imports_from",
@@ -34176,8 +34176,8 @@
       "source_file": "survey-cli/survey/snapshot.py",
       "source_location": "L163",
       "weight": 1.0,
-      "_src": "survey_snapshot_generate_snapshot",
-      "_tgt": "survey_scanner_detect_provider",
+      "_src": "survey_scanner_detect_provider",
+      "_tgt": "survey_snapshot_generate_snapshot",
       "source": "survey_scanner_detect_provider",
       "target": "survey_snapshot_generate_snapshot"
     },

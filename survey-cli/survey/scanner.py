@@ -188,7 +188,11 @@ def read_page_text(ws_url, max_len=500):
 
 
 def read_balance(port=9999):
-    """Read current balance from dashboard."""
+    """Read current balance from dashboard.
+
+    The heypiggy dashboard shows balance in a .balance or .credit element.
+    Falls back to regex on innerText.
+    """
     ws_url = chrome.find_dashboard_ws(port)
     if not ws_url:
         return 0.0
@@ -200,15 +204,31 @@ def read_balance(port=9999):
             "params": {
                 "expression": '''
 (function() {
+    // Try specific balance elements first
+    var el = document.querySelector('.balance, .my-balance, .credit, [class*=balance], [class*=credit]');
+    if (el) {
+        var t = el.innerText || el.textContent;
+        var m = t.match(/(\\d+[.,]\\d+)/);
+        if (m) return m[1].replace(",", ".");
+    }
+    // Fallback: find the largest number near € in the full text
     var t = document.body.innerText;
-    var m = t.match(/\\d+\\.\\d+\\s*[€$]/g);
-    return m ? m[m.length-1].replace("€","").replace("$","").trim() : "0";
+    var re = /(\\d+[.,]\\d+)\\s*\\n?\\s*[€$]/g;
+    var matches = [];
+    var match;
+    while ((match = re.exec(t)) !== null) {
+        matches.push(parseFloat(match[1].replace(",", ".")));
+    }
+    // Filter out very small values (< 0.01) and return the largest
+    var valid = matches.filter(function(v) { return v > 0.01; });
+    return valid.length > 0 ? Math.max.apply(null, valid).toString() : "0";
 })()
 '''
             }
         }))
         r = json.loads(ws.recv())
         ws.close()
-        return float(r.get("result", {}).get("result", {}).get("value", "0"))
-    except Exception:
+        val = r.get("result", {}).get("result", {}).get("value", "0")
+        return float(val)
+    except Exception as e:
         return 0.0
