@@ -781,3 +781,46 @@ else:
 - ❌ Hardcoded PIDs (48437, 51212, etc.)
 - ❌ devjerro@gmail.com (NUR zukunftsorientierte.energie@gmail.com)
 - ❌ Alle anderen Login-Implementierungen (A2A-Worker, stealth-skills, etc. — GELÖSCHT)
+
+---
+
+## 🚀 SURVEY-CLI — Standalone Binary (2026-05-06, NEU)
+
+**Separates survey automation from coding completely.**
+
+### Was ist survey-cli?
+- **Standalone** Python-CLI (kein opencode cli nötig!)
+- **12 subcommands**: login, scan, run, loop, watch, balance, status, doctor, kill, summary, opencode, profile
+- **NEMO Architecture**: Compact Snapshot → NIM Decision → Batch Execute → AutoDoc
+- **CDP WebSocket** für ALLE Browser-Interaktionen
+- **NVIDIA NIM Nemotron 3 Omni** für Entscheidungen
+- **Auto-Dokumentation** via append-only JSONL (KEIN LLM schreibt Docs!)
+- **OpenCode Bridge** für Coding-Delegation
+
+### Architektur
+```
+survey.py → survey/*.py → CDP WebSocket (port 9999) → Chrome
+                            NVIDIA NIM API → Nemotron 3 Omni
+                            logs/*.jsonl → Auto-Doc (append-only)
+```
+
+### Quick Start
+```bash
+cd survey-cli/
+pip install -r requirements.txt
+./survey.py login       # Einmalig Login
+./survey.py watch       # Dauerschleife
+```
+
+### Wann survey-cli vs opencode cli?
+| scenario | tool |
+|----------|------|
+| Umfragen ausfüllen | `survey.py loop --max 10` |
+| Dashboard scannen | `survey.py scan` |
+| Coding-Aufgabe | `survey.py opencode "fix X"` |
+| System-Check | `survey.py doctor` |
+| Entwicklung | `opencode` (open-code cli) |
+
+### GitHub
+- **Repo**: https://github.com/SIN-CLIs/survey-cli
+- **Location**: `survey-cli/` im stealth-runner workspace

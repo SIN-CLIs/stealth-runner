@@ -38,6 +38,19 @@
 |---------|------|--------|
 | playstealth launch | [commands/playstealth/launch.md](commands/playstealth/launch.md) | ✅ |
 | kill bot chrome | [commands/bot-chrome/kill-bot-chrome.md](commands/bot-chrome/kill-bot-chrome.md) | ✅ |
+
+### Survey Automation (survey-cli — NEW)
+| Command | Location | Status |
+|---------|----------|--------|
+| survey login | [survey-cli/survey.py](survey-cli/survey.py) | ✅ NEW |
+| survey scan | [survey-cli/survey/scanner.py](survey-cli/survey/scanner.py) | ✅ NEW |
+| survey run | [survey-cli/survey/runner.py](survey-cli/survey/runner.py) | ✅ NEW |
+| survey loop | [survey-cli/survey/runner.py](survey-cli/survey/runner.py) | ✅ NEW |
+| survey watch | [survey-cli/survey.py](survey-cli/survey.py) | ✅ NEW |
+| survey balance | [survey-cli/survey/scanner.py](survey-cli/survey/scanner.py) | ✅ NEW |
+| survey status/doctor | [survey-cli/survey.py](survey-cli/survey.py) | ✅ NEW |
+| survey opencode | [survey-cli/survey/opencode_bridge.py](survey-cli/survey/opencode_bridge.py) | ✅ NEW |
+| **GitHub Repo** | [SIN-CLIs/survey-cli](https://github.com/SIN-CLIs/survey-cli) | ✅ |
 | find bot pids | [commands/bot-chrome/find-bot-pids.md](commands/bot-chrome/find-bot-pids.md) | ✅ |
 
 ### Auth & Credentials
