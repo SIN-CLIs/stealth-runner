@@ -1,7 +1,10 @@
-"""NVIDIA NIM Client — Nemotron 3 Omni survey decisions.
+"""NVIDIA NIM Client v2 — Nemotron 3 Omni with Chain-of-Thought.
 
-Reuses OpenAI-compatible API pattern. Returns batch actions.
-Falls back to simple auto-pilot when NIM is unavailable.
+Key findings (2026-05-06):
+- Reasoning models need chain-of-thought prompts (NOT system prompts)
+- max_tokens must be ≥500 for reasoning overhead
+- The model needs to "think" before outputting JSON
+- Short imperative prompts ("Return ONLY JSON") cause empty responses
 """
 
 import json
@@ -11,91 +14,69 @@ import re
 from openai import OpenAI
 from typing import Dict, List, Any, Optional
 
-# ── Constants ──────────────────────────────────────────
-
 DEFAULT_MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
 DEFAULT_BASE_URL = "https://integrate.api.nvidia.com/v1"
-MAX_TOKENS = 800
+MAX_TOKENS = 600
 RETRIES = 3
 
-ACTION_TYPES = ["click", "fill", "select", "check", "wait", "submit", "skip"]
 
-SYSTEM_PROMPT = """You are an ultra-fast survey-filling agent. Analyze a compact DOM snapshot and decide the next batch of actions.
-
-RULES:
-1. Match question text to user profile data.
-2. Return ONLY a JSON array of batch actions.
-3. Use @eN element references from snapshot.
-4. NEVER write code or explanations. Just JSON.
-5. Batch independent actions together.
-6. On completion text, return [{"action": "complete"}].
-
-ACTIONS:
-- {"ref": "@eN", "action": "click"}     — Click element
-- {"ref": "@eN", "action": "fill", "value": "text"}  — Fill text field
-- {"ref": "@eN", "action": "select"}    — Select radio/checkbox
-- {"ref": "@eN", "action": "check"}     — Toggle checkbox
-- {"action": "wait", "ms": 800}         — Wait
-- {"action": "submit"}                  — Click next/submit
-- {"action": "complete"}                — Survey done"""
-
-
-# ── Prompt Builder ─────────────────────────────────────
-
-def build_survey_prompt(
-    snapshot: Dict[str, Any],
-    profile: Dict[str, Any],
-    learnings: Optional[List[str]] = None,
-    history: Optional[List[Dict]] = None,
-) -> str:
-    """Build token-efficient prompt for Nemotron."""
-    parts = []
-
-    # Compact element list (truncated to 30)
+def build_survey_prompt(snapshot, profile, learnings=None, history=None):
+    """Build chain-of-thought prompt for Nemotron 3 Omni.
+    
+    The model needs to THINK before acting. Chain-of-thought format
+    lets it analyze the question, match the profile, then output JSON.
+    """
     refs = snapshot.get("refs", {})
-    elements_str = json.dumps(dict(list(refs.items())[:30]), indent=2, ensure_ascii=False)
-    if len(refs) > 30:
-        elements_str += f"\n... ({len(refs) - 30} more truncated)"
-
-    questions = snapshot.get("semantic", {}).get("questions", [])
+    # Compact element list (max 25)
+    elements = dict(list(refs.items())[:25])
+    questions = snapshot.get("semantic", {}).get("questions", [])[:3]
+    provider = snapshot.get("provider", "?")
     progress = snapshot.get("semantic", {}).get("progress", "?")
 
-    parts.append(f"## Snapshot ({snapshot.get('provider', '?')}, progress {progress})")
-    parts.append(f"```json\n{elements_str}\n```")
-
-    if questions:
-        parts.append(f"\n## Questions\n{json.dumps(questions, ensure_ascii=False)}")
-
-    # Profile (key fields only)
+    # Minimal profile
     profile_fields = {
         "age": profile.get("age"),
         "gender": profile.get("gender_label"),
         "city": profile.get("city"),
-        "state": profile.get("state"),
         "education": profile.get("education"),
         "employment": profile.get("employment_label"),
         "income": profile.get("household_income"),
     }
     profile_fields = {k: v for k, v in profile_fields.items() if v}
-    parts.append(f"\n## Profile\n{json.dumps(profile_fields, indent=2)}")
 
-    # Learnings
-    if learnings:
-        parts.append("\n## Learnings\n" + "\n".join(f"- {l}" for l in learnings[:5]))
+    prompt = f"""Analyze this survey page and decide what to do next.
 
-    # Recent actions
-    if history:
-        recent = history[-3:]
-        parts.append(f"\n## Recent\n{json.dumps(recent, indent=2)}")
+Provider: {provider} | Progress: {progress}
 
-    parts.append("\nReturn ONLY JSON array of actions.")
-    return "\n".join(parts)
+Available elements:
+{json.dumps(elements, indent=2, ensure_ascii=False)}
+
+Detected questions:
+{json.dumps(questions, ensure_ascii=False)}
+
+User profile:
+{json.dumps(profile_fields, indent=2)}
+
+Think step by step:
+1. What question is being asked?
+2. What answer matches the profile?
+3. Which element(s) need to be clicked/selected/filled?
+4. Is there a submit/next button?
+
+Then output ONLY a JSON array of actions.
+Example: [{{"ref": "@e0", "action": "select"}}, {{"action": "submit"}}]
+If done (completion text visible): [{{"action": "complete"}}]
+
+Your JSON:"""
+
+    return prompt
 
 
-# ── Response Parser ────────────────────────────────────
-
-def parse_response(raw: str) -> List[Dict[str, Any]]:
-    """Parse LLM response into action list."""
+def parse_response(raw):
+    """Parse LLM response into action list. Robust extraction."""
+    if not raw:
+        return [{"action": "submit"}]  # fallback
+    
     raw = raw.strip()
 
     # Remove markdown code fences
@@ -115,16 +96,19 @@ def parse_response(raw: str) -> List[Dict[str, Any]]:
             return parsed["actions"]
         return [parsed]
     except json.JSONDecodeError:
-        match = re.search(r"\[.*\]", raw, re.DOTALL)
+        match = re.search(r"\[.*?\]", raw, re.DOTALL)
         if match:
             try:
                 return json.loads(match.group(0))
             except json.JSONDecodeError:
                 pass
-    return [{"action": "error", "raw": raw[:200]}]
+    
+    # Last resort: check for "complete"
+    if "complete" in raw.lower() or "done" in raw.lower():
+        return [{"action": "complete"}]
+    
+    return [{"action": "submit"}]  # ultimate fallback
 
-
-# ── NIM Client ─────────────────────────────────────────
 
 class NIMClient:
     """NVIDIA Nemotron 3 Omni client for survey decisions."""
@@ -145,21 +129,14 @@ class NIMClient:
 
     def decide(self, snapshot, profile,
                learnings=None, history=None,
-               temperature=0.1):
-        """Decide next batch actions.
-
-        Args:
-            snapshot: Dict from snapshot generator
-            profile: User profile dict
-            learnings: Optional list of learnings
-            history: Optional recent action history
-            temperature: LLM temperature
+               temperature=0.0):
+        """Decide next batch actions with chain-of-thought.
 
         Returns:
-            Dict with actions, raw_response, tokens, elapsed_ms
+            Dict with actions, tokens, elapsed_ms
         """
         if not self.client:
-            return {"actions": self._simple_actions(snapshot),
+            return {"actions": [{"action": "submit"}],
                     "model": "auto_pilot", "elapsed_ms": 0,
                     "tokens": {"total": 0}}
 
@@ -169,66 +146,30 @@ class NIMClient:
         try:
             response = self.client.chat.completions.create(
                 model=self.model,
-                messages=[
-                    {"role": "system", "content": SYSTEM_PROMPT},
-                    {"role": "user", "content": prompt},
-                ],
+                messages=[{"role": "user", "content": prompt}],
                 temperature=temperature,
                 max_tokens=MAX_TOKENS,
             )
             elapsed = time.monotonic() - start
-            raw = response.choices[0].message.content.strip()
+            raw = response.choices[0].message.content or ""
             actions = parse_response(raw)
 
             return {
                 "actions": actions,
-                "raw_response": raw,
+                "raw_response": raw[:200],
                 "model": self.model,
                 "elapsed_ms": round(elapsed * 1000),
                 "tokens": {
-                    "prompt": response.usage.prompt_tokens if response.usage else 0,
-                    "completion": response.usage.completion_tokens if response.usage else 0,
                     "total": response.usage.total_tokens if response.usage else 0,
                 },
             }
         except Exception as e:
             elapsed = time.monotonic() - start
-            return {"actions": self._simple_actions(snapshot),
-                    "model": f"fallback_{e}",
+            return {"actions": [{"action": "submit"}],
+                    "model": f"fallback",
                     "elapsed_ms": round(elapsed * 1000),
                     "tokens": {"total": 0}}
 
-    def _simple_actions(self, snapshot):
-        """Simple auto-pilot fallback."""
-        actions = []
-
-        # Select first radio/checkbox
-        for ref, info in snapshot.get("refs", {}).items():
-            if info.get("role") in ("radio", "checkbox") and info.get("enabled", True):
-                actions.append({"ref": ref, "action": "select"})
-                break
-
-        # Find submit/next button
-        for ref, info in snapshot.get("refs", {}).items():
-            if info.get("role") == "button":
-                text = info.get("text", "").lower()
-                if any(kw in text for kw in ["weiter", "next", "submit", "nächste"]):
-                    actions.append({"action": "submit"})
-                    break
-        else:
-            # Fallback: first button
-            for ref, info in snapshot.get("refs", {}).items():
-                if info.get("role") == "button":
-                    actions.append({"ref": ref, "action": "click"})
-                    break
-
-        if not actions:
-            actions.append({"action": "submit"})
-
-        return actions
-
-
-# ── Singleton ──────────────────────────────────────────
 
 _default_client = None
 

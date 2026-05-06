@@ -352,17 +352,7 @@ class SurveyRunner:
 
     def _create_tab(self, dashboard_ws, url):
         """Create a new browser tab via CDP Target.createTarget."""
-        try:
-            ws = websocket.create_connection(dashboard_ws, timeout=15)
-            ws.send(json.dumps({
-                "id": 1, "method": "Target.createTarget",
-                "params": {"url": url}
-            }))
-            r = json.loads(ws.recv())
-            ws.close()
-            return r.get("result", {}).get("targetId")
-        except Exception:
-            return None
+        return chrome.create_tab(url, self.config.cdp_port)
 
     def _click_redirect_link(self, tab_ws):
         """Click the 'hier klicken' link on CPX redirect page."""

@@ -144,24 +144,31 @@ def is_chrome_alive(port=9999):
 
 
 def launch_chrome(url="https://www.heypiggy.com/?page=dashboard", port=9999):
-    """Launch Chrome via playstealth or raw subprocess."""
-    # Try playstealth first
+    """Launch Chrome via playstealth or raw subprocess.
+
+    NOTE: playstealth launch does NOT accept --port. Port is auto-assigned.
+    For raw launch, we specify --remote-debugging-port directly.
+    """
+    # Try playstealth first (port is auto-assigned)
     try:
         result = subprocess.run(
-            ["playstealth", "launch", "--url", url, "--port", str(port)],
+            ["playstealth", "launch", "--url", url],
             capture_output=True, text=True, timeout=30
         )
         if result.returncode == 0:
             try:
                 info = json.loads(result.stdout)
-                print(f"[CHROME] Launched: pid={info.get('pid')}, port={port}")
-                return info
+                actual_port = info.get("cdp_port", info.get("port", port))
+                print(f"[CHROME] Launched via playstealth: pid={info.get('pid')}, port={actual_port}")
+                return {"pid": info.get("pid"), "port": actual_port, "profile": info.get("profile", "")}
             except json.JSONDecodeError:
                 pass
     except FileNotFoundError:
         pass
+    except Exception:
+        pass
 
-    # Fallback: raw Chrome launch with remote debugging
+    # Fallback: raw Chrome launch
     profile_dir = f"/tmp/heypiggy-bot-{int(time.time())}"
     cmd = [
         "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
@@ -169,18 +176,42 @@ def launch_chrome(url="https://www.heypiggy.com/?page=dashboard", port=9999):
         "--remote-allow-origins=*",
         "--no-first-run",
         "--no-default-browser-check",
-        "--disable-background-networking",
-        "--disable-sync",
         f"--user-data-dir={profile_dir}",
         "--force-renderer-accessibility",
         url,
     ]
-    subprocess.Popen(
-        cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-    )
-    print(f"[CHROME] Launching: port={port}, profile={profile_dir}")
-    time.sleep(5)
+    subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    print(f"[CHROME] Raw launch: port={port}, profile={profile_dir}")
+    time.sleep(8)
     return {"pid": None, "port": port, "profile": profile_dir}
+
+
+def create_tab(url, port=9999):
+    """Create a new browser tab via CDP WebSocket.
+
+    Uses Target.createTarget through an existing WebSocket connection.
+    Does NOT use HTTP API (which is unreliable across Chrome versions).
+    """
+    try:
+        import websocket
+        # Find any existing tab to get a WebSocket
+        pages = find_bot_tabs(port)
+        if not pages:
+            return None
+        ws_url = pages[0].get("webSocketDebuggerUrl")
+        if not ws_url:
+            return None
+
+        ws = websocket.create_connection(ws_url, timeout=10)
+        ws.send(json.dumps({
+            "id": 1, "method": "Target.createTarget",
+            "params": {"url": url}
+        }))
+        r = json.loads(ws.recv())
+        ws.close()
+        return r.get("result", {}).get("targetId")
+    except Exception:
+        return None
 
 
 def safe_kill_bot():
