@@ -56,3 +56,6 @@ logbook.stealth.yaml
 
 # Infisical
 .infisical.json
+
+stealth-skills/
+graphify-out/cache/
