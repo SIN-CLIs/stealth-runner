@@ -34,7 +34,7 @@ class SurveyResult:
     elapsed_s: float = 0.0
     nim_calls: int = 0
     nim_tokens: int = 0
-    error: Optional[str] = None
+    error: str = ""
 
 
 @dataclass

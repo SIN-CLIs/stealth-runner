@@ -220,13 +220,8 @@ class BatchExecutor:
         a_start = time.monotonic()
 
         # Get WebSocket URL for state verification calls
-        ws_url = ws.getsockname()
-        if not ws_url:
-            # Extract from the socket if available
-            try:
-                ws_url = f"ws://localhost:{ws._sock.getpeername()[1]}"
-            except Exception:
-                ws_url = None
+        # self.ws_url is always available (set in __init__)
+        ws_url = self.ws_url
 
         try:
             # Normalize ref: add @e prefix if missing
@@ -235,8 +230,7 @@ class BatchExecutor:
                 ref = "@" + ref
 
             # SOTA: Capture DOM state BEFORE action (anti-stuck)
-            before_hash = capture_dom_hash(ws.sock if hasattr(ws, 'sock') else ws_url, 2000) \
-                if ws_url else ""
+            before_hash = capture_dom_hash(ws_url, 2000) if ws_url else ""
 
             js = self._build_js(action_type, ref, value)
 
@@ -251,9 +245,7 @@ class BatchExecutor:
                 method_used = "cdp_click_element"
             elif js and js.startswith("__CDP_CLICK_BUTTON__"):
                 button_text = js.replace("__CDP_CLICK_BUTTON__:", "")
-                success, method_used = cdp_click_element_by_text(
-                    ws.sock if hasattr(ws, 'sock') else ws_url, button_text
-                )
+                success, method_used = cdp_click_element_by_text(ws_url, button_text)
                 if not success:
                     # Last resort fallback
                     self._cdp_click_button(ws, js)
@@ -541,7 +533,10 @@ class BatchExecutor:
         if action_type in ("click", "select", "check"):
             if ref and ref.startswith("@e"):
                 idx = int(ref[2:])
-                return cmd.get("click_element", GENERIC_COMMANDS["click_element"]).format(idx=idx)
+                tpl = cmd.get("click_element", GENERIC_COMMANDS["click_element"])
+                # Use .replace() to avoid .format() conflicts with JS {} in templates
+                # Supports both {idx} (single) and {{idx}} (double-brace) patterns
+                return tpl.replace("{idx}", str(idx))
             # Fallback: click next/submit
             return cmd.get("click_next", GENERIC_COMMANDS["click_next"])
 
@@ -550,9 +545,8 @@ class BatchExecutor:
                 return None
             safe_value = value.replace('"', '\\"')
             tpl = cmd.get("fill_text", GENERIC_COMMANDS["fill_text"])
-            if "{value}" in tpl:
-                return tpl.format(value=safe_value)
-            return tpl
+            # Use .replace() to avoid .format() conflicts with JS {} in templates
+            return tpl.replace("{value}", safe_value)
 
         elif action_type == "submit":
             return cmd.get("click_next", GENERIC_COMMANDS["click_next"])
@@ -610,13 +604,13 @@ class BatchExecutor:
             ("qualify for this survey", "Did not qualify"),
             ("you've reached the limit", "Survey limit reached"),
             ("maximum number of responses", "Survey full"),
-            ("session expired", "Session expired (please re-login)"),
+            ("your session has expired", "Session expired (please re-login)"),
             ("connection error", "Connection error"),
             ("technical error", "Technical error"),
             ("503", "Server error 503"),
             ("500", "Server error 500"),
             ("oops", "Generic Oops error"),
-            ("sorry something went wrong", "Generic sorry error"),
+            ("sorry, something went wrong", "Generic sorry error"),
         ]
         for pattern, reason in generic_errors:
             if pattern in text:
