@@ -1,12 +1,28 @@
-# GOOGLE LOGIN FLOW — VERIFIED ✅ (PASSKEY v2 — 2026-05-05)
+# GOOGLE LOGIN FLOW — VERIFIED ✅ (2026-05-06, cua-driver + CDP)
 
 ## Status
-**VERIFIED** — 2026-05-05, LIVE GETESTET mit PID=78708, 8 Steps, 0 Fehler
+**VERIFIED** — 2026-05-06, PID=86834, cua-driver, 0 Fehler.  
+**VERIFIED** — 2026-05-05, PID=78708, 8 Steps, 0 Fehler.
+
+## ⚠️ VORAUSSETZUNGEN (Invarianten)
+```
+✅ Chrome: --force-renderer-accessibility + --remote-allow-origins=*
+✅ cua-driver daemon: nohup cua-driver serve > /tmp/cua-daemon.log 2>&1 &
+✅ Accessibility: System Settings → Privacy → Accessibility → Chrome AN
+✅ Port: 9999
+❌ NIE playstealth — setzt NICHT --force-renderer-accessibility
+```
+
+## Tool
+```bash
+./survey-cli/survey.py login
+# → Ruft survey/google_login.py → _verify_invariants() → cua-driver Flow
+```
 
 ## Phasen
 ```
-[1] playstealth launch → Chrome (PID)
-[2] list_windows → Dashboard WID
+[1] Chrome manuell starten mit --force-renderer-accessibility --remote-allow-origins=*
+[2] cua-driver call list_windows → Dashboard WID
 [3] get_window_state → Google Login-Symbol [54]
 [4] click [54] → OAuth Popup (NEUE WID)
 [5] list_windows → OAuth WID
