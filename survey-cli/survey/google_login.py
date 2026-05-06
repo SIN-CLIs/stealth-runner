@@ -80,17 +80,35 @@ def _set_value(pid, wid, index, value):
                                "element_index": index, "value": value})
 
 
-def google_login(launch_url="https://www.heypiggy.com/?page=dashboard"):
+def google_login(launch_url="https://www.heypiggy.com/?page=dashboard", force_launch=False):
     """Execute Google OAuth login. Tries cua-driver first, CDP as fallback.
     
-    cua-driver is PRIMARY (handles macOS Passkey/TouchID properly).
-    CDP is FALLBACK (works without Accessibility permission).
+    If Chrome is already running on port 9999, uses that instance.
+    Otherwise launches via playstealth.
     
     Returns:
         {"status": "ok", "pid": X, "wid": Y} on success
         {"status": "error", "reason": "..."} on failure
     """
-    # Try cua-driver first
+    # Check if Chrome is already running on port 9999
+    import urllib.request
+    chrome_running = False
+    try:
+        urllib.request.urlopen("http://127.0.0.1:9999/json", timeout=3)
+        chrome_running = True
+    except:
+        pass
+    
+    if chrome_running and not force_launch:
+        print("[LOGIN] Chrome already running on port 9999 — using existing instance")
+        # Try CDP login directly (cua-driver needs playstealth PID which we don't have)
+        from .cdp_login import cdp_login
+        result = cdp_login(port=9999)
+        if result.get("status") == "ok":
+            return {"status": "ok", "pid": 0, "wid": 0}
+        return {"status": "error", "reason": f"CDP login failed: {result.get('reason')}"}
+    
+    # Try cua-driver first (fresh Chrome launch)
     result = _cua_login(launch_url)
     if result.get("status") == "ok":
         return result
