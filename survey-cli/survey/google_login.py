@@ -98,7 +98,21 @@ def google_login(launch_url="https://www.heypiggy.com/?page=dashboard"):
     # Fallback to CDP login
     print(f"[LOGIN] cua-driver failed: {result.get('reason')} — trying CDP fallback...")
     from .cdp_login import cdp_login
-    cdp_result = cdp_login(port=9999)
+    # Detect port from running Chrome instances
+    import subprocess
+    ports = []
+    try:
+        out = subprocess.run(["lsof", "-i", "-P", "-n"], capture_output=True, text=True, timeout=5).stdout
+        for line in out.split("\n"):
+            if "Google" in line and "LISTEN" in line and "localhost" in line:
+                import re
+                m = re.search(r':(\d+)', line)
+                if m: ports.append(int(m.group(1)))
+    except: pass
+    
+    cdp_port = ports[0] if ports else 9999
+    print(f"[LOGIN] CDP fallback on port {cdp_port}")
+    cdp_result = cdp_login(port=cdp_port)
     if cdp_result.get("status") == "ok":
         return {"status": "ok", "pid": 0, "wid": 0}
     return {"status": "error", "reason": f"Both methods failed: cua={result.get('reason')}, cdp={cdp_result.get('reason')}"}
