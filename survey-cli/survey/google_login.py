@@ -81,12 +81,30 @@ def _set_value(pid, wid, index, value):
 
 
 def google_login(launch_url="https://www.heypiggy.com/?page=dashboard"):
-    """Execute the full Google OAuth login flow via cua-driver.
-
+    """Execute Google OAuth login. Tries cua-driver first, CDP as fallback.
+    
+    cua-driver is PRIMARY (handles macOS Passkey/TouchID properly).
+    CDP is FALLBACK (works without Accessibility permission).
+    
     Returns:
         {"status": "ok", "pid": X, "wid": Y} on success
         {"status": "error", "reason": "..."} on failure
     """
+    # Try cua-driver first
+    result = _cua_login(launch_url)
+    if result.get("status") == "ok":
+        return result
+    
+    # Fallback to CDP login
+    print(f"[LOGIN] cua-driver failed: {result.get('reason')} — trying CDP fallback...")
+    from .cdp_login import cdp_login
+    cdp_result = cdp_login(port=9999)
+    if cdp_result.get("status") == "ok":
+        return {"status": "ok", "pid": 0, "wid": 0}
+    return {"status": "error", "reason": f"Both methods failed: cua={result.get('reason')}, cdp={cdp_result.get('reason')}"}
+
+
+def _cua_login(launch_url):
     try:
         # STEP 1: Launch Chrome via playstealth
         print("[LOGIN] Launching Chrome via playstealth...")
