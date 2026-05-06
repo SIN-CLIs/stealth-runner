@@ -350,20 +350,34 @@ def _cua_login_existing(pid):
 
 def _cua_login(launch_url):
     try:
-        # STEP 1: Launch Chrome via playstealth
-        print("[LOGIN] Launching Chrome via playstealth...")
-        result = subprocess.run(
-            ["playstealth", "launch", "--url", launch_url],
-            capture_output=True, text=True, timeout=30
-        )
-        if result.returncode != 0:
-            return {"status": "error", "reason": f"playstealth failed: {result.stderr[:200]}"}
+        # STEP 1: Launch Chrome directly on port 9999 (NOT playstealth!)
+        print("[LOGIN] Launching Chrome on port 9999 with accessibility...")
+        subprocess.run(["pkill", "-f", "Google Chrome"], capture_output=True)
+        time.sleep(3)
         
-        launch_data = json.loads(result.stdout.strip().split("\n")[-1])
-        pid = launch_data["pid"]
-        print(f"[LOGIN] Chrome PID={pid}")
-
-        time.sleep(5)
+        subprocess.Popen([
+            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+            "--remote-debugging-port=9999",
+            "--remote-allow-origins=*",
+            "--force-renderer-accessibility",
+            "--no-first-run",
+            "--user-data-dir=/tmp/heypiggy-bot",
+            launch_url,
+        ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        time.sleep(8)
+        
+        # Find PID from cua-driver
+        r = subprocess.run([CUA_BIN, "call", "list_windows"], capture_output=True, text=True, timeout=10)
+        data = json.loads(r.stdout)
+        pid = None
+        for w in data.get("windows", []):
+            t = (w.get("title", "") or "").lower()
+            if "heypiggy" in t or "verdienen" in t:
+                pid = w.get("pid")
+                break
+        if not pid:
+            return {"status": "error", "reason": "Chrome PID not found after launch"}
+        print(f"[LOGIN] Chrome PID={pid} on port 9999")
 
         # STEP 2: Find dashboard window
         print("[LOGIN] Finding dashboard window...")
