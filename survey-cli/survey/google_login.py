@@ -105,14 +105,38 @@ def _find_google_login(markdown):
 
 
 def _click_element(pid, wid, index):
-    """Click element by index via cua-driver."""
-    return _cua("click", {"pid": pid, "window_id": wid, "element_index": index})
+    """Click element by index via cua-driver. Returns True on success."""
+    try:
+        result = subprocess.run(
+            [CUA_BIN, "call", "click"],
+            input=json.dumps({"pid": pid, "window_id": wid, "element_index": index}),
+            capture_output=True, text=True, timeout=15
+        )
+        success = "Performed" in result.stdout or "✅" in result.stdout
+        if not success:
+            print(f"  ⚠️ cua-driver click: {result.stdout.strip()[:100]}")
+        return success
+    except Exception as e:
+        print(f"  ❌ click error: {e}")
+        return False
 
 
 def _set_value(pid, wid, index, value):
-    """Set text value via cua-driver."""
-    return _cua("set_value", {"pid": pid, "window_id": wid, 
-                               "element_index": index, "value": value})
+    """Set text value via cua-driver. Returns True on success."""
+    try:
+        result = subprocess.run(
+            [CUA_BIN, "call", "set_value"],
+            input=json.dumps({"pid": pid, "window_id": wid, 
+                               "element_index": index, "value": value}),
+            capture_output=True, text=True, timeout=15
+        )
+        success = "Set" in result.stdout or "✅" in result.stdout or result.returncode == 0
+        if not success:
+            print(f"  ⚠️ cua-driver set_value: {result.stdout.strip()[:100]}")
+        return success
+    except Exception as e:
+        print(f"  ❌ set_value error: {e}")
+        return False
 
 
 def google_login(launch_url="https://www.heypiggy.com/?page=dashboard", force_launch=False):
