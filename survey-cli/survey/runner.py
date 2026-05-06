@@ -9,6 +9,7 @@ Loop per page:
 """
 
 import json
+import re
 import time
 import urllib.request
 import urllib.parse
@@ -16,7 +17,7 @@ import websocket
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
 from . import chrome
-from .snapshot import generate_snapshot, detect_completion, CompactSnapshot
+from .snapshot import generate_snapshot, detect_completion, detect_progress, CompactSnapshot
 from .nim import NIMClient, get_nim
 from .execute import BatchExecutor
 from .autodoc import log_earnings, log_error, log_session, log_decision
@@ -251,6 +252,11 @@ class SurveyRunner:
         max_consecutive_fails = 5  # Circuit breaker: stop after 5 fails
         prev_page_hash = ""  # Detect infinite loops (same page every time)
         loop_detection_threshold = 10  # Stop if same page 10× in a row (was 4, too aggressive)
+        prev_progress = ""  # SOTA: Track progress bar state for anti-stuck
+        progress_same_count = 0  # SOTA: Count iterations with same progress = stuck
+        progress_stuck_threshold = 5  # SOTA: Stuck if progress unchanged 5× (e.g., no question advance)
+        actions_executed = 0  # SOTA: Count total actions for anti-stuck
+        max_actions = 80  # SOTA: Safety limit — stop after 80 actions (survey has ~20-30 questions)
 
         for iteration in range(self.config.max_iterations):
             result.iterations = iteration + 1
@@ -271,7 +277,39 @@ class SurveyRunner:
                     print(f"  [iter {iteration}] {snapshot.provider} "
                           f"({len(snapshot.refs)} el)")
 
-                # 5c. Loop detection: same page content 10× = stuck (was 4, too aggressive)
+                # 5c. SOTA Anti-stuck: Progress bar tracking
+                # If progress bar stays same for 5+ iterations = stuck (no question advance)
+                page_text = BatchExecutor.read_page_text(tab_ws, 500)
+                progressed, pstatus = detect_progress(page_text)
+
+                # Extract progress indicator (e.g., "3/10" → "3/10")
+                prog_match = re.search(r"(\d+)\s*/\s*(\d+)", page_text)
+                current_progress = prog_match.group(0) if prog_match else str(len(snapshot.refs))
+
+                if current_progress == prev_progress and pstatus not in ("loading", "error_page"):
+                    progress_same_count += 1
+                    if progress_same_count >= progress_stuck_threshold:
+                        result.error = f"Stuck: no progress (same state {progress_stuck_threshold}×, progress={current_progress})"
+                        result.status = "error"
+                        break
+                else:
+                    progress_same_count = 0
+                    prev_progress = current_progress
+
+                # 5d. SOTA Safety: Max actions limit
+                # Estimate actions from snapshot element count (radio buttons, text fields, buttons)
+                estimated_actions = sum(
+                    1 for info in snapshot.refs.values()
+                    if info.get("role") in ("radio", "checkbox", "textbox", "button")
+                )
+                # Always add 1 for the submit/next button
+                actions_executed += min(estimated_actions + 1, 15)
+                if actions_executed > max_actions:
+                    result.error = f"Safety limit: {actions_executed} actions (survey overflow)"
+                    result.status = "error"
+                    break
+
+                # 5e. Loop detection: same page content 10× = stuck (was 4, too aggressive)
                 # Better detection: hash of element texts + count + provider
                 el_texts = [info.get("text","")[:30] for _,info in list(snapshot.refs.items())[:8]]
                 el_count = len(snapshot.refs)
@@ -286,18 +324,30 @@ class SurveyRunner:
                     consecutive_fails = 0
                     prev_page_hash = page_hash
 
-                # 5d. Empty snapshot: page not loaded — skip iteration
+                # 5f. SOTA Error detection: Check for screen-out/error page
+                is_error, error_reason = BatchExecutor.detect_error_page(page_text)
+                if is_error:
+                    if self.config.debug:
+                        print(f"[RUN] Error page detected: {error_reason}")
+                    result.status = "screen_out"
+                    result.error = error_reason
+                    self._close_tab(tab_id)
+                    log_earnings(survey_id, provider, 0, "screen_out", 0,
+                                {"error_reason": error_reason})
+                    return result
+
+                # 5g. Empty snapshot: page not loaded — skip iteration
                 if len(snapshot.refs) == 0:
                     time.sleep(self.config.wait_page_load)
                     continue
 
-                # 5e. Check completion
+                # 5h. Check completion
                 if detect_completion(snapshot.url + " " + snapshot.title) or \
                    self._detect_completion_text(tab_ws):
                     result.status = "completed"
                     break
 
-                # 5f. NIM decision (with retry on empty actions)
+                # 5i. NIM decision (with retry on empty actions)
                 if self.nim and self.config.use_nim:
                     decision = self.nim.decide(
                         snapshot.to_dict(), self.profile,
@@ -317,20 +367,20 @@ class SurveyRunner:
                 else:
                     actions = self._simple_actions(snapshot, tab_ws)
 
-                # 5g. Check for complete action
+                # 5j. Check for complete action
                 if any(a.get("action") == "complete" for a in actions):
                     result.status = "completed"
                     break
 
-                # 5h. Log decision
+                # 5k. Log decision
                 log_decision(
                     len(snapshot.refs), actions, nim_calls,
                     decision.get("elapsed_ms", 0) if self.nim else 0,
                     survey_id, provider
                 )
 
-                # 5i. Execute batch with circuit breaker
-                executor = BatchExecutor(tab_ws, provider)
+                # 5l. Execute batch with circuit breaker
+                executor = BatchExecutor(tab_ws, provider, config=self.config)
                 batch_result = executor.execute(actions)
 
                 # Circuit breaker: 3+ failed actions in batch = abort
@@ -343,17 +393,22 @@ class SurveyRunner:
                         result.status = "blocked"
                         break
 
-                # 5j. Record history
+                # 5m. SOTA Adaptive backoff: If page didn't progress, wait longer
+                if not progressed or pstatus in ("loading",):
+                    time.sleep(self.config.wait_page_load)  # Wait for page to load/render
+                else:
+                    time.sleep(self.config.wait_after_action)
+
+                # 5n. Record history
                 self.history.append({
                     "iteration": iteration,
                     "actions": len(actions),
                     "success": batch_result.total_success,
                     "fail": batch_result.total_fail,
                     "page_hash": page_hash,
+                    "progress": current_progress,
+                    "pstatus": pstatus,
                 })
-
-                # 5k. Wait for page transition
-                time.sleep(self.config.wait_after_action)
 
             except Exception as e:
                 if self.config.debug:

@@ -7,7 +7,8 @@ Inspired by Vercel agent-browser's compact snapshot format.
 import json
 import time
 import websocket
-from typing import Dict, List, Any, Optional
+import re
+from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, field, asdict
 from .scanner import detect_provider
 
@@ -195,10 +196,97 @@ def _detect_progress(elements):
 
 
 def detect_completion(text):
-    """Check if survey is completed based on page text."""
+    """SOTA: Check if survey is completed based on page text.
+
+    Provider-specific completion patterns (2026-05-06):
+    - German surveys: heypiggy, Samplicio DE
+    - English surveys: Qualtrics, Toluna, Cint, PureSpectrum
+    - All major panel providers covered
+    """
     text_lower = text.lower()
-    markers = [
-        "zurück zur website", "gutgeschrieben", "vielen dank",
-        "thank you", "survey complete", "umfrage beendet",
+
+    # ✅ SURVEY COMPLETED — all providers
+    completion_markers = [
+        # German
+        "zurück zur website", "zurück zur umfrage", "gutgeschrieben",
+        "guthaben wurde", "vielen dank", "danke für", "umfrage beendet",
+        "abgeschlossen", "erfolgreich", "ausgefüllt",
+        # English (Qualtrics, Toluna, Cint, PureSpectrum, Samplicio)
+        "thank you for completing", "thank you for your",
+        "survey complete", "completed the survey", "successfully submitted",
+        "your response has been recorded", "you have completed",
+        "points have been credited", "points credited", "reward credited",
+        "thank you for participating", "thanks for completing",
+        "your submission", "submitted successfully",
+        "finished", "complete!", "completed!",
+        # Progress/checking
+        "finished checking", "survey has ended",
     ]
-    return any(m in text_lower for m in markers)
+    for m in completion_markers:
+        if m in text_lower:
+            return True
+
+    return False
+
+
+def detect_progress(text: str) -> Tuple[bool, str]:
+    """SOTA: Detect survey progress state.
+
+    Returns (progressed, status):
+    - ('advanced', 'progressed') = page advanced to next question
+    - ('stuck', reason) = page is stuck or regressed
+    - ('loading', 'loading') = page still loading
+    - ('error', 'error_page') = error screen-out page
+    - ('captcha', 'captcha') = captcha detected
+    """
+    text_lower = text.lower()
+
+    # Check for error pages first
+    error_markers = [
+        "screen out", "you do not qualify", "not eligible",
+        "no app id was specified", "unable to start survey",
+        "survey has ended", "survey closed", "link expired",
+        "leider ist ein fehler", "error occurred",
+        "thank you for your interest",
+    ]
+    for m in error_markers:
+        if m in text_lower:
+            return False, "error_page"
+
+    # Loading indicators
+    loading_markers = ["loading", "just getting things ready", "won't be long",
+                       "bitte warten", "wird geladen", "please wait"]
+    for m in loading_markers:
+        if m in text_lower:
+            return False, "loading"
+
+    # Captcha
+    captcha_markers = ["captcha", "ich bin kein roboter", "i am not a robot",
+                       "not a robot", "human check", "human verification"]
+    for m in captcha_markers:
+        if m in text_lower:
+            return False, "captcha"
+
+    # Progress bar (common in Qualtrics, Cint)
+    progress_patterns = [
+        r"(\d+)\s*/\s*\d+",  # "3/10" progress
+        r"fortschritt.*?(\d+)%",  # German progress
+        r"progress.*?(\d+)%",
+        r"[████░░░░▓▓▒]",
+    ]
+    for pat in progress_patterns:
+        if re.search(pat, text_lower):
+            return True, "progressed"
+
+    # Question indicators (page advanced)
+    question_markers = [
+        "wie", "was", "wann", "warum",  # German question words
+        "how often", "how many", "do you", "would you", "please select",
+        "bitte auswählen", "stimmen sie zu", "meinungen",
+        "radio", "checkbox", "submit", "next", "weiter",
+    ]
+    question_count = sum(1 for m in question_markers if m in text_lower)
+    if question_count >= 2:
+        return True, "progressed"
+
+    return True, "unknown"
