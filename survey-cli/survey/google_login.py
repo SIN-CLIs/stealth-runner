@@ -65,8 +65,43 @@ def _find_by_role(elements, role, text_substring=None):
 
 
 def _get_state(pid, wid):
-    """Get AX-Tree for a window."""
-    return _cua("get_window_state", {"pid": pid, "window_id": wid})
+    """Get AX-Tree for a window. Returns tree_markdown text."""
+    data = _cua("get_window_state", {"pid": pid, "window_id": wid})
+    return data.get("tree_markdown", "")
+
+
+def _find_element_by_text(markdown, role, text_substring):
+    """Find element in tree_markdown by role and text substring.
+    
+    Parses lines like: - [54] AXLink (Google Login-Symbol)
+    """
+    import re
+    pattern = re.compile(
+        r'-\s*\[(\d+)\]\s+' + re.escape(role) + r'\s+\((.*?)\)'
+    )
+    for match in pattern.finditer(markdown):
+        idx = int(match.group(1))
+        txt = match.group(2).lower()
+        if text_substring in txt:
+            return {"element_index": idx, "text": txt}
+    return None
+
+
+def _find_google_login(markdown):
+    """Find Google Login-Symbol in markdown tree."""
+    # Try AXLink with google
+    el = _find_element_by_text(markdown, "AXLink", "google")
+    if el: return el
+    # Try AXImage with google
+    el = _find_element_by_text(markdown, "AXImage", "google")
+    if el: return el
+    # Try AXLink with anmeld
+    el = _find_element_by_text(markdown, "AXLink", "anmeld")
+    if el: return el
+    # Try AXLink with login
+    el = _find_element_by_text(markdown, "AXLink", "login")
+    if el: return el
+    return None
 
 
 def _click_element(pid, wid, index):
@@ -161,37 +196,20 @@ def _cua_login(launch_url):
         dash_wid = dash_win["window_id"]
         print(f"[LOGIN] Dashboard WID={dash_wid}")
 
-        # STEP 3: Find Google Login-Symbol (AXLink)
+        # STEP 3: Find Google Login-Symbol in markdown tree
         print("[LOGIN] Finding Google Login-Symbol...")
-        state = _get_state(pid, dash_wid)
-        google_link = _find_by_role(state, "AXLink", "google")
-        if not google_link:
-            # Fallback: look for any link with login-related text
-            google_link = _find_by_role(state, "AXLink", "login")
-        if not google_link:
-            # Try image with Google alt text
-            google_link = _find_by_role(state, "AXImage", "google")
-        if not google_link:
-            # Last resort: find any element near the known position
-            for el_data in [state]:
-                def find_near_bounds(root, target_x, target_y):
-                    result = []
-                    def traverse(el):
-                        b = el.get("bounds", {})
-                        x, y = b.get("x", 0), b.get("y", 0)
-                        if abs(x - target_x) < 100 and abs(y - target_y) < 100:
-                            if el.get("role") in ("AXLink", "AXButton", "AXImage"):
-                                result.append(el)
-                        for child in el.get("children", []):
-                            traverse(child)
-                    traverse(root)
-                    return result[0] if result else None
-                google_link = find_near_bounds(state, 764, 470)
+        markdown = _get_state(pid, dash_wid)
+        google_el = _find_google_login(markdown)
         
-        if not google_link:
-            return {"status": "error", "reason": "Google Login-Symbol not found in AX-Tree"}
+        if not google_el:
+            # Debug: show all AXLink elements
+            import re
+            links = re.findall(r'- \[(\d+)\] AXLink \((.*?)\)', markdown)
+            print(f"[LOGIN] Found {len(links)} AXLinks: {links[:5]}")
+            return {"status": "error", "reason": f"Google Login-Symbol not found. {len(links)} AXLinks on page."}
         
-        google_idx = google_link["element_index"]
+        google_idx = google_el["element_index"]
+        print(f"[LOGIN] Google Login-Symbol at index [{google_idx}]: {google_el.get('text','')}")
         print(f"[LOGIN] Google Login-Symbol at index [{google_idx}]")
 
         # STEP 4: Click Google Login
@@ -211,25 +229,23 @@ def _cua_login(launch_url):
         oauth_wid = oauth_win["window_id"]
         print(f"[LOGIN] OAuth WID={oauth_wid}")
 
-        # STEP 6: Find email field + Weiter button
+        # STEP 6: Find email field + Weiter in markdown
         print("[LOGIN] Finding email field...")
-        state = _get_state(pid, oauth_wid)
-        email_field = _find_by_role(state, "AXTextField", "e-mail")
-        if not email_field:
-            email_field = _find_by_role(state, "AXTextField", "telefon")
-        if not email_field:
-            email_field = _find_by_role(state, "AXTextField", "email")
-        if not email_field:
-            return {"status": "error", "reason": "Email field not found"}
-        email_idx = email_field["element_index"]
+        markdown = _get_state(pid, oauth_wid)
+        
+        email_el = (_find_element_by_text(markdown, "AXTextField", "e-mail") or
+                    _find_element_by_text(markdown, "AXTextField", "telefon") or
+                    _find_element_by_text(markdown, "AXTextField", "email"))
+        if not email_el:
+            return {"status": "error", "reason": "Email field not found in OAuth"}
+        email_idx = email_el["element_index"]
         print(f"[LOGIN] Email field at index [{email_idx}]")
 
-        weiter_btn = _find_by_role(state, "AXButton", "weiter")
-        if not weiter_btn:
-            weiter_btn = _find_by_role(state, "AXButton", "next")
-        if not weiter_btn:
-            return {"status": "error", "reason": "Weiter button not found"}
-        weiter_idx = weiter_btn["element_index"]
+        weiter_el = (_find_element_by_text(markdown, "AXButton", "weiter") or
+                     _find_element_by_text(markdown, "AXButton", "next"))
+        if not weiter_el:
+            return {"status": "error", "reason": "Weiter button not found in OAuth"}
+        weiter_idx = weiter_el["element_index"]
         print(f"[LOGIN] Weiter button at index [{weiter_idx}]")
 
         # STEP 7: Fill email + click Weiter
@@ -240,13 +256,12 @@ def _cua_login(launch_url):
         _click_element(pid, oauth_wid, weiter_idx)
         time.sleep(5)
 
-        # STEP 8: Passkey screen — find "Weiter" (NOT "Andere Option")
+        # STEP 8: Passkey screen — find "Weiter"
         print("[LOGIN] Passkey screen — finding Weiter...")
-        state = _get_state(pid, oauth_wid)
-        passkey_weiter = _find_by_role(state, "AXButton", "weiter")
+        markdown = _get_state(pid, oauth_wid)
+        passkey_weiter = _find_element_by_text(markdown, "AXButton", "weiter")
         if not passkey_weiter:
-            # Maybe already past passkey — check for Fortfahren
-            fortfahren = _find_by_role(state, "AXButton", "fortfahren")
+            fortfahren = _find_element_by_text(markdown, "AXButton", "fortfahren")
             if fortfahren:
                 print("[LOGIN] Passkey skipped — Fortfahren already visible")
                 _click_element(pid, oauth_wid, fortfahren["element_index"])
@@ -260,55 +275,31 @@ def _cua_login(launch_url):
 
         # STEP 9: Fortfahren
         print("[LOGIN] Finding Fortfahren...")
-        state = _get_state(pid, oauth_wid)
-        fortfahren_btn = _find_by_role(state, "AXButton", "fortfahren")
-        if fortfahren_btn:
+        markdown = _get_state(pid, oauth_wid)
+        fortfahren_el = _find_element_by_text(markdown, "AXButton", "fortfahren")
+        if fortfahren_el:
             print("[LOGIN] Clicking Fortfahren...")
-            _click_element(pid, oauth_wid, fortfahren_btn["element_index"])
+            _click_element(pid, oauth_wid, fortfahren_el["element_index"])
             time.sleep(3)
 
         # STEP 10: Consent Weiter
-        state = _get_state(pid, oauth_wid)
-        consent_weiter = _find_by_role(state, "AXButton", "weiter")
-        if consent_weiter:
+        markdown = _get_state(pid, oauth_wid)
+        consent_el = _find_element_by_text(markdown, "AXButton", "weiter")
+        if consent_el:
             print("[LOGIN] Clicking Consent Weiter...")
-            _click_element(pid, oauth_wid, consent_weiter["element_index"])
+            _click_element(pid, oauth_wid, consent_el["element_index"])
             time.sleep(5)
 
         # STEP 11: Verify login
         print("[LOGIN] Verifying login...")
         time.sleep(3)
-        dash_win = _find_window(pid, "heypiggy") or _find_window(pid, "dashboard")
-        if not dash_win:
-            # Window might have changed title
-            data = _cua("list_windows")
-            for w in data.get("windows", []):
-                if w.get("pid") == pid and w.get("bounds", {}).get("height", 0) > 500:
-                    if "umfragen" in (w.get("title") or "").lower() or "heypiggy" in (w.get("title") or "").lower():
-                        dash_win = w
-                        break
-            if not dash_win:
-                return {"status": "error", "reason": "Dashboard not found after login"}
-
-        dash_wid = dash_win["window_id"]
-        state = _get_state(pid, dash_wid)
-
-        # Check for Abmelden or Umfragen in AX-Tree
-        def check_logged_in(el):
-            text = ((el.get("title","") or el.get("value","") or 
-                     el.get("label","") or el.get("description","")).lower())
-            if "abmelden" in text or "umfragen" in text:
-                return True
-            for child in el.get("children", []):
-                if check_logged_in(child):
-                    return True
-            return False
-
-        if check_logged_in(state):
+        markdown = _get_state(pid, dash_wid)
+        logged_in = ("Abmelden" in markdown or "abmelden" in markdown) and ("Umfragen" in markdown or "umfragen" in markdown)
+        if logged_in:
             print(f"[LOGIN] ✅ SUCCESS — PID={pid}, WID={dash_wid}")
             return {"status": "ok", "pid": pid, "wid": dash_wid}
         else:
-            return {"status": "error", "reason": "Login verification failed"}
+            return {"status": "error", "reason": "Login verification failed — Abmelden/Umfragen not in AX-Tree"}
 
     except subprocess.TimeoutExpired:
         return {"status": "error", "reason": "Timeout"}
