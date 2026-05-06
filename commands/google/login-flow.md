@@ -1,10 +1,11 @@
 # GOOGLE LOGIN FLOW — VERIFIED ✅ (2026-05-06, cua-driver + CDP)
 
 ## Status
-**VERIFIED** — 2026-05-06, PID=86834, cua-driver, 0 Fehler.  
+**VERIFIED** — 2026-05-06, PID=97688 (port 9999), cua-driver, 0 Fehler.  
+**VERIFIED** — 2026-05-06, PID=95165, cua-driver, 0 Fehler.  
 **VERIFIED** — 2026-05-05, PID=78708, 8 Steps, 0 Fehler.
 
-## ⚠️ VORAUSSETZUNGEN (Invarianten)
+## ⚠️ VORAUSSETZUNGEN (Invarianten — werden von google_login.py geprüft)
 ```
 ✅ Chrome: --force-renderer-accessibility + --remote-allow-origins=*
 ✅ cua-driver daemon: nohup cua-driver serve > /tmp/cua-daemon.log 2>&1 &

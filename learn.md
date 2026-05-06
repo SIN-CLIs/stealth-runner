@@ -138,3 +138,123 @@ def _verify_invariants():
     return True
 ```
 **JEDES Tool MUSS einen Invariant-Guard haben.**
+
+## 🔥 DEBUGGING-TIMELINE (2026-05-06)
+
+| # | Bug | Root Cause | Fix |
+|---|-----|-----------|-----|
+| 1 | Login crasht `json.loads` | cua-driver `click` returns TEXT "✅ Performed", nicht JSON | `"Performed" in stdout` statt `json.loads()` |
+| 2 | "Email or Weiter not found" | Regex matchte nur `(text)`, nicht `"text"` | Regex: `[\(\"]([^\)\"]+)[\)\"]` |
+| 3 | 0 AX-Tree children | `get_window_state` hat `tree_markdown`, kein `children[]` | Parse markdown mit Regex |
+| 4 | Chrome window not found | `owner` Feld ist LEER in cua-driver | Via `title` suchen statt `owner` |
+| 5 | CDP login "success" bei Landing-Page | `cdp_login.py` returned immer OK | Gelöscht, cua-driver ist PRIMARY |
+| 6 | 2 Chrome-Instanzen (9999 + playstealth) | `google_login` startete playstealth | Launch direkt auf 9999 |
+| 7 | NIM decisions leer | `max_tokens=200` zu wenig für Reasoning-Model | `max_tokens=600`, Chain-of-thought |
+
+## 🔥 subprocess vs Shell Pipe (cua-driver)
+
+```python
+# ✅ Shell (funktioniert):
+echo '{"pid":84077,"window_id":1704,"element_index":56}' | cua-driver call click
+
+# ✅ Python subprocess (funktioniert auch):
+subprocess.run(["cua-driver","call","click"], input=json.dumps(params), 
+               capture_output=True, text=True)
+
+# ❌ ABER: json.loads() auf Output → CRASHT bei Text-Antwort!
+# cua-driver click/set_value → TEXT, nicht JSON
+```
+
+## 🔥 Google OAuth DOM-Struktur
+
+```
+Email Page:
+  input[type=email] #identifierId @ (25, 217, 450×54)
+  button "Weiter" @ (431, 414)
+
+Passkey Page:
+  NO "Weiter" button im DOM (nur "Andere Option wählen")
+  → cua-driver findet "Weiter" via AX-Tree, nicht CDP
+  → Passkey-Lösung ist macOS-Systemdialog → NUR cua-driver!
+
+Fortfahren Page:
+  button "Fortfahren" → klicken
+  button "Weiter" (Consent) → klicken
+```
+
+## 🔥 Provider Detection Patterns
+
+```python
+PROVIDER_PATTERNS = {
+    "qualtrics":      ["qualtrics.com", "jfe/form"],
+    "tolunastart":    ["tolunastart.com"],
+    "purespectrum":   ["purespectrum.com"],
+    "strat7":         ["strat7audiences.com"],
+    "brand_ambassador": ["brand-ambassador.com"],
+    "focusvision":    ["focusvision.com"],       # Kantar/Nfield
+    "decipher":       ["decipherinc.com"],
+    "ipsos":          ["ipsosinteractive.com"],
+    "samplicio":      ["samplicio.us"],
+    "surveyrouter":   ["surveyrouter.com"],       # BLOCKED
+    "gfk":            ["surveys.com"],            # BLOCKED
+}
+```
+
+## 🔥 GPT-OSS-120B — 10× schneller als Nemotron
+
+```python
+# Für 90% der Umfragen reicht dieses Modell:
+model = "openai/gpt-oss-120b"  # via NVIDIA NIM
+# Schneller, günstiger, gute JSON-Entscheidungen
+# Nemotron 3 Omni nur für komplexe Matrix/Video-Fragen
+```
+
+## 🔥 reCAPTCHA v2 Checkbox
+
+```python
+# 1. iframe-Position finden
+iframe = document.querySelector('iframe[title="reCAPTCHA"]')
+# 2. CDP-Click bei (iframe.x + 25, iframe.y + iframe.h/2)
+# 3. Wait 3s
+# 4. "Weiter" Button klicken auf Parent-Page
+```
+
+## 🔥 survey-cli Datei-Struktur (final)
+
+```
+survey-cli/
+├── survey.py                  # CLI Entry (12 commands)
+├── survey/
+│   ├── google_login.py        # cua-driver login (UNVERÄNDERLICH)
+│   ├── cdp_login.py           # CDP fallback login
+│   ├── accessibility.py       # Chrome Accessibility Manager
+│   ├── chrome.py              # Chrome Lifecycle (launch/create_tab)
+│   ├── scanner.py             # Dashboard Scan + Balance
+│   ├── runner.py              # NEMO Survey Execution
+│   ├── nim.py                 # NVIDIA NIM Client v2
+│   ├── snapshot.py            # Compact DOM Snapshot
+│   ├── execute.py             # CDP Batch Executor
+│   ├── autodoc.py             # Append-only JSONL Logging
+│   ├── opencode_bridge.py     # Coding Task Delegation
+│   ├── providers/
+│   │   ├── purespectrum.py    # OCR + Drag Solver
+│   │   ├── qualtrics.py       # .NextButton patterns
+│   │   ├── toluna.py          # .cf-radio patterns
+│   │   └── strat7.py          # .bsbutton patterns
+│   └── profiles/
+│       └── jeremy_schulze.json
+└── logs/                      # Auto-generated JSONL
+```
+
+## 🔥 NIE wieder diese Fehler
+
+1. **NIE `json.loads()` auf cua-driver `click`/`set_value` Output** — es ist TEXT!
+2. **NIE `el.get("children")` auf `get_window_state`** — nutze `tree_markdown`!
+3. **NIE `owner` Feld für Fenster-Identifikation** — nutze `title`!
+4. **NIE `playstealth launch`** — setzt Accessibility-Flag NICHT!
+5. **NIE Chrome ohne `--force-renderer-accessibility`** — cua-driver blind!
+6. **NIE Chrome ohne `--remote-allow-origins=*`** — CDP 403!
+7. **NIE `max_tokens=200` für Nemotron** — Reasoning Model braucht 600+!
+8. **NIE system prompt für Nemotron** — Chain-of-thought in user prompt!
+9. **NIE JS `.click()` auf Angular-Seiten** — CDP `Input.dispatchMouseEvent`!
+10. **NIE Zombie-Tabs offen lassen** — Cleanup vor jedem Survey-Run!
