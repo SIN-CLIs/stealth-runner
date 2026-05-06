@@ -159,6 +159,46 @@ def print_survey_table(results):
     return results
 
 
+# ── DOM Survey Card Scanner (IN-PAGE MODAL) ─────────────
+
+
+def scan_dashboard_dom(port=9999):
+    """Scan dashboard DOM for survey cards with rewards.
+
+    heypiggy renders survey cards with onclick=\"clickSurvey('ID')\".
+    These show reward/duration that CPX API doesn't expose.
+    """
+    try:
+        ws_url = chrome.find_dashboard_ws(port)
+        if not ws_url:
+            return []
+        ws = websocket.create_connection(ws_url, timeout=10)
+        ws.send(json.dumps({
+            "id": 1, "method": "Runtime.evaluate",
+            "params": {"expression": '''
+JSON.stringify(
+    Array.from(document.querySelectorAll("[onclick*=clickSurvey]")).map(el => {
+        var onclick = el.getAttribute("onclick");
+        var id = (onclick.match(/clickSurvey\\('(\\d+)'\\)/) || [])[1] || "";
+        var text = (el.textContent || "").trim();
+        var reward = (text.match(/(\\d+\\.?\\d*)\\s*€/) || [])[1] || "0";
+        var duration = (text.match(/(\\d+)\\s*Min/) || [])[1] || "0";
+        return {id: id, reward: parseFloat(reward), duration: parseInt(duration)};
+    })
+)
+''', "returnByValue": True}
+        }))
+        r = json.loads(ws.recv())
+        ws.close()
+        cards = json.loads(r.get("result", {}).get("result", {}).get("value", "[]"))
+        for c in cards:
+            c["provider"] = "in_page_modal"
+            c["type"] = "okay"
+        return cards
+    except Exception:
+        return []
+
+
 def scan_dashboard(port=9999, skip_providers=None):
     """Full scan: connect → extract IDs → filter → print.
 

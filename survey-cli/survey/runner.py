@@ -103,8 +103,11 @@ class SurveyRunner:
         if tabs_before != tabs_after and self.config.debug:
             print(f"[RUN] Cleaned {tabs_before - tabs_after} zombie tabs")
 
-        # 1. Get survey URL
-        if not survey_url:
+        # 1. Get survey URL (skip CPX API for in-page modal)
+        provider = None  # Will be set below
+        if survey_url == "in-page://modal":
+            provider = "in_page_modal"
+        elif not survey_url:
             # Check if it's a pre-qualifier
             details = chrome.get_survey_details(survey_id)
             if details.get("type") == "question":
@@ -134,7 +137,9 @@ class SurveyRunner:
                     log_earnings(survey_id, "pre_qualifier", 0, "screen_out", 0)
                     return result
 
-        provider = self._detect_provider(survey_url)
+        # Detect provider from URL (skip for in-page modal)
+        if provider != "in_page_modal":
+            provider = self._detect_provider(survey_url)
         result.provider = provider
 
         # 1b. Check blocked providers
@@ -144,12 +149,15 @@ class SurveyRunner:
             log_earnings(survey_id, provider, 0, "blocked", 0)
             return result
 
-        # 1c. Unknown provider → use generic fallback (tries all click patterns)
+        # 1c. Unknown provider → use generic fallback (except in-page modal)
         if provider == "unknown":
             provider = "generic"
             result.provider = "generic"
             if self.config.debug:
                 print(f"[RUN] Unknown provider — using generic fallback commands")
+        elif provider == "in_page_modal":
+            if self.config.debug:
+                print(f"[RUN] In-page modal survey — clicking card on dashboard")
 
         if self.config.debug:
             print(f"[RUN] {survey_id} → {provider} (CPX: {survey_url[:60]})")
@@ -162,79 +170,79 @@ class SurveyRunner:
         if self.config.debug:
             print(f"[BALANCE] Before survey: {balance_before}€")
 
-        # 3. Open survey in new tab
-        tab_id = self._create_tab(dashboard_ws, survey_url)
-        if not tab_id:
-            result.error = "Failed to create browser tab"
-            result.status = "error"
-            return result
-
-        # 3. Wait for CPX redirect + handle redirect page + detect REAL provider
-        # Fast-fail: if page is still loading after timeout, skip
-        tab_ws, actual_url = self._find_survey_tab_ws(tab_id)
-        
-        # Check for stuck loading pages
-        if tab_ws:
-            page_text = BatchExecutor.read_page_text(tab_ws, 500).lower()
-            if any(s in page_text for s in ["loading", "just getting things ready", "won't be long"]):
-                if self.config.debug:
-                    print("[RUN] Stuck on loading page — skipping")
-                self._close_tab(tab_id)
-                result.status = "screen_out"
-                result.error = "Survey stuck on loading page"
-                log_earnings(survey_id, "unknown", 0, "screen_out", 0)
+        # 3. Open survey — IN-PAGE MODAL (preferred) or NEW TAB (fallback)
+        is_in_page = (provider == "in_page_modal")
+        tab_id = None  # Only set for new-tab flow
+        if is_in_page:
+            # In-page modal: click survey card on dashboard (no new tab!)
+            tab_ws = self._click_survey_card(survey_id)
+            if not tab_ws:
+                result.error = "Failed to click survey card (in-page modal)"
+                result.status = "error"
                 return result
-        
-        time.sleep(self.config.wait_page_load)
-        
-        # Handle CPX redirect page (if stuck on "Sie werden umgeleitet")
-        tab_ws, actual_url = self._find_survey_tab_ws(tab_id)
-        if tab_ws:
-            page_text = BatchExecutor.read_page_text(tab_ws, 500).lower()
-            # Detect ALL expired survey error pages
-            if any(s in page_text for s in [
-                "no app id", "survey not available", "error - unable to start survey",
-                "survey closed", "link has expired", "survey has ended",
-                "leider ist ein fehler aufgetreten", "error occurred",
-                "this survey is no longer available", "survey unavailable",
-            ]):
-                if self.config.debug:
-                    print(f"[RUN] Survey URL expired or error page — skipping")
-                self._close_tab(tab_id)
-                result.status = "screen_out"
-                result.error = "Survey URL expired/error page (screener.purespectrum.com or similar)"
-                log_earnings(survey_id, "unknown", 0, "screen_out", 0)
+            time.sleep(self.config.wait_page_load)
+        else:
+            # Legacy: open new browser tab via Target.createTarget
+            tab_id = self._create_tab(dashboard_ws, survey_url)
+            if not tab_id:
+                result.error = "Failed to create browser tab"
+                result.status = "error"
                 return result
-            page_text = page_text  # keep lowercase for redirect check
-            if "umgeleitet" in page_text or "redirect" in page_text:
-                if self.config.debug:
-                    print("[RUN] CPX URL expired or survey not available — skipping")
-                self._close_tab(tab_id)
-                result.status = "screen_out"
-                result.error = "CPX survey not available (expired/removed)"
-                log_earnings(survey_id, "unknown", 0, "screen_out", 0)
-                return result
-            page_text = BatchExecutor.read_page_text(tab_ws, 500)
-            if "umgeleitet" in page_text.lower() or "redirect" in page_text.lower():
-                if self.config.debug:
-                    print("[RUN] CPX redirect page — clicking link...")
-                self._click_redirect_link(tab_ws)
-                time.sleep(self.config.wait_page_load)
-                tab_ws, actual_url = self._find_survey_tab_ws(tab_id)
 
-        if not tab_ws:
-            result.status = "screen_out"
-            result.error = "Survey tab not found after redirect (screen-out?)"
-            log_earnings(survey_id, "unknown", 0, "screen_out", 0)
-            return result
+            # Wait for CPX redirect + handle redirect page + detect REAL provider
+            tab_ws, actual_url = self._find_survey_tab_ws(tab_id)
+            
+            # Check for stuck loading pages
+            if tab_ws:
+                page_text = BatchExecutor.read_page_text(tab_ws, 500).lower()
+                if any(s in page_text for s in ["loading", "just getting things ready", "won't be long"]):
+                    if self.config.debug:
+                        print("[RUN] Stuck on loading page — skipping")
+                    self._close_tab(tab_id)
+                    result.status = "screen_out"
+                    result.error = "Survey stuck on loading page"
+                    log_earnings(survey_id, "unknown", 0, "screen_out", 0)
+                    return result
+            
+            time.sleep(self.config.wait_page_load)
+            
+            # Handle CPX redirect page (if stuck on "Sie werden umgeleitet")
+            tab_ws, actual_url = self._find_survey_tab_ws(tab_id)
+            if tab_ws:
+                page_text = BatchExecutor.read_page_text(tab_ws, 500).lower()
+                # Detect ALL expired survey error pages
+                if any(s in page_text for s in [
+                    "no app id", "survey not available", "error - unable to start survey",
+                    "survey closed", "link has expired", "survey has ended",
+                    "leider ist ein fehler aufgetreten", "error occurred",
+                    "this survey is no longer available", "survey unavailable",
+                ]):
+                    if self.config.debug:
+                        print(f"[RUN] Survey URL expired or error page — skipping")
+                    self._close_tab(tab_id)
+                    result.status = "screen_out"
+                    result.error = "Survey URL expired/error page"
+                    log_earnings(survey_id, "unknown", 0, "screen_out", 0)
+                    return result
+                if "umgeleitet" in page_text or "redirect" in page_text:
+                    if self.config.debug:
+                        print("[RUN] CPX redirect page — clicking link...")
+                    self._click_redirect_link(tab_ws)
+                    time.sleep(self.config.wait_page_load)
 
-        # Detect real provider from actual URL (not CPX URL)
-        real_provider = self._detect_provider(actual_url) if actual_url else provider
-        if real_provider != provider and real_provider != "unknown":
-            result.provider = real_provider
-            provider = real_provider
-            if self.config.debug:
-                print(f"[RUN] Real provider: {provider} ({actual_url[:60]})")
+        # Post-tab-creation: provider + URL detection
+        # For in-page modal: provider stays as "in_page_modal", URL is dashboard
+        if is_in_page:
+            actual_url = "heypiggy.com/dashboard"
+            real_provider = provider
+        else:
+            # Detect real provider from actual URL
+            real_provider = self._detect_provider(actual_url) if actual_url else provider
+            if real_provider != provider and real_provider != "unknown":
+                result.provider = real_provider
+                provider = real_provider
+                if self.config.debug:
+                    print(f"[RUN] Real provider: {provider} ({actual_url[:60]})")
 
         # 4. Handle PureSpectrum captcha preflight (if applicable)
         if provider == "purespectrum" and tab_ws:
@@ -249,9 +257,10 @@ class SurveyRunner:
             # Captcha solved, wait for page transition
             time.sleep(self.config.wait_page_load)
             # Refresh tab WS
-            tab_info = chrome.get_ws_for_tab(tab_id, self.config.cdp_port)
-            if tab_info:
-                tab_ws = tab_info
+            if tab_id:
+                tab_info = chrome.get_ws_for_tab(tab_id, self.config.cdp_port)
+                if tab_info:
+                    tab_ws = tab_info
 
         # 5. NEMO Loop — with Circuit Breaker + Tab Re-Discovery
         nim_calls = 0
@@ -269,13 +278,20 @@ class SurveyRunner:
             result.iterations = iteration + 1
 
             try:
-                # 5a. Tab re-discovery: WS may be stale after navigation
-                tab_ws_current = self._refresh_tab_ws(tab_id)
-                if not tab_ws_current:
-                    result.error = "Tab disappeared (screen-out or redirect)"
-                    result.status = "screen_out"
-                    break
-                tab_ws = tab_ws_current
+                # 5a. Tab re-discovery (skip for in-page modal — same dashboard tab)
+                if is_in_page:
+                    tab_ws = chrome.find_dashboard_ws(self.config.cdp_port)
+                    if not tab_ws:
+                        result.error = "Dashboard tab lost"
+                        result.status = "screen_out"
+                        break
+                else:
+                    tab_ws_current = self._refresh_tab_ws(tab_id)
+                    if not tab_ws_current:
+                        result.error = "Tab disappeared (screen-out or redirect)"
+                        result.status = "screen_out"
+                        break
+                    tab_ws = tab_ws_current
 
                 # 5b. Compact snapshot
                 snapshot = generate_snapshot(tab_ws)
@@ -432,8 +448,9 @@ class SurveyRunner:
                 # Continue loop but increment fail counter
                 time.sleep(1)
 
-        # 6. Close tab
-        self._close_tab(tab_id)
+        # 6. Close tab (only for new-tab flow, not in-page modal)
+        if not is_in_page:
+            self._close_tab(tab_id)
 
         # 7. Rate survey
         if result.status == "completed" and self.config.auto_rate:
@@ -586,6 +603,37 @@ class SurveyRunner:
                 print("[STEALTH] Navigation failed — tab might already be on survey page")
         
         return tab_info["id"]
+
+    def _click_survey_card(self, survey_id):
+        """Click a survey card IN-PAGE on the dashboard (modal flow).
+
+        Unlike _create_tab which opens a NEW browser tab, this clicks the
+        survey card directly on the dashboard via CDP JS. The survey opens
+        as an in-page modal/overlay in the SAME tab.
+
+        Returns:
+            dashboard_ws URL if successful, None if failed
+        """
+        import websocket as ws_lib
+        dash_ws = chrome.find_dashboard_ws(self.config.cdp_port)
+        if not dash_ws:
+            return None
+        try:
+            ws = ws_lib.create_connection(dash_ws, timeout=10)
+            ws.send(json.dumps({
+                "id": 1, "method": "Runtime.evaluate",
+                "params": {"expression": f'clickSurvey("{survey_id}")'}
+            }))
+            json.loads(ws.recv())
+            ws.close()
+            if self.config.debug:
+                print(f"[MODAL] Clicked survey card {survey_id}")
+            # Return dashboard WS — the survey runs IN-PAGE, not in a new tab
+            return dash_ws
+        except Exception as e:
+            if self.config.debug:
+                print(f"[MODAL] Failed to click survey card: {e}")
+            return None
 
     def _click_redirect_link(self, tab_ws):
         """Click the 'hier klicken' link on CPX redirect page."""
