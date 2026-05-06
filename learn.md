@@ -98,17 +98,43 @@ Dashboard hat zusätzliche Parameter: `secure_hash_offerwall`, `m`, `m_1`, etc.
 - `survey/login.py`: Behauptete "already_logged_in" auf Landing-Page → GELÖSCHT
 - Alte `_find_by_role()`: Traversierte `el.get("children", [])` das nicht existiert → ERSETZT
 
+## 🔥 Chrome auf Port 9999 — NIE anders
+
+```python
+# login.py startet Chrome IMMER auf 9999:
+subprocess.Popen([
+    "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+    "--remote-debugging-port=9999",
+    "--remote-allow-origins=*",
+    "--force-renderer-accessibility",
+    "--no-first-run",
+    "--user-data-dir=/tmp/heypiggy-bot",
+    launch_url,
+])
+```
+- Nach Login: Dashboard auf Port 9999 ist eingeloggt
+- Daemon nutzt Port 9999 → sieht eingeloggten Zustand
+- Profil `/tmp/heypiggy-bot` persistent → Cookies bleiben
+- **Nie playstealth (random Port). Nie ohne Accessibility.**
+
+## 🔥 VERIFIED HEUTE (2026-05-06)
+
+| PID | Tool | Ergebnis |
+|-----|------|----------|
+| 86834 | cua-driver login | ✅ First success after regex fix |
+| 95165 | cua-driver login | ✅ Full flow: Google→OAuth→Passkey→Fortfahren→Consent |
+| 97688 | cua-driver login | ✅ On port 9999, daemon-ready |
+| 9999 | Daemon scan | ✅ 12 surveys, 2.15€ balance |
+
 ## 🔥 Invariant-Guard Pattern (für ALLE zukünftigen Tools)
 
 ```python
 def _verify_invariants():
-    """Prüfe ALLE Vorbedingungen. Raise/Rückgabe bei Fehler."""
     errors = []
-    if not daemon_running: errors.append("...")
-    if not chrome_accessible: errors.append("...")
-    if not accessibility_enabled: errors.append("...")
+    if not daemon_running: errors.append("cua-driver daemon NOT running")
+    if not chrome_on_9999: errors.append("Chrome NOT on port 9999")
+    if not accessibility_enabled: errors.append("AX-Tree < 100 elements")
     if errors: return False
     return True
 ```
-
-JEDES Tool MUSS einen Invariant-Guard haben. Nie wieder blind starten.
+**JEDES Tool MUSS einen Invariant-Guard haben.**
