@@ -501,37 +501,10 @@ class SurveyRunner:
                 fill_opinion_textarea(tab_ws)
                 steps.append({"step": "opinion_filled"})
                 time.sleep(1.5)
-                # Click next button — robust multi-strategy finder
-                import websocket as ws_lib
-                ws = ws_lib.create_connection(tab_ws, timeout=15)
-                ws.send(json.dumps({
-                    "id": 0, "method": "Runtime.evaluate",
-                    "params": {
-                        "expression": '''
-(function() {
-    // Strategy 1: Find by text
-    var btns = document.querySelectorAll("button, input[type=submit], input[type=button]");
-    for (var i = 0; i < btns.length; i++) {
-        var t = (btns[i].textContent || btns[i].value || "").trim();
-        if (t === "Nächste" || t === "Next" || t === "Weiter" || t.includes("Nächste")) {
-            btns[i].click(); return "clicked_text:" + t;
-        }
-    }
-    // Strategy 2: Find any visible button
-    for (var i = 0; i < btns.length; i++) {
-        if (btns[i].offsetParent !== null && !btns[i].disabled) {
-            btns[i].click(); return "clicked_visible_button:" + (btns[i].textContent||"").trim().substring(0,20);
-        }
-    }
-    // Strategy 3: Any button at all
-    if (btns.length > 0) { btns[0].click(); return "clicked_first"; }
-    return "no_button";
-})()
-                        '''
-                    }
-                }))
-                json.loads(ws.recv())
-                ws.close()
+                # CDP-click Nächste (Angular-proof — JS .click() ignored)
+                from survey.providers.purespectrum import cdp_click_button
+                cdp_click_button(tab_ws, "Nächste")
+                steps.append({"step": "clicked_next_cdp"})
                 steps.append({"step": "clicked_next_after_opinion"})
                 time.sleep(3)
                 # Re-check for captcha

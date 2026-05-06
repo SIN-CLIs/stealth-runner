@@ -431,7 +431,7 @@ def find_captcha_input(ws_url):
 
 
 def fill_captcha_and_submit(ws_url, answer):
-    """Fill captcha answer and click submit."""
+    """Fill captcha answer and CDP-click submit (Angular-proof)."""
     try:
         ws = websocket.create_connection(ws_url, timeout=15)
 
@@ -457,16 +457,11 @@ def fill_captcha_and_submit(ws_url, answer):
         }))
         r_fill = json.loads(ws.recv())
         fill_status = r_fill.get("result", {}).get("result", {}).get("value", "")
-
-        # Click submit
-        ws.send(json.dumps({
-            "id": 1, "method": "Runtime.evaluate",
-            "params": {
-                "expression": 'document.querySelector("button[type=submit]").click()'
-            }
-        }))
-        json.loads(ws.recv())
         ws.close()
+
+        # Use CDP click for submit (Angular-proof)
+        cdp_click_button(ws_url, "Nächste")
+        time.sleep(0.5)
 
         return {"success": "filled" in fill_status, "detail": fill_status}
 
@@ -503,13 +498,13 @@ def solve_purespectrum_captcha(ws_url, debug=False):
         print(f"  [CAPTCHA] Image extracted: {img_data['width']}x{img_data['height']} "
               f"at ({img_data['x']},{img_data['y']})")
 
-    # Step 2: OCR via clipped screenshot (PRIMARY) or base64 (fallback)
-    ocr_result = solve_captcha_with_clip(ws_url)
-    if not ocr_result.get("success"):
-        # Fallback to base64 approach
-        img_data = extract_captcha_image(ws_url)
-        if img_data.get("found"):
-            ocr_result = solve_captcha_with_vision(img_data["data_url"])
+    # Step 2: OCR via base64 image (PRIMARY) or clipped screenshot (fallback)
+    ocr_result = None
+    img_data = extract_captcha_image(ws_url)
+    if img_data.get("found") and img_data.get("data_url"):
+        ocr_result = solve_captcha_with_vision(img_data["data_url"])
+    if not ocr_result or not ocr_result.get("success"):
+        ocr_result = solve_captcha_with_clip(ws_url)
     steps.append({"step": "ocr", "success": ocr_result.get("success", False)})
 
     if not ocr_result.get("success"):
@@ -712,3 +707,59 @@ def solve_drag_puzzle(ws_url):
                 "error": None if success else str(result)[:200]}
     except Exception as e:
         return {"success": False, "result": None, "error": str(e)[:200]}
+
+
+# ── CDP Click Helpers (Angular v19 requires real OS events) ──
+
+def _cdp_click(ws_url, x, y):
+    """Click at coordinates using CDP Input.dispatchMouseEvent.
+
+    Angular CDK v19 requires real OS-level mouse events (isTrusted: true).
+    JS .click() and dispatchEvent() do NOT work on production builds.
+    """
+    try:
+        ws = websocket.create_connection(ws_url, timeout=10)
+        for event_type in ["mouseMoved", "mousePressed", "mouseReleased"]:
+            ws.send(json.dumps({
+                "id": 0, "method": "Input.dispatchMouseEvent",
+                "params": {"type": event_type, "x": x, "y": y,
+                          "button": "left", "clickCount": 1}
+            }))
+            json.loads(ws.recv())
+        ws.close()
+        return True
+    except Exception:
+        return False
+
+
+def cdp_click_button(ws_url, button_text):
+    """Click a button by text using CDP real mouse events.
+
+    Finds button position via JS, then clicks with OS-level events.
+    Essential for Angular v19 pages where JS .click() is ignored.
+    """
+    try:
+        ws = websocket.create_connection(ws_url, timeout=10)
+        expr = (
+            "(function() {"
+            "var btns = document.querySelectorAll('button, input[type=submit], input[type=button]');"
+            "for (var i=0;i<btns.length;i++) {"
+            "var t = (btns[i].textContent||btns[i].value||'').trim();"
+            f"if (t === '{button_text}' || t.includes('{button_text}')) {{"
+            "var r = btns[i].getBoundingClientRect();"
+            "return JSON.stringify({x: r.x+r.width/2, y: r.y+r.height/2, found:true});"
+            "}}"
+            "}"
+            "return JSON.stringify({found:false});"
+            "})()"
+        )
+        ws.send(json.dumps({"id":0,"method":"Runtime.evaluate",
+            "params":{"expression": expr}}))
+        r = json.loads(ws.recv())
+        ws.close()
+        pos = json.loads(r.get("result",{}).get("result",{}).get("value","{}"))
+        if pos.get("found"):
+            return _cdp_click(ws_url, pos["x"], pos["y"])
+    except Exception:
+        pass
+    return False
