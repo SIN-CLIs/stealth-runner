@@ -166,6 +166,14 @@ def cmd_watch(args):
     print(f"\n{'═'*60}")
     print(f"  🔄 SURVEY-CLI WATCH DAEMON — 24/7 Mode")
     print(f"{'═'*60}")
+
+    # ── Accessibility Check (ONCE, never kill Chrome after) ──
+    from survey.accessibility import ensure_accessibility, start_cua_daemon
+    start_cua_daemon()
+    if not ensure_accessibility(port=args.port):
+        print("[WATCH] ❌ Accessibility not available — cua-driver login will fail")
+        print("[WATCH] Continuing with CDP-only mode...")
+
     print(f"  Poll interval:  {interval}s")
     print(f"  Max/cycle:      {args.max}")
     print(f"  NVIDIA NIM:     {'✅' if config.use_nim else '⚠️  auto-pilot'}")
@@ -210,24 +218,17 @@ def cmd_watch(args):
         loop_start = time.monotonic()
 
         try:
-            # Health check
+            # Health check — just log, never restart Chrome
             if not is_chrome_alive(args.port):
-                print(f"[WATCH] ⚠️  Chrome not responding on port {args.port}")
+                print(f"[WATCH] ⚠️  Chrome not responding on port {args.port} — waiting...")
                 state["consecutive_errors"] += 1
-
-                # Try to recover
-                from survey.chrome import launch_chrome
-                print(f"[WATCH] Attempting Chrome restart...")
-                launch_chrome(port=args.port)
-                time.sleep(5)
-                if not is_chrome_alive(args.port):
-                    if state["consecutive_errors"] >= state["max_consecutive_errors"]:
-                        print("[WATCH] ❌ Too many Chrome failures — stopping")
-                        break
-                    wait_s = min(60, 2 ** state["consecutive_errors"])
-                    print(f"[WATCH] Waiting {wait_s}s before retry...")
-                    time.sleep(wait_s)
-                    continue
+                if state["consecutive_errors"] >= state["max_consecutive_errors"]:
+                    print("[WATCH] ❌ Too many Chrome failures — stopping")
+                    break
+                wait_s = min(60, 2 ** state["consecutive_errors"])
+                print(f"[WATCH] Waiting {wait_s}s...")
+                time.sleep(wait_s)
+                continue
 
             # Check dashboard
             dashboard_ws = find_dashboard_ws(args.port)
