@@ -258,3 +258,141 @@ survey-cli/
 8. **NIE system prompt für Nemotron** — Chain-of-thought in user prompt!
 9. **NIE JS `.click()` auf Angular-Seiten** — CDP `Input.dispatchMouseEvent`!
 10. **NIE Zombie-Tabs offen lassen** — Cleanup vor jedem Survey-Run!
+11. **NIE `tccutil reset` ohne Chrome-Neustart** — Permission greift erst nach Restart!
+12. **NIE Dashboard-Text mit `?page=dashboard` prüfen** — Landing-Page hat KEINEN Login-Status!
+13. **NIE CDP `Page.navigate`** — nutze `Target.createTarget` für neue Tabs!
+14. **NIE `pkill -f heypiggy-bot`** — killt USER Chrome mit!
+15. **NIE API-URLs hartcodieren** — `details_url` MUSS vom Dashboard kommen!
+
+## 🔥 CDP WebSocket Patterns
+
+```python
+# ALLE CDP-Interaktionen gehen über WebSocket:
+ws = websocket.create_connection(ws_url, timeout=15)
+
+# JS ausführen (Inhalt lesen):
+ws.send(json.dumps({"id":0, "method":"Runtime.evaluate",
+    "params":{"expression": "document.body.innerText"}}))
+
+# Maus-Klick (Angular-proof):
+ws.send(json.dumps({"id":0, "method":"Input.dispatchMouseEvent",
+    "params":{"type":"mousePressed","x":x,"y":y,"button":"left","clickCount":1}}))
+
+# Screenshot:
+ws.send(json.dumps({"id":0, "method":"Page.captureScreenshot",
+    "params":{"format":"png", "clip":{"x":0,"y":0,"width":200,"height":100,"scale":2}}}))
+
+# Neuer Tab:
+ws.send(json.dumps({"id":0, "method":"Target.createTarget",
+    "params":{"url": "..."}}))
+
+# Tab schließen:
+ws.send(json.dumps({"id":0, "method":"Target.closeTarget",
+    "params":{"targetId": tab_id}}))
+```
+
+## 🔥 Survey Provider Patterns (getestet)
+
+| Provider | Button | Radio | Text | Matrix | Payout |
+|----------|--------|-------|------|--------|--------|
+| **Qualtrics** | `.NextButton` | `input[type=radio][idx]` | `textarea.InputText` | `table.ChoiceStructure` | ~0.38€ |
+| **TolunaStart** | `button` | `.cf-radio[idx].click()` JS | `input[type=number]` | `.cf-radio` global | ~0.09€ |
+| **Strat7** | `.bsbutton:not([disabled])` | `input[type=radio][idx]` | `input[type=text]` | - | ~0.03-0.09€ |
+| **BrandAmbassador** | `.submit-btn` | `input[type=radio][idx]` | - | - | ~0.02€ |
+| **FocusVision** | `input[type=submit]` | Standard | Standard | - | variabel |
+| **PureSpectrum** | `button` (CDP!) | - | `textarea` ROBOT | - | blockiert |
+
+## 🔥 Survey Completion Detection
+
+```python
+COMPLETION_MARKERS = [
+    "vielen dank", "gutgeschrieben", "zurück zur website",
+    "thank you", "survey complete", "umfrage beendet",
+]
+# Immer BOTH checken: URL title + page innerText
+```
+
+## 🔥 Survey Rating (+0.01€ Bonus)
+
+```
+Nach Survey-Completion:
+1. "Diese Umfrage bewerten" erscheint INLINE auf Completion-Page
+2. Klicken → navigiert zu offers.cpx-research.com/rating.php
+3. Rating-Button klicken → +0.01€
+4. "Zurück zur Website" → zurück zum Dashboard
+```
+
+## 🔥 CPX API Endpunkte
+
+```python
+# details_url Format (vom Dashboard JS-Context):
+"https://live-api.cpx-research.com/api/get-survey-details.php"
+"?output_method=jsscriptv1"
+"&app_id=11644"
+"&ext_user_id=2525530"
+"&secure_hash=ae75b0feca27c0f8eb356d7117d978ec"
+"&subid_1=&subid_2=website"
+"&email=zukunftsorientierte.energie@gmail.com"
+"&extra_info_1=offerwall"
+"&secure_hash_offerwall=4513de32fa14dec8b40031d79c0149ff"
+"&main_info=true"
+"&extra_info_2=0.85224"
+"&extra_info_3=EUR"
+"&extra_info_4=nomobile"
+"&m=adsplashxmas&m_1=...&m_2=...&m_3=&m_4="
+# Zusätzlich: &survey_id=XXXXX
+
+# Response:
+{"status":"success","type":"okay","href":"https://click.cpx-research.com/?k=..."}
+# type kann sein: "okay", "question" (pre-qualifier), "not_okay" (screen-out)
+```
+
+## 🔥 Chrome Profil-Management
+
+```
+/tmp/heypiggy-bot/  ← FESTES Profil (Cookies persistent)
+  ├── Default/
+  │   ├── Cookies        ← Login-Session
+  │   ├── Login Data     ← Passwörter/Passkeys
+  │   └── Local Storage  ← heypiggy UI-State
+  └── ...
+```
+
+- **Nie Profil löschen** — Login-Cookies gehen verloren
+- **Nie Profil timestampen** (`/tmp/heypiggy-bot-12345678`) — Daemon findet Profil nicht
+- Bei "Chrome wird bereits verwendet"-Fehler: `rm /tmp/heypiggy-bot/SingletonLock`
+
+## 🔥 FCTES Flow Engine (für spätere Tools)
+
+```
+Learning (unsicher) → 10× Success → COMPILE → FROZEN → 1-Call Dispatcher
+
+NIE: Agent denkt selbst, kombiniert Tools frei
+IMMER: Agent ruft EIN frozen Tool auf → Tool führt Flow aus
+```
+
+## 🔥 macOS Accessibility (ONE-TIME SETUP)
+
+```bash
+# Schritt 1: Permission reset
+tccutil reset Accessibility com.google.Chrome
+
+# Schritt 2: Chrome starten mit --force-renderer-accessibility
+# → macOS zeigt Permission-Dialog
+
+# Schritt 3: User klickt "Allow" in System Settings
+# → Danach: cua-driver AX-Tree hat 600+ Elemente
+# → PERMANENT (bis zum nächsten tccutil reset)
+```
+
+## 🔥 Error-Message Lexikon
+
+| Fehler | Bedeutung | Fix |
+|--------|-----------|-----|
+| `Handshake status 403` | `--remote-allow-origins=*` fehlt | Chrome-Flag setzen |
+| `AX-Tree 0 children` | `--force-renderer-accessibility` fehlt | Chrome-Flag + Accessibility-Permission |
+| `Expecting value: line 1 column 1` | `json.loads()` auf Text-Output | Output-Typ prüfen (JSON vs TEXT) |
+| `No such target id` | Tab wurde bereits geschlossen | `_close_tab` tolerant machen |
+| `Survey tab not found` | CPX-Redirect screen-out | Survey als screen_out markieren |
+| `Google Login-Symbol not found` | Dashboard ist Landing-Page (nicht logged in) | Login ausführen |
+| `No surveys available` | Hardcoded `details_url` ohne Session-Params | Live-URL vom Dashboard holen |
