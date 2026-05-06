@@ -296,36 +296,6 @@ class BatchExecutor:
                 "error": str(e)[:200],
                 "elapsed_ms": round((time.monotonic() - a_start) * 1000),
             }
-            
-            # CDP click marker for Angular pages (PureSpectrum)
-            if js and js.startswith("__CDP_CLICK__"):
-                self._cdp_click_element(ws, js)
-            elif js and js.startswith("__CDP_CLICK_BUTTON__"):
-                self._cdp_click_button(ws, js)
-            elif js and js.startswith("__CDP_CLICK_ROLE_BUTTON__"):
-                self._cdp_click_role_button(ws, js)
-            elif js and js.startswith("__CDP_CLICK_GENERIC__"):
-                self._cdp_click_generic(ws, js)
-            elif js:
-                ws.send(json.dumps({
-                    "id": 0, "method": "Runtime.evaluate",
-                    "params": {"expression": js}
-                }))
-                json.loads(ws.recv())
-
-            if action_type == "wait":
-                time.sleep(ms / 1000 if ms > 0 else 1.0)
-
-            return {
-                "action": action_type, "ref": ref, "success": True,
-                "elapsed_ms": round((time.monotonic() - a_start) * 1000),
-            }
-        except Exception as e:
-            return {
-                "action": action_type, "ref": ref, "success": False,
-                "error": str(e)[:200],
-                "elapsed_ms": round((time.monotonic() - a_start) * 1000),
-            }
 
     def _cdp_click_element(self, ws, js):
         """CDP click on element (for Angular pages). js format: __CDP_CLICK__:selector:idx"""

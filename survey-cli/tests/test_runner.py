@@ -263,5 +263,173 @@ class TestRefNormalization(unittest.TestCase):
         self.assertIn("5", js)
 
 
+# =============================================================================
+# Test scanner.read_balance (CDP WS call)
+# =============================================================================
+class MockWs:
+    """Minimal mock WebSocket for scanner tests."""
+    def __init__(self, responses):
+        self._responses = responses
+        self._idx = 0
+        self.sent = []
+    def send(self, data):
+        self.sent.append(json.loads(data) if isinstance(data, str) else data)
+    def recv(self):
+        if self._idx < len(self._responses):
+            r = self._responses[self._idx]
+            self._idx += 1
+            return r if isinstance(r, str) else json.dumps(r)
+        return json.dumps({"result": {"result": {"value": "0"}}})
+    def getsockname(self): return "ws://localhost:9999"
+    def getpeername(self): return ("localhost", 9999)
+    def close(self): pass
+
+
+class TestReadBalance(unittest.TestCase):
+
+    def test_parses_balance_from_element(self):
+        """Balance shown in .balance element → extracted correctly."""
+        from survey.scanner import read_balance
+        resp = json.dumps({
+            "result": {"result": {"value": "2.23"}}
+        })
+        mock_ws = MockWs([resp])
+        with patch('survey.scanner.websocket.create_connection', return_value=mock_ws):
+            balance = read_balance(port=9999)
+        self.assertEqual(balance, 2.23)
+
+    def test_parses_euros_with_comma(self):
+        """European format: parseFloat('2,50'.replace(',','.')) → 2.50."""
+        # The read_balance JS uses .replace(",", ".") before parseFloat.
+        # Our mock returns the raw value from the CDP response.
+        # If the CDP response contains a properly formatted number string,
+        # Python's float() handles it. The JS code handles comma locale.
+        from survey.scanner import read_balance
+        resp = json.dumps({
+            "result": {"result": {"value": "2.50"}}
+        })
+        mock_ws = MockWs([resp])
+        with patch('survey.scanner.websocket.create_connection', return_value=mock_ws):
+            balance = read_balance(port=9999)
+        self.assertEqual(balance, 2.50)
+
+    def test_returns_zero_on_empty_response(self):
+        """No balance element found → returns 0.0."""
+        from survey.scanner import read_balance
+        resp = json.dumps({
+            "result": {"result": {"value": "0"}}
+        })
+        mock_ws = MockWs([resp])
+        with patch('survey.scanner.websocket.create_connection', return_value=mock_ws):
+            balance = read_balance(port=9999)
+        self.assertEqual(balance, 0.0)
+
+    def test_returns_zero_on_websocket_error(self):
+        """WebSocket error → graceful fallback."""
+        from survey.scanner import read_balance
+        with patch('survey.scanner.websocket.create_connection',
+                   side_effect=Exception("Connection refused")):
+            balance = read_balance(port=9999)
+        self.assertEqual(balance, 0.0)
+
+    def test_returns_zero_on_no_dashboard(self):
+        """No dashboard WS found → 0.0."""
+        from survey.scanner import read_balance, chrome
+        with patch.object(chrome, 'find_dashboard_ws', return_value=None):
+            balance = read_balance(port=9999)
+        self.assertEqual(balance, 0.0)
+
+
+class TestExtractIdsFromDashboard(unittest.TestCase):
+
+    def test_extracts_multiple_ids(self):
+        """Dashboard has clickSurvey(12345) and clickSurvey(67890)."""
+        from survey.scanner import extract_ids_from_dashboard
+        resp = json.dumps({
+            "result": {"result": {"value": "12345|67890|11223"}}
+        })
+        mock_ws = MockWs([resp])
+        with patch('survey.scanner.websocket.create_connection', return_value=mock_ws):
+            ids = extract_ids_from_dashboard("ws://localhost:9999")
+        self.assertEqual(ids, ["12345", "67890", "11223"])
+
+    def test_returns_empty_on_no_ids(self):
+        """No clickSurvey handlers found."""
+        from survey.scanner import extract_ids_from_dashboard
+        resp = json.dumps({
+            "result": {"result": {"value": ""}}
+        })
+        mock_ws = MockWs([resp])
+        with patch('survey.scanner.websocket.create_connection', return_value=mock_ws):
+            ids = extract_ids_from_dashboard("ws://localhost:9999")
+        self.assertEqual(ids, [])
+
+    def test_returns_empty_on_websocket_error(self):
+        """Connection error → returns [] gracefully."""
+        from survey.scanner import extract_ids_from_dashboard
+        with patch('survey.scanner.websocket.create_connection',
+                   side_effect=Exception("Failed")):
+            ids = extract_ids_from_dashboard("ws://localhost:9999")
+        self.assertEqual(ids, [])
+
+    def test_filters_empty_strings(self):
+        """IDs string has empty parts → filtered out."""
+        from survey.scanner import extract_ids_from_dashboard
+        resp = json.dumps({
+            "result": {"result": {"value": "111||222||"}}
+        })
+        mock_ws = MockWs([resp])
+        with patch('survey.scanner.websocket.create_connection', return_value=mock_ws):
+            ids = extract_ids_from_dashboard("ws://localhost:9999")
+        self.assertEqual(ids, ["111", "222"])
+
+
+# =============================================================================
+# Test chrome.find_dashboard_ws
+# =============================================================================
+class TestFindDashboardWs(unittest.TestCase):
+
+    def test_finds_dashboard_tab(self):
+        """Chrome has dashboard tab at port 9999 → returns WS URL."""
+        from survey.chrome import find_dashboard_ws
+        mock_tabs = [
+            {"id": 1, "url": "https://www.heypiggy.com/?page=dashboard",
+             "webSocketDebuggerUrl": "ws://localhost:9999/devtools/page/abc123"},
+            {"id": 2, "url": "https://google.com"},
+        ]
+        with patch('survey.chrome.find_bot_tabs', return_value=mock_tabs):
+            result = find_dashboard_ws(port=9999)
+        self.assertEqual(result, "ws://localhost:9999/devtools/page/abc123")
+
+    def test_returns_none_if_no_dashboard(self):
+        """Chrome open but no heypiggy dashboard tab."""
+        from survey.chrome import find_dashboard_ws
+        mock_tabs = [
+            {"id": 1, "url": "https://google.com"},
+            {"id": 2, "url": "https://mail.google.com"},
+        ]
+        with patch('survey.chrome.find_bot_tabs', return_value=mock_tabs):
+            result = find_dashboard_ws(port=9999)
+        self.assertIsNone(result)
+
+    def test_returns_none_if_no_tabs(self):
+        """Chrome not running or no tabs."""
+        from survey.chrome import find_dashboard_ws
+        with patch('survey.chrome.find_bot_tabs', return_value=[]):
+            result = find_dashboard_ws(port=9999)
+        self.assertIsNone(result)
+
+    def test_case_insensitive_heypiggy_match(self):
+        """Dashboard URL case doesn't matter."""
+        from survey.chrome import find_dashboard_ws
+        mock_tabs = [
+            {"id": 1, "url": "https://HEYPIGGY.COM/?page=DASHBOARD",
+             "webSocketDebuggerUrl": "ws://localhost:9999/devtools/page/xyz"},
+        ]
+        with patch('survey.chrome.find_bot_tabs', return_value=mock_tabs):
+            result = find_dashboard_ws(port=9999)
+        self.assertEqual(result, "ws://localhost:9999/devtools/page/xyz")
+
+
 if __name__ == "__main__":
     unittest.main(verbosity=2)

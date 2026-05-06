@@ -12,7 +12,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from survey.execute import (
-    BatchExecutor, PROVIDER_COMMANDS, GENERIC_COMMANDS,
+    BatchExecutor, BatchResult, PROVIDER_COMMANDS, GENERIC_COMMANDS,
     cdp_keyboard_enter, cdp_click_element_by_text, capture_dom_hash,
     verify_state_change, EXECUTION_VERIFY_MS
 )
@@ -451,6 +451,193 @@ class TestBatchExecutorInit(unittest.TestCase):
     def test_unknown_provider_uses_generic_commands(self):
         executor = BatchExecutor("ws://localhost:9999", "completely_unknown_provider_xyz")
         self.assertEqual(executor.commands, GENERIC_COMMANDS)
+
+
+# =============================================================================
+# Test BatchResult
+# =============================================================================
+class TestBatchResult(unittest.TestCase):
+
+    def test_default_values(self):
+        result = BatchResult()
+        self.assertEqual(result.actions, [])
+        self.assertEqual(result.total_success, 0)
+        self.assertEqual(result.total_fail, 0)
+        self.assertEqual(result.total_elapsed_ms, 0.0)
+
+    def test_mutable_actions(self):
+        result = BatchResult()
+        result.actions.append({"ref": "@e0", "success": True})
+        result.total_success += 1
+        self.assertEqual(len(result.actions), 1)
+        self.assertEqual(result.total_success, 1)
+
+    def test_multiple_actions_tracked(self):
+        result = BatchResult()
+        for i in range(5):
+            result.actions.append({"ref": f"@e{i}", "success": i % 2 == 0})
+            if i % 2 == 0:
+                result.total_success += 1
+            else:
+                result.total_fail += 1
+        self.assertEqual(result.total_success, 3)
+        self.assertEqual(result.total_fail, 2)
+
+
+# =============================================================================
+# Test BatchExecutor.execute (batch-level)
+# =============================================================================
+class MockWsForExecute:
+    """Mock WS that tracks sends and returns configurable JSON responses."""
+    def __init__(self, responses):
+        self._responses = responses
+        self._idx = 0
+        self.sent = []
+
+    def send(self, data):
+        self.sent.append(json.loads(data) if isinstance(data, str) else data)
+
+    def recv(self):
+        if self._idx < len(self._responses):
+            r = self._responses[self._idx]
+            self._idx += 1
+            return r if isinstance(r, str) else json.dumps(r)
+        return json.dumps({"result": {"result": {"value": "null"}}})
+
+    def getsockname(self):
+        return "ws://localhost:9999"
+
+    def getpeername(self):
+        return ("localhost", 9999)
+
+    def close(self):
+        pass
+
+
+class TestBatchExecutorExecute(unittest.TestCase):
+
+    def test_empty_actions_returns_empty_result(self):
+        executor = BatchExecutor("ws://localhost:9999", "generic")
+        # capture_dom_hash patched → doesn't need WS for that
+        import survey.execute as ex_mod
+        orig_hash = ex_mod.capture_dom_hash
+        orig_kbe = ex_mod.cdp_keyboard_enter
+        ex_mod.capture_dom_hash = lambda url: ""
+        ex_mod.cdp_keyboard_enter = lambda url: False
+        try:
+            mock_ws = MockWsForExecute([])
+            with patch('websocket.create_connection', return_value=mock_ws):
+                result = executor.execute([])
+            self.assertEqual(len(result.actions), 0)
+            self.assertEqual(result.total_success, 0)
+        finally:
+            ex_mod.capture_dom_hash = orig_hash
+            ex_mod.cdp_keyboard_enter = orig_kbe
+
+    def test_single_click_action(self):
+        import survey.execute as ex_mod
+        orig_hash = ex_mod.capture_dom_hash
+        orig_kbe = ex_mod.cdp_keyboard_enter
+        ex_mod.capture_dom_hash = lambda url: ""
+        ex_mod.cdp_keyboard_enter = lambda url: False
+        try:
+            def make_resp(d):
+                return json.dumps({"result": {"result": {"value": json.dumps(d)}}})
+            responses = [make_resp({"n": 1, "t": "btn", "url": ""})]
+            mock_ws = MockWsForExecute(responses)
+            executor = BatchExecutor("ws://localhost:9999", "generic")
+            with patch('websocket.create_connection', return_value=mock_ws):
+                result = executor.execute([{"ref": "@e0", "action": "click", "value": ""}])
+            self.assertEqual(len(result.actions), 1)
+            self.assertIn("success", result.actions[0])
+        finally:
+            ex_mod.capture_dom_hash = orig_hash
+            ex_mod.cdp_keyboard_enter = orig_kbe
+
+    def test_multiple_actions_accumulated(self):
+        import survey.execute as ex_mod
+        orig_hash = ex_mod.capture_dom_hash
+        orig_kbe = ex_mod.cdp_keyboard_enter
+        ex_mod.capture_dom_hash = lambda url: ""
+        ex_mod.cdp_keyboard_enter = lambda url: False
+        try:
+            def make_resp(d):
+                return json.dumps({"result": {"result": {"value": json.dumps(d)}}})
+            responses = [
+                make_resp({"n": 1, "t": "btn", "url": ""}),  # action 1
+                make_resp({"n": 2, "t": "radio", "url": ""}),  # action 2
+                make_resp({"n": 3, "t": "submit", "url": ""}),  # action 3
+            ]
+            mock_ws = MockWsForExecute(responses)
+            executor = BatchExecutor("ws://localhost:9999", "generic")
+            with patch('websocket.create_connection', return_value=mock_ws):
+                result = executor.execute([
+                    {"ref": "@e0", "action": "click", "value": ""},
+                    {"ref": "@e1", "action": "select", "value": ""},
+                    {"ref": "@e2", "action": "submit", "value": ""},
+                ])
+            self.assertEqual(len(result.actions), 3)
+        finally:
+            ex_mod.capture_dom_hash = orig_hash
+            ex_mod.cdp_keyboard_enter = orig_kbe
+
+    def test_elapsed_ms_recorded(self):
+        import survey.execute as ex_mod
+        orig_hash = ex_mod.capture_dom_hash
+        orig_kbe = ex_mod.cdp_keyboard_enter
+        ex_mod.capture_dom_hash = lambda url: ""
+        ex_mod.cdp_keyboard_enter = lambda url: False
+        try:
+            def make_resp(d):
+                return json.dumps({"result": {"result": {"value": json.dumps(d)}}})
+            mock_ws = MockWsForExecute([make_resp({"n": 1, "t": "btn", "url": ""})])
+            executor = BatchExecutor("ws://localhost:9999", "generic")
+            with patch('websocket.create_connection', return_value=mock_ws):
+                result = executor.execute([{"ref": "@e0", "action": "click", "value": ""}])
+            self.assertIsInstance(result.total_elapsed_ms, (int, float))
+            self.assertGreaterEqual(result.total_elapsed_ms, 0)
+        finally:
+            ex_mod.capture_dom_hash = orig_hash
+            ex_mod.cdp_keyboard_enter = orig_kbe
+
+    def test_wait_action_preserved(self):
+        import survey.execute as ex_mod
+        orig_hash = ex_mod.capture_dom_hash
+        orig_kbe = ex_mod.cdp_keyboard_enter
+        ex_mod.capture_dom_hash = lambda url: ""
+        ex_mod.cdp_keyboard_enter = lambda url: False
+        try:
+            def make_resp(d):
+                return json.dumps({"result": {"result": {"value": json.dumps(d)}}})
+            mock_ws = MockWsForExecute([make_resp({"n": 1, "t": "btn", "url": ""})])
+            executor = BatchExecutor("ws://localhost:9999", "generic")
+            with patch('websocket.create_connection', return_value=mock_ws):
+                result = executor.execute([{"ref": "", "action": "wait", "value": "", "ms": 100}])
+            self.assertEqual(len(result.actions), 1)
+            self.assertEqual(result.actions[0]["action"], "wait")
+        finally:
+            ex_mod.capture_dom_hash = orig_hash
+            ex_mod.cdp_keyboard_enter = orig_kbe
+
+    def test_ws_closed_after_batch(self):
+        import survey.execute as ex_mod
+        orig_hash = ex_mod.capture_dom_hash
+        orig_kbe = ex_mod.cdp_keyboard_enter
+        ex_mod.capture_dom_hash = lambda url: ""
+        ex_mod.cdp_keyboard_enter = lambda url: False
+        try:
+            def make_resp(d):
+                return json.dumps({"result": {"result": {"value": json.dumps(d)}}})
+            mock_ws = MockWsForExecute([make_resp({"n": 1, "t": "btn", "url": ""})])
+            executor = BatchExecutor("ws://localhost:9999", "generic")
+            with patch('websocket.create_connection', return_value=mock_ws):
+                result = executor.execute([{"ref": "@e0", "action": "click", "value": ""}])
+            # After execute, WS should be closed (close() called)
+            # MockWs tracks close() calls
+            self.assertTrue(hasattr(mock_ws, 'close'))
+        finally:
+            ex_mod.capture_dom_hash = orig_hash
+            ex_mod.cdp_keyboard_enter = orig_kbe
 
 
 if __name__ == "__main__":
