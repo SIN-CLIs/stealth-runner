@@ -1,0 +1,10 @@
+# survey-cli .gitignore
+logs/
+__pycache__/
+*.pyc
+*.pyo
+.DS_Store
+*.pending
+*.egg-info/
+dist/
+build/

@@ -1,0 +1,182 @@
+"""Chrome lifecycle — launch, connect, identify, kill.
+
+RULES:
+- NEVER kill user Chrome (no pkill, no killall)
+- ONLY manage /tmp/heypiggy-bot-* profiles
+- Use playstealth launch when available, fallback to raw subprocess
+"""
+
+import json
+import os
+import subprocess
+import time
+import urllib.request
+
+# ── Constants ──────────────────────────────────────────
+
+CPX_CREDENTIALS = {
+    "app_id": "11644",
+    "ext_user_id": "2525530",
+    "secure_hash": "ae75b0feca27c0f8eb356d7117d978ec",
+    "email": "zukunftsorientierte.energie@gmail.com",
+}
+
+DETAILS_URL = (
+    "https://live-api.cpx-research.com/api/get-survey-details.php"
+    "?output_method=jsscriptv1"
+    f"&app_id={CPX_CREDENTIALS['app_id']}"
+    f"&ext_user_id={CPX_CREDENTIALS['ext_user_id']}"
+    f"&secure_hash={CPX_CREDENTIALS['secure_hash']}"
+    f"&email={CPX_CREDENTIALS['email']}"
+    "&extra_info_1=offerwall&main_info=true"
+    "&extra_info_3=EUR&extra_info_4=nomobile"
+)
+
+
+# ── Chrome Management ──────────────────────────────────
+
+def find_bot_pids():
+    """Find ALL Chrome processes with bot profiles (safe)."""
+    try:
+        result = subprocess.run(
+            ["ps", "aux"], capture_output=True, text=True, timeout=5
+        )
+        pids = []
+        for line in result.stdout.split("\n"):
+            if "/tmp/heypiggy-bot-" in line and "/Contents/MacOS/Google Chrome" in line:
+                parts = line.split()
+                if parts and parts[1].isdigit():
+                    pids.append(int(parts[1]))
+        return pids
+    except Exception:
+        return []
+
+
+def find_bot_tabs(port=9999):
+    """Find all tabs in bot Chrome."""
+    try:
+        pages = json.loads(urllib.request.urlopen(
+            f"http://127.0.0.1:{port}/json", timeout=5
+        ).read())
+        return pages
+    except Exception:
+        return []
+
+
+def find_dashboard_ws(port=9999):
+    """Find WebSocket URL for a heypiggy dashboard tab."""
+    for p in find_bot_tabs(port):
+        if "dashboard" in p.get("url", "").lower():
+            return p.get("webSocketDebuggerUrl")
+    # Fallback: first tab
+    pages = find_bot_tabs(port)
+    if pages:
+        return pages[0].get("webSocketDebuggerUrl")
+    return None
+
+
+def find_survey_tab(port=9999):
+    """Find first non-dashboard survey tab."""
+    for p in find_bot_tabs(port):
+        url = p.get("url", "")
+        if "dashboard" not in url and "rating" not in url:
+            return p
+    return None
+
+
+def get_ws_for_tab(tab_id, port=9999):
+    """Get WebSocket URL for a specific tab ID."""
+    for p in find_bot_tabs(port):
+        if p.get("id") == tab_id:
+            return p.get("webSocketDebuggerUrl")
+    return None
+
+
+def is_chrome_alive(port=9999):
+    """Check if bot Chrome is running with CDP enabled."""
+    try:
+        urllib.request.urlopen(f"http://127.0.0.1:{port}/json", timeout=3)
+        return True
+    except Exception:
+        return False
+
+
+def launch_chrome(url="https://www.heypiggy.com/?page=dashboard", port=9999):
+    """Launch Chrome via playstealth or raw subprocess."""
+    # Try playstealth first
+    try:
+        result = subprocess.run(
+            ["playstealth", "launch", "--url", url, "--port", str(port)],
+            capture_output=True, text=True, timeout=30
+        )
+        if result.returncode == 0:
+            try:
+                info = json.loads(result.stdout)
+                print(f"[CHROME] Launched: pid={info.get('pid')}, port={port}")
+                return info
+            except json.JSONDecodeError:
+                pass
+    except FileNotFoundError:
+        pass
+
+    # Fallback: raw Chrome launch with remote debugging
+    profile_dir = f"/tmp/heypiggy-bot-{int(time.time())}"
+    cmd = [
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        f"--remote-debugging-port={port}",
+        "--remote-allow-origins=*",
+        "--no-first-run",
+        "--no-default-browser-check",
+        "--disable-background-networking",
+        "--disable-sync",
+        f"--user-data-dir={profile_dir}",
+        "--force-renderer-accessibility",
+        url,
+    ]
+    subprocess.Popen(
+        cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+    )
+    print(f"[CHROME] Launching: port={port}, profile={profile_dir}")
+    time.sleep(5)
+    return {"pid": None, "port": port, "profile": profile_dir}
+
+
+def safe_kill_bot():
+    """Safely kill ONLY bot Chrome processes."""
+    pids = find_bot_pids()
+    if not pids:
+        print("[CHROME] No bot Chrome processes found")
+        return False
+    for pid in pids:
+        try:
+            subprocess.run(["kill", str(pid)], timeout=5)
+            print(f"[CHROME] Killed bot PID: {pid}")
+        except Exception as e:
+            print(f"[CHROME] Failed to kill {pid}: {e}")
+    return True
+
+
+# ── CPX API ────────────────────────────────────────────
+
+def get_survey_url(survey_id):
+    """Get survey URL from CPX API."""
+    try:
+        resp = json.loads(urllib.request.urlopen(
+            DETAILS_URL + "&survey_id=" + survey_id, timeout=8
+        ).read())
+        if resp.get("type") == "okay":
+            return resp.get("href")
+        return None
+    except Exception:
+        return None
+
+
+def get_survey_details(survey_id):
+    """Get full survey details from CPX API."""
+    try:
+        resp = json.loads(urllib.request.urlopen(
+            DETAILS_URL + "&survey_id=" + survey_id, timeout=8
+        ).read())
+        return resp
+    except Exception:
+        return {}
