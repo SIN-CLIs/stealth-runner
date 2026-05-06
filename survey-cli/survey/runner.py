@@ -77,13 +77,30 @@ class SurveyRunner:
         result = SurveyResult(survey_id=survey_id)
         start_time = time.monotonic()
 
-        # 0. Connect to dashboard
+        # 0. Connect to dashboard + CLEAN ZOMBIE TABS
         dashboard_ws = chrome.find_dashboard_ws(self.config.cdp_port)
         if not dashboard_ws:
             result.error = "No dashboard WebSocket found"
             result.status = "error"
             log_error("run_survey", result.error, survey_id)
             return result
+
+        # Clean all non-dashboard tabs (zombie prevention)
+        tabs_before = len(chrome.find_bot_tabs(self.config.cdp_port))
+        for p in chrome.find_bot_tabs(self.config.cdp_port):
+            if p.get("url") and "dashboard" not in p.get("url", "").lower():
+                try:
+                    import websocket as ws_lib
+                    w = ws_lib.create_connection(p["webSocketDebuggerUrl"], timeout=8)
+                    w.send(json.dumps({"id":1,"method":"Target.closeTarget",
+                                       "params":{"targetId": p["id"]}}))
+                    json.loads(w.recv())
+                    w.close()
+                except Exception:
+                    pass
+        tabs_after = len(chrome.find_bot_tabs(self.config.cdp_port))
+        if tabs_before != tabs_after and self.config.debug:
+            print(f"[RUN] Cleaned {tabs_before - tabs_after} zombie tabs")
 
         # 1. Get survey URL
         if not survey_url:
@@ -127,13 +144,21 @@ class SurveyRunner:
             result.status = "error"
             return result
 
-        # 3. Wait for CPX redirect + detect REAL provider
+        # 3. Wait for CPX redirect + handle redirect page + detect REAL provider
         time.sleep(self.config.wait_page_load)
-
-        # Find the actual survey tab (may have changed after CPX redirect)
+        
+        # Handle CPX redirect page (if stuck on "Sie werden umgeleitet")
         tab_ws, actual_url = self._find_survey_tab_ws(tab_id)
+        if tab_ws:
+            page_text = BatchExecutor.read_page_text(tab_ws, 500)
+            if "umgeleitet" in page_text.lower() or "redirect" in page_text.lower():
+                if self.config.debug:
+                    print("[RUN] CPX redirect page — clicking link...")
+                self._click_redirect_link(tab_ws)
+                time.sleep(self.config.wait_page_load)
+                tab_ws, actual_url = self._find_survey_tab_ws(tab_id)
+
         if not tab_ws:
-            # Tab might have closed (screen-out) or redirect failed
             result.status = "screen_out"
             result.error = "Survey tab not found after redirect (screen-out?)"
             log_earnings(survey_id, "unknown", 0, "screen_out", 0)
@@ -339,6 +364,31 @@ class SurveyRunner:
         except Exception:
             return None
 
+    def _click_redirect_link(self, tab_ws):
+        """Click the 'hier klicken' link on CPX redirect page."""
+        try:
+            ws = websocket.create_connection(tab_ws, timeout=10)
+            ws.send(json.dumps({
+                "id": 0, "method": "Runtime.evaluate",
+                "params": {"expression": '''
+(function() {
+    var links = document.querySelectorAll("a");
+    for (var i=0;i<links.length;i++) {
+        if ((links[i].textContent||"").includes("hier klicken")) {
+            links[i].click(); return "clicked";
+        }
+    }
+    // Fallback: any link
+    if (links.length > 0) { links[0].click(); return "fallback_click"; }
+    return "no_link";
+})()
+                '''
+            }}))
+            json.loads(ws.recv())
+            ws.close()
+        except Exception:
+            pass
+
     def _find_survey_tab_ws(self, tab_id):
         """Find WebSocket URL for the actual survey tab after CPX redirect.
         
@@ -446,12 +496,12 @@ class SurveyRunner:
         ])
 
         if not has_captcha:
-            # Check if it's an opinion page instead
-            if "meinung" in page_text.lower() or "opinion" in page_text.lower():
+            # Check if it's an opinion/ROBOT page instead
+            if "meinung" in page_text.lower() or "opinion" in page_text.lower() or "ROBOT" in page_text:
                 fill_opinion_textarea(tab_ws)
                 steps.append({"step": "opinion_filled"})
-                time.sleep(1)
-                # Click next button
+                time.sleep(1.5)
+                # Click next button — robust multi-strategy finder
                 import websocket as ws_lib
                 ws = ws_lib.create_connection(tab_ws, timeout=15)
                 ws.send(json.dumps({
@@ -459,16 +509,25 @@ class SurveyRunner:
                     "params": {
                         "expression": '''
 (function() {
-    var btns = document.querySelectorAll("button");
+    // Strategy 1: Find by text
+    var btns = document.querySelectorAll("button, input[type=submit], input[type=button]");
     for (var i = 0; i < btns.length; i++) {
-        var t = (btns[i].textContent || "").trim();
-        if (t === "Nächste" || t === "Next") {
-            btns[i].click(); return "clicked";
+        var t = (btns[i].textContent || btns[i].value || "").trim();
+        if (t === "Nächste" || t === "Next" || t === "Weiter" || t.includes("Nächste")) {
+            btns[i].click(); return "clicked_text:" + t;
         }
     }
+    // Strategy 2: Find any visible button
+    for (var i = 0; i < btns.length; i++) {
+        if (btns[i].offsetParent !== null && !btns[i].disabled) {
+            btns[i].click(); return "clicked_visible_button:" + (btns[i].textContent||"").trim().substring(0,20);
+        }
+    }
+    // Strategy 3: Any button at all
+    if (btns.length > 0) { btns[0].click(); return "clicked_first"; }
     return "no_button";
 })()
-'''
+                        '''
                     }
                 }))
                 json.loads(ws.recv())
