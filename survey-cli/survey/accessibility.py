@@ -126,11 +126,13 @@ def ensure_accessibility(port=9999, url="https://www.heypiggy.com/?page=dashboar
         print("[ACCESS] ✅ Chrome Accessibility now working")
         return True
 
-    # Still not working — user needs to approve macOS dialog
-    print("[ACCESS] ⚠️  macOS Permission dialog may have appeared")
-    print("[ACCESS] → Please open System Settings → Privacy → Accessibility")
-    print("[ACCESS] → Find 'Google Chrome' and enable the toggle")
-    print("[ACCESS] → Then restart the daemon")
+    # Still not working — user needs to approve macOS dialog ONCE
+    print("[ACCESS] ⚠️  Chrome Accessibility NOT enabled")
+    print("[ACCESS] ⚠️  ONE-TIME SETUP REQUIRED:")
+    print("[ACCESS] → System Settings → Privacy & Security → Accessibility")
+    print("[ACCESS] → Find & enable 'Google Chrome'")
+    print("[ACCESS] → Then restart: ./survey.py watch")
+    print("[ACCESS] Continuing with CDP-only mode (no passkey/TouchID)...")
     return False
 
 
