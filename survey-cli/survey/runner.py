@@ -11,6 +11,7 @@ Loop per page:
 import json
 import time
 import urllib.request
+import urllib.parse
 import websocket
 from typing import Dict, List, Any, Optional
 from dataclasses import dataclass, field
@@ -86,7 +87,20 @@ class SurveyRunner:
 
         # 1. Get survey URL
         if not survey_url:
-            survey_url = chrome.get_survey_url(survey_id)
+            # Check if it's a pre-qualifier
+            details = chrome.get_survey_details(survey_id)
+            if details.get("type") == "question":
+                if self.config.debug:
+                    print(f"[RUN] Pre-qualifier detected: {details.get('question','?')[:60]}")
+                survey_url = self.handle_pre_qualifier(survey_id, details)
+                if not survey_url:
+                    result.error = "Pre-qualifier failed"
+                    result.status = "screen_out"
+                    log_earnings(survey_id, "pre_qualifier", 0, "screen_out", 0)
+                    return result
+            else:
+                survey_url = details.get("href")
+
             if not survey_url:
                 result.error = "Failed to get survey URL"
                 result.status = "error"
@@ -473,27 +487,125 @@ class SurveyRunner:
         return actions
 
     def _load_profile(self):
-        """Load profile from JSON file or fallback."""
+        """Load profile from JSON file or fallback. Calculates age dynamically."""
         import os
+        from datetime import date
         paths = [
             os.path.join(os.path.dirname(__file__), "profiles", "jeremy_schulze.json"),
             os.path.join(os.path.dirname(os.path.dirname(__file__)),
                          "config", "profiles", "jeremy_schulze.json"),
         ]
+        profile = None
         for path in paths:
             if os.path.exists(path):
                 try:
-                    return json.loads(open(path).read())
+                    profile = json.loads(open(path).read())
+                    break
                 except Exception:
                     pass
 
-        return {
-            "name": "Jeremy Schulze",
-            "age": 32, "gender": "male", "gender_label": "Männlich",
-            "city": "Berlin", "state": "Berlin", "zip": "10785",
-            "household_size": 3, "marital_status": "married",
-            "education": "abitur", "employment": "employed_fulltime",
-            "employment_label": "Angestellte",
-            "household_income": "3000-4000", "personal_income": "1000-2000",
-            "nationality": "Deutsch", "language": "Deutsch",
-        }
+        if not profile:
+            profile = {
+                "name": "Jeremy Schulze",
+                "date_of_birth": "1993-11-13",
+                "gender": "male", "gender_label": "Männlich",
+                "city": "Berlin", "state": "Berlin", "zip": "10785",
+                "household_size": 3, "marital_status": "married",
+                "education": "abitur", "employment": "employed_fulltime",
+                "employment_label": "Angestellte",
+                "household_income": "3000-4000", "personal_income": "1000-2000",
+                "nationality": "Deutsch", "language": "Deutsch",
+            }
+
+        # Dynamically calculate age from date_of_birth
+        if "date_of_birth" in profile and "age" not in profile:
+            try:
+                dob = profile["date_of_birth"]
+                born = date.fromisoformat(dob)
+                today = date.today()
+                profile["age"] = today.year - born.year - (
+                    (today.month, today.day) < (born.month, born.day)
+                )
+            except (ValueError, TypeError):
+                profile["age"] = 32
+
+        return profile
+
+    def handle_pre_qualifier(self, survey_id, survey_details):
+        """Answer a pre-qualifier (type=question) survey.
+
+        When CPX returns type=question, the survey asks a screening
+        question before routing to the actual survey. Answer it to
+        get the real survey URL.
+
+        Args:
+            survey_id: CPX survey ID
+            survey_details: Full API response dict
+
+        Returns:
+            Real survey URL or None
+        """
+        question = survey_details.get("question", "")
+        answers = survey_details.get("answers", [])
+        if not answers:
+            return None
+
+        profile = self.profile
+        answer_idx = None
+
+        q_lower = question.lower()
+
+        # Match known question patterns to profile data
+        if "alter" in q_lower or "age" in q_lower:
+            age = profile.get("age", 32)
+            if age < 18: answer_idx = 0
+            elif age < 25: answer_idx = 1
+            elif age < 35: answer_idx = 2
+            elif age < 45: answer_idx = 3
+            elif age < 55: answer_idx = 4
+            else: answer_idx = 5
+
+        elif "geschlecht" in q_lower or "gender" in q_lower:
+            gender = profile.get("gender", "male")
+            answer_idx = 0 if gender == "male" else 1
+
+        elif "bundesland" in q_lower or "wohnort" in q_lower or "region" in q_lower:
+            # Look for Berlin in answers
+            for i, a in enumerate(answers):
+                if "berlin" in str(a).lower():
+                    answer_idx = i
+                    break
+
+        elif "einkommen" in q_lower or "income" in q_lower:
+            answer_idx = 2  # middle bracket
+
+        elif "bildung" in q_lower or "education" in q_lower:
+            edu = profile.get("education", "abitur")
+            for i, a in enumerate(answers):
+                if edu in str(a).lower():
+                    answer_idx = i
+                    break
+
+        elif "beschäftigung" in q_lower or "employment" in q_lower:
+            answer_idx = 1  # employed
+
+        if answer_idx is not None and answer_idx < len(answers):
+            # POST the answer via CPX API
+            import urllib.request
+            from .chrome import get_details_url
+            details_url = get_details_url(self.config.cdp_port)
+            answer = answers[answer_idx]
+            if isinstance(answer, dict):
+                answer = answer.get("id", answer.get("value", answer))
+
+            try:
+                post_url = (details_url + "&survey_id=" + survey_id +
+                            "&answer=" + str(answer_idx) + "&answer_value=" +
+                            urllib.parse.quote(str(answer)))
+                resp = json.loads(urllib.request.urlopen(post_url, timeout=8).read())
+                if resp.get("status") == "success" and resp.get("href"):
+                    return resp.get("href")
+            except Exception:
+                pass
+
+        return None

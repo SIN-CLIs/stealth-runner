@@ -189,8 +189,125 @@ def extract_captcha_image(ws_url):
         return {"found": False, "error": str(e)[:200]}
 
 
-# ── NVIDIA Vision OCR ──────────────────────────────────
+# ── NVIDIA Vision OCR (CLIPPED SCREENSHOT) ──────────────
 
+def solve_captcha_with_clip(ws_url):
+    """Solve captcha using clipped screenshot — avoids base64 ambiguity.
+
+    Uses Page.captureScreenshot with clip targeting the captcha image
+    element. More reliable than base64 src (which may pick up logos).
+
+    Args:
+        ws_url: CDP WebSocket URL
+
+    Returns:
+        Dict with {success, text, error, tokens_used, elapsed_ms}
+    """
+    api_key = os.getenv("NVIDIA_API_KEY")
+    if not api_key:
+        return {"success": False, "error": "NVIDIA_API_KEY not set"}
+
+    start = time.monotonic()
+    try:
+        ws = websocket.create_connection(ws_url, timeout=15)
+
+        # Find captcha image position for clip
+        ws.send(json.dumps({
+            "id": 0, "method": "Runtime.evaluate",
+            "params": {"expression": '''
+(function() {
+    // Find the captcha image (base64 src, reasonable size)
+    var imgs = document.querySelectorAll("img");
+    for (var i = 0; i < imgs.length; i++) {
+        var src = imgs[i].src || "";
+        var r = imgs[i].getBoundingClientRect();
+        if ((src.includes("base64") || src.includes("captcha")) && r.width > 30 && r.height > 20 && r.width < 400) {
+            return JSON.stringify({x:r.x, y:r.y, w:r.width, h:r.height, idx:i});
+        }
+    }
+    // Fallback: any medium-sized visible image
+    for (var i = 0; i < imgs.length; i++) {
+        var r = imgs[i].getBoundingClientRect();
+        if (r.width > 40 && r.width < 400 && r.height > 15 && r.height < 120 && imgs[i].offsetParent) {
+            return JSON.stringify({x:r.x, y:r.y, w:r.width, h:r.height, idx:i, fallback:true});
+        }
+    }
+    return "{}";
+})()
+            }}
+        }))
+        r = json.loads(ws.recv())
+        clip_info = json.loads(r.get("result", {}).get("result", {}).get("value", "{}"))
+
+        if not clip_info.get("w"):
+            ws.close()
+            return {"success": False, "error": "No captcha image found for clipping"}
+
+        # Clip screenshot of captcha area (with 10px padding)
+        ws.send(json.dumps({
+            "id": 1, "method": "Page.captureScreenshot",
+            "params": {
+                "format": "png",
+                "clip": {
+                    "x": max(0, clip_info["x"] - 5),
+                    "y": max(0, clip_info["y"] - 5),
+                    "width": clip_info["w"] + 10,
+                    "height": clip_info["h"] + 10,
+                    "scale": 2
+                }
+            }
+        }))
+        r = json.loads(ws.recv())
+        ws.close()
+        b64 = r.get("result", {}).get("data", "")
+
+        if not b64:
+            return {"success": False, "error": "Screenshot failed"}
+
+        # Send to Vision API
+        client = OpenAI(api_key=api_key, base_url=NIM_BASE_URL)
+        response = client.chat.completions.create(
+            model=VISION_MODEL,
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": (
+                        "Read ONLY the alphanumeric captcha characters. "
+                        "Return ONLY the characters, no spaces, no explanation. "
+                        "Maximum 8 characters."
+                    )},
+                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}},
+                ],
+            }],
+            max_tokens=20, temperature=0.0,
+        )
+        elapsed = time.monotonic() - start
+
+        raw_text = response.choices[0].message.content.strip()
+        import re
+        cleaned = re.sub(r'[^a-zA-Z0-9]', '', raw_text).upper()[:10]
+
+        tokens = response.usage.total_tokens if response.usage else 0
+
+        return {
+            "success": True,
+            "text": cleaned,
+            "raw": raw_text,
+            "tokens_used": tokens,
+            "elapsed_ms": round(elapsed * 1000),
+        } if cleaned else {
+            "success": False,
+            "error": f"OCR empty (raw: {raw_text})",
+            "tokens_used": tokens,
+            "elapsed_ms": round(elapsed * 1000),
+        }
+
+    except Exception as e:
+        return {"success": False, "error": str(e)[:200],
+                "elapsed_ms": round((time.monotonic() - start) * 1000)}
+
+
+# Keep old function as fallback
 def solve_captcha_with_vision(data_url):
     """Send captcha image to NVIDIA NIM Vision API for OCR.
 
@@ -378,21 +495,21 @@ def solve_purespectrum_captcha(ws_url, debug=False):
     steps = []
     result = {"success": False, "steps": steps, "captcha_text": ""}
 
-    # Step 1: Extract
+    # Step 1: Try to extract captcha image (for debug info)
     img_data = extract_captcha_image(ws_url)
     steps.append({"step": "extract", "found": img_data.get("found", False)})
 
-    if not img_data.get("found"):
-        result["error"] = img_data.get("error", "No captcha image found")
-        return result
-
-    if debug:
+    if debug and img_data.get("found"):
         print(f"  [CAPTCHA] Image extracted: {img_data['width']}x{img_data['height']} "
-              f"at ({img_data['x']},{img_data['y']}), "
-              f"data_url length: {len(img_data['data_url'])}")
+              f"at ({img_data['x']},{img_data['y']})")
 
-    # Step 2: OCR with NVIDIA Vision
-    ocr_result = solve_captcha_with_vision(img_data["data_url"])
+    # Step 2: OCR via clipped screenshot (PRIMARY) or base64 (fallback)
+    ocr_result = solve_captcha_with_clip(ws_url)
+    if not ocr_result.get("success"):
+        # Fallback to base64 approach
+        img_data = extract_captcha_image(ws_url)
+        if img_data.get("found"):
+            ocr_result = solve_captcha_with_vision(img_data["data_url"])
     steps.append({"step": "ocr", "success": ocr_result.get("success", False)})
 
     if not ocr_result.get("success"):
