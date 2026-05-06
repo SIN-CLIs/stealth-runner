@@ -664,7 +664,7 @@ Use --remote-allow-origins=* to allow connections from this origin.
 ### Lösung
 Chrome MUSS mit `--remote-allow-origins=*` gestartet werden:
 ```bash
-playstealth launch --url '...'  # playstealth setzt das automatisch
+playstealth launch --url '...'  # ⚠️ playstealth setzt NICHT --force-renderer-accessibility!
 ```
 
 **ABER**: Selbst mit playstealth kann der Origin-Check noch aktiv sein.
@@ -673,7 +673,7 @@ Dann: Chrome neu starten oder `--disable-web-security` testen.
 ### AX-Tree leer? Checkliste
 Wenn `cua-driver call get_window_state` **0 Children** zurückgibt:
 1. **Accessibility prüfen**: System Settings → Accessibility → Screen bei Bedarf AN
-2. **Chrome Accessibility Flag**: playstealth startet mit `--force-renderer-accessibility`
+2. **Chrome Accessibility Flag**: Chrome MUSS manuell mit `--force-renderer-accessibility` gestartet werden. playstealth setzt dies NICHT.
 3. **Window wählen**: Nicht WID 0 (Menüleiste), sondern WID mit `height > 100` und `depth > 5`
 4. **Page laden**: Seite muss vollständig geladen sein (5s warten)
 5. **CUA-Daemon**: `cua-driver serve` muss als Daemon laufen
@@ -695,7 +695,7 @@ print('AX Enabled:', data.get('spAccessibilityDataType', {}).get('AXEnhancedAcce
 | Symptom | Ursache | Fix |
 |---------|---------|-----|
 | `get_window_state` → 0 children | Accessibility nicht aktiv | System Settings → Accessibility einschalten |
-| CDP WS 403 Forbidden | Chrome Origin check | Chrome neu starten (playstealth setzt flags) |
+| CDP WS 403 Forbidden | Chrome Origin check | Chrome mit `--remote-allow-origins=*` starten |
 | Alle Windows height=0 | Falsches Window | WID mit height>100 suchen |
 | AXButton/AXLink nicht gefunden | depth<5 filter | Apple-Menüleiste hat depth 1-4 |
 

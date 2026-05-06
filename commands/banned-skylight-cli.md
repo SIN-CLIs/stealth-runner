@@ -1,18 +1,18 @@
-# BANNED: SKYLIGHT-CLI ❌
+# SKYLIGHT-CLI STATUS — RE-ACTIVATED (2026-05-06) ✅
 
 ## Status
-**BANNED** — 2026-05-03, AGENTS.md Line 5
+**RE-ACTIVATED** — 2026-05-06, per AGENTS.md + sinrules.md.
+`snapshot-compact` und `batch` sind PRIMARY. Nur `click --element-index` bleibt BANNED.
 
-## Warum BANNED?
-```
-CDP + skylight-cli + webauto-nodriver sind ALLE BANNED.
-(AGENTS.md — CUA-ONLY Trinity Architektur)
-```
+## ✅ ERLAUBT (PRIMARY)
+- `skylight-cli snapshot-compact --pid X --semantic` — Compact @eN Snapshot
+- `skylight-cli find --role button --text "Weiter"` — Element-Suche
+- `skylight-cli batch '[{"ref":"@e0","action":"click"}]'` — Batch-Ausführung
 
-- skylight-cli nutzt Browser-Chrome + Web-Content vermischt
-- Element-Indizes sind instabil (ändern sich bei Page-Load)
-- Index passt nicht zwischen Sessions
-- **CUA-DRIVER ist die einzige erlaubte Lösung**
+## ❌ BANNED (unverändert)
+- `skylight-cli click --element-index` — Index instabil
+- `skylight-cli query` — veraltet
+- `skylight-cli screenshot` — veraltet (nutze CDP Page.captureScreenshot)
 
 ## Verbote
 ```bash
