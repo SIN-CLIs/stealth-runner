@@ -154,7 +154,15 @@ class SurveyRunner:
         if self.config.debug:
             print(f"[RUN] {survey_id} → {provider} (CPX: {survey_url[:60]})")
 
-        # 2. Open survey in new tab
+        # 2. Read balance BEFORE opening survey tab (dashboard WS still valid)
+        try:
+            balance_before = read_balance(self.config.cdp_port)
+        except Exception:
+            balance_before = 0.0
+        if self.config.debug:
+            print(f"[BALANCE] Before survey: {balance_before}€")
+
+        # 3. Open survey in new tab
         tab_id = self._create_tab(dashboard_ws, survey_url)
         if not tab_id:
             result.error = "Failed to create browser tab"
@@ -247,7 +255,6 @@ class SurveyRunner:
 
         # 5. NEMO Loop — with Circuit Breaker + Tab Re-Discovery
         nim_calls = 0
-        balance_before = read_balance(self.config.cdp_port)
         consecutive_fails = 0
         max_consecutive_fails = 5  # Circuit breaker: stop after 5 fails
         prev_page_hash = ""  # Detect infinite loops (same page every time)
@@ -432,10 +439,17 @@ class SurveyRunner:
         if result.status == "completed" and self.config.auto_rate:
             self._rate_survey()
 
-        # 8. Calculate earnings
+        # 8. Calculate earnings (balance read before tab creation, after survey close)
         time.sleep(2)
-        balance_after = read_balance(self.config.cdp_port)
-        result.earned = round(balance_after - balance_before, 2)
+        try:
+            balance_after = read_balance(self.config.cdp_port)
+            result.earned = max(0, round(balance_after - balance_before, 2))
+            if self.config.debug:
+                print(f"[BALANCE] After: {balance_after}€ | Earned: +{result.earned}€")
+        except Exception:
+            result.earned = 0.0
+            if self.config.debug:
+                print(f"[BALANCE] After read failed — earned=0 (before was {balance_before}€)")
         result.elapsed_s = round(time.monotonic() - start_time, 1)
 
         # 9. Log earnings
@@ -472,23 +486,33 @@ class SurveyRunner:
             print("[LOOP] No viable surveys found")
             return results
 
-        ok_surveys = [s for s in viable if s.get("provider") != "pre_qualifier"]
-        total_ok = len(ok_surveys)
+        total_viable = len(viable)
+        total_ok = len([s for s in viable if s.get("provider") != "pre_qualifier"])
+        print(f"[LOOP] Processing up to {self.config.max_surveys} surveys from {total_viable} viable")
 
-        if total_ok == 0:
-            print(f"[LOOP] All {len(viable)} surveys are pre-qualifiers (browser-based, skipped)")
-            return results
-
-        print(f"[LOOP] Processing {total_ok} OK surveys out of {len(viable)} total")
-
+        started_count = 0  # Only count successfully started surveys
+        failed_preq_cache = {}  # {survey_id: attempt_count} — skip if failed recently
         for i, survey in enumerate(viable):
-            if i >= self.config.max_surveys:
+            if started_count >= self.config.max_surveys:
                 break
 
-            # Prioritize OK surveys over pre-qualifiers (pre-qualifiers require
-            # browser-based answering which is complex — skip for now)
+            # Handle pre-qualifiers via CPX API (NOT browser-based)
             if survey.get("provider") == "pre_qualifier":
-                continue  # silently skip pre-qualifiers
+                survey_id = survey["id"]
+                # Skip recently failed pre-qualifiers to avoid redundant API calls
+                if survey_id in failed_preq_cache:
+                    continue
+                survey_url = self.handle_pre_qualifier(survey_id, survey)
+                if not survey_url:
+                    print(f"[LOOP] Pre-qualifier failed for {survey_id} → skipping")
+                    failed_preq_cache[survey_id] = True  # Cache failure
+                    continue
+                # Update survey dict with real survey URL
+                survey = survey.copy()
+                survey["href"] = survey_url
+                survey["provider"] = "pre_qualifier_answered"
+                if self.config.debug:
+                    print(f"[LOOP] Pre-qualifier answered → survey URL: {survey_url[:60]}")
 
             # Check balance target
             balance = read_balance(self.config.cdp_port)
@@ -500,11 +524,13 @@ class SurveyRunner:
 
             sid = survey["id"]
             href = survey.get("href", "")
+            # ok_idx counts OK surveys seen so far (excluding pre-qualifiers)
             ok_idx = sum(1 for s in viable[:i] if s.get("provider") != "pre_qualifier") + 1
             print(f"[LOOP] [{ok_idx}/{total_ok}] Running survey {sid} ({survey['provider']})...")
 
             result = self.run_survey(sid, survey_url=href)
             results.append(result)
+            started_count += 1
             print(f"[LOOP]   → {result.status} | {'+' + str(result.earned) + '€' if result.earned > 0 else str(result.earned) + '€'} | {result.error[:50] if result.error else 'no error'}")
 
             if result.status == "completed":
@@ -534,8 +560,32 @@ class SurveyRunner:
     # ── Private ─────────────────────────────────────
 
     def _create_tab(self, dashboard_ws, url):
-        """Create a new browser tab via CDP Target.createTarget."""
-        return chrome.create_tab(url, self.config.cdp_port)
+        """Create a new browser tab with stealth injection before navigation.
+
+        Uses stealth-injection to hide automation flags BEFORE the page loads:
+        1. Create blank tab (about:blank)
+        2. Inject stealth JS via Page.addScriptToEvaluateOnNewDocument
+        3. Navigate to survey URL
+        """
+        # 1. Create blank tab
+        tab_info = chrome.create_blank_tab(self.config.cdp_port)
+        if not tab_info:
+            if self.config.debug:
+                print("[STEALTH] Failed to create blank tab — falling back to direct navigation")
+            return chrome.create_tab(url, self.config.cdp_port)
+        
+        # 2. Inject stealth before navigation
+        injected = chrome.inject_stealth_to_tab(tab_info["ws_url"])
+        if self.config.debug:
+            print(f"[STEALTH] {'✅' if injected else '❌'} Injected stealth JS into tab {tab_info['id'][:8]}")
+        
+        # 3. Navigate to survey URL (stealth active before first byte)
+        navigated = chrome.navigate_tab(tab_info["ws_url"], url)
+        if not navigated:
+            if self.config.debug:
+                print("[STEALTH] Navigation failed — tab might already be on survey page")
+        
+        return tab_info["id"]
 
     def _click_redirect_link(self, tab_ws):
         """Click the 'hier klicken' link on CPX redirect page."""
@@ -632,43 +682,38 @@ class SurveyRunner:
         After executing actions, the tab may have navigated to a new page
         or been replaced. Re-find the WS URL to prevent stale WS errors.
 
+        Uses CDPConnection for retry + auto-reconnect on stale connections.
+
         Returns:
             Fresh WS URL or None if tab is gone (screen-out)
         """
+        from .cdp_client import CDPConnection
+
         # Try original tab first
         tab_info = chrome.get_ws_for_tab(tab_id, self.config.cdp_port)
         if tab_info:
             try:
-                import websocket as ws_lib
-                ws = ws_lib.create_connection(tab_info, timeout=5)
-                ws.send(json.dumps({
-                    "id": 0, "method": "Runtime.evaluate",
-                    "params": {"expression": "document.location.href"}
-                }))
-                json.loads(ws.recv())
-                ws.close()
-                return tab_info  # Tab still alive
+                with CDPConnection(tab_info, max_retries=2, timeout=5) as cdp:
+                    cdp.call("Runtime.evaluate",
+                             {"expression": "document.location.href"})
+                    return tab_info
             except Exception:
-                pass  # Tab WS stale — search all tabs
+                pass
 
-        # Fallback: find any non-dashboard tab with matching URL pattern
+        # Fallback: find any non-dashboard tab
         for p in chrome.find_bot_tabs(self.config.cdp_port):
             url = p.get("url", "")
             if url and "dashboard" not in url and "about:blank" not in url:
-                # Verify it's still accessible
                 try:
-                    ws = websocket.create_connection(p["webSocketDebuggerUrl"], timeout=5)
-                    ws.send(json.dumps({
-                        "id": 0, "method": "Runtime.evaluate",
-                        "params": {"expression": "document.readyState"}
-                    }))
-                    json.loads(ws.recv())
-                    ws.close()
-                    return p["webSocketDebuggerUrl"]
+                    ws_url = p["webSocketDebuggerUrl"]
+                    with CDPConnection(ws_url, max_retries=2, timeout=5) as cdp:
+                        cdp.call("Runtime.evaluate",
+                                 {"expression": "document.readyState"})
+                        return ws_url
                 except Exception:
                     continue
 
-        return None  # Tab is gone (screen-out closed it)
+        return None  # Tab is gone
 
     def _detect_provider(self, url):
         """Detect provider from URL."""
@@ -1148,11 +1193,13 @@ class SurveyRunner:
             if self.config.debug:
                 print(f"[PREQ] Step {step}: Q={question_text[:50]}... → {selected_text[:50]}")
 
-            # POST answer
+            # POST answer (with message_button for CPX API compatibility)
             try:
+                msg_button = current_details.get("message_button", "einreichen")
                 post_url = (details_url + "&survey_id=" + survey_id +
                             "&" + urllib.parse.quote(question_key) + "=" +
-                            urllib.parse.quote(selected_key))
+                            urllib.parse.quote(selected_key) +
+                            "&message_button=" + urllib.parse.quote(msg_button))
                 resp_json = json.loads(urllib.request.urlopen(post_url, timeout=8).read())
 
                 # Check if we got the real survey URL

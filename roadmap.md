@@ -20,6 +20,11 @@
 - [x] Persona-System mit date_of_birth-basierter Altersberechnung
 - [x] End-to-End Survey Test (1 Zyklus)
 - [x] Master Registry + Category Registries
+- [x] Pre-qualifier handling (handle_pre_qualifier in run_loop, message_button CPX POST)
+- [x] Stealth injection (Page.addScriptToEvaluateOnNewDocument, 12-module bundle)
+- [x] CDPConnection (retry + reconnect + ID routing, 229 lines)
+- [x] Balance timing fix (read before tab creation, max(0, earned))
+- [x] Live crash-test (1 survey completed, 36.3s, generic provider)
 - [ ] Stealth Pipeline (perceive→plan→guard→execute→critique) implementieren
 - [ ] Guardian-Check in jeden Survey-Schritt integrieren
 - [ ] Verify-Box für alle cua-driver Aktionen

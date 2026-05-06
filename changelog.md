@@ -5,6 +5,39 @@
 
 ---
 
+## 2026-05-06 — NEXT-GEN: 4 Root Causes Fixed + Crash-Tested
+
+### P0: Pre-Qualifier Handling
+- Fixed: run_loop() now calls handle_pre_qualifier() instead of skipping pre-qualifiers
+- Added: message_button to CPX API POST (required for API acceptance)
+- Added: pre-qualifier failure cache, started_count tracking
+- Tests: 13 (test_prequalifier.py), LIVE-verified: 6/6 pre-qualifiers processed
+
+### P1: Stealth Injection (Anti-Detection)
+- Added: create_blank_tab(), inject_stealth_to_tab(), navigate_tab() to chrome.py
+- Added: 12-module stealth bundle (251 lines) via Page.addScriptToEvaluateOnNewDocument
+- Tests: 19 (test_stealth.py), LIVE-verified: [STEALTH] ✅ Injected stealth JS into tab
+
+### P1: CDPConnection (Retry + Reconnect + ID Routing)
+- Added: survey/cdp_client.py (229 lines) — sync wrapper with exponential backoff
+- Retry: 5 attempts, 0.3→4.8s backoff, auto-reconnect on "No such target"
+- Integrated: runner.py _refresh_tab_ws(), execute.py BatchExecutor.execute()
+- Tests: 15 (test_cdp_client.py), LIVE-verified: 0 "No such target id" errors
+
+### P3: Balance Read Timing
+- Fixed: balance_before read BEFORE tab creation (was AFTER → dashboard WS stale)
+- Added: try/except wrapper, max(0, earned) to prevent negatives
+- Tests: 5 (test_balance.py), LIVE-verified: [BALANCE] Before: 2.23€
+
+### Bonus Fixes
+- read_page_text + detect_error_page added as static methods to BatchExecutor
+- Pre-qualifier failure cache avoids redundant CPX API calls
+
+### Metrics
+- 282 total tests (52 new), 0 regressions
+- 1 survey completed in production: 36.3s, 3 iterations, status=completed
+- Balance before/after tracking verified
+
 ## 2026-05-05
 
 | Typ | Beschreibung | Referenz |

@@ -2,7 +2,7 @@
 
 ## Current Session Status
 
-**Balance: 2.15€** (from 1.54€ → +0.61€ today)
+**Balance: 2.23€ (2026-05-06)** (from 1.54€ → +0.69€ today)
 - Strat7 survey: +0.09€ ✅
 - Strat7 (260409): +0.03€ ✅
 - Brand Ambassador: +0.02€ compensation
@@ -31,6 +31,8 @@ import json, urllib.request, websocket
 PORT = 9999
 pages = json.loads(urllib.request.urlopen(f'http://127.0.0.1:{PORT}/json').read())
 ```
+
+**NEMO pipeline active: CDPConnection + BatchExecutor + StealthInjection**
 
 ## Survey Providers Verified
 
@@ -176,3 +178,5 @@ Only 2 IDs return `type:question` (pre-qualifier), rest are PureSpectrum.
 ```bash
 ps aux | grep "user-data-dir=/tmp/heypiggy-bot" | awk '{print $2}'
 ```
+
+2026-05-06 NEXT-GEN: 4 Root Causes gefixt. 282 tests. See fix.md + learn.md §M.

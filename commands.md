@@ -25,6 +25,10 @@ result = agent.run_survey(session, profile)  # 1 LLM call per page!
 
 ## Google Login FLOWS
 
+> ⚠️ **NEMO UPDATE 2026-05-06**: `auto_google_login.py` is the AUTHORITATIVE Google Login flow.
+> CDP+AX Trinity patterns (`cdp_click.py`, `asyncio.run`) are DEPRECATED.
+> See AGENTS.md § Google Login for the verified CUA-only 6-step flow.
+
 ### FLOW A — Frischer Browser (keine Cookies)
 ```bash
 # 1. Email (cdp_click)

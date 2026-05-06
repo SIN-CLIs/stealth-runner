@@ -5,6 +5,14 @@
 
 ---
 
+## 2026-05-06 (15:00-18:30) — NEXT-GEN: 4 Root Causes + Crash-Test
+- P0: Pre-qualifier skip → handle_pre_qualifier() call (13 tests)
+- P1: Stealth injection via Page.addScriptToEvaluateOnNewDocument (19 tests)
+- P1: CDPConnection wrapper with retry/reconnect (15 tests)
+- P3: Balance read timing fix (5 tests)
+- Crash-test: 1 survey completed (66883950, 36.3s, generic provider)
+- 282 tests passing, learn.md §M documented, fix.md updated
+
 ## 2026-05-05
 
 | Zeit | Agent | Aktion | Ergebnis | Fix |

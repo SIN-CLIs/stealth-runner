@@ -1,3 +1,26 @@
+## 2026-05-06 — NEXT-GEN Crash-Test Successes 🎉
+
+### Pre-Qualifier Fix (P0)
+- 6 pre-qualifiers processed via CPX API (was: 0 — all skipped)
+- loop: 12 viable → 0 OK → all pre-qualifiers attempted → 6 failed (CPX filtering), 0 skipped
+- [LOOP] Pre-qualifier failed for 66764861 → skipping (correctly handled)
+
+### Stealth Injection (P1)
+- [STEALTH] ✅ Injected stealth JS into tab AAB87721
+- 12-module bundle injected before navigation via Page.addScriptToEvaluateOnNewDocument
+
+### CDPConnection (P1)
+- 0 "No such target id" errors during entire crash-test session
+- _refresh_tab_ws() uses CDPConnection with retry
+
+### Balance Tracking (P3)
+- [BALANCE] Before survey: 2.23€ → After: 2.23€ | Earned: +0€
+- Balance read BEFORE tab creation (dashboard WS valid)
+
+### Survey Completion
+- Survey 66883950: completed, 36.3s, 3 iterations, generic provider
+- [RUN] Cleaned 1 zombie tabs — zombie prevention working
+
 | 2026-05-05 | CaptchaSolver: Slide-Captcha 8/8 via cua-driver drag | [cli/modules/captcha_solver.py](cli/modules/captcha_solver.py) |
 | 2026-05-05 | Koordinaten-Bug: dynamisch statt hardcoded Window-Position | [commands/captcha/solve-slide.md](commands/captcha/solve-slide.md) |
 | 2026-05-05 | pixtral-large: Text-Captcha QXem34 korrekt gelesen | [commands/captcha/solve-text.md](commands/captcha/solve-text.md) |

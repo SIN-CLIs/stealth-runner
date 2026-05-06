@@ -34,7 +34,13 @@ echo '{"pid": PID, "window_id": WID, "element_index": IDX, "value": "TEXT"}' | c
 
 ## History
 - 2026-05-03: skylight-cli BANNED wegen instabiler Indizes
-- 2026-05-05: CUA-DRIVER ist PRIMARY für alle Browser-Interaktionen
+NEMO UPDATE (2026-05-06):
+- CUA-DRIVER = DEPRECATED (Legacy-Fallback, kein neuer Code)
+- CDPConnection (survey/cdp_client.py) = PRIMARY für CDP-Interaktionen
+- BatchExecutor = PRIMARY für Survey-Actions
+- StealthInjection = PRIMARY für Anti-Detection
+
+- 2026-05-06: NEMO PRIMARY, skylight-cli snapshot-compact + batch RE-ACTIVATED, cua-driver DEPRECATED
 
 ## Alternative
 - NUR cua-driver für macOS UI Automation

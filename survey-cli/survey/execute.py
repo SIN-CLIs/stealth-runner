@@ -19,6 +19,8 @@ import websocket
 from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, field
 
+from .cdp_client import CDPConnection
+
 # SOTA: State verification — wait this long before checking DOM change
 EXECUTION_VERIFY_MS = 1500
 EXECUTION_MAX_WAIT_MS = 3000
@@ -178,8 +180,45 @@ class BatchExecutor:
         self.commands = PROVIDER_COMMANDS.get(provider, GENERIC_COMMANDS)
         self.config = config  # SOTA: access debug flag for logging
 
+    # ── Static Helpers ──────────────────────────────────────
+
+    @staticmethod
+    def read_page_text(ws_url: str, max_len: int = 500) -> str:
+        """Read page innerText via CDP WebSocket."""
+        try:
+            cdp = CDPConnection(ws_url, max_retries=2, timeout=10)
+            cdp.connect()
+            try:
+                result = cdp.call("Runtime.evaluate", {
+                    "expression": f"document.body.innerText.substring(0, {max_len})"
+                })
+                return result.get("result", {}).get("result", {}).get("value", "")
+            finally:
+                cdp.close()
+        except Exception:
+            return ""
+
+    @staticmethod
+    def detect_error_page(page_text: str) -> tuple[bool, str]:
+        """Detect common survey error pages from innerText."""
+        error_patterns = [
+            ("no app id", "CPX: No app ID specified"),
+            ("survey not available", "Survey not available"),
+            ("survey closed", "Survey closed"),
+            ("link has expired", "Link expired"),
+            ("survey has ended", "Survey ended"),
+            ("leider ist ein fehler aufgetreten", "Error page (German)"),
+            ("error occurred", "Error occurred"),
+            ("this survey is no longer available", "Survey unavailable"),
+        ]
+        text_lower = (page_text or "").lower()
+        for pattern, reason in error_patterns:
+            if pattern in text_lower:
+                return True, reason
+        return False, ""
+
     def execute(self, actions):
-        """Execute batch of actions.
+        """Execute batch of actions with auto-retry on stale connections.
 
         Args:
             actions: List of action dicts [{ref, action, value, ms}]
@@ -190,17 +229,22 @@ class BatchExecutor:
         result = BatchResult()
         start = time.monotonic()
 
-        ws = websocket.create_connection(self.ws_url, timeout=15)
+        # Use CDPConnection for auto-reconnect on "No such target" errors
+        cdp = CDPConnection(self.ws_url, max_retries=5)
+        cdp.connect()
+        ws = cdp._ws  # Raw WebSocket for compatibility with _execute_single
 
-        for action in actions:
-            ar = self._execute_single(ws, action)
-            result.actions.append(ar)
-            if ar.get("success"):
-                result.total_success += 1
-            else:
-                result.total_fail += 1
+        try:
+            for action in actions:
+                ar = self._execute_single(ws, action)
+                result.actions.append(ar)
+                if ar.get("success"):
+                    result.total_success += 1
+                else:
+                    result.total_fail += 1
+        finally:
+            cdp.close()
 
-        ws.close()
         result.total_elapsed_ms = round((time.monotonic() - start) * 1000)
         return result
 
@@ -587,6 +631,22 @@ class BatchExecutor:
                 return True, reason
 
         return False, ""
+
+
+# ══════════════════════════════════════════════════════════════════
+# CDP CONNECTION HELPERS
+# ══════════════════════════════════════════════════════════════════
+
+
+def _cdp_call(ws_url: str, method: str, params: dict = None,
+              max_retries: int = 3) -> dict:
+    """Execute a CDP command with retry + auto-reconnect via CDPConnection."""
+    cdp = CDPConnection(ws_url, max_retries=max_retries)
+    cdp.connect()
+    try:
+        return cdp.call(method, params)
+    finally:
+        cdp.close()
 
 
 # ══════════════════════════════════════════════════════════════════

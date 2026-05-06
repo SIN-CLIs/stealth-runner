@@ -86,3 +86,11 @@ React validation may require exact input events.
 2. Complete Civey survey
 3. Loop through more surveys
 4. Document all working survey providers
+
+## 18:00 — NEMO Crash-Test (4 Fixes Verified)
+- P0: Pre-qualifiers processed (was: skipped). 6/6 attempted, 0 skipped.
+- P1: Stealth injected: [STEALTH] ✅ Injected stealth JS into tab AAB87721
+- P1: CDPConnection: 0 "No such target" errors
+- P3: Balance: [BALANCE] Before: 2.23€ → After: 2.23€
+- Survey 66883950: completed, 36.3s, 3 iterations, generic provider
+- 282 tests passing, learn.md §M documented

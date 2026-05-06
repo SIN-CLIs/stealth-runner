@@ -38,6 +38,17 @@
 | `scripts/check_doc_health.py` | Doc-Health prüfen | [scripts/check_doc_health.py](scripts/check_doc_health.py) |
 | `scripts/generate_missing_docs.py` | Fehlende Docs generieren | [scripts/generate_missing_docs.py](scripts/generate_missing_docs.py) |
 
+## NEMO Tools (2026-05-06)
+
+| Tool | Zweck | Command/File | Description |
+|------|-------|-------------|-------------|
+| survey | survey-cli loop | `python3 -m survey run --mode loop` | NEMO Survey Loop |
+| BatchExecutor | CDP batch actions | `survey/execute.py` | SOTA 3-tier click + verify |
+| CDPConnection | CDP retry/reconnect | `survey/cdp_client.py` | 5-retry, ID routing |
+| StealthInjector | Anti-detection | `survey/chrome.py` | Page.addScriptToEvaluateOnNewDocument |
+| SurveyRunner | Survey orchestration | `survey/runner.py` | NEMO loop + anti-stuck |
+| NIMSurveyClient | NIM decisions | `survey/nim.py` | NVIDIA Nemotron 3 Omni |
+
 ## BANNED Tools
 
 | Tool | Grund | File |
@@ -48,5 +59,5 @@
 | pyautogui | BANNED | [banned-pyautogui.md](commands/banned-pyautogui.md) |
 | pynput | BANNED | [banned-pynput.md](commands/banned-pynput.md) |
 
-**Tool-Gesamt**: 11 verified + 5 banned = 16 registrierte Tools
-**Letztes Update**: 2026-05-05
+**Tool-Gesamt**: 17 verified + 5 banned = 22 registrierte Tools
+**Letztes Update**: 2026-05-06

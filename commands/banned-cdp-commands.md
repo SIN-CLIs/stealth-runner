@@ -1,5 +1,7 @@
 # BANNED: CDP COMMANDS ❌
 
+⚠️ NEMO UPDATE 2026-05-06: CDP Runtime.evaluate is NOW PRIMARY for JS execution. See fix.md.
+
 ## Status
 **BANNED** — 2026-05-03, AGENTS.md Line 5
 
@@ -11,7 +13,12 @@ webauto-nodriver ist ABSOLUT BANNED. skylight-cli snapshot-compact + batch sind 
 
 - Chrome blockiert eingehende CDP WebSocket Verbindungen (403 Forbidden)
 - Origin check verhindert CDP-Verbindungen
-- **CUA-DRIVER ist die einzige erlaubte Lösung**
+NEMO ARCHITECTURE UPDATE (2026-05-06):
+- CDP WebSocket = BANNED for navigation/clicks/queryAXTree/getContentQuads
+- CDP WebSocket = ERLAUBT for Runtime.evaluate (JS execution, snapshot generation)
+- CDP WebSocket = ERLAUBT for Page.addScriptToEvaluateOnNewDocument (stealth injection)
+- BatchExecutor + CDPConnection nutzen CDP für Runtime.evaluate als PRIMARY
+- cua-driver = LEGACY/DEPRECATED, nur Fallback
 
 ## Symptom
 ```
@@ -52,3 +59,4 @@ print(r.stdout)
 - 2026-05-03: CDP WebSocket blockiert (403 Forbidden)
 - 2026-05-03: CDP BANNED, CUA-DRIVER PRIMARY
 - 2026-05-05: CUA-DRIVER funktioniert einwandfrei (PID=78708, 8 Steps)
+- 2026-05-06: NEMO PRIMARY — CDP Runtime.evaluate RE-ACTIVATED, cua-driver DEPRECATED

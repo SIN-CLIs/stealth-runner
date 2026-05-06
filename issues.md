@@ -19,7 +19,7 @@
 
 | Issue | Priority | Status | Titel | Plan |
 |-------|----------|--------|-------|------|
-| [SR-28](issues/ISSUE-SR-28.md) | 🔴 P0 | 📋 TODO | **CDP Survey Module** — cua-driver → CDP WebSocket Rewrite | [plan-sr-28](plan-sr-28-cdp-survey-module.md) |
+| [SR-28](issues/ISSUE-SR-28.md) | 🔴 P0 | 📋 PARTIAL: CDPConnection + BatchExecutor implemented, NEMO loop needs work | **CDP Survey Module** — cua-driver → CDP WebSocket Rewrite | [plan-sr-28](plan-sr-28-cdp-survey-module.md) |
 | [SR-29](issues/ISSUE-SR-29.md) | 🔴 P0 | 🚧 BLOCKED | **PureSpectrum CAPTCHA OCR Solver** | [plan-sr-29](plan-sr-29-ps-captcha-ocr.md) |
 | [SR-30](issues/ISSUE-SR-30.md) | 🔴 P0 | 📋 TODO | **Dashboard Poller + Auto-Loop** | [plan-sr-30](plan-sr-30-dashboard-poller.md) |
 | [SR-31](issues/ISSUE-SR-31.md) | 🟠 P1 | 📋 TODO | **Flow Compiler FCTES — Production Promotion** | [plan-sr-31](plan-sr-31-fctes-promotion.md) |
@@ -143,6 +143,6 @@ heypiggy → CPX API → click.cpx-research.com →
 | 1 | **PureSpectrum CAPTCHA** | 🚧 BLOCKED | SR-29 — OCR Solver |
 | 2 | **Surveyrouter** | ❌ HANGS | Tab schließen, nächsten Survey |
 | 3 | **CPX URL Single-Use** | ⚠️ BEKANNT | Immer neuen API-Call machen |
-| 4 | **Balance-Desync** | ⚠️ BEKANNT | Dashboard-Reload nach jedem Survey |
+| 4 | **Balance-Desync** | ✅ FIXED (2026-05-06): balance_before VOR tab creation, try/except wrapper | Dashboard-Reload nach jedem Survey |
 | 5 | **Insights-Today Education** | ⚠️ PENDING | Abitur statt Universität (SR-33) |
 | 6 | **orchestrator.py Import** | ✅ FIXED | `auto_google_login` statt `heypiggy_login_box` |

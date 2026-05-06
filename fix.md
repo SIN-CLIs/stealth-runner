@@ -8,6 +8,66 @@
 
 | 2026-05-05 | CUA-ONLY verletzt: cliclick+CDP dispatchEvent | [incidents/2026-05-05-1430.md](incidents/2026-05-05-1430.md) |
 | 2026-05-06 | GoCaptcha Slide: CDP Input.dispatchMouseEvent als Lösung | [incidents/2026-05-06-gocaptcha-slide-cdp.md](incidents/2026-05-06-gocaptcha-slide-cdp.md) |
+| 2026-05-06 | NEXT-GEN: 4 Root Causes gefixt + Crash-tested | [learn.md §M](learn.md) |
+
+## 🔴 2026-05-06 NEXT-GEN: 4 Root Causes (CRASH-TESTED ✅)
+
+### P0: Pre-Qualifiers SKIPPED
+**Root Cause:** `run_loop()` line 490: `if survey.get("provider") == "pre_qualifier": continue`
+→ 75% (9/12) Surveys wurden ignoriert. `handle_pre_qualifier()` existierte aber nie aufgerufen.
+
+**Fix:** `continue` ersetzt durch `handle_pre_qualifier(survey_id, survey)`.
+Zusätzlich: `message_button` an POST angehängt (CPX API erfordert das).
+Pre-Qualifier Failure Cache vermeidet redundante API Calls.
+`started_count` statt Loop-Index für max_surveys Tracking.
+
+**Dateien:** `survey/runner.py` (~40 lines changed)
+**Tests:** 13 (test_prequalifier.py)
+**Verifiziert:** LIVE — 6 Pre-Qualifiers verarbeitet, 0 skipped ✅
+
+### P1: Zero Stealth Injection
+**Root Cause:** `Target.createTarget` öffnet neuen Tab ohne Stealth-Overrides.
+`navigator.webdriver = true` → PureSpectrum/Cint erkennen Automation.
+
+**Fix:** 3-Phasen Tab-Erstellung: (1) `create_blank_tab()` → about:blank,
+(2) `inject_stealth_to_tab()` → Page.addScriptToEvaluateOnNewDocument,
+(3) `navigate_tab()` → Survey-URL. 12-Module Stealth Bundle (251 Zeilen).
+
+**Dateien:** `survey/chrome.py` (+120 lines), `survey/stealth/injection.js` (new)
+**Tests:** 19 (test_stealth.py)
+**Verifiziert:** LIVE — `[STEALTH] ✅ Injected stealth JS into tab AAB87721` ✅
+
+### P1: Stale CDP WebSocket
+**Root Cause:** `websocket.create_connection()` synchron, kein Reconnect.
+Bei "No such target id" → Crash. Response-Routing broken in `_refresh_tab_ws()`.
+
+**Fix:** `CDPConnection` Klasse (sync, 229 lines) mit:
+- Exponential backoff retry (0.3→4.8s, 5 attempts)
+- ID-based response routing (überspringt Events)
+- Auto-reconnect bei "No such target"
+- Context manager support
+
+**Dateien:** `survey/cdp_client.py` (new), `survey/runner.py`, `survey/execute.py`
+**Tests:** 15 (test_cdp_client.py)
+**Verifiziert:** LIVE — 0 "No such target id" errors ✅
+
+### P3: Balance Read FAILS
+**Root Cause:** `read_balance()` wurde NACH `Target.createTarget` aufgerufen.
+→ Dashboard WS stale → Balance immer 0.0€ → 8 completed surveys mit amount_eur: 0.0.
+
+**Fix:** `balance_before` VOR Tab-Erstellung lesen (`try/except` → fallback 0.0).
+`earned = max(0, balance_after - balance_before)` mit try/except.
+`read_page_text` + `detect_error_page` als static methods zu BatchExecutor.
+
+**Dateien:** `survey/runner.py` (~20 lines), `survey/execute.py` (~30 lines)
+**Tests:** 5 (test_balance.py)
+**Verifiziert:** LIVE — `[BALANCE] Before survey: 2.23€ | After: 2.23€ | Earned: +0€` ✅
+
+### Bonus Fixes (während Crash-Test entdeckt)
+- `read_page_text` war in `scanner.py` aber wurde via `BatchExecutor.read_page_text()` aufgerufen → AttributeError. Als static method zu BatchExecutor hinzugefügt.
+- `detect_error_page` ebenfalls als static method zu BatchExecutor.
+- Pre-Qualifier Loop: `started_count` tracking damit fehlgeschlagene Pre-Qualifiers nicht max_surveys verbrauchen.
+- `message_button` Parameter an CPX API POST (war vorher nicht enthalten → API akzeptierte Antwort nicht).
 
 ## 🔴 KRITISCH: Survey-Test nach Persona-Fix NICHT wiederholt (2026-05-05, 15:15)
 

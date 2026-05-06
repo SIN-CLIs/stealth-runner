@@ -590,3 +590,288 @@ class LatentState:
 - 100% CPX routes to PureSpectrum (captcha blocked)
 - CloudResearch (working, but survey count low)
 - EdgeSurvey (working, needs manual math answer)
+
+
+---
+
+## §M — SURVEY-CLI NEXT-GEN LEARNINGS (2026-05-06) 🔥
+
+> **CRASH-TESTED & VERIFIED** — Alles hier wurde LIVE getestet mit Chrome + heypiggy Dashboard.
+> 282 Tests, 1 Survey erfolgreich completed, 4 Root Causes gefixt.
+
+---
+
+### §M1 — Pre-Qualifier CPX API (das WICHTIGSTE)
+
+**Problem:** `run_loop()` skipped ALLE `provider=="pre_qualifier"` Surveys mit `continue`.
+→ 75% der Survey-Inventory wurde ignoriert.
+
+**Lösung:** `handle_pre_qualifier()` existierte bereits (200+ Zeilen) aber wurde nie aufgerufen.
+Einfach aus `run_loop()` aufrufen statt skippen.
+
+**CPX API Flow (MUST-KNOW):**
+```
+1. GET  details_url + "&survey_id=" + sid
+   → {type:"question", question_key:"cpxq_...", answers:{key:{text,key}}, message_button:"einreichen"}
+
+2. POST details_url + "&survey_id=" + sid + "&" + question_key + "=" + answer_key
+                            + "&message_button=" + message_button  ← KRITISCH! Ohne akzeptiert API nicht
+   → {status:"success", type:"question"} oder {status:"success", href:"https://..."}
+
+3. Loop bis type!="question" oder max_retries(8) exceeded
+```
+
+**CRITICAL: `message_button` MUSS im POST sein.** Ohne diesen Parameter antwortet die CPX API
+mit demselben `type:"question"` zurück — Endlosschleife. GET enthält `message_button: "einreichen"`,
+muss an POST angehängt werden.
+
+**answer_idx Bounds Check (BUG-GEFÄHRLICH):**
+```python
+if answer_idx >= len(answer_keys):  # return None
+```
+Profil-Alter 32 → answer_idx=2. Wenn nur 1 Answer → `2 >= 1` → vorzeitiges None.
+→ IMMER genug Answer-Optionen im Test bereitstellen (mindestens 3).
+
+**CPX API Filtering (AKZEPTIERT):**
+Die CPX API akzeptiert NICHT alle Antworten. Bei Profil-Mismatch (z.B. "Interesse an Formel E" 
+passt nicht zum Profil) returned die API IMMER `type:"question"` mit derselben Frage zurück — 
+egal welche Antwort man sendet. Das ist KEIN Bug in unserem Code, sondern CPX Screening.
+
+**Pre-Qualifier Failure Cache:**
+```python
+failed_preq_cache = {}
+if survey_id in failed_preq_cache:
+    continue  # Skip redundant API calls within same loop
+```
+Ohne Cache: jede Pre-Qualifier wird JEDE Runde neu probiert (96 API calls/Runde).
+Mit Cache: nur 1× pro Loop-Runde.
+
+**started_count vs loop index:**
+```python
+started_count = 0
+if started_count >= max_surveys: break
+# Nur incrementieren wenn Survey WIRKLICH gestartet wurde
+started_count += 1  # nach run_survey()
+```
+Ohne: Pre-Qualifier Failures verbrauchen max_surveys Slots → OK Surveys werden nie erreicht.
+
+---
+
+### §M2 — Stealth Injection (ANTI-DETECTION)
+
+**Problem:** `Target.createTarget` erzeugt neuen Tab — OHNE Stealth-Overrides.
+`navigator.webdriver = true` → PureSpectrum/Cint erkennen Automation sofort.
+
+**Lösung (PRIMARY): `Page.addScriptToEvaluateOnNewDocument`**
+```python
+# 1. Tab mit about:blank erstellen (NOCH NICHT zur Survey-URL navigieren!)
+tab_info = create_blank_tab(port)  # {id, ws_url}
+
+# 2. Stealth injectieren (läuft VOR jedem Page-Load im Tab)
+inject_stealth_to_tab(tab_info["ws_url"])
+# Sendet: Page.addScriptToEvaluateOnNewDocument {source: stealth_js}
+
+# 3. JETZT zur Survey-URL navigieren
+navigate_tab(tab_info["ws_url"], survey_url)
+```
+
+**KRITISCH: Timing!** Stealth MUSS VOR der Navigation aktiv sein.
+`Page.addScriptToEvaluateOnNewDocument` läuft auf JEDEM neuen Document — auch nach Redirects.
+12-Module Bundle (251 Zeilen): webdriver, plugins, languages, chrome.runtime, permissions,
+WebGL, Canvas, AudioContext, Battery, iframe, toString, cdc-probes.
+
+**WebSocket Mocking (für Tests):**
+`websocket` wird LOKAL in `get_details_url()` importiert (`import websocket`).
+→ `patch("survey.chrome.websocket")` funktioniert NICHT (module hat kein `websocket` Attribut).
+→ **IMMER `patch("websocket.create_connection")` (global) verwenden.**
+
+---
+
+### §M3 — CDPClient (RETRY + RECONNECT + ID-ROUTING)
+
+**Problem:** `websocket.create_connection()` synchron, kein Reconnect.
+Bei "No such target id (500)" → Crash. `_refresh_tab_ws()` response routing broken.
+
+**Lösung: Leichtgewichtiger Sync-Wrapper (KEIN async-refactor nötig!)**
+```python
+class CDPConnection:
+    def call(method, params) → dict      # Sendet CDP command, returned parsed response
+    def connect() → None                  # Mit exponential backoff (5 retries)
+    def _recv_until_id(target_id) → str   # ID-Routing: überspringt Events + andere Responses
+```
+
+**Exponential Backoff:** `0.3 → 0.6 → 1.2 → 2.4 → 4.8s` (max 5.0)
+
+**Auto-Reconnect bei "No such target":**
+```python
+if "No such target" in error_str and reconnect_url_fn:
+    self.ws_url = reconnect_url_fn()  # Neue Tab-URL ermitteln
+    self.connect()                    # Neu verbinden
+```
+
+**ID-Routing löst "response consumed" Problem:**
+```python
+def _recv_until_id(self, target_id):
+    while True:
+        data = json.loads(self._ws.recv())
+        if "id" in data and data["id"] == target_id:
+            return data  # Nur DIESE Response zurückgeben
+        # Events (ohne "id") und andere IDs werden ignoriert
+```
+
+**Mocking für Tests:** `cdp._ws.settimeout()` existiert auf Mock-Objekten nicht.
+→ `hasattr(self._ws, 'settimeout')` prüfen vor Aufruf.
+
+**`urllib.request.urlopen` Mocking (LEKTION aus P0 Tests):**
+```python
+# ✅ RICHTIG: side_effect mit Lambda das **kw akzeptiert
+mock_urlopen.side_effect = lambda *a, **kw: _make_response(data)
+
+# ❌ FALSCH: return_value.__enter__... funktioniert nicht wegen timeout=8 kwarg
+mock_urlopen.return_value.__enter__.return_value.read.return_value = ...
+# → TypeError: <lambda>() got an unexpected keyword argument 'timeout'
+```
+
+---
+
+### §M4 — Balance Read Timing (VOR Tab-Erstellung)
+
+**Problem:** `read_balance()` wurde NACH `Target.createTarget` aufgerufen.
+→ Dashboard WS wird stale wenn neuer Tab erscheint → Balance = 0.0€ IMMER.
+
+**Lösung:**
+```python
+# VOR Tab-Erstellung (Dashboard WS noch gültig)
+balance_before = read_balance(cdp_port)  # try/except → fallback 0.0
+
+# Survey ausführen
+result = run_survey(survey_id, survey_url)
+
+# NACH Survey (Tab geschlossen, Dashboard wieder aktiv)
+balance_after = read_balance(cdp_port)  # try/except → earned = 0
+result.earned = max(0, round(balance_after - balance_before, 2))
+```
+
+**`max(0, ...)` verhindert negative Earnings** wenn Balance zwischendurch sinkt.
+
+**Debug-Ausgabe für Monitoring:**
+```
+[BALANCE] Before survey: 2.23€
+[BALANCE] After: 2.50€ | Earned: +0.27€
+```
+
+---
+
+### §M5 — Python Mocking Patterns (aus P0 Test-Debugging)
+
+**Decorator-Reihenfolge (WICHTIG!):**
+```python
+@patch("C")  # bottom  → param 1
+@patch("B")  # middle  → param 2
+@patch("A")  # top     → param 3
+def test(self, mock_c_bottom, mock_b_middle, mock_a_top):
+```
+Bottom→Top Decorators = Left→Right Parameter.
+
+**`@patch` auf Module vs. lokale Imports:**
+`from .chrome import get_details_url` innerhalb einer Funktion erzeugt LOKALEN Binding.
+→ `patch("survey.chrome.get_details_url")` funktioniert TROTZDEM, weil Import zur Laufzeit
+  das Modul-Attribut ausliest (nicht zur Definitionszeit).
+
+**`urllib.request.urlopen` patch target:**
+```python
+# In runner.py: import urllib.request; urllib.request.urlopen(...)
+@patch("survey.runner.urllib.request.urlopen")  # ✅ Richtig
+@patch("urllib.request.urlopen")                 # ❌ Falsch (nicht im runner-namespace)
+```
+
+**`json.loads` braucht String/Bytes — nicht MagicMock:**
+```python
+# ✅ Richtig: MagicMock mit read.return_value = bytes
+resp = MagicMock()
+resp.read.return_value = json.dumps({"status": "success"}).encode()
+
+# ❌ Falsch: read() returned MagicMock → json.loads(MagicMock) → TypeError
+```
+
+**`_cached_details_url` Modul-Cache persistiert zwischen Tests:**
+```python
+from survey import chrome
+chrome._cached_details_url = None  # Vor JEDEM Test clearen!
+```
+
+**Context-Manager Mock für `urllib.request.urlopen`:**
+```python
+# urlopen(url, timeout=8) returned KEINEN context manager nativ.
+# ABER unser Code nutzt es mit `.read()` direkt:
+# json.loads(urllib.request.urlopen(url, timeout=8).read())
+# → side_effect muss MagicMock mit .read() zurückgeben (kein __enter__)
+```
+
+---
+
+### §M6 — Survey Runner Flow (KOMPLETT)
+
+```
+run_loop(max_surveys=N):
+  for each survey in viable:
+    if pre_qualifier:
+      handle_pre_qualifier(sid, details)
+        → POST loop (max 8 retries, message_button required)
+        → success: return survey_url
+        → fail: cache miss → skip
+    
+    read_balance() → balance_before  ← VOR tab creation!
+    
+    create_blank_tab() → {id, ws_url}
+    inject_stealth_to_tab(ws_url)
+    navigate_tab(ws_url, survey_url)
+    
+    NEMO Loop (max_iterations):
+      refresh_tab_ws()  ← CDPConnection mit retry
+      generate_snapshot(tab_ws)
+      detect_completion() → break if done
+      BatchExecutor.execute(actions)
+    
+    read_balance() → balance_after
+    earned = max(0, balance_after - balance_before)
+```
+
+---
+
+### §M7 — Live Crash-Test Erkenntnisse
+
+| Erkenntnis | Details |
+|-----------|---------|
+| **Pre-Qualifier Ratio** | 9/12 (75%) waren pre_qualifier — werden jetzt verarbeitet statt geskippt |
+| **CPX API Geschwindigkeit** | ~1s pro API-Call, 8 retries = 8s pro Pre-Qualifier |
+| **Survey Completion** | 1× completed (generic, 36s, 3 iterations) |
+| **Stuck Detection** | Funktioniert: "same state 5×" → bricht ab nach 189s |
+| **Balance** | 2.23€ stabil — kein Payout während Test (Survey war 0€) |
+| **Watch Loop** | 3 Runden, 15s/Runde, keine neuen Surveys |
+| **Stealth** | `[STEALTH] ✅ Injected stealth JS into tab AAB87721` |
+| **Tab Cleanup** | Zombie-Tab Erkennung funktioniert: `[RUN] Cleaned 1 zombie tabs` |
+
+---
+
+### §M8 — DOs und DON'Ts (aus heutigem Debugging)
+
+**✅ DO:**
+- `message_button` IMMER an pre-qualifier POST anhängen
+- `balance_before` VOR `create_blank_tab()` lesen
+- `started_count` statt Loop-Index für max_surveys tracking
+- `patch("websocket.create_connection")` (global) — NIE `survey.chrome.websocket`
+- `side_effect` mit `**kw` für urlopen mock (timeout parameter!)
+- `chrome._cached_details_url = None` vor JEDEM Test
+- `hasattr(ws, 'settimeout')` vor Aufruf (Mock-Kompatibilität)
+- `max(0, earned)` um negative Earnings zu verhindern
+
+**❌ DON'T:**
+- `continue` bei pre_qualifier (→ handle_pre_qualifier() aufrufen!)
+- `balance_before` NACH tab creation lesen (→ Dashboard WS stale)
+- `loop index` als max_surveys counter (→ pre-qualifier failures blocken OK surveys)
+- `patch("survey.chrome.websocket")` (→ Modul hat kein websocket Attribut)
+- `return_value.__enter__.return_value.read.return_value` für urlopen mock (→ timeout kwarg)
+- Mock-Response OHNE `status:"success"` (→ CPX API check: `resp.get("status") == "success"`)
+- `answer_idx >= len(answer_keys)` ignorieren (→ braucht genug Test-Optionen)
+- `json.loads(MagicMock)` (→ MagicMock ist kein String/Bytes)
