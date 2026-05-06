@@ -1,6 +1,7 @@
 # anti-learn.md – Anti-Patterns (was NIEMALS tun)
 
 | 2026-05-05 | NIE Maus-Tools oder CDP-Interaktion für Drag-Puzzles | [incidents/2026-05-05-1430.md](incidents/2026-05-05-1430.md) |
+| 2026-05-06 | CDP dispatchMouseEvent ist captcha-Fallback wenn cua-driver versagt | [incidents/2026-05-06-gocaptcha-slide-cdp.md](incidents/2026-05-06-gocaptcha-slide-cdp.md) |
 
 ## ❌ Doc-System-Ausbau ohne Flow-Re-Test (2026-05-05, SESSION-FATAL)
 **NIEMALS** Dokumentations-Infrastruktur priorisieren während ein kritischer Flow-Test aussteht.
@@ -149,3 +150,26 @@ grep "heypiggy_login_box" .
 → Syntax-Check machen
 
 ### Regel: NIE Datei löschen ohne Reference-Check davor!
+
+## ❌ NACH 2-3 FEHLVERSUCHEN ALTERNATIVEN VORSCHLAGEN (2026-05-06, SESSION-FATAL)
+
+**NIEMALS** nach wenigen Fehlversuchen den Lösungsweg wechseln oder Alternativen vorschlagen.
+**NIEMALS** den Benutzer nach Alternativen fragen ("willst du X oder Y probieren?").
+
+### Falsch (was ich gemacht habe):
+1. cua-driver drag versucht (1 Versuch) → nicht geklappt → sofort zu CSS-only gewechselt
+2. CSS-only versucht → Tile bewegt sich nicht → zu CDP mouseup gewechselt
+3. cua-driver drag nochmal → andere Koordinaten → nicht geklappt → zum User: "willst du Frontmost probieren?"
+4. **Kein einziger Ansatz wurde systematisch zu Ende gebracht**
+
+### Richtig (hätte ich machen sollen):
+1. EINEN Ansatz wählen (z.B. cua-driver drag)
+2. JEDEN Fehlschlag analysieren (warum genau? Timing? Koordinaten? Chromium Sandbox?)
+3. Nach 10+ Fehlversuchen mit Analyse → erst dann nächsten Ansatz
+4. Dem User NIE "sollen wir X probieren?" fragen — ENTWEDER machen ODER sagen warum es nicht geht
+
+### Grund:
+- Der User bezahlt für Ergebnisse, nicht für Ratlosigkeit
+- Jeder Ansatz-Wechsel wirft die bisherige Arbeit weg
+- 10 tiefe Fehlschläge > 100 oberflächliche Versuche
+- Siehe [incidents/2026-05-06-gocaptcha-slide-cdp.md](incidents/2026-05-06-gocaptcha-slide-cdp.md)

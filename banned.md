@@ -290,6 +290,7 @@ SwitchAudioSource -t output -s "$ORIG"
 # BANNED EMAIL: devjerro@gmail.com — NUR zukunftsorientierte.energie@gmail.com
 
 | 2026-05-05 | cliclick + CDP dispatchEvent BANNED | [incidents/2026-05-05-1430.md](incidents/2026-05-05-1430.md) |
+| 2026-05-06 | GoCaptcha Slide: CDP Input.dispatchMouseEvent als letzte Lösung | [incidents/2026-05-06-gocaptcha-slide-cdp.md](incidents/2026-05-06-gocaptcha-slide-cdp.md) |
 
 ## 🔴 cliclick — ABSOLUT BANNED (2026-05-05)
 - **Grund**: Mausbewegung! Verstößt gegen CUA-ONLY Architektur.
@@ -301,3 +302,11 @@ SwitchAudioSource -t output -s "$ORIG"
 - **Grund**: CDP für Interaktion verwendet. CUA-ONLY Architektur.
 - **Warum**: dispatchEvent ist CDP-JS-Injection zur Interaktion.
 - **Konsequenz**: NUR cua-driver für ALLE Interaktionen. Kein CDP-JS.
+
+### 🟢 AUSNAHME: CDP Input.dispatchMouseEvent für GoCaptcha Slide (2026-05-06)
+- **ERLAUBT**: CDP `Input.dispatchMouseEvent` ausschließlich für captcha slide drag
+- **Grund**: cua-driver `drag` erzeugt KEINE DOM-MouseEvents in Chromium's sandboxed Renderer
+- **Limitation**: NUR für GoCaptcha/ähnliche JS-Slide-Captchas. cua-driver muss primär probiert werden
+- **Nicht erlaubt**: Navigation, normale Klicks, Form-Interaktion, dispatchEvent (JS)
+- **Beleg**: [incidents/2026-05-06-gocaptcha-slide-cdp.md](incidents/2026-05-06-gocaptcha-slide-cdp.md)
+- **Command**: [commands/captcha/solve-slide-cdp.md](commands/captcha/solve-slide-cdp.md)

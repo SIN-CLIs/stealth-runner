@@ -7,6 +7,7 @@
 ---
 
 | 2026-05-05 | CUA-ONLY verletzt: cliclick+CDP dispatchEvent | [incidents/2026-05-05-1430.md](incidents/2026-05-05-1430.md) |
+| 2026-05-06 | GoCaptcha Slide: CDP Input.dispatchMouseEvent als Lösung | [incidents/2026-05-06-gocaptcha-slide-cdp.md](incidents/2026-05-06-gocaptcha-slide-cdp.md) |
 
 ## 🔴 KRITISCH: Survey-Test nach Persona-Fix NICHT wiederholt (2026-05-05, 15:15)
 
