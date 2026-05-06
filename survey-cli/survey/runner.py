@@ -457,18 +457,6 @@ class SurveyRunner:
         """Handle PureSpectrum pre-survey flow: cookie + ROBOT + captcha + puzzle."""
         from survey.providers.purespectrum import solve_purespectrum_preflight
         return solve_purespectrum_preflight(tab_ws, debug=self.config.debug)
-                
-                return result
-            else:
-                result["error"] = captcha_result.get("error", "Captcha solve failed")
-                return result
-        else:
-            # No captcha detected — might have passed automatically
-            result["success"] = True
-            result["note"] = "no_captcha_detected"
-            return result
-
-        return result
 
     def _rate_survey(self):
         """Rate completed survey for +0.01€ bonus."""
