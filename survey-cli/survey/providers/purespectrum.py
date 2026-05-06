@@ -80,20 +80,47 @@ def fill_opinion_textarea(ws_url):
 def solve_text_captcha(ws_url, debug=False):
     """Extract base64 captcha img → NVIDIA Vision OCR → fill + CDP-click submit."""
     try:
-        # Extract base64 image
         ws = websocket.create_connection(ws_url, timeout=15)
+        
+        # Find captcha image position for CLIPPED screenshot
         ws.send(json.dumps({"id":0,"method":"Runtime.evaluate",
-            "params":{"expression": "var imgs=document.querySelectorAll('img');for(var i=0;i<imgs.length;i++){var s=imgs[i].src||'';if(s.startsWith('data:image/')&&s.length>200)return s;}return'';"}}))
+            "params":{"expression": """
+(function() {
+    // Find captcha image: medium size, visible, near text input
+    var input = document.querySelector('input[type=text]');
+    var inputY = input ? input.getBoundingClientRect().y : 500;
+    var imgs = document.querySelectorAll('img');
+    for (var i=0;i<imgs.length;i++) {
+        var r = imgs[i].getBoundingClientRect();
+        // Captcha is ABOVE the input field, 50-200px wide, 20-80px tall
+        if (r.width>50 && r.width<300 && r.height>20 && r.height<100 && r.y < inputY && imgs[i].offsetParent) {
+            return JSON.stringify({x:r.x-5, y:r.y-5, w:r.width+10, h:r.height+10, found:true});
+        }
+    }
+    return JSON.stringify({found:false});
+})()
+"""}}))
+        r = json.loads(ws.recv())
+        clip = json.loads(r.get("result",{}).get("result",{}).get("value","{}"))
+        
+        if not clip.get("found"):
+            ws.close()
+            return {"success": False, "error": "No captcha image found for clipping"}
+        
+        # Screenshot with clip (2x scale for better OCR)
+        ws.send(json.dumps({"id":1,"method":"Page.captureScreenshot",
+            "params":{"format":"png","clip":{"x":max(0,clip["x"]),"y":max(0,clip["y"]),
+                "width":clip["w"],"height":clip["h"],"scale":3}}}))
         r = json.loads(ws.recv())
         ws.close()
-        data_url = r.get("result",{}).get("result",{}).get("value","")
-
-        if not data_url or len(data_url) < 200:
-            return {"success": False, "error": "No base64 captcha found"}
-
+        b64 = r.get("result",{}).get("data","")
+        
+        if not b64 or len(b64) < 100:
+            return {"success": False, "error": "Screenshot empty"}
+        
         if debug:
-            print(f"  [CAPTCHA] Image: {len(data_url)} chars")
-
+            print(f"  [CAPTCHA] Clip screenshot: {len(b64)} chars base64")
+        
         # OCR
         api_key = os.getenv("NVIDIA_API_KEY")
         if not api_key:
@@ -104,8 +131,8 @@ def solve_text_captcha(ws_url, debug=False):
         resp = client.chat.completions.create(
             model=VISION_MODEL,
             messages=[{"role":"user","content":[
-                {"type":"text","text":"Read ONLY alphanumeric captcha chars. Return only them. Max 8 chars."},
-                {"type":"image_url","image_url":{"url":data_url}}
+                {"type":"text","text":"Read the captcha. Return ONLY the letters and numbers. No spaces, no explanation. Max 8 chars. The characters may be distorted, slanted, or have lines through them."},
+                {"type":"image_url","image_url":{"url":f"data:image/png;base64,{b64}"}}
             ]}],
             max_tokens=15, temperature=0.0)
         elapsed = (time.monotonic()-start)*1000
