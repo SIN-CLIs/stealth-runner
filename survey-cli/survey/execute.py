@@ -60,7 +60,9 @@ PROVIDER_COMMANDS = {
         "click_element": 'document.querySelectorAll("input[type=radio]")[{idx}].click()',
     },
     "purespectrum": {
-        "click_next": 'document.querySelector("button[type=submit]").click()',
+        # Angular v19: JS .click() IGNORED — use CDP marker
+        "click_next": "__CDP_CLICK_BUTTON__:Nächste",
+        "click_element": '__CDP_CLICK__:input[type=radio]:{idx}',
         "fill_text": '''(function(v){
             var t=document.querySelector("textarea");
             if(t){t.value=v;t.dispatchEvent(new Event("input",{bubbles:true}));
@@ -70,10 +72,6 @@ PROVIDER_COMMANDS = {
     "insights_today": {
         "click_next": 'document.querySelector("button[type=submit]").click()',
         "click_element": 'document.querySelectorAll("input[type=radio]")[{idx}].click()',
-        "select_option": '''(function(){
-            var s=document.querySelector("select");
-            if(s){s.value="{value}";s.dispatchEvent(new Event("change",{bubbles:true}));}
-        })()''',
     },
 }
 
@@ -125,7 +123,7 @@ class BatchExecutor:
         return result
 
     def _execute_single(self, ws, action):
-        """Execute single action."""
+        """Execute single action. Handles __CDP_CLICK__ marker for Angular."""
         action_type = action.get("action", "")
         ref = action.get("ref", "")
         value = action.get("value", "")
@@ -134,12 +132,18 @@ class BatchExecutor:
 
         try:
             js = self._build_js(action_type, ref, value)
-            if js:
+            
+            # CDP click marker for Angular pages (PureSpectrum)
+            if js and js.startswith("__CDP_CLICK__"):
+                self._cdp_click_element(ws, js)
+            elif js and js.startswith("__CDP_CLICK_BUTTON__"):
+                self._cdp_click_button(ws, js)
+            elif js:
                 ws.send(json.dumps({
                     "id": 0, "method": "Runtime.evaluate",
                     "params": {"expression": js}
                 }))
-                json.loads(ws.recv())  # consume response
+                json.loads(ws.recv())
 
             if action_type == "wait":
                 time.sleep(ms / 1000 if ms > 0 else 1.0)
@@ -154,6 +158,40 @@ class BatchExecutor:
                 "error": str(e)[:200],
                 "elapsed_ms": round((time.monotonic() - a_start) * 1000),
             }
+
+    def _cdp_click_element(self, ws, js):
+        """CDP click on element (for Angular pages). js format: __CDP_CLICK__:selector:idx"""
+        parts = js.replace("__CDP_CLICK__:", "").split(":")
+        selector = parts[0] if parts else "button"
+        idx = int(parts[1]) if len(parts) > 1 else 0
+        
+        # Find element position
+        ws.send(json.dumps({
+            "id": 0, "method": "Runtime.evaluate",
+            "params": {"expression": f"var els=document.querySelectorAll('{selector}');if(els[{idx}]){{var r=els[{idx}].getBoundingClientRect();return r.x+r.width/2+','+(r.y+r.height/2);}}return'0,0';"}}))
+        r = json.loads(ws.recv())
+        coords = r.get("result",{}).get("result",{}).get("value","0,0")
+        x, y = map(float, coords.split(","))
+        if x > 0:
+            for et in ["mouseMoved","mousePressed","mouseReleased"]:
+                ws.send(json.dumps({"id":0,"method":"Input.dispatchMouseEvent",
+                    "params":{"type":et,"x":x,"y":y,"button":"left","clickCount":1}}))
+                json.loads(ws.recv())
+
+    def _cdp_click_button(self, ws, js):
+        """CDP click on button by text. js format: __CDP_CLICK_BUTTON__:text"""
+        text = js.replace("__CDP_CLICK_BUTTON__:", "")
+        ws.send(json.dumps({
+            "id": 0, "method": "Runtime.evaluate",
+            "params": {"expression": f"var btns=document.querySelectorAll('button');for(var i=0;i<btns.length;i++){{if((btns[i].textContent||'').trim()==='{text}'){{var r=btns[i].getBoundingClientRect();return r.x+r.width/2+','+(r.y+r.height/2);}}}}return'0,0';"}}))
+        r = json.loads(ws.recv())
+        coords = r.get("result",{}).get("result",{}).get("value","0,0")
+        x, y = map(float, coords.split(","))
+        if x > 0:
+            for et in ["mouseMoved","mousePressed","mouseReleased"]:
+                ws.send(json.dumps({"id":0,"method":"Input.dispatchMouseEvent",
+                    "params":{"type":et,"x":x,"y":y,"button":"left","clickCount":1}}))
+                json.loads(ws.recv())
 
     def _build_js(self, action_type, ref, value):
         """Build CDP JS string for action."""
