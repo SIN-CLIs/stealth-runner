@@ -97,7 +97,8 @@ def launch_chrome_with_accessibility(port=9999, url="https://www.heypiggy.com/?p
 def ensure_accessibility(port=9999, url="https://www.heypiggy.com/?page=dashboard"):
     """Ensure Chrome is running with Accessibility enabled.
 
-    Call this ONCE at daemon startup. After this, NEVER kill Chrome.
+    Call this ONCE at daemon startup. Will restart Chrome if needed
+    to apply permission changes.
 
     Returns:
         True if Accessibility is working, False if user action needed.
@@ -108,13 +109,19 @@ def ensure_accessibility(port=9999, url="https://www.heypiggy.com/?page=dashboar
         return True
 
     # Grant permission
+    print("[ACCESS] Granting Chrome Accessibility permission...")
     grant_accessibility()
 
-    # Launch Chrome with accessibility flag
+    # Restart Chrome to apply permission (kill + relaunch)
+    print("[ACCESS] Restarting Chrome to apply permission...")
+    import subprocess as sp
+    sp.run(["pkill", "-f", "Google Chrome"], capture_output=True)
+    time.sleep(3)
+
     launch_chrome_with_accessibility(port=port, url=url)
 
     # Wait and re-check
-    time.sleep(5)
+    time.sleep(8)
     if is_accessibility_enabled():
         print("[ACCESS] ✅ Chrome Accessibility now working")
         return True
