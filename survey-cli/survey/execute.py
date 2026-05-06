@@ -244,11 +244,77 @@ class BatchExecutor:
                 json.loads(ws.recv())
 
     def _cdp_click_button(self, ws, js):
-        """CDP click on button by text. js format: __CDP_CLICK_BUTTON__:text"""
+        """CDP click on button by text. js format: __CDP_CLICK_BUTTON__:text
+        
+        Strategy: JS .click() FIRST (more reliable, works on custom elements).
+        Fallback: CDP dispatchMouseEvent if JS fails.
+        """
         text = js.replace("__CDP_CLICK_BUTTON__:", "")
+        
+        # Try JS click first (universal, works on all frameworks including Angular v19)
         ws.send(json.dumps({
             "id": 0, "method": "Runtime.evaluate",
-            "params": {"expression": f"var btns=document.querySelectorAll('button');for(var i=0;i<btns.length;i++){{if((btns[i].textContent||'').trim()==='{text}'){{var r=btns[i].getBoundingClientRect();return r.x+r.width/2+','+(r.y+r.height/2);}}}}return'0,0';"}}))
+            "params": {"expression": f'''
+(function(){{
+    var text = '{text}';
+    var selectors = ['button', 'input[type=submit]', 'input[type=button]',
+                     '[role=button]', 'a', '[class*=btn]', '.btn', '.button'];
+    var result = null;
+    selectors.forEach(function(sel){{
+        if(result !== null) return;
+        document.querySelectorAll(sel).forEach(function(el){{
+            if(result !== null) return;
+            if(el.offsetHeight <= 0) return;
+            if(el.disabled) return;
+            var elText = (el.textContent||el.value||'').trim();
+            if(elText === text || elText.includes(text) || text.includes(elText)){{
+                el.click();
+                result = 'clicked:' + el.tagName;
+            }}
+        }});
+    }});
+    return result || 'not_found';
+}})();
+'''}}))
+        r = json.loads(ws.recv())
+        result = r.get("result",{}).get("result",{}).get("value","")
+        
+        if result.startswith("clicked:"):
+            return  # JS click succeeded
+        
+        # Fallback: CDP mouse events at bounding rect center
+        ws.send(json.dumps({
+            "id": 0, "method": "Runtime.evaluate",
+            "params": {"expression": f'''
+(function(){{
+    var text = '{text}';
+    var selectors = ['button', 'input[type=submit]', 'input[type=button]',
+                     '[role=button]', 'a', '[class*=btn]'];
+    var found = null;
+    selectors.forEach(function(sel){{
+        if(found) return;
+        document.querySelectorAll(sel).forEach(function(el){{
+            if(found) return;
+            if(el.offsetHeight <= 0) return;
+            if(el.disabled) return;
+            var elText = (el.textContent||el.value||'').trim();
+            if(elText === text || elText.includes(text) || text.includes(elText)){{
+                var r = el.getBoundingClientRect();
+                found = r.x+r.width/2+','+r.y+r.height/2;
+            }}
+        }});
+    }});
+    return found || '0,0';
+}})();
+'''}}))
+        r = json.loads(ws.recv())
+        coords = r.get("result",{}).get("result",{}).get("value","0,0")
+        x, y = map(float, coords.split(","))
+        if x > 0:
+            for et in ["mouseMoved","mousePressed","mouseReleased"]:
+                ws.send(json.dumps({"id":0,"method":"Input.dispatchMouseEvent",
+                    "params":{"type":et,"x":x,"y":y,"button":"left","clickCount":1}}))
+                json.loads(ws.recv())
         r = json.loads(ws.recv())
         coords = r.get("result",{}).get("result",{}).get("value","0,0")
         x, y = map(float, coords.split(","))

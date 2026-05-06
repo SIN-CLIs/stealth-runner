@@ -182,6 +182,16 @@ class SurveyRunner:
         tab_ws, actual_url = self._find_survey_tab_ws(tab_id)
         if tab_ws:
             page_text = BatchExecutor.read_page_text(tab_ws, 500)
+            # Detect expired CPX URL ("No app id was specified")
+            if "no app id" in page_text.lower() or "survey not available" in page_text.lower():
+                if self.config.debug:
+                    print("[RUN] CPX URL expired or survey not available — skipping")
+                self._close_tab(tab_id)
+                result.status = "screen_out"
+                result.error = "CPX survey not available (expired/removed)"
+                log_earnings(survey_id, "unknown", 0, "screen_out", 0)
+                return result
+            page_text = BatchExecutor.read_page_text(tab_ws, 500)
             if "umgeleitet" in page_text.lower() or "redirect" in page_text.lower():
                 if self.config.debug:
                     print("[RUN] CPX redirect page — clicking link...")
@@ -248,7 +258,9 @@ class SurveyRunner:
                           f"({len(snapshot.refs)} el)")
 
                 # 5c. Loop detection: same page content 4× = stuck
-                page_hash = hash(snapshot.text[:100]) if snapshot.text else 0
+                # CompactSnapshot has refs + semantic, NOT .text
+                ref_keys = list(snapshot.refs.keys())[:5]
+                page_hash = hash(str(ref_keys)) if ref_keys else hash(snapshot.url)
                 if page_hash == prev_page_hash:
                     consecutive_fails += 1
                     if consecutive_fails >= loop_detection_threshold:
@@ -260,7 +272,7 @@ class SurveyRunner:
                     prev_page_hash = page_hash
 
                 # 5d. Empty snapshot: page not loaded — skip iteration
-                if len(snapshot.refs) == 0 and not snapshot.text.strip():
+                if len(snapshot.refs) == 0:
                     time.sleep(self.config.wait_page_load)
                     continue
 
