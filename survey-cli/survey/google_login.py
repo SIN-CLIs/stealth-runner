@@ -234,6 +234,22 @@ def google_login(launch_url="https://www.heypiggy.com/?page=dashboard", force_la
         pass
     
     if chrome_running and not force_launch:
+        # Quick CDP check: are we already logged in?
+        import urllib.request, json as _json, websocket
+        try:
+            pages = _json.loads(urllib.request.urlopen("http://127.0.0.1:9999/json", timeout=3).read())
+            for p in pages:
+                if "heypiggy" in p.get("url", "").lower():
+                    ws = websocket.create_connection(p["webSocketDebuggerUrl"], timeout=10)
+                    ws.send(_json.dumps({"id":0,"method":"Runtime.evaluate",
+                        "params":{"expression":"document.body.innerText.substring(0,200)"}}))
+                    r = _json.loads(ws.recv()); ws.close()
+                    text = r.get("result",{}).get("result",{}).get("value","")
+                    if "Abmelden" in text and ("Umfragen" in text or "Erhebungen" in text):
+                        print("[LOGIN] Already logged in (CDP check) — skipping login")
+                        return {"status": "ok", "pid": 0, "wid": 0}
+        except: pass
+        
         print("[LOGIN] Chrome already running — using cua-driver on existing instance")
         # Try cua-driver on existing Chrome (find PID from windows)
         import subprocess, json as _json
@@ -291,6 +307,12 @@ def _cua_login_existing(pid):
         dash_wid = dash_win["window_id"]
         print(f"[LOGIN] Dashboard WID={dash_wid}")
 
+        # Check if already logged in
+        markdown = _get_state(pid, dash_wid)
+        if "Abmelden" in markdown and ("Umfragen" in markdown or "Auszahlung" in markdown):
+            print(f"[LOGIN] Already logged in — PID={pid}, WID={dash_wid}")
+            return {"status": "ok", "pid": pid, "wid": dash_wid}
+        
         # Find Google Login-Symbol
         markdown = _get_state(pid, dash_wid)
         google_el = _find_google_login(markdown)
@@ -387,9 +409,14 @@ def _cua_login(launch_url):
         dash_wid = dash_win["window_id"]
         print(f"[LOGIN] Dashboard WID={dash_wid}")
 
-        # STEP 3: Find Google Login-Symbol in markdown tree
-        print("[LOGIN] Finding Google Login-Symbol...")
+        # STEP 3: Check if already logged in
         markdown = _get_state(pid, dash_wid)
+        if "Abmelden" in markdown and ("Umfragen" in markdown or "Auszahlung" in markdown):
+            print(f"[LOGIN] Already logged in — PID={pid}, WID={dash_wid}")
+            return {"status": "ok", "pid": pid, "wid": dash_wid}
+        
+        # Find Google Login-Symbol in markdown tree
+        print("[LOGIN] Finding Google Login-Symbol...")
         google_el = _find_google_login(markdown)
         
         if not google_el:
