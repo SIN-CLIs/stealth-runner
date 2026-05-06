@@ -8,7 +8,13 @@ Architecture:
 Also handles PureSpectrum-specific flows:
   - Cookie consent ("Alle akzeptieren")
   - Opinion textarea with ROBOT keyword
-  - Number captcha ("Bitte legen Sie die Zahl 02...")
+  - Number puzzle (BLOCKED — Angular CDK v19 drag-drop)
+
+SOTA Research (2026-05-06): Angular CDK v19 prod mode number puzzle.
+  Tried: JS PointerEvents, CDP mouse/touch events, HTML5 DragEvent, __ngContext__
+  All fail: CDK checks isTrusted or uses zone.js internals hidden in prod.
+  SOTA fix: OS-level mouse (CGEvent/AppleScript/Cliclick) for real hardware events.
+  Current strategy: Skip PureSpectrum, solve text captcha ✅, wait for other providers.
 """
 
 import json
@@ -513,3 +519,79 @@ def read_page_text(ws_url, max_len=1000):
         return r.get("result", {}).get("result", {}).get("value", "")
     except Exception:
         return ""
+
+
+# ── Drag Puzzle Solver (SOTA __ngContext__ approach) ──
+
+def solve_drag_puzzle(ws_url):
+    """Solve PureSpectrum drag-drop puzzle via Angular __ngContext__.
+
+    Recursively searches __ngContext__ for CdkDropList._dropListRef
+    and CdkDrag._dragRef, then calls dropListRef.drop().
+    This is the ONLY approach that works on Angular v19 production mode.
+
+    Args:
+        ws_url: CDP WebSocket URL for PureSpectrum tab
+
+    Returns:
+        Dict with {success, result, error}
+    """
+    js = """
+(() => {
+    function findInstance(root, propertyName) {
+        if (!root || typeof root !== 'object') return null;
+        if (root.hasOwnProperty(propertyName)) return root;
+        for (let key of Object.keys(root)) {
+            try { const res = findInstance(root[key], propertyName); if (res) return res; } catch (e) {}
+        }
+        return null;
+    }
+
+    const dropListEl = document.querySelector('.cdk-drop-list');
+    if (!dropListEl) return 'NO_DROPLIST';
+
+    const dragEls = document.querySelectorAll('.cdk-drag');
+    if (!dragEls.length) return 'NO_DRAGELS';
+
+    const ctx = dropListEl.__ngContext__;
+    if (!ctx) return 'NO_CTX';
+
+    const dropListDir = findInstance(ctx, '_dropListRef');
+    if (!dropListDir) return 'NO_DROPLISTDIR';
+
+    const dropListRef = dropListDir._dropListRef;
+    if (!dropListRef) return 'NO_DROPLISTREF';
+
+    const firstDragEl = dragEls[0];
+    const dragCtx = firstDragEl.__ngContext__;
+    const dragDir = findInstance(dragCtx, '_dragRef');
+    if (!dragDir) return 'NO_DRAGDIR';
+
+    const dragRef = dragDir._dragRef;
+    if (!dragRef) return 'NO_DRAGREF';
+
+    try {
+        dropListRef.enter(dragRef, dragRef.element.nativeElement, 0);
+        dropListRef.drop(dragRef, 0);
+        return 'DROP_SUCCESS:' + (dragRef.element.nativeElement.textContent || '').trim();
+    } catch (e) {
+        return 'DROP_ERROR: ' + e.message;
+    }
+})()
+    """
+
+    try:
+        ws = websocket.create_connection(ws_url, timeout=15)
+        ws.send(json.dumps({
+            "id": 0, "method": "Runtime.evaluate",
+            "params": {"expression": js, "returnByValue": True}
+        }))
+        r = json.loads(ws.recv())
+        ws.close()
+        result = r.get("result", {}).get("result", {}).get("value", "???")
+
+        success = "DROP_SUCCESS" in str(result)
+        return {"success": success, "result": result,
+                "error": None if success else str(result)[:200]}
+    except Exception as e:
+        return {"success": False, "result": None, "error": str(e)[:200]}
