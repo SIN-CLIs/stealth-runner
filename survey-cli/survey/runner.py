@@ -145,6 +145,21 @@ class SurveyRunner:
             return result
 
         # 3. Wait for CPX redirect + handle redirect page + detect REAL provider
+        # Fast-fail: if page is still loading after timeout, skip
+        tab_ws, actual_url = self._find_survey_tab_ws(tab_id)
+        
+        # Check for stuck loading pages
+        if tab_ws:
+            page_text = BatchExecutor.read_page_text(tab_ws, 500).lower()
+            if any(s in page_text for s in ["loading", "just getting things ready", "won't be long"]):
+                if self.config.debug:
+                    print("[RUN] Stuck on loading page — skipping")
+                self._close_tab(tab_id)
+                result.status = "screen_out"
+                result.error = "Survey stuck on loading page"
+                log_earnings(survey_id, "unknown", 0, "screen_out", 0)
+                return result
+        
         time.sleep(self.config.wait_page_load)
         
         # Handle CPX redirect page (if stuck on "Sie werden umgeleitet")
