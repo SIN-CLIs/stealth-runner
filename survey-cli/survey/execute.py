@@ -73,6 +73,67 @@ PROVIDER_COMMANDS = {
         "click_next": 'document.querySelector("button[type=submit]").click()',
         "click_element": 'document.querySelectorAll("input[type=radio]")[{idx}].click()',
     },
+    "cloudresearch": {
+        # CloudResearch Sentry: <div role="button"> elements (not <input type=radio>)
+        "click_next": "__CDP_CLICK_BUTTON__:Nächster",
+        "click_element": '__CDP_CLICK_ROLE_BUTTON__:{idx}',
+        "fill_text": '''(function(v){
+            var ta = document.querySelector("textarea");
+            if(!ta){ta = document.querySelector("input[type=text],input[type=number]");}
+            if(ta){
+                var nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype,"value").set;
+                if(nativeSetter) nativeSetter.call(ta, v);
+                else ta.value = v;
+                ta.dispatchEvent(new Event("input",{bubbles:true,cancelable:true}));
+                ta.dispatchEvent(new Event("change",{bubbles:true,cancelable:true}));
+                ta.dispatchEvent(new Event("blur",{bubbles:true,cancelable:true}));
+            }
+        })("{value}")''',
+    },
+    "edgesurvey": {
+        # EdgeSurvey innovatemr.net: Angular Material <mat-radio-button>
+        "click_next": "__CDP_CLICK_BUTTON__:Weiter",
+        "click_element": '__CDP_CLICK__:input[type=radio]:{idx}',
+        "fill_text": '''(function(v){
+            var ta = document.querySelector("textarea,input[type=text]");
+            if(ta){
+                var nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype,"value").set;
+                if(nativeSetter) nativeSetter.call(ta, v);
+                else ta.value = v;
+                ta.dispatchEvent(new Event("input",{bubbles:true}));
+                ta.dispatchEvent(new Event("change",{bubbles:true}));
+                ta.dispatchEvent(new Event("blur",{bubbles:true}));
+            }
+        })("{value}")''',
+    },
+    "reach3insights": {
+        # Reach3Insights: standard form inputs + submit buttons
+        "click_next": 'document.querySelector("input[type=submit]").click()',
+        "click_element": 'document.querySelectorAll("input[type=radio],input[type=checkbox]")[{idx}].click()',
+        "fill_text": '''(function(v){
+            var ta = document.querySelector("textarea,input[type=text]");
+            if(ta){
+                ta.value = v;
+                ta.dispatchEvent(new Event("input",{bubbles:true}));
+                ta.dispatchEvent(new Event("change",{bubbles:true}));
+            }
+        })("{value}")''',
+    },
+    "generic": {
+        # Universal fallback for unknown providers: CDP click + textarea fill
+        "click_next": "__CDP_CLICK_BUTTON__:Weiter",
+        "click_element": '__CDP_CLICK_GENERIC__:{idx}',
+        "fill_text": '''(function(v){
+            var ta = document.querySelector("textarea,input[type=text]");
+            if(ta){
+                var nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype,"value").set;
+                if(nativeSetter) nativeSetter.call(ta, v);
+                else ta.value = v;
+                ta.dispatchEvent(new Event("input",{bubbles:true,cancelable:true}));
+                ta.dispatchEvent(new Event("change",{bubbles:true,cancelable:true}));
+            }
+        })("{value}")''',
+    },
 }
 
 GENERIC_COMMANDS = {
@@ -138,6 +199,10 @@ class BatchExecutor:
                 self._cdp_click_element(ws, js)
             elif js and js.startswith("__CDP_CLICK_BUTTON__"):
                 self._cdp_click_button(ws, js)
+            elif js and js.startswith("__CDP_CLICK_ROLE_BUTTON__"):
+                self._cdp_click_role_button(ws, js)
+            elif js and js.startswith("__CDP_CLICK_GENERIC__"):
+                self._cdp_click_generic(ws, js)
             elif js:
                 ws.send(json.dumps({
                     "id": 0, "method": "Runtime.evaluate",
@@ -187,6 +252,62 @@ class BatchExecutor:
         r = json.loads(ws.recv())
         coords = r.get("result",{}).get("result",{}).get("value","0,0")
         x, y = map(float, coords.split(","))
+        if x > 0:
+            for et in ["mouseMoved","mousePressed","mouseReleased"]:
+                ws.send(json.dumps({"id":0,"method":"Input.dispatchMouseEvent",
+                    "params":{"type":et,"x":x,"y":y,"button":"left","clickCount":1}}))
+                json.loads(ws.recv())
+
+    def _cdp_click_role_button(self, ws, js):
+        """CDP click on [role=button] element by index. For CloudResearch."""
+        parts = js.replace("__CDP_CLICK_ROLE_BUTTON__:", "").split(":")
+        idx = int(parts[0]) if parts else 0
+        ws.send(json.dumps({
+            "id": 0, "method": "Runtime.evaluate",
+            "params": {"expression": f'''
+(function(){{
+    var els = Array.from(document.querySelectorAll('[role=button]'));
+    var visible = els.filter(function(e){{ return e.offsetHeight > 0; }});
+    if(visible[{idx}]){{
+        var r = visible[{idx}].getBoundingClientRect();
+        return r.x+r.width/2+','+(r.y+r.height/2);
+    }}
+    return '0,0';
+}})();
+'''}}))
+        r = json.loads(ws.recv())
+        coords = r.get("result",{}).get("result",{}).get("value","0,0")
+        x, y = map(float, coords.split(","))
+        if x > 0:
+            for et in ["mouseMoved","mousePressed","mouseReleased"]:
+                ws.send(json.dumps({"id":0,"method":"Input.dispatchMouseEvent",
+                    "params":{"type":et,"x":x,"y":y,"button":"left","clickCount":1}}))
+                json.loads(ws.recv())
+
+    def _cdp_click_generic(self, ws, js):
+        """Universal click: tries [role=button], input[radio], button by index."""
+        parts = js.replace("__CDP_CLICK_GENERIC__:", "").split(":")
+        idx = int(parts[0]) if parts else 0
+        ws.send(json.dumps({
+            "id": 0, "method": "Runtime.evaluate",
+            "params": {"expression": f'''
+(function(){{
+    // Try [role=button] first (CloudResearch pattern)
+    var rb = Array.from(document.querySelectorAll('[role=button]')).filter(function(e){{return e.offsetHeight>0;}});
+    if(rb[{idx}]){{var r=rb[{idx}].getBoundingClientRect();return r.x+r.width/2+','+(r.y+r.height/2)+',rb';}}
+    // Try radio buttons (Qualtrics, Strat7 pattern)
+    var ra = document.querySelectorAll('input[type=radio]');
+    if(ra[{idx}]){{var r=ra[{idx}].getBoundingClientRect();return r.x+r.width/2+','+(r.y+r.height/2)+',radio';}}
+    // Try buttons
+    var bt = document.querySelectorAll('button');
+    if(bt[{idx}] && bt[{idx}].offsetHeight>0){{var r=bt[{idx}].getBoundingClientRect();return r.x+r.width/2+','+(r.y+r.height/2)+',button';}}
+    return '0,0,none';
+}})();
+'''}}))
+        r = json.loads(ws.recv())
+        coords = r.get("result",{}).get("result",{}).get("value","0,0")
+        parts = coords.split(",")
+        x, y = float(parts[0]), float(parts[1])
         if x > 0:
             for et in ["mouseMoved","mousePressed","mouseReleased"]:
                 ws.send(json.dumps({"id":0,"method":"Input.dispatchMouseEvent",

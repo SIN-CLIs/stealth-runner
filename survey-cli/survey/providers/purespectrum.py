@@ -78,86 +78,135 @@ def fill_opinion_textarea(ws_url):
 # ── Text Captcha OCR ───────────────────────────────────
 
 def solve_text_captcha(ws_url, debug=False):
-    """Extract base64 captcha img → NVIDIA Vision OCR → fill + CDP-click submit."""
+    """Extract captcha img → NVIDIA Vision OCR → fill + CDP-click submit.
+
+    Strategy (2026-05-06):
+    1. Find captcha image via MULTIPLE strategies (not just position)
+    2. Screenshot the specific img element (not a positional clip)
+    3. High-res (scale=3) for better OCR
+    4. Targeted prompt + result validation (4-8 alphanumeric chars)
+    """
     try:
         ws = websocket.create_connection(ws_url, timeout=15)
-        
-        # Find captcha image position for CLIPPED screenshot
+
+        # Find captcha image: try multiple selectors
         ws.send(json.dumps({"id":0,"method":"Runtime.evaluate",
             "params":{"expression": """
 (function() {
-    // Find captcha image: medium size, visible, near text input
+    // Strategy 1: Look for images inside captcha-related containers
+    var captchaImg = document.querySelector('img[alt*=captcha],img[alt*=Captcha],img[alt*=code],img[class*=captcha],img[class*=code],img[class*=verify]');
+    if(captchaImg) {
+        var r = captchaImg.getBoundingClientRect();
+        return JSON.stringify({x:r.x,y:r.y,w:r.width,h:r.height,strategy:'selector'});
+    }
+    // Strategy 2: Image near the text input, correct size range
     var input = document.querySelector('input[type=text]');
-    var inputY = input ? input.getBoundingClientRect().y : 500;
+    var inputRect = input ? input.getBoundingClientRect() : null;
     var imgs = document.querySelectorAll('img');
-    for (var i=0;i<imgs.length;i++) {
+    var best = null, bestDist = 99999;
+    for(var i=0;i<imgs.length;i++) {
         var r = imgs[i].getBoundingClientRect();
-        // Captcha is ABOVE the input field, 50-200px wide, 20-80px tall
-        if (r.width>50 && r.width<300 && r.height>20 && r.height<100 && r.y < inputY && imgs[i].offsetParent) {
-            return JSON.stringify({x:r.x-5, y:r.y-5, w:r.width+10, h:r.height+10, found:true});
+        // Captcha: above/beside input, 80-400px wide, 30-120px tall
+        if(r.width>=80 && r.width<=400 && r.height>=30 && r.height<=120) {
+            var visible = r.width>0 && r.height>0 && imgs[i].offsetParent;
+            if(!visible) continue;
+            // Prefer image closest to input vertically
+            if(inputRect) {
+                var dist = Math.abs(r.y - inputRect.y) + Math.abs(r.x - inputRect.x);
+                if(dist < bestDist) { bestDist = dist; best = r; }
+            } else if(r.y < 600) { best = r; }
         }
     }
+    if(best) return JSON.stringify({x:best.x,y:best.y,w:best.width,h:best.height,strategy:'positional'});
     return JSON.stringify({found:false});
 })()
 """}}))
         r = json.loads(ws.recv())
         clip = json.loads(r.get("result",{}).get("result",{}).get("value","{}"))
-        
-        if not clip.get("found"):
+
+        if clip.get("found") is False:
             ws.close()
-            return {"success": False, "error": "No captcha image found for clipping"}
-        
-        # Screenshot with clip (2x scale for better OCR)
+            return {"success": False, "error": "No captcha image found (all strategies)"}
+
+        x, y, w, h = clip["x"], clip["y"], clip["w"], clip["h"]
+        strategy = clip.get("strategy", "?")
+        if debug:
+            print(f"  [CAPTCHA] Found via {strategy}: ({x:.0f},{y:.0f}) {w:.0f}×{h:.0f}")
+
+        # Screenshot captcha area at HIGH RES (3× scale for clear OCR)
         ws.send(json.dumps({"id":1,"method":"Page.captureScreenshot",
-            "params":{"format":"png","clip":{"x":max(0,clip["x"]),"y":max(0,clip["y"]),
-                "width":clip["w"],"height":clip["h"],"scale":3}}}))
+            "params":{"format":"png","clip":{"x":max(0,x-5),"y":max(0,y-5),
+                "width":min(w+10,1920),"height":min(h+10,1080),"scale":3}}}))
         r = json.loads(ws.recv())
         ws.close()
         b64 = r.get("result",{}).get("data","")
-        
-        if not b64 or len(b64) < 100:
-            return {"success": False, "error": "Screenshot empty"}
-        
+
+        if not b64 or len(b64) < 200:
+            return {"success": False, "error": f"Screenshot empty ({len(b64)} chars)"}
+
         if debug:
-            print(f"  [CAPTCHA] Clip screenshot: {len(b64)} chars base64")
-        
-        # OCR
+            print(f"  [CAPTCHA] Screenshot: {len(b64)} chars base64, scale=3")
+
+        # OCR via NVIDIA Vision
         api_key = os.getenv("NVIDIA_API_KEY")
         if not api_key:
             return {"success": False, "error": "NVIDIA_API_KEY not set"}
 
         client = OpenAI(api_key=api_key, base_url=NIM_BASE_URL)
         start = time.monotonic()
+
+        # Targeted prompt: captcha recognition, ignore background noise
         resp = client.chat.completions.create(
             model=VISION_MODEL,
             messages=[{"role":"user","content":[
-                {"type":"text","text":"Read the captcha. Return ONLY the letters and numbers. No spaces, no explanation. Max 8 chars. The characters may be distorted, slanted, or have lines through them."},
+                {"type":"text","text":"This is a captcha image. Read ONLY the character sequence shown in the image. "
+                 "Return the exact letters and numbers (uppercase) with NO spaces, NO punctuation, NO explanation. "
+                 "The characters may be distorted, slanted, rotated, or have noise lines through them. "
+                 "Ignore any background patterns. Examples: 'PURESPC', 'XKCD42', 'ABC123', 'r4nd0m'. "
+                 "If uncertain, make your best guess — return only 4-8 alphanumeric characters."},
                 {"type":"image_url","image_url":{"url":f"data:image/png;base64,{b64}"}}
             ]}],
-            max_tokens=15, temperature=0.0)
+            max_tokens=12, temperature=0.1)
         elapsed = (time.monotonic()-start)*1000
         raw = resp.choices[0].message.content.strip()
+        # Extract only alphanumeric, uppercase, limit to 10 chars
         captcha = re.sub(r'[^a-zA-Z0-9]','',raw).upper()[:10]
         tokens = resp.usage.total_tokens if resp.usage else 0
 
         if debug:
-            print(f"  [CAPTCHA] OCR: '{captcha}' ({elapsed:.0f}ms, {tokens}tok)")
+            print(f"  [CAPTCHA] Raw: '{raw}' → Cleaned: '{captcha}' ({elapsed:.0f}ms, {tokens}tok)")
 
-        if len(captcha) < 2:
-            return {"success": False, "error": f"OCR too short: {captcha}", "raw": raw}
+        # Validate: captcha must be 4-8 alphanumeric chars
+        if len(captcha) < 3:
+            return {"success": False, "error": f"OCR too short ({len(captcha)} chars): '{captcha}'", "raw": raw}
+        if len(captcha) > 10:
+            captcha = captcha[:10]
 
-        # Fill input
-        ws = websocket.create_connection(ws_url, timeout=15)
-        ws.send(json.dumps({"id":0,"method":"Runtime.evaluate",
-            "params":{"expression": f"var i=document.querySelector('input[type=text]');if(i){{i.value='{captcha}';i.dispatchEvent(new Event('input',{{bubbles:true}}));i.dispatchEvent(new Event('change',{{bubbles:true}}));}}"}}))
-        json.loads(ws.recv()); ws.close()
+        # Fill input with native setter (Angular form binding)
+        ws2 = websocket.create_connection(ws_url, timeout=15)
+        ws2.send(json.dumps({"id":0,"method":"Runtime.evaluate",
+            "params":{"expression": f"""
+(function(){{
+    var i = document.querySelector('input[type=text]');
+    if(!i) return 'no input';
+    // Angular native value setter
+    var nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value').set;
+    if(nativeSetter) nativeSetter.call(i,'{captcha}');
+    else i.value = '{captcha}';
+    i.dispatchEvent(new Event('input',{{bubbles:true,cancelable:true}}));
+    i.dispatchEvent(new Event('change',{{bubbles:true,cancelable:true}}));
+    i.dispatchEvent(new Event('blur',{{bubbles:true,cancelable:true}}));
+    return 'filled:' + i.value;
+}})();
+"""}}))
+        json.loads(ws2.recv()); ws2.close()
 
-        # CDP-click submit
+        # CDP-click submit (Nächste / Next button)
         cdp_click_button(ws_url, "Nächste")
         time.sleep(0.5)
 
         return {"success": True, "captcha_text": captcha, "tokens_used": tokens,
-                "elapsed_ms": round(elapsed)}
+                "elapsed_ms": round(elapsed), "strategy": strategy}
 
     except Exception as e:
         return {"success": False, "error": str(e)[:200]}

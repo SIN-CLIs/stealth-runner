@@ -134,6 +134,13 @@ class SurveyRunner:
             log_earnings(survey_id, provider, 0, "blocked", 0)
             return result
 
+        # 1c. Unknown provider → use generic fallback (tries all click patterns)
+        if provider == "unknown":
+            provider = "generic"
+            result.provider = "generic"
+            if self.config.debug:
+                print(f"[RUN] Unknown provider — using generic fallback commands")
+
         if self.config.debug:
             print(f"[RUN] {survey_id} → {provider} (CPX: {survey_url[:60]})")
 
@@ -204,28 +211,57 @@ class SurveyRunner:
             if tab_info:
                 tab_ws = tab_info
 
-        # 5. NEMO Loop
+        # 5. NEMO Loop — with Circuit Breaker + Tab Re-Discovery
         nim_calls = 0
         balance_before = read_balance(self.config.cdp_port)
+        consecutive_fails = 0
+        max_consecutive_fails = 5  # Circuit breaker: stop after 5 fails
+        prev_page_hash = ""  # Detect infinite loops (same page every time)
+        loop_detection_threshold = 4  # Stop if same page 4× in a row
 
         for iteration in range(self.config.max_iterations):
             result.iterations = iteration + 1
 
             try:
-                # 5a. Compact snapshot
+                # 5a. Tab re-discovery: WS may be stale after navigation
+                tab_ws_current = self._refresh_tab_ws(tab_id)
+                if not tab_ws_current:
+                    result.error = "Tab disappeared (screen-out or redirect)"
+                    result.status = "screen_out"
+                    break
+                tab_ws = tab_ws_current
+
+                # 5b. Compact snapshot
                 snapshot = generate_snapshot(tab_ws)
 
                 if self.config.debug and iteration % 5 == 0:
                     print(f"  [iter {iteration}] {snapshot.provider} "
                           f"({len(snapshot.refs)} el)")
 
-                # 5b. Check completion
+                # 5c. Loop detection: same page content 4× = stuck
+                page_hash = hash(snapshot.text[:100]) if snapshot.text else 0
+                if page_hash == prev_page_hash:
+                    consecutive_fails += 1
+                    if consecutive_fails >= loop_detection_threshold:
+                        result.error = f"Stuck on same page ({loop_detection_threshold}×)"
+                        result.status = "error"
+                        break
+                else:
+                    consecutive_fails = 0
+                    prev_page_hash = page_hash
+
+                # 5d. Empty snapshot: page not loaded — skip iteration
+                if len(snapshot.refs) == 0 and not snapshot.text.strip():
+                    time.sleep(self.config.wait_page_load)
+                    continue
+
+                # 5e. Check completion
                 if detect_completion(snapshot.url + " " + snapshot.title) or \
                    self._detect_completion_text(tab_ws):
                     result.status = "completed"
                     break
 
-                # 5c. NIM decision
+                # 5f. NIM decision (with retry on empty actions)
                 if self.nim and self.config.use_nim:
                     decision = self.nim.decide(
                         snapshot.to_dict(), self.profile,
@@ -235,44 +271,68 @@ class SurveyRunner:
                     nim_calls += 1
                     result.nim_calls = nim_calls
                     result.nim_tokens += decision.get("tokens", {}).get("total", 0)
-                else:
-                    actions = self._simple_actions(snapshot)
 
-                # 5d. Check for complete action
+                    # Retry NIM once if actions empty (first call might miss content)
+                    if not actions and iteration < 3:
+                        time.sleep(1)
+                        decision = self.nim.decide(snapshot.to_dict(), self.profile,
+                                                  self.learnings, self.history)
+                        actions = decision.get("actions", [])
+                else:
+                    actions = self._simple_actions(snapshot, tab_ws)
+
+                # 5g. Check for complete action
                 if any(a.get("action") == "complete" for a in actions):
                     result.status = "completed"
                     break
 
-                # 5e. Log decision
+                # 5h. Log decision
                 log_decision(
                     len(snapshot.refs), actions, nim_calls,
                     decision.get("elapsed_ms", 0) if self.nim else 0,
                     survey_id, provider
                 )
 
-                # 5f. Execute batch
+                # 5i. Execute batch with circuit breaker
                 executor = BatchExecutor(tab_ws, provider)
                 batch_result = executor.execute(actions)
 
-                # 5g. Record history
+                # Circuit breaker: 3+ failed actions in batch = abort
+                if batch_result.total_fail >= 3:
+                    consecutive_fails += 2
+                    if self.config.debug:
+                        print(f"  [iter {iteration}] Circuit breaker: {batch_result.total_fail} fails")
+                    if consecutive_fails >= max_consecutive_fails:
+                        result.error = f"Circuit breaker triggered ({batch_result.total_fail} fail, {consecutive_fails} streak)"
+                        result.status = "blocked"
+                        break
+
+                # 5j. Record history
                 self.history.append({
                     "iteration": iteration,
                     "actions": len(actions),
                     "success": batch_result.total_success,
                     "fail": batch_result.total_fail,
+                    "page_hash": page_hash,
                 })
 
-                # 5h. Wait for page transition
+                # 5k. Wait for page transition
                 time.sleep(self.config.wait_after_action)
 
             except Exception as e:
                 if self.config.debug:
                     print(f"  [iter {iteration}] Error: {e}")
+                consecutive_fails += 1
+                if consecutive_fails >= max_consecutive_fails:
+                    result.error = f"Circuit breaker: {str(e)[:100]}"
+                    result.status = "blocked"
+                    break
                 result.error = str(e)[:200]
                 result.status = "error"
                 log_error("run_survey", e, survey_id, provider,
                           {"iteration": iteration})
-                break
+                # Continue loop but increment fail counter
+                time.sleep(1)
 
         # 6. Close tab
         self._close_tab(tab_id)
@@ -329,6 +389,8 @@ class SurveyRunner:
             balance = read_balance(self.config.cdp_port)
             if balance >= self.config.balance_target:
                 print(f"[LOOP] Balance target reached: {balance}€")
+                # Trigger cash-out flow
+                self._trigger_cash_out()
                 break
 
             sid = survey["id"]
@@ -458,10 +520,118 @@ class SurveyRunner:
         except Exception:
             pass  # Tab already closed — that's fine
 
+    def _refresh_tab_ws(self, tab_id):
+        """Re-discover WebSocket URL for tab after navigation.
+
+        After executing actions, the tab may have navigated to a new page
+        or been replaced. Re-find the WS URL to prevent stale WS errors.
+
+        Returns:
+            Fresh WS URL or None if tab is gone (screen-out)
+        """
+        # Try original tab first
+        tab_info = chrome.get_ws_for_tab(tab_id, self.config.cdp_port)
+        if tab_info:
+            try:
+                import websocket as ws_lib
+                ws = ws_lib.create_connection(tab_info, timeout=5)
+                ws.send(json.dumps({
+                    "id": 0, "method": "Runtime.evaluate",
+                    "params": {"expression": "document.location.href"}
+                }))
+                json.loads(ws.recv())
+                ws.close()
+                return tab_info  # Tab still alive
+            except Exception:
+                pass  # Tab WS stale — search all tabs
+
+        # Fallback: find any non-dashboard tab with matching URL pattern
+        for p in chrome.find_bot_tabs(self.config.cdp_port):
+            url = p.get("url", "")
+            if url and "dashboard" not in url and "about:blank" not in url:
+                # Verify it's still accessible
+                try:
+                    ws = websocket.create_connection(p["webSocketDebuggerUrl"], timeout=5)
+                    ws.send(json.dumps({
+                        "id": 0, "method": "Runtime.evaluate",
+                        "params": {"expression": "document.readyState"}
+                    }))
+                    json.loads(ws.recv())
+                    ws.close()
+                    return p["webSocketDebuggerUrl"]
+                except Exception:
+                    continue
+
+        return None  # Tab is gone (screen-out closed it)
+
     def _detect_provider(self, url):
         """Detect provider from URL."""
         from .scanner import detect_provider
         return detect_provider(url)
+
+    def _trigger_cash_out(self):
+        """Navigate to cash-out page when balance target is reached.
+
+        Uses cua-driver to click Auszahlung sidebar item (the one in the
+        main modal, not the mobile tab bar). Finds the correct element
+        via cua-driver list_windows → get_window_state → depth>5 filter.
+        """
+        try:
+            # Use cua-driver to click Auszahlung in sidebar
+            import subprocess, json as json_mod
+
+            # Get window
+            result = subprocess.run(
+                ["cua-driver", "call", "list_windows"],
+                capture_output=True, text=True, timeout=10
+            )
+            windows = json_mod.loads(result.stdout)
+            hp_window = next(
+                (w for w in windows.get("windows", []) if "HeyPiggy" in w.get("title", "")),
+                None
+            )
+            if not hp_window:
+                print("[CASH] HeyPiggy window not found")
+                return
+
+            pid = hp_window["pid"]
+            wid = hp_window["window_id"]
+
+            # Get AX tree and find "Auszahlung" element
+            result = subprocess.run(
+                ["cua-driver", "call", "get_window_state"],
+                input=json_mod.dumps({"pid": pid, "window_id": wid}).encode(),
+                capture_output=True, text=True, timeout=15
+            )
+            state = json_mod.loads(result.stdout)
+
+            # Find Auszahlung link in sidebar (depth > 5 for content)
+            # Look for AXLink with text "Auszahlung" in sidebar
+            import re
+            tree = state.get("tree_markdown", "")
+            lines = tree.split("\n")
+            idx = None
+            for i, line in enumerate(lines):
+                if re.search(r'\[(\d+)\].*Auszahlung', line):
+                    m = re.search(r'\[(\d+)\]', line)
+                    if m:
+                        idx = int(m.group(1))
+                        break
+
+            if idx is not None:
+                result = subprocess.run(
+                    ["cua-driver", "call", "click"],
+                    input=json_mod.dumps({"pid": pid, "window_id": wid,
+                                         "element_index": idx}).encode(),
+                    capture_output=True, text=True, timeout=15
+                )
+                print(f"[CASH] Clicked Auszahlung sidebar: {result.stdout[:100]}")
+                log_session("cash_out", "triggered", {"balance_target": self.config.balance_target})
+            else:
+                print("[CASH] Auszahlung element not found in AX tree")
+
+        except Exception as e:
+            print(f"[CASH] Cash-out trigger failed: {e}")
 
     def _detect_completion_text(self, ws_url):
         """Check page text for completion markers."""
@@ -498,22 +668,62 @@ class SurveyRunner:
         except Exception:
             pass
 
-    def _simple_actions(self, snapshot):
-        """Simple auto-pilot when NIM not available."""
+    def _simple_actions(self, snapshot, tab_ws=None):
+        """Simple auto-pilot when NIM not available. Smart selection + verify.
+
+        Strategy:
+        1. Find first unchecked radio → select it
+        2. Find enabled submit button → click it
+        3. Fallback: fill first textarea with plausible persona answer
+        """
         actions = []
+
+        # 1. Select first unchecked radio/checkbox
         for ref, info in snapshot.refs.items():
-            if info.get("role") in ("radio", "checkbox") and info.get("enabled", True):
-                actions.append({"ref": ref, "action": "select"})
-                break
+            role = info.get("role", "")
+            if role in ("radio", "checkbox") and info.get("enabled", True):
+                text = info.get("text", "").lower()
+                # Prefer common persona answers
+                preferred = ["berlin", "männlich", "weiblich", "deutsch",
+                            "angestellt", "verheiratet", "mittlere", "master"]
+                if any(p in text for p in preferred):
+                    actions.append({"ref": ref, "action": "select"})
+                    break
+        else:
+            # No preferred answer found — select first available
+            for ref, info in snapshot.refs.items():
+                if info.get("role") in ("radio", "checkbox") and info.get("enabled", True):
+                    actions.append({"ref": ref, "action": "select"})
+                    break
+
+        # 2. Find enabled submit/next button
         for ref, info in snapshot.refs.items():
             if info.get("role") == "button":
                 text = info.get("text", "").lower()
-                if any(kw in text for kw in ["weiter", "next", "submit", "nächste"]):
+                enabled = info.get("enabled", True)
+                if enabled and any(kw in text for kw in
+                    ["weiter", "next", "submit", "nächste", "submit", "forward", "fortfahren"]):
                     actions.append({"action": "submit"})
                     break
         else:
-            actions.append({"action": "submit"})
-        return actions
+            # No submit button found — check for textarea (open-ended question)
+            for ref, info in snapshot.refs.items():
+                if info.get("role") == "textbox":
+                    # Fill with short plausible answer
+                    placeholder = info.get("placeholder", "").lower()
+                    if "gemüse" in placeholder or "hobby" in placeholder:
+                        actions.append({"ref": ref, "action": "fill",
+                                        "value": "Karotten werden von vielen Menschen gegessen, weil sie gesund und vielseitig sind."})
+                    elif "beschreiben" in placeholder:
+                        actions.append({"ref": ref, "action": "fill",
+                                        "value": "Ich finde das Thema interessant und nehme gerne an Umfragen teil."})
+                    else:
+                        actions.append({"ref": ref, "action": "fill",
+                                        "value": "Ja"})
+                    break
+
+        # Safety cap: never return more than 2 actions
+        return actions[:2]
 
     def _load_profile(self):
         """Load profile from JSON file or fallback. Calculates age dynamically."""

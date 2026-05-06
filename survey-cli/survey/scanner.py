@@ -21,6 +21,13 @@ PROVIDER_PATTERNS = {
     "insights_today": ["insights-today.com"],
     "surveyrouter": ["surveyrouter.com"],
     "gfk": ["surveys.com"],
+    # NEW PROVIDERS (2026-05-06) — discovered from live surveys
+    "cloudresearch": ["cloudresearch.com", "sentry.cloudresearch.com"],
+    "edgesurvey": ["edgesurvey.innovatemr.net", "innovatemr.net"],
+    "reach3insights": ["reach3insights.com", "surveys.reach3insights.com"],
+    "samplicio": ["samplicio.us", "rx.samplicio.us"],
+    "cint": ["s.cint.com"],
+    "nfield": ["nfieldeu-interviewing.nfieldmr.com"],
 }
 
 
@@ -143,7 +150,10 @@ def print_survey_table(results):
     print(f"  Total: {len(results)} | OK: {okay_count} | Filtered: {len(results) - okay_count}")
     print()
 
-    return [r for r in results if r.get("type") == "okay"]
+    # Return ALL surveys — including pre-qualifiers and unknown types.
+    # The runner's handle_pre_qualifier() will answer pre-qualifier questions.
+    # NEVER filter out surveys before they reach the execution engine.
+    return results
 
 
 def scan_dashboard(port=9999, skip_providers=None):
