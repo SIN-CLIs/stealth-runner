@@ -32,7 +32,7 @@ DYNAMIC_PID, Checkboxen, Radio-Buttons, Textfelder.
 
 ### Flow dokumentiert:
 ```bash
-playstealth launch → PID=DYNAMIC, WID 56640
+Manueller Chrome-Launch --remote-debugging-port=9999 → PID=DYNAMIC, WID 56640
 click [54] Google Login-Symbol → WID 56658 Google OAuth
 set_value [25] Email → click [35] Weiter
 → Keychain Auto-Fill! → "Jeremy Schulze" Konto

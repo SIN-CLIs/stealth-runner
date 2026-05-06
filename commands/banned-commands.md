@@ -89,12 +89,14 @@ ws.send(json.dumps({'id': 0, 'method': 'Target.createTarget', 'params': {'url': 
 
 ### skylight-cli
 ```bash
-# ❌ BANNED — deprecated, index-based clicking unreliable!
+# ❌ BANNED — index-based clicking unreliable!
 skylight-cli click --pid 12345 --element-index 42
 skylight-cli query --label "Weiter"
 ```
 
 **Why banned**: Element indices change between page renders. Index 42 one day is Index 15 the next.
+
+**✅ ERLAUBT**: skylight-cli `snapshot-compact` + `batch` sind PRIMARY (NEMO Tool-Chain). Nur `click --element-index` ist BANNED.
 
 ### webauto-nodriver MCP
 ```bash

@@ -18,7 +18,7 @@
 
 ## Akzeptanzkriterien
 
-1. [x] Chrome via playstealth launch starten mit `--cdp-port 9222`
+1. [x] Chrome via playstealth launch starten mit `--cdp-port 9999`
 2. [x] CDPClient.connect() → WebSocket Browser URL auto-discovered
 3. [x] Target.attachToTarget() → CDPSession erstellt
 4. [x] SlideCaptchaSolver() → Pipeline läuft (stealth inject, hit test, gap detection, drag)
@@ -31,7 +31,7 @@
 
 ```
 Chrome PID: 94761 | URL: https://www.google.com/recaptcha/api2/demo
-CDP WS: ws://localhost:9222/devtools/browser/9fb2b18b-0557-46ff-b094-5905eb75c806
+CDP WS: ws://localhost:9999/devtools/browser/9fb2b18b-0557-46ff-b094-5905eb75c806
 
 [1/5] CDP connect        ✅ ws_url discovered via /json/version
 [2/5] Target listing     ✅ 2 targets found (page + worker)
@@ -52,7 +52,7 @@ Use `get_browser_ws()` from `captchas.cdp.targets` to auto-discover.
 
 ```python
 from captchas.cdp.targets import get_browser_ws
-browser_ws = await get_browser_ws(host="localhost", port=9222)
+browser_ws = await get_browser_ws(host="localhost", port=9999)
 client = await CDPClient.connect(browser_ws)
 ```
 

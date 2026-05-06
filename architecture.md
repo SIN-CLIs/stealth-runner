@@ -60,7 +60,9 @@ pip install -e .
 PROFILE=$(mktemp -d /tmp/heypiggy-bot-XXXXXX)
 open -a "Google Chrome" --args \
   --user-data-dir="$PROFILE" \
-  --remote-debugging-port=0 \
+  --remote-debugging-port=9999 \
+  --remote-allow-origins=* \
+  --force-renderer-accessibility \
   --disable-blink-features=AutomationControlled \
   --allow-javascript-apple-events
 ```

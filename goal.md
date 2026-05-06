@@ -1,29 +1,29 @@
 # goal.md – Stealth Runner Hauptziel
 
 > **← [sinrules.md](sinrules.md) ist die zentrale Regeldatei.**
-> **← [brain.md](brain.md) dokumentiert die CDP+AX Trinity Architektur.**
+> **← [brain.md](brain.md) dokumentiert die NEMO Architektur.**
 
 ## Primärziel
 
 Heypiggy.com automatisieren: Google-Login → Surveys abschließen → EUR > 0 verdienen
-**mit CDP+AX Trinity — kein Element-Index-Shift mehr.**
+**mit NEMO Architektur — Compact Snapshot + NIM + Batch Execute.**
 
 ---
 
-## CDP+AX Trinity: Hauptziel 2026-05-03
+## NEMO Architektur: Hauptziel 2026-05-06
 
 **Problem:** skylight-cli's flacher Element-Index ist instabil (Browser-Chrome + Web-Content gemischt).
-**Lösung:** CDP queryAXTree (NUR Web) → AXUIElementCopyElementAtPosition (Position ≠ Index)
+**Lösung:** Compact Snapshot (skylight/CDP) → Nemotron Decision (NIM) → Batch Execute (CDP)
 
 ### Meilensteine
 
 | Datum | Meilenstein | Status |
 |-------|-------------|--------|
-| 2026-05-03 | **CDP+AX Grundlage**: `cdp_click.py` mit WebSocket + queryAXTree + AXPress | ⬜ |
-| 2026-05-03 | **Google Login via CDP+AX**: Email → Weiter → Passwort → Dashboard | ⬜ |
-| 2026-05-03 | **Fallback-Kette**: CDP → skylight → cua → macos-ax-cli | ⬜ |
-| 2026-05-03 | **10× stabiler Google Login** mit CDP+AX | ⬜ |
-| 2026-05-03 | **HeyPiggy Dashboard + Survey** via CDP+AX | ⬜ |
+| 2026-05-03 | ~~CDP+AX Grundlage~~ (LEGACY/DEPRECATED) | ⬜ |
+| 2026-05-06 | **NEMO Grundlage**: `src/stealth_survey/` SurveyAgent + NIMClient + BatchExecutor | ⬜ |
+| 2026-05-06 | **Compact Snapshot**: skylight-cli snapshot-compact → @eN Element-Refs | ⬜ |
+| 2026-05-06 | **NIM Decision**: Nemotron 3 Omni entscheidet pro Seite | ⬜ |
+| 2026-05-06 | **Batch Execute**: Alle Actions in EINEM CDP WebSocket Call | ⬜ |
 
 ### Erfolgskriterien
 

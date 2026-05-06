@@ -70,7 +70,8 @@
 
 | Command | Grund | Ersatz |
 |---------|-------|--------|
-| `skylight-cli click --element-index` | DEPRECATED — CUA-ONLY | `cua-driver call click` |
+| `skylight-cli batch` | ✅ ERLAUBT — NEMO PRIMARY | Batch-Aktionen ausführen |
+| `skylight-cli click --element-index` | DEPRECATED — NEMO PRIMARY | `skylight-cli batch` |
 | `skylight-cli click --x --y` | BANNED — Koordinaten raten | cua-driver AXPress |
 | `webauto-nodriver click` | ABSOLUT BANNED | cua-driver |
 | `pyautogui.click()` | BANNED — Mausbewegung | cua-driver |

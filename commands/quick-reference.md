@@ -147,7 +147,9 @@ heypiggy dashboard → clickSurvey API → click.cpx-research.com →
 - ❌ Hardcoded PIDs (71104, 70293, etc.)
 - ❌ CDP `Page.navigate` — use `Target.createTarget`
 - ❌ MouseEvent on `.cf-radio`/`.cf-checkbox` — use JS `.click()`
-- ❌ skylight-cli, webauto-nodriver MCP
+- ❌ skylight-cli click --element-index (only index clicks banned)
+- ❌ skylight-cli click --x --y (coordinates banned)
+- ❌ webauto-nodriver MCP
 - ❌ Manually parsing WebSocket URL — use `webSocketDebuggerUrl` from JSON
 
 ## Survey IDs (Current Dashboard)

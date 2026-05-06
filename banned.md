@@ -76,11 +76,11 @@ bash(command="screen-follow record --video --output /tmp/file.mp4 &")
 
 ### playstealth --json Argument-Reihenfolge
 ```bash
-# ❌ FALSCH
+# ⚠️ NUR für dev/debug — NIEMALS für production!
 playstealth launch --url X --json
 # → "unrecognized arguments: --json"
 ```
-**Korrekt**: `playstealth --json launch --url X`
+**Korrekt**: `playstealth --json launch --url X` (dev/debug ONLY)
 
 ### asyncio.get_event_loop() in Python 3.14+
 ```python
@@ -120,8 +120,10 @@ loop = asyncio.get_event_loop()
 ║  GRUND: webauto screenshot hat "no page" bug                     ║
 ║  GRUND: User hat explizit verboten — mehrfach!                   ║
 ║                                                                  ║
-║  ✅ ERLAUBT: playstealth launch → skylight-cli + cua-driver      ║
-║  ✅ ERLAUBT: CDP via httpx/websockets für Chrome DevTools        ║
+║  ✅ ERLAUBT: playstealth launch                                 ║
+║  ✅ ERLAUBT: skylight-cli snapshot-compact + batch               ║
+║  ✅ ERLAUBT: CDP via httpx/websockets für Runtime.evaluate       ║
+║  ✅ ERLAUBT: cua-driver (NUR Legacy-Fallback)                    ║
 ╚══════════════════════════════════════════════════════════════════╝
 ```
 **NIEMALS. WIEDER. IN BETRACHT ZIEHEN. GÄNZLICH ENTFERNEN. ALLES.**

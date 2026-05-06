@@ -5,28 +5,20 @@
 
 ---
 
-## CDP+AX Trinity (NEU, PRIMARY)
+## CDP+AX Trinity (LEGACY/DEPRECATED)
 
 ```bash
-# Chrome starten (liefert cdp_port!)
+# Chrome starten (DEPRECATED — use NEMO instead!)
 playstealth launch --url 'https://accounts.google.com/ServiceLogin'
 # → {"pid": DYNAMIC_PID, "cdp_port": DYNAMIC_PORT, "cdp_ws": "ws://127.0.0.1:DYNAMIC_PORT"}
+```
 
-# Email-Feld finden + tippen (cdp_click)
-python3 -c "
-from cli.modules.cdp_click import click_by_label, type_by_label
-import asyncio
-asyncio.run(type_by_label(pid=DYNAMIC_PID, cdp_port=DYNAMIC_PORT,
-    label='E-Mail oder Telefonnummer', text='zukunftsorientierte.energie@gmail.com'))
-"
-
-# Weiter klicken (cdp_click)
-python3 -c "
-from cli.modules.cdp_click import click_by_label
-import asyncio
-asyncio.run(click_by_label(pid=DYNAMIC_PID, cdp_port=DYNAMIC_PORT,
-    label='Weiter', role='button'))
-"
+### NEMO PRIMARY (REPLACEMENT)
+```python
+# Compact Snapshot → NIM Decision → Batch Execute
+from src.stealth_survey import SurveyAgent
+agent = SurveyAgent()
+result = agent.run_survey(session, profile)  # 1 LLM call per page!
 ```
 
 ---

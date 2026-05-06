@@ -43,7 +43,7 @@
 | Tool | Grund | File |
 |------|-------|------|
 | webauto-nodriver | ABSOLUT BANNED | [banned-webauto-nodriver.md](commands/banned-webauto-nodriver.md) |
-| skylight-cli | DEPRECATED | [banned-skylight-cli.md](commands/banned-skylight-cli.md) |
+| skylight-cli | RE-ACTIVATED (snapshot-compact + batch) | [banned-skylight-cli.md](commands/banned-skylight-cli.md) |
 | CDP Navigation | BANNED | [banned-cdp-commands.md](commands/banned-cdp-commands.md) |
 | pyautogui | BANNED | [banned-pyautogui.md](commands/banned-pyautogui.md) |
 | pynput | BANNED | [banned-pynput.md](commands/banned-pynput.md) |

@@ -52,7 +52,8 @@
 
 | Command | Grund | Ersatz |
 |---------|-------|--------|
-| `skylight-cli screenshot` | BANNED — CUA-ONLY Architektur | `cua-driver call get_window_state` |
+| `skylight-cli snapshot-compact` | ✅ ERLAUBT — NEMO PRIMARY | Compact @eN Snapshots |
+| `skylight-cli screenshot` (legacy) | BANNED | `skylight-cli snapshot-compact` |
 | `cdp --screenshot` | BANNED — CDP für Navigation verboten | `cua-driver call get_window_state` |
 | `webauto-nodriver observe_screen` | ABSOLUT BANNED | cua-driver |
 

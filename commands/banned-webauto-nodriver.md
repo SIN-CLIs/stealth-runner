@@ -5,8 +5,8 @@
 
 ## Warum BANNED?
 ```
-CDP + skylight-cli + webauto-nodriver sind ALLE BANNED.
-(AGENTS.md — CUA-ONLY Trinity Architektur)
+webauto-nodriver ist ABSOLUT BANNED. skylight-cli snapshot-compact + batch sind ERLAUBT.
+(AGENTS.md — NEMO Architektur)
 ```
 
 - Nutzt CDP WebSocket (Origin check blockiert Chrome)

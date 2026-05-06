@@ -1,12 +1,13 @@
-# brain.md – Systemwissen & Architektur-Entscheidungen (CUA-ONLY)
+# brain.md – Systemwissen & Architektur-Entscheidungen (NEMO PRIMARY)
 
 > **← [sinrules.md](sinrules.md) ist die zentrale Regeldatei. Alle Regeln sind DORT definiert.**
 > **← [issues.md](issues.md) dokumentiert aktuelle Issues.**
 > **← [registry.md](registry.md) ist der Master Command Index.**
 >
-> **CUA-ONLY AKTIV**: cua-driver für alle Browser-Interaktionen.
+> **NEMO PRIMARY AKTIV**: Compact Snapshot + NVIDIA NIM + Batch Execute.
 > - `webauto-nodriver` = ABSOLUT BANNED
-> - `skylight-cli` = DEPRECATED (nur macOS-Menü-Fallback)
+> - `skylight-cli` = RE-ACTIVATED (snapshot-compact + batch sind PRIMARY, click ist BANNED)
+> - `cua-driver` = DEPRECATED (Legacy-Fallback only)
 > - CDP = NUR für JS execute/evaluate, BANNED für Navigation/Klicks
 >
 > **Stealth Pipeline**: perceive → plan → guard → execute → critique
@@ -16,7 +17,7 @@
 
 ---
 
-## 🔥 CUA-ONLY STACK (2026-05-03)
+## 🔥 CUA-ONLY STACK — LEGACY (2026-05-03)
 
 ```
 CLICK LAYER (NUR CUA):
@@ -50,7 +51,7 @@ CRITICAL:
 
 ### Module Stack (CUA-ONLY)
 ```
-playstealth launch → isolierte Chrome-Instanz
+Manueller Chrome-Launch mit --force-renderer-accessibility + --remote-allow-origins=*
 cua-driver serve  → Daemon (nohup!)
 cua-driver call   → ALLE Interaktionen
 ```

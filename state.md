@@ -25,7 +25,7 @@
 ## Bekannte Issues
 
 - [ ] Survey-Disqualifikation wegen falschem Alter (gefixt)
-- [ ] CDP-Port nicht verfügbar (--remote-debugging-port=0)
+- [ ] CDP-Port nicht verfügbar (--remote-debugging-port=9999)
 - [ ] Graphify-Report benötigt Neubau
 
 **Letztes Update**: 2026-05-05

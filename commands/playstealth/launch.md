@@ -31,6 +31,25 @@ for line in r.stdout.strip().split("\n"):
         pass
 ```
 
+## ⚠️ WARNING: Missing Flags
+
+**playstealth launch does NOT set `--force-renderer-accessibility`!**
+Without this flag, cua-driver AX-Tree is EMPTY (0 children).
+
+**playstealth launch does NOT guarantee `--remote-allow-origins=*`!**
+Without this flag, CDP WebSocket connections get 403 Forbidden.
+
+**If AX-Tree is empty or CDP is blocked**, launch Chrome manually:
+```bash
+open -a "Google Chrome" --args \
+  --user-data-dir="/tmp/heypiggy-bot-XXXXX" \
+  --remote-debugging-port=9999 \
+  --remote-allow-origins=* \
+  --force-renderer-accessibility \
+  --no-first-run \
+  'URL'
+```
+
 ## Profile Pattern
 `/tmp/heypiggy-bot-XXXXXXXX` → BOT Chrome (NIEMALS USER Chrome killen!)
 

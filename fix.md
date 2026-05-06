@@ -2,7 +2,7 @@
 
 > **← [sinrules.md](sinrules.md) ist die zentrale Regeldatei. §2 definiert Banned-Patterns.**
 > **← [issues.md](issues.md) dokumentiert das Index-Problem.**
-> **← [brain.md](brain.md) dokumentiert die CDP+AX Trinity Lösung.**
+> **← [brain.md](brain.md) dokumentiert die NEMO Architektur.**
 
 ---
 
@@ -93,7 +93,7 @@ Der User: *"du hast ein icon in der browser leiste angeklickt statt weiter butto
 `skylight-cli list-elements` returned **flachen AX-Baum** mit Browser-Chrome + Web-Content.
 Der Index verschiebt sich während Page-Load.
 
-### Lösung: CDP+AX Trinity
+### Lösung: CDP+AX Trinity (LEGACY/DEPRECATED — 2026-05-03)
 **Fusioniert aus 3 Forschungsansätzen + 120+ analysierten Webseiten:**
 
 | Ansatz | Genutzt als |
@@ -105,8 +105,8 @@ Der Index verschiebt sich während Page-Load.
 | skylight-cli `find_by_label` | Fallback |
 | cua-driver `get_window_state` click | Popup-Fallback |
 
-### Implementierung
-**Modul**: `cli/modules/cdp_click.py` (NEU, geplant)
+### Implementierung (NEMO ersetzt dies)
+**Modul**: `cli/modules/cdp_click.py` (LEGACY/DEPRECATED — ersetzt durch [src/stealth_survey/](src/stealth_survey/))
 
 ```python
 async def click_by_label(pid, cdp_port, label, role):
@@ -138,7 +138,7 @@ async def click_by_label(pid, cdp_port, label, role):
   1. `passkey_popup.py`: cua-only → `cua.get_window_state(popup_wid)` → find "Fortfahren" → `cua.click`
   2. `consent_screen.py`: cua-only → kein skylight-Fallback mehr
   3. `ax_scan.py`: stderr capture, robust JSON parsing
-  4. `heypiggy_login.py`: 15× Retry mit 1.5s, _safe_click für FaceID-Timeout
+   4. `survey/google_login.py` (cua-driver PRIMARY, CDP FALLBACK): 15× Retry mit 1.5s, _safe_click für FaceID-Timeout
   5. `cua_popup.py`: "Passkey" zu title_patterns
 
 ## ✅ MACOS-AX-CLI `find` funktioniert, `windows list` crashed
@@ -194,6 +194,8 @@ async def click_by_label(pid, cdp_port, label, role):
 - **cua-touch MCP** — hat element_index Lookup
 
 ## ❌ CRITICAL: orchestrator.py importiert gelöschte Datei — 2026-05-05
+
+> **(2026-05-06: heypiggy_login_box.py replaced by survey/google_login.py)**
 
 ### Symptom
 `heypiggy_login_box.py` wurde gelöscht, ABER `orchestrator.py` (line 90) importiert noch daraus:
