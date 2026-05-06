@@ -875,3 +875,134 @@ run_loop(max_surveys=N):
 - Mock-Response OHNE `status:"success"` (→ CPX API check: `resp.get("status") == "success"`)
 - `answer_idx >= len(answer_keys)` ignorieren (→ braucht genug Test-Optionen)
 - `json.loads(MagicMock)` (→ MagicMock ist kein String/Bytes)
+
+
+---
+
+## §N — EHRLICHE BESTANDSAUFNAHME (2026-05-06) 🔴
+
+> **WICHTIG:** Diese Sektion dokumentiert WAS TATSÄCHLICH FUNKTIONIERT und WAS NICHT.
+> Keine Beschönigung. Das ist der unfilterte Zustand nach 6h Debugging + Crash-Test.
+
+---
+
+### §N1 — Was TATSÄCHLICH funktioniert (LIVE verifiziert)
+
+| Feature | Status | Beweis |
+|---------|--------|--------|
+| **Pre-Qualifier API Loop** | ✅ Funktioniert | 12/12 Surveys werden jetzt `handle_pre_qualifier()` aufgerufen. 8 CPX API Calls pro Survey. Max-Retries verhindert Endlosschleife. |
+| **message_button CPX POST** | ✅ Funktioniert | CPX API akzeptiert POST-Format (status=success). |
+| **Stealth Injection** | ✅ Funktioniert | `[STEALTH] ✅ Injected stealth JS into tab` im Live-Log. |
+| **CDPConnection Retry** | ✅ Funktioniert | 0 "No such target id" Errors während Crash-Test. |
+| **Balance Read Timing** | ✅ Funktioniert | `[BALANCE] Before survey: 2.23€` vor Tab-Erstellung. |
+| **Tab Cleanup** | ✅ Funktioniert | `[RUN] Cleaned 1 zombie tabs` — Zombie-Erkennung aktiv. |
+| **Anti-Stuck Detection** | ✅ Funktioniert | Survey 66557643: "Stuck: no progress (same state 5×)" nach 189s abgebrochen. |
+| **Unit Tests** | ✅ 282 passing | 52 neue Tests. 0 Regressionen. Mock-Infrastruktur stabil. |
+
+### §N2 — Was NICHT funktioniert (CRASH-TEST ERGEBNISSE)
+
+| Problem | Schwere | Details |
+|---------|---------|---------|
+| **Surveys verdienen 0€** | 🔴 KRITISCH | 1 Survey completed (36.3s, 3 iterations) aber **0.00€ verdient**. Balance 2.23€ unverändert seit Session-Start. **KEIN EINZIGER SURVEY HAT AUSGEZAHLT.** |
+| **CPX API lehnt ALLE Pre-Qualifier ab** | 🔴 KRITISCH | 12 Pre-Qualifier Surveys — KEINER hat `href` zurückgegeben. Alle 8 Retries exhausted mit `type:"question"`. CPX filtert unser Profil (32M, Berlin, angestellt) bei ALLEN Surveys aus. 96 API-Calls → 0 Erfolge. |
+| **Pre-Qualifier: Frage wiederholt sich** | 🟡 MITTEL | CPX API returned `status:"success"` + `type:"question"` mit DERSELBEN Frage. Kein Fortschritt. Nicht unser Bug (CPX Screening), aber verhindert Survey-Zugang. |
+| **Kein Survey-Payout nachweisbar** | 🟡 MITTEL | "completed" Status bedeutet nicht "bezahlt". Der eine completed Survey hatte 0€ Reward. Balance-Tracking korrekt (before=2.23, after=2.23), aber kein Delta weil kein Payout. |
+| **Purespectrum Survey steckt fest** | 🟡 MITTEL | Survey 66557643: Provider purespectrum, 6 iterations, Stuck-Detection hat nach 189s abgebrochen. Generischer Executor kann purespectrum nicht handlen. |
+
+### §N3 — Was NOCH FEHLT (TODO)
+
+| TODO | Prio | Begründung |
+|------|------|------------|
+| **Survey-Verdienst NACHWEISEN** | P0 | Solange kein Survey 0.01€+ auszahlt, ist das System BROKEN. Brauchen einen echten Survey-Durchlauf MIT Payout. |
+| **CPX Pre-Qualifier Screening verstehen** | P0 | Warum lehnt CPX ALLE Antworten ab? Profil zu spezifisch? Falsche Antwort-Strategie? Brauchen Reverse-Engineering des CPX Screeners. |
+| **Provider-Commands für Purespectrum** | P1 | Generischer Executor failed bei purespectrum. Brauchen spezifische Click-Patterns (wie qualtrics/tolunastart). |
+| **Auto-Rating testen** | P1 | `_rate_survey()` wurde nie LIVE getestet (immer gemocked in Tests). |
+| **Cash-Out Flow** | P2 | `_trigger_cash_out()` existiert aber ungetestet. |
+| **Mehr Surveys parallel** | P2 | Aktuell nur 1 Survey pro Loop. Watch-Mode läuft aber keine neuen Surveys. |
+| **E2E Integration Tests** | P2 | Kein Integration-Test der den GESAMTEN Flow (scan → pre-qualifier → survey → balance) durchläuft. Alles Unit-Tests mit Mocks. |
+
+### §N4 — Was die 282 Tests WIRKLICH testen
+
+| Getestet | Nicht getestet |
+|----------|----------------|
+| ✅ `handle_pre_qualifier()` API-Loop (mit Mock) | ❌ Echter CPX API Call mit erfolgreichem href |
+| ✅ `inject_stealth_to_tab()` sendet korrektes CDP | ❌ Ob Stealth tatsächlich Detection verhindert |
+| ✅ `CDPConnection.call()` retry/reconnect (mit Mock) | ❌ Echter "No such target" mit Reconnect |
+| ✅ `balance_before` wird VOR tab creation gelesen | ❌ Ob Balance NACH echtem Survey-Payout steigt |
+| ✅ `BatchExecutor` action execution (mit Mock) | ❌ Echte Survey-Seite mit JS-Interaktion |
+| ✅ `detect_completion()` page analysis | ❌ Completion-Erkennung auf LIVE Survey-Seiten |
+| ✅ Provider-Commands (qualtrics, tolunastart) | ❌ Purespectrum, Cint, Brand-Ambassador LIVE |
+| ✅ Zombie-Tab Cleanup | ❌ Stress-Test mit 20+ offenen Tabs |
+
+**Fazit:** Die Unit-Tests sind SOTA (282 Stück, 0 Regressionen, saubere Mock-Infrastruktur).
+Aber der **End-to-End-Flow wurde NIE erfolgreich mit Payout getestet.**
+Survey 66883950: completed, 0€. Survey 66557643: stuck, 0€. Balance: 2.23€ (unverändert).
+
+### §N5 — Die Wahrheit in einem Satz
+
+> **Die 4 Fixes sind korrekt implementiert und crash-getestet, aber das System hat noch keinen einzigen bezahlten Survey erfolgreich abgewickelt.**
+
+
+---
+
+## §O — SOTA TEST COVERAGE AUDIT (2026-05-06) 🔍
+
+> **Subagent-gestützter Audit aller 27 Source-Dateien vs. 282 Tests.**
+
+### Gesamtbilanz
+
+| Metrik | Wert |
+|--------|------|
+| Source-Dateien | 27 (~7,400 Zeilen) |
+| Test-Dateien | 9 (282 Tests, ~3,300 Zeilen) |
+| **Dateien mit 0 Tests** | **19/27 (70%)** |
+| **Dateien mit guter Coverage** | 4 (cdp_client, autodoc, snapshot-detection, execute-basics) |
+| **Ungetestete Produktions-Code-Zeilen** | **~4,800/7,400 (65%)** |
+
+### TOP 10 Kritischste Lücken
+
+| # | Datei | Was fehlt | Zeilen | Risiko |
+|---|-------|-----------|--------|--------|
+| **1** | `runner.py` | `run_survey()` NEMO Loop (Circuit Breaker, Loop Detection, Anti-Stuck) | ~450 | 🔴 P0 |
+| **2** | `nim.py` | `NIMClient.decide()` + `parse_response()` — gesamte AI-Pipeline | ~180 | 🔴 P0 |
+| **3** | `google_login.py` | Kompletter Login-Flow (cua-driver, OAuth, Passkey) | ~530 | 🔴 P0 |
+| **4** | `execute.py` | `_cdp_click_button()` — Angular/React Mouse-Dispatch | ~200 | 🔴 P0 |
+| **5** | `runner.py` | `_handle_pre_qualifier_browser()` — Browser Pre-Qualifier | ~100 | 🟡 P1 |
+| **6** | `agents/task_router.py` | Model-Routing + Escalation | ~400 | 🟡 P1 |
+| **7** | `providers/purespectrum.py` | Captcha-OCR + Angular native setter | ~310 | 🟡 P1 |
+| **8** | `execute.py` | CDP Click-Methoden (element, role_button, generic) | ~200 | 🟡 P1 |
+| **9** | `survey.py` | Alle 12 CLI-Subcommands | ~590 | 🟡 P1 |
+| **10** | `runner.py` | `run_loop()` Komplett-Flow | ~80 | 🟢 P2 |
+
+### Was die Tests WIRKLICH testen vs. was sie NICHT testen
+
+| Kategorie | GETESTET | UNGETESTET |
+|-----------|----------|------------|
+| **API-Layer** | ✅ Mock-basierte CDP-Calls | ❌ Echte CDP-Verbindungen |
+| **Parsing** | ✅ JSON-Response-Parsing | ❌ Malformed/Truncated Responses |
+| **Retry** | ✅ CDPConnection Retry-Logik | ❌ Live "No such target" mit Reconnect |
+| **State** | ✅ SurveyResult defaults | ❌ State-Machine (completed→screen_out→error→blocked) |
+| **Boundary** | ✅ Backoff-Formel | ❌ max_iterations=0, max_retries=0, leere Actions |
+| **Error** | ✅ Grundlegende Exceptions | ❌ 15+ try/except-Blöcke in runner.py + execute.py |
+| **Cleanup** | ❌ | ❌ ws.close() nach Crash, Tab-Cleanup, Prozess-Kill |
+| **Concurrency** | ❌ | ❌ ThreadPool, parallele CDP-Calls, File-Append |
+
+### SOTA-Lücken im Detail
+
+**Edge Cases (nie getestet):**
+- `_build_js()` mit `@exyz` (non-numeric suffix) → `int("xyz")` → **ValueError Crash**
+- `_load_profile()` mit korruptem JSON → stummer Fallback auf Defaults
+- `parse_response()` mit leerem API-Response → Return-Type unklar
+
+**Error Paths (nie getestet):**
+- 15+ try/except Blöcke in `runner.py` `run_survey()` — kein einziger Exception-Pfad getestet
+- `_cdp_click_button()` 5 nested try/except — alle ungetestet
+- `_handle_pre_qualifier_browser()` Exception bei clickSurvey → `{"aborted": True}` — ungetestet
+
+**Boundary Conditions:**
+- `max_iterations=0` → Endlosschleife?
+- `max_retries=0` → sofortiger Abbruch?
+- Leere `actions=[]` → `BatchResult` mit 0 success/0 fail?
+
+**Mock-Isolation:**
+- `cdp_keyboard_enter = lambda url: False` als Module-Level Monkey-Patch → wenn Test crashed, bleibt Patch für ALLE folgenden Tests aktiv. **State-Leakage-Risiko.**
