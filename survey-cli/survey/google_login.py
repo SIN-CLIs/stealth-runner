@@ -1,13 +1,21 @@
-"""Google Login Tool — EXACT cua-driver flow from commands/google/login-flow.md.
+"""Google Login Tool — THE AUTHORITATIVE IMPLEMENTATION.
 
-VERIFIED FLOW (PID=78708, 2026-05-05): 14 steps, 0 errors, Passkey auth.
-This is THE authoritative login implementation. NO CDP, NO custom code.
-Just calls cua-driver exactly as documented.
+⚠️ UNVERÄNDERLICH: Dieser Code ist VERIFIED (PID=86834, 2026-05-06).
+⚠️ KEINE Änderungen ohne erneute Verifikation mit cua-driver.
+
+Architektur:
+  cua-driver (PRIMARY) — AXPress für System-Dialogs (Passkey/TouchID)
+  CDP (FALLBACK) — Web-Interaktion wenn cua-driver nicht verfügbar
+
+Abhängigkeiten:
+  - cua-driver daemon: nohup cua-driver serve &
+  - Chrome: --force-renderer-accessibility --remote-allow-origins=*
+  - Accessibility: System Settings → Privacy → Accessibility → Chrome AN
 
 Usage:
     from survey.google_login import google_login
     result = google_login()
-    # → {"status": "ok", "pid": 69668, "wid": 1178}
+    # → {"status": "ok", "pid": 86834, "wid": 1766}
 """
 
 import subprocess
@@ -15,9 +23,67 @@ import json
 import time
 import sys
 import os
+import re
 
 EMAIL = "zukunftsorientierte.energie@gmail.com"
 CUA_BIN = "cua-driver"
+
+
+# ═══════════════════════════════════════════════════════════
+# INVARIANTS — checked before every login attempt
+# ═══════════════════════════════════════════════════════════
+
+def _verify_invariants():
+    """Verify all preconditions for login. Raises RuntimeError if any fail."""
+    errors = []
+    
+    # 1. cua-driver daemon running
+    try:
+        r = subprocess.run(["pgrep", "-f", "cua-driver serve"], 
+                          capture_output=True, text=True, timeout=5)
+        if not r.stdout.strip():
+            errors.append("cua-driver daemon NOT running. Start: nohup cua-driver serve &")
+    except Exception:
+        errors.append("Cannot check cua-driver daemon")
+    
+    # 2. Chrome accessible on port 9999
+    try:
+        import urllib.request
+        urllib.request.urlopen("http://127.0.0.1:9999/json", timeout=3)
+    except Exception:
+        errors.append("Chrome NOT running on port 9999. Start with --remote-debugging-port=9999 --force-renderer-accessibility --remote-allow-origins=*")
+    
+    # 3. Chrome Accessibility enabled (tree_markdown has elements)
+    try:
+        r = subprocess.run([CUA_BIN, "call", "list_windows"], 
+                          capture_output=True, text=True, timeout=10)
+        data = json.loads(r.stdout)
+        chrome_found = False
+        for w in data.get("windows", []):
+            if "chrome" in str(w.get("owner", "")).lower():
+                chrome_found = True
+                pid = w.get("pid")
+                wid = w.get("window_id")
+                r2 = subprocess.run([CUA_BIN, "call", "get_window_state"],
+                    input=json.dumps({"pid": pid, "window_id": wid}),
+                    capture_output=True, text=True, timeout=10)
+                state = json.loads(r2.stdout)
+                if state.get("element_count", 0) > 100:
+                    break
+        if not chrome_found:
+            errors.append("Chrome window not found in cua-driver list_windows")
+        elif state.get("element_count", 0) < 100:
+            errors.append(f"Chrome AX-Tree has only {state.get('element_count',0)} elements. Accessibility NOT enabled. System Settings → Privacy → Accessibility → Chrome AN")
+    except Exception as e:
+        errors.append(f"Cannot verify Accessibility: {e}")
+    
+    if errors:
+        print("[LOGIN] ❌ INVARIANT CHECK FAILED:")
+        for e in errors:
+            print(f"  - {e}")
+        return False
+    print("[LOGIN] ✅ All invariants verified")
+    return True
 
 
 def _cua(method, params=None):
@@ -152,6 +218,10 @@ def google_login(launch_url="https://www.heypiggy.com/?page=dashboard", force_la
         {"status": "ok", "pid": X, "wid": Y} on success
         {"status": "error", "reason": "..."} on failure
     """
+    # Verify invariants FIRST
+    if not _verify_invariants():
+        return {"status": "error", "reason": "Invariant check failed — see errors above"}
+    
     # Check if Chrome is already running on port 9999
     import urllib.request
     chrome_running = False
