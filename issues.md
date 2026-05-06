@@ -1,204 +1,148 @@
 # Issues — Stealth Runner
 
-> Alle Issues sind in `issues/ISSUE-SR-*.md`.
+> Alle Issues sind in `issues/ISSUE-SR-*.md`.  
+> Pläne sind in `plan-sr-XX-*.md`.
+
+---
+
+## 📊 Übersicht
+
+| Status | Count |
+|--------|-------|
+| ✅ Completed | 17 (SR-11 bis SR-27) |
+| 📋 Active | 9 (SR-28 bis SR-36) |
+| 🚧 Blocked | 1 (PureSpectrum CAPTCHA) |
+
+---
+
+## 📋 AKTIV — Offene Coding-Aufgaben
+
+| Issue | Priority | Status | Titel | Plan |
+|-------|----------|--------|-------|------|
+| [SR-28](issues/ISSUE-SR-28.md) | 🔴 P0 | 📋 TODO | **CDP Survey Module** — cua-driver → CDP WebSocket Rewrite | [plan-sr-28](plan-sr-28-cdp-survey-module.md) |
+| [SR-29](issues/ISSUE-SR-29.md) | 🔴 P0 | 🚧 BLOCKED | **PureSpectrum CAPTCHA OCR Solver** | [plan-sr-29](plan-sr-29-ps-captcha-ocr.md) |
+| [SR-30](issues/ISSUE-SR-30.md) | 🔴 P0 | 📋 TODO | **Dashboard Poller + Auto-Loop** | [plan-sr-30](plan-sr-30-dashboard-poller.md) |
+| [SR-31](issues/ISSUE-SR-31.md) | 🟠 P1 | 📋 TODO | **Flow Compiler FCTES — Production Promotion** | [plan-sr-31](plan-sr-31-fctes-promotion.md) |
+| [SR-32](issues/ISSUE-SR-32.md) | 🟠 P1 | 📋 TODO | **Provider Auto-Detect Engine** | [plan-sr-32](plan-sr-32-provider-detect.md) |
+| [SR-33](issues/ISSUE-SR-33.md) | 🟠 P1 | 📋 TODO | **Persona System** — Dynamic Profile statt Hardcode | [plan-sr-33](plan-sr-33-persona-system.md) |
+| [SR-34](issues/ISSUE-SR-34.md) | 🟡 P2 | 📋 TODO | **Survey Flow Test Suite** | [plan-sr-34](plan-sr-34-test-suite.md) |
+| [SR-35](issues/ISSUE-SR-35.md) | 🟡 P2 | 📋 TODO | **Chrome Lease Manager + Safety** | [plan-sr-35](plan-sr-35-chrome-safety.md) |
+| [SR-36](issues/ISSUE-SR-36.md) | 🟢 P3 | 📋 TODO | **Generated Docs De-Duplication** | [plan-sr-36](plan-sr-36-docs-cleanup.md) |
+
+### Priority Map
+
+```
+P0 (BLOCKER — kein Einkommen ohne):
+  SR-28  CDP Survey Module        ← JEDER Survey braucht das
+  SR-29  PureSpectrum OCR          ← 12 Survey-IDs blockiert
+  SR-30  Dashboard Poller          ← Automatischer Loop
+
+P1 (Enabler — macht alles schneller):
+  SR-31  FCTES Promotion           ← 10× → frozen → 1-Click
+  SR-32  Provider Detect           ← URL → Pattern auto
+  SR-33  Persona System            ← Keine Disqualifikation mehr
+
+P2 (Qualität):
+  SR-34  Test Suite                ← Stabilität
+  SR-35  Chrome Safety             ← User-Chrome-Schutz
+
+P3 (Nice-to-have):
+  SR-36  Docs Cleanup              ← 470+ Dateien aufräumen
+```
+
+### Sub-Issues pro Issue
+
+| Issue | Sub-Count | Sub-Issues |
+|-------|-----------|------------|
+| SR-28 | 5 | CDP Client, Provider Registry, Answer Engine, Full Runner, Demographics |
+| SR-29 | 4 | Image Extraction, OCR Selection, Auto-Submit, Integration |
+| SR-30 | 5 | ID Extractor, API Filter, Provider Router, Auto-Loop, Balance Tracker |
+| SR-31 | 5 | Flow Definition, Tracker Repair, Compiler Hardening, Signature, opencode.json |
+| SR-32 | 4 | URL Detection, DOM Fallback, Pre-Qualifier, Provider Stats |
+| SR-33 | 4 | Profile File, Age Calculator, Question Matcher, Integration |
+| SR-34 | 5 | Provider Detect Tests, Answer Pattern Tests, Persona Tests, Mock Server, E2E |
+| SR-35 | 4 | KillGuard, Lease System, PID Registry, Auto-Recovery |
+| SR-36 | 4 | Inventar, Quality Scoring, De-Duplication, Cleanup Script |
+
+---
+
+## ✅ COMPLETED — Abgeschlossene Issues
 
 | Issue | Status | Priority | Titel |
 |-------|--------|----------|-------|
-| [SR-11](issues/ISSUE-SR-11.md) | ✅ COMPLETED | 🔴 Critical | CI/CD — GitHub Actions, Pre-Commit, Auto-Release |
-| [SR-12](issues/ISSUE-SR-12.md) | ✅ COMPLETED | 🔴 Critical | Test Suite — Unit, Integration, E2E |
-| [SR-13](issues/ISSUE-SR-13.md) | ✅ COMPLETED | 🟠 High | Survey Provider Adapter — Samplicio.us, Cint, Nfield |
-| [SR-14](issues/ISSUE-SR-14.md) | ✅ COMPLETED | 🟠 High | Audio Capture Module — BlackHole + ffmpeg + Omni |
-| [SR-15](issues/ISSUE-SR-15.md) | ✅ COMPLETED | 🟡 Medium | Captcha Solving — Simple, GeeTest v4, Lemin Puzzle |
-| [SR-16](issues/ISSUE-SR-16.md) | ✅ COMPLETED | 🟡 Medium | Error Recovery — Disqualification, Modal Error, Timeout |
-| [SR-17](issues/ISSUE-SR-17.md) | ✅ COMPLETED | 🔴 Critical | CUA-ONLY Migration — skylight-cli → cua-driver |
-| [SR-18](issues/ISSUE-SR-18.md) | ✅ COMPLETED | 🔴 Critical | stealth-session — Warm Daemon für <50ms Command Execution |
-| [SR-19](issues/ISSUE-SR-19.md) | ✅ COMPLETED | 🔴 Critical | stealth-axiom — 3-Tier Hierarchical Model Router |
-| [SR-20](issues/ISSUE-SR-20.md) | ✅ COMPLETED | 🔴 Critical | RecursiveMAS — RecursiveLink + Survey MAS Pipeline |
-| [SR-21](issues/ISSUE-SR-21.md) | ✅ COMPLETED | 🔴 Critical | stealth-sota — Chaos/Security/Healing/Observability/Determinism |
-| [SR-22](issues/ISSUE-SR-22.md) | ✅ COMPLETED | 🔴 Critical | stealth-core + stealth-dynamic — Basis-Klassen + Dynamische Engine |
-| [SR-23](issues/ISSUE-SR-23.md) | ✅ COMPLETED | 🔴 Critical | stealth-memory — Ewiges Gedächtnis (opencode.db Poller) |
-| [SR-24](issues/ISSUE-SR-24.md) | ✅ COMPLETED | 🔴 Critical | **E2E Test: GoCaptcha Slide mit echtem Browser** |
-| [SR-25](issues/ISSUE-SR-25.md) | ✅ COMPLETED | 🟠 High | **README.md + CLI Dokumentation für @stealth/captcha** |
-| [SR-26](issues/ISSUE-SR-26.md) | ✅ COMPLETED | 🟠 High | **Unit Tests: CDP Client + HitTester + Memory** |
-| [SR-27](issues/ISSUE-SR-27.md) | ✅ COMPLETED | 🟡 Medium | **stealth-suite: Incident Resolution + Monitoring** |
+| [SR-11](issues/ISSUE-SR-11.md) | ✅ | 🔴 | CI/CD — GitHub Actions, Pre-Commit, Auto-Release |
+| [SR-12](issues/ISSUE-SR-12.md) | ✅ | 🔴 | Test Suite — Unit, Integration, E2E |
+| [SR-13](issues/ISSUE-SR-13.md) | ✅ | 🟠 | Survey Provider Adapter — Samplicio.us, Cint, Nfield |
+| [SR-14](issues/ISSUE-SR-14.md) | ✅ | 🟠 | Audio Capture Module — BlackHole + ffmpeg + Omni |
+| [SR-15](issues/ISSUE-SR-15.md) | ✅ | 🟡 | Captcha Solving — Simple, GeeTest v4, Lemin Puzzle |
+| [SR-16](issues/ISSUE-SR-16.md) | ✅ | 🟡 | Error Recovery — Disqualification, Modal Error, Timeout |
+| [SR-17](issues/ISSUE-SR-17.md) | ✅ | 🔴 | CUA-ONLY Migration — skylight-cli → cua-driver |
+| [SR-18](issues/ISSUE-SR-18.md) | ✅ | 🔴 | stealth-session — Warm Daemon for <50ms Command Execution |
+| [SR-19](issues/ISSUE-SR-19.md) | ✅ | 🔴 | stealth-axiom — 3-Tier Hierarchical Model Router |
+| [SR-20](issues/ISSUE-SR-20.md) | ✅ | 🔴 | RecursiveMAS — RecursiveLink + Survey MAS Pipeline |
+| [SR-21](issues/ISSUE-SR-21.md) | ✅ | 🔴 | stealth-sota — Chaos/Security/Healing/Observability/Determinism |
+| [SR-22](issues/ISSUE-SR-22.md) | ✅ | 🔴 | stealth-core + stealth-dynamic — Basis-Klassen + Dynamic Engine |
+| [SR-23](issues/ISSUE-SR-23.md) | ✅ | 🔴 | stealth-memory — Eternal Memory (opencode.db Poller) |
+| [SR-24](issues/ISSUE-SR-24.md) | ✅ | 🔴 | E2E Test: GoCaptcha Slide with Real Browser |
+| [SR-25](issues/ISSUE-SR-25.md) | ✅ | 🟠 | README.md + CLI Documentation for @stealth/captcha |
+| [SR-26](issues/ISSUE-SR-26.md) | ✅ | 🟠 | Unit Tests: CDP Client + HitTester + Memory |
+| [SR-27](issues/ISSUE-SR-27.md) | ✅ | 🟡 | stealth-suite: Incident Resolution + Monitoring |
 
 ---
 
-## 🔴 NEW — Qualtrics HUK Coburg Survey (2026-05-06)
+## 🏭 SURVEY FINDINGS (2026-05-06)
 
-| Feld | Wert |
-|------|------|
-| Status | ✅ COMPLETED + DOCUMENTED |
-| Priority | 🟠 High |
-| Payout | **+0.38€** (highest single survey so far!) |
-| Gefunden | 2026-05-06 |
+### Qualtrics HUK Coburg (+0.38€)
+- **File**: `commands/surveys/qualtrics-huk-survey.md`
+- **Pattern**: `.NextButton` + `input[type=radio]` global indices + `table.ChoiceStructure` matrix
+- **Flow**: 21 pages, insurance brand perception study
+- **Balance impact**: 1.77€ → 2.15€
 
-### Discovery
-Qualtrics surveys (`eu.qualtrics.com/jfe/form/`) are a DIFFERENT platform from TolunaStart.
-They use:
-- `.NextButton` for page advancement
-- `input[type=radio]` with global indices
-- `input[type=checkbox]` for multi choice
-- `textarea.InputText` for text input with Event dispatch
-- `table.ChoiceStructure` for matrix tables (rows × columns)
-- Webpack SPA — requires 3-5s wait for render
+### TolunaStart (+0.09€, 92%)
+- **File**: `commands/tolunastart-survey.md`
+- **Pattern**: JS `.click()` on `.cf-radio`/`.cf-checkbox` (NOT MouseEvent!)
+- **Remaining**: Demographics section (8%)
 
-### Flow (21 pages)
+### Strat7 Audiences (+0.03-0.09€)
+- **File**: `commands/strat7-survey.md`
+- **Pattern**: `.bsbutton` grid + consent flow
+
+### Brand Ambassador (+0.02€)
+- **File**: `commands/brand-ambassador-survey.md`
+- **Pattern**: Attention checks with hidden inputs
+
+### Insights-Today (Screen-out)
+- **File**: `commands/insights-today-survey.md`
+- **Pattern**: `<select>` for age, LABEL click for income
+- **Issue**: Universitätsabschluss → screen-out. Try Abitur.
+
+### PureSpectrum (BLOCKED — CAPTCHA)
+- **File**: `commands/purespectrum-survey.md`
+- **Issue**: Base64 PNG text CAPTCHA blocks all 12 current survey IDs
+- **Blocked by**: Need OCR solver (SR-29)
+
+### Survey Routing
 ```
-Welcome → Gender → Age → Contracts → Insurance Products →
-Insurance Companies → Assign to Company → Target Confirmation →
-NPS (0-10) → NPS Reason → Info Sources → Brand Matrix (8×5) →
-Self/Agent → Price/Service → Family Status → Household Size →
-State → Employment → Education → HH Income → Personal Income
-```
-
-### File
-- `/commands/surveys/qualtrics-huk-survey.md` → NEW ✅
-
----
-
-## 🔴 CRITICAL — SURVEY RATING MANDATORY — 2026-05-06
-
-| Feld | Wert |
-|------|------|
-| Status | ✅ DOCUMENTED + VERIFIED |
-| Priority | 🔴 Critical |
-| Gefunden | 2026-05-06 |
-
-### Problem
-Every heypiggy/CPX survey ends with a rating page. Without rating, you lose the **+0.01€ bonus**.
-
-### Solution
-```python
-# After survey completion, find the rating tab
-for p in pages:
-    if 'rating.php' in p.get('url',''):
-        ws_url = p.get('webSocketDebuggerUrl')
-        break
-
-# Click the rating button
-ws.send(json.dumps({'id': 0, 'method': 'Runtime.evaluate', 'params': {'expression': 'document.querySelector("button").click()'}}))
-```
-
-### Betroffene Files
-- `/commands/heypiggy/rating-page.md` → NEW ✅
-- `/commands/quick-reference.md` → UPDATED ✅
-- `/sessions/2026-05-06.md` → UPDATED ✅
-
-### Flow
-```
-Survey completes → "Diese Umfrage bewerten" link → rating.php → +0.01€ → "Zurück zur Website"
+heypiggy → CPX API → click.cpx-research.com →
+  → eu.qualtrics.com          ✅ +0.38€
+  → tolunastart.com           ✅ +0.09€
+  → strat7audiences.com       ✅ +0.03-0.09€
+  → brand-ambassador.com      ✅ +0.02€
+  → insights-today.com        ❌ Screen-out
+  → purespectrum.com          ❌ CAPTCHA (12 IDs)
+  → surveyrouter.com          ❌ Hangs
+  → surveys.com (GfK)         ❌ Cookie wall
 ```
 
 ---
 
-## 🟠 HIGH — TolunaStart JS .click() Pattern — 2026-05-06
+## 🚨 PERSISTENT ISSUES (nicht in SR-Nummern)
 
-| Feld | Wert |
-|------|------|
-| Status | ✅ VERIFIED |
-| Priority | 🟠 High |
-| Gefunden | 2026-05-06 |
-
-### Discovery
-For `survey.tolunastart.com`, CDP MouseEvent on .cf-radio/.cf-checkbox **FAILS**.
-JS `.click()` on these elements **ALWAYS WORKS**.
-
-### Solution
-```python
-# RADIO (single select)
-ws.send(json.dumps({'id': 0, 'method': 'Runtime.evaluate', 'params': {'expression': '(function(){var rs=document.querySelectorAll(".cf-radio");rs[INDEX].click();})()'}}))
-
-# CHECKBOX (multi select)
-ws.send(json.dumps({'id': 0, 'method': 'Runtime.evaluate', 'params': {'expression': '(function(){var cbs=document.querySelectorAll(".cf-checkbox");[0,2,3].forEach(function(i){cbs[i].click();});})()'}}))
-
-# BUTTON
-document.querySelector("button").click()
-
-# INPUT
-i.value = "32"; i.dispatchEvent(new Event("input", {bubbles:true}))
-```
-
-### Betroffene Files
-- `/commands/tolunastart-survey.md` → NEW ✅ (37 steps documented)
-- `/commands/quick-reference.md` → UPDATED ✅
-
----
-
-## 🟠 HIGH — Insights-Today SELECT + LABEL Pattern — 2026-05-06
-
-| Feld | Wert |
-|------|------|
-| Status | ⚠️ SCREEN-OUT at education |
-| Priority | 🟠 High |
-| Gefunden | 2026-05-06 |
-
-### Discovery
-Insights-Today uses:
-1. `<select>` for age (not radio buttons)
-2. Labels for income radio groups (MouseEvent on LABEL needed)
-3. Screen-out at "Universitätsabschluss" education
-
-### Solution
-```python
-# Age: SELECT dropdown
-sel = document.querySelector("select");
-sel.value = "32";
-sel.dispatchEvent(new Event("change", {bubbles: true}));
-
-# Income: MouseEvent on LABEL containing "30.000"
-for label in labels:
-    if "30.000" in label.textContent:
-        # MouseEvent click on label
-
-# Education: Try Abitur instead of Universitätsabschluss
-rs = document.querySelectorAll("input[name=education]");
-rs[3].click();  # Abitur instead of rs[6] (Universität)
-```
-
-### Betroffene Files
-- `/commands/insights-today-survey.md` → NEW ✅
-
----
-
-## 🔴 CRITICAL — orchestrator.py importiert gelöschte Datei — 2026-05-05
-
-| Feld | Wert |
-|------|------|
-| Status | ✅ FIXED |
-| Priority | 🔴 Critical |
-| Gefunden | 2026-05-05 |
-| Gefixt | 2026-05-05 |
-
-### Problem
-`heypiggy_login_box.py` gelöscht aber `orchestrator.py` (line 90) importiert noch davon.
-
-### Fix
-`orchestrator.py` → `from cli.modules.auto_google_login import execute as auto_google_login`
-
-### Betroffene Files
-- `/Users/jeremy/dev/stealth-runner/app/core/orchestrator.py` → FIXED ✅
-- `/Users/jeremy/dev/stealth-runner/AGENTS.md` → FIXED ✅
-
----
-
-## Open Issues Summary
-
-| # | Titel | Status | Nächste Aktion |
-|---|-------|--------|----------------|
-| — | **PureSpectrum CAPTCHA** | ❌ BLOCKED | Solve base64 PNG OCR for 12 survey IDs |
-| — | **Surveyrouter** | ❌ HANGS | Page never loads content |
-| — | **Insights-Today retry** | ⚠️ PENDING | Try Abitur education level |
-| SR-27 | stealth-suite: Incident Resolution & Monitoring | ✅ COMPLETED | 5 Incident-Files deployed |
-
----
-
-## Neue dokumentierte Provider (2026-05-06)
-
-| Provider | Survey | Ergebnis | Dokumentation |
-|----------|--------|----------|----------------|
-| **Qualtrics (HUK)** | 66844385 | ✅ **+0.38€** COMPLETED | `surveys/qualtrics-huk-survey.md` |
-| TolunaStart | 66583827 | ✅ +0.09€ (92% complete) | `tolunastart-survey.md` |
-| Insights-Today | 66291306 | ❌ Screen-out | `insights-today-survey.md` |
-| CPX Rating | (post-survey) | ✅ +0.01€ bonus | `heypiggy/rating-page.md` |
-| **PureSpectrum** | 66845098 + more | ❌ CAPTCHA blocked | `purespectrum-survey.md` |
+| # | Titel | Status | Fix |
+|---|-------|--------|-----|
+| 1 | **PureSpectrum CAPTCHA** | 🚧 BLOCKED | SR-29 — OCR Solver |
+| 2 | **Surveyrouter** | ❌ HANGS | Tab schließen, nächsten Survey |
+| 3 | **CPX URL Single-Use** | ⚠️ BEKANNT | Immer neuen API-Call machen |
+| 4 | **Balance-Desync** | ⚠️ BEKANNT | Dashboard-Reload nach jedem Survey |
+| 5 | **Insights-Today Education** | ⚠️ PENDING | Abitur statt Universität (SR-33) |
+| 6 | **orchestrator.py Import** | ✅ FIXED | `auto_google_login` statt `heypiggy_login_box` |
