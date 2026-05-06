@@ -153,7 +153,7 @@
       "source_file": "app/config.py",
       "source_location": "L1",
       "id": "app_config_py",
-      "community": 30,
+      "community": 32,
       "norm_label": "config.py"
     },
     {
@@ -549,7 +549,7 @@
       "source_file": "app/core/__init__.py",
       "source_location": "L1",
       "id": "app_core_init_py",
-      "community": 31,
+      "community": 33,
       "norm_label": "__init__.py"
     },
     {
@@ -738,7 +738,7 @@
       "source_file": "app/core/executor.py",
       "source_location": "L1",
       "id": "app_core_executor_py",
-      "community": 23,
+      "community": 25,
       "norm_label": "executor.py"
     },
     {
@@ -747,7 +747,7 @@
       "source_file": "app/core/executor.py",
       "source_location": "L4",
       "id": "core_executor_run",
-      "community": 23,
+      "community": 25,
       "norm_label": "run()"
     },
     {
@@ -945,7 +945,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/config.py",
       "source_location": "L95",
       "id": "stealth_captcha_config_chromesettings",
-      "community": 2,
+      "community": 5,
       "norm_label": "chromesettings"
     },
     {
@@ -954,7 +954,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/config.py",
       "source_location": "L105",
       "id": "stealth_captcha_config_settings",
-      "community": 4,
+      "community": 2,
       "norm_label": "settings"
     },
     {
@@ -963,7 +963,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/config.py",
       "source_location": "L127",
       "id": "stealth_captcha_config_get_settings",
-      "community": 2,
+      "community": 5,
       "norm_label": "get_settings()"
     },
     {
@@ -1025,7 +1025,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/config.py",
       "source_location": "L96",
-      "community": 2,
+      "community": 5,
       "norm_label": "chrome launch flags (only used when stealthbrowser launches chrome).",
       "id": "stealth_captcha_config_rationale_96"
     },
@@ -1034,7 +1034,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/config.py",
       "source_location": "L106",
-      "community": 4,
+      "community": 2,
       "norm_label": "root settings \u2014 nested via pydantic.",
       "id": "stealth_captcha_config_rationale_106"
     },
@@ -1043,7 +1043,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/config.py",
       "source_location": "L128",
-      "community": 2,
+      "community": 5,
       "norm_label": "return a singleton settings, loaded once from env.",
       "id": "stealth_captcha_config_rationale_128"
     },
@@ -1269,7 +1269,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/__init__.py",
       "source_location": "L1",
       "id": "stealth_captcha_src_stealth_captcha_init_py",
-      "community": 4,
+      "community": 2,
       "norm_label": "__init__.py"
     },
     {
@@ -1277,7 +1277,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/__init__.py",
       "source_location": "L1",
-      "community": 4,
+      "community": 2,
       "norm_label": "stealth captcha \u2014 production-grade cdp-based captcha solver for stealth suite.",
       "id": "stealth_captcha_init_rationale_1"
     },
@@ -1287,7 +1287,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cli.py",
       "source_location": "L1",
       "id": "stealth_captcha_src_stealth_captcha_cli_py",
-      "community": 2,
+      "community": 5,
       "norm_label": "cli.py"
     },
     {
@@ -1296,7 +1296,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cli.py",
       "source_location": "L38",
       "id": "stealth_captcha_cli_main",
-      "community": 2,
+      "community": 5,
       "norm_label": "main()"
     },
     {
@@ -1305,7 +1305,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cli.py",
       "source_location": "L49",
       "id": "stealth_captcha_cli_solve_slide",
-      "community": 2,
+      "community": 5,
       "norm_label": "solve_slide()"
     },
     {
@@ -1314,7 +1314,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cli.py",
       "source_location": "L61",
       "id": "stealth_captcha_cli_solve_slide_async",
-      "community": 2,
+      "community": 5,
       "norm_label": "_solve_slide_async()"
     },
     {
@@ -1323,7 +1323,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cli.py",
       "source_location": "L84",
       "id": "stealth_captcha_cli_run_solver",
-      "community": 2,
+      "community": 5,
       "norm_label": "_run_solver()"
     },
     {
@@ -1332,7 +1332,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cli.py",
       "source_location": "L139",
       "id": "stealth_captcha_cli_targets",
-      "community": 2,
+      "community": 5,
       "norm_label": "targets()"
     },
     {
@@ -1341,7 +1341,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cli.py",
       "source_location": "L151",
       "id": "stealth_captcha_cli_memory_stats",
-      "community": 2,
+      "community": 5,
       "norm_label": "memory_stats()"
     },
     {
@@ -1350,7 +1350,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cli.py",
       "source_location": "L172",
       "id": "stealth_captcha_cli_memory_clear",
-      "community": 2,
+      "community": 5,
       "norm_label": "memory_clear()"
     },
     {
@@ -1358,7 +1358,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cli.py",
       "source_location": "L1",
-      "community": 2,
+      "community": 5,
       "norm_label": "click-based cli for the stealth-captcha solver.  allows launching chrome, connec",
       "id": "stealth_captcha_cli_rationale_1"
     },
@@ -1367,7 +1367,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cli.py",
       "source_location": "L39",
-      "community": 2,
+      "community": 5,
       "norm_label": "stealth captcha cli \u2014 cdp-based captcha solver for stealth suite.",
       "id": "stealth_captcha_cli_rationale_39"
     },
@@ -1376,7 +1376,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cli.py",
       "source_location": "L55",
-      "community": 2,
+      "community": 5,
       "norm_label": "solve a gocaptcha / netease / geetest slide captcha.",
       "id": "stealth_captcha_cli_rationale_55"
     },
@@ -1385,7 +1385,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cli.py",
       "source_location": "L140",
-      "community": 2,
+      "community": 5,
       "norm_label": "list all debuggable cdp targets/pages.",
       "id": "stealth_captcha_cli_rationale_140"
     },
@@ -1394,7 +1394,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cli.py",
       "source_location": "L152",
-      "community": 2,
+      "community": 5,
       "norm_label": "show experience memory statistics.",
       "id": "stealth_captcha_cli_rationale_152"
     },
@@ -1403,7 +1403,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cli.py",
       "source_location": "L173",
-      "community": 2,
+      "community": 5,
       "norm_label": "clear all experience memory.",
       "id": "stealth_captcha_cli_rationale_173"
     },
@@ -1413,7 +1413,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/exceptions.py",
       "source_location": "L1",
       "id": "stealth_captcha_src_stealth_captcha_exceptions_py",
-      "community": 4,
+      "community": 2,
       "norm_label": "exceptions.py"
     },
     {
@@ -1422,7 +1422,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/exceptions.py",
       "source_location": "L6",
       "id": "stealth_captcha_exceptions_captchaerror",
-      "community": 4,
+      "community": 2,
       "norm_label": "captchaerror"
     },
     {
@@ -1440,7 +1440,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/exceptions.py",
       "source_location": "L10",
       "id": "stealth_captcha_exceptions_cdpconnectionerror",
-      "community": 2,
+      "community": 5,
       "norm_label": "cdpconnectionerror"
     },
     {
@@ -1449,7 +1449,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/exceptions.py",
       "source_location": "L14",
       "id": "stealth_captcha_exceptions_cdpcommanderror",
-      "community": 2,
+      "community": 5,
       "norm_label": "cdpcommanderror"
     },
     {
@@ -1467,7 +1467,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/exceptions.py",
       "source_location": "L22",
       "id": "stealth_captcha_exceptions_hittesterror",
-      "community": 4,
+      "community": 2,
       "norm_label": "hittesterror"
     },
     {
@@ -1476,7 +1476,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/exceptions.py",
       "source_location": "L29",
       "id": "stealth_captcha_exceptions_gapdetectionerror",
-      "community": 4,
+      "community": 2,
       "norm_label": "gapdetectionerror"
     },
     {
@@ -1494,7 +1494,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/exceptions.py",
       "source_location": "L37",
       "id": "stealth_captcha_exceptions_verifytimeouterror",
-      "community": 4,
+      "community": 2,
       "norm_label": "verifytimeouterror"
     },
     {
@@ -1503,7 +1503,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/exceptions.py",
       "source_location": "L41",
       "id": "stealth_captcha_exceptions_solverfailederror",
-      "community": 4,
+      "community": 2,
       "norm_label": "solverfailederror"
     },
     {
@@ -1511,7 +1511,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/exceptions.py",
       "source_location": "L1",
-      "community": 4,
+      "community": 2,
       "norm_label": "exception hierarchy \u2014 every failure mode gets its own type for precise error han",
       "id": "stealth_captcha_exceptions_rationale_1"
     },
@@ -1520,7 +1520,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/exceptions.py",
       "source_location": "L7",
-      "community": 4,
+      "community": 2,
       "norm_label": "base for all captcha-related failures.",
       "id": "stealth_captcha_exceptions_rationale_7"
     },
@@ -1529,7 +1529,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/exceptions.py",
       "source_location": "L11",
-      "community": 2,
+      "community": 5,
       "norm_label": "failed to connect to chrome devtools protocol websocket.",
       "id": "stealth_captcha_exceptions_rationale_11"
     },
@@ -1538,7 +1538,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/exceptions.py",
       "source_location": "L15",
-      "community": 2,
+      "community": 5,
       "norm_label": "a cdp command returned an error or timed out.",
       "id": "stealth_captcha_exceptions_rationale_15"
     },
@@ -1556,7 +1556,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/exceptions.py",
       "source_location": "L23",
-      "community": 4,
+      "community": 2,
       "norm_label": "the captcha block element is not the topmost at hit-test coordinates.      typic",
       "id": "stealth_captcha_exceptions_rationale_23"
     },
@@ -1565,7 +1565,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/exceptions.py",
       "source_location": "L30",
-      "community": 4,
+      "community": 2,
       "norm_label": "could not determine the slide-target gap from the dom.",
       "id": "stealth_captcha_exceptions_rationale_30"
     },
@@ -1583,7 +1583,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/exceptions.py",
       "source_location": "L38",
-      "community": 4,
+      "community": 2,
       "norm_label": "captcha verification did not resolve to success or failure within timeout.",
       "id": "stealth_captcha_exceptions_rationale_38"
     },
@@ -1592,7 +1592,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/exceptions.py",
       "source_location": "L42",
-      "community": 4,
+      "community": 2,
       "norm_label": "solver exhausted all retries without a successful solve.",
       "id": "stealth_captcha_exceptions_rationale_42"
     },
@@ -1602,7 +1602,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/targets.py",
       "source_location": "L1",
       "id": "stealth_captcha_src_stealth_captcha_cdp_targets_py",
-      "community": 2,
+      "community": 5,
       "norm_label": "targets.py"
     },
     {
@@ -1611,7 +1611,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/targets.py",
       "source_location": "L17",
       "id": "cdp_targets_targetinfo",
-      "community": 2,
+      "community": 5,
       "norm_label": "targetinfo"
     },
     {
@@ -1620,7 +1620,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/targets.py",
       "source_location": "L27",
       "id": "cdp_targets_list_targets",
-      "community": 2,
+      "community": 5,
       "norm_label": "list_targets()"
     },
     {
@@ -1629,7 +1629,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/targets.py",
       "source_location": "L57",
       "id": "cdp_targets_find_page",
-      "community": 2,
+      "community": 5,
       "norm_label": "find_page()"
     },
     {
@@ -1638,7 +1638,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/targets.py",
       "source_location": "L74",
       "id": "cdp_targets_get_browser_ws",
-      "community": 2,
+      "community": 5,
       "norm_label": "get_browser_ws()"
     },
     {
@@ -1647,7 +1647,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/targets.py",
       "source_location": "L92",
       "id": "cdp_targets_create_tab",
-      "community": 2,
+      "community": 5,
       "norm_label": "create_tab()"
     },
     {
@@ -1655,7 +1655,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/targets.py",
       "source_location": "L1",
-      "community": 2,
+      "community": 5,
       "norm_label": "target discovery via cdp http endpoints.  chrome exposes /json and /json/version",
       "id": "cdp_targets_rationale_1"
     },
@@ -1664,7 +1664,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/targets.py",
       "source_location": "L18",
-      "community": 2,
+      "community": 5,
       "norm_label": "a cdp target (page, iframe, worker, etc.).",
       "id": "cdp_targets_rationale_18"
     },
@@ -1673,7 +1673,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/targets.py",
       "source_location": "L31",
-      "community": 2,
+      "community": 5,
       "norm_label": "list all debuggable targets from /json.      returns:         a list of targetin",
       "id": "cdp_targets_rationale_31"
     },
@@ -1682,7 +1682,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/targets.py",
       "source_location": "L63",
-      "community": 2,
+      "community": 5,
       "norm_label": "find the first page target whose url contains the given substring.      useful w",
       "id": "cdp_targets_rationale_63"
     },
@@ -1691,7 +1691,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/targets.py",
       "source_location": "L78",
-      "community": 2,
+      "community": 5,
       "norm_label": "get the browser-level websocket debugger url from /json/version.      this is th",
       "id": "cdp_targets_rationale_78"
     },
@@ -1700,7 +1700,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/targets.py",
       "source_location": "L98",
-      "community": 2,
+      "community": 5,
       "norm_label": "create a new tab via /json/new and return its target info.",
       "id": "cdp_targets_rationale_98"
     },
@@ -1710,7 +1710,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L1",
       "id": "stealth_captcha_src_stealth_captcha_cdp_client_py",
-      "community": 2,
+      "community": 5,
       "norm_label": "client.py"
     },
     {
@@ -1719,7 +1719,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L39",
       "id": "cdp_client_pending",
-      "community": 2,
+      "community": 5,
       "norm_label": "_pending"
     },
     {
@@ -1728,7 +1728,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L46",
       "id": "cdp_client_cdpsession",
-      "community": 4,
+      "community": 2,
       "norm_label": "cdpsession"
     },
     {
@@ -1737,7 +1737,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L57",
       "id": "cdp_client_cdpsession_send",
-      "community": 2,
+      "community": 5,
       "norm_label": ".send()"
     },
     {
@@ -1746,7 +1746,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L83",
       "id": "cdp_client_cdpsession_on",
-      "community": 2,
+      "community": 5,
       "norm_label": ".on()"
     },
     {
@@ -1755,7 +1755,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L92",
       "id": "cdp_client_cdpsession_off",
-      "community": 2,
+      "community": 5,
       "norm_label": ".off()"
     },
     {
@@ -1764,7 +1764,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L100",
       "id": "cdp_client_cdpclient",
-      "community": 2,
+      "community": 5,
       "norm_label": "cdpclient"
     },
     {
@@ -1773,7 +1773,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L119",
       "id": "cdp_client_connect",
-      "community": 2,
+      "community": 5,
       "norm_label": "connect()"
     },
     {
@@ -1782,7 +1782,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L152",
       "id": "cdp_client_cdpclient_aclose",
-      "community": 2,
+      "community": 5,
       "norm_label": ".aclose()"
     },
     {
@@ -1791,7 +1791,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L168",
       "id": "cdp_client_cdpclient_aenter",
-      "community": 2,
+      "community": 5,
       "norm_label": ".__aenter__()"
     },
     {
@@ -1800,7 +1800,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L171",
       "id": "cdp_client_cdpclient_aexit",
-      "community": 2,
+      "community": 5,
       "norm_label": ".__aexit__()"
     },
     {
@@ -1809,7 +1809,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L174",
       "id": "cdp_client_cdpclient_attach",
-      "community": 2,
+      "community": 5,
       "norm_label": ".attach()"
     },
     {
@@ -1818,7 +1818,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L190",
       "id": "cdp_client_cdpclient_send",
-      "community": 2,
+      "community": 5,
       "norm_label": "._send()"
     },
     {
@@ -1827,7 +1827,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L223",
       "id": "cdp_client_cdpclient_reader_loop",
-      "community": 2,
+      "community": 5,
       "norm_label": "._reader_loop()"
     },
     {
@@ -1836,7 +1836,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L276",
       "id": "cdp_client_event_stream",
-      "community": 2,
+      "community": 5,
       "norm_label": "event_stream()"
     },
     {
@@ -1844,7 +1844,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L1",
-      "community": 2,
+      "community": 5,
       "norm_label": "async cdp websocket client with multiplexed sessions and event streaming.  desig",
       "id": "cdp_client_rationale_1"
     },
@@ -1853,7 +1853,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L40",
-      "community": 2,
+      "community": 5,
       "norm_label": "a future waiting for a cdp response, keyed by message id.",
       "id": "cdp_client_rationale_40"
     },
@@ -1862,7 +1862,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L47",
-      "community": 4,
+      "community": 5,
       "norm_label": "a session attached to a specific cdp target (page/iframe).      created via cdpc",
       "id": "cdp_client_rationale_47"
     },
@@ -1871,7 +1871,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L64",
-      "community": 2,
+      "community": 5,
       "norm_label": "send a cdp command and wait for the result.          args:             method: c",
       "id": "cdp_client_rationale_64"
     },
@@ -1880,7 +1880,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L84",
-      "community": 2,
+      "community": 5,
       "norm_label": "register an event handler for this session.          args:             event: cd",
       "id": "cdp_client_rationale_84"
     },
@@ -1889,7 +1889,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L93",
-      "community": 2,
+      "community": 5,
       "norm_label": "remove a previously registered event handler.",
       "id": "cdp_client_rationale_93"
     },
@@ -1898,7 +1898,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L101",
-      "community": 2,
+      "community": 5,
       "norm_label": "root cdp client connected to a browser websocket endpoint.      usage:         a",
       "id": "cdp_client_rationale_101"
     },
@@ -1907,7 +1907,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L120",
-      "community": 2,
+      "community": 5,
       "norm_label": "connect to a cdp websocket endpoint with automatic retry.          args:",
       "id": "cdp_client_rationale_120"
     },
@@ -1916,7 +1916,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L153",
-      "community": 2,
+      "community": 5,
       "norm_label": "close the cdp connection gracefully.",
       "id": "cdp_client_rationale_153"
     },
@@ -1925,7 +1925,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L175",
-      "community": 2,
+      "community": 5,
       "norm_label": "attach to a target (page) and return a session for it.          uses flatten=tru",
       "id": "cdp_client_rationale_175"
     },
@@ -1934,7 +1934,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L198",
-      "community": 2,
+      "community": 5,
       "norm_label": "low-level cdp command send.          assigns a unique message id, serializes the",
       "id": "cdp_client_rationale_198"
     },
@@ -1943,7 +1943,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L224",
-      "community": 2,
+      "community": 5,
       "norm_label": "background task: reads json messages from the websocket and dispatches them.",
       "id": "cdp_client_rationale_224"
     },
@@ -1952,7 +1952,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/client.py",
       "source_location": "L281",
-      "community": 2,
+      "community": 5,
       "norm_label": "context manager: yields an asyncio.queue that receives cdp events.          exam",
       "id": "cdp_client_rationale_281"
     },
@@ -1962,7 +1962,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/__init__.py",
       "source_location": "L1",
       "id": "stealth_captcha_src_stealth_captcha_cdp_init_py",
-      "community": 2,
+      "community": 5,
       "norm_label": "__init__.py"
     },
     {
@@ -1970,7 +1970,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/__init__.py",
       "source_location": "L1",
-      "community": 2,
+      "community": 5,
       "norm_label": "chrome devtools protocol client + browser launcher.  provides async cdp over web",
       "id": "cdp_init_rationale_1"
     },
@@ -1980,7 +1980,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/browser.py",
       "source_location": "L1",
       "id": "stealth_captcha_src_stealth_captcha_cdp_browser_py",
-      "community": 2,
+      "community": 5,
       "norm_label": "browser.py"
     },
     {
@@ -1989,7 +1989,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/browser.py",
       "source_location": "L55",
       "id": "cdp_browser_find_chrome",
-      "community": 2,
+      "community": 5,
       "norm_label": "_find_chrome()"
     },
     {
@@ -1998,7 +1998,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/browser.py",
       "source_location": "L93",
       "id": "cdp_browser_stealthbrowser",
-      "community": 2,
+      "community": 5,
       "norm_label": "stealthbrowser"
     },
     {
@@ -2007,7 +2007,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/browser.py",
       "source_location": "L116",
       "id": "cdp_browser_stealthbrowser_post_init",
-      "community": 2,
+      "community": 5,
       "norm_label": ".__post_init__()"
     },
     {
@@ -2016,7 +2016,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/browser.py",
       "source_location": "L125",
       "id": "cdp_browser_stealthbrowser_launch",
-      "community": 2,
+      "community": 5,
       "norm_label": ".launch()"
     },
     {
@@ -2025,7 +2025,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/browser.py",
       "source_location": "L176",
       "id": "cdp_browser_stealthbrowser_navigate",
-      "community": 2,
+      "community": 5,
       "norm_label": ".navigate()"
     },
     {
@@ -2034,7 +2034,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/browser.py",
       "source_location": "L199",
       "id": "cdp_browser_stealthbrowser_terminate",
-      "community": 2,
+      "community": 5,
       "norm_label": ".terminate()"
     },
     {
@@ -2043,7 +2043,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/browser.py",
       "source_location": "L225",
       "id": "cdp_browser_stealthbrowser_aenter",
-      "community": 2,
+      "community": 5,
       "norm_label": ".__aenter__()"
     },
     {
@@ -2052,7 +2052,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/browser.py",
       "source_location": "L229",
       "id": "cdp_browser_stealthbrowser_aexit",
-      "community": 2,
+      "community": 5,
       "norm_label": ".__aexit__()"
     },
     {
@@ -2060,7 +2060,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/browser.py",
       "source_location": "L1",
-      "community": 2,
+      "community": 5,
       "norm_label": "chrome launcher with hardened flags for stealth automation.  no --enable-automat",
       "id": "cdp_browser_rationale_1"
     },
@@ -2069,7 +2069,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/browser.py",
       "source_location": "L56",
-      "community": 2,
+      "community": 5,
       "norm_label": "locate the chrome/chromium binary on the current platform.",
       "id": "cdp_browser_rationale_56"
     },
@@ -2078,7 +2078,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/browser.py",
       "source_location": "L94",
-      "community": 2,
+      "community": 5,
       "norm_label": "manages a chrome process with stealth flags and isolated profile.      usage:",
       "id": "cdp_browser_rationale_94"
     },
@@ -2087,7 +2087,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/browser.py",
       "source_location": "L126",
-      "community": 2,
+      "community": 5,
       "norm_label": "launch chrome with stealth flags.          blocks until the cdp endpoint becomes",
       "id": "cdp_browser_rationale_126"
     },
@@ -2096,7 +2096,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/browser.py",
       "source_location": "L177",
-      "community": 2,
+      "community": 5,
       "norm_label": "open a url in the default tab (creates one if none exist).          requires tha",
       "id": "cdp_browser_rationale_177"
     },
@@ -2105,7 +2105,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/cdp/browser.py",
       "source_location": "L200",
-      "community": 2,
+      "community": 5,
       "norm_label": "kill the chrome process gracefully (sigterm \u2192 sigkill after 5s).",
       "id": "cdp_browser_rationale_200"
     },
@@ -2313,7 +2313,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/payloads/__init__.py",
       "source_location": "L1",
       "id": "stealth_captcha_src_stealth_captcha_payloads_init_py",
-      "community": 21,
+      "community": 23,
       "norm_label": "__init__.py"
     },
     {
@@ -2322,7 +2322,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/payloads/__init__.py",
       "source_location": "L11",
       "id": "payloads_init_load",
-      "community": 21,
+      "community": 23,
       "norm_label": "load()"
     },
     {
@@ -2330,7 +2330,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/payloads/__init__.py",
       "source_location": "L1",
-      "community": 21,
+      "community": 23,
       "norm_label": "embedded js payloads for reference \u2014 legacy dispatchevent approach.  these paylo",
       "id": "payloads_init_rationale_1"
     },
@@ -2339,7 +2339,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/payloads/__init__.py",
       "source_location": "L12",
-      "community": 21,
+      "community": 23,
       "norm_label": "load a js payload by filename.      args:         name: filename (e.g., \"gocaptc",
       "id": "payloads_init_rationale_12"
     },
@@ -2349,7 +2349,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/payloads/gocaptcha_slide.js",
       "source_location": "L1",
       "id": "stealth_captcha_src_stealth_captcha_payloads_gocaptcha_slide_js",
-      "community": 32,
+      "community": 34,
       "norm_label": "gocaptcha_slide.js"
     },
     {
@@ -2358,7 +2358,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/tests/__init__.py",
       "source_location": "L1",
       "id": "stealth_captcha_src_stealth_captcha_tests_init_py",
-      "community": 24,
+      "community": 26,
       "norm_label": "__init__.py"
     },
     {
@@ -2366,7 +2366,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/tests/__init__.py",
       "source_location": "L1",
-      "community": 24,
+      "community": 26,
       "norm_label": "tests for stealth-captcha.",
       "id": "tests_init_rationale_1"
     },
@@ -2673,7 +2673,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/solver/slide.py",
       "source_location": "L1",
       "id": "stealth_captcha_src_stealth_captcha_solver_slide_py",
-      "community": 4,
+      "community": 2,
       "norm_label": "slide.py"
     },
     {
@@ -2682,7 +2682,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/solver/slide.py",
       "source_location": "L56",
       "id": "solver_slide_slidecaptchasolver",
-      "community": 4,
+      "community": 2,
       "norm_label": "slidecaptchasolver"
     },
     {
@@ -2691,7 +2691,7 @@
       "source_file": "",
       "source_location": "",
       "id": "basesolver",
-      "community": 4,
+      "community": 2,
       "norm_label": "basesolver"
     },
     {
@@ -2709,7 +2709,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/solver/slide.py",
       "source_location": "L98",
       "id": "solver_slide_slidecaptchasolver_solve",
-      "community": 4,
+      "community": 2,
       "norm_label": ".solve()"
     },
     {
@@ -2718,7 +2718,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/solver/slide.py",
       "source_location": "L157",
       "id": "solver_slide_slidecaptchasolver_attempt",
-      "community": 4,
+      "community": 2,
       "norm_label": "._attempt()"
     },
     {
@@ -2727,7 +2727,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/solver/slide.py",
       "source_location": "L244",
       "id": "solver_slide_slidecaptchasolver_dispatch",
-      "community": 4,
+      "community": 2,
       "norm_label": "._dispatch()"
     },
     {
@@ -2736,7 +2736,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/solver/slide.py",
       "source_location": "L337",
       "id": "solver_slide_slidecaptchasolver_page_host",
-      "community": 4,
+      "community": 2,
       "norm_label": "._page_host()"
     },
     {
@@ -2745,7 +2745,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/solver/slide.py",
       "source_location": "L350",
       "id": "solver_slide_replay_with_fresh_jitter",
-      "community": 4,
+      "community": 2,
       "norm_label": "_replay_with_fresh_jitter()"
     },
     {
@@ -2753,7 +2753,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/solver/slide.py",
       "source_location": "L1",
-      "community": 4,
+      "community": 2,
       "norm_label": "gocaptcha / netease / geetest v3/v4 slide captcha solver.  pipeline (matches the",
       "id": "solver_slide_rationale_1"
     },
@@ -2762,7 +2762,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/solver/slide.py",
       "source_location": "L57",
-      "community": 4,
+      "community": 2,
       "norm_label": "slide captcha solver with cdp input.dispatchmouseevent.      usage:         solv",
       "id": "solver_slide_rationale_57"
     },
@@ -2771,7 +2771,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/solver/slide.py",
       "source_location": "L99",
-      "community": 4,
+      "community": 2,
       "norm_label": "solve a slide captcha. retries with exponential backoff on failure.          arg",
       "id": "solver_slide_rationale_99"
     },
@@ -2780,7 +2780,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/solver/slide.py",
       "source_location": "L158",
-      "community": 4,
+      "community": 2,
       "norm_label": "single solve attempt \u2014 the core pipeline.",
       "id": "solver_slide_rationale_158"
     },
@@ -2789,7 +2789,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/solver/slide.py",
       "source_location": "L249",
-      "community": 4,
+      "community": 2,
       "norm_label": "stream input.dispatchmouseevent for the trajectory.          event sequence: mou",
       "id": "solver_slide_rationale_249"
     },
@@ -2798,7 +2798,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/solver/slide.py",
       "source_location": "L338",
-      "community": 4,
+      "community": 2,
       "norm_label": "get the current page's hostname.",
       "id": "solver_slide_rationale_338"
     },
@@ -2807,7 +2807,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/solver/slide.py",
       "source_location": "L351",
-      "community": 4,
+      "community": 2,
       "norm_label": "replay a memory trajectory with fresh micro-jitter.          the base path is pr",
       "id": "solver_slide_rationale_351"
     },
@@ -2817,7 +2817,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/solver/drag_drop.py",
       "source_location": "L1",
       "id": "stealth_captcha_src_stealth_captcha_solver_drag_drop_py",
-      "community": 4,
+      "community": 2,
       "norm_label": "drag_drop.py"
     },
     {
@@ -2826,7 +2826,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/solver/drag_drop.py",
       "source_location": "L31",
       "id": "solver_drag_drop_dragdropcaptchasolver",
-      "community": 4,
+      "community": 2,
       "norm_label": "dragdropcaptchasolver"
     },
     {
@@ -2835,7 +2835,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/solver/drag_drop.py",
       "source_location": "L45",
       "id": "solver_drag_drop_dragdropcaptchasolver_post_init",
-      "community": 2,
+      "community": 5,
       "norm_label": ".__post_init__()"
     },
     {
@@ -2844,7 +2844,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/solver/drag_drop.py",
       "source_location": "L49",
       "id": "solver_drag_drop_dragdropcaptchasolver_solve",
-      "community": 4,
+      "community": 2,
       "norm_label": ".solve()"
     },
     {
@@ -2852,7 +2852,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/solver/drag_drop.py",
       "source_location": "L1",
-      "community": 4,
+      "community": 2,
       "norm_label": "drag-drop puzzle captcha solver (purespectrum, funcaptcha-style).  these captcha",
       "id": "solver_drag_drop_rationale_1"
     },
@@ -2861,7 +2861,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/solver/drag_drop.py",
       "source_location": "L32",
-      "community": 4,
+      "community": 2,
       "norm_label": "solves drag-drop puzzle captchas with multiple piece-place pairs.      usage:",
       "id": "solver_drag_drop_rationale_32"
     },
@@ -2870,7 +2870,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/solver/drag_drop.py",
       "source_location": "L50",
-      "community": 4,
+      "community": 2,
       "norm_label": "drag each source piece to its target slot.          args:             session: c",
       "id": "solver_drag_drop_rationale_50"
     },
@@ -2880,7 +2880,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/solver/__init__.py",
       "source_location": "L1",
       "id": "stealth_captcha_src_stealth_captcha_solver_init_py",
-      "community": 4,
+      "community": 2,
       "norm_label": "__init__.py"
     },
     {
@@ -2888,7 +2888,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/solver/__init__.py",
       "source_location": "L1",
-      "community": 4,
+      "community": 2,
       "norm_label": "solver implementations for different captcha types.  each solver follows the sam",
       "id": "solver_init_rationale_1"
     },
@@ -2898,7 +2898,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/solver/text.py",
       "source_location": "L1",
       "id": "stealth_captcha_src_stealth_captcha_solver_text_py",
-      "community": 4,
+      "community": 2,
       "norm_label": "text.py"
     },
     {
@@ -2907,7 +2907,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/solver/text.py",
       "source_location": "L26",
       "id": "solver_text_visionocrbackend",
-      "community": 4,
+      "community": 2,
       "norm_label": "visionocrbackend"
     },
     {
@@ -2916,7 +2916,7 @@
       "source_file": "",
       "source_location": "",
       "id": "protocol",
-      "community": 4,
+      "community": 2,
       "norm_label": "protocol"
     },
     {
@@ -2925,7 +2925,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/solver/text.py",
       "source_location": "L29",
       "id": "solver_text_visionocrbackend_transcribe",
-      "community": 4,
+      "community": 2,
       "norm_label": ".transcribe()"
     },
     {
@@ -2934,7 +2934,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/solver/text.py",
       "source_location": "L42",
       "id": "solver_text_textcaptchasolver",
-      "community": 4,
+      "community": 2,
       "norm_label": "textcaptchasolver"
     },
     {
@@ -2943,7 +2943,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/solver/text.py",
       "source_location": "L64",
       "id": "solver_text_textcaptchasolver_solve",
-      "community": 4,
+      "community": 2,
       "norm_label": ".solve()"
     },
     {
@@ -2952,7 +2952,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/solver/text.py",
       "source_location": "L130",
       "id": "solver_text_textcaptchasolver_get_image_rect",
-      "community": 4,
+      "community": 2,
       "norm_label": "._get_image_rect()"
     },
     {
@@ -2961,7 +2961,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/solver/text.py",
       "source_location": "L156",
       "id": "solver_text_fill_js",
-      "community": 4,
+      "community": 2,
       "norm_label": "_fill_js()"
     },
     {
@@ -2970,7 +2970,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/solver/text.py",
       "source_location": "L179",
       "id": "solver_text_pixtrallargeocr",
-      "community": 4,
+      "community": 2,
       "norm_label": "pixtrallargeocr"
     },
     {
@@ -2979,7 +2979,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/solver/text.py",
       "source_location": "L189",
       "id": "solver_text_pixtrallargeocr_transcribe",
-      "community": 4,
+      "community": 2,
       "norm_label": ".transcribe()"
     },
     {
@@ -2987,7 +2987,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/solver/text.py",
       "source_location": "L1",
-      "community": 4,
+      "community": 2,
       "norm_label": "text/ocr captcha solver \u2014 captures the captcha image, sends to vision model, typ",
       "id": "solver_text_rationale_1"
     },
@@ -2996,7 +2996,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/solver/text.py",
       "source_location": "L27",
-      "community": 4,
+      "community": 2,
       "norm_label": "protocol for ocr backends (e.g. pixtral, llama vision, tesseract).",
       "id": "solver_text_rationale_27"
     },
@@ -3005,7 +3005,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/solver/text.py",
       "source_location": "L30",
-      "community": 4,
+      "community": 2,
       "norm_label": "transcribe text from a png image (base64-encoded).          args:             im",
       "id": "solver_text_rationale_30"
     },
@@ -3014,7 +3014,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/solver/text.py",
       "source_location": "L43",
-      "community": 4,
+      "community": 2,
       "norm_label": "solves text/ocr captchas by capturing the image and using a vision model.      u",
       "id": "solver_text_rationale_43"
     },
@@ -3023,7 +3023,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/solver/text.py",
       "source_location": "L65",
-      "community": 4,
+      "community": 2,
       "norm_label": "run the ocr pipeline: screenshot \u2192 transcribe \u2192 type \u2192 submit.",
       "id": "solver_text_rationale_65"
     },
@@ -3032,7 +3032,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/solver/text.py",
       "source_location": "L134",
-      "community": 4,
+      "community": 2,
       "norm_label": "get the bounding rect of the captcha image element.",
       "id": "solver_text_rationale_134"
     },
@@ -3041,7 +3041,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/solver/text.py",
       "source_location": "L161",
-      "community": 4,
+      "community": 2,
       "norm_label": "generate js to fill the captcha input and submit.",
       "id": "solver_text_rationale_161"
     },
@@ -3050,7 +3050,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/solver/text.py",
       "source_location": "L180",
-      "community": 4,
+      "community": 2,
       "norm_label": "ocr via pixtral large through the ai gateway.      set stealth_ai_gateway_url an",
       "id": "solver_text_rationale_180"
     },
@@ -3060,7 +3060,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/solver/base.py",
       "source_location": "L1",
       "id": "stealth_captcha_src_stealth_captcha_solver_base_py",
-      "community": 4,
+      "community": 2,
       "norm_label": "base.py"
     },
     {
@@ -3069,7 +3069,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/solver/base.py",
       "source_location": "L16",
       "id": "solver_base_solveoutcome",
-      "community": 4,
+      "community": 2,
       "norm_label": "solveoutcome"
     },
     {
@@ -3078,7 +3078,7 @@
       "source_file": "",
       "source_location": "",
       "id": "enum",
-      "community": 4,
+      "community": 2,
       "norm_label": "enum"
     },
     {
@@ -3087,7 +3087,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/solver/base.py",
       "source_location": "L23",
       "id": "solver_base_solveresult",
-      "community": 4,
+      "community": 2,
       "norm_label": "solveresult"
     },
     {
@@ -3096,7 +3096,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/solver/base.py",
       "source_location": "L39",
       "id": "solver_base_basesolver",
-      "community": 4,
+      "community": 2,
       "norm_label": "basesolver"
     },
     {
@@ -3105,7 +3105,7 @@
       "source_file": "",
       "source_location": "",
       "id": "abc",
-      "community": 4,
+      "community": 2,
       "norm_label": "abc"
     },
     {
@@ -3114,7 +3114,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/solver/base.py",
       "source_location": "L47",
       "id": "solver_base_solve",
-      "community": 4,
+      "community": 2,
       "norm_label": "solve()"
     },
     {
@@ -3122,7 +3122,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/solver/base.py",
       "source_location": "L1",
-      "community": 4,
+      "community": 2,
       "norm_label": "abstract solver interface \u2014 uniform contract across captcha families.  every sol",
       "id": "solver_base_rationale_1"
     },
@@ -3131,7 +3131,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/solver/base.py",
       "source_location": "L24",
-      "community": 4,
+      "community": 2,
       "norm_label": "result of a captcha solve attempt.      attributes:         outcome: success, fa",
       "id": "solver_base_rationale_24"
     },
@@ -3140,7 +3140,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/solver/base.py",
       "source_location": "L40",
-      "community": 4,
+      "community": 2,
       "norm_label": "abstract captcha solver.      subclasses implement solve() for their specific ca",
       "id": "solver_base_rationale_40"
     },
@@ -3149,7 +3149,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/solver/base.py",
       "source_location": "L48",
-      "community": 4,
+      "community": 2,
       "norm_label": "solve the captcha in the given cdp session.          args:             session:",
       "id": "solver_base_rationale_48"
     },
@@ -3159,7 +3159,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/hit_test.py",
       "source_location": "L1",
       "id": "stealth_captcha_src_stealth_captcha_primitives_hit_test_py",
-      "community": 4,
+      "community": 2,
       "norm_label": "hit_test.py"
     },
     {
@@ -3168,7 +3168,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/hit_test.py",
       "source_location": "L31",
       "id": "primitives_hit_test_neutralizedoverlay",
-      "community": 4,
+      "community": 2,
       "norm_label": "neutralizedoverlay"
     },
     {
@@ -3177,7 +3177,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/hit_test.py",
       "source_location": "L40",
       "id": "primitives_hit_test_hittestresult",
-      "community": 4,
+      "community": 2,
       "norm_label": "hittestresult"
     },
     {
@@ -3186,7 +3186,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/hit_test.py",
       "source_location": "L127",
       "id": "primitives_hit_test_hittester",
-      "community": 4,
+      "community": 2,
       "norm_label": "hittester"
     },
     {
@@ -3195,7 +3195,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/hit_test.py",
       "source_location": "L139",
       "id": "primitives_hit_test_hittester_ensure_topmost",
-      "community": 4,
+      "community": 2,
       "norm_label": ".ensure_topmost()"
     },
     {
@@ -3204,7 +3204,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/hit_test.py",
       "source_location": "L193",
       "id": "primitives_hit_test_hittester_restore",
-      "community": 4,
+      "community": 2,
       "norm_label": ".restore()"
     },
     {
@@ -3213,7 +3213,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/hit_test.py",
       "source_location": "L201",
       "id": "primitives_hit_test_hittester_eval",
-      "community": 4,
+      "community": 2,
       "norm_label": "._eval()"
     },
     {
@@ -3221,7 +3221,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/hit_test.py",
       "source_location": "L1",
-      "community": 4,
+      "community": 2,
       "norm_label": "pre-drag hit-test: the missing piece in every captcha solver.  root cause of the",
       "id": "primitives_hit_test_rationale_1"
     },
@@ -3230,7 +3230,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/hit_test.py",
       "source_location": "L32",
-      "community": 4,
+      "community": 2,
       "norm_label": "a dom element whose pointer-events were temporarily disabled.",
       "id": "primitives_hit_test_rationale_32"
     },
@@ -3239,7 +3239,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/hit_test.py",
       "source_location": "L41",
-      "community": 4,
+      "community": 2,
       "norm_label": "result of a successful hit-test with optional overlay neutralization.",
       "id": "primitives_hit_test_rationale_41"
     },
@@ -3248,7 +3248,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/hit_test.py",
       "source_location": "L128",
-      "community": 4,
+      "community": 2,
       "norm_label": "ensures the captcha target element is the topmost at its center point.      usag",
       "id": "primitives_hit_test_rationale_128"
     },
@@ -3257,7 +3257,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/hit_test.py",
       "source_location": "L140",
-      "community": 4,
+      "community": 2,
       "norm_label": "check and (if needed) fix elementfrompoint for the target.          args:",
       "id": "primitives_hit_test_rationale_140"
     },
@@ -3266,7 +3266,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/hit_test.py",
       "source_location": "L194",
-      "community": 4,
+      "community": 2,
       "norm_label": "restore pointer-events on any neutralized overlays.",
       "id": "primitives_hit_test_rationale_194"
     },
@@ -3275,7 +3275,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/hit_test.py",
       "source_location": "L202",
-      "community": 4,
+      "community": 2,
       "norm_label": "evaluate js in the page and return parsed json dict.",
       "id": "primitives_hit_test_rationale_202"
     },
@@ -3285,7 +3285,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/__init__.py",
       "source_location": "L1",
       "id": "stealth_captcha_src_stealth_captcha_primitives_init_py",
-      "community": 4,
+      "community": 2,
       "norm_label": "__init__.py"
     },
     {
@@ -3293,7 +3293,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/__init__.py",
       "source_location": "L1",
-      "community": 4,
+      "community": 2,
       "norm_label": "low-level primitives for captcha interaction.  these are the building blocks:",
       "id": "primitives_init_rationale_1"
     },
@@ -3420,7 +3420,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/verify.py",
       "source_location": "L1",
       "id": "stealth_captcha_src_stealth_captcha_primitives_verify_py",
-      "community": 4,
+      "community": 2,
       "norm_label": "verify.py"
     },
     {
@@ -3429,7 +3429,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/verify.py",
       "source_location": "L31",
       "id": "primitives_verify_verifyoutcome",
-      "community": 4,
+      "community": 2,
       "norm_label": "verifyoutcome"
     },
     {
@@ -3438,7 +3438,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/verify.py",
       "source_location": "L68",
       "id": "primitives_verify_verifier",
-      "community": 4,
+      "community": 2,
       "norm_label": "verifier"
     },
     {
@@ -3447,7 +3447,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/verify.py",
       "source_location": "L96",
       "id": "primitives_verify_verifier_wait",
-      "community": 4,
+      "community": 2,
       "norm_label": ".wait()"
     },
     {
@@ -3455,7 +3455,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/verify.py",
       "source_location": "L1",
-      "community": 4,
+      "community": 2,
       "norm_label": "captcha verification via dom polling.  after the mouse drag is complete, we poll",
       "id": "primitives_verify_rationale_1"
     },
@@ -3464,7 +3464,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/verify.py",
       "source_location": "L32",
-      "community": 4,
+      "community": 2,
       "norm_label": "result of verification polling.",
       "id": "primitives_verify_rationale_32"
     },
@@ -3473,7 +3473,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/verify.py",
       "source_location": "L69",
-      "community": 4,
+      "community": 2,
       "norm_label": "polls the dom for captcha success/failure after a drag.      usage:         veri",
       "id": "primitives_verify_rationale_69"
     },
@@ -3482,7 +3482,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/verify.py",
       "source_location": "L102",
-      "community": 4,
+      "community": 2,
       "norm_label": "poll the dom until success, failure, or timeout.          args:             time",
       "id": "primitives_verify_rationale_102"
     },
@@ -3492,7 +3492,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/gap_detector.py",
       "source_location": "L1",
       "id": "stealth_captcha_src_stealth_captcha_primitives_gap_detector_py",
-      "community": 4,
+      "community": 2,
       "norm_label": "gap_detector.py"
     },
     {
@@ -3501,7 +3501,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/gap_detector.py",
       "source_location": "L30",
       "id": "primitives_gap_detector_gapgeometry",
-      "community": 4,
+      "community": 2,
       "norm_label": "gapgeometry"
     },
     {
@@ -3510,7 +3510,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/gap_detector.py",
       "source_location": "L71",
       "id": "primitives_gap_detector_gapdetector",
-      "community": 4,
+      "community": 2,
       "norm_label": "gapdetector"
     },
     {
@@ -3519,7 +3519,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/gap_detector.py",
       "source_location": "L84",
       "id": "primitives_gap_detector_gapdetector_detect",
-      "community": 4,
+      "community": 2,
       "norm_label": ".detect()"
     },
     {
@@ -3528,7 +3528,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/gap_detector.py",
       "source_location": "L128",
       "id": "primitives_gap_detector_gapdetector_eval",
-      "community": 4,
+      "community": 2,
       "norm_label": "._eval()"
     },
     {
@@ -3536,7 +3536,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/gap_detector.py",
       "source_location": "L1",
-      "community": 4,
+      "community": 2,
       "norm_label": "dom-based gap detection \u2014 100x more accurate than vision models.  per the captch",
       "id": "primitives_gap_detector_rationale_1"
     },
@@ -3545,7 +3545,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/gap_detector.py",
       "source_location": "L31",
-      "community": 4,
+      "community": 2,
       "norm_label": "the measured gap between drag block and target.      attributes:         block_b",
       "id": "primitives_gap_detector_rationale_31"
     },
@@ -3554,7 +3554,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/gap_detector.py",
       "source_location": "L72",
-      "community": 4,
+      "community": 2,
       "norm_label": "detect the drag offset by reading dom bounding rects.      usage:         detect",
       "id": "primitives_gap_detector_rationale_72"
     },
@@ -3563,7 +3563,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/primitives/gap_detector.py",
       "source_location": "L85",
-      "community": 4,
+      "community": 2,
       "norm_label": "measure the gap from block to target.          returns:             gapgeometry",
       "id": "primitives_gap_detector_rationale_85"
     },
@@ -3699,7 +3699,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/stealth/scripts/__init__.py",
       "source_location": "L1",
       "id": "stealth_captcha_src_stealth_captcha_stealth_scripts_init_py",
-      "community": 25,
+      "community": 27,
       "norm_label": "__init__.py"
     },
     {
@@ -3707,7 +3707,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/stealth/scripts/__init__.py",
       "source_location": "L1",
-      "community": 25,
+      "community": 27,
       "norm_label": "embedded javascript payloads loaded at import time via importlib.resources.",
       "id": "scripts_init_rationale_1"
     },
@@ -3717,7 +3717,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/stealth/scripts/stealth_main.js",
       "source_location": "L1",
       "id": "stealth_captcha_src_stealth_captcha_stealth_scripts_stealth_main_js",
-      "community": 0,
+      "community": 22,
       "norm_label": "stealth_main.js"
     },
     {
@@ -3726,7 +3726,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/stealth/scripts/stealth_main.js",
       "source_location": "L17",
       "id": "scripts_stealth_main_safe",
-      "community": 0,
+      "community": 22,
       "norm_label": "safe()"
     },
     {
@@ -3744,7 +3744,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/stealth/scripts/stealth_main.js",
       "source_location": "L146",
       "id": "scripts_stealth_main_rng",
-      "community": 0,
+      "community": 22,
       "norm_label": "rng()"
     },
     {
@@ -3753,7 +3753,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/stealth/scripts/stealth_main.js",
       "source_location": "L147",
       "id": "scripts_stealth_main_jitter",
-      "community": 0,
+      "community": 22,
       "norm_label": "jitter()"
     },
     {
@@ -3762,7 +3762,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/stealth/scripts/stealth_main.js",
       "source_location": "L207",
       "id": "scripts_stealth_main_get",
-      "community": 0,
+      "community": 22,
       "norm_label": "get()"
     },
     {
@@ -3771,7 +3771,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/telemetry/__init__.py",
       "source_location": "L1",
       "id": "stealth_captcha_src_stealth_captcha_telemetry_init_py",
-      "community": 26,
+      "community": 28,
       "norm_label": "__init__.py"
     },
     {
@@ -3779,7 +3779,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/telemetry/__init__.py",
       "source_location": "L1",
-      "community": 26,
+      "community": 28,
       "norm_label": "structured logging and opentelemetry integration.",
       "id": "telemetry_init_rationale_1"
     },
@@ -3789,7 +3789,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/telemetry/tracer.py",
       "source_location": "L1",
       "id": "stealth_captcha_src_stealth_captcha_telemetry_tracer_py",
-      "community": 2,
+      "community": 20,
       "norm_label": "tracer.py"
     },
     {
@@ -3798,7 +3798,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/telemetry/tracer.py",
       "source_location": "L19",
       "id": "telemetry_tracer_init_telemetry",
-      "community": 2,
+      "community": 20,
       "norm_label": "init_telemetry()"
     },
     {
@@ -3807,7 +3807,7 @@
       "source_file": "stealth-captcha/src/stealth_captcha/telemetry/tracer.py",
       "source_location": "L46",
       "id": "telemetry_tracer_get_logger",
-      "community": 2,
+      "community": 20,
       "norm_label": "get_logger()"
     },
     {
@@ -3815,7 +3815,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/telemetry/tracer.py",
       "source_location": "L1",
-      "community": 2,
+      "community": 20,
       "norm_label": "structured logging with structlog + optional opentelemetry tracing.  we keep tel",
       "id": "telemetry_tracer_rationale_1"
     },
@@ -3824,7 +3824,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/telemetry/tracer.py",
       "source_location": "L20",
-      "community": 2,
+      "community": 20,
       "norm_label": "initialize structlog once. idempotent.",
       "id": "telemetry_tracer_rationale_20"
     },
@@ -3833,7 +3833,7 @@
       "file_type": "rationale",
       "source_file": "stealth-captcha/src/stealth_captcha/telemetry/tracer.py",
       "source_location": "L47",
-      "community": 2,
+      "community": 20,
       "norm_label": "get a structlog logger. init telemetry first if needed.",
       "id": "telemetry_tracer_rationale_47"
     },
@@ -3843,7 +3843,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L1",
       "id": "tests_test_output_generator_py",
-      "community": 5,
+      "community": 4,
       "norm_label": "test_output_generator.py"
     },
     {
@@ -3852,7 +3852,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L21",
       "id": "tests_test_output_generator_testoutputgenerator",
-      "community": 5,
+      "community": 4,
       "norm_label": "testoutputgenerator"
     },
     {
@@ -3861,7 +3861,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L24",
       "id": "tests_test_output_generator_testoutputgenerator_test_init_default_output_dir",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_init_default_output_dir()"
     },
     {
@@ -3870,7 +3870,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L38",
       "id": "tests_test_output_generator_testoutputgenerator_test_init_custom_output_dir",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_init_custom_output_dir()"
     },
     {
@@ -3879,7 +3879,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L46",
       "id": "tests_test_output_generator_testoutputgenerator_test_init_creates_directory",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_init_creates_directory()"
     },
     {
@@ -3888,7 +3888,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L54",
       "id": "tests_test_output_generator_testoutputgenerator_test_generate_yaml",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_generate_yaml()"
     },
     {
@@ -3897,7 +3897,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L73",
       "id": "tests_test_output_generator_testoutputgenerator_test_generate_yaml_multiple_sessions",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_generate_yaml_multiple_sessions()"
     },
     {
@@ -3906,7 +3906,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L102",
       "id": "tests_test_output_generator_testoutputgenerator_test_generate_json",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_generate_json()"
     },
     {
@@ -3915,7 +3915,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L125",
       "id": "tests_test_output_generator_testoutputgenerator_test_generate_json_unicode_support",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_generate_json_unicode_support()"
     },
     {
@@ -3924,7 +3924,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L146",
       "id": "tests_test_output_generator_testoutputgenerator_test_update_changelog",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_update_changelog()"
     },
     {
@@ -3933,7 +3933,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L165",
       "id": "tests_test_output_generator_testoutputgenerator_test_update_changelog_default_dir",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_update_changelog_default_dir()"
     },
     {
@@ -3942,7 +3942,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L175",
       "id": "tests_test_output_generator_testoutputgenerator_test_update_logbook",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_update_logbook()"
     },
     {
@@ -3951,7 +3951,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L197",
       "id": "tests_test_output_generator_testoutputgenerator_test_update_logbook_append",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_update_logbook_append()"
     },
     {
@@ -3960,7 +3960,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L220",
       "id": "tests_test_output_generator_testoutputgenerator_test_update_logbook_default_path",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_update_logbook_default_path()"
     },
     {
@@ -3969,7 +3969,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L233",
       "id": "tests_test_output_generator_testoutputgenerator_test_generate_yaml_with_missing_fields",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_generate_yaml_with_missing_fields()"
     },
     {
@@ -3978,7 +3978,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L246",
       "id": "tests_test_output_generator_testoutputgenerator_test_output_paths_are_unique",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_output_paths_are_unique()"
     },
     {
@@ -3987,7 +3987,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L266",
       "id": "tests_test_output_generator_testoutputgeneratorlogbook",
-      "community": 5,
+      "community": 4,
       "norm_label": "testoutputgeneratorlogbook"
     },
     {
@@ -3996,7 +3996,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L269",
       "id": "tests_test_output_generator_testoutputgeneratorlogbook_test_update_logbook_with_all_categories",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_update_logbook_with_all_categories()"
     },
     {
@@ -4005,7 +4005,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L303",
       "id": "tests_test_output_generator_testoutputgeneratorlogbook_test_update_logbook_structure_and_content",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_update_logbook_structure_and_content()"
     },
     {
@@ -4014,7 +4014,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L339",
       "id": "tests_test_output_generator_testoutputgeneratorlogbook_test_update_logbook_multiple_appends",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_update_logbook_multiple_appends()"
     },
     {
@@ -4023,7 +4023,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L367",
       "id": "tests_test_output_generator_testoutputgeneratorlogbook_test_update_logbook_with_minimal_doc_unit",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_update_logbook_with_minimal_doc_unit()"
     },
     {
@@ -4032,7 +4032,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L390",
       "id": "tests_test_output_generator_testoutputgeneratorlogbook_test_update_logbook_with_none_values",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_update_logbook_with_none_values()"
     },
     {
@@ -4041,7 +4041,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L414",
       "id": "tests_test_output_generator_testoutputgeneratorlogbook_test_update_logbook_unicode_support",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_update_logbook_unicode_support()"
     },
     {
@@ -4050,7 +4050,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L440",
       "id": "tests_test_output_generator_testoutputgeneratorlogbook_test_update_logbook_large_number_of_entries",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_update_logbook_large_number_of_entries()"
     },
     {
@@ -4059,7 +4059,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L467",
       "id": "tests_test_output_generator_testoutputgeneratorlogbook_test_update_logbook_different_output_formats",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_update_logbook_different_output_formats()"
     },
     {
@@ -4068,7 +4068,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L498",
       "id": "tests_test_output_generator_testoutputgeneratorlogbook_test_update_logbook_preserves_existing_file",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_update_logbook_preserves_existing_file()"
     },
     {
@@ -4077,7 +4077,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L542",
       "id": "tests_test_output_generator_testoutputgeneratorlogbook_test_update_logbook_with_special_characters_in_session_id",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_update_logbook_with_special_characters_in_session_id()"
     },
     {
@@ -4086,7 +4086,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L574",
       "id": "tests_test_output_generator_testoutputgeneratorlogbook_test_update_logbook_concurrent_updates",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_update_logbook_concurrent_updates()"
     },
     {
@@ -4095,7 +4095,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L617",
       "id": "tests_test_output_generator_testoutputgeneratorchangelog",
-      "community": 5,
+      "community": 4,
       "norm_label": "testoutputgeneratorchangelog"
     },
     {
@@ -4104,7 +4104,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L620",
       "id": "tests_test_output_generator_testoutputgeneratorchangelog_test_update_changelog_with_all_categories",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_update_changelog_with_all_categories()"
     },
     {
@@ -4113,7 +4113,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L644",
       "id": "tests_test_output_generator_testoutputgeneratorchangelog_test_update_changelog_content_structure",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_update_changelog_content_structure()"
     },
     {
@@ -4122,7 +4122,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L672",
       "id": "tests_test_output_generator_testoutputgeneratorchangelog_test_update_changelog_unicode_support",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_update_changelog_unicode_support()"
     },
     {
@@ -4131,7 +4131,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L694",
       "id": "tests_test_output_generator_testoutputgeneratorchangelog_test_update_changelog_multiple_entries",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_update_changelog_multiple_entries()"
     },
     {
@@ -4140,7 +4140,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L726",
       "id": "tests_test_output_generator_testoutputgeneratorchangelog_test_update_changelog_default_directory",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_update_changelog_default_directory()"
     },
     {
@@ -4149,7 +4149,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L744",
       "id": "tests_test_output_generator_testoutputgeneratorchangelog_test_update_changelog_special_characters_in_summary",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_update_changelog_special_characters_in_summary()"
     },
     {
@@ -4158,7 +4158,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L767",
       "id": "tests_test_output_generator_testoutputgeneratorchangelog_test_update_changelog_empty_summary",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_update_changelog_empty_summary()"
     },
     {
@@ -4167,7 +4167,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L792",
       "id": "tests_test_output_generator_testoutputgeneratorchangelog_test_update_changelog_large_summary",
-      "community": 5,
+      "community": 4,
       "norm_label": ".test_update_changelog_large_summary()"
     },
     {
@@ -4176,7 +4176,7 @@
       "source_file": "tests/test_output_generator.py",
       "source_location": "L819",
       "id": "tests_test_output_generator_test_async_compatibility",
-      "community": 5,
+      "community": 4,
       "norm_label": "test_async_compatibility()"
     },
     {
@@ -4184,7 +4184,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L1",
-      "community": 5,
+      "community": 4,
       "norm_label": "test suite for outputgenerator module.  tests the output generation functionalit",
       "id": "tests_test_output_generator_rationale_1"
     },
@@ -4193,7 +4193,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L22",
-      "community": 5,
+      "community": 4,
       "norm_label": "test suite for outputgenerator class.",
       "id": "tests_test_output_generator_rationale_22"
     },
@@ -4202,7 +4202,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L25",
-      "community": 5,
+      "community": 4,
       "norm_label": "test initialization with default output directory.",
       "id": "tests_test_output_generator_rationale_25"
     },
@@ -4211,7 +4211,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L39",
-      "community": 5,
+      "community": 4,
       "norm_label": "test initialization with custom output directory.",
       "id": "tests_test_output_generator_rationale_39"
     },
@@ -4220,7 +4220,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L47",
-      "community": 5,
+      "community": 4,
       "norm_label": "test that output directory is created if it doesn't exist.",
       "id": "tests_test_output_generator_rationale_47"
     },
@@ -4229,7 +4229,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L55",
-      "community": 5,
+      "community": 4,
       "norm_label": "test yaml file generation.",
       "id": "tests_test_output_generator_rationale_55"
     },
@@ -4238,7 +4238,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L74",
-      "community": 5,
+      "community": 4,
       "norm_label": "test yaml generation for multiple sessions.",
       "id": "tests_test_output_generator_rationale_74"
     },
@@ -4247,7 +4247,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L103",
-      "community": 5,
+      "community": 4,
       "norm_label": "test json file generation.",
       "id": "tests_test_output_generator_rationale_103"
     },
@@ -4256,7 +4256,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L126",
-      "community": 5,
+      "community": 4,
       "norm_label": "test json generation with unicode characters.",
       "id": "tests_test_output_generator_rationale_126"
     },
@@ -4265,7 +4265,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L147",
-      "community": 5,
+      "community": 4,
       "norm_label": "test changelog update.",
       "id": "tests_test_output_generator_rationale_147"
     },
@@ -4274,7 +4274,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L166",
-      "community": 5,
+      "community": 4,
       "norm_label": "test changelog update with default directory.",
       "id": "tests_test_output_generator_rationale_166"
     },
@@ -4283,7 +4283,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L198",
-      "community": 5,
+      "community": 4,
       "norm_label": "test that logbook appends new entries.",
       "id": "tests_test_output_generator_rationale_198"
     },
@@ -4292,7 +4292,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L221",
-      "community": 5,
+      "community": 4,
       "norm_label": "test logbook update with default path.",
       "id": "tests_test_output_generator_rationale_221"
     },
@@ -4301,7 +4301,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L234",
-      "community": 5,
+      "community": 4,
       "norm_label": "test yaml generation with missing optional fields.",
       "id": "tests_test_output_generator_rationale_234"
     },
@@ -4310,7 +4310,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L247",
-      "community": 5,
+      "community": 4,
       "norm_label": "test that each output generates unique files.",
       "id": "tests_test_output_generator_rationale_247"
     },
@@ -4319,7 +4319,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L267",
-      "community": 5,
+      "community": 4,
       "norm_label": "enhanced test suite for outputgenerator.logbook functionality.",
       "id": "tests_test_output_generator_rationale_267"
     },
@@ -4328,7 +4328,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L270",
-      "community": 5,
+      "community": 4,
       "norm_label": "test logbook update with all classification categories.",
       "id": "tests_test_output_generator_rationale_270"
     },
@@ -4337,7 +4337,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L304",
-      "community": 5,
+      "community": 4,
       "norm_label": "test that logbook entries have correct structure.",
       "id": "tests_test_output_generator_rationale_304"
     },
@@ -4346,7 +4346,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L340",
-      "community": 5,
+      "community": 4,
       "norm_label": "test appending multiple entries to logbook.",
       "id": "tests_test_output_generator_rationale_340"
     },
@@ -4355,7 +4355,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L368",
-      "community": 5,
+      "community": 4,
       "norm_label": "test logbook update with minimal documentation unit.",
       "id": "tests_test_output_generator_rationale_368"
     },
@@ -4364,7 +4364,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L391",
-      "community": 5,
+      "community": 4,
       "norm_label": "test logbook update with none values in doc unit.",
       "id": "tests_test_output_generator_rationale_391"
     },
@@ -4373,7 +4373,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L415",
-      "community": 5,
+      "community": 4,
       "norm_label": "test logbook update with unicode characters.",
       "id": "tests_test_output_generator_rationale_415"
     },
@@ -4382,7 +4382,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L441",
-      "community": 5,
+      "community": 4,
       "norm_label": "test logbook performance with large number of entries.",
       "id": "tests_test_output_generator_rationale_441"
     },
@@ -4391,7 +4391,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L468",
-      "community": 5,
+      "community": 4,
       "norm_label": "test logbook yaml formatting.",
       "id": "tests_test_output_generator_rationale_468"
     },
@@ -4400,7 +4400,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L499",
-      "community": 5,
+      "community": 4,
       "norm_label": "test that update_logbook preserves existing logbook file.",
       "id": "tests_test_output_generator_rationale_499"
     },
@@ -4409,7 +4409,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L543",
-      "community": 5,
+      "community": 4,
       "norm_label": "test logbook update with special characters in session id.",
       "id": "tests_test_output_generator_rationale_543"
     },
@@ -4418,7 +4418,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L575",
-      "community": 5,
+      "community": 4,
       "norm_label": "test that multiple logbook updates work correctly.",
       "id": "tests_test_output_generator_rationale_575"
     },
@@ -4427,7 +4427,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L618",
-      "community": 5,
+      "community": 4,
       "norm_label": "enhanced test suite for outputgenerator.changelog functionality.",
       "id": "tests_test_output_generator_rationale_618"
     },
@@ -4436,7 +4436,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L621",
-      "community": 5,
+      "community": 4,
       "norm_label": "test changelog update with all classification categories.",
       "id": "tests_test_output_generator_rationale_621"
     },
@@ -4445,7 +4445,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L645",
-      "community": 5,
+      "community": 4,
       "norm_label": "test that changelog entry has correct markdown structure.",
       "id": "tests_test_output_generator_rationale_645"
     },
@@ -4454,7 +4454,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L673",
-      "community": 5,
+      "community": 4,
       "norm_label": "test changelog update with unicode characters.",
       "id": "tests_test_output_generator_rationale_673"
     },
@@ -4463,7 +4463,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L695",
-      "community": 5,
+      "community": 4,
       "norm_label": "test creating multiple changelog entries.",
       "id": "tests_test_output_generator_rationale_695"
     },
@@ -4472,7 +4472,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L727",
-      "community": 5,
+      "community": 4,
       "norm_label": "test changelog update with default directory.",
       "id": "tests_test_output_generator_rationale_727"
     },
@@ -4481,7 +4481,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L745",
-      "community": 5,
+      "community": 4,
       "norm_label": "test changelog with special characters and code in summary.",
       "id": "tests_test_output_generator_rationale_745"
     },
@@ -4490,7 +4490,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L768",
-      "community": 5,
+      "community": 4,
       "norm_label": "test changelog with empty summary.",
       "id": "tests_test_output_generator_rationale_768"
     },
@@ -4499,7 +4499,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L793",
-      "community": 5,
+      "community": 4,
       "norm_label": "test changelog with very large summary text.",
       "id": "tests_test_output_generator_rationale_793"
     },
@@ -4508,7 +4508,7 @@
       "file_type": "rationale",
       "source_file": "tests/test_output_generator.py",
       "source_location": "L820",
-      "community": 5,
+      "community": 4,
       "norm_label": "test async/await compatibility of output generator methods.",
       "id": "tests_test_output_generator_rationale_820"
     },
@@ -5184,7 +5184,7 @@
       "source_file": "cli/__init__.py",
       "source_location": "L1",
       "id": "cli_init_py",
-      "community": 33,
+      "community": 35,
       "norm_label": "__init__.py"
     },
     {
@@ -5553,7 +5553,7 @@
       "source_file": "cli/modules/__init__.py",
       "source_location": "L1",
       "id": "cli_modules_init_py",
-      "community": 34,
+      "community": 36,
       "norm_label": "__init__.py"
     },
     {
@@ -6300,7 +6300,7 @@
       "source_file": "stealth-sync/src/stealth_sync/output_generator.py",
       "source_location": "L1",
       "id": "stealth_sync_src_stealth_sync_output_generator_py",
-      "community": 5,
+      "community": 4,
       "norm_label": "output_generator.py"
     },
     {
@@ -6309,7 +6309,7 @@
       "source_file": "src/stealth_sync/output_generator.py",
       "source_location": "L25",
       "id": "stealth_sync_output_generator_outputgenerator",
-      "community": 5,
+      "community": 4,
       "norm_label": "outputgenerator"
     },
     {
@@ -6318,7 +6318,7 @@
       "source_file": "src/stealth_sync/output_generator.py",
       "source_location": "L39",
       "id": "stealth_sync_output_generator_outputgenerator_init",
-      "community": 5,
+      "community": 4,
       "norm_label": ".__init__()"
     },
     {
@@ -6327,7 +6327,7 @@
       "source_file": "src/stealth_sync/output_generator.py",
       "source_location": "L51",
       "id": "stealth_sync_output_generator_outputgenerator_generate_yaml",
-      "community": 5,
+      "community": 4,
       "norm_label": ".generate_yaml()"
     },
     {
@@ -6336,7 +6336,7 @@
       "source_file": "src/stealth_sync/output_generator.py",
       "source_location": "L80",
       "id": "stealth_sync_output_generator_outputgenerator_generate_json",
-      "community": 5,
+      "community": 4,
       "norm_label": ".generate_json()"
     },
     {
@@ -6345,7 +6345,7 @@
       "source_file": "src/stealth_sync/output_generator.py",
       "source_location": "L108",
       "id": "stealth_sync_output_generator_outputgenerator_update_changelog",
-      "community": 5,
+      "community": 4,
       "norm_label": ".update_changelog()"
     },
     {
@@ -6354,7 +6354,7 @@
       "source_file": "src/stealth_sync/output_generator.py",
       "source_location": "L140",
       "id": "stealth_sync_output_generator_outputgenerator_build_changelog_entry",
-      "community": 5,
+      "community": 4,
       "norm_label": "._build_changelog_entry()"
     },
     {
@@ -6363,7 +6363,7 @@
       "source_file": "src/stealth_sync/output_generator.py",
       "source_location": "L167",
       "id": "stealth_sync_output_generator_outputgenerator_update_logbook",
-      "community": 5,
+      "community": 4,
       "norm_label": ".update_logbook()"
     },
     {
@@ -6371,7 +6371,7 @@
       "file_type": "rationale",
       "source_file": "src/stealth_sync/output_generator.py",
       "source_location": "L1",
-      "community": 5,
+      "community": 4,
       "norm_label": "output generators for documentation units.  this module handles generating struc",
       "id": "stealth_sync_output_generator_rationale_1"
     },
@@ -6380,7 +6380,7 @@
       "file_type": "rationale",
       "source_file": "src/stealth_sync/output_generator.py",
       "source_location": "L26",
-      "community": 5,
+      "community": 4,
       "norm_label": "generates structured documentation from session analysis.          this class cr",
       "id": "stealth_sync_output_generator_rationale_26"
     },
@@ -6389,7 +6389,7 @@
       "file_type": "rationale",
       "source_file": "src/stealth_sync/output_generator.py",
       "source_location": "L40",
-      "community": 5,
+      "community": 4,
       "norm_label": "initialize the output generator.                  args:             output_dir:",
       "id": "stealth_sync_output_generator_rationale_40"
     },
@@ -6398,7 +6398,7 @@
       "file_type": "rationale",
       "source_file": "src/stealth_sync/output_generator.py",
       "source_location": "L52",
-      "community": 5,
+      "community": 4,
       "norm_label": "generate a yaml documentation file for a session.                  creates a yam",
       "id": "stealth_sync_output_generator_rationale_52"
     },
@@ -6407,7 +6407,7 @@
       "file_type": "rationale",
       "source_file": "src/stealth_sync/output_generator.py",
       "source_location": "L81",
-      "community": 5,
+      "community": 4,
       "norm_label": "generate a json documentation file for a session.                  creates a jso",
       "id": "stealth_sync_output_generator_rationale_81"
     },
@@ -6416,7 +6416,7 @@
       "file_type": "rationale",
       "source_file": "src/stealth_sync/output_generator.py",
       "source_location": "L111",
-      "community": 5,
+      "community": 4,
       "norm_label": "update changelog with a new entry for this session.                  creates a m",
       "id": "stealth_sync_output_generator_rationale_111"
     },
@@ -6425,7 +6425,7 @@
       "file_type": "rationale",
       "source_file": "src/stealth_sync/output_generator.py",
       "source_location": "L141",
-      "community": 5,
+      "community": 4,
       "norm_label": "build a markdown changelog entry.                  creates a formatted markdown",
       "id": "stealth_sync_output_generator_rationale_141"
     },
@@ -6434,7 +6434,7 @@
       "file_type": "rationale",
       "source_file": "src/stealth_sync/output_generator.py",
       "source_location": "L170",
-      "community": 5,
+      "community": 4,
       "norm_label": "update the central logbook with a session reference.                  appends a",
       "id": "stealth_sync_output_generator_rationale_170"
     },
@@ -7092,7 +7092,7 @@
       "source_file": "scripts/check_doc_health.py",
       "source_location": "L1",
       "id": "scripts_check_doc_health_py",
-      "community": 20,
+      "community": 21,
       "norm_label": "check_doc_health.py"
     },
     {
@@ -7101,7 +7101,7 @@
       "source_file": "scripts/check_doc_health.py",
       "source_location": "L95",
       "id": "scripts_check_doc_health_find_repo",
-      "community": 20,
+      "community": 21,
       "norm_label": "find_repo()"
     },
     {
@@ -7110,7 +7110,7 @@
       "source_file": "scripts/check_doc_health.py",
       "source_location": "L125",
       "id": "scripts_check_doc_health_check_repo",
-      "community": 20,
+      "community": 21,
       "norm_label": "check_repo()"
     },
     {
@@ -7119,7 +7119,7 @@
       "source_file": "scripts/check_doc_health.py",
       "source_location": "L188",
       "id": "scripts_check_doc_health_main",
-      "community": 20,
+      "community": 21,
       "norm_label": "main()"
     },
     {
@@ -7127,7 +7127,7 @@
       "file_type": "rationale",
       "source_file": "scripts/check_doc_health.py",
       "source_location": "L96",
-      "community": 20,
+      "community": 21,
       "norm_label": "find repo dir by name in /users/jeremy/dev.",
       "id": "scripts_check_doc_health_rationale_96"
     },
@@ -7136,7 +7136,7 @@
       "file_type": "rationale",
       "source_file": "scripts/check_doc_health.py",
       "source_location": "L126",
-      "community": 20,
+      "community": 21,
       "norm_label": "sota audit: check all required files + uppercase violations.",
       "id": "scripts_check_doc_health_rationale_126"
     },
@@ -7874,7 +7874,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/execute.py",
       "source_location": "L188",
-      "community": 35,
+      "community": 37,
       "norm_label": "read page text for completion check.",
       "id": "survey_execute_rationale_188"
     },
@@ -8685,7 +8685,7 @@
       "source_file": "survey-cli/survey/providers/strat7.py",
       "source_location": "L1",
       "id": "survey_cli_survey_providers_strat7_py",
-      "community": 27,
+      "community": 29,
       "norm_label": "strat7.py"
     },
     {
@@ -8693,7 +8693,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/strat7.py",
       "source_location": "L1",
-      "community": 27,
+      "community": 29,
       "norm_label": "strat7 audiences provider patterns.  key patterns:   - .bsbutton grid for consen",
       "id": "providers_strat7_rationale_1"
     },
@@ -8703,7 +8703,7 @@
       "source_file": "survey-cli/survey/providers/qualtrics.py",
       "source_location": "L1",
       "id": "survey_cli_survey_providers_qualtrics_py",
-      "community": 22,
+      "community": 24,
       "norm_label": "qualtrics.py"
     },
     {
@@ -8712,7 +8712,7 @@
       "source_file": "survey-cli/survey/providers/qualtrics.py",
       "source_location": "L30",
       "id": "providers_qualtrics_get_action_for_question",
-      "community": 22,
+      "community": 24,
       "norm_label": "get_action_for_question()"
     },
     {
@@ -8720,7 +8720,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/qualtrics.py",
       "source_location": "L1",
-      "community": 22,
+      "community": 24,
       "norm_label": "qualtrics provider patterns.  key differences from other providers:   - .nextbut",
       "id": "providers_qualtrics_rationale_1"
     },
@@ -8729,7 +8729,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/qualtrics.py",
       "source_location": "L31",
-      "community": 22,
+      "community": 24,
       "norm_label": "match a question to profile data.      returns:         {\"index\": int, \"value\":",
       "id": "providers_qualtrics_rationale_31"
     },
@@ -8739,7 +8739,7 @@
       "source_file": "survey-cli/survey/providers/__init__.py",
       "source_location": "L1",
       "id": "survey_cli_survey_providers_init_py",
-      "community": 28,
+      "community": 30,
       "norm_label": "__init__.py"
     },
     {
@@ -8747,7 +8747,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/__init__.py",
       "source_location": "L1",
-      "community": 28,
+      "community": 30,
       "norm_label": "provider-specific survey patterns.  each provider module exports:   - detect(pag",
       "id": "providers_init_rationale_1"
     },
@@ -8764,7 +8764,7 @@
       "label": "extract_captcha_image()",
       "file_type": "code",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L64",
+      "source_location": "L70",
       "id": "providers_purespectrum_extract_captcha_image",
       "community": 12,
       "norm_label": "extract_captcha_image()"
@@ -8773,7 +8773,7 @@
       "label": "solve_captcha_with_vision()",
       "file_type": "code",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L188",
+      "source_location": "L194",
       "id": "providers_purespectrum_solve_captcha_with_vision",
       "community": 12,
       "norm_label": "solve_captcha_with_vision()"
@@ -8782,7 +8782,7 @@
       "label": "find_captcha_input()",
       "file_type": "code",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L269",
+      "source_location": "L275",
       "id": "providers_purespectrum_find_captcha_input",
       "community": 12,
       "norm_label": "find_captcha_input()"
@@ -8791,7 +8791,7 @@
       "label": "fill_captcha_and_submit()",
       "file_type": "code",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L310",
+      "source_location": "L316",
       "id": "providers_purespectrum_fill_captcha_and_submit",
       "community": 12,
       "norm_label": "fill_captcha_and_submit()"
@@ -8800,7 +8800,7 @@
       "label": "solve_purespectrum_captcha()",
       "file_type": "code",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L356",
+      "source_location": "L362",
       "id": "providers_purespectrum_solve_purespectrum_captcha",
       "community": 12,
       "norm_label": "solve_purespectrum_captcha()"
@@ -8809,7 +8809,7 @@
       "label": "handle_cookie_consent()",
       "file_type": "code",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L435",
+      "source_location": "L441",
       "id": "providers_purespectrum_handle_cookie_consent",
       "community": 12,
       "norm_label": "handle_cookie_consent()"
@@ -8818,7 +8818,7 @@
       "label": "fill_opinion_textarea()",
       "file_type": "code",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L468",
+      "source_location": "L474",
       "id": "providers_purespectrum_fill_opinion_textarea",
       "community": 12,
       "norm_label": "fill_opinion_textarea()"
@@ -8827,10 +8827,19 @@
       "label": "read_page_text()",
       "file_type": "code",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L501",
+      "source_location": "L507",
       "id": "providers_purespectrum_read_page_text",
       "community": 12,
       "norm_label": "read_page_text()"
+    },
+    {
+      "label": "solve_drag_puzzle()",
+      "file_type": "code",
+      "source_file": "survey-cli/survey/providers/purespectrum.py",
+      "source_location": "L526",
+      "id": "providers_purespectrum_solve_drag_puzzle",
+      "community": 12,
+      "norm_label": "solve_drag_puzzle()"
     },
     {
       "label": "PureSpectrum provider patterns \u2014 CAPTCHA blocked.  All current PureSpectrum surv",
@@ -8845,64 +8854,73 @@
       "label": "Extract base64 captcha image from PureSpectrum page via CDP.      Returns:",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L65",
+      "source_location": "L71",
+      "id": "providers_purespectrum_rationale_71",
       "community": 12,
-      "norm_label": "extract base64 captcha image from purespectrum page via cdp.      returns:",
-      "id": "providers_purespectrum_rationale_65"
+      "norm_label": "extract base64 captcha image from purespectrum page via cdp.      returns:"
     },
     {
       "label": "Send captcha image to NVIDIA NIM Vision API for OCR.      Args:         data_url",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L189",
+      "source_location": "L195",
+      "id": "providers_purespectrum_rationale_195",
       "community": 12,
-      "norm_label": "send captcha image to nvidia nim vision api for ocr.      args:         data_url",
-      "id": "providers_purespectrum_rationale_189"
+      "norm_label": "send captcha image to nvidia nim vision api for ocr.      args:         data_url"
     },
     {
       "label": "Find the captcha input field on the page.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L270",
+      "source_location": "L276",
+      "id": "providers_purespectrum_rationale_276",
       "community": 12,
-      "norm_label": "find the captcha input field on the page.",
-      "id": "providers_purespectrum_rationale_270"
+      "norm_label": "find the captcha input field on the page."
     },
     {
       "label": "Fill captcha answer and click submit.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L311",
+      "source_location": "L317",
+      "id": "providers_purespectrum_rationale_317",
       "community": 12,
-      "norm_label": "fill captcha answer and click submit.",
-      "id": "providers_purespectrum_rationale_311"
+      "norm_label": "fill captcha answer and click submit."
     },
     {
       "label": "Full PureSpectrum captcha solving pipeline.      1. Extract captcha image     2.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L357",
+      "source_location": "L363",
+      "id": "providers_purespectrum_rationale_363",
       "community": 12,
-      "norm_label": "full purespectrum captcha solving pipeline.      1. extract captcha image     2.",
-      "id": "providers_purespectrum_rationale_357"
+      "norm_label": "full purespectrum captcha solving pipeline.      1. extract captcha image     2."
     },
     {
       "label": "Click 'Alle akzeptieren' or similar consent button.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L436",
+      "source_location": "L442",
+      "id": "providers_purespectrum_rationale_442",
       "community": 12,
-      "norm_label": "click 'alle akzeptieren' or similar consent button.",
-      "id": "providers_purespectrum_rationale_436"
+      "norm_label": "click 'alle akzeptieren' or similar consent button."
     },
     {
       "label": "Fill the opinion textarea with ROBOT keyword.      PureSpectrum requires the wor",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L469",
+      "source_location": "L475",
+      "id": "providers_purespectrum_rationale_475",
       "community": 12,
-      "norm_label": "fill the opinion textarea with robot keyword.      purespectrum requires the wor",
-      "id": "providers_purespectrum_rationale_469"
+      "norm_label": "fill the opinion textarea with robot keyword.      purespectrum requires the wor"
+    },
+    {
+      "label": "Solve PureSpectrum drag-drop puzzle via Angular __ngContext__.      Recursively",
+      "file_type": "rationale",
+      "source_file": "survey-cli/survey/providers/purespectrum.py",
+      "source_location": "L527",
+      "id": "providers_purespectrum_rationale_527",
+      "community": 12,
+      "norm_label": "solve purespectrum drag-drop puzzle via angular __ngcontext__.      recursively"
     },
     {
       "label": "toluna.py",
@@ -8910,7 +8928,7 @@
       "source_file": "survey-cli/survey/providers/toluna.py",
       "source_location": "L1",
       "id": "survey_cli_survey_providers_toluna_py",
-      "community": 29,
+      "community": 31,
       "norm_label": "toluna.py"
     },
     {
@@ -8918,7 +8936,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/toluna.py",
       "source_location": "L1",
-      "community": 29,
+      "community": 31,
       "norm_label": "tolunastart provider patterns.  key patterns:   - .cf-radio for single select (u",
       "id": "providers_toluna_rationale_1"
     },
@@ -9027,7 +9045,7 @@
       "source_file": "src/stealth_sync/output_generator.py",
       "source_location": "L1",
       "id": "src_stealth_sync_output_generator_py",
-      "community": 5,
+      "community": 4,
       "norm_label": "output_generator.py"
     },
     {
@@ -9269,7 +9287,7 @@
       "file_type": "rationale",
       "source_file": "src/stealth_survey/batch_executor.py",
       "source_location": "L206",
-      "community": 36,
+      "community": 38,
       "norm_label": "read the current page text for completion detection.",
       "id": "stealth_survey_batch_executor_rationale_206"
     },
@@ -9278,7 +9296,7 @@
       "file_type": "rationale",
       "source_file": "src/stealth_survey/batch_executor.py",
       "source_location": "L218",
-      "community": 37,
+      "community": 39,
       "norm_label": "check if survey is completed.",
       "id": "stealth_survey_batch_executor_rationale_218"
     },
@@ -9728,7 +9746,7 @@
       "file_type": "rationale",
       "source_file": "src/stealth_survey/nim_client.py",
       "source_location": "L158",
-      "community": 38,
+      "community": 40,
       "norm_label": "ask nemotron to decide the next batch of actions.          args:             sna",
       "id": "stealth_survey_nim_client_rationale_158"
     },
@@ -9746,7 +9764,7 @@
       "file_type": "rationale",
       "source_file": "src/stealth_survey/nim_client.py",
       "source_location": "L254",
-      "community": 39,
+      "community": 41,
       "norm_label": "parse the llm response into a list of actions.          handles:         - pure",
       "id": "stealth_survey_nim_client_rationale_254"
     },
@@ -9980,7 +9998,7 @@
       "file_type": "rationale",
       "source_file": "src/stealth_survey/compact_snapshot.py",
       "source_location": "L281",
-      "community": 40,
+      "community": 42,
       "norm_label": "extract question texts from elements.",
       "id": "stealth_survey_compact_snapshot_rationale_281"
     },
@@ -9989,7 +10007,7 @@
       "file_type": "rationale",
       "source_file": "src/stealth_survey/compact_snapshot.py",
       "source_location": "L292",
-      "community": 41,
+      "community": 43,
       "norm_label": "detect survey progress if visible.",
       "id": "stealth_survey_compact_snapshot_rationale_292"
     },
@@ -9998,16 +10016,79 @@
       "file_type": "rationale",
       "source_file": "src/stealth_survey/compact_snapshot.py",
       "source_location": "L301",
-      "community": 42,
+      "community": 44,
       "norm_label": "detect survey provider from url.",
       "id": "stealth_survey_compact_snapshot_rationale_301"
+    },
+    {
+      "label": "Extract base64 captcha image from PureSpectrum page via CDP.      Returns:",
+      "file_type": "rationale",
+      "source_file": "survey-cli/survey/providers/purespectrum.py",
+      "source_location": "L65",
+      "community": 45,
+      "norm_label": "extract base64 captcha image from purespectrum page via cdp.      returns:",
+      "id": "providers_purespectrum_rationale_65"
+    },
+    {
+      "label": "Send captcha image to NVIDIA NIM Vision API for OCR.      Args:         data_url",
+      "file_type": "rationale",
+      "source_file": "survey-cli/survey/providers/purespectrum.py",
+      "source_location": "L189",
+      "community": 46,
+      "norm_label": "send captcha image to nvidia nim vision api for ocr.      args:         data_url",
+      "id": "providers_purespectrum_rationale_189"
+    },
+    {
+      "label": "Find the captcha input field on the page.",
+      "file_type": "rationale",
+      "source_file": "survey-cli/survey/providers/purespectrum.py",
+      "source_location": "L270",
+      "community": 47,
+      "norm_label": "find the captcha input field on the page.",
+      "id": "providers_purespectrum_rationale_270"
+    },
+    {
+      "label": "Fill captcha answer and click submit.",
+      "file_type": "rationale",
+      "source_file": "survey-cli/survey/providers/purespectrum.py",
+      "source_location": "L311",
+      "community": 48,
+      "norm_label": "fill captcha answer and click submit.",
+      "id": "providers_purespectrum_rationale_311"
+    },
+    {
+      "label": "Full PureSpectrum captcha solving pipeline.      1. Extract captcha image     2.",
+      "file_type": "rationale",
+      "source_file": "survey-cli/survey/providers/purespectrum.py",
+      "source_location": "L357",
+      "community": 49,
+      "norm_label": "full purespectrum captcha solving pipeline.      1. extract captcha image     2.",
+      "id": "providers_purespectrum_rationale_357"
+    },
+    {
+      "label": "Click 'Alle akzeptieren' or similar consent button.",
+      "file_type": "rationale",
+      "source_file": "survey-cli/survey/providers/purespectrum.py",
+      "source_location": "L436",
+      "community": 50,
+      "norm_label": "click 'alle akzeptieren' or similar consent button.",
+      "id": "providers_purespectrum_rationale_436"
+    },
+    {
+      "label": "Fill the opinion textarea with ROBOT keyword.      PureSpectrum requires the wor",
+      "file_type": "rationale",
+      "source_file": "survey-cli/survey/providers/purespectrum.py",
+      "source_location": "L469",
+      "community": 51,
+      "norm_label": "fill the opinion textarea with robot keyword.      purespectrum requires the wor",
+      "id": "providers_purespectrum_rationale_469"
     },
     {
       "label": "Pretty-print filtered survey results.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/scanner.py",
       "source_location": "L120",
-      "community": 43,
+      "community": 52,
       "norm_label": "pretty-print filtered survey results.",
       "id": "survey_scanner_rationale_120"
     },
@@ -10016,7 +10097,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/scanner.py",
       "source_location": "L146",
-      "community": 44,
+      "community": 53,
       "norm_label": "full scan: connect \u2192 extract ids \u2192 filter \u2192 print.      returns:         list of",
       "id": "survey_scanner_rationale_146"
     },
@@ -10025,7 +10106,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/scanner.py",
       "source_location": "L174",
-      "community": 45,
+      "community": 54,
       "norm_label": "read page innertext via cdp.",
       "id": "survey_scanner_rationale_174"
     },
@@ -10034,7 +10115,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/scanner.py",
       "source_location": "L191",
-      "community": 46,
+      "community": 55,
       "norm_label": "read current balance from dashboard.",
       "id": "survey_scanner_rationale_191"
     },
@@ -10043,7 +10124,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L56",
-      "community": 47,
+      "community": 56,
       "norm_label": "find all tabs in bot chrome.",
       "id": "survey_chrome_rationale_56"
     },
@@ -10052,7 +10133,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L67",
-      "community": 48,
+      "community": 57,
       "norm_label": "find websocket url for a heypiggy dashboard tab.",
       "id": "survey_chrome_rationale_67"
     },
@@ -10061,7 +10142,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L79",
-      "community": 49,
+      "community": 58,
       "norm_label": "find first non-dashboard survey tab.",
       "id": "survey_chrome_rationale_79"
     },
@@ -10070,7 +10151,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L88",
-      "community": 50,
+      "community": 59,
       "norm_label": "get websocket url for a specific tab id.",
       "id": "survey_chrome_rationale_88"
     },
@@ -10079,7 +10160,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L96",
-      "community": 51,
+      "community": 60,
       "norm_label": "check if bot chrome is running with cdp enabled.",
       "id": "survey_chrome_rationale_96"
     },
@@ -10088,7 +10169,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L105",
-      "community": 52,
+      "community": 61,
       "norm_label": "launch chrome via playstealth or raw subprocess.",
       "id": "survey_chrome_rationale_105"
     },
@@ -10097,7 +10178,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L145",
-      "community": 53,
+      "community": 62,
       "norm_label": "safely kill only bot chrome processes.",
       "id": "survey_chrome_rationale_145"
     },
@@ -10106,7 +10187,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L162",
-      "community": 54,
+      "community": 63,
       "norm_label": "get survey url from cpx api.",
       "id": "survey_chrome_rationale_162"
     },
@@ -10115,7 +10196,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L175",
-      "community": 55,
+      "community": 64,
       "norm_label": "get full survey details from cpx api.",
       "id": "survey_chrome_rationale_175"
     },
@@ -10259,7 +10340,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/captcha_solver.py",
       "source_location": "L25",
-      "community": 56,
+      "community": 65,
       "norm_label": "dynamically get window position and toolbar height",
       "id": "modules_captcha_solver_rationale_25"
     },
@@ -10268,7 +10349,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/captcha_solver.py",
       "source_location": "L51",
-      "community": 57,
+      "community": 66,
       "norm_label": "convert dom (viewport) coordinates to window coordinates",
       "id": "modules_captcha_solver_rationale_51"
     },
@@ -10277,7 +10358,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/captcha_solver.py",
       "source_location": "L55",
-      "community": 58,
+      "community": 67,
       "norm_label": "execute drag via cua-driver cgevent",
       "id": "modules_captcha_solver_rationale_55"
     },
@@ -10286,7 +10367,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/captcha_solver.py",
       "source_location": "L63",
-      "community": 59,
+      "community": 68,
       "norm_label": "solve slide captcha (gc-drag-block on gc-drag-slide-bar)",
       "id": "modules_captcha_solver_rationale_63"
     },
@@ -10295,7 +10376,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/captcha_solver.py",
       "source_location": "L86",
-      "community": 60,
+      "community": 69,
       "norm_label": "generic: drag element from drag_selector to drop_selector",
       "id": "modules_captcha_solver_rationale_86"
     },
@@ -10574,7 +10655,7 @@
       "file_type": "rationale",
       "source_file": "stealth_mind/validator.py",
       "source_location": "L1",
-      "community": 61,
+      "community": 70,
       "norm_label": "command validator that detects failure patterns and logs fixes.",
       "id": "stealth_mind_validator_rationale_1"
     },
@@ -10583,7 +10664,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/ax_python.py",
       "source_location": "L1",
-      "community": 62,
+      "community": 71,
       "norm_label": "ax_python \u2014 python ax tree traversal via atomacos.  bietet schnellen python-basi",
       "id": "modules_ax_python_rationale_1"
     },
@@ -10592,7 +10673,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/ax_python.py",
       "source_location": "L28",
-      "community": 63,
+      "community": 72,
       "norm_label": "gibt kompletten ax-tree einer app als dict zuruck.",
       "id": "modules_ax_python_rationale_28"
     },
@@ -10601,7 +10682,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/ax_python.py",
       "source_location": "L42",
-      "community": 64,
+      "community": 73,
       "norm_label": "rekursiver walk des ax-trees.",
       "id": "modules_ax_python_rationale_42"
     },
@@ -10610,7 +10691,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/ax_python.py",
       "source_location": "L77",
-      "community": 65,
+      "community": 74,
       "norm_label": "findet ersten element-index mit passendem label (word-boundary).      returns:",
       "id": "modules_ax_python_rationale_77"
     },
@@ -10619,7 +10700,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/ax_python.py",
       "source_location": "L91",
-      "community": 66,
+      "community": 75,
       "norm_label": "rekursive suche mit index-zahlung.",
       "id": "modules_ax_python_rationale_91"
     },
@@ -10628,7 +10709,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/ax_python.py",
       "source_location": "L107",
-      "community": 67,
+      "community": 76,
       "norm_label": "listet alle fenster aller laufenden apps.",
       "id": "modules_ax_python_rationale_107"
     },
@@ -10637,7 +10718,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/ax_python.py",
       "source_location": "L125",
-      "community": 68,
+      "community": 77,
       "norm_label": "hilfsfunktion: alle laufenden pids via nsworkspace.",
       "id": "modules_ax_python_rationale_125"
     },
@@ -10646,7 +10727,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L37",
-      "community": 69,
+      "community": 78,
       "norm_label": "pruft ob aktuelle seite eine audio-frage hat.",
       "id": "modules_survey_runner_rationale_37"
     },
@@ -10655,7 +10736,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L67",
-      "community": 70,
+      "community": 79,
       "norm_label": "audio-frage automatisch beantworten.     nutzt blackhole + ffmpeg + nvidia omni.",
       "id": "modules_survey_runner_rationale_67"
     },
@@ -10664,7 +10745,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L128",
-      "community": 71,
+      "community": 80,
       "norm_label": "findet passende antwort aus persona fur eine frage.",
       "id": "modules_survey_runner_rationale_128"
     },
@@ -10673,7 +10754,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L217",
-      "community": 72,
+      "community": 81,
       "norm_label": "erkennt fragen und antwortmoglichkeiten im aktuellen ax-tree.          filtert b",
       "id": "modules_survey_runner_rationale_217"
     },
@@ -10682,7 +10763,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L311",
-      "community": 73,
+      "community": 82,
       "norm_label": "klickt eine antwortmoglichkeit (radiobutton/checkbox).",
       "id": "modules_survey_runner_rationale_311"
     },
@@ -10691,7 +10772,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L316",
-      "community": 74,
+      "community": 83,
       "norm_label": "tippt eine antwort in ein textfeld.",
       "id": "modules_survey_runner_rationale_316"
     },
@@ -10700,7 +10781,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L323",
-      "community": 75,
+      "community": 84,
       "norm_label": "klickt den weiter/nachst-button.",
       "id": "modules_survey_runner_rationale_323"
     },
@@ -10709,7 +10790,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L333",
-      "community": 76,
+      "community": 85,
       "norm_label": "pruft ob ein survey machbar ist \u2014 via vision_gate (nvidia + pixtral).          e",
       "id": "modules_survey_runner_rationale_333"
     },
@@ -10718,7 +10799,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L344",
-      "community": 77,
+      "community": 86,
       "norm_label": "macht einen screenshot und speichert ihn.",
       "id": "modules_survey_runner_rationale_344"
     },
@@ -10727,7 +10808,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L356",
-      "community": 78,
+      "community": 87,
       "norm_label": "beantwortet eine einzelne frage basierend auf persona und fragetyp.          - r",
       "id": "modules_survey_runner_rationale_356"
     },
@@ -10736,7 +10817,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L423",
-      "community": 79,
+      "community": 88,
       "norm_label": "scannt verfugbare surveys via cdp dom.          returns:         list[dict]: [{i",
       "id": "modules_survey_runner_rationale_423"
     },
@@ -10745,7 +10826,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L464",
-      "community": 80,
+      "community": 89,
       "norm_label": "startet einen survey per cdp click.          returns:         dict: {\"success\":",
       "id": "modules_survey_runner_rationale_464"
     },
@@ -10754,7 +10835,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L496",
-      "community": 81,
+      "community": 90,
       "norm_label": "bearbeitet die vorqualifizierung mit vision-gate logik-prufung.          1. cook",
       "id": "modules_survey_runner_rationale_496"
     },
@@ -10763,7 +10844,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L651",
-      "community": 82,
+      "community": 91,
       "norm_label": "bearbeitet einen survey im neuen tab.          1. erkennt neuen tab (cint, pures",
       "id": "modules_survey_runner_rationale_651"
     },
@@ -10772,7 +10853,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L739",
-      "community": 83,
+      "community": 92,
       "norm_label": "schlie\u00dft den survey-tab und kehrt zum heypiggy dashboard zuruck.",
       "id": "modules_survey_runner_rationale_739"
     },
@@ -10781,7 +10862,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L768",
-      "community": 84,
+      "community": 93,
       "norm_label": "bearbeitet das bewertungsfeld nach dem survey.          schreibt kurzen text + r",
       "id": "modules_survey_runner_rationale_768"
     },
@@ -10790,7 +10871,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L803",
-      "community": 85,
+      "community": 94,
       "norm_label": "pruft ob sich das guthaben erhoht hat.",
       "id": "modules_survey_runner_rationale_803"
     },
@@ -10799,7 +10880,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L815",
-      "community": 86,
+      "community": 95,
       "norm_label": "public box api: komplette survey automation.          fuhrt surveys nacheinander",
       "id": "modules_survey_runner_rationale_815"
     },
@@ -10808,7 +10889,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L926",
-      "community": 87,
+      "community": 96,
       "norm_label": "public api: verfugbare surveys scannen.",
       "id": "modules_survey_runner_rationale_926"
     },
@@ -10817,7 +10898,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L931",
-      "community": 88,
+      "community": 97,
       "norm_label": "public api: besten oder bestimmten survey starten.",
       "id": "modules_survey_runner_rationale_931"
     },
@@ -10826,7 +10907,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L943",
-      "community": 89,
+      "community": 98,
       "norm_label": "public api: vorqualifizierung durchfuhren.",
       "id": "modules_survey_runner_rationale_943"
     }
@@ -36876,7 +36957,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L64",
+      "source_location": "L70",
       "weight": 1.0,
       "_src": "survey_cli_survey_providers_purespectrum_py",
       "_tgt": "providers_purespectrum_extract_captcha_image",
@@ -36888,7 +36969,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L188",
+      "source_location": "L194",
       "weight": 1.0,
       "_src": "survey_cli_survey_providers_purespectrum_py",
       "_tgt": "providers_purespectrum_solve_captcha_with_vision",
@@ -36900,7 +36981,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L269",
+      "source_location": "L275",
       "weight": 1.0,
       "_src": "survey_cli_survey_providers_purespectrum_py",
       "_tgt": "providers_purespectrum_find_captcha_input",
@@ -36912,7 +36993,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L310",
+      "source_location": "L316",
       "weight": 1.0,
       "_src": "survey_cli_survey_providers_purespectrum_py",
       "_tgt": "providers_purespectrum_fill_captcha_and_submit",
@@ -36924,7 +37005,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L356",
+      "source_location": "L362",
       "weight": 1.0,
       "_src": "survey_cli_survey_providers_purespectrum_py",
       "_tgt": "providers_purespectrum_solve_purespectrum_captcha",
@@ -36936,7 +37017,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L435",
+      "source_location": "L441",
       "weight": 1.0,
       "_src": "survey_cli_survey_providers_purespectrum_py",
       "_tgt": "providers_purespectrum_handle_cookie_consent",
@@ -36948,7 +37029,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L468",
+      "source_location": "L474",
       "weight": 1.0,
       "_src": "survey_cli_survey_providers_purespectrum_py",
       "_tgt": "providers_purespectrum_fill_opinion_textarea",
@@ -36960,12 +37041,24 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L501",
+      "source_location": "L507",
       "weight": 1.0,
       "_src": "survey_cli_survey_providers_purespectrum_py",
       "_tgt": "providers_purespectrum_read_page_text",
       "source": "survey_cli_survey_providers_purespectrum_py",
       "target": "providers_purespectrum_read_page_text",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "contains",
+      "confidence": "EXTRACTED",
+      "source_file": "survey-cli/survey/providers/purespectrum.py",
+      "source_location": "L526",
+      "weight": 1.0,
+      "_src": "survey_cli_survey_providers_purespectrum_py",
+      "_tgt": "providers_purespectrum_solve_drag_puzzle",
+      "source": "survey_cli_survey_providers_purespectrum_py",
+      "target": "providers_purespectrum_solve_drag_puzzle",
       "confidence_score": 1.0
     },
     {
@@ -36984,7 +37077,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L376",
+      "source_location": "L382",
       "weight": 1.0,
       "_src": "providers_purespectrum_solve_purespectrum_captcha",
       "_tgt": "providers_purespectrum_extract_captcha_image",
@@ -36996,19 +37089,19 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L65",
+      "source_location": "L71",
       "weight": 1.0,
-      "_src": "providers_purespectrum_rationale_65",
+      "_src": "providers_purespectrum_rationale_71",
       "_tgt": "providers_purespectrum_extract_captcha_image",
       "source": "providers_purespectrum_extract_captcha_image",
-      "target": "providers_purespectrum_rationale_65",
+      "target": "providers_purespectrum_rationale_71",
       "confidence_score": 1.0
     },
     {
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L389",
+      "source_location": "L395",
       "weight": 1.0,
       "_src": "providers_purespectrum_solve_purespectrum_captcha",
       "_tgt": "providers_purespectrum_solve_captcha_with_vision",
@@ -37020,19 +37113,19 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L189",
+      "source_location": "L195",
       "weight": 1.0,
-      "_src": "providers_purespectrum_rationale_189",
+      "_src": "providers_purespectrum_rationale_195",
       "_tgt": "providers_purespectrum_solve_captcha_with_vision",
       "source": "providers_purespectrum_solve_captcha_with_vision",
-      "target": "providers_purespectrum_rationale_189",
+      "target": "providers_purespectrum_rationale_195",
       "confidence_score": 1.0
     },
     {
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L408",
+      "source_location": "L414",
       "weight": 1.0,
       "_src": "providers_purespectrum_solve_purespectrum_captcha",
       "_tgt": "providers_purespectrum_find_captcha_input",
@@ -37044,19 +37137,19 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L270",
+      "source_location": "L276",
       "weight": 1.0,
-      "_src": "providers_purespectrum_rationale_270",
+      "_src": "providers_purespectrum_rationale_276",
       "_tgt": "providers_purespectrum_find_captcha_input",
       "source": "providers_purespectrum_find_captcha_input",
-      "target": "providers_purespectrum_rationale_270",
+      "target": "providers_purespectrum_rationale_276",
       "confidence_score": 1.0
     },
     {
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L420",
+      "source_location": "L426",
       "weight": 1.0,
       "_src": "providers_purespectrum_solve_purespectrum_captcha",
       "_tgt": "providers_purespectrum_fill_captcha_and_submit",
@@ -37068,48 +37161,60 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L311",
+      "source_location": "L317",
       "weight": 1.0,
-      "_src": "providers_purespectrum_rationale_311",
+      "_src": "providers_purespectrum_rationale_317",
       "_tgt": "providers_purespectrum_fill_captcha_and_submit",
       "source": "providers_purespectrum_fill_captcha_and_submit",
-      "target": "providers_purespectrum_rationale_311",
+      "target": "providers_purespectrum_rationale_317",
       "confidence_score": 1.0
     },
     {
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L357",
+      "source_location": "L363",
       "weight": 1.0,
-      "_src": "providers_purespectrum_rationale_357",
+      "_src": "providers_purespectrum_rationale_363",
       "_tgt": "providers_purespectrum_solve_purespectrum_captcha",
       "source": "providers_purespectrum_solve_purespectrum_captcha",
-      "target": "providers_purespectrum_rationale_357",
+      "target": "providers_purespectrum_rationale_363",
       "confidence_score": 1.0
     },
     {
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L436",
+      "source_location": "L442",
       "weight": 1.0,
-      "_src": "providers_purespectrum_rationale_436",
+      "_src": "providers_purespectrum_rationale_442",
       "_tgt": "providers_purespectrum_handle_cookie_consent",
       "source": "providers_purespectrum_handle_cookie_consent",
-      "target": "providers_purespectrum_rationale_436",
+      "target": "providers_purespectrum_rationale_442",
       "confidence_score": 1.0
     },
     {
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
-      "source_location": "L469",
+      "source_location": "L475",
       "weight": 1.0,
-      "_src": "providers_purespectrum_rationale_469",
+      "_src": "providers_purespectrum_rationale_475",
       "_tgt": "providers_purespectrum_fill_opinion_textarea",
       "source": "providers_purespectrum_fill_opinion_textarea",
-      "target": "providers_purespectrum_rationale_469",
+      "target": "providers_purespectrum_rationale_475",
+      "confidence_score": 1.0
+    },
+    {
+      "relation": "rationale_for",
+      "confidence": "EXTRACTED",
+      "source_file": "survey-cli/survey/providers/purespectrum.py",
+      "source_location": "L527",
+      "weight": 1.0,
+      "_src": "providers_purespectrum_rationale_527",
+      "_tgt": "providers_purespectrum_solve_drag_puzzle",
+      "source": "providers_purespectrum_solve_drag_puzzle",
+      "target": "providers_purespectrum_rationale_527",
       "confidence_score": 1.0
     },
     {
