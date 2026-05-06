@@ -110,7 +110,7 @@ class SurveyRunner:
         provider = self._detect_provider(survey_url)
         result.provider = provider
 
-        # 2. Check blocked providers
+        # 1b. Check blocked providers
         if provider in self.config.skip_providers:
             result.status = "blocked"
             result.error = f"Blocked provider: {provider}"
@@ -118,22 +118,36 @@ class SurveyRunner:
             return result
 
         if self.config.debug:
-            print(f"[RUN] {survey_id} → {provider}")
+            print(f"[RUN] {survey_id} → {provider} (CPX: {survey_url[:60]})")
 
-        # 3. Open survey in new tab
+        # 2. Open survey in new tab
         tab_id = self._create_tab(dashboard_ws, survey_url)
         if not tab_id:
             result.error = "Failed to create browser tab"
             result.status = "error"
             return result
 
-        # 4. Wait for redirects
+        # 3. Wait for CPX redirect + detect REAL provider
         time.sleep(self.config.wait_page_load)
 
-        tab_info = chrome.get_ws_for_tab(tab_id, self.config.cdp_port)
-        tab_ws = tab_info if tab_info else chrome.find_survey_tab(self.config.cdp_port)
+        # Find the actual survey tab (may have changed after CPX redirect)
+        tab_ws, actual_url = self._find_survey_tab_ws(tab_id)
+        if not tab_ws:
+            # Tab might have closed (screen-out) or redirect failed
+            result.status = "screen_out"
+            result.error = "Survey tab not found after redirect (screen-out?)"
+            log_earnings(survey_id, "unknown", 0, "screen_out", 0)
+            return result
 
-        # 4b. Handle PureSpectrum captcha (if applicable)
+        # Detect real provider from actual URL (not CPX URL)
+        real_provider = self._detect_provider(actual_url) if actual_url else provider
+        if real_provider != provider and real_provider != "unknown":
+            result.provider = real_provider
+            provider = real_provider
+            if self.config.debug:
+                print(f"[RUN] Real provider: {provider} ({actual_url[:60]})")
+
+        # 4. Handle PureSpectrum captcha preflight (if applicable)
         if provider == "purespectrum" and tab_ws:
             captcha_result = self._handle_purespectrum_preflight(tab_ws, survey_id)
             if not captcha_result.get("success"):
@@ -325,12 +339,61 @@ class SurveyRunner:
         except Exception:
             return None
 
+    def _find_survey_tab_ws(self, tab_id):
+        """Find WebSocket URL for the actual survey tab after CPX redirect.
+        
+        CPX URLs redirect through multiple hops. The original tab_id
+        may have been replaced or a new tab opened. Find the real
+        survey tab (not dashboard, not about:blank).
+        
+        Returns:
+            (ws_url, page_url) tuple or (None, None)
+        """
+        # 1. Try the original tab first
+        tab_info = chrome.get_ws_for_tab(tab_id, self.config.cdp_port)
+        if tab_info:
+            # Check if it's still the CPX redirect or has landed on a survey
+            try:
+                import websocket as ws_lib
+                ws = ws_lib.create_connection(tab_info, timeout=8)
+                ws.send(json.dumps({
+                    "id": 0, "method": "Runtime.evaluate",
+                    "params": {"expression": "document.location.href", "returnByValue": True}
+                }))
+                r = json.loads(ws.recv())
+                ws.close()
+                url = r.get("result", {}).get("result", {}).get("value", "")
+                if url and "click.cpx" not in url and "dashboard" not in url:
+                    return tab_info, url
+            except Exception:
+                pass
+        
+        # 2. Fallback: find any non-dashboard, non-blank tab
+        for p in chrome.find_bot_tabs(self.config.cdp_port):
+            url = p.get("url", "")
+            if url and "dashboard" not in url and "about:blank" not in url:
+                return p.get("webSocketDebuggerUrl"), url
+        
+        return None, None
+
     def _close_tab(self, tab_id):
-        """Close a browser tab."""
+        """Close a browser tab. Tolerates already-closed tabs."""
         try:
-            tab_info = chrome.get_ws_for_tab(tab_id, self.config.cdp_port)
-            if tab_info:
-                ws = websocket.create_connection(tab_info, timeout=10)
+            # Try using the original tab's WS to close it
+            for p in chrome.find_bot_tabs(self.config.cdp_port):
+                if p.get("id") == tab_id:
+                    ws = websocket.create_connection(p["webSocketDebuggerUrl"], timeout=10)
+                    ws.send(json.dumps({
+                        "id": 1, "method": "Target.closeTarget",
+                        "params": {"targetId": tab_id}
+                    }))
+                    json.loads(ws.recv())
+                    ws.close()
+                    return
+            # If not found, try closing via dashboard WS
+            dash_ws = chrome.find_dashboard_ws(self.config.cdp_port)
+            if dash_ws:
+                ws = websocket.create_connection(dash_ws, timeout=10)
                 ws.send(json.dumps({
                     "id": 1, "method": "Target.closeTarget",
                     "params": {"targetId": tab_id}
@@ -338,7 +401,7 @@ class SurveyRunner:
                 json.loads(ws.recv())
                 ws.close()
         except Exception:
-            pass
+            pass  # Tab already closed — that's fine
 
     def _detect_provider(self, url):
         """Detect provider from URL."""
@@ -419,7 +482,7 @@ class SurveyRunner:
                 ])
 
         if has_captcha:
-            # Step 3: Solve captcha
+            # Step 3: Solve captcha (clip-based OCR, PRIMARY)
             captcha_result = solve_purespectrum_captcha(
                 tab_ws, debug=self.config.debug
             )
@@ -432,6 +495,25 @@ class SurveyRunner:
                     print(f"[RUN] PureSpectrum captcha SOLVED: "
                           f"'{result['captcha_text']}' "
                           f"({captcha_result.get('elapsed_ms', 0)}ms)")
+                
+                # Step 4: Handle drag puzzle (if present)
+                time.sleep(3)
+                page_text = read_page_text(tab_ws, 2000)
+                has_puzzle = "Bitte legen Sie die Zahl" in page_text
+                if has_puzzle:
+                    if self.config.debug:
+                        print("[RUN] Drag puzzle detected — solving via __ngContext__...")
+                    from survey.providers.purespectrum import solve_drag_puzzle
+                    puzzle_result = solve_drag_puzzle(tab_ws)
+                    steps.append({"step": "puzzle", **puzzle_result})
+                    if puzzle_result.get("success"):
+                        if self.config.debug:
+                            print(f"[RUN] Puzzle SOLVED: {puzzle_result['result']}")
+                        time.sleep(3)
+                    else:
+                        result["error"] = f"Drag puzzle failed: {puzzle_result.get('error', 'unknown')}"
+                        return result
+                
                 return result
             else:
                 result["error"] = captcha_result.get("error", "Captcha solve failed")
