@@ -73,16 +73,20 @@ def _get_state(pid, wid):
 def _find_element_by_text(markdown, role, text_substring):
     """Find element in tree_markdown by role and text substring.
     
-    Parses lines like: - [54] AXLink (Google Login-Symbol)
+    Handles both formats:
+      - [35] AXButton (Weiter)
+      - [35] AXButton "Weiter"
     """
     import re
+    # Match both (text) and "text" formats
     pattern = re.compile(
-        r'-\s*\[(\d+)\]\s+' + re.escape(role) + r'\s+\((.*?)\)'
+        r'-\s*\[(\d+)\]\s+' + re.escape(role) + r'\s+[\(“\"]([^\)\"”]+)[\)\"”]'
     )
+    text_lower = text_substring.lower()
     for match in pattern.finditer(markdown):
         idx = int(match.group(1))
         txt = match.group(2).lower()
-        if text_substring in txt:
+        if text_lower in txt:
             return {"element_index": idx, "text": txt}
     return None
 
