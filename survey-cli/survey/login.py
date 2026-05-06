@@ -121,28 +121,27 @@ def execute(port=9999, url="https://www.heypiggy.com/?page=dashboard"):
 
 
 def _check_logged_in(ws_url):
-    """Check if logged in to heypiggy dashboard."""
+    """Check if ACTUALLY logged in to heypiggy dashboard.
+
+    Must see 'Abmelden' AND 'Erhebungen' AND a balance amount.
+    The landing page has none of these.
+    """
     try:
         ws = websocket.create_connection(ws_url, timeout=10)
         ws.send(json.dumps({
             "id": 0, "method": "Runtime.evaluate",
             "params": {
-                "expression": '''
-(function() {
-    var t = document.body.innerText.toLowerCase();
-    return JSON.stringify({
-        logged_in: t.includes('abmelden') || t.includes('umfragen') || t.includes('survey'),
-        has_surveys: t.includes('umfragen') || t.includes('verfügbar'),
-        balance_match: t.match(/\d[.,]\d+\s*[€$]/) ? t.match(/\d[.,]\d+\s*[€$]/)[0] : null
-    });
-})()
-'''
+                "expression": "document.body.innerText"
             }
         }))
         r = json.loads(ws.recv())
         ws.close()
-        info = json.loads(r.get("result", {}).get("result", {}).get("value", "{}"))
-        return info.get("logged_in", False)
+        text = r.get("result", {}).get("result", {}).get("value", "")
+        # Must have ALL three indicators
+        has_logout = "Abmelden" in text
+        has_surveys = "Erhebungen" in text or "Umfragen" in text
+        has_balance = bool(re.search(r'\d+[.,]\d+\s*\n?\s*€', text))
+        return has_logout and has_surveys and has_balance
     except Exception:
         return False
 

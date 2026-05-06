@@ -168,8 +168,8 @@ def launch_chrome(url="https://www.heypiggy.com/?page=dashboard", port=9999):
     except Exception:
         pass
 
-    # Fallback: raw Chrome launch
-    profile_dir = f"/tmp/heypiggy-bot-{int(time.time())}"
+    # Fallback: raw Chrome launch with FIXED profile (keeps login cookies)
+    profile_dir = "/tmp/heypiggy-bot"  # FIXED, not timestamped!
     cmd = [
         "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
         f"--remote-debugging-port={port}",

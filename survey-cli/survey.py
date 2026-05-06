@@ -179,6 +179,19 @@ def cmd_watch(args):
         "use_nim": config.use_nim,
     })
 
+    # ── Auto-Login if needed ──────────────────────
+    from survey.login import execute as do_login, _check_logged_in
+    dash_ws = find_dashboard_ws(args.port)
+    if dash_ws and not _check_logged_in(dash_ws):
+        print(f"[WATCH] Not logged in — running Google OAuth login...")
+        login_result = do_login(port=args.port)
+        if login_result.get("status") != "ok":
+            print(f"[WATCH] ❌ Login failed: {login_result.get('reason')}")
+            state["running"] = False
+            return
+        print(f"[WATCH] ✅ Login successful")
+        time.sleep(3)
+
     # ── Main Loop ──────────────────────────────────
     while state["running"]:
         state["loop_count"] += 1
