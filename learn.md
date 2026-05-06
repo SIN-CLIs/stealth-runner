@@ -396,3 +396,128 @@ tccutil reset Accessibility com.google.Chrome
 | `Survey tab not found` | CPX-Redirect screen-out | Survey als screen_out markieren |
 | `Google Login-Symbol not found` | Dashboard ist Landing-Page (nicht logged in) | Login ausführen |
 | `No surveys available` | Hardcoded `details_url` ohne Session-Params | Live-URL vom Dashboard holen |
+
+## 🔥 Daemon Watch Loop Architektur
+
+```
+while running:
+  1. Health Check → Chrome alive? Dashboard WS?
+  2. Invariant Check → Login state? Accessibility?
+  3. Auto-Login → google_login() if not authenticated
+  4. Scan → extract_ids() → filter_surveys() via CPX API
+  5. Run Loop → run_survey(id) → NEMO pipeline
+  6. AutoDoc → log earnings, errors, decisions
+  7. Backoff → exponential if errors, immediate if success
+  8. Repeat
+```
+
+## 🔥 NEMO Loop (pro Survey-Seite)
+
+```
+Compact Snapshot (CDP Runtime.evaluate) → ~200 tokens
+    ↓
+NIM Decision (Nemotron 3 Omni / GPT-OSS-120B) → ~100 tokens
+    ↓
+Batch Execute (CDP Runtime.evaluate) → 1 WebSocket call
+    ↓
+Memory + Guardian (append-only JSONL)
+```
+
+## 🔥 Tab Lifecycle (CRITICAL für Multi-Survey)
+
+```
+1. CREATE: Target.createTarget(url) → tab_id
+2. WAIT: 8s für CPX-Redirect (click.cpx → Qualtrics/PureSpectrum/etc)
+3. DETECT: _find_survey_tab_ws(tab_id) → echte Survey-URL
+4. HANDLE: PureSpectrum preflight ODER NEMO loop
+5. CLOSE: Target.closeTarget(tab_id)
+6. CLEAN: Alle Zombie-Tabs vor nächstem Survey schließen
+```
+
+## 🔥 Survey ID Extraction (vom Dashboard)
+
+```python
+# Dashboard speichert Survey-Liste in JS-Variable:
+acctualSurveyList  # 73 Surveys! Nur 12 sichtbar im DOM
+
+# Sichtbare IDs via onclick-Handler:
+document.querySelectorAll('[onclick*=clickSurvey]')
+# Format: clickSurvey('66846193');
+
+# CPX API check:
+details_url + '&survey_id=' + id
+# Response: {"type":"okay","href":"..."} oder {"type":"question"}
+```
+
+## 🔥 Balance Reader — Regex Stolpersteine
+
+```python
+# Dashboard zeigt Balance als: "2.15\n€" (multiline!)
+# ❌ Falsch: sucht "2.15€" → findet nichts
+# ✅ Richtig: sucht "\d+[.,]\d+\s*\n?\s*€"
+BALANCE_REGEX = r'(\d+[.,]\d+)\s*\n?\s*[€$]'
+
+# ABER: Dashboard hat VIELE €-Beträge (Survey-Werte 0.06€, 0.38€...)
+# Balance ist der GRÖSSTE Wert → max() filtern
+```
+
+## 🔥 WebSocket Connection Management
+
+```python
+# IMMER neuen WebSocket pro Operation (nicht wiederverwenden!)
+ws = websocket.create_connection(ws_url, timeout=15)
+ws.send(json.dumps({...}))
+response = json.loads(ws.recv())
+ws.close()  # SOFORT schließen!
+
+# Grund: WebSocket-Timeout nach Inaktivität, State-Pollution
+# JEDE Operation = neuer WebSocket
+```
+
+## 🔥 Timing/Delays — empirisch ermittelt
+
+| Aktion | Delay | Grund |
+|--------|-------|-------|
+| Chrome Launch | 8s | Profil laden, erste Seite rendern |
+| CPX Redirect | 8s | click.cpx → Qualtrics/PureSpectrum chain |
+| Nach Button-Klick | 3-5s | Page-Transition, JS-Loading |
+| OAuth Popup | 5s | Google Redirect, Passkey-Dialog |
+| Captcha lösen | 5s | Page-Reload nach Submit |
+| Drag Puzzle | 3s | DOM-Update nach dropListRef.drop() |
+| Balance lesen | 2s | Dashboard-Cache-Refresh |
+
+Keine dieser Delays darf unterboten werden — sonst: stale DOM, falsche WS, fehlende Elemente.
+
+## 🔥 File-Saving Patterns (für ALLE Tools)
+
+```python
+# Konfiguration: JSON
+json.dump(config, open("config.json", "w"), indent=2)
+
+# Logs: JSONL (append-only, nie rewrite!)
+with open("logs.jsonl", "a") as f:
+    f.write(json.dumps(entry) + "\n")
+
+# Sessions: Markdown (human-readable)
+with open(f"sessions/{date}.md", "a") as f:
+    f.write(f"## {timestamp}\n{details}\n")
+
+# NIE: LLM schreibt Dokumentation (halluziniert)
+# IMMER: Code schreibt strukturierte Logs
+```
+
+## 🔥 Tool-Building Checkliste (für jeden neuen Flow)
+
+Bevor ein Flow zum Tool wird:
+- [ ] Invariant-Guard (`_verify_invariants()`)
+- [ ] cua-driver Output-Type-Check (JSON vs TEXT)
+- [ ] Chrome-Flag-Check (Accessibility + CDP)
+- [ ] Port-Hardcoding vermeiden (nutze 9999)
+- [ ] Zombie-Cleanup vor Start
+- [ ] Append-Only Logging
+- [ ] Error-Message mit Kontext (Survey-ID, Provider, Iteration)
+- [ ] Timing-Delays einhalten
+- [ ] WebSocket pro Operation (nicht wiederverwenden)
+- [ ] `learn.md` updaten nach Verifikation
+- [ ] `commands/` .md Datei anlegen
+- [ ] GitHub commit + push
