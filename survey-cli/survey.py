@@ -108,49 +108,188 @@ def cmd_loop(args):
 
 
 def cmd_watch(args):
-    """Continuous poller: scan → run → wait → repeat."""
+    """24/7 Watch Daemon — continuous poller with crash recovery.
+
+    Features:
+    - Graceful shutdown on SIGTERM/SIGINT
+    - Auto-restart on Chrome crash or CDP disconnect
+    - Exponential backoff on consecutive errors
+    - Health check before each scan cycle
+    - Balance target alerting
+    - Structured JSONL logging
+    """
+    import signal
     from survey.runner import SurveyRunner, RunnerConfig
     from survey.scanner import read_balance
+    from survey.chrome import is_chrome_alive, find_bot_tabs, find_dashboard_ws
+    from survey.autodoc import log_session
 
     interval = args.interval
-    print(f"[WATCH] Starting continuous poller (every {interval}s)")
-    print(f"  Press Ctrl+C to stop\n")
-
     config = RunnerConfig(
         cdp_port=args.port,
         use_nim=not args.no_nim,
         auto_rate=not args.no_rate,
         debug=False,
+        max_surveys=args.max,
     )
 
-    total_earned = 0
-    loop_count = 0
+    # ── State ──────────────────────────────────────
+    state = {
+        "running": True,
+        "total_earned": 0.0,
+        "loop_count": 0,
+        "consecutive_errors": 0,
+        "max_consecutive_errors": 5,
+        "session_start": time.time(),
+    }
 
-    try:
-        while True:
-            loop_count += 1
+    # ── Signal Handler ─────────────────────────────
+    def shutdown(signum, frame):
+        sig_name = signal.Signals(signum).name
+        elapsed = time.time() - state["session_start"]
+        print(f"\n[WATCH] Received {sig_name} — shutting down gracefully...")
+        print(f"[WATCH] Session: {state['loop_count']} loops, "
+              f"+{state['total_earned']:.2f}€ earned in {elapsed:.0f}s")
+        state["running"] = False
+        log_session("watch_stop", "ok", {
+            "reason": sig_name,
+            "loops": state["loop_count"],
+            "earned": state["total_earned"],
+            "elapsed_s": round(elapsed),
+        })
+
+    signal.signal(signal.SIGINT, shutdown)
+    signal.signal(signal.SIGTERM, shutdown)
+
+    # ── Banner ─────────────────────────────────────
+    print(f"\n{'═'*60}")
+    print(f"  🔄 SURVEY-CLI WATCH DAEMON — 24/7 Mode")
+    print(f"{'═'*60}")
+    print(f"  Poll interval:  {interval}s")
+    print(f"  Max/cycle:      {args.max}")
+    print(f"  NVIDIA NIM:     {'✅' if config.use_nim else '⚠️  auto-pilot'}")
+    print(f"  Balance target: {config.balance_target}€")
+    print(f"  Logs:           survey-cli/logs/")
+    print(f"  Stop:           Ctrl+C or SIGTERM")
+    print(f"{'═'*60}\n")
+
+    log_session("watch_start", "ok", {
+        "interval": interval,
+        "max_per_cycle": args.max,
+        "use_nim": config.use_nim,
+    })
+
+    # ── Main Loop ──────────────────────────────────
+    while state["running"]:
+        state["loop_count"] += 1
+        loop_start = time.monotonic()
+
+        try:
+            # Health check
+            if not is_chrome_alive(args.port):
+                print(f"[WATCH] ⚠️  Chrome not responding on port {args.port}")
+                state["consecutive_errors"] += 1
+
+                # Try to recover
+                from survey.chrome import launch_chrome
+                print(f"[WATCH] Attempting Chrome restart...")
+                launch_chrome(port=args.port)
+                time.sleep(5)
+                if not is_chrome_alive(args.port):
+                    if state["consecutive_errors"] >= state["max_consecutive_errors"]:
+                        print("[WATCH] ❌ Too many Chrome failures — stopping")
+                        break
+                    wait_s = min(60, 2 ** state["consecutive_errors"])
+                    print(f"[WATCH] Waiting {wait_s}s before retry...")
+                    time.sleep(wait_s)
+                    continue
+
+            # Check dashboard
+            dashboard_ws = find_dashboard_ws(args.port)
+            if not dashboard_ws:
+                print(f"[WATCH] ⚠️  No dashboard tab found")
+                state["consecutive_errors"] += 1
+                time.sleep(interval)
+                continue
+
+            # Reset error counter on successful health check
+            state["consecutive_errors"] = 0
+
+            # Read balance
             balance_before = read_balance(args.port)
-            print(f"[{loop_count}] Balance: {balance_before}€ | Scanning...")
+            tabs = len(find_bot_tabs(args.port))
 
+            print(f"\n[{state['loop_count']}] Balance: {balance_before}€ | "
+                  f"Tabs: {tabs} | "
+                  f"Earned: +{state['total_earned']:.2f}€ | "
+                  f"{time.strftime('%H:%M:%S')}")
+
+            # Check balance target
+            if balance_before >= config.balance_target:
+                print(f"[WATCH] 🎯 Balance target reached: {balance_before}€")
+                print(f"[WATCH] Total earned: +{state['total_earned']:.2f}€")
+                break
+
+            # Run survey cycle
             runner = SurveyRunner(config=config)
             results = runner.run_loop(max_surveys=args.max)
 
             earned = sum(r.earned for r in results if r.earned > 0)
-            total_earned += earned
+            state["total_earned"] += earned
             completed = sum(1 for r in results if r.status == "completed")
+            failed = len(results) - completed
 
             balance_after = read_balance(args.port)
-            print(f"[{loop_count}] This round: +{earned}€ ({completed} surveys) | "
-                  f"Total: {total_earned}€ | Balance now: {balance_after}€")
 
+            # Print cycle summary
+            icons = " ".join(
+                "✅" if r.status == "completed" else
+                "⛔" if r.status == "blocked" else "❌"
+                for r in results
+            )
+            print(f"  → +{earned:.2f}€ | {completed} done, {failed} fail | "
+                  f"Balance: {balance_after}€ | {icons}")
+
+            # Smart backoff: if no surveys completed, wait interval
             if completed == 0:
-                print(f"[WATCH] No surveys completed. Waiting {interval}s...\n")
-                time.sleep(interval)
+                if failed == 0:
+                    # No surveys available at all — wait longer
+                    wait_s = interval
+                    print(f"  No surveys found — waiting {wait_s}s...")
+                else:
+                    # Surveys attempted but failed — quick retry
+                    wait_s = min(interval, 10)
+                    print(f"  All failed — retrying in {wait_s}s...")
+                time.sleep(wait_s)
             else:
-                print(f"[WATCH] Continuing immediately...\n")
+                # Surveys completed — continue immediately
+                pass
 
-    except KeyboardInterrupt:
-        print(f"\n[WATCH] Stopped. Total earned this session: {total_earned}€")
+        except KeyboardInterrupt:
+            shutdown(signal.SIGINT, None)
+
+        except Exception as e:
+            state["consecutive_errors"] += 1
+            print(f"[WATCH] ❌ Error in loop {state['loop_count']}: {e}")
+
+            # Exponential backoff
+            if state["consecutive_errors"] >= state["max_consecutive_errors"]:
+                print(f"[WATCH] ❌ Too many consecutive errors — stopping")
+                break
+
+            wait_s = min(300, 5 * (2 ** state["consecutive_errors"]))
+            print(f"[WATCH] Backing off {wait_s}s (error {state['consecutive_errors']}/{state['max_consecutive_errors']})")
+            time.sleep(wait_s)
+
+    # ── Shutdown ───────────────────────────────────
+    elapsed = time.time() - state["session_start"]
+    print(f"\n{'═'*60}")
+    print(f"  WATCH DAEMON STOPPED")
+    print(f"{'═'*60}")
+    print(f"  Loops:     {state['loop_count']}")
+    print(f"  Earned:    +{state['total_earned']:.2f}€")
+    print(f"  Duration:  {elapsed:.0f}s ({elapsed/3600:.1f}h)")
+    print(f"{'═'*60}\n")
 
 
 def cmd_balance(args):

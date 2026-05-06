@@ -84,7 +84,7 @@ def filter_surveys(survey_ids, skip_providers=None, max_ids=15):
         List of dicts: [{id, provider, href, type}, ...]
     """
     if skip_providers is None:
-        skip_providers = ["purespectrum", "surveyrouter"]
+        skip_providers = ["surveyrouter"]
 
     results = []
     for sid in survey_ids[:max_ids]:

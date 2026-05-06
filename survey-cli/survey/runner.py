@@ -47,7 +47,7 @@ class RunnerConfig:
     rate_url: str = "https://www.heypiggy.com/?page=dashboard"
     balance_target: float = 5.0
     skip_providers: List[str] = field(default_factory=lambda: [
-        "purespectrum", "surveyrouter", "gfk"
+        "surveyrouter", "gfk"
     ])
     debug: bool = False
 
@@ -118,6 +118,23 @@ class SurveyRunner:
 
         tab_info = chrome.get_ws_for_tab(tab_id, self.config.cdp_port)
         tab_ws = tab_info if tab_info else chrome.find_survey_tab(self.config.cdp_port)
+
+        # 4b. Handle PureSpectrum captcha (if applicable)
+        if provider == "purespectrum" and tab_ws:
+            captcha_result = self._handle_purespectrum_preflight(tab_ws, survey_id)
+            if not captcha_result.get("success"):
+                result.status = "blocked"
+                result.error = f"PureSpectrum captcha: {captcha_result.get('error', 'unknown')}"
+                log_earnings(survey_id, provider, 0, "blocked", 0,
+                            {"captcha_error": captcha_result.get("error")})
+                self._close_tab(tab_id)
+                return result
+            # Captcha solved, wait for page transition
+            time.sleep(self.config.wait_page_load)
+            # Refresh tab WS
+            tab_info = chrome.get_ws_for_tab(tab_id, self.config.cdp_port)
+            if tab_info:
+                tab_ws = tab_info
 
         # 5. NEMO Loop
         nim_calls = 0
@@ -318,6 +335,100 @@ class SurveyRunner:
         """Check page text for completion markers."""
         text = BatchExecutor.read_page_text(ws_url)
         return detect_completion(text)
+
+    def _handle_purespectrum_preflight(self, tab_ws, survey_id):
+        """Handle PureSpectrum pre-survey flow: cookie consent + captcha.
+
+        Returns:
+            Dict with {success, steps, error}
+        """
+        from survey.providers.purespectrum import (
+            handle_cookie_consent,
+            solve_purespectrum_captcha,
+            fill_opinion_textarea,
+            read_page_text,
+        )
+
+        steps = []
+        result = {"success": False, "steps": steps}
+
+        if self.config.debug:
+            print(f"[RUN] PureSpectrum preflight starting...")
+
+        # Step 1: Cookie consent
+        consent = handle_cookie_consent(tab_ws)
+        steps.append({"step": "consent", **consent})
+        if consent.get("success"):
+            time.sleep(2)
+
+        # Step 2: Check page for captcha
+        page_text = read_page_text(tab_ws, 2000)
+        has_captcha = any(kw in page_text.lower() for kw in [
+            "code eingeben", "captcha", "sicherheitscode",
+            "bitte geben sie den folgenden code",
+        ])
+
+        if not has_captcha:
+            # Check if it's an opinion page instead
+            if "meinung" in page_text.lower() or "opinion" in page_text.lower():
+                fill_opinion_textarea(tab_ws)
+                steps.append({"step": "opinion_filled"})
+                time.sleep(1)
+                # Click next button
+                import websocket as ws_lib
+                ws = ws_lib.create_connection(tab_ws, timeout=15)
+                ws.send(json.dumps({
+                    "id": 0, "method": "Runtime.evaluate",
+                    "params": {
+                        "expression": '''
+(function() {
+    var btns = document.querySelectorAll("button");
+    for (var i = 0; i < btns.length; i++) {
+        var t = (btns[i].textContent || "").trim();
+        if (t === "Nächste" || t === "Next") {
+            btns[i].click(); return "clicked";
+        }
+    }
+    return "no_button";
+})()
+'''
+                    }
+                }))
+                json.loads(ws.recv())
+                ws.close()
+                steps.append({"step": "clicked_next_after_opinion"})
+                time.sleep(3)
+                # Re-check for captcha
+                page_text = read_page_text(tab_ws, 2000)
+                has_captcha = any(kw in page_text.lower() for kw in [
+                    "code eingeben", "captcha",
+                ])
+
+        if has_captcha:
+            # Step 3: Solve captcha
+            captcha_result = solve_purespectrum_captcha(
+                tab_ws, debug=self.config.debug
+            )
+            steps.append({"step": "captcha", **captcha_result})
+
+            if captcha_result.get("success"):
+                result["success"] = True
+                result["captcha_text"] = captcha_result.get("captcha_text", "")
+                if self.config.debug:
+                    print(f"[RUN] PureSpectrum captcha SOLVED: "
+                          f"'{result['captcha_text']}' "
+                          f"({captcha_result.get('elapsed_ms', 0)}ms)")
+                return result
+            else:
+                result["error"] = captcha_result.get("error", "Captcha solve failed")
+                return result
+        else:
+            # No captcha detected — might have passed automatically
+            result["success"] = True
+            result["note"] = "no_captcha_detected"
+            return result
+
+        return result
 
     def _rate_survey(self):
         """Rate completed survey for +0.01€ bonus."""
