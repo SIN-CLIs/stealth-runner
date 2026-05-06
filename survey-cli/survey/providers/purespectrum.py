@@ -1,655 +1,146 @@
-"""PureSpectrum provider — full OCR captcha solver via NVIDIA NIM Vision.
+"""PureSpectrum provider — captcha OCR + drag puzzle solver.
 
-Architecture:
-  1. CDP JS → extract base64 captcha image from <img>
-  2. NVIDIA Vision API → OCR text from image
-  3. CDP JS → fill input + submit
-
-Also handles PureSpectrum-specific flows:
-  - Cookie consent ("Alle akzeptieren")
-  - Opinion textarea with ROBOT keyword
-  - Number puzzle (BLOCKED — Angular CDK v19 drag-drop)
-
-SOTA Research (2026-05-06): Angular CDK v19 prod mode number puzzle.
-  Tried: JS PointerEvents, CDP mouse/touch events, HTML5 DragEvent, __ngContext__
-  All fail: CDK checks isTrusted or uses zone.js internals hidden in prod.
-  SOTA fix: OS-level mouse (CGEvent/AppleScript/Cliclick) for real hardware events.
-  Current strategy: Skip PureSpectrum, solve text captcha ✅, wait for other providers.
+SOTA: CDP mouse clicks for Angular v19 (JS .click() ignored).
+OCR: base64 img extraction → NVIDIA Vision API.
+Drag: __ngContext__ recursive search → dropListRef.drop().
 """
 
 import json
 import time
 import os
-import base64
+import re
 import websocket
 from openai import OpenAI
 
-# ── Constants ──────────────────────────────────────────
-
-VISION_MODEL = "nvidia/meta/llama-3.2-11b-vision-instruct"
+VISION_MODEL = "meta/llama-3.2-11b-vision-instruct"
 NIM_BASE_URL = "https://integrate.api.nvidia.com/v1"
 
-COMPLETION_MARKERS = [
-    "zurück zur website", "vielen dank",
-    "survey complete", "umfrage beendet",
-    "gutgeschrieben",
-]
+COMPLETION_MARKERS = ["zurück zur website", "vielen dank", "gutgeschrieben"]
 
-COMMANDS = {
-    "click_next": 'document.querySelector("button[type=submit]").click()',
-    "click_element": 'document.querySelectorAll("input[type=radio],input[type=checkbox]")[{idx}].click()',
-    "fill_text": '''(function(v){
-        var t=document.querySelector("textarea");
-        if(t){t.value=v;t.dispatchEvent(new Event("input",{bubbles:true}));
-        t.dispatchEvent(new Event("change",{bubbles:true}));}
-    })("{value}")''',
-}
+# ── CDP Mouse Click (Angular-proof) ────────────────────
 
-# ── Captcha Image Extraction ───────────────────────────
-
-CAPTCHA_IMG_SELECTORS = [
-    'img[src*="base64"]',
-    'img[src*="captcha"]',
-    '#captcha img',
-    '.captcha-image img',
-    'img[src*="png"]',
-    'img[src*="jpeg"]',
-    'img[src*="jpg"]',
-]
-
-CAPTCHA_INPUT_SELECTORS = [
-    'input[name*="captcha"]',
-    'input[placeholder*="Code"]',
-    'input[placeholder*="code"]',
-    '#captcha input',
-    '.captcha-input input',
-    'input[type="text"]:not([name]):not([id])',
-]
-
-
-def extract_captcha_image(ws_url):
-    """Extract base64 captcha image from PureSpectrum page via CDP.
-
-    Returns:
-        Dict with {data_url, img_element, success, error}
-        or None if no captcha found
-    """
+def cdp_click(ws_url, x, y):
+    """CDP Input.dispatchMouseEvent — real OS event (isTrusted=true)."""
     try:
-        ws = websocket.create_connection(ws_url, timeout=15)
+        ws = websocket.create_connection(ws_url, timeout=10)
+        for et in ["mouseMoved", "mousePressed", "mouseReleased"]:
+            ws.send(json.dumps({"id":0,"method":"Input.dispatchMouseEvent",
+                "params":{"type":et,"x":x,"y":y,"button":"left","clickCount":1}}))
+            json.loads(ws.recv())
+        ws.close()
+        return True
+    except:
+        return False
 
-        # JS to find captcha image and extract base64 src
-        js = '''
-(function() {
-    var selectors = {selectors};
-    for (var i = 0; i < selectors.length; i++) {{
-        var imgs = document.querySelectorAll(selectors[i]);
-        for (var j = 0; j < imgs.length; j++) {{
-            var src = imgs[j].src || '';
-            if (src.startsWith('data:image/')) {{
-                var rect = imgs[j].getBoundingClientRect();
-                return JSON.stringify({{
-                    found: true,
-                    src: src.substring(0, 200) + '...(truncated)',
-                    full_src_length: src.length,
-                    has_base64: src.includes('base64'),
-                    image_type: src.split(';')[0].replace('data:', ''),
-                    width: rect.width,
-                    height: rect.height,
-                    x: rect.x,
-                    y: rect.y,
-                    selector: selectors[i],
-                    index: j
-                }});
-            }}
-        }}
-    }}
-    // Fallback: find any image that looks like a captcha
-    var allImgs = document.querySelectorAll('img');
-    for (var k = 0; k < allImgs.length; k++) {{
-        var s = allImgs[k].src || '';
-        var r = allImgs[k].getBoundingClientRect();
-        if (s.includes('base64') || (r.width > 50 && r.width < 400 && r.height > 20 && r.height < 150)) {{
-            return JSON.stringify({{
-                found: true,
-                src: s.substring(0, 200) + '...(truncated)',
-                full_src_length: s.length,
-                has_base64: s.includes('base64'),
-                width: r.width,
-                height: r.height,
-                x: r.x,
-                y: r.y,
-                selector: 'fallback',
-                index: k
-            }});
-        }}
-    }}
-    return JSON.stringify({{found: false}});
-}})()
-'''.replace('{selectors}', json.dumps(CAPTCHA_IMG_SELECTORS))
 
-        ws.send(json.dumps({
-            "id": 0, "method": "Runtime.evaluate",
-            "params": {"expression": js}
-        }))
+def cdp_click_button(ws_url, text):
+    """Find button by text, CDP-click it."""
+    try:
+        ws = websocket.create_connection(ws_url, timeout=10)
+        ws.send(json.dumps({"id":0,"method":"Runtime.evaluate",
+            "params":{"expression": f"var b=document.querySelector('button');if(b){{var r=b.getBoundingClientRect();return JSON.stringify({{x:r.x+r.width/2,y:r.y+r.height/2}});}}return'{{}}';"}}))
         r = json.loads(ws.recv())
         ws.close()
-
-        info = json.loads(r.get("result", {}).get("result", {}).get("value", "{}"))
-        if not info.get("found"):
-            return {"found": False, "error": "No captcha image found"}
-
-        # Now extract the FULL base64 data
-        ws = websocket.create_connection(ws_url, timeout=15)
-        extract_js = '''
-(function() {
-    var selectors = {selectors};
-    for (var i = 0; i < selectors.length; i++) {{
-        var imgs = document.querySelectorAll(selectors[i]);
-        for (var j = 0; j < imgs.length; j++) {{
-            var src = imgs[j].src || '';
-            if (src.startsWith('data:image/') && src.length > 100) {{
-                return src;
-            }}
-        }}
-    }}
-    // Fallback
-    var allImgs = document.querySelectorAll('img');
-    for (var k = 0; k < allImgs.length; k++) {{
-        var s = allImgs[k].src || '';
-        var r = allImgs[k].getBoundingClientRect();
-        if (s.startsWith('data:image/') || (r.width > 50 && r.width < 400 && s.length > 100)) {{
-            return s;
-        }}
-    }}
-    return '';
-}})()
-'''.replace('{selectors}', json.dumps(CAPTCHA_IMG_SELECTORS))
-
-        ws.send(json.dumps({
-            "id": 1, "method": "Runtime.evaluate",
-            "params": {"expression": extract_js}
-        }))
-        r2 = json.loads(ws.recv())
-        ws.close()
-
-        data_url = r2.get("result", {}).get("result", {}).get("value", "")
-        if data_url and len(data_url) > 100:
-            return {
-                "found": True,
-                "data_url": data_url,
-                "width": info["width"],
-                "height": info["height"],
-                "x": info["x"],
-                "y": info["y"],
-            }
-
-        return {"found": False, "error": "Could not extract full image"}
-
-    except Exception as e:
-        return {"found": False, "error": str(e)[:200]}
-
-
-# ── NVIDIA Vision OCR (CLIPPED SCREENSHOT) ──────────────
-
-def solve_captcha_with_clip(ws_url):
-    """Solve captcha using clipped screenshot — avoids base64 ambiguity.
-
-    Uses Page.captureScreenshot with clip targeting the captcha image
-    element. More reliable than base64 src (which may pick up logos).
-
-    Args:
-        ws_url: CDP WebSocket URL
-
-    Returns:
-        Dict with {success, text, error, tokens_used, elapsed_ms}
-    """
-    api_key = os.getenv("NVIDIA_API_KEY")
-    if not api_key:
-        return {"success": False, "error": "NVIDIA_API_KEY not set"}
-
-    start = time.monotonic()
-    try:
-        ws = websocket.create_connection(ws_url, timeout=15)
-
-        # Find captcha image position for clip
-        ws.send(json.dumps({
-            "id": 0, "method": "Runtime.evaluate",
-            "params": {"expression": '''
-(function() {
-    // Find the captcha image (base64 src, reasonable size)
-    var imgs = document.querySelectorAll("img");
-    for (var i = 0; i < imgs.length; i++) {
-        var src = imgs[i].src || "";
-        var r = imgs[i].getBoundingClientRect();
-        if ((src.includes("base64") || src.includes("captcha")) && r.width > 30 && r.height > 20 && r.width < 400) {
-            return JSON.stringify({x:r.x, y:r.y, w:r.width, h:r.height, idx:i});
-        }
-    }
-    // Fallback: any medium-sized visible image
-    for (var i = 0; i < imgs.length; i++) {
-        var r = imgs[i].getBoundingClientRect();
-        if (r.width > 40 && r.width < 400 && r.height > 15 && r.height < 120 && imgs[i].offsetParent) {
-            return JSON.stringify({x:r.x, y:r.y, w:r.width, h:r.height, idx:i, fallback:true});
-        }
-    }
-    return "{}";
-})()
-            }}
-        }))
-        r = json.loads(ws.recv())
-        clip_info = json.loads(r.get("result", {}).get("result", {}).get("value", "{}"))
-
-        if not clip_info.get("w"):
-            ws.close()
-            return {"success": False, "error": "No captcha image found for clipping"}
-
-        # Clip screenshot of captcha area (with 10px padding)
-        ws.send(json.dumps({
-            "id": 1, "method": "Page.captureScreenshot",
-            "params": {
-                "format": "png",
-                "clip": {
-                    "x": max(0, clip_info["x"] - 5),
-                    "y": max(0, clip_info["y"] - 5),
-                    "width": clip_info["w"] + 10,
-                    "height": clip_info["h"] + 10,
-                    "scale": 2
-                }
-            }
-        }))
-        r = json.loads(ws.recv())
-        ws.close()
-        b64 = r.get("result", {}).get("data", "")
-
-        if not b64:
-            return {"success": False, "error": "Screenshot failed"}
-
-        # Send to Vision API
-        client = OpenAI(api_key=api_key, base_url=NIM_BASE_URL)
-        response = client.chat.completions.create(
-            model=VISION_MODEL,
-            messages=[{
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": (
-                        "Read ONLY the alphanumeric captcha characters. "
-                        "Return ONLY the characters, no spaces, no explanation. "
-                        "Maximum 8 characters."
-                    )},
-                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}},
-                ],
-            }],
-            max_tokens=20, temperature=0.0,
-        )
-        elapsed = time.monotonic() - start
-
-        raw_text = response.choices[0].message.content.strip()
-        import re
-        cleaned = re.sub(r'[^a-zA-Z0-9]', '', raw_text).upper()[:10]
-
-        tokens = response.usage.total_tokens if response.usage else 0
-
-        return {
-            "success": True,
-            "text": cleaned,
-            "raw": raw_text,
-            "tokens_used": tokens,
-            "elapsed_ms": round(elapsed * 1000),
-        } if cleaned else {
-            "success": False,
-            "error": f"OCR empty (raw: {raw_text})",
-            "tokens_used": tokens,
-            "elapsed_ms": round(elapsed * 1000),
-        }
-
-    except Exception as e:
-        return {"success": False, "error": str(e)[:200],
-                "elapsed_ms": round((time.monotonic() - start) * 1000)}
-
-
-# Keep old function as fallback
-def solve_captcha_with_vision(data_url):
-    """Send captcha image to NVIDIA NIM Vision API for OCR.
-
-    Args:
-        data_url: Full data:image/png;base64,XXXX URL
-
-    Returns:
-        Dict with {success, text, error, tokens_used, elapsed_ms}
-    """
-    api_key = os.getenv("NVIDIA_API_KEY")
-    if not api_key:
-        return {"success": False, "error": "NVIDIA_API_KEY not set"}
-
-    client = OpenAI(api_key=api_key, base_url=NIM_BASE_URL)
-
-    start = time.monotonic()
-    try:
-        response = client.chat.completions.create(
-            model=VISION_MODEL,
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": (
-                                "What characters, letters, or numbers are shown in this captcha image? "
-                                "Return ONLY the exact characters with no spaces, punctuation, or explanation. "
-                                "Maximum 10 characters. If unclear, return your best guess."
-                            ),
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": {"url": data_url},
-                        },
-                    ],
-                }
-            ],
-            max_tokens=50,
-            temperature=0.0,
-        )
-        elapsed = time.monotonic() - start
-
-        raw_text = response.choices[0].message.content.strip()
-        # Clean: remove spaces, punctuation, keep alphanumeric
-        import re
-        cleaned = re.sub(r'[^a-zA-Z0-9]', '', raw_text).upper()[:10]
-
-        tokens = {
-            "prompt": response.usage.prompt_tokens if response.usage else 0,
-            "completion": response.usage.completion_tokens if response.usage else 0,
-            "total": response.usage.total_tokens if response.usage else 0,
-        }
-
-        if cleaned:
-            return {
-                "success": True,
-                "text": cleaned,
-                "raw": raw_text,
-                "tokens_used": tokens["total"],
-                "elapsed_ms": round(elapsed * 1000),
-            }
-        else:
-            return {
-                "success": False,
-                "error": f"OCR returned empty after cleaning (raw: {raw_text})",
-                "tokens_used": tokens["total"],
-                "elapsed_ms": round(elapsed * 1000),
-            }
-
-    except Exception as e:
-        elapsed = time.monotonic() - start
-        return {
-            "success": False,
-            "error": str(e)[:300],
-            "elapsed_ms": round(elapsed * 1000),
-        }
-
-
-# ── Captcha Input Detection & Fill ─────────────────────
-
-def find_captcha_input(ws_url):
-    """Find the captcha input field on the page."""
-    try:
-        ws = websocket.create_connection(ws_url, timeout=15)
-        js = '''
-(function() {
-    var selectors = {selectors};
-    for (var i = 0; i < selectors.length; i++) {{
-        var el = document.querySelector(selectors[i]);
-        if (el && el.offsetParent !== null) {{
-            var rect = el.getBoundingClientRect();
-            return JSON.stringify({{
-                found: true,
-                selector: selectors[i],
-                tag: el.tagName,
-                type: el.type,
-                name: el.name || '',
-                placeholder: el.placeholder || '',
-                x: rect.x,
-                y: rect.y,
-                width: rect.width,
-                height: rect.height
-            }});
-        }}
-    }}
-    return JSON.stringify({{found: false}});
-}})()
-'''.replace('{selectors}', json.dumps(CAPTCHA_INPUT_SELECTORS))
-
-        ws.send(json.dumps({
-            "id": 0, "method": "Runtime.evaluate",
-            "params": {"expression": js}
-        }))
-        r = json.loads(ws.recv())
-        ws.close()
-
-        return json.loads(r.get("result", {}).get("result", {}).get("value", "{}"))
-    except Exception:
-        return {"found": False}
-
-
-def fill_captcha_and_submit(ws_url, answer):
-    """Fill captcha answer and CDP-click submit (Angular-proof)."""
-    try:
-        ws = websocket.create_connection(ws_url, timeout=15)
-
-        fill_js = f'''
-(function() {{
-    var selectors = {json.dumps(CAPTCHA_INPUT_SELECTORS)};
-    for (var i = 0; i < selectors.length; i++) {{
-        var el = document.querySelector(selectors[i]);
-        if (el && el.offsetParent !== null) {{
-            el.value = "{answer}";
-            el.dispatchEvent(new Event("input", {{bubbles: true}}));
-            el.dispatchEvent(new Event("change", {{bubbles: true}}));
-            return "filled:" + selectors[i];
-        }}
-    }}
-    return "no_input_found";
-}})()
-'''
-
-        ws.send(json.dumps({
-            "id": 0, "method": "Runtime.evaluate",
-            "params": {"expression": fill_js}
-        }))
-        r_fill = json.loads(ws.recv())
-        fill_status = r_fill.get("result", {}).get("result", {}).get("value", "")
-        ws.close()
-
-        # Use CDP click for submit (Angular-proof)
-        cdp_click_button(ws_url, "Nächste")
-        time.sleep(0.5)
-
-        return {"success": "filled" in fill_status, "detail": fill_status}
-
-    except Exception as e:
-        return {"success": False, "error": str(e)[:200]}
-
-
-# ── Full Solve Flow ────────────────────────────────────
-
-def solve_purespectrum_captcha(ws_url, debug=False):
-    """Full PureSpectrum captcha solving pipeline.
-
-    1. Extract captcha image
-    2. Send to NVIDIA Vision API
-    3. Fill input + submit
-    4. Return result
-
-    Args:
-        ws_url: CDP WebSocket URL for the PureSpectrum tab
-        debug: Print detailed progress
-
-    Returns:
-        Dict with {success, captcha_text, solved, error, steps, elapsed_ms}
-    """
-    start = time.monotonic()
-    steps = []
-    result = {"success": False, "steps": steps, "captcha_text": ""}
-
-    # Step 1: Try to extract captcha image (for debug info)
-    img_data = extract_captcha_image(ws_url)
-    steps.append({"step": "extract", "found": img_data.get("found", False)})
-
-    if debug and img_data.get("found"):
-        print(f"  [CAPTCHA] Image extracted: {img_data['width']}x{img_data['height']} "
-              f"at ({img_data['x']},{img_data['y']})")
-
-    # Step 2: OCR via base64 image (PRIMARY) or clipped screenshot (fallback)
-    ocr_result = None
-    img_data = extract_captcha_image(ws_url)
-    if img_data.get("found") and img_data.get("data_url"):
-        ocr_result = solve_captcha_with_vision(img_data["data_url"])
-    if not ocr_result or not ocr_result.get("success"):
-        ocr_result = solve_captcha_with_clip(ws_url)
-    steps.append({"step": "ocr", "success": ocr_result.get("success", False)})
-
-    if not ocr_result.get("success"):
-        result["error"] = ocr_result.get("error", "OCR failed")
-        return result
-
-    captcha_text = ocr_result["text"]
-    result["captcha_text"] = captcha_text
-
-    if debug:
-        print(f"  [CAPTCHA] OCR result: '{captcha_text}' "
-              f"({ocr_result['elapsed_ms']}ms, {ocr_result['tokens_used']} tokens)")
-
-    if len(captcha_text) < 2:
-        result["error"] = f"OCR text too short: '{captcha_text}'"
-        return result
-
-    # Step 3: Find input
-    input_info = find_captcha_input(ws_url)
-    steps.append({"step": "find_input", "found": input_info.get("found", False)})
-
-    if not input_info.get("found"):
-        result["error"] = "No captcha input field found"
-        return result
-
-    if debug:
-        print(f"  [CAPTCHA] Input found: {input_info.get('selector')} "
-              f"({input_info.get('placeholder', '')})")
-
-    # Step 4: Fill + submit
-    fill_result = fill_captcha_and_submit(ws_url, captcha_text)
-    steps.append({"step": "fill_submit", "success": fill_result.get("success", False)})
-
-    if debug:
-        print(f"  [CAPTCHA] Fill+Submit: {fill_result.get('detail', '?')}")
-
-    result["success"] = fill_result.get("success", False)
-    result["elapsed_ms"] = round((time.monotonic() - start) * 1000)
-    result["tokens_used"] = ocr_result.get("tokens_used", 0)
-
-    return result
+        pos = json.loads(r.get("result",{}).get("result",{}).get("value","{}"))
+        if pos.get("x"):
+            return cdp_click(ws_url, pos["x"], pos["y"])
+    except:
+        pass
+    return False
 
 
 # ── Cookie Consent ─────────────────────────────────────
 
 def handle_cookie_consent(ws_url):
-    """Click 'Alle akzeptieren' or similar consent button."""
     try:
         ws = websocket.create_connection(ws_url, timeout=15)
-        js = '''
-(function() {
-    var btns = document.querySelectorAll("button");
-    for (var i = 0; i < btns.length; i++) {
-        var t = (btns[i].textContent || "").trim().toLowerCase();
-        if (t.includes("alle akzeptieren") || t.includes("accept all") || t.includes("zustimmen")) {
-            btns[i].click();
-            return "clicked:" + t;
-        }
-    }
-    return "no_consent_button";
-})()
-'''
-        ws.send(json.dumps({
-            "id": 0, "method": "Runtime.evaluate",
-            "params": {"expression": js}
-        }))
+        ws.send(json.dumps({"id":0,"method":"Runtime.evaluate",
+            "params":{"expression": "var b=document.querySelector('button');if(b){b.click();return'clicked';}return'none';"}}))
+        r = json.loads(ws.recv()); ws.close()
+        return {"success": "clicked" in str(r.get("result",{}).get("result",{}).get("value",""))}
+    except Exception as e:
+        return {"success": False, "error": str(e)[:100]}
+
+
+# ── ROBOT Textarea Fill ────────────────────────────────
+
+def fill_opinion_textarea(ws_url):
+    try:
+        ws = websocket.create_connection(ws_url, timeout=15)
+        ws.send(json.dumps({"id":0,"method":"Runtime.evaluate",
+            "params":{"expression": "var t=document.querySelector('textarea');if(t){t.value='ROBOT I enjoy sharing my opinion about this topic.';t.dispatchEvent(new Event('input',{bubbles:true}));t.dispatchEvent(new Event('change',{bubbles:true}));return'filled';}return'none';"}}))
+        json.loads(ws.recv()); ws.close()
+        return True
+    except:
+        return False
+
+
+# ── Text Captcha OCR ───────────────────────────────────
+
+def solve_text_captcha(ws_url, debug=False):
+    """Extract base64 captcha img → NVIDIA Vision OCR → fill + CDP-click submit."""
+    try:
+        # Extract base64 image
+        ws = websocket.create_connection(ws_url, timeout=15)
+        ws.send(json.dumps({"id":0,"method":"Runtime.evaluate",
+            "params":{"expression": "var imgs=document.querySelectorAll('img');for(var i=0;i<imgs.length;i++){var s=imgs[i].src||'';if(s.startsWith('data:image/')&&s.length>200)return s;}return'';"}}))
         r = json.loads(ws.recv())
         ws.close()
+        data_url = r.get("result",{}).get("result",{}).get("value","")
 
-        status = r.get("result", {}).get("result", {}).get("value", "")
-        return {"success": "clicked" in status, "detail": status}
+        if not data_url or len(data_url) < 200:
+            return {"success": False, "error": "No base64 captcha found"}
+
+        if debug:
+            print(f"  [CAPTCHA] Image: {len(data_url)} chars")
+
+        # OCR
+        api_key = os.getenv("NVIDIA_API_KEY")
+        if not api_key:
+            return {"success": False, "error": "NVIDIA_API_KEY not set"}
+
+        client = OpenAI(api_key=api_key, base_url=NIM_BASE_URL)
+        start = time.monotonic()
+        resp = client.chat.completions.create(
+            model=VISION_MODEL,
+            messages=[{"role":"user","content":[
+                {"type":"text","text":"Read ONLY alphanumeric captcha chars. Return only them. Max 8 chars."},
+                {"type":"image_url","image_url":{"url":data_url}}
+            ]}],
+            max_tokens=15, temperature=0.0)
+        elapsed = (time.monotonic()-start)*1000
+        raw = resp.choices[0].message.content.strip()
+        captcha = re.sub(r'[^a-zA-Z0-9]','',raw).upper()[:10]
+        tokens = resp.usage.total_tokens if resp.usage else 0
+
+        if debug:
+            print(f"  [CAPTCHA] OCR: '{captcha}' ({elapsed:.0f}ms, {tokens}tok)")
+
+        if len(captcha) < 2:
+            return {"success": False, "error": f"OCR too short: {captcha}", "raw": raw}
+
+        # Fill input
+        ws = websocket.create_connection(ws_url, timeout=15)
+        ws.send(json.dumps({"id":0,"method":"Runtime.evaluate",
+            "params":{"expression": f"var i=document.querySelector('input[type=text]');if(i){{i.value='{captcha}';i.dispatchEvent(new Event('input',{{bubbles:true}}));i.dispatchEvent(new Event('change',{{bubbles:true}}));}}"}}))
+        json.loads(ws.recv()); ws.close()
+
+        # CDP-click submit
+        cdp_click_button(ws_url, "Nächste")
+        time.sleep(0.5)
+
+        return {"success": True, "captcha_text": captcha, "tokens_used": tokens,
+                "elapsed_ms": round(elapsed)}
 
     except Exception as e:
         return {"success": False, "error": str(e)[:200]}
 
 
-# ── Opinion Textarea Fill ──────────────────────────────
-
-def fill_opinion_textarea(ws_url, text="ROBOT"):
-    """Fill the opinion textarea with ROBOT keyword.
-
-    PureSpectrum requires the word ROBOT in the textarea plus
-    minimum 5 words.
-    """
-    long_text = f"{text} I am sharing my honest opinion about this survey topic."
-    try:
-        ws = websocket.create_connection(ws_url, timeout=15)
-        js = f'''
-(function() {{
-    var areas = document.querySelectorAll("textarea");
-    if (areas.length === 0) return "no_textarea";
-    areas[0].value = "{long_text}";
-    areas[0].dispatchEvent(new Event("input", {{bubbles: true}}));
-    areas[0].dispatchEvent(new Event("change", {{bubbles: true}}));
-    return "filled";
-}})()
-'''
-        ws.send(json.dumps({
-            "id": 0, "method": "Runtime.evaluate",
-            "params": {"expression": js}
-        }))
-        json.loads(ws.recv())
-        ws.close()
-        return {"success": True}
-
-    except Exception as e:
-        return {"success": False, "error": str(e)[:200]}
-
-
-# ── Page Text Reader ───────────────────────────────────
-
-def read_page_text(ws_url, max_len=1000):
-    """Read page innerText."""
-    try:
-        ws = websocket.create_connection(ws_url, timeout=10)
-        ws.send(json.dumps({
-            "id": 0, "method": "Runtime.evaluate",
-            "params": {
-                "expression": f"document.body.innerText.substring(0, {max_len})"
-            }
-        }))
-        r = json.loads(ws.recv())
-        ws.close()
-        return r.get("result", {}).get("result", {}).get("value", "")
-    except Exception:
-        return ""
-
-
-# ── Drag Puzzle Solver (SOTA __ngContext__ approach) ──
+# ── Drag Puzzle Solver (__ngContext__) ─────────────────
 
 def solve_drag_puzzle(ws_url):
-    """Solve PureSpectrum drag-drop puzzle via Angular __ngContext__.
-
-    Recursively searches __ngContext__ for CdkDropList._dropListRef
-    and CdkDrag._dragRef, then calls dropListRef.drop().
-    This is the ONLY approach that works on Angular v19 production mode.
-
-    Args:
-        ws_url: CDP WebSocket URL for PureSpectrum tab
-
-    Returns:
-        Dict with {success, result, error}
-    """
-    js = """
-(() => {
+    """Recursive __ngContext__ search → dropListRef.drop()."""
+    js = """(() => {
     function findInstance(root, propertyName) {
         if (!root || typeof root !== 'object') return null;
         if (root.hasOwnProperty(propertyName)) return root;
@@ -658,108 +149,88 @@ def solve_drag_puzzle(ws_url):
         }
         return null;
     }
-
     const dropListEl = document.querySelector('.cdk-drop-list');
     if (!dropListEl) return 'NO_DROPLIST';
-
     const dragEls = document.querySelectorAll('.cdk-drag');
     if (!dragEls.length) return 'NO_DRAGELS';
-
     const ctx = dropListEl.__ngContext__;
     if (!ctx) return 'NO_CTX';
-
     const dropListDir = findInstance(ctx, '_dropListRef');
     if (!dropListDir) return 'NO_DROPLISTDIR';
-
     const dropListRef = dropListDir._dropListRef;
     if (!dropListRef) return 'NO_DROPLISTREF';
-
     const firstDragEl = dragEls[0];
     const dragCtx = firstDragEl.__ngContext__;
     const dragDir = findInstance(dragCtx, '_dragRef');
     if (!dragDir) return 'NO_DRAGDIR';
-
     const dragRef = dragDir._dragRef;
     if (!dragRef) return 'NO_DRAGREF';
-
     try {
         dropListRef.enter(dragRef, dragRef.element.nativeElement, 0);
         dropListRef.drop(dragRef, 0);
         return 'DROP_SUCCESS:' + (dragRef.element.nativeElement.textContent || '').trim();
-    } catch (e) {
-        return 'DROP_ERROR: ' + e.message;
-    }
-})()
-    """
-
+    } catch (e) { return 'DROP_ERROR: ' + e.message; }
+})()"""
     try:
         ws = websocket.create_connection(ws_url, timeout=15)
-        ws.send(json.dumps({
-            "id": 0, "method": "Runtime.evaluate",
-            "params": {"expression": js, "returnByValue": True}
-        }))
-        r = json.loads(ws.recv())
-        ws.close()
-        result = r.get("result", {}).get("result", {}).get("value", "???")
-
-        success = "DROP_SUCCESS" in str(result)
-        return {"success": success, "result": result,
-                "error": None if success else str(result)[:200]}
+        ws.send(json.dumps({"id":0,"method":"Runtime.evaluate",
+            "params":{"expression": js, "returnByValue": True}}))
+        r = json.loads(ws.recv()); ws.close()
+        result = r.get("result",{}).get("result",{}).get("value","???")
+        return {"success": "DROP_SUCCESS" in str(result), "result": result}
     except Exception as e:
         return {"success": False, "result": None, "error": str(e)[:200]}
 
 
-# ── CDP Click Helpers (Angular v19 requires real OS events) ──
+# ── Page Text Reader ───────────────────────────────────
 
-def _cdp_click(ws_url, x, y):
-    """Click at coordinates using CDP Input.dispatchMouseEvent.
-
-    Angular CDK v19 requires real OS-level mouse events (isTrusted: true).
-    JS .click() and dispatchEvent() do NOT work on production builds.
-    """
+def read_page_text(ws_url, max_len=1000):
     try:
         ws = websocket.create_connection(ws_url, timeout=10)
-        for event_type in ["mouseMoved", "mousePressed", "mouseReleased"]:
-            ws.send(json.dumps({
-                "id": 0, "method": "Input.dispatchMouseEvent",
-                "params": {"type": event_type, "x": x, "y": y,
-                          "button": "left", "clickCount": 1}
-            }))
-            json.loads(ws.recv())
-        ws.close()
-        return True
-    except Exception:
-        return False
-
-
-def cdp_click_button(ws_url, button_text):
-    """Click a button by text using CDP real mouse events.
-
-    Finds button position via JS, then clicks with OS-level events.
-    Essential for Angular v19 pages where JS .click() is ignored.
-    """
-    try:
-        ws = websocket.create_connection(ws_url, timeout=10)
-        expr = (
-            "(function() {"
-            "var btns = document.querySelectorAll('button, input[type=submit], input[type=button]');"
-            "for (var i=0;i<btns.length;i++) {"
-            "var t = (btns[i].textContent||btns[i].value||'').trim();"
-            f"if (t === '{button_text}' || t.includes('{button_text}')) {{"
-            "var r = btns[i].getBoundingClientRect();"
-            "return JSON.stringify({x: r.x+r.width/2, y: r.y+r.height/2, found:true});"
-            "}}"
-            "}"
-            "return JSON.stringify({found:false});"
-            "})()"
-        )
         ws.send(json.dumps({"id":0,"method":"Runtime.evaluate",
-            "params":{"expression": expr}}))
-        r = json.loads(ws.recv())
-        ws.close()
-        pos = json.loads(r.get("result",{}).get("result",{}).get("value","{}"))
-        if pos.get("found"):
-            return _cdp_click(ws_url, pos["x"], pos["y"])
-    except Exception:
-        pass
-    return False
+            "params":{"expression": f"document.body.innerText.substring(0,{max_len})"}}))
+        r = json.loads(ws.recv()); ws.close()
+        return r.get("result",{}).get("result",{}).get("value","")
+    except:
+        return ""
+
+
+# ── Full Preflight ─────────────────────────────────────
+
+def solve_purespectrum_preflight(ws_url, debug=False):
+    """Run full PureSpectrum preflight: cookie → ROBOT → captcha → puzzle."""
+    steps = []
+
+    # 1. Cookie
+    handle_cookie_consent(ws_url)
+    steps.append("cookie")
+    time.sleep(2)
+
+    # 2. ROBOT
+    text = read_page_text(ws_url, 2000)
+    if "ROBOT" in text:
+        fill_opinion_textarea(ws_url)
+        time.sleep(1)
+        cdp_click_button(ws_url, "Nächste")
+        steps.append("robot")
+        time.sleep(5)
+
+    # 3. Text captcha
+    text = read_page_text(ws_url, 2000)
+    if "Code" in text and ("eingeben" in text or "captcha" in text.lower()):
+        result = solve_text_captcha(ws_url, debug=debug)
+        steps.append(f"captcha:{result.get('success')}")
+        if not result.get("success"):
+            return {"success": False, "steps": steps, "error": result.get("error")}
+        time.sleep(5)
+
+    # 4. Drag puzzle
+    text = read_page_text(ws_url, 2000)
+    if "Bitte legen Sie die Zahl" in text:
+        result = solve_drag_puzzle(ws_url)
+        steps.append(f"puzzle:{result.get('success')}")
+        if not result.get("success"):
+            return {"success": False, "steps": steps, "error": result.get("error")}
+        time.sleep(5)
+
+    return {"success": True, "steps": steps}

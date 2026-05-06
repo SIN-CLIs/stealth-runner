@@ -454,87 +454,9 @@ class SurveyRunner:
         return detect_completion(text)
 
     def _handle_purespectrum_preflight(self, tab_ws, survey_id):
-        """Handle PureSpectrum pre-survey flow: cookie consent + captcha.
-
-        Returns:
-            Dict with {success, steps, error}
-        """
-        from survey.providers.purespectrum import (
-            handle_cookie_consent,
-            solve_purespectrum_captcha,
-            fill_opinion_textarea,
-            read_page_text,
-        )
-
-        steps = []
-        result = {"success": False, "steps": steps}
-
-        if self.config.debug:
-            print(f"[RUN] PureSpectrum preflight starting...")
-
-        # Step 1: Cookie consent
-        consent = handle_cookie_consent(tab_ws)
-        steps.append({"step": "consent", **consent})
-        if consent.get("success"):
-            time.sleep(2)
-
-        # Step 2: Check page for captcha
-        page_text = read_page_text(tab_ws, 2000)
-        has_captcha = any(kw in page_text.lower() for kw in [
-            "code eingeben", "captcha", "sicherheitscode",
-            "bitte geben sie den folgenden code",
-        ])
-
-        if not has_captcha:
-            # Check if it's an opinion/ROBOT page instead
-            if "meinung" in page_text.lower() or "opinion" in page_text.lower() or "ROBOT" in page_text:
-                fill_opinion_textarea(tab_ws)
-                steps.append({"step": "opinion_filled"})
-                time.sleep(1.5)
-                # CDP-click Nächste (Angular-proof — JS .click() ignored)
-                from survey.providers.purespectrum import cdp_click_button
-                cdp_click_button(tab_ws, "Nächste")
-                steps.append({"step": "clicked_next_cdp"})
-                steps.append({"step": "clicked_next_after_opinion"})
-                time.sleep(3)
-                # Re-check for captcha
-                page_text = read_page_text(tab_ws, 2000)
-                has_captcha = any(kw in page_text.lower() for kw in [
-                    "code eingeben", "captcha",
-                ])
-
-        if has_captcha:
-            # Step 3: Solve captcha (clip-based OCR, PRIMARY)
-            captcha_result = solve_purespectrum_captcha(
-                tab_ws, debug=self.config.debug
-            )
-            steps.append({"step": "captcha", **captcha_result})
-
-            if captcha_result.get("success"):
-                result["success"] = True
-                result["captcha_text"] = captcha_result.get("captcha_text", "")
-                if self.config.debug:
-                    print(f"[RUN] PureSpectrum captcha SOLVED: "
-                          f"'{result['captcha_text']}' "
-                          f"({captcha_result.get('elapsed_ms', 0)}ms)")
-                
-                # Step 4: Handle drag puzzle (if present)
-                time.sleep(3)
-                page_text = read_page_text(tab_ws, 2000)
-                has_puzzle = "Bitte legen Sie die Zahl" in page_text
-                if has_puzzle:
-                    if self.config.debug:
-                        print("[RUN] Drag puzzle detected — solving via __ngContext__...")
-                    from survey.providers.purespectrum import solve_drag_puzzle
-                    puzzle_result = solve_drag_puzzle(tab_ws)
-                    steps.append({"step": "puzzle", **puzzle_result})
-                    if puzzle_result.get("success"):
-                        if self.config.debug:
-                            print(f"[RUN] Puzzle SOLVED: {puzzle_result['result']}")
-                        time.sleep(3)
-                    else:
-                        result["error"] = f"Drag puzzle failed: {puzzle_result.get('error', 'unknown')}"
-                        return result
+        """Handle PureSpectrum pre-survey flow: cookie + ROBOT + captcha + puzzle."""
+        from survey.providers.purespectrum import solve_purespectrum_preflight
+        return solve_purespectrum_preflight(tab_ws, debug=self.config.debug)
                 
                 return result
             else:
