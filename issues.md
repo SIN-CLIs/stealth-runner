@@ -16,7 +16,116 @@
 | [SR-20](issues/ISSUE-SR-20.md) | ✅ COMPLETED | 🔴 Critical | RecursiveMAS — RecursiveLink + Survey MAS Pipeline |
 | [SR-21](issues/ISSUE-SR-21.md) | ✅ COMPLETED | 🔴 Critical | stealth-sota — Chaos/Security/Healing/Observability/Determinism |
 | [SR-22](issues/ISSUE-SR-22.md) | ✅ COMPLETED | 🔴 Critical | stealth-core + stealth-dynamic — Basis-Klassen + Dynamische Engine |
-| [SR-23](issues/ISSUE-SR-23.md) | ✅ COMPLETED | 🔴 Critical | stealth-memory — Ewiges Gedächtnis (opencode.db Poller) | ✅ COMPLETED | 🔴 Critical | stealth-core + stealth-dynamic — Basis-Klassen + Dynamische Engine |
+| [SR-23](issues/ISSUE-SR-23.md) | ✅ COMPLETED | 🔴 Critical | stealth-memory — Ewiges Gedächtnis (opencode.db Poller) |
+| [SR-24](issues/ISSUE-SR-24.md) | ✅ COMPLETED | 🔴 Critical | **E2E Test: GoCaptcha Slide mit echtem Browser** |
+| [SR-25](issues/ISSUE-SR-25.md) | ✅ COMPLETED | 🟠 High | **README.md + CLI Dokumentation für @stealth/captcha** |
+| [SR-26](issues/ISSUE-SR-26.md) | ✅ COMPLETED | 🟠 High | **Unit Tests: CDP Client + HitTester + Memory** |
+| [SR-27](issues/ISSUE-SR-27.md) | ✅ COMPLETED | 🟡 Medium | **stealth-suite: Incident Resolution + Monitoring** |
+
+---
+
+## 🔴 CRITICAL — SURVEY RATING MANDATORY — 2026-05-06
+
+| Feld | Wert |
+|------|------|
+| Status | ✅ DOCUMENTED + VERIFIED |
+| Priority | 🔴 Critical |
+| Gefunden | 2026-05-06 |
+
+### Problem
+Every heypiggy/CPX survey ends with a rating page. Without rating, you lose the **+0.01€ bonus**.
+
+### Solution
+```python
+# After survey completion, find the rating tab
+for p in pages:
+    if 'rating.php' in p.get('url',''):
+        ws_url = p.get('webSocketDebuggerUrl')
+        break
+
+# Click the rating button
+ws.send(json.dumps({'id': 0, 'method': 'Runtime.evaluate', 'params': {'expression': 'document.querySelector("button").click()'}}))
+# 4 stars pre-selected, submit gives +0.01€
+```
+
+### Betroffene Files
+- `/commands/heypiggy/rating-page.md` → NEW ✅
+- `/commands/quick-reference.md` → UPDATED ✅
+- `/sessions/2026-05-06.md` → UPDATED ✅
+
+### Flow
+```
+Survey completes → rating.php tab opens → Click button → +0.01€ → "Zurück zur Website"
+```
+
+---
+
+## 🟠 HIGH — TolunaStart JS .click() Pattern — 2026-05-06
+
+| Feld | Wert |
+|------|------|
+| Status | ✅ VERIFIED |
+| Priority | 🟠 High |
+| Gefunden | 2026-05-06 |
+
+### Discovery
+For `survey.tolunastart.com`, CDP MouseEvent on .cf-radio/.cf-checkbox **FAILS**.
+JS `.click()` on these elements **ALWAYS WORKS**.
+
+### Solution
+```python
+# RADIO (single select)
+ws.send(json.dumps({'id': 0, 'method': 'Runtime.evaluate', 'params': {'expression': '(function(){var rs=document.querySelectorAll(".cf-radio");rs[INDEX].click();})()'}}))
+
+# CHECKBOX (multi select)
+ws.send(json.dumps({'id': 0, 'method': 'Runtime.evaluate', 'params': {'expression': '(function(){var cbs=document.querySelectorAll(".cf-checkbox");[0,2,3].forEach(function(i){cbs[i].click();});})()'}}))
+
+# BUTTON
+document.querySelector("button").click()
+
+# INPUT
+i.value = "32"; i.dispatchEvent(new Event("input", {bubbles:true}))
+```
+
+### Betroffene Files
+- `/commands/tolunastart-survey.md` → NEW ✅ (37 steps documented)
+- `/commands/quick-reference.md` → UPDATED ✅
+
+---
+
+## 🟠 HIGH — Insights-Today SELECT + LABEL Pattern — 2026-05-06
+
+| Feld | Wert |
+|------|------|
+| Status | ⚠️ SCREEN-OUT at education |
+| Priority | 🟠 High |
+| Gefunden | 2026-05-06 |
+
+### Discovery
+Insights-Today uses:
+1. `<select>` for age (not radio buttons)
+2. Labels for income radio groups (MouseEvent on LABEL needed)
+3. Screen-out at "Universitätsabschluss" education
+
+### Solution
+```python
+# Age: SELECT dropdown
+sel = document.querySelector("select");
+sel.value = "32";
+sel.dispatchEvent(new Event("change", {bubbles: true}));
+
+# Income: MouseEvent on LABEL containing "30.000"
+for label in labels:
+    if "30.000" in label.textContent:
+        # MouseEvent click on label
+
+# Education: Try Abitur instead of Universitätsabschluss
+rs = document.querySelectorAll("input[name=education]");
+rs[3].click();  # Abitur instead of rs[6] (Universität)
+```
+
+### Betroffene Files
+- `/commands/insights-today-survey.md` → NEW ✅
 
 ---
 
@@ -30,10 +139,7 @@
 | Gefixt | 2026-05-05 |
 
 ### Problem
-`heypiggy_login_box.py` gelöscht aber `orchestrator.py` (line 90) importiert noch davon:
-```python
-from cli.modules.heypiggy_login_box import heypiggy_login  # ImportError!
-```
+`heypiggy_login_box.py` gelöscht aber `orchestrator.py` (line 90) importiert noch davon.
 
 ### Fix
 `orchestrator.py` → `from cli.modules.auto_google_login import execute as auto_google_login`
@@ -44,24 +150,18 @@ from cli.modules.heypiggy_login_box import heypiggy_login  # ImportError!
 
 ---
 
-## 🟠 HIGH — BOT Chrome vs USER Chrome Verwechslung — 2026-05-05
+## Offene Issues Summary
 
-| Feld | Wert |
-|------|------|
-| Status | ✅ DOCUMENTED |
-| Priority | 🟠 High |
-| Gefunden | 2026-05-05 |
+| # | Titel | Status | Nächste Aktion |
+|---|-------|--------|----------------|
+| SR-27 | stealth-suite: Incident Resolution + Monitoring | ✅ COMPLETED | 5 Incident-Files deployed |
 
-### Problem
-Bei mehreren Chrome-Instanzen: BOT Chrome (`heypiggy-bot-*`) von USER Chrome unterscheiden.
+---
 
-### Lösung
-```bash
-ps aux | grep "user-data-dir"
-# BOT: /tmp/heypiggy-bot-XXXXXXXX
-# USER: /Users/jeremy/Library/Application Support/Google/Chrome/...
-```
+## Neue dokumentierte Provider (2026-05-06)
 
-### Regel
-- NUR Chrome mit `heypiggy-bot-XXXXXXXX` in user-data-dir → INTERAGIEREN
-- ALLE ANDEREN Chrome → IGNORIEREN
+| Provider | Survey | Ergebnis | Dokumentation |
+|----------|--------|----------|----------------|
+| TolunaStart | 66583827 | ✅ +0.09€ (92% complete) | `tolunastart-survey.md` |
+| Insights-Today | 66291306 | ❌ Screen-out | `insights-today-survey.md` |
+| CPX Rating | (post-survey) | ✅ +0.01€ bonus | `heypiggy/rating-page.md` |
