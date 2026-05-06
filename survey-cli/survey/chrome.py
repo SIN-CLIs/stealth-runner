@@ -144,44 +144,26 @@ def is_chrome_alive(port=9999):
 
 
 def launch_chrome(url="https://www.heypiggy.com/?page=dashboard", port=9999):
-    """Launch Chrome via playstealth or raw subprocess.
+    """Launch Chrome with BOTH --force-renderer-accessibility AND --remote-allow-origins=*.
 
-    NOTE: playstealth launch does NOT accept --port. Port is auto-assigned.
-    For raw launch, we specify --remote-debugging-port directly.
+    ⚠️ UNVERBRÜCHLICHE REGEL: Chrome NUR mit diesen beiden Flags starten.
+    --force-renderer-accessibility = cua-driver kann AX-Tree lesen
+    --remote-allow-origins=* = CDP WebSocket funktioniert
+    Ohne diese Flags: Login UNMÖGLICH. Surveys UNMÖGLICH.
     """
-    # Try playstealth first (port is auto-assigned)
-    try:
-        result = subprocess.run(
-            ["playstealth", "launch", "--url", url],
-            capture_output=True, text=True, timeout=30
-        )
-        if result.returncode == 0:
-            try:
-                info = json.loads(result.stdout)
-                actual_port = info.get("cdp_port", info.get("port", port))
-                print(f"[CHROME] Launched via playstealth: pid={info.get('pid')}, port={actual_port}")
-                return {"pid": info.get("pid"), "port": actual_port, "profile": info.get("profile", "")}
-            except json.JSONDecodeError:
-                pass
-    except FileNotFoundError:
-        pass
-    except Exception:
-        pass
-
-    # Fallback: raw Chrome launch with FIXED profile (keeps login cookies)
-    profile_dir = "/tmp/heypiggy-bot"  # FIXED, not timestamped!
+    profile_dir = "/tmp/heypiggy-bot"
     cmd = [
         "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
         f"--remote-debugging-port={port}",
         "--remote-allow-origins=*",
+        "--force-renderer-accessibility",
         "--no-first-run",
         "--no-default-browser-check",
         f"--user-data-dir={profile_dir}",
-        "--force-renderer-accessibility",
         url,
     ]
     subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    print(f"[CHROME] Raw launch: port={port}, profile={profile_dir}")
+    print(f"[CHROME] Launched: port={port}, profile={profile_dir}, accessibility=ON, cdp=ON")
     time.sleep(8)
     return {"pid": None, "port": port, "profile": profile_dir}
 

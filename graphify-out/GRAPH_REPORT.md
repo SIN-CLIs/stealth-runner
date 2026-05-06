@@ -1,11 +1,11 @@
 # Graph Report - stealth-runner  (2026-05-06)
 
 ## Corpus Check
-- 89 files · ~172,935 words
+- 89 files · ~173,106 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 1343 nodes · 2710 edges · 112 communities detected
+- 1347 nodes · 2710 edges · 116 communities detected
 - Extraction: 52% EXTRACTED · 48% INFERRED · 0% AMBIGUOUS · INFERRED: 1308 edges (avg confidence: 0.56)
 - Token cost: 0 input · 0 output
 
@@ -122,6 +122,10 @@
 - [[_COMMUNITY_Community 115|Community 115]]
 - [[_COMMUNITY_Community 116|Community 116]]
 - [[_COMMUNITY_Community 117|Community 117]]
+- [[_COMMUNITY_Community 118|Community 118]]
+- [[_COMMUNITY_Community 119|Community 119]]
+- [[_COMMUNITY_Community 120|Community 120]]
+- [[_COMMUNITY_Community 121|Community 121]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `OutputGenerator` - 119 edges
@@ -199,7 +203,7 @@ Nodes (19): BaseSettings, ExperienceMemory, Episodic experience memory: caches s
 
 ### Community 12 - "Community 12"
 Cohesion: 0.11
-Nodes (25): cdp_login(), _click(), _find_google_tab(), _js(), CDP Google Login — Fallback when cua-driver AX-Tree is empty.  Uses CDP Runtime., CDP mouse click at coordinates., Execute JS via Runtime.evaluate., Find Google OAuth tab URL. (+17 more)
+Nodes (25): _cdp_click(), cdp_login(), _find_tab(), _js(), CDP Google Login — Fallback when cua-driver AX-Tree is empty.  Uses CDP Runtime., CDP mouse click at coordinates., Execute JS, return value string., Find first tab URL containing substring. Returns WebSocket URL. (+17 more)
 
 ### Community 13 - "Community 13"
 Cohesion: 0.22
@@ -315,290 +319,306 @@ Nodes (1): Start cua-driver daemon if not running.
 
 ### Community 47 - "Community 47"
 Cohesion: 1.0
-Nodes (1): Navigate to URL and wait for page load.
+Nodes (1): Execute JS via Runtime.evaluate.
 
 ### Community 48 - "Community 48"
 Cohesion: 1.0
-Nodes (1): Extract base64 captcha image from PureSpectrum page via CDP.      Returns:
+Nodes (1): Find Google OAuth tab URL.
 
 ### Community 49 - "Community 49"
 Cohesion: 1.0
-Nodes (1): Build token-efficient prompt for Nemotron.
+Nodes (1): Full CDP Google OAuth login.      Returns:         {"status": "ok"} or {"status"
 
 ### Community 50 - "Community 50"
 Cohesion: 1.0
-Nodes (1): Parse LLM response into action list.
+Nodes (1): Start cua-driver daemon if not running.
 
 ### Community 51 - "Community 51"
 Cohesion: 1.0
-Nodes (1): NVIDIA Nemotron 3 Omni client for survey decisions.
+Nodes (1): Navigate to URL and wait for page load.
 
 ### Community 52 - "Community 52"
 Cohesion: 1.0
-Nodes (1): Decide next batch actions.          Args:             snapshot: Dict from snapsh
+Nodes (1): Extract base64 captcha image from PureSpectrum page via CDP.      Returns:
 
 ### Community 53 - "Community 53"
 Cohesion: 1.0
-Nodes (1): Simple auto-pilot fallback.
+Nodes (1): Build token-efficient prompt for Nemotron.
 
 ### Community 54 - "Community 54"
 Cohesion: 1.0
-Nodes (1): Get or create default NIM client.
+Nodes (1): Parse LLM response into action list.
 
 ### Community 55 - "Community 55"
 Cohesion: 1.0
-Nodes (1): Safely kill ONLY bot Chrome processes.
+Nodes (1): NVIDIA Nemotron 3 Omni client for survey decisions.
 
 ### Community 56 - "Community 56"
 Cohesion: 1.0
-Nodes (1): Get survey URL from CPX API using live details_url.
+Nodes (1): Decide next batch actions.          Args:             snapshot: Dict from snapsh
 
 ### Community 57 - "Community 57"
 Cohesion: 1.0
-Nodes (1): Send captcha image to NVIDIA NIM Vision API for OCR.      Args:         data_url
+Nodes (1): Simple auto-pilot fallback.
 
 ### Community 58 - "Community 58"
 Cohesion: 1.0
-Nodes (1): Find the captcha input field on the page.
+Nodes (1): Get or create default NIM client.
 
 ### Community 59 - "Community 59"
 Cohesion: 1.0
-Nodes (1): Fill captcha answer and click submit.
+Nodes (1): Safely kill ONLY bot Chrome processes.
 
 ### Community 60 - "Community 60"
 Cohesion: 1.0
-Nodes (1): Full PureSpectrum captcha solving pipeline.      1. Extract captcha image     2.
+Nodes (1): Get survey URL from CPX API using live details_url.
 
 ### Community 61 - "Community 61"
 Cohesion: 1.0
-Nodes (1): Click 'Alle akzeptieren' or similar consent button.
+Nodes (1): Send captcha image to NVIDIA NIM Vision API for OCR.      Args:         data_url
 
 ### Community 62 - "Community 62"
 Cohesion: 1.0
-Nodes (1): Fill the opinion textarea with ROBOT keyword.      PureSpectrum requires the wor
+Nodes (1): Find the captcha input field on the page.
 
 ### Community 63 - "Community 63"
 Cohesion: 1.0
-Nodes (1): Solve PureSpectrum drag-drop puzzle via Angular __ngContext__.      Recursively
+Nodes (1): Fill captcha answer and click submit.
 
 ### Community 64 - "Community 64"
 Cohesion: 1.0
-Nodes (1): Extract base64 captcha image from PureSpectrum page via CDP.      Returns:
+Nodes (1): Full PureSpectrum captcha solving pipeline.      1. Extract captcha image     2.
 
 ### Community 65 - "Community 65"
 Cohesion: 1.0
-Nodes (1): Send captcha image to NVIDIA NIM Vision API for OCR.      Args:         data_url
+Nodes (1): Click 'Alle akzeptieren' or similar consent button.
 
 ### Community 66 - "Community 66"
 Cohesion: 1.0
-Nodes (1): Find the captcha input field on the page.
+Nodes (1): Fill the opinion textarea with ROBOT keyword.      PureSpectrum requires the wor
 
 ### Community 67 - "Community 67"
 Cohesion: 1.0
-Nodes (1): Fill captcha answer and click submit.
+Nodes (1): Solve PureSpectrum drag-drop puzzle via Angular __ngContext__.      Recursively
 
 ### Community 68 - "Community 68"
 Cohesion: 1.0
-Nodes (1): Full PureSpectrum captcha solving pipeline.      1. Extract captcha image     2.
+Nodes (1): Extract base64 captcha image from PureSpectrum page via CDP.      Returns:
 
 ### Community 69 - "Community 69"
 Cohesion: 1.0
-Nodes (1): Click 'Alle akzeptieren' or similar consent button.
+Nodes (1): Send captcha image to NVIDIA NIM Vision API for OCR.      Args:         data_url
 
 ### Community 70 - "Community 70"
 Cohesion: 1.0
-Nodes (1): Fill the opinion textarea with ROBOT keyword.      PureSpectrum requires the wor
+Nodes (1): Find the captcha input field on the page.
 
 ### Community 71 - "Community 71"
 Cohesion: 1.0
-Nodes (1): Pretty-print filtered survey results.
+Nodes (1): Fill captcha answer and click submit.
 
 ### Community 72 - "Community 72"
 Cohesion: 1.0
-Nodes (1): Full scan: connect → extract IDs → filter → print.      Returns:         List of
+Nodes (1): Full PureSpectrum captcha solving pipeline.      1. Extract captcha image     2.
 
 ### Community 73 - "Community 73"
 Cohesion: 1.0
-Nodes (1): Read page innerText via CDP.
+Nodes (1): Click 'Alle akzeptieren' or similar consent button.
 
 ### Community 74 - "Community 74"
 Cohesion: 1.0
-Nodes (1): Read current balance from dashboard.
+Nodes (1): Fill the opinion textarea with ROBOT keyword.      PureSpectrum requires the wor
 
 ### Community 75 - "Community 75"
 Cohesion: 1.0
-Nodes (1): Find all tabs in bot Chrome.
+Nodes (1): Pretty-print filtered survey results.
 
 ### Community 76 - "Community 76"
 Cohesion: 1.0
-Nodes (1): Find WebSocket URL for a heypiggy dashboard tab.
+Nodes (1): Full scan: connect → extract IDs → filter → print.      Returns:         List of
 
 ### Community 77 - "Community 77"
 Cohesion: 1.0
-Nodes (1): Find first non-dashboard survey tab.
+Nodes (1): Read page innerText via CDP.
 
 ### Community 78 - "Community 78"
 Cohesion: 1.0
-Nodes (1): Get WebSocket URL for a specific tab ID.
+Nodes (1): Read current balance from dashboard.
 
 ### Community 79 - "Community 79"
 Cohesion: 1.0
-Nodes (1): Check if bot Chrome is running with CDP enabled.
+Nodes (1): Find all tabs in bot Chrome.
 
 ### Community 80 - "Community 80"
 Cohesion: 1.0
-Nodes (1): Launch Chrome via playstealth or raw subprocess.
+Nodes (1): Find WebSocket URL for a heypiggy dashboard tab.
 
 ### Community 81 - "Community 81"
 Cohesion: 1.0
-Nodes (1): Safely kill ONLY bot Chrome processes.
+Nodes (1): Find first non-dashboard survey tab.
 
 ### Community 82 - "Community 82"
 Cohesion: 1.0
-Nodes (1): Get survey URL from CPX API.
+Nodes (1): Get WebSocket URL for a specific tab ID.
 
 ### Community 83 - "Community 83"
 Cohesion: 1.0
-Nodes (1): Get full survey details from CPX API.
+Nodes (1): Check if bot Chrome is running with CDP enabled.
 
 ### Community 84 - "Community 84"
 Cohesion: 1.0
-Nodes (1): Dynamically get window position and toolbar height
+Nodes (1): Launch Chrome via playstealth or raw subprocess.
 
 ### Community 85 - "Community 85"
 Cohesion: 1.0
-Nodes (1): Convert DOM (viewport) coordinates to window coordinates
+Nodes (1): Safely kill ONLY bot Chrome processes.
 
 ### Community 86 - "Community 86"
 Cohesion: 1.0
-Nodes (1): Execute drag via cua-driver CGEvent
+Nodes (1): Get survey URL from CPX API.
 
 ### Community 87 - "Community 87"
 Cohesion: 1.0
-Nodes (1): Solve slide captcha (gc-drag-block on gc-drag-slide-bar)
+Nodes (1): Get full survey details from CPX API.
 
 ### Community 88 - "Community 88"
 Cohesion: 1.0
-Nodes (1): Generic: drag element from drag_selector to drop_selector
+Nodes (1): Dynamically get window position and toolbar height
 
 ### Community 89 - "Community 89"
 Cohesion: 1.0
-Nodes (1): Command validator that detects failure patterns and logs fixes.
+Nodes (1): Convert DOM (viewport) coordinates to window coordinates
 
 ### Community 90 - "Community 90"
 Cohesion: 1.0
-Nodes (1): ax_python — Python AX tree traversal via atomacos.  Bietet schnellen Python-basi
+Nodes (1): Execute drag via cua-driver CGEvent
 
 ### Community 91 - "Community 91"
 Cohesion: 1.0
-Nodes (1): Gibt kompletten AX-Tree einer App als Dict zurück.
+Nodes (1): Solve slide captcha (gc-drag-block on gc-drag-slide-bar)
 
 ### Community 92 - "Community 92"
 Cohesion: 1.0
-Nodes (1): Rekursiver Walk des AX-Trees.
+Nodes (1): Generic: drag element from drag_selector to drop_selector
 
 ### Community 93 - "Community 93"
 Cohesion: 1.0
-Nodes (1): Findet ersten Element-Index mit passendem Label (word-boundary).      Returns:
+Nodes (1): Command validator that detects failure patterns and logs fixes.
 
 ### Community 94 - "Community 94"
 Cohesion: 1.0
-Nodes (1): Rekursive Suche mit Index-Zählung.
+Nodes (1): ax_python — Python AX tree traversal via atomacos.  Bietet schnellen Python-basi
 
 ### Community 95 - "Community 95"
 Cohesion: 1.0
-Nodes (1): Listet alle Fenster aller laufenden Apps.
+Nodes (1): Gibt kompletten AX-Tree einer App als Dict zurück.
 
 ### Community 96 - "Community 96"
 Cohesion: 1.0
-Nodes (1): Hilfsfunktion: Alle laufenden PIDs via NSWorkspace.
+Nodes (1): Rekursiver Walk des AX-Trees.
 
 ### Community 97 - "Community 97"
 Cohesion: 1.0
-Nodes (1): Prüft ob aktuelle Seite eine Audio-Frage hat.
+Nodes (1): Findet ersten Element-Index mit passendem Label (word-boundary).      Returns:
 
 ### Community 98 - "Community 98"
 Cohesion: 1.0
-Nodes (1): Audio-Frage automatisch beantworten.     Nutzt BlackHole + ffmpeg + NVIDIA Omni.
+Nodes (1): Rekursive Suche mit Index-Zählung.
 
 ### Community 99 - "Community 99"
 Cohesion: 1.0
-Nodes (1): Findet passende Antwort aus Persona für eine Frage.
+Nodes (1): Listet alle Fenster aller laufenden Apps.
 
 ### Community 100 - "Community 100"
 Cohesion: 1.0
-Nodes (1): Erkennt Fragen und Antwortmöglichkeiten im aktuellen AX-Tree.          Filtert B
+Nodes (1): Hilfsfunktion: Alle laufenden PIDs via NSWorkspace.
 
 ### Community 101 - "Community 101"
 Cohesion: 1.0
-Nodes (1): Klickt eine Antwortmöglichkeit (RadioButton/CheckBox).
+Nodes (1): Prüft ob aktuelle Seite eine Audio-Frage hat.
 
 ### Community 102 - "Community 102"
 Cohesion: 1.0
-Nodes (1): Tippt eine Antwort in ein Textfeld.
+Nodes (1): Audio-Frage automatisch beantworten.     Nutzt BlackHole + ffmpeg + NVIDIA Omni.
 
 ### Community 103 - "Community 103"
 Cohesion: 1.0
-Nodes (1): Klickt den Weiter/Nächst-Button.
+Nodes (1): Findet passende Antwort aus Persona für eine Frage.
 
 ### Community 104 - "Community 104"
 Cohesion: 1.0
-Nodes (1): Prüft ob ein Survey machbar ist — via vision_gate (NVIDIA + Pixtral).          E
+Nodes (1): Erkennt Fragen und Antwortmöglichkeiten im aktuellen AX-Tree.          Filtert B
 
 ### Community 105 - "Community 105"
 Cohesion: 1.0
-Nodes (1): Macht einen Screenshot und speichert ihn.
+Nodes (1): Klickt eine Antwortmöglichkeit (RadioButton/CheckBox).
 
 ### Community 106 - "Community 106"
 Cohesion: 1.0
-Nodes (1): Beantwortet eine einzelne Frage basierend auf Persona und Fragetyp.          - r
+Nodes (1): Tippt eine Antwort in ein Textfeld.
 
 ### Community 107 - "Community 107"
 Cohesion: 1.0
-Nodes (1): Scannt verfügbare Surveys via CDP DOM.          Returns:         list[dict]: [{i
+Nodes (1): Klickt den Weiter/Nächst-Button.
 
 ### Community 108 - "Community 108"
 Cohesion: 1.0
-Nodes (1): Startet einen Survey per CDP Click.          Returns:         dict: {"success":
+Nodes (1): Prüft ob ein Survey machbar ist — via vision_gate (NVIDIA + Pixtral).          E
 
 ### Community 109 - "Community 109"
 Cohesion: 1.0
-Nodes (1): Bearbeitet die Vorqualifizierung mit Vision-Gate Logik-Prüfung.          1. Cook
+Nodes (1): Macht einen Screenshot und speichert ihn.
 
 ### Community 110 - "Community 110"
 Cohesion: 1.0
-Nodes (1): Bearbeitet einen Survey im neuen Tab.          1. Erkennt neuen Tab (Cint, PureS
+Nodes (1): Beantwortet eine einzelne Frage basierend auf Persona und Fragetyp.          - r
 
 ### Community 111 - "Community 111"
 Cohesion: 1.0
-Nodes (1): Schließt den Survey-Tab und kehrt zum HeyPiggy Dashboard zurück.
+Nodes (1): Scannt verfügbare Surveys via CDP DOM.          Returns:         list[dict]: [{i
 
 ### Community 112 - "Community 112"
 Cohesion: 1.0
-Nodes (1): Bearbeitet das Bewertungsfeld nach dem Survey.          Schreibt kurzen Text + r
+Nodes (1): Startet einen Survey per CDP Click.          Returns:         dict: {"success":
 
 ### Community 113 - "Community 113"
 Cohesion: 1.0
-Nodes (1): Prüft ob sich das Guthaben erhöht hat.
+Nodes (1): Bearbeitet die Vorqualifizierung mit Vision-Gate Logik-Prüfung.          1. Cook
 
 ### Community 114 - "Community 114"
 Cohesion: 1.0
-Nodes (1): PUBLIC BOX API: Komplette Survey Automation.          Führt Surveys nacheinander
+Nodes (1): Bearbeitet einen Survey im neuen Tab.          1. Erkennt neuen Tab (Cint, PureS
 
 ### Community 115 - "Community 115"
 Cohesion: 1.0
-Nodes (1): Public API: Verfügbare Surveys scannen.
+Nodes (1): Schließt den Survey-Tab und kehrt zum HeyPiggy Dashboard zurück.
 
 ### Community 116 - "Community 116"
 Cohesion: 1.0
-Nodes (1): Public API: Besten oder bestimmten Survey starten.
+Nodes (1): Bearbeitet das Bewertungsfeld nach dem Survey.          Schreibt kurzen Text + r
 
 ### Community 117 - "Community 117"
+Cohesion: 1.0
+Nodes (1): Prüft ob sich das Guthaben erhöht hat.
+
+### Community 118 - "Community 118"
+Cohesion: 1.0
+Nodes (1): PUBLIC BOX API: Komplette Survey Automation.          Führt Surveys nacheinander
+
+### Community 119 - "Community 119"
+Cohesion: 1.0
+Nodes (1): Public API: Verfügbare Surveys scannen.
+
+### Community 120 - "Community 120"
+Cohesion: 1.0
+Nodes (1): Public API: Besten oder bestimmten Survey starten.
+
+### Community 121 - "Community 121"
 Cohesion: 1.0
 Nodes (1): Public API: Vorqualifizierung durchführen.
 
 ## Knowledge Gaps
-- **297 isolated node(s):** `Ring 1: Signierte & unveränderliche Flow-Artefakte. Jeder kompilierte Flow wird`, `Generiert Ed25519-Schlüsselpaar falls nicht vorhanden.`, `Signiert einen Flow und speichert .sig + flow_hash + lock.json.`, `Prüft Signatur und Hash eines Flows.     Returns: (is_valid, reason)`, `Boolean wrapper für Vorbedingungs-Check (Semgrep-Regel).` (+292 more)
+- **301 isolated node(s):** `Ring 1: Signierte & unveränderliche Flow-Artefakte. Jeder kompilierte Flow wird`, `Generiert Ed25519-Schlüsselpaar falls nicht vorhanden.`, `Signiert einen Flow und speichert .sig + flow_hash + lock.json.`, `Prüft Signatur und Hash eines Flows.     Returns: (is_valid, reason)`, `Boolean wrapper für Vorbedingungs-Check (Semgrep-Regel).` (+296 more)
   These have ≤1 connection - possible missing edges or undocumented components.
 - **Thin community `Community 23`** (5 nodes): `get()`, `jitter()`, `rng()`, `safe()`, `stealth_main.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
@@ -632,156 +652,164 @@ Nodes (1): Public API: Vorqualifizierung durchführen.
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 46`** (1 nodes): `Start cua-driver daemon if not running.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 47`** (1 nodes): `Navigate to URL and wait for page load.`
+- **Thin community `Community 47`** (1 nodes): `Execute JS via Runtime.evaluate.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 48`** (1 nodes): `Extract base64 captcha image from PureSpectrum page via CDP.      Returns:`
+- **Thin community `Community 48`** (1 nodes): `Find Google OAuth tab URL.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 49`** (1 nodes): `Build token-efficient prompt for Nemotron.`
+- **Thin community `Community 49`** (1 nodes): `Full CDP Google OAuth login.      Returns:         {"status": "ok"} or {"status"`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 50`** (1 nodes): `Parse LLM response into action list.`
+- **Thin community `Community 50`** (1 nodes): `Start cua-driver daemon if not running.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 51`** (1 nodes): `NVIDIA Nemotron 3 Omni client for survey decisions.`
+- **Thin community `Community 51`** (1 nodes): `Navigate to URL and wait for page load.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 52`** (1 nodes): `Decide next batch actions.          Args:             snapshot: Dict from snapsh`
+- **Thin community `Community 52`** (1 nodes): `Extract base64 captcha image from PureSpectrum page via CDP.      Returns:`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 53`** (1 nodes): `Simple auto-pilot fallback.`
+- **Thin community `Community 53`** (1 nodes): `Build token-efficient prompt for Nemotron.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 54`** (1 nodes): `Get or create default NIM client.`
+- **Thin community `Community 54`** (1 nodes): `Parse LLM response into action list.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 55`** (1 nodes): `Safely kill ONLY bot Chrome processes.`
+- **Thin community `Community 55`** (1 nodes): `NVIDIA Nemotron 3 Omni client for survey decisions.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 56`** (1 nodes): `Get survey URL from CPX API using live details_url.`
+- **Thin community `Community 56`** (1 nodes): `Decide next batch actions.          Args:             snapshot: Dict from snapsh`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 57`** (1 nodes): `Send captcha image to NVIDIA NIM Vision API for OCR.      Args:         data_url`
+- **Thin community `Community 57`** (1 nodes): `Simple auto-pilot fallback.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 58`** (1 nodes): `Find the captcha input field on the page.`
+- **Thin community `Community 58`** (1 nodes): `Get or create default NIM client.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 59`** (1 nodes): `Fill captcha answer and click submit.`
+- **Thin community `Community 59`** (1 nodes): `Safely kill ONLY bot Chrome processes.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 60`** (1 nodes): `Full PureSpectrum captcha solving pipeline.      1. Extract captcha image     2.`
+- **Thin community `Community 60`** (1 nodes): `Get survey URL from CPX API using live details_url.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 61`** (1 nodes): `Click 'Alle akzeptieren' or similar consent button.`
+- **Thin community `Community 61`** (1 nodes): `Send captcha image to NVIDIA NIM Vision API for OCR.      Args:         data_url`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 62`** (1 nodes): `Fill the opinion textarea with ROBOT keyword.      PureSpectrum requires the wor`
+- **Thin community `Community 62`** (1 nodes): `Find the captcha input field on the page.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 63`** (1 nodes): `Solve PureSpectrum drag-drop puzzle via Angular __ngContext__.      Recursively`
+- **Thin community `Community 63`** (1 nodes): `Fill captcha answer and click submit.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 64`** (1 nodes): `Extract base64 captcha image from PureSpectrum page via CDP.      Returns:`
+- **Thin community `Community 64`** (1 nodes): `Full PureSpectrum captcha solving pipeline.      1. Extract captcha image     2.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 65`** (1 nodes): `Send captcha image to NVIDIA NIM Vision API for OCR.      Args:         data_url`
+- **Thin community `Community 65`** (1 nodes): `Click 'Alle akzeptieren' or similar consent button.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 66`** (1 nodes): `Find the captcha input field on the page.`
+- **Thin community `Community 66`** (1 nodes): `Fill the opinion textarea with ROBOT keyword.      PureSpectrum requires the wor`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 67`** (1 nodes): `Fill captcha answer and click submit.`
+- **Thin community `Community 67`** (1 nodes): `Solve PureSpectrum drag-drop puzzle via Angular __ngContext__.      Recursively`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 68`** (1 nodes): `Full PureSpectrum captcha solving pipeline.      1. Extract captcha image     2.`
+- **Thin community `Community 68`** (1 nodes): `Extract base64 captcha image from PureSpectrum page via CDP.      Returns:`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 69`** (1 nodes): `Click 'Alle akzeptieren' or similar consent button.`
+- **Thin community `Community 69`** (1 nodes): `Send captcha image to NVIDIA NIM Vision API for OCR.      Args:         data_url`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 70`** (1 nodes): `Fill the opinion textarea with ROBOT keyword.      PureSpectrum requires the wor`
+- **Thin community `Community 70`** (1 nodes): `Find the captcha input field on the page.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 71`** (1 nodes): `Pretty-print filtered survey results.`
+- **Thin community `Community 71`** (1 nodes): `Fill captcha answer and click submit.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 72`** (1 nodes): `Full scan: connect → extract IDs → filter → print.      Returns:         List of`
+- **Thin community `Community 72`** (1 nodes): `Full PureSpectrum captcha solving pipeline.      1. Extract captcha image     2.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 73`** (1 nodes): `Read page innerText via CDP.`
+- **Thin community `Community 73`** (1 nodes): `Click 'Alle akzeptieren' or similar consent button.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 74`** (1 nodes): `Read current balance from dashboard.`
+- **Thin community `Community 74`** (1 nodes): `Fill the opinion textarea with ROBOT keyword.      PureSpectrum requires the wor`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 75`** (1 nodes): `Find all tabs in bot Chrome.`
+- **Thin community `Community 75`** (1 nodes): `Pretty-print filtered survey results.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 76`** (1 nodes): `Find WebSocket URL for a heypiggy dashboard tab.`
+- **Thin community `Community 76`** (1 nodes): `Full scan: connect → extract IDs → filter → print.      Returns:         List of`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 77`** (1 nodes): `Find first non-dashboard survey tab.`
+- **Thin community `Community 77`** (1 nodes): `Read page innerText via CDP.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 78`** (1 nodes): `Get WebSocket URL for a specific tab ID.`
+- **Thin community `Community 78`** (1 nodes): `Read current balance from dashboard.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 79`** (1 nodes): `Check if bot Chrome is running with CDP enabled.`
+- **Thin community `Community 79`** (1 nodes): `Find all tabs in bot Chrome.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 80`** (1 nodes): `Launch Chrome via playstealth or raw subprocess.`
+- **Thin community `Community 80`** (1 nodes): `Find WebSocket URL for a heypiggy dashboard tab.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 81`** (1 nodes): `Safely kill ONLY bot Chrome processes.`
+- **Thin community `Community 81`** (1 nodes): `Find first non-dashboard survey tab.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 82`** (1 nodes): `Get survey URL from CPX API.`
+- **Thin community `Community 82`** (1 nodes): `Get WebSocket URL for a specific tab ID.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 83`** (1 nodes): `Get full survey details from CPX API.`
+- **Thin community `Community 83`** (1 nodes): `Check if bot Chrome is running with CDP enabled.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 84`** (1 nodes): `Dynamically get window position and toolbar height`
+- **Thin community `Community 84`** (1 nodes): `Launch Chrome via playstealth or raw subprocess.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 85`** (1 nodes): `Convert DOM (viewport) coordinates to window coordinates`
+- **Thin community `Community 85`** (1 nodes): `Safely kill ONLY bot Chrome processes.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 86`** (1 nodes): `Execute drag via cua-driver CGEvent`
+- **Thin community `Community 86`** (1 nodes): `Get survey URL from CPX API.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 87`** (1 nodes): `Solve slide captcha (gc-drag-block on gc-drag-slide-bar)`
+- **Thin community `Community 87`** (1 nodes): `Get full survey details from CPX API.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 88`** (1 nodes): `Generic: drag element from drag_selector to drop_selector`
+- **Thin community `Community 88`** (1 nodes): `Dynamically get window position and toolbar height`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 89`** (1 nodes): `Command validator that detects failure patterns and logs fixes.`
+- **Thin community `Community 89`** (1 nodes): `Convert DOM (viewport) coordinates to window coordinates`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 90`** (1 nodes): `ax_python — Python AX tree traversal via atomacos.  Bietet schnellen Python-basi`
+- **Thin community `Community 90`** (1 nodes): `Execute drag via cua-driver CGEvent`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 91`** (1 nodes): `Gibt kompletten AX-Tree einer App als Dict zurück.`
+- **Thin community `Community 91`** (1 nodes): `Solve slide captcha (gc-drag-block on gc-drag-slide-bar)`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 92`** (1 nodes): `Rekursiver Walk des AX-Trees.`
+- **Thin community `Community 92`** (1 nodes): `Generic: drag element from drag_selector to drop_selector`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 93`** (1 nodes): `Findet ersten Element-Index mit passendem Label (word-boundary).      Returns:`
+- **Thin community `Community 93`** (1 nodes): `Command validator that detects failure patterns and logs fixes.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 94`** (1 nodes): `Rekursive Suche mit Index-Zählung.`
+- **Thin community `Community 94`** (1 nodes): `ax_python — Python AX tree traversal via atomacos.  Bietet schnellen Python-basi`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 95`** (1 nodes): `Listet alle Fenster aller laufenden Apps.`
+- **Thin community `Community 95`** (1 nodes): `Gibt kompletten AX-Tree einer App als Dict zurück.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 96`** (1 nodes): `Hilfsfunktion: Alle laufenden PIDs via NSWorkspace.`
+- **Thin community `Community 96`** (1 nodes): `Rekursiver Walk des AX-Trees.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 97`** (1 nodes): `Prüft ob aktuelle Seite eine Audio-Frage hat.`
+- **Thin community `Community 97`** (1 nodes): `Findet ersten Element-Index mit passendem Label (word-boundary).      Returns:`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 98`** (1 nodes): `Audio-Frage automatisch beantworten.     Nutzt BlackHole + ffmpeg + NVIDIA Omni.`
+- **Thin community `Community 98`** (1 nodes): `Rekursive Suche mit Index-Zählung.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 99`** (1 nodes): `Findet passende Antwort aus Persona für eine Frage.`
+- **Thin community `Community 99`** (1 nodes): `Listet alle Fenster aller laufenden Apps.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 100`** (1 nodes): `Erkennt Fragen und Antwortmöglichkeiten im aktuellen AX-Tree.          Filtert B`
+- **Thin community `Community 100`** (1 nodes): `Hilfsfunktion: Alle laufenden PIDs via NSWorkspace.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 101`** (1 nodes): `Klickt eine Antwortmöglichkeit (RadioButton/CheckBox).`
+- **Thin community `Community 101`** (1 nodes): `Prüft ob aktuelle Seite eine Audio-Frage hat.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 102`** (1 nodes): `Tippt eine Antwort in ein Textfeld.`
+- **Thin community `Community 102`** (1 nodes): `Audio-Frage automatisch beantworten.     Nutzt BlackHole + ffmpeg + NVIDIA Omni.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 103`** (1 nodes): `Klickt den Weiter/Nächst-Button.`
+- **Thin community `Community 103`** (1 nodes): `Findet passende Antwort aus Persona für eine Frage.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 104`** (1 nodes): `Prüft ob ein Survey machbar ist — via vision_gate (NVIDIA + Pixtral).          E`
+- **Thin community `Community 104`** (1 nodes): `Erkennt Fragen und Antwortmöglichkeiten im aktuellen AX-Tree.          Filtert B`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 105`** (1 nodes): `Macht einen Screenshot und speichert ihn.`
+- **Thin community `Community 105`** (1 nodes): `Klickt eine Antwortmöglichkeit (RadioButton/CheckBox).`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 106`** (1 nodes): `Beantwortet eine einzelne Frage basierend auf Persona und Fragetyp.          - r`
+- **Thin community `Community 106`** (1 nodes): `Tippt eine Antwort in ein Textfeld.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 107`** (1 nodes): `Scannt verfügbare Surveys via CDP DOM.          Returns:         list[dict]: [{i`
+- **Thin community `Community 107`** (1 nodes): `Klickt den Weiter/Nächst-Button.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 108`** (1 nodes): `Startet einen Survey per CDP Click.          Returns:         dict: {"success":`
+- **Thin community `Community 108`** (1 nodes): `Prüft ob ein Survey machbar ist — via vision_gate (NVIDIA + Pixtral).          E`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 109`** (1 nodes): `Bearbeitet die Vorqualifizierung mit Vision-Gate Logik-Prüfung.          1. Cook`
+- **Thin community `Community 109`** (1 nodes): `Macht einen Screenshot und speichert ihn.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 110`** (1 nodes): `Bearbeitet einen Survey im neuen Tab.          1. Erkennt neuen Tab (Cint, PureS`
+- **Thin community `Community 110`** (1 nodes): `Beantwortet eine einzelne Frage basierend auf Persona und Fragetyp.          - r`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 111`** (1 nodes): `Schließt den Survey-Tab und kehrt zum HeyPiggy Dashboard zurück.`
+- **Thin community `Community 111`** (1 nodes): `Scannt verfügbare Surveys via CDP DOM.          Returns:         list[dict]: [{i`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 112`** (1 nodes): `Bearbeitet das Bewertungsfeld nach dem Survey.          Schreibt kurzen Text + r`
+- **Thin community `Community 112`** (1 nodes): `Startet einen Survey per CDP Click.          Returns:         dict: {"success":`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 113`** (1 nodes): `Prüft ob sich das Guthaben erhöht hat.`
+- **Thin community `Community 113`** (1 nodes): `Bearbeitet die Vorqualifizierung mit Vision-Gate Logik-Prüfung.          1. Cook`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 114`** (1 nodes): `PUBLIC BOX API: Komplette Survey Automation.          Führt Surveys nacheinander`
+- **Thin community `Community 114`** (1 nodes): `Bearbeitet einen Survey im neuen Tab.          1. Erkennt neuen Tab (Cint, PureS`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 115`** (1 nodes): `Public API: Verfügbare Surveys scannen.`
+- **Thin community `Community 115`** (1 nodes): `Schließt den Survey-Tab und kehrt zum HeyPiggy Dashboard zurück.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 116`** (1 nodes): `Public API: Besten oder bestimmten Survey starten.`
+- **Thin community `Community 116`** (1 nodes): `Bearbeitet das Bewertungsfeld nach dem Survey.          Schreibt kurzen Text + r`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 117`** (1 nodes): `Public API: Vorqualifizierung durchführen.`
+- **Thin community `Community 117`** (1 nodes): `Prüft ob sich das Guthaben erhöht hat.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 118`** (1 nodes): `PUBLIC BOX API: Komplette Survey Automation.          Führt Surveys nacheinander`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 119`** (1 nodes): `Public API: Verfügbare Surveys scannen.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 120`** (1 nodes): `Public API: Besten oder bestimmten Survey starten.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 121`** (1 nodes): `Public API: Vorqualifizierung durchführen.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
 - **Why does `CaptchaError` connect `Community 2` to `Community 8`, `Community 10`, `Community 3`?**
-  _High betweenness centrality (0.343) - this node is a cross-community bridge._
+  _High betweenness centrality (0.336) - this node is a cross-community bridge._
 - **Why does `create_tab()` connect `Community 1` to `Community 3`?**
-  _High betweenness centrality (0.321) - this node is a cross-community bridge._
+  _High betweenness centrality (0.310) - this node is a cross-community bridge._
 - **Are the 110 inferred relationships involving `OutputGenerator` (e.g. with `TestOutputGenerator` and `TestOutputGeneratorLogbook`) actually correct?**
   _`OutputGenerator` has 110 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 92 inferred relationships involving `SemanticAnalyzer` (e.g. with `TestSemanticAnalyzer` and `TestSemanticAnalyzerCategories`) actually correct?**

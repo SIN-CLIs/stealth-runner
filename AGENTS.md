@@ -29,6 +29,14 @@
 
 ## 🚨 EXPLICITE VERBOTE (UNVERBRÜCHLICH)
 
+### 🔥 CHROME NUR MIT ACCESSIBILITY + CDP STARTEN
+**REGEL: Chrome MUSS IMMER mit `--force-renderer-accessibility` UND `--remote-allow-origins=*` gestartet werden.**
+- ❌ `playstealth launch` — setzt NICHT beide Flags
+- ❌ Chrome OHNE `--force-renderer-accessibility` — cua-driver AX-Tree LEER
+- ❌ Chrome OHNE `--remote-allow-origins=*` — CDP WebSocket 403
+- ✅ `/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9999 --remote-allow-origins=* --force-renderer-accessibility --no-first-run --user-data-dir=/tmp/heypiggy-bot URL`
+- ✅ cua-driver + CDP BEIDE nutzen — eine Chrome-Instanz, beide Tools
+
 ### NIEMALS user Chrome/Prozesse töten!
 **REGEL: ICH DARF NIEMALS — UNTER KEINEN UMSTÄNDEN — USER CHROME, USER OPENCODE SITZUNGEN ODER ANDERE USER-PROZESSE BEENDEN**
 

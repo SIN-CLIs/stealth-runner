@@ -58,35 +58,25 @@ def grant_accessibility():
 
 
 def launch_chrome_with_accessibility(port=9999, url="https://www.heypiggy.com/?page=dashboard"):
-    """Launch Chrome with --force-renderer-accessibility on fixed port.
-    
-    Uses fixed profile /tmp/heypiggy-bot to maintain session + cookies.
-    NEVER kills existing Chrome — reuses it if already running.
-    """
-    # Check if Chrome is already running on the port
-    import urllib.request
-    try:
-        urllib.request.urlopen(f"http://127.0.0.1:{port}/json", timeout=3)
-        print(f"[ACCESS] Chrome already running on port {port}")
-        return True
-    except Exception:
-        pass
+    """Launch Chrome with BOTH --force-renderer-accessibility AND --remote-allow-origins=*.
 
-    # Launch Chrome
+    ⚠️ This is the ONLY valid way to launch Chrome. Never use playstealth.
+    """
+    import subprocess as sp
     profile_dir = "/tmp/heypiggy-bot"
     cmd = [
         "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
         f"--remote-debugging-port={port}",
         "--remote-allow-origins=*",
+        "--force-renderer-accessibility",
         "--no-first-run",
         "--no-default-browser-check",
-        "--force-renderer-accessibility",
         f"--user-data-dir={profile_dir}",
         url,
     ]
     try:
-        subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-        print(f"[ACCESS] Chrome launched on port {port} (profile: {profile_dir})")
+        sp.Popen(cmd, stdout=sp.DEVNULL, stderr=sp.DEVNULL)
+        print(f"[ACCESS] Chrome launched: port={port}, accessibility=ON, cdp=ON")
         time.sleep(8)
         return True
     except Exception as e:
