@@ -8890,7 +8890,7 @@
       "label": "_cua()",
       "file_type": "code",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L89",
+      "source_location": "L91",
       "id": "survey_google_login_cua",
       "community": 11,
       "norm_label": "_cua()"
@@ -8899,7 +8899,7 @@
       "label": "_find_window()",
       "file_type": "code",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L106",
+      "source_location": "L108",
       "id": "survey_google_login_find_window",
       "community": 11,
       "norm_label": "_find_window()"
@@ -8908,7 +8908,7 @@
       "label": "_find_by_role()",
       "file_type": "code",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L118",
+      "source_location": "L120",
       "id": "survey_google_login_find_by_role",
       "community": 11,
       "norm_label": "_find_by_role()"
@@ -8917,7 +8917,7 @@
       "label": "_get_state()",
       "file_type": "code",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L133",
+      "source_location": "L135",
       "id": "survey_google_login_get_state",
       "community": 11,
       "norm_label": "_get_state()"
@@ -8926,7 +8926,7 @@
       "label": "_find_element_by_text()",
       "file_type": "code",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L139",
+      "source_location": "L141",
       "id": "survey_google_login_find_element_by_text",
       "community": 11,
       "norm_label": "_find_element_by_text()"
@@ -8935,7 +8935,7 @@
       "label": "_find_google_login()",
       "file_type": "code",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L160",
+      "source_location": "L162",
       "id": "survey_google_login_find_google_login",
       "community": 11,
       "norm_label": "_find_google_login()"
@@ -8944,7 +8944,7 @@
       "label": "_click_element()",
       "file_type": "code",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L177",
+      "source_location": "L179",
       "id": "survey_google_login_click_element",
       "community": 11,
       "norm_label": "_click_element()"
@@ -8953,7 +8953,7 @@
       "label": "_set_value()",
       "file_type": "code",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L194",
+      "source_location": "L196",
       "id": "survey_google_login_set_value",
       "community": 11,
       "norm_label": "_set_value()"
@@ -8962,7 +8962,7 @@
       "label": "google_login()",
       "file_type": "code",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L212",
+      "source_location": "L214",
       "id": "survey_google_login_google_login",
       "community": 11,
       "norm_label": "google_login()"
@@ -8971,7 +8971,7 @@
       "label": "_cua_login_existing()",
       "file_type": "code",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L280",
+      "source_location": "L282",
       "id": "survey_google_login_cua_login_existing",
       "community": 11,
       "norm_label": "_cua_login_existing()"
@@ -8980,7 +8980,7 @@
       "label": "_cua_login()",
       "file_type": "code",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L349",
+      "source_location": "L351",
       "id": "survey_google_login_cua_login",
       "community": 11,
       "norm_label": "_cua_login()"
@@ -9007,91 +9007,91 @@
       "label": "Call cua-driver with method and params. Returns parsed JSON.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L90",
+      "source_location": "L92",
       "community": 11,
       "norm_label": "call cua-driver with method and params. returns parsed json.",
-      "id": "survey_google_login_rationale_90"
+      "id": "survey_google_login_rationale_92"
     },
     {
       "label": "Find a window by PID and title substring.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L107",
+      "source_location": "L109",
       "community": 11,
       "norm_label": "find a window by pid and title substring.",
-      "id": "survey_google_login_rationale_107"
+      "id": "survey_google_login_rationale_109"
     },
     {
-      "label": "Execute Google OAuth login. Tries cua-driver first, CDP as fallback.          If",
+      "label": "Recursively find element by AXRole, optionally matching text.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L119",
+      "source_location": "L121",
       "community": 11,
-      "norm_label": "execute google oauth login. tries cua-driver first, cdp as fallback.          if",
-      "id": "survey_google_login_rationale_119"
+      "norm_label": "recursively find element by axrole, optionally matching text.",
+      "id": "survey_google_login_rationale_121"
     },
     {
       "label": "Get AX-Tree for a window. Returns tree_markdown text.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L134",
+      "source_location": "L136",
       "community": 11,
       "norm_label": "get ax-tree for a window. returns tree_markdown text.",
-      "id": "survey_google_login_rationale_134"
+      "id": "survey_google_login_rationale_136"
     },
     {
       "label": "Find element in tree_markdown by role and text substring.          Handles both",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L140",
+      "source_location": "L142",
       "community": 11,
       "norm_label": "find element in tree_markdown by role and text substring.          handles both",
-      "id": "survey_google_login_rationale_140"
+      "id": "survey_google_login_rationale_142"
     },
     {
       "label": "Find Google Login-Symbol in markdown tree.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L161",
+      "source_location": "L163",
       "community": 11,
       "norm_label": "find google login-symbol in markdown tree.",
-      "id": "survey_google_login_rationale_161"
+      "id": "survey_google_login_rationale_163"
     },
     {
       "label": "Click element by index via cua-driver. Returns True on success.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L178",
+      "source_location": "L180",
       "community": 11,
       "norm_label": "click element by index via cua-driver. returns true on success.",
-      "id": "survey_google_login_rationale_178"
+      "id": "survey_google_login_rationale_180"
     },
     {
       "label": "Set text value via cua-driver. Returns True on success.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L195",
+      "source_location": "L197",
       "community": 11,
       "norm_label": "set text value via cua-driver. returns true on success.",
-      "id": "survey_google_login_rationale_195"
+      "id": "survey_google_login_rationale_197"
     },
     {
       "label": "Execute Google OAuth login via cua-driver (PRIMARY) or CDP (fallback).",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L213",
+      "source_location": "L215",
       "community": 11,
       "norm_label": "execute google oauth login via cua-driver (primary) or cdp (fallback).",
-      "id": "survey_google_login_rationale_213"
+      "id": "survey_google_login_rationale_215"
     },
     {
       "label": "Login using cua-driver on an already-running Chrome instance.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L281",
+      "source_location": "L283",
       "community": 11,
       "norm_label": "login using cua-driver on an already-running chrome instance.",
-      "id": "survey_google_login_rationale_281"
+      "id": "survey_google_login_rationale_283"
     },
     {
       "label": "strat7.py",
@@ -10402,8 +10402,98 @@
       "label": "Call cua-driver with method and params. Returns parsed JSON.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L24",
+      "source_location": "L90",
       "community": 44,
+      "norm_label": "call cua-driver with method and params. returns parsed json.",
+      "id": "survey_google_login_rationale_90"
+    },
+    {
+      "label": "Find a window by PID and title substring.",
+      "file_type": "rationale",
+      "source_file": "survey-cli/survey/google_login.py",
+      "source_location": "L107",
+      "community": 45,
+      "norm_label": "find a window by pid and title substring.",
+      "id": "survey_google_login_rationale_107"
+    },
+    {
+      "label": "Execute Google OAuth login. Tries cua-driver first, CDP as fallback.          If",
+      "file_type": "rationale",
+      "source_file": "survey-cli/survey/google_login.py",
+      "source_location": "L119",
+      "community": 46,
+      "norm_label": "execute google oauth login. tries cua-driver first, cdp as fallback.          if",
+      "id": "survey_google_login_rationale_119"
+    },
+    {
+      "label": "Get AX-Tree for a window. Returns tree_markdown text.",
+      "file_type": "rationale",
+      "source_file": "survey-cli/survey/google_login.py",
+      "source_location": "L134",
+      "community": 47,
+      "norm_label": "get ax-tree for a window. returns tree_markdown text.",
+      "id": "survey_google_login_rationale_134"
+    },
+    {
+      "label": "Find element in tree_markdown by role and text substring.          Handles both",
+      "file_type": "rationale",
+      "source_file": "survey-cli/survey/google_login.py",
+      "source_location": "L140",
+      "community": 48,
+      "norm_label": "find element in tree_markdown by role and text substring.          handles both",
+      "id": "survey_google_login_rationale_140"
+    },
+    {
+      "label": "Find Google Login-Symbol in markdown tree.",
+      "file_type": "rationale",
+      "source_file": "survey-cli/survey/google_login.py",
+      "source_location": "L161",
+      "community": 49,
+      "norm_label": "find google login-symbol in markdown tree.",
+      "id": "survey_google_login_rationale_161"
+    },
+    {
+      "label": "Click element by index via cua-driver. Returns True on success.",
+      "file_type": "rationale",
+      "source_file": "survey-cli/survey/google_login.py",
+      "source_location": "L178",
+      "community": 50,
+      "norm_label": "click element by index via cua-driver. returns true on success.",
+      "id": "survey_google_login_rationale_178"
+    },
+    {
+      "label": "Set text value via cua-driver. Returns True on success.",
+      "file_type": "rationale",
+      "source_file": "survey-cli/survey/google_login.py",
+      "source_location": "L195",
+      "community": 51,
+      "norm_label": "set text value via cua-driver. returns true on success.",
+      "id": "survey_google_login_rationale_195"
+    },
+    {
+      "label": "Execute Google OAuth login via cua-driver (PRIMARY) or CDP (fallback).",
+      "file_type": "rationale",
+      "source_file": "survey-cli/survey/google_login.py",
+      "source_location": "L213",
+      "community": 52,
+      "norm_label": "execute google oauth login via cua-driver (primary) or cdp (fallback).",
+      "id": "survey_google_login_rationale_213"
+    },
+    {
+      "label": "Login using cua-driver on an already-running Chrome instance.",
+      "file_type": "rationale",
+      "source_file": "survey-cli/survey/google_login.py",
+      "source_location": "L281",
+      "community": 53,
+      "norm_label": "login using cua-driver on an already-running chrome instance.",
+      "id": "survey_google_login_rationale_281"
+    },
+    {
+      "label": "Call cua-driver with method and params. Returns parsed JSON.",
+      "file_type": "rationale",
+      "source_file": "survey-cli/survey/google_login.py",
+      "source_location": "L24",
+      "community": 54,
       "norm_label": "call cua-driver with method and params. returns parsed json.",
       "id": "survey_google_login_rationale_24"
     },
@@ -10412,7 +10502,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
       "source_location": "L41",
-      "community": 45,
+      "community": 55,
       "norm_label": "find a window by pid and title substring.",
       "id": "survey_google_login_rationale_41"
     },
@@ -10421,7 +10511,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
       "source_location": "L53",
-      "community": 46,
+      "community": 56,
       "norm_label": "recursively find element by axrole, optionally matching text.",
       "id": "survey_google_login_rationale_53"
     },
@@ -10430,7 +10520,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
       "source_location": "L68",
-      "community": 47,
+      "community": 57,
       "norm_label": "get ax-tree for a window.",
       "id": "survey_google_login_rationale_68"
     },
@@ -10439,7 +10529,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
       "source_location": "L74",
-      "community": 48,
+      "community": 58,
       "norm_label": "find element in tree_markdown by role and text substring.          parses lines",
       "id": "survey_google_login_rationale_74"
     },
@@ -10448,7 +10538,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
       "source_location": "L95",
-      "community": 49,
+      "community": 59,
       "norm_label": "find google login-symbol in markdown tree.",
       "id": "survey_google_login_rationale_95"
     },
@@ -10457,7 +10547,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
       "source_location": "L112",
-      "community": 50,
+      "community": 60,
       "norm_label": "click element by index via cua-driver. returns true on success.",
       "id": "survey_google_login_rationale_112"
     },
@@ -10466,7 +10556,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
       "source_location": "L129",
-      "community": 51,
+      "community": 61,
       "norm_label": "set text value via cua-driver. returns true on success.",
       "id": "survey_google_login_rationale_129"
     },
@@ -10475,7 +10565,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
       "source_location": "L147",
-      "community": 52,
+      "community": 62,
       "norm_label": "execute google oauth login via cua-driver (primary) or cdp (fallback).",
       "id": "survey_google_login_rationale_147"
     },
@@ -10484,7 +10574,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
       "source_location": "L211",
-      "community": 53,
+      "community": 63,
       "norm_label": "login using cua-driver on an already-running chrome instance.",
       "id": "survey_google_login_rationale_211"
     },
@@ -10493,7 +10583,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
       "source_location": "L91",
-      "community": 54,
+      "community": 64,
       "norm_label": "find google login-symbol in markdown tree.",
       "id": "survey_google_login_rationale_91"
     },
@@ -10502,7 +10592,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
       "source_location": "L108",
-      "community": 55,
+      "community": 65,
       "norm_label": "click element by index via cua-driver.",
       "id": "survey_google_login_rationale_108"
     },
@@ -10511,7 +10601,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
       "source_location": "L125",
-      "community": 56,
+      "community": 66,
       "norm_label": "set text value via cua-driver. returns true on success.",
       "id": "survey_google_login_rationale_125"
     },
@@ -10520,7 +10610,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
       "source_location": "L143",
-      "community": 57,
+      "community": 67,
       "norm_label": "execute google oauth login via cua-driver (primary) or cdp (fallback).",
       "id": "survey_google_login_rationale_143"
     },
@@ -10529,7 +10619,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
       "source_location": "L207",
-      "community": 58,
+      "community": 68,
       "norm_label": "login using cua-driver on an already-running chrome instance.",
       "id": "survey_google_login_rationale_207"
     },
@@ -10538,7 +10628,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
       "source_location": "L113",
-      "community": 59,
+      "community": 69,
       "norm_label": "set text value via cua-driver.",
       "id": "survey_google_login_rationale_113"
     },
@@ -10547,7 +10637,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
       "source_location": "L183",
-      "community": 60,
+      "community": 70,
       "norm_label": "login using cua-driver on an already-running chrome instance.",
       "id": "survey_google_login_rationale_183"
     },
@@ -10556,7 +10646,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
       "source_location": "L73",
-      "community": 61,
+      "community": 71,
       "norm_label": "click element by index via cua-driver.",
       "id": "survey_google_login_rationale_73"
     },
@@ -10565,7 +10655,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
       "source_location": "L78",
-      "community": 62,
+      "community": 72,
       "norm_label": "set text value via cua-driver.",
       "id": "survey_google_login_rationale_78"
     },
@@ -10574,7 +10664,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/google_login.py",
       "source_location": "L84",
-      "community": 63,
+      "community": 73,
       "norm_label": "execute the full google oauth login flow via cua-driver.      returns:         {",
       "id": "survey_google_login_rationale_84"
     },
@@ -10583,7 +10673,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L190",
-      "community": 64,
+      "community": 74,
       "norm_label": "create a new browser tab via cdp websocket.      uses target.createtarget throug",
       "id": "survey_chrome_rationale_190"
     },
@@ -10592,7 +10682,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L218",
-      "community": 65,
+      "community": 75,
       "norm_label": "get full survey details from cpx api using live details_url.",
       "id": "survey_chrome_rationale_218"
     },
@@ -10601,7 +10691,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L235",
-      "community": 66,
+      "community": 76,
       "norm_label": "get survey url from cpx api using live details_url.",
       "id": "survey_chrome_rationale_235"
     },
@@ -10610,7 +10700,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L249",
-      "community": 67,
+      "community": 77,
       "norm_label": "get full survey details from cpx api using live details_url.",
       "id": "survey_chrome_rationale_249"
     },
@@ -10619,7 +10709,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/login.py",
       "source_location": "L1",
-      "community": 68,
+      "community": 78,
       "norm_label": "google oauth login via cdp websocket.  uses keychain auto-fill. no passwords sto",
       "id": "survey_login_rationale_1"
     },
@@ -10628,7 +10718,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/login.py",
       "source_location": "L14",
-      "community": 69,
+      "community": 79,
       "norm_label": "execute full google oauth login flow.      returns:         {\"status\": \"ok\", \"pi",
       "id": "survey_login_rationale_14"
     },
@@ -10637,7 +10727,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/login.py",
       "source_location": "L124",
-      "community": 70,
+      "community": 80,
       "norm_label": "check if logged in to heypiggy dashboard.",
       "id": "survey_login_rationale_124"
     },
@@ -10646,7 +10736,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/login.py",
       "source_location": "L150",
-      "community": 71,
+      "community": 81,
       "norm_label": "navigate to url and wait for page load.",
       "id": "survey_login_rationale_150"
     },
@@ -10655,7 +10745,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/accessibility.py",
       "source_location": "L98",
-      "community": 72,
+      "community": 82,
       "norm_label": "ensure chrome is running with accessibility enabled.      call this once at daem",
       "id": "survey_accessibility_rationale_98"
     },
@@ -10664,7 +10754,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/accessibility.py",
       "source_location": "L140",
-      "community": 73,
+      "community": 83,
       "norm_label": "start cua-driver daemon if not running.",
       "id": "survey_accessibility_rationale_140"
     },
@@ -10673,7 +10763,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/accessibility.py",
       "source_location": "L138",
-      "community": 74,
+      "community": 84,
       "norm_label": "start cua-driver daemon if not running.",
       "id": "survey_accessibility_rationale_138"
     },
@@ -10682,7 +10772,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/cdp_login.py",
       "source_location": "L29",
-      "community": 75,
+      "community": 85,
       "norm_label": "execute js via runtime.evaluate.",
       "id": "survey_cdp_login_rationale_29"
     },
@@ -10691,7 +10781,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/cdp_login.py",
       "source_location": "L37",
-      "community": 76,
+      "community": 86,
       "norm_label": "find google oauth tab url.",
       "id": "survey_cdp_login_rationale_37"
     },
@@ -10700,7 +10790,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/cdp_login.py",
       "source_location": "L47",
-      "community": 77,
+      "community": 87,
       "norm_label": "full cdp google oauth login.      returns:         {\"status\": \"ok\"} or {\"status\"",
       "id": "survey_cdp_login_rationale_47"
     },
@@ -10709,7 +10799,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/accessibility.py",
       "source_location": "L131",
-      "community": 78,
+      "community": 88,
       "norm_label": "start cua-driver daemon if not running.",
       "id": "survey_accessibility_rationale_131"
     },
@@ -10925,7 +11015,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/login.py",
       "source_location": "L151",
-      "community": 79,
+      "community": 89,
       "norm_label": "navigate to url and wait for page load.",
       "id": "survey_login_rationale_151"
     },
@@ -10997,7 +11087,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
       "source_location": "L71",
-      "community": 80,
+      "community": 90,
       "norm_label": "extract base64 captcha image from purespectrum page via cdp.      returns:",
       "id": "providers_purespectrum_rationale_71"
     },
@@ -11078,7 +11168,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/nim.py",
       "source_location": "L51",
-      "community": 81,
+      "community": 91,
       "norm_label": "build token-efficient prompt for nemotron.",
       "id": "survey_nim_rationale_51"
     },
@@ -11087,7 +11177,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/nim.py",
       "source_location": "L98",
-      "community": 82,
+      "community": 92,
       "norm_label": "parse llm response into action list.",
       "id": "survey_nim_rationale_98"
     },
@@ -11096,7 +11186,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/nim.py",
       "source_location": "L130",
-      "community": 83,
+      "community": 93,
       "norm_label": "nvidia nemotron 3 omni client for survey decisions.",
       "id": "survey_nim_rationale_130"
     },
@@ -11105,7 +11195,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/nim.py",
       "source_location": "L149",
-      "community": 84,
+      "community": 94,
       "norm_label": "decide next batch actions.          args:             snapshot: dict from snapsh",
       "id": "survey_nim_rationale_149"
     },
@@ -11114,7 +11204,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/nim.py",
       "source_location": "L202",
-      "community": 85,
+      "community": 95,
       "norm_label": "simple auto-pilot fallback.",
       "id": "survey_nim_rationale_202"
     },
@@ -11123,7 +11213,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/nim.py",
       "source_location": "L237",
-      "community": 86,
+      "community": 96,
       "norm_label": "get or create default nim client.",
       "id": "survey_nim_rationale_237"
     },
@@ -11132,7 +11222,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L187",
-      "community": 87,
+      "community": 97,
       "norm_label": "safely kill only bot chrome processes.",
       "id": "survey_chrome_rationale_187"
     },
@@ -11141,7 +11231,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L204",
-      "community": 88,
+      "community": 98,
       "norm_label": "get survey url from cpx api using live details_url.",
       "id": "survey_chrome_rationale_204"
     },
@@ -11447,7 +11537,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
       "source_location": "L195",
-      "community": 89,
+      "community": 99,
       "norm_label": "send captcha image to nvidia nim vision api for ocr.      args:         data_url",
       "id": "providers_purespectrum_rationale_195"
     },
@@ -11456,7 +11546,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
       "source_location": "L276",
-      "community": 90,
+      "community": 100,
       "norm_label": "find the captcha input field on the page.",
       "id": "providers_purespectrum_rationale_276"
     },
@@ -11465,7 +11555,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
       "source_location": "L317",
-      "community": 91,
+      "community": 101,
       "norm_label": "fill captcha answer and click submit.",
       "id": "providers_purespectrum_rationale_317"
     },
@@ -11474,7 +11564,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
       "source_location": "L363",
-      "community": 92,
+      "community": 102,
       "norm_label": "full purespectrum captcha solving pipeline.      1. extract captcha image     2.",
       "id": "providers_purespectrum_rationale_363"
     },
@@ -11483,7 +11573,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
       "source_location": "L442",
-      "community": 93,
+      "community": 103,
       "norm_label": "click 'alle akzeptieren' or similar consent button.",
       "id": "providers_purespectrum_rationale_442"
     },
@@ -11492,7 +11582,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
       "source_location": "L475",
-      "community": 94,
+      "community": 104,
       "norm_label": "fill the opinion textarea with robot keyword.      purespectrum requires the wor",
       "id": "providers_purespectrum_rationale_475"
     },
@@ -11501,7 +11591,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
       "source_location": "L527",
-      "community": 95,
+      "community": 105,
       "norm_label": "solve purespectrum drag-drop puzzle via angular __ngcontext__.      recursively",
       "id": "providers_purespectrum_rationale_527"
     },
@@ -11510,7 +11600,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
       "source_location": "L65",
-      "community": 96,
+      "community": 106,
       "norm_label": "extract base64 captcha image from purespectrum page via cdp.      returns:",
       "id": "providers_purespectrum_rationale_65"
     },
@@ -11519,7 +11609,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
       "source_location": "L189",
-      "community": 97,
+      "community": 107,
       "norm_label": "send captcha image to nvidia nim vision api for ocr.      args:         data_url",
       "id": "providers_purespectrum_rationale_189"
     },
@@ -11528,7 +11618,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
       "source_location": "L270",
-      "community": 98,
+      "community": 108,
       "norm_label": "find the captcha input field on the page.",
       "id": "providers_purespectrum_rationale_270"
     },
@@ -11537,7 +11627,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
       "source_location": "L311",
-      "community": 99,
+      "community": 109,
       "norm_label": "fill captcha answer and click submit.",
       "id": "providers_purespectrum_rationale_311"
     },
@@ -11546,7 +11636,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
       "source_location": "L357",
-      "community": 100,
+      "community": 110,
       "norm_label": "full purespectrum captcha solving pipeline.      1. extract captcha image     2.",
       "id": "providers_purespectrum_rationale_357"
     },
@@ -11555,7 +11645,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
       "source_location": "L436",
-      "community": 101,
+      "community": 111,
       "norm_label": "click 'alle akzeptieren' or similar consent button.",
       "id": "providers_purespectrum_rationale_436"
     },
@@ -11564,7 +11654,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/providers/purespectrum.py",
       "source_location": "L469",
-      "community": 102,
+      "community": 112,
       "norm_label": "fill the opinion textarea with robot keyword.      purespectrum requires the wor",
       "id": "providers_purespectrum_rationale_469"
     },
@@ -11573,7 +11663,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/scanner.py",
       "source_location": "L120",
-      "community": 103,
+      "community": 113,
       "norm_label": "pretty-print filtered survey results.",
       "id": "survey_scanner_rationale_120"
     },
@@ -11582,7 +11672,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/scanner.py",
       "source_location": "L146",
-      "community": 104,
+      "community": 114,
       "norm_label": "full scan: connect \u2192 extract ids \u2192 filter \u2192 print.      returns:         list of",
       "id": "survey_scanner_rationale_146"
     },
@@ -11591,7 +11681,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/scanner.py",
       "source_location": "L174",
-      "community": 105,
+      "community": 115,
       "norm_label": "read page innertext via cdp.",
       "id": "survey_scanner_rationale_174"
     },
@@ -11600,7 +11690,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/scanner.py",
       "source_location": "L191",
-      "community": 106,
+      "community": 116,
       "norm_label": "read current balance from dashboard.",
       "id": "survey_scanner_rationale_191"
     },
@@ -11609,7 +11699,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L56",
-      "community": 107,
+      "community": 117,
       "norm_label": "find all tabs in bot chrome.",
       "id": "survey_chrome_rationale_56"
     },
@@ -11618,7 +11708,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L67",
-      "community": 108,
+      "community": 118,
       "norm_label": "find websocket url for a heypiggy dashboard tab.",
       "id": "survey_chrome_rationale_67"
     },
@@ -11627,7 +11717,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L79",
-      "community": 109,
+      "community": 119,
       "norm_label": "find first non-dashboard survey tab.",
       "id": "survey_chrome_rationale_79"
     },
@@ -11636,7 +11726,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L88",
-      "community": 110,
+      "community": 120,
       "norm_label": "get websocket url for a specific tab id.",
       "id": "survey_chrome_rationale_88"
     },
@@ -11645,7 +11735,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L96",
-      "community": 111,
+      "community": 121,
       "norm_label": "check if bot chrome is running with cdp enabled.",
       "id": "survey_chrome_rationale_96"
     },
@@ -11654,7 +11744,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L105",
-      "community": 112,
+      "community": 122,
       "norm_label": "launch chrome via playstealth or raw subprocess.",
       "id": "survey_chrome_rationale_105"
     },
@@ -11663,7 +11753,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L145",
-      "community": 113,
+      "community": 123,
       "norm_label": "safely kill only bot chrome processes.",
       "id": "survey_chrome_rationale_145"
     },
@@ -11672,7 +11762,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L162",
-      "community": 114,
+      "community": 124,
       "norm_label": "get survey url from cpx api.",
       "id": "survey_chrome_rationale_162"
     },
@@ -11681,7 +11771,7 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/chrome.py",
       "source_location": "L175",
-      "community": 115,
+      "community": 125,
       "norm_label": "get full survey details from cpx api.",
       "id": "survey_chrome_rationale_175"
     },
@@ -11825,7 +11915,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/captcha_solver.py",
       "source_location": "L25",
-      "community": 116,
+      "community": 126,
       "norm_label": "dynamically get window position and toolbar height",
       "id": "modules_captcha_solver_rationale_25"
     },
@@ -11834,7 +11924,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/captcha_solver.py",
       "source_location": "L51",
-      "community": 117,
+      "community": 127,
       "norm_label": "convert dom (viewport) coordinates to window coordinates",
       "id": "modules_captcha_solver_rationale_51"
     },
@@ -11843,7 +11933,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/captcha_solver.py",
       "source_location": "L55",
-      "community": 118,
+      "community": 128,
       "norm_label": "execute drag via cua-driver cgevent",
       "id": "modules_captcha_solver_rationale_55"
     },
@@ -11852,7 +11942,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/captcha_solver.py",
       "source_location": "L63",
-      "community": 119,
+      "community": 129,
       "norm_label": "solve slide captcha (gc-drag-block on gc-drag-slide-bar)",
       "id": "modules_captcha_solver_rationale_63"
     },
@@ -11861,7 +11951,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/captcha_solver.py",
       "source_location": "L86",
-      "community": 120,
+      "community": 130,
       "norm_label": "generic: drag element from drag_selector to drop_selector",
       "id": "modules_captcha_solver_rationale_86"
     },
@@ -12140,7 +12230,7 @@
       "file_type": "rationale",
       "source_file": "stealth_mind/validator.py",
       "source_location": "L1",
-      "community": 121,
+      "community": 131,
       "norm_label": "command validator that detects failure patterns and logs fixes.",
       "id": "stealth_mind_validator_rationale_1"
     },
@@ -12149,7 +12239,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/ax_python.py",
       "source_location": "L1",
-      "community": 122,
+      "community": 132,
       "norm_label": "ax_python \u2014 python ax tree traversal via atomacos.  bietet schnellen python-basi",
       "id": "modules_ax_python_rationale_1"
     },
@@ -12158,7 +12248,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/ax_python.py",
       "source_location": "L28",
-      "community": 123,
+      "community": 133,
       "norm_label": "gibt kompletten ax-tree einer app als dict zuruck.",
       "id": "modules_ax_python_rationale_28"
     },
@@ -12167,7 +12257,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/ax_python.py",
       "source_location": "L42",
-      "community": 124,
+      "community": 134,
       "norm_label": "rekursiver walk des ax-trees.",
       "id": "modules_ax_python_rationale_42"
     },
@@ -12176,7 +12266,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/ax_python.py",
       "source_location": "L77",
-      "community": 125,
+      "community": 135,
       "norm_label": "findet ersten element-index mit passendem label (word-boundary).      returns:",
       "id": "modules_ax_python_rationale_77"
     },
@@ -12185,7 +12275,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/ax_python.py",
       "source_location": "L91",
-      "community": 126,
+      "community": 136,
       "norm_label": "rekursive suche mit index-zahlung.",
       "id": "modules_ax_python_rationale_91"
     },
@@ -12194,7 +12284,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/ax_python.py",
       "source_location": "L107",
-      "community": 127,
+      "community": 137,
       "norm_label": "listet alle fenster aller laufenden apps.",
       "id": "modules_ax_python_rationale_107"
     },
@@ -12203,7 +12293,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/ax_python.py",
       "source_location": "L125",
-      "community": 128,
+      "community": 138,
       "norm_label": "hilfsfunktion: alle laufenden pids via nsworkspace.",
       "id": "modules_ax_python_rationale_125"
     },
@@ -12212,7 +12302,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L37",
-      "community": 129,
+      "community": 139,
       "norm_label": "pruft ob aktuelle seite eine audio-frage hat.",
       "id": "modules_survey_runner_rationale_37"
     },
@@ -12221,7 +12311,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L67",
-      "community": 130,
+      "community": 140,
       "norm_label": "audio-frage automatisch beantworten.     nutzt blackhole + ffmpeg + nvidia omni.",
       "id": "modules_survey_runner_rationale_67"
     },
@@ -12230,7 +12320,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L128",
-      "community": 131,
+      "community": 141,
       "norm_label": "findet passende antwort aus persona fur eine frage.",
       "id": "modules_survey_runner_rationale_128"
     },
@@ -12239,7 +12329,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L217",
-      "community": 132,
+      "community": 142,
       "norm_label": "erkennt fragen und antwortmoglichkeiten im aktuellen ax-tree.          filtert b",
       "id": "modules_survey_runner_rationale_217"
     },
@@ -12248,7 +12338,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L311",
-      "community": 133,
+      "community": 143,
       "norm_label": "klickt eine antwortmoglichkeit (radiobutton/checkbox).",
       "id": "modules_survey_runner_rationale_311"
     },
@@ -12257,7 +12347,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L316",
-      "community": 134,
+      "community": 144,
       "norm_label": "tippt eine antwort in ein textfeld.",
       "id": "modules_survey_runner_rationale_316"
     },
@@ -12266,7 +12356,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L323",
-      "community": 135,
+      "community": 145,
       "norm_label": "klickt den weiter/nachst-button.",
       "id": "modules_survey_runner_rationale_323"
     },
@@ -12275,7 +12365,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L333",
-      "community": 136,
+      "community": 146,
       "norm_label": "pruft ob ein survey machbar ist \u2014 via vision_gate (nvidia + pixtral).          e",
       "id": "modules_survey_runner_rationale_333"
     },
@@ -12284,7 +12374,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L344",
-      "community": 137,
+      "community": 147,
       "norm_label": "macht einen screenshot und speichert ihn.",
       "id": "modules_survey_runner_rationale_344"
     },
@@ -12293,7 +12383,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L356",
-      "community": 138,
+      "community": 148,
       "norm_label": "beantwortet eine einzelne frage basierend auf persona und fragetyp.          - r",
       "id": "modules_survey_runner_rationale_356"
     },
@@ -12302,7 +12392,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L423",
-      "community": 139,
+      "community": 149,
       "norm_label": "scannt verfugbare surveys via cdp dom.          returns:         list[dict]: [{i",
       "id": "modules_survey_runner_rationale_423"
     },
@@ -12311,7 +12401,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L464",
-      "community": 140,
+      "community": 150,
       "norm_label": "startet einen survey per cdp click.          returns:         dict: {\"success\":",
       "id": "modules_survey_runner_rationale_464"
     },
@@ -12320,7 +12410,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L496",
-      "community": 141,
+      "community": 151,
       "norm_label": "bearbeitet die vorqualifizierung mit vision-gate logik-prufung.          1. cook",
       "id": "modules_survey_runner_rationale_496"
     },
@@ -12329,7 +12419,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L651",
-      "community": 142,
+      "community": 152,
       "norm_label": "bearbeitet einen survey im neuen tab.          1. erkennt neuen tab (cint, pures",
       "id": "modules_survey_runner_rationale_651"
     },
@@ -12338,7 +12428,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L739",
-      "community": 143,
+      "community": 153,
       "norm_label": "schlie\u00dft den survey-tab und kehrt zum heypiggy dashboard zuruck.",
       "id": "modules_survey_runner_rationale_739"
     },
@@ -12347,7 +12437,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L768",
-      "community": 144,
+      "community": 154,
       "norm_label": "bearbeitet das bewertungsfeld nach dem survey.          schreibt kurzen text + r",
       "id": "modules_survey_runner_rationale_768"
     },
@@ -12356,7 +12446,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L803",
-      "community": 145,
+      "community": 155,
       "norm_label": "pruft ob sich das guthaben erhoht hat.",
       "id": "modules_survey_runner_rationale_803"
     },
@@ -12365,7 +12455,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L815",
-      "community": 146,
+      "community": 156,
       "norm_label": "public box api: komplette survey automation.          fuhrt surveys nacheinander",
       "id": "modules_survey_runner_rationale_815"
     },
@@ -12374,7 +12464,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L926",
-      "community": 147,
+      "community": 157,
       "norm_label": "public api: verfugbare surveys scannen.",
       "id": "modules_survey_runner_rationale_926"
     },
@@ -12383,7 +12473,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L931",
-      "community": 148,
+      "community": 158,
       "norm_label": "public api: besten oder bestimmten survey starten.",
       "id": "modules_survey_runner_rationale_931"
     },
@@ -12392,7 +12482,7 @@
       "file_type": "rationale",
       "source_file": "cli/modules/survey_runner.py",
       "source_location": "L943",
-      "community": 149,
+      "community": 159,
       "norm_label": "public api: vorqualifizierung durchfuhren.",
       "id": "modules_survey_runner_rationale_943"
     }
@@ -41202,7 +41292,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L89",
+      "source_location": "L91",
       "weight": 1.0,
       "_src": "survey_cli_survey_google_login_py",
       "_tgt": "survey_google_login_cua",
@@ -41214,7 +41304,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L106",
+      "source_location": "L108",
       "weight": 1.0,
       "_src": "survey_cli_survey_google_login_py",
       "_tgt": "survey_google_login_find_window",
@@ -41226,7 +41316,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L118",
+      "source_location": "L120",
       "weight": 1.0,
       "_src": "survey_cli_survey_google_login_py",
       "_tgt": "survey_google_login_find_by_role",
@@ -41238,7 +41328,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L133",
+      "source_location": "L135",
       "weight": 1.0,
       "_src": "survey_cli_survey_google_login_py",
       "_tgt": "survey_google_login_get_state",
@@ -41250,7 +41340,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L139",
+      "source_location": "L141",
       "weight": 1.0,
       "_src": "survey_cli_survey_google_login_py",
       "_tgt": "survey_google_login_find_element_by_text",
@@ -41262,7 +41352,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L160",
+      "source_location": "L162",
       "weight": 1.0,
       "_src": "survey_cli_survey_google_login_py",
       "_tgt": "survey_google_login_find_google_login",
@@ -41274,7 +41364,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L177",
+      "source_location": "L179",
       "weight": 1.0,
       "_src": "survey_cli_survey_google_login_py",
       "_tgt": "survey_google_login_click_element",
@@ -41286,7 +41376,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L194",
+      "source_location": "L196",
       "weight": 1.0,
       "_src": "survey_cli_survey_google_login_py",
       "_tgt": "survey_google_login_set_value",
@@ -41298,7 +41388,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L212",
+      "source_location": "L214",
       "weight": 1.0,
       "_src": "survey_cli_survey_google_login_py",
       "_tgt": "survey_google_login_google_login",
@@ -41310,7 +41400,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L280",
+      "source_location": "L282",
       "weight": 1.0,
       "_src": "survey_cli_survey_google_login_py",
       "_tgt": "survey_google_login_cua_login_existing",
@@ -41322,7 +41412,7 @@
       "relation": "contains",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L349",
+      "source_location": "L351",
       "weight": 1.0,
       "_src": "survey_cli_survey_google_login_py",
       "_tgt": "survey_google_login_cua_login",
@@ -41346,7 +41436,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L222",
+      "source_location": "L224",
       "weight": 1.0,
       "_src": "survey_google_login_google_login",
       "_tgt": "survey_google_login_verify_invariants",
@@ -41370,7 +41460,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L108",
+      "source_location": "L110",
       "weight": 1.0,
       "_src": "survey_google_login_find_window",
       "_tgt": "survey_google_login_cua",
@@ -41382,7 +41472,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L135",
+      "source_location": "L137",
       "weight": 1.0,
       "_src": "survey_google_login_get_state",
       "_tgt": "survey_google_login_cua",
@@ -41394,19 +41484,19 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L90",
+      "source_location": "L92",
       "weight": 1.0,
-      "_src": "survey_google_login_rationale_90",
+      "_src": "survey_google_login_rationale_92",
       "_tgt": "survey_google_login_cua",
       "source": "survey_google_login_cua",
-      "target": "survey_google_login_rationale_90",
+      "target": "survey_google_login_rationale_92",
       "confidence_score": 1.0
     },
     {
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L286",
+      "source_location": "L288",
       "weight": 1.0,
       "_src": "survey_google_login_cua_login_existing",
       "_tgt": "survey_google_login_find_window",
@@ -41418,7 +41508,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L368",
+      "source_location": "L384",
       "weight": 1.0,
       "_src": "survey_google_login_cua_login",
       "_tgt": "survey_google_login_find_window",
@@ -41430,31 +41520,31 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L107",
+      "source_location": "L109",
       "weight": 1.0,
-      "_src": "survey_google_login_rationale_107",
+      "_src": "survey_google_login_rationale_109",
       "_tgt": "survey_google_login_find_window",
       "source": "survey_google_login_find_window",
-      "target": "survey_google_login_rationale_107",
+      "target": "survey_google_login_rationale_109",
       "confidence_score": 1.0
     },
     {
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L119",
+      "source_location": "L121",
       "weight": 1.0,
-      "_src": "survey_google_login_rationale_119",
+      "_src": "survey_google_login_rationale_121",
       "_tgt": "survey_google_login_find_by_role",
       "source": "survey_google_login_find_by_role",
-      "target": "survey_google_login_rationale_119",
+      "target": "survey_google_login_rationale_121",
       "confidence_score": 1.0
     },
     {
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L293",
+      "source_location": "L295",
       "weight": 1.0,
       "_src": "survey_google_login_cua_login_existing",
       "_tgt": "survey_google_login_get_state",
@@ -41466,7 +41556,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L376",
+      "source_location": "L392",
       "weight": 1.0,
       "_src": "survey_google_login_cua_login",
       "_tgt": "survey_google_login_get_state",
@@ -41478,19 +41568,19 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L134",
+      "source_location": "L136",
       "weight": 1.0,
-      "_src": "survey_google_login_rationale_134",
+      "_src": "survey_google_login_rationale_136",
       "_tgt": "survey_google_login_get_state",
       "source": "survey_google_login_get_state",
-      "target": "survey_google_login_rationale_134",
+      "target": "survey_google_login_rationale_136",
       "confidence_score": 1.0
     },
     {
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L163",
+      "source_location": "L165",
       "weight": 1.0,
       "_src": "survey_google_login_find_google_login",
       "_tgt": "survey_google_login_find_element_by_text",
@@ -41502,7 +41592,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L313",
+      "source_location": "L315",
       "weight": 1.0,
       "_src": "survey_google_login_cua_login_existing",
       "_tgt": "survey_google_login_find_element_by_text",
@@ -41514,7 +41604,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L411",
+      "source_location": "L427",
       "weight": 1.0,
       "_src": "survey_google_login_cua_login",
       "_tgt": "survey_google_login_find_element_by_text",
@@ -41526,19 +41616,19 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L140",
+      "source_location": "L142",
       "weight": 1.0,
-      "_src": "survey_google_login_rationale_140",
+      "_src": "survey_google_login_rationale_142",
       "_tgt": "survey_google_login_find_element_by_text",
       "source": "survey_google_login_find_element_by_text",
-      "target": "survey_google_login_rationale_140",
+      "target": "survey_google_login_rationale_142",
       "confidence_score": 1.0
     },
     {
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L294",
+      "source_location": "L296",
       "weight": 1.0,
       "_src": "survey_google_login_cua_login_existing",
       "_tgt": "survey_google_login_find_google_login",
@@ -41550,7 +41640,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L377",
+      "source_location": "L393",
       "weight": 1.0,
       "_src": "survey_google_login_cua_login",
       "_tgt": "survey_google_login_find_google_login",
@@ -41562,19 +41652,19 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L161",
+      "source_location": "L163",
       "weight": 1.0,
-      "_src": "survey_google_login_rationale_161",
+      "_src": "survey_google_login_rationale_163",
       "_tgt": "survey_google_login_find_google_login",
       "source": "survey_google_login_find_google_login",
-      "target": "survey_google_login_rationale_161",
+      "target": "survey_google_login_rationale_163",
       "confidence_score": 1.0
     },
     {
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L301",
+      "source_location": "L303",
       "weight": 1.0,
       "_src": "survey_google_login_cua_login_existing",
       "_tgt": "survey_google_login_click_element",
@@ -41586,7 +41676,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L392",
+      "source_location": "L408",
       "weight": 1.0,
       "_src": "survey_google_login_cua_login",
       "_tgt": "survey_google_login_click_element",
@@ -41598,19 +41688,19 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L178",
+      "source_location": "L180",
       "weight": 1.0,
-      "_src": "survey_google_login_rationale_178",
+      "_src": "survey_google_login_rationale_180",
       "_tgt": "survey_google_login_click_element",
       "source": "survey_google_login_click_element",
-      "target": "survey_google_login_rationale_178",
+      "target": "survey_google_login_rationale_180",
       "confidence_score": 1.0
     },
     {
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L320",
+      "source_location": "L322",
       "weight": 1.0,
       "_src": "survey_google_login_cua_login_existing",
       "_tgt": "survey_google_login_set_value",
@@ -41622,7 +41712,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L428",
+      "source_location": "L444",
       "weight": 1.0,
       "_src": "survey_google_login_cua_login",
       "_tgt": "survey_google_login_set_value",
@@ -41634,19 +41724,19 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L195",
+      "source_location": "L197",
       "weight": 1.0,
-      "_src": "survey_google_login_rationale_195",
+      "_src": "survey_google_login_rationale_197",
       "_tgt": "survey_google_login_set_value",
       "source": "survey_google_login_set_value",
-      "target": "survey_google_login_rationale_195",
+      "target": "survey_google_login_rationale_197",
       "confidence_score": 1.0
     },
     {
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L247",
+      "source_location": "L249",
       "weight": 1.0,
       "_src": "survey_google_login_google_login",
       "_tgt": "survey_google_login_cua_login_existing",
@@ -41658,7 +41748,7 @@
       "relation": "calls",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L253",
+      "source_location": "L255",
       "weight": 1.0,
       "_src": "survey_google_login_google_login",
       "_tgt": "survey_google_login_cua_login",
@@ -41670,24 +41760,24 @@
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L213",
+      "source_location": "L215",
       "weight": 1.0,
-      "_src": "survey_google_login_rationale_213",
+      "_src": "survey_google_login_rationale_215",
       "_tgt": "survey_google_login_google_login",
       "source": "survey_google_login_google_login",
-      "target": "survey_google_login_rationale_213",
+      "target": "survey_google_login_rationale_215",
       "confidence_score": 1.0
     },
     {
       "relation": "rationale_for",
       "confidence": "EXTRACTED",
       "source_file": "survey-cli/survey/google_login.py",
-      "source_location": "L281",
+      "source_location": "L283",
       "weight": 1.0,
-      "_src": "survey_google_login_rationale_281",
+      "_src": "survey_google_login_rationale_283",
       "_tgt": "survey_google_login_cua_login_existing",
       "source": "survey_google_login_cua_login_existing",
-      "target": "survey_google_login_rationale_281",
+      "target": "survey_google_login_rationale_283",
       "confidence_score": 1.0
     },
     {
