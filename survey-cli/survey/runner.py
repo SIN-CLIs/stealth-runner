@@ -119,10 +119,19 @@ class SurveyRunner:
                 survey_url = details.get("href")
 
             if not survey_url:
-                result.error = "Failed to get survey URL"
-                result.status = "error"
-                log_error("run_survey", result.error, survey_id)
-                return result
+                # No survey URL from API — try browser-based pre-qualifier
+                if self.config.debug:
+                    print(f"[RUN] No href from API for {survey_id} — trying browser pre-qualifier")
+                preq_result = self._handle_pre_qualifier_browser(survey_id)
+                if preq_result.get("redirect_url"):
+                    survey_url = preq_result["redirect_url"]
+                    if self.config.debug:
+                        print(f"[RUN] Browser pre-qualifier → {survey_url[:60]}")
+                else:
+                    result.status = "screen_out"
+                    result.error = "No survey URL (pre-qualifier failed or not available)"
+                    log_earnings(survey_id, "pre_qualifier", 0, "screen_out", 0)
+                    return result
 
         provider = self._detect_provider(survey_url)
         result.provider = provider
@@ -569,6 +578,195 @@ class SurveyRunner:
         from .scanner import detect_provider
         return detect_provider(url)
 
+    def _handle_pre_qualifier_browser(self, survey_id):
+        """Handle CPX pre-qualifier in browser. Answer via CDP → wait for redirect.
+
+        Returns:
+            {"redirect_url": "..."} on success
+            {"aborted": True} on failure
+        """
+        from .chrome import create_tab, find_bot_tabs
+
+        # Build CPX click URL using dashboard context
+        dash_ws = chrome.find_dashboard_ws(self.config.cdp_port)
+        if not dash_ws:
+            return {"aborted": True}
+
+        try:
+            # Execute clickSurvey in browser context to get the survey tab
+            ws = websocket.create_connection(dash_ws, timeout=10)
+            ws.send(json.dumps({
+                "id": 0, "method": "Runtime.evaluate",
+                "params": {"expression": f"clickSurvey('{survey_id}'); '';"}
+            }))
+            json.loads(ws.recv())
+            ws.close()
+        except Exception as e:
+            if self.config.debug:
+                print(f"[PREQ-BROWSER] clickSurvey failed: {e}")
+            return {"aborted": True}
+
+        # Wait for new tab to open
+        time.sleep(3)
+
+        # Find the pre-qualifier tab
+        preq_tab = None
+        for attempt in range(10):
+            for p in find_bot_tabs(self.config.cdp_port):
+                url = p.get("url", "")
+                if "click.cpx" in url or "cpx" in url.lower():
+                    preq_tab = p
+                    break
+            if preq_tab:
+                break
+            time.sleep(1)
+
+        if not preq_tab:
+            return {"aborted": True}
+
+        tab_ws = preq_tab.get("webSocketDebuggerUrl")
+        tab_id = preq_tab.get("id")
+
+        if self.config.debug:
+            print(f"[PREQ-BROWSER] Tab opened: {preq_tab.get('url','')[:60]}")
+
+        # Loop: answer pre-qualifier questions until redirect
+        max_steps = 8
+        for step in range(max_steps):
+            time.sleep(2)
+
+            # Check if we've been redirected to actual survey
+            try:
+                ws2 = websocket.create_connection(tab_ws, timeout=8)
+                ws2.send(json.dumps({
+                    "id": 0, "method": "Runtime.evaluate",
+                    "params": {"expression": "window.location.href"}
+                }))
+                r = json.loads(ws2.recv())
+                current_url = r.get("result", {}).get("result", {}).get("value", "")
+                ws2.close()
+
+                # Check if redirected to non-CPX URL
+                if current_url and "click.cpx" not in current_url and current_url != preq_tab.get("url", ""):
+                    # Redirected! Close pre-qualifier tab, return survey URL
+                    if current_url.startswith("http"):
+                        self._close_tab(tab_id)
+                        return {"redirect_url": current_url}
+
+            except Exception:
+                pass
+
+            # Read current page text
+            page_text = BatchExecutor.read_page_text(tab_ws, 1000)
+
+            if not page_text.strip():
+                time.sleep(2)
+                page_text = BatchExecutor.read_page_text(tab_ws, 1000)
+
+            if not page_text.strip():
+                continue  # Page not loaded yet
+
+            # Find radio buttons (pre-qualifier answers)
+            ws3 = websocket.create_connection(tab_ws, timeout=8)
+            ws3.send(json.dumps({
+                "id": 0, "method": "Runtime.evaluate",
+                "params": {"expression": """
+(function(){
+    // Try multiple answer element types
+    var selectors = [
+        'input[type=radio]',           // standard radio
+        '[role=radio]',                // ARIA radio
+        '.answer-option',              // custom class
+        '.survey-option',              // custom class
+        '.cp-answer'                   // CPX specific
+    ];
+    var results = {};
+    selectors.forEach(function(sel){
+        var els = document.querySelectorAll(sel);
+        if(els.length > 0){
+            results[sel] = els.length;
+        }
+    });
+    return JSON.stringify(results);
+})();
+"""
+                }
+            }))
+            r = json.loads(ws3.recv())
+            answer_types = json.loads(r.get("result", {}).get("result", {}).get("value", "{}"))
+            ws3.close()
+
+            if not answer_types:
+                if self.config.debug:
+                    print(f"[PREQ-BROWSER] Step {step}: No answer elements found")
+                time.sleep(2)
+                continue
+
+            # Select first non-"cannot answer" answer
+            ws4 = websocket.create_connection(tab_ws, timeout=8)
+            ws4.send(json.dumps({
+                "id": 0, "method": "Runtime.evaluate",
+                "params": {"expression": """
+(function(){
+    var els = document.querySelectorAll('input[type=radio]');
+    if(els.length === 0) els = document.querySelectorAll('[role=radio]');
+    for(var i=0;i<els.length;i++){
+        var el = els[i];
+        var label = el.closest('label') || el.parentElement;
+        var text = (label ? label.textContent : el.value || '').trim();
+        if(text && !text.includes('nicht beantworten') && !text.includes('cannot answer')){
+            el.click();
+            return 'selected:' + text.slice(0,40);
+        }
+    }
+    // Fallback: select first
+    if(els.length > 0){ els[0].click(); return 'fallback:first'; }
+    return 'no answers';
+})();
+"""
+                }
+            }))
+            r = json.loads(ws4.recv())
+            selected = r.get("result", {}).get("result", {}).get("value", "")
+            ws4.close()
+
+            if self.config.debug:
+                print(f"[PREQ-BROWSER] Step {step}: {selected}")
+
+            if "selected" in selected or "fallback" in selected:
+                time.sleep(1)
+                # Click submit button
+                ws5 = websocket.create_connection(tab_ws, timeout=8)
+                ws5.send(json.dumps({
+                    "id": 0, "method": "Runtime.evaluate",
+                    "params": {"expression": """
+(function(){
+    var btn = document.querySelector('button[type=submit],input[type=submit],.submit-btn,[onclick*="submit"],button:not([disabled])');
+    if(btn){ var r=btn.getBoundingClientRect(); return r.x+r.width/2+','+(r.y+r.height/2); }
+    return '0,0';
+})();
+"""
+                    }
+                }))
+                r = json.loads(ws5.recv())
+                coords = r.get("result", {}).get("result", {}).get("value", "0,0")
+                x, y = map(float, coords.split(","))
+                ws5.close()
+
+                if x > 0:
+                    for et in ["mouseMoved", "mousePressed", "mouseReleased"]:
+                        ws6 = websocket.create_connection(tab_ws, timeout=8)
+                        ws6.send(json.dumps({"id": 0, "method": "Input.dispatchMouseEvent",
+                            "params": {"type": et, "x": x, "y": y, "button": "left", "clickCount": 1}}))
+                        json.loads(ws6.recv())
+                        ws6.close()
+                    if self.config.debug:
+                        print(f"[PREQ-BROWSER] Clicked submit!")
+
+        # Max steps reached
+        self._close_tab(tab_id)
+        return {"aborted": True}
+
     def _trigger_cash_out(self):
         """Navigate to cash-out page when balance target is reached.
 
@@ -771,80 +969,118 @@ class SurveyRunner:
         return profile
 
     def handle_pre_qualifier(self, survey_id, survey_details):
-        """Answer a pre-qualifier (type=question) survey.
+        """Answer pre-qualifier questions via CPX API. Handles MULTI-STEP qualifiers.
 
-        When CPX returns type=question, the survey asks a screening
-        question before routing to the actual survey. Answer it to
-        get the real survey URL.
+        CPX asks 1-N questions before routing to actual survey. Loop until
+        we get type=okay with href, or hit max retries.
 
-        Args:
-            survey_id: CPX survey ID
-            survey_details: Full API response dict
-
-        Returns:
-            Real survey URL or None
+        API response format:
+        {
+            "type": "question" | "okay",
+            "question_text": "...",    # for type=question
+            "question_key": "cpxq_...",  # POST parameter name
+            "answers": {key: {text, key}},  # DICT not list
+            "message_button": "einreichen"
+        }
         """
-        question = survey_details.get("question", "")
-        answers = survey_details.get("answers", [])
-        if not answers:
-            return None
+        from .chrome import get_details_url
 
-        profile = self.profile
-        answer_idx = None
+        max_retries = 8
+        details_url = get_details_url(self.config.cdp_port)
+        current_details = survey_details
 
-        q_lower = question.lower()
+        for step in range(max_retries):
+            question_text = current_details.get("question_text", "")
+            question_key = current_details.get("question_key", "")
+            answers_raw = current_details.get("answers", {})
 
-        # Match known question patterns to profile data
-        if "alter" in q_lower or "age" in q_lower:
-            age = profile.get("age", 32)
-            if age < 18: answer_idx = 0
-            elif age < 25: answer_idx = 1
-            elif age < 35: answer_idx = 2
-            elif age < 45: answer_idx = 3
-            elif age < 55: answer_idx = 4
-            else: answer_idx = 5
+            if not answers_raw or not question_key:
+                if self.config.debug:
+                    print(f"[PREQ] Step {step}: No answers/key — aborting")
+                return None
 
-        elif "geschlecht" in q_lower or "gender" in q_lower:
-            gender = profile.get("gender", "male")
-            answer_idx = 0 if gender == "male" else 1
+            answer_keys = list(answers_raw.keys())
+            profile = self.profile
+            q_lower = question_text.lower()
+            answer_idx = None
 
-        elif "bundesland" in q_lower or "wohnort" in q_lower or "region" in q_lower:
-            # Look for Berlin in answers
-            for i, a in enumerate(answers):
-                if "berlin" in str(a).lower():
-                    answer_idx = i
-                    break
+            # Match question to profile
+            if any(kw in q_lower for kw in ["alter", "age", "alters"]):
+                age = profile.get("age", 32)
+                if age < 18: answer_idx = 0
+                elif age < 25: answer_idx = 1
+                elif age < 35: answer_idx = 2
+                elif age < 45: answer_idx = 3
+                elif age < 55: answer_idx = 4
+                else: answer_idx = 5
 
-        elif "einkommen" in q_lower or "income" in q_lower:
-            answer_idx = 2  # middle bracket
+            elif any(kw in q_lower for kw in ["geschlecht", "gender"]):
+                answer_idx = 0 if profile.get("gender", "male") == "male" else 1
 
-        elif "bildung" in q_lower or "education" in q_lower:
-            edu = profile.get("education", "abitur")
-            for i, a in enumerate(answers):
-                if edu in str(a).lower():
-                    answer_idx = i
-                    break
+            elif any(kw in q_lower for kw in ["bundesland", "wohnort", "region", "stadt"]):
+                for i, k in enumerate(answer_keys):
+                    if "berlin" in answers_raw[k].get("text", "").lower():
+                        answer_idx = i; break
 
-        elif "beschäftigung" in q_lower or "employment" in q_lower:
-            answer_idx = 1  # employed
+            elif any(kw in q_lower for kw in ["einkommen", "income"]):
+                answer_idx = 2  # middle bracket
 
-        if answer_idx is not None and answer_idx < len(answers):
-            # POST the answer via CPX API
-            import urllib.request
-            from .chrome import get_details_url
-            details_url = get_details_url(self.config.cdp_port)
-            answer = answers[answer_idx]
-            if isinstance(answer, dict):
-                answer = answer.get("id", answer.get("value", answer))
+            elif any(kw in q_lower for kw in ["bildung", "education", "schulabschluss"]):
+                edu = profile.get("education", "abitur")
+                for i, k in enumerate(answer_keys):
+                    if edu in answers_raw[k].get("text", "").lower():
+                        answer_idx = i; break
 
+            elif any(kw in q_lower for kw in ["beschäftigung", "employment", "berufstätig"]):
+                answer_idx = 1  # employed
+
+            # Default: first non-"cannot answer" option
+            if answer_idx is None:
+                for i, k in enumerate(answer_keys):
+                    if "nicht beantworten" not in answers_raw[k].get("text", "").lower():
+                        answer_idx = i; break
+                if answer_idx is None:
+                    answer_idx = 0
+
+            if answer_idx >= len(answer_keys):
+                return None
+
+            selected_key = answer_keys[answer_idx]
+            selected_text = answers_raw[selected_key].get("text", "")
+
+            if self.config.debug:
+                print(f"[PREQ] Step {step}: Q={question_text[:50]}... → {selected_text[:50]}")
+
+            # POST answer
             try:
                 post_url = (details_url + "&survey_id=" + survey_id +
-                            "&answer=" + str(answer_idx) + "&answer_value=" +
-                            urllib.parse.quote(str(answer)))
-                resp = json.loads(urllib.request.urlopen(post_url, timeout=8).read())
-                if resp.get("status") == "success" and resp.get("href"):
-                    return resp.get("href")
-            except Exception:
-                pass
+                            "&" + urllib.parse.quote(question_key) + "=" +
+                            urllib.parse.quote(selected_key))
+                resp_json = json.loads(urllib.request.urlopen(post_url, timeout=8).read())
 
+                # Check if we got the real survey URL
+                if resp_json.get("status") == "success" and resp_json.get("href"):
+                    if self.config.debug:
+                        print(f"[PREQ] ✅ Got survey URL: {resp_json['href'][:60]}")
+                    return resp_json.get("href")
+
+                # Check if more questions (type still "question")
+                if resp_json.get("type") == "question":
+                    current_details = resp_json
+                    if self.config.debug:
+                        print(f"[PREQ] → Next question, retrying...")
+                    continue
+
+                # Other response type
+                if self.config.debug:
+                    print(f"[PREQ] Step {step}: unexpected response type: {resp_json.get('type')}")
+                return None
+
+            except Exception as e:
+                if self.config.debug:
+                    print(f"[PREQ] Step {step} POST failed: {e}")
+                return None
+
+        if self.config.debug:
+            print(f"[PREQ] Max retries ({max_retries}) exceeded")
         return None

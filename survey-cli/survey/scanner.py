@@ -114,8 +114,11 @@ def filter_surveys(survey_ids, skip_providers=None, max_ids=15, port=9999):
             # Check pre-qualifier
             if entry["type"] == "question":
                 entry["provider"] = "pre_qualifier"
-                entry["pre_q"] = resp.get("question", "")
-                entry["answers"] = resp.get("answers", [])
+                entry["question_text"] = resp.get("question_text", resp.get("question", ""))
+                # answers is a dict: {key: {text, key}} — keep as-is
+                entry["answers"] = resp.get("answers", {})
+                entry["question_key"] = resp.get("question_key", "")
+                entry["message_button"] = resp.get("message_button", "einreichen")
 
             results.append(entry)
 
