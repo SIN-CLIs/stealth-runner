@@ -116,10 +116,9 @@ def _set_value(pid, wid, index, value):
 
 
 def google_login(launch_url="https://www.heypiggy.com/?page=dashboard", force_launch=False):
-    """Execute Google OAuth login. Tries cua-driver first, CDP as fallback.
+    """Execute Google OAuth login via cua-driver (PRIMARY) or CDP (fallback).
     
-    If Chrome is already running on port 9999, uses that instance.
-    Otherwise launches via playstealth.
+    ALWAYS tries cua-driver first. CDP only as last resort.
     
     Returns:
         {"status": "ok", "pid": X, "wid": Y} on success
@@ -135,13 +134,22 @@ def google_login(launch_url="https://www.heypiggy.com/?page=dashboard", force_la
         pass
     
     if chrome_running and not force_launch:
-        print("[LOGIN] Chrome already running on port 9999 — using existing instance")
-        # Try CDP login directly (cua-driver needs playstealth PID which we don't have)
-        from .cdp_login import cdp_login
-        result = cdp_login(port=9999)
-        if result.get("status") == "ok":
-            return {"status": "ok", "pid": 0, "wid": 0}
-        return {"status": "error", "reason": f"CDP login failed: {result.get('reason')}"}
+        print("[LOGIN] Chrome already running — using cua-driver on existing instance")
+        # Try cua-driver on existing Chrome (find PID from windows)
+        import subprocess, json as _json
+        r = subprocess.run(["cua-driver","call","list_windows"], capture_output=True, text=True, timeout=10)
+        data = _json.loads(r.stdout)
+        pid = None
+        for w in data.get("windows",[]):
+            t = (w.get("title","") or "").lower()
+            if "heypiggy" in t or "verdienen" in t:
+                pid = w.get("pid")
+                break
+        if pid:
+            result = _cua_login_existing(pid)
+            if result.get("status") == "ok":
+                return result
+            print(f"[LOGIN] cua-driver failed: {result.get('reason')} — trying CDP...")
     
     # Try cua-driver first (fresh Chrome launch)
     result = _cua_login(launch_url)
@@ -169,6 +177,75 @@ def google_login(launch_url="https://www.heypiggy.com/?page=dashboard", force_la
     if cdp_result.get("status") == "ok":
         return {"status": "ok", "pid": 0, "wid": 0}
     return {"status": "error", "reason": f"Both methods failed: cua={result.get('reason')}, cdp={cdp_result.get('reason')}"}
+
+
+def _cua_login_existing(pid):
+    """Login using cua-driver on an already-running Chrome instance."""
+    try:
+        print(f"[LOGIN] Using existing Chrome PID={pid}")
+        
+        # Find dashboard window
+        dash_win = _find_window(pid, "heypiggy")
+        if not dash_win:
+            return {"status": "error", "reason": "Dashboard not found"}
+        dash_wid = dash_win["window_id"]
+        print(f"[LOGIN] Dashboard WID={dash_wid}")
+
+        # Find Google Login-Symbol
+        markdown = _get_state(pid, dash_wid)
+        google_el = _find_google_login(markdown)
+        if not google_el:
+            return {"status": "error", "reason": "Google Login-Symbol not found"}
+        google_idx = google_el["element_index"]
+        print(f"[LOGIN] Google Login-Symbol at [{google_idx}]")
+
+        # Click it
+        _click_element(pid, dash_wid, google_idx)
+        time.sleep(5)
+
+        # Find OAuth popup
+        oauth_win = _find_window(pid, "anmelden", 300) or _find_window(pid, "google", 300)
+        if not oauth_win:
+            return {"status": "error", "reason": "OAuth popup not found"}
+        oauth_wid = oauth_win["window_id"]
+        print(f"[LOGIN] OAuth WID={oauth_wid}")
+
+        # Fill email + click Weiter
+        markdown = _get_state(pid, oauth_wid)
+        email_el = (_find_element_by_text(markdown, "AXTextField", "e-mail") or
+                    _find_element_by_text(markdown, "AXTextField", "telefon"))
+        weiter_el = (_find_element_by_text(markdown, "AXButton", "weiter") or
+                     _find_element_by_text(markdown, "AXButton", "next"))
+        if not email_el or not weiter_el:
+            return {"status": "error", "reason": "Email or Weiter not found"}
+        
+        _set_value(pid, oauth_wid, email_el["element_index"], EMAIL)
+        time.sleep(1)
+        _click_element(pid, oauth_wid, weiter_el["element_index"])
+        time.sleep(5)
+
+        # Handle remaining screens
+        for step in range(3):
+            markdown = _get_state(pid, oauth_wid)
+            for btn_text in ["weiter", "fortfahren", "next"]:
+                el = _find_element_by_text(markdown, "AXButton", btn_text)
+                if el:
+                    print(f"[LOGIN] Clicking {btn_text} [{el['element_index']}]")
+                    _click_element(pid, oauth_wid, el["element_index"])
+                    time.sleep(5)
+                    break
+            else:
+                break
+
+        # Verify
+        markdown = _get_state(pid, dash_wid)
+        if "Abmelden" in markdown and "Umfragen" in markdown:
+            print(f"[LOGIN] ✅ SUCCESS")
+            return {"status": "ok", "pid": pid, "wid": dash_wid}
+        return {"status": "error", "reason": "Verification failed"}
+
+    except Exception as e:
+        return {"status": "error", "reason": str(e)[:200]}
 
 
 def _cua_login(launch_url):
