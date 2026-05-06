@@ -192,6 +192,10 @@ class BatchExecutor:
         a_start = time.monotonic()
 
         try:
+            # Normalize ref: add @e prefix if missing
+            # (NIM output may return "e0" instead of "@e0" per the prompt example)
+            if ref and not ref.startswith("@e"):
+                ref = "@" + ref
             js = self._build_js(action_type, ref, value)
             
             # CDP click marker for Angular pages (PureSpectrum)
@@ -246,83 +250,126 @@ class BatchExecutor:
     def _cdp_click_button(self, ws, js):
         """CDP click on button by text. js format: __CDP_CLICK_BUTTON__:text
         
-        Strategy: JS .click() FIRST (more reliable, works on custom elements).
-        Fallback: CDP dispatchMouseEvent if JS fails.
+        Strategy: PRIMARY = CDP dispatchMouseEvent (works on Angular v19, React, all).
+        Fallback = JS .click() (works on standard HTML, Qualtrics, etc.)
+        
+        Angular v19 PROBLEM: element.click() and dispatchEvent ignored.
+        SOLUTION: Real OS mouse event via Input.dispatchMouseEvent (isTrusted=true).
         """
         text = js.replace("__CDP_CLICK_BUTTON__:", "")
         
-        # Try JS click first (universal, works on all frameworks including Angular v19)
+        # 1. Find element position (viewport coords) via JS
         ws.send(json.dumps({
             "id": 0, "method": "Runtime.evaluate",
             "params": {"expression": f'''
 (function(){{
     var text = '{text}';
     var selectors = ['button', 'input[type=submit]', 'input[type=button]',
-                     '[role=button]', 'a', '[class*=btn]', '.btn', '.button'];
+                     '[role=button]', 'a[href]', '[class*=btn]', '.btn', '.button'];
     var result = null;
     selectors.forEach(function(sel){{
-        if(result !== null) return;
+        if(result) return;
         document.querySelectorAll(sel).forEach(function(el){{
-            if(result !== null) return;
-            if(el.offsetHeight <= 0) return;
-            if(el.disabled) return;
+            if(result) return;
+            if(!el.offsetWidth || !el.offsetHeight) return;  // invisible
+            if(el.disabled && el.tagName !== 'A') return;
             var elText = (el.textContent||el.value||'').trim();
-            if(elText === text || elText.includes(text) || text.includes(elText)){{
-                el.click();
-                result = 'clicked:' + el.tagName;
-            }}
-        }});
-    }});
-    return result || 'not_found';
-}})();
-'''}}))
-        r = json.loads(ws.recv())
-        result = r.get("result",{}).get("result",{}).get("value","")
-        
-        if result.startswith("clicked:"):
-            return  # JS click succeeded
-        
-        # Fallback: CDP mouse events at bounding rect center
-        ws.send(json.dumps({
-            "id": 0, "method": "Runtime.evaluate",
-            "params": {"expression": f'''
-(function(){{
-    var text = '{text}';
-    var selectors = ['button', 'input[type=submit]', 'input[type=button]',
-                     '[role=button]', 'a', '[class*=btn]'];
-    var found = null;
-    selectors.forEach(function(sel){{
-        if(found) return;
-        document.querySelectorAll(sel).forEach(function(el){{
-            if(found) return;
-            if(el.offsetHeight <= 0) return;
-            if(el.disabled) return;
-            var elText = (el.textContent||el.value||'').trim();
+            if(!elText) return;
+            // Word-boundary match: exact, contains, or starts-with
             if(elText === text || elText.includes(text) || text.includes(elText)){{
                 var r = el.getBoundingClientRect();
-                found = r.x+r.width/2+','+r.y+r.height/2;
+                var vp = {{w: window.innerWidth, h: window.innerHeight}};
+                result = JSON.stringify({{
+                    x: Math.round(r.x + r.width/2),
+                    y: Math.round(r.y + r.height/2),
+                    tag: el.tagName,
+                    text: elText.substring(0,30),
+                    inView: r.x >= 0 && r.y >= 0 && r.x + r.width <= vp.w && r.y + r.height <= vp.h
+                }});
             }}
         }});
     }});
-    return found || '0,0';
+    return result || 'null';
 }})();
 '''}}))
-        r = json.loads(ws.recv())
-        coords = r.get("result",{}).get("result",{}).get("value","0,0")
-        x, y = map(float, coords.split(","))
-        if x > 0:
-            for et in ["mouseMoved","mousePressed","mouseReleased"]:
-                ws.send(json.dumps({"id":0,"method":"Input.dispatchMouseEvent",
-                    "params":{"type":et,"x":x,"y":y,"button":"left","clickCount":1}}))
+        try:
+            r = json.loads(ws.recv())
+            raw_val = r.get("result",{}).get("result",{}).get("value","null")
+            if raw_val == "null" or not raw_val:
+                pos = None
+            else:
+                pos = json.loads(raw_val)
+        except (json.JSONDecodeError, TypeError):
+            pos = None
+        
+        if not pos:
+            # Button not found — try JS click as last resort
+            ws.send(json.dumps({
+                "id": 0, "method": "Runtime.evaluate",
+                "params": {"expression": f'''
+(function(){{
+    var text = '{text}';
+    var selectors = ['button', 'input[type=submit]', '[role=button]'];
+    for(var sel of selectors){{
+        var els = document.querySelectorAll(sel);
+        for(var i=0;i<els.length;i++){{
+            var t = (els[i].textContent||'').trim();
+            if(t === text || t.includes(text)){{els[i].click(); return 'clicked';}}
+        }}
+    }}
+    return 'not_found';
+}})();
+'''}}))
+            try:
+                r2 = json.loads(ws.recv())
+                val = r2.get("result",{}).get("result",{}).get("value","")
+                if val == "clicked":
+                    return
+            except:
+                pass
+            return
+        
+        x, y = pos["x"], pos["y"]
+        
+        # 2. CDP dispatchMouseEvent (Angular v19 needs this!)
+        if pos.get("inView", False) and x > 0 and y > 0:
+            for et in ["mouseMoved", "mousePressed", "mouseReleased"]:
+                ws.send(json.dumps({
+                    "id": 0, "method": "Input.dispatchMouseEvent",
+                    "params": {
+                        "type": et,
+                        "x": x, "y": y,
+                        "button": "left",
+                        "clickCount": 1,
+                        "modifiers": 0
+                    }
+                }))
+                try:
+                    json.loads(ws.recv())
+                except Exception:
+                    pass  # Don't fail on response parse error
+        else:
+            # Out of viewport — use JS click as fallback
+            ws.send(json.dumps({
+                "id": 0, "method": "Runtime.evaluate",
+                "params": {"expression": f'''
+(function(){{
+    var text = '{text}';
+    var selectors = ['button', 'input[type=submit]', '[role=button]'];
+    for(var sel of selectors){{
+        var els = document.querySelectorAll(sel);
+        for(var i=0;i<els.length;i++){{
+            var t = (els[i].textContent||'').trim();
+            if(t === text || t.includes(text)){{els[i].click(); return 'clicked';}}
+        }}
+    }}
+    return 'not_found';
+}})();
+'''}}))
+            try:
                 json.loads(ws.recv())
-        r = json.loads(ws.recv())
-        coords = r.get("result",{}).get("result",{}).get("value","0,0")
-        x, y = map(float, coords.split(","))
-        if x > 0:
-            for et in ["mouseMoved","mousePressed","mouseReleased"]:
-                ws.send(json.dumps({"id":0,"method":"Input.dispatchMouseEvent",
-                    "params":{"type":et,"x":x,"y":y,"button":"left","clickCount":1}}))
-                json.loads(ws.recv())
+            except:
+                pass
 
     def _cdp_click_role_button(self, ws, js):
         """CDP click on [role=button] element by index. For CloudResearch."""

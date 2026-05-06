@@ -181,9 +181,23 @@ class SurveyRunner:
         # Handle CPX redirect page (if stuck on "Sie werden umgeleitet")
         tab_ws, actual_url = self._find_survey_tab_ws(tab_id)
         if tab_ws:
-            page_text = BatchExecutor.read_page_text(tab_ws, 500)
-            # Detect expired CPX URL ("No app id was specified")
-            if "no app id" in page_text.lower() or "survey not available" in page_text.lower():
+            page_text = BatchExecutor.read_page_text(tab_ws, 500).lower()
+            # Detect ALL expired survey error pages
+            if any(s in page_text for s in [
+                "no app id", "survey not available", "error - unable to start survey",
+                "survey closed", "link has expired", "survey has ended",
+                "leider ist ein fehler aufgetreten", "error occurred",
+                "this survey is no longer available", "survey unavailable",
+            ]):
+                if self.config.debug:
+                    print(f"[RUN] Survey URL expired or error page — skipping")
+                self._close_tab(tab_id)
+                result.status = "screen_out"
+                result.error = "Survey URL expired/error page (screener.purespectrum.com or similar)"
+                log_earnings(survey_id, "unknown", 0, "screen_out", 0)
+                return result
+            page_text = page_text  # keep lowercase for redirect check
+            if "umgeleitet" in page_text or "redirect" in page_text:
                 if self.config.debug:
                     print("[RUN] CPX URL expired or survey not available — skipping")
                 self._close_tab(tab_id)
@@ -236,7 +250,7 @@ class SurveyRunner:
         consecutive_fails = 0
         max_consecutive_fails = 5  # Circuit breaker: stop after 5 fails
         prev_page_hash = ""  # Detect infinite loops (same page every time)
-        loop_detection_threshold = 4  # Stop if same page 4× in a row
+        loop_detection_threshold = 10  # Stop if same page 10× in a row (was 4, too aggressive)
 
         for iteration in range(self.config.max_iterations):
             result.iterations = iteration + 1
@@ -257,10 +271,11 @@ class SurveyRunner:
                     print(f"  [iter {iteration}] {snapshot.provider} "
                           f"({len(snapshot.refs)} el)")
 
-                # 5c. Loop detection: same page content 4× = stuck
-                # CompactSnapshot has refs + semantic, NOT .text
-                ref_keys = list(snapshot.refs.keys())[:5]
-                page_hash = hash(str(ref_keys)) if ref_keys else hash(snapshot.url)
+                # 5c. Loop detection: same page content 10× = stuck (was 4, too aggressive)
+                # Better detection: hash of element texts + count + provider
+                el_texts = [info.get("text","")[:30] for _,info in list(snapshot.refs.items())[:8]]
+                el_count = len(snapshot.refs)
+                page_hash = hash((snapshot.provider, el_count, str(el_texts)))
                 if page_hash == prev_page_hash:
                     consecutive_fails += 1
                     if consecutive_fails >= loop_detection_threshold:
@@ -402,6 +417,15 @@ class SurveyRunner:
             print("[LOOP] No viable surveys found")
             return results
 
+        ok_surveys = [s for s in viable if s.get("provider") != "pre_qualifier"]
+        total_ok = len(ok_surveys)
+
+        if total_ok == 0:
+            print(f"[LOOP] All {len(viable)} surveys are pre-qualifiers (browser-based, skipped)")
+            return results
+
+        print(f"[LOOP] Processing {total_ok} OK surveys out of {len(viable)} total")
+
         for i, survey in enumerate(viable):
             if i >= self.config.max_surveys:
                 break
@@ -409,9 +433,7 @@ class SurveyRunner:
             # Prioritize OK surveys over pre-qualifiers (pre-qualifiers require
             # browser-based answering which is complex — skip for now)
             if survey.get("provider") == "pre_qualifier":
-                if self.config.debug:
-                    print(f"[LOOP] Skipping pre-qualifier {survey['id']} (browser-based)")
-                continue
+                continue  # silently skip pre-qualifiers
 
             # Check balance target
             balance = read_balance(self.config.cdp_port)
@@ -423,11 +445,12 @@ class SurveyRunner:
 
             sid = survey["id"]
             href = survey.get("href", "")
-            print(f"\n[{i+1}/{min(len(viable), self.config.max_surveys)}] "
-                  f"Survey: {sid} ({survey['provider']})")
+            ok_idx = sum(1 for s in viable[:i] if s.get("provider") != "pre_qualifier") + 1
+            print(f"[LOOP] [{ok_idx}/{total_ok}] Running survey {sid} ({survey['provider']})...")
 
             result = self.run_survey(sid, survey_url=href)
             results.append(result)
+            print(f"[LOOP]   → {result.status} | {'+' + str(result.earned) + '€' if result.earned > 0 else str(result.earned) + '€'} | {result.error[:50] if result.error else 'no error'}")
 
             if result.status == "completed":
                 print(f"  ✅ +{result.earned}€ ({result.provider}, "
