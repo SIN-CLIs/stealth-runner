@@ -140,7 +140,7 @@ def cmd_watch(args):
         "total_earned": 0.0,
         "loop_count": 0,
         "consecutive_errors": 0,
-        "max_consecutive_errors": 5,
+        "max_consecutive_errors": 20,  # Was 5 — now 20 (surveys fail often on captcha)
         "session_start": time.time(),
     }
 
