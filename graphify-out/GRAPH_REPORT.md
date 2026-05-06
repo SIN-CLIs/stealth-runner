@@ -1,12 +1,12 @@
-# Graph Report - stealth-runner  (2026-05-06)
+# Graph Report - stealth-runner  (2026-05-07)
 
 ## Corpus Check
-- 108 files · ~205,834 words
+- 110 files · ~211,176 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2294 nodes · 4873 edges · 246 communities detected
-- Extraction: 46% EXTRACTED · 54% INFERRED · 0% AMBIGUOUS · INFERRED: 2634 edges (avg confidence: 0.57)
+- 2490 nodes · 5634 edges · 246 communities detected
+- Extraction: 44% EXTRACTED · 56% INFERRED · 0% AMBIGUOUS · INFERRED: 3181 edges (avg confidence: 0.57)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -258,20 +258,18 @@
 - [[_COMMUNITY_Community 252|Community 252]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `BatchExecutor` - 265 edges
-2. `CompactSnapshot` - 250 edges
-3. `SurveyRunner` - 203 edges
-4. `RunnerConfig` - 188 edges
-5. `NIMClient` - 182 edges
-6. `OutputGenerator` - 119 edges
-7. `SemanticAnalyzer` - 105 edges
-8. `CDPConnection` - 99 edges
-9. `SurveyResult` - 87 edges
-10. `CDPSession` - 79 edges
+1. `CompactSnapshot` - 330 edges
+2. `SurveyRunner` - 304 edges
+3. `BatchExecutor` - 303 edges
+4. `RunnerConfig` - 289 edges
+5. `NIMClient` - 246 edges
+6. `SurveyResult` - 167 edges
+7. `OutputGenerator` - 119 edges
+8. `SemanticAnalyzer` - 105 edges
+9. `CDPConnection` - 99 edges
+10. `patch()` - 92 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `_run_solver()` --calls--> `create_tab()`  [INFERRED]
-  stealth-captcha/src/stealth_captcha/cli.py → survey-cli/survey/chrome.py
 - `list_targets()` --calls--> `CDPConnectionError`  [INFERRED]
   stealth-captcha/src/stealth_captcha/cdp/targets.py → survey-cli/survey/cdp_client.py
 - `get_browser_ws()` --calls--> `CDPConnectionError`  [INFERRED]
@@ -280,68 +278,70 @@
   stealth-captcha/src/stealth_captcha/cdp/targets.py → survey-cli/survey/cdp_client.py
 - `connect()` --calls--> `CDPConnectionError`  [INFERRED]
   stealth-captcha/src/stealth_captcha/cdp/client.py → survey-cli/survey/cdp_client.py
+- `_find_chrome()` --calls--> `CDPConnectionError`  [INFERRED]
+  stealth-captcha/src/stealth_captcha/cdp/browser.py → survey-cli/survey/cdp_client.py
 
 ## Communities
 
 ### Community 0 - "Community 0"
 Cohesion: 0.02
-Nodes (187): generate_summary(), print_summary(), Generate a summary of recent activity.      Args:         days: Number of days t, Print a formatted summary., _get_stealth_js(), inject_stealth_to_tab(), is_chrome_alive(), Check if bot Chrome is running with CDP enabled. (+179 more)
+Nodes (272): find_dashboard_ws(), _get_stealth_js(), inject_stealth_to_tab(), is_chrome_alive(), Find WebSocket URL for a heypiggy dashboard tab., Check if bot Chrome is running with CDP enabled., Load stealth injection bundle, or fallback to inline minimal overrides., Inject stealth JS into a tab via Page.addScriptToEvaluateOnNewDocument.      The (+264 more)
 
 ### Community 1 - "Community 1"
-Cohesion: 0.03
-Nodes (163): ABC, BaseSettings, BaseSolver, _find_chrome(), Chrome launcher with hardened flags for stealth automation.  No --enable-automat, Launch Chrome with stealth flags.          Blocks until the CDP endpoint becomes, Open a URL in the default tab (creates one if none exist).          Requires tha, Kill the Chrome process gracefully (SIGTERM → SIGKILL after 5s). (+155 more)
+Cohesion: 0.02
+Nodes (257): build_survey_prompt(), decide(), _parse_response(), NIM Survey Client — Nemotron 3 Omni via NVIDIA NIM API.  Reuses the OpenAI clien, Build a prompt for Nemotron to decide next batch actions.      Args:         sna, BatchExecutor, Execute batched survey actions via CDP WebSocket.      SOTA features:     - Stat, build_survey_prompt() (+249 more)
 
 ### Community 2 - "Community 2"
 Cohesion: 0.02
-Nodes (114): Exception, patch(), patch(), Semantic analysis engine using NVIDIA NIM API for OpenCode session classificatio, Parse the classification response from NVIDIA NIM API.                  The LLM, Generate structured summary of OpenCode session messages using NVIDIA NIM., Parse the classification response from NVIDIA NIM API.                  The LLM, Generate a structured documentation unit from session analysis. (+106 more)
+Nodes (166): ABC, BaseSettings, BaseSolver, _find_chrome(), Chrome launcher with hardened flags for stealth automation.  No --enable-automat, Launch Chrome with stealth flags.          Blocks until the CDP endpoint becomes, Open a URL in the default tab (creates one if none exist).          Requires tha, Kill the Chrome process gracefully (SIGTERM → SIGKILL after 5s). (+158 more)
 
 ### Community 3 - "Community 3"
 Cohesion: 0.02
 Nodes (149): auto_doc(), check_infisical(), monitor(), Start the stealth-sync daemon with optional Infisical integration., Check Infisical integration status., Display Infisical setup guide., setup_infisical(), summarize() (+141 more)
 
 ### Community 4 - "Community 4"
-Cohesion: 0.03
-Nodes (184): Scan all elements on current page., BatchExecutor, Execute batched survey actions via CDP WebSocket.      SOTA features:     - Stat, CDP click on element (for Angular pages). js format: __CDP_CLICK__:selector:idx, CDP click on button by text. js format: __CDP_CLICK_BUTTON__:text, CDP click on [role=button] element by index. For CloudResearch., NIMClient, NVIDIA Nemotron 3 Omni client for survey decisions. (+176 more)
+Cohesion: 0.02
+Nodes (104): Exception, patch(), patch(), Semantic analysis engine using NVIDIA NIM API for OpenCode session classificatio, Parse the classification response from NVIDIA NIM API.                  The LLM, Generate structured summary of OpenCode session messages using NVIDIA NIM., Parse the classification response from NVIDIA NIM API.                  The LLM, Generate a structured documentation unit from session analysis. (+96 more)
 
 ### Community 5 - "Community 5"
 Cohesion: 0.03
-Nodes (78): check_nvidia_api(), cmd_legacy(), cmd_loop(), cmd_nim_survey(), cmd_scan(), cmd_snapshot(), load_profile(), main() (+70 more)
+Nodes (74): check_nvidia_api(), cmd_legacy(), cmd_loop(), cmd_nim_survey(), cmd_scan(), cmd_snapshot(), load_profile(), main() (+66 more)
 
 ### Community 6 - "Community 6"
-Cohesion: 0.03
-Nodes (58): ActionVerifier, survey/agents/action_verifier.py — Action Verifier Agent (2026-05-06)  FUNKTION:, Verify a click action was successful., Verify text was filled into field., Verify survey completion page., Get current page content hash for comparison., Verifies actions were successful by comparing before/after state.      FUNCTIONS, Verify an action was executed successfully. (+50 more)
+Cohesion: 0.04
+Nodes (57): ActionVerifier, survey/agents/action_verifier.py — Action Verifier Agent (2026-05-06)  FUNKTION:, Verify a click action was successful., Verify text was filled into field., Verify survey completion page., Get current page content hash for comparison., Verifies actions were successful by comparing before/after state.      FUNCTIONS, Verify an action was executed successfully. (+49 more)
 
 ### Community 7 - "Community 7"
-Cohesion: 0.06
-Nodes (72): CDPConnection, CDPConnectionError, CDPError, create_cdp(), Lightweight sync CDP WebSocket client with retry, reconnect, and ID routing.  So, Send a CDP command and return the result dict.          Args:             method, Read WebSocket messages until we find one with the matching ID.          This so, CDP command returned an error. (+64 more)
+Cohesion: 0.05
+Nodes (76): Scan all elements on current page., CDPConnection, CDPConnectionError, CDPError, create_cdp(), Lightweight sync CDP WebSocket client with retry, reconnect, and ID routing.  So, Send a CDP command and return the result dict.          Args:             method, Read WebSocket messages until we find one with the matching ID.          This so (+68 more)
 
 ### Community 8 - "Community 8"
-Cohesion: 0.05
-Nodes (46): cdp_click(), cdp_click_button(), fill_opinion_textarea(), handle_cookie_consent(), PureSpectrum provider patterns — CAPTCHA blocked.  All current PureSpectrum surv, Recursive __ngContext__ search → dropListRef.drop()., CDP Input.dispatchMouseEvent — real OS event (isTrusted=true)., Run full PureSpectrum preflight: cookie → ROBOT → captcha → puzzle. (+38 more)
+Cohesion: 0.03
+Nodes (66): _daily_file(), _ensure_logs(), generate_summary(), log_decision(), log_earnings(), log_error(), log_session(), print_summary() (+58 more)
 
 ### Community 9 - "Community 9"
-Cohesion: 0.05
-Nodes (38): ModelConfig, Return routing statistics., Model configuration as dict with attribute access., dict, ExperienceMemory, Episodic experience memory: caches successful trajectories per (host, captcha-ty, Store a trajectory in the experience database.          Args:             record, Find successful trajectories with similar gap distance.          Args: (+30 more)
-
-### Community 10 - "Community 10"
 Cohesion: 0.06
 Nodes (33): compile(), FlowCompiler, FlowStatus, get_status(), record_run(), dispatch(), _dispatch_step(), _execute_yaml_flow() (+25 more)
 
-### Community 11 - "Community 11"
+### Community 10 - "Community 10"
 Cohesion: 0.04
 Nodes (5): Test SOTA detection functions: detect_error_page, detect_progress, detect_comple, Test BatchExecutor.detect_error_page() — comprehensive error detection., Test detect_progress() — SOTA progress state detection., TestDetectErrorPage, TestDetectProgress
 
-### Community 12 - "Community 12"
+### Community 11 - "Community 11"
 Cohesion: 0.09
 Nodes (33): _bezier(), _ease_out_quint(), Human-like Bezier mouse trajectory generator.  Produces a sequence of (t_ms, x,, A single point in the mouse trajectory.      Attributes:         t_ms: Milliseco, Ease-out quintic: fast start, smooth stop.      This matches human motor control, Cubic Bezier interpolation at parameter t ∈ [0, 1]., Generates human-like drag trajectories.      Usage:         gen = TrajectoryGene, Generate a human-like drag trajectory from start to end.          Args: (+25 more)
 
-### Community 13 - "Community 13"
+### Community 12 - "Community 12"
 Cohesion: 0.04
 Nodes (3): generate_repo(), main(), Generate all missing files for one repo.
 
-### Community 14 - "Community 14"
+### Community 13 - "Community 13"
 Cohesion: 0.05
 Nodes (9): Test survey/autodoc.py — append-only logging and summary generation.  Tests log_, End-to-end: log + regenerate summary from same tmp dir., TestAutodocIntegration, TestGenerateSummary, TestLogDecision, TestLogEarnings, TestLogError, TestLogSession (+1 more)
+
+### Community 14 - "Community 14"
+Cohesion: 0.08
+Nodes (30): ModelConfig, Return routing statistics., Model configuration as dict with attribute access., dict, _balance(), _click(), _cua(), execute() (+22 more)
 
 ### Community 15 - "Community 15"
 Cohesion: 0.09
@@ -352,40 +352,40 @@ Cohesion: 0.12
 Nodes (4): detect_completion(), SOTA: Check if survey is completed based on page text.      Provider-specific co, Test detect_completion() — provider-specific completion detection., TestDetectCompletion
 
 ### Community 17 - "Community 17"
-Cohesion: 0.08
-Nodes (28): create_blank_tab(), create_tab(), find_bot_pids(), find_bot_tabs(), find_survey_tab(), get_details_url(), get_survey_details(), get_survey_url() (+20 more)
+Cohesion: 0.12
+Nodes (13): ExperienceMemory, Episodic experience memory: caches successful trajectories per (host, captcha-ty, Store a trajectory in the experience database.          Args:             record, Find successful trajectories with similar gap distance.          Args:, Get memory statistics., Close the database connection., A stored trajectory from a solved captcha.      Attributes:         host: The do, Episodic memory backed by SQLite (WAL mode for concurrent access).      Usage: (+5 more)
 
 ### Community 18 - "Community 18"
 Cohesion: 0.2
 Nodes (5): Cache response by prompt hash + model., _main_chrome_pids(), _run(), SessionManager, _wid_from_pid()
 
 ### Community 19 - "Community 19"
-Cohesion: 0.29
-Nodes (13): _make_urlopen_response(), test_all_prequalifiers_no_early_return(), test_answer_idx_bound_check(), test_loops_on_multiple_questions(), test_mixed_prequalifier_and_normal(), test_normal_survey_unchanged(), test_prequalifier_answered_via_api(), test_prequalifier_skipped_when_api_fails() (+5 more)
+Cohesion: 0.19
+Nodes (14): cdp_click(), cdp_click_button(), fill_opinion_textarea(), handle_cookie_consent(), PureSpectrum provider patterns — CAPTCHA blocked.  All current PureSpectrum surv, Recursive __ngContext__ search → dropListRef.drop()., CDP Input.dispatchMouseEvent — real OS event (isTrusted=true)., Run full PureSpectrum preflight: cookie → ROBOT → captcha → puzzle. (+6 more)
 
 ### Community 20 - "Community 20"
-Cohesion: 0.3
-Nodes (11): _balance(), _click(), _cua(), execute(), _find_bot_wid(), _find_field(), _find_idx(), SURVEY_HEYPIGGY — CUA-ONLY Survey Flow      Args:       payload : dict   — optio (+3 more)
+Cohesion: 0.29
+Nodes (13): _make_urlopen_response(), test_all_prequalifiers_no_early_return(), test_answer_idx_bound_check(), test_loops_on_multiple_questions(), test_mixed_prequalifier_and_normal(), test_normal_survey_unchanged(), test_prequalifier_answered_via_api(), test_prequalifier_skipped_when_api_fails() (+5 more)
 
 ### Community 21 - "Community 21"
 Cohesion: 0.24
 Nodes (5): CaptchaSolver, Convert DOM (viewport) coordinates to window coordinates, Execute drag via cua-driver CGEvent, Solve slide captcha (gc-drag-block on gc-drag-slide-bar), Generic: drag element from drag_selector to drop_selector
 
 ### Community 22 - "Community 22"
-Cohesion: 0.3
-Nodes (2): _detect_progress(), TestDetectProgress
-
-### Community 23 - "Community 23"
 Cohesion: 0.21
 Nodes (11): ensure_accessibility(), grant_accessibility(), is_accessibility_enabled(), launch_chrome_with_accessibility(), Chrome Accessibility Manager — grant + verify + maintain.  SOTA: NEVER kill Chro, Start cua-driver daemon if not running., Check if cua-driver can read Chrome's AX-Tree., Grant Accessibility permission to Google Chrome via tccutil. (+3 more)
+
+### Community 23 - "Community 23"
+Cohesion: 0.3
+Nodes (2): _detect_progress(), TestDetectProgress
 
 ### Community 24 - "Community 24"
 Cohesion: 0.33
 Nodes (2): _detect_questions(), TestDetectQuestions
 
 ### Community 25 - "Community 25"
-Cohesion: 0.25
-Nodes (7): check_pending_tasks(), delegate_task(), OpenCode CLI Bridge — delegate coding tasks to opencode.  Survey-cli is NOT a co, Delegate a coding task to opencode cli.      Creates a temporary task file and i, Check for pending tasks that were dispatched., Submit a GitHub issue via gh CLI.      Used to report bugs or request features d, submit_issue()
+Cohesion: 0.22
+Nodes (8): cmd_opencode(), check_pending_tasks(), delegate_task(), OpenCode CLI Bridge — delegate coding tasks to opencode.  Survey-cli is NOT a co, Delegate a coding task to opencode cli.      Creates a temporary task file and i, Check for pending tasks that were dispatched., Submit a GitHub issue via gh CLI.      Used to report bugs or request features d, submit_issue()
 
 ### Community 26 - "Community 26"
 Cohesion: 0.6
@@ -1270,7 +1270,7 @@ Nodes (1): Public API: Vorqualifizierung durchführen.
 ## Knowledge Gaps
 - **483 isolated node(s):** `Ring 1: Signierte & unveränderliche Flow-Artefakte. Jeder kompilierte Flow wird`, `Generiert Ed25519-Schlüsselpaar falls nicht vorhanden.`, `Signiert einen Flow und speichert .sig + flow_hash + lock.json.`, `Prüft Signatur und Hash eines Flows.     Returns: (is_valid, reason)`, `Boolean wrapper für Vorbedingungs-Check (Semgrep-Regel).` (+478 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **Thin community `Community 22`** (12 nodes): `_detect_progress()`, `TestDetectProgress`, `.test_digit_in_bracket()`, `.test_empty_list()`, `.test_empty_text()`, `.test_missing_text_key()`, `.test_no_percent_returns_question_mark()`, `.test_percent_but_no_digit_returns_question_mark()`, `.test_percent_english()`, `.test_percent_only()`, `.test_percent_with_digit()`, `.test_picks_first_match()`
+- **Thin community `Community 23`** (12 nodes): `_detect_progress()`, `TestDetectProgress`, `.test_digit_in_bracket()`, `.test_empty_list()`, `.test_empty_text()`, `.test_missing_text_key()`, `.test_no_percent_returns_question_mark()`, `.test_percent_but_no_digit_returns_question_mark()`, `.test_percent_english()`, `.test_percent_only()`, `.test_percent_with_digit()`, `.test_picks_first_match()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 24`** (11 nodes): `_detect_questions()`, `TestDetectQuestions`, `.test_case_insensitive_powered_by()`, `.test_empty_list()`, `.test_ignores_non_label_roles()`, `.test_ignores_powered_by()`, `.test_ignores_short_text()`, `.test_long_question()`, `.test_missing_text_key()`, `.test_simple_labels()`, `.test_trims_whitespace()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
@@ -1708,17 +1708,17 @@ Nodes (1): Public API: Vorqualifizierung durchführen.
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `BatchExecutor` connect `Community 4` to `Community 0`, `Community 2`, `Community 5`, `Community 7`, `Community 11`, `Community 16`?**
-  _High betweenness centrality (0.146) - this node is a cross-community bridge._
-- **Why does `CaptchaError` connect `Community 1` to `Community 2`, `Community 12`?**
-  _High betweenness centrality (0.124) - this node is a cross-community bridge._
-- **Why does `SurveyRunner` connect `Community 0` to `Community 2`, `Community 4`, `Community 7`, `Community 8`, `Community 17`, `Community 19`?**
-  _High betweenness centrality (0.123) - this node is a cross-community bridge._
-- **Are the 255 inferred relationships involving `BatchExecutor` (e.g. with `MockWs` and `TestBuildJS`) actually correct?**
-  _`BatchExecutor` has 255 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 246 inferred relationships involving `CompactSnapshot` (e.g. with `TestSimpleActions` and `TestRunSurveyLoopDetection`) actually correct?**
-  _`CompactSnapshot` has 246 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 184 inferred relationships involving `SurveyRunner` (e.g. with `Login to heypiggy via Google OAuth.` and `Scan dashboard for surveys.`) actually correct?**
-  _`SurveyRunner` has 184 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 186 inferred relationships involving `RunnerConfig` (e.g. with `Login to heypiggy via Google OAuth.` and `Scan dashboard for surveys.`) actually correct?**
-  _`RunnerConfig` has 186 INFERRED edges - model-reasoned connections that need verification._
+- **Why does `SurveyRunner` connect `Community 0` to `Community 1`, `Community 7`, `Community 8`, `Community 19`, `Community 20`?**
+  _High betweenness centrality (0.150) - this node is a cross-community bridge._
+- **Why does `BatchExecutor` connect `Community 1` to `Community 0`, `Community 4`, `Community 5`, `Community 7`, `Community 10`, `Community 16`?**
+  _High betweenness centrality (0.149) - this node is a cross-community bridge._
+- **Why does `CaptchaError` connect `Community 2` to `Community 11`, `Community 4`?**
+  _High betweenness centrality (0.134) - this node is a cross-community bridge._
+- **Are the 326 inferred relationships involving `CompactSnapshot` (e.g. with `TestCompleteImmediately` and `TestCircuitBreaker`) actually correct?**
+  _`CompactSnapshot` has 326 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 285 inferred relationships involving `SurveyRunner` (e.g. with `Login to heypiggy via Google OAuth.` and `Scan dashboard for surveys.`) actually correct?**
+  _`SurveyRunner` has 285 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 293 inferred relationships involving `BatchExecutor` (e.g. with `TestSimpleActions` and `TestRunSurveyLoopDetection`) actually correct?**
+  _`BatchExecutor` has 293 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 287 inferred relationships involving `RunnerConfig` (e.g. with `Login to heypiggy via Google OAuth.` and `Scan dashboard for surveys.`) actually correct?**
+  _`RunnerConfig` has 287 INFERRED edges - model-reasoned connections that need verification._

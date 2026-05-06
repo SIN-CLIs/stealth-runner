@@ -945,6 +945,72 @@ Survey 66883950: completed, 0€. Survey 66557643: stuck, 0€. Balance: 2.23€
 
 ---
 
+## §P — ROOT CAUSE: IN-PAGE MODALS vs. NEUE TABS (2026-05-06) 🔴🔴🔴
+
+> **Diese Entdeckung erklärt WARUM kein Survey Payout erzielt wurde.**
+
+### Der FUNDAMENTALE Architektur-Fehler
+
+**Unser Flow (FALSCH):**
+```
+1. scan_dashboard() → finde Survey-IDs via CPX API
+2. get_details_url() → hole CPX-URL
+3. Target.createTarget → öffne NEUEN Tab mit CPX-URL
+4. Navigiere zur Survey-Seite
+5. Interagiere mit Survey-Elementen
+```
+
+**Der heypiggy Flow (RICHTIG):**
+```
+1. Dashboard zeigt Survey-Cards mit clickSurvey('ID') onclick
+2. User klickt Card → Survey lädt IN-PAGE (Modal/Overlay/Iframe)
+3. GLEICHER Tab, GLEICHE URL (heypiggy.com/?page=dashboard)
+4. Survey-Inhalt erscheint als Modal mit Frage-Elementen
+5. User antwortet IM MODAL → Modal schließt → Reward gutgeschrieben
+```
+
+### Beweis (LIVE 2026-05-06 19:00)
+
+```javascript
+// Dashboard nach clickSurvey('66764861'):
+URL: https://www.heypiggy.com/?page=dashboard  // ← GLEICH!
+Iframes: 1 (src: heypiggy.com/?page=dashboard)  // ← self-referencing
+Overlays/modals: 127  // ← Survey-Content lädt HIER
+Survey-Class-Elemente: 116  // ← Frage-Elemente im DOM
+Browser-Tabs: 1  // ← KEIN neuer Tab!
+```
+
+### Konsequenzen
+
+| Was unser Code macht | Was passieren sollte | Ergebnis |
+|----------------------|---------------------|----------|
+| `Target.createTarget` → neuer Tab | `clickSurvey('ID')` → in-page Modal | ❌ Survey lädt nicht |
+| `Page.navigate(survey_url)` | Modal-Content via JS | ❌ Falsche Page |
+| `generate_snapshot(tab_ws)` | Snapshot vom DASHBOARD-Tab | ❌ Liest falsche Seite |
+| `BatchExecutor.execute(actions)` | Aktionen im DASHBOARD-Tab | ❌ Klickt falsche Elemente |
+
+### Was das für die Architektur bedeutet
+
+**Der gesamte `run_survey()` Flow muss umgeschrieben werden:**
+1. NICHT `Target.createTarget` → stattdessen `clickSurvey('ID')` per CDP JS
+2. NICHT neuen Tab-WS → stattdessen Dashboard-WS weiterverwenden
+3. Nach `clickSurvey` warten bis Modal erscheint
+4. `generate_snapshot(dashboard_ws)` auf dem MODAL-Inhalt
+5. `BatchExecutor` interagiert mit MODAL-Elementen
+6. Nach Completion: Modal schließt → Balance aktualisieren
+
+### Neue Survey-IDs (vom Dashboard, nicht von CPX API)
+
+Unser `scan_dashboard()` findet NUR Surveys via CPX API. Aber das Dashboard zeigt:
+- `65980923` — 0.21€ (5 Min) ← NICHT in CPX API!
+- `66894421` — 0.09€ (5 Min) ← NICHT in CPX API!
+- `65034418` — 0.23€ (8 Min) ← NICHT in CPX API!
+
+**Der Scanner muss die Dashboard-DOM parsen, nicht die CPX API!**
+
+
+---
+
 ## §O — SOTA TEST COVERAGE AUDIT (2026-05-06) 🔍
 
 > **Subagent-gestützter Audit aller 27 Source-Dateien vs. 282 Tests.**
