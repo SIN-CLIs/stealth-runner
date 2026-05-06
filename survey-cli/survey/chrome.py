@@ -32,6 +32,48 @@ DETAILS_URL = (
     "&extra_info_3=EUR&extra_info_4=nomobile"
 )
 
+_cached_details_url = None
+
+
+def get_details_url(port=9999, force_refresh=False):
+    """Get the live details_url from the dashboard page.
+
+    The heypiggy dashboard maintains a `details_url` JS variable with
+    the full CPX API URL including all session-specific parameters.
+    This is more reliable than the hardcoded DETAILS_URL.
+
+    Args:
+        port: CDP port
+        force_refresh: Force re-fetch from page
+
+    Returns:
+        Full CPX API URL string, or fallback to hardcoded DETAILS_URL
+    """
+    global _cached_details_url
+    if _cached_details_url and not force_refresh:
+        return _cached_details_url
+
+    try:
+        ws_url = find_dashboard_ws(port)
+        if not ws_url:
+            return DETAILS_URL
+
+        import websocket
+        ws = websocket.create_connection(ws_url, timeout=10)
+        ws.send(json.dumps({
+            "id": 0, "method": "Runtime.evaluate",
+            "params": {"expression": "typeof details_url !== 'undefined' ? details_url : ''"}
+        }))
+        r = json.loads(ws.recv())
+        ws.close()
+        url = r.get("result", {}).get("result", {}).get("value", "")
+        if url and url.startswith("https://"):
+            _cached_details_url = url
+            return url
+    except Exception:
+        pass
+    return DETAILS_URL
+
 
 # ── Chrome Management ──────────────────────────────────
 
@@ -158,11 +200,12 @@ def safe_kill_bot():
 
 # ── CPX API ────────────────────────────────────────────
 
-def get_survey_url(survey_id):
-    """Get survey URL from CPX API."""
+def get_survey_url(survey_id, port=9999):
+    """Get survey URL from CPX API using live details_url."""
+    details = get_details_url(port)
     try:
         resp = json.loads(urllib.request.urlopen(
-            DETAILS_URL + "&survey_id=" + survey_id, timeout=8
+            details + "&survey_id=" + survey_id, timeout=8
         ).read())
         if resp.get("type") == "okay":
             return resp.get("href")
@@ -171,11 +214,12 @@ def get_survey_url(survey_id):
         return None
 
 
-def get_survey_details(survey_id):
-    """Get full survey details from CPX API."""
+def get_survey_details(survey_id, port=9999):
+    """Get full survey details from CPX API using live details_url."""
+    details = get_details_url(port)
     try:
         resp = json.loads(urllib.request.urlopen(
-            DETAILS_URL + "&survey_id=" + survey_id, timeout=8
+            details + "&survey_id=" + survey_id, timeout=8
         ).read())
         return resp
     except Exception:

@@ -8,7 +8,7 @@ import time
 import urllib.request
 import websocket
 from . import chrome
-from .chrome import DETAILS_URL, CPX_CREDENTIALS
+from . import chrome
 
 # ── Provider Detection ─────────────────────────────────
 
@@ -72,13 +72,14 @@ def extract_ids_from_dashboard(ws_url):
 
 # ── Survey Filtering ───────────────────────────────────
 
-def filter_surveys(survey_ids, skip_providers=None, max_ids=15):
+def filter_surveys(survey_ids, skip_providers=None, max_ids=15, port=9999):
     """Filter surveys via CPX API.
 
     Args:
         survey_ids: List of IDs to check
         skip_providers: List of provider names to skip
         max_ids: Max IDs to process
+        port: CDP port
 
     Returns:
         List of dicts: [{id, provider, href, type}, ...]
@@ -86,11 +87,14 @@ def filter_surveys(survey_ids, skip_providers=None, max_ids=15):
     if skip_providers is None:
         skip_providers = ["surveyrouter"]
 
+    from .chrome import get_details_url
+    details_url = get_details_url(port)
+
     results = []
     for sid in survey_ids[:max_ids]:
         try:
             resp = json.loads(urllib.request.urlopen(
-                DETAILS_URL + "&survey_id=" + sid, timeout=8
+                details_url + "&survey_id=" + sid, timeout=8
             ).read())
 
             entry = {
