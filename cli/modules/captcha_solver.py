@@ -2,14 +2,29 @@
 """
 Captcha Solver Module — CUA-ONLY (cua-driver drag + AppleEvents JS)
 ====================================================================
-WAS: Hardcoded window position (73,70) → funktionierte nur zufällig
-WARUM: Window-Position ist dynamisch, abhängig von Launch-Methode
-WO: /Users/jeremy/dev/stealth-runner/cli/modules/captcha_solver.py
-WIE: list_windows → get window position, AX tree → get toolbar height,
-     DOM coordinates + toolbar → window coordinates → cua-driver drag
-WANN: 2026-05-05, GoCaptcha getestet, 5/5 erfolgreich
-WOMIT: cua-driver (CGEvent drag), AppleEvents JS (DOM query + scrollIntoView)
-ZWECK: Slide-Captcha und Drag-Drop-Captcha via reale MouseEvents lösen
+WARUM: Slide-Captchas (GoCaptcha, NetEase, GeeTest) verlangen echte
+Mouse-Drag-Events. JS dispatchEvent(PointerEvent) hat isTrusted=false
+und wird sofort blockiert. Dieses Modul nutzt cua-driver für CGEvent-
+basierte Drags und AppleEvents JS für DOM-Koordinaten.
+
+ARCHITEKTUR: 2-Phasen-Ansatz:
+  1. DOM-Phase: AppleEvents JS querySelectorAll → Koordinaten extrahieren
+  2. Drag-Phase: cua-driver list_windows → Fenster-Position ermitteln,
+     AX-Tree → Toolbar-Höhe, DOM-Koordinaten + Toolbar-Offset →
+     globale Bildschirmkoordinaten → CGEvent drag via cua-driver.
+LIVE TESTED: 2026-05-05, GoCaptcha 5/5 erfolgreich.
+KEINE Hardcoded Window-Position (73,70) — dynamisch via list_windows.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index) — instabil, nutze Verify-Box
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 import subprocess, json, time, re
 

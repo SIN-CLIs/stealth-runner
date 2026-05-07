@@ -1,18 +1,30 @@
 """
 survey/agents/page_classifier.py — Page Classifier Agent (2026-05-06)
 
-FUNKTION: Classified page type in ~80ms using mistral-small.
-Identifies: consent, question, completed, login, captcha, audio, video, matrix, unknown.
+WARUM: Jede Survey-Seite braucht eine andere Strategie.
+Consent-Seiten → Zustimmen-Klick. Audio-Fragen → Audio-Capture + Omni.
+Matrix-Fragen → Multi-Select-Logik. Ohne Klassifizierung wendet der
+Agent die falsche Logik an → Disqualifikation.
 
- Thread: 3 von 5 im ParallelOrchestrator
- Model:  mistral-small (80ms, MICRO) — fast enough for real-time classification
- Input:  page text + element counts + framework hint
- Output: {page_type, confidence, hints, ms}
+ARCHITEKTUR: Agent 3/5 im ParallelOrchestrator. Model: mistral-small
+(80ms, MICRO) — 95% der Seiten werden via instant Regex-Heuristik
+klassifiziert (kein LLM-Call). Fallback auf LLM nur bei unklaren Seiten.
+Input: page_text + element_counts + framework_hint.
+Output: {page_type, confidence, hints, ms}.
+Page Types: consent, audio_question, video_question, image_question,
+math_question, matrix_question, text_question, radio_question,
+checkbox_question, login, completed, unknown.
 
-PAGE TYPES (12 types from stealth-dynamic/classifier.py):
-    consent, audio_question, video_question, image_question, math_question,
-    matrix_question, text_question, radio_question, checkbox_question,
-    login, completed, unknown
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 from __future__ import annotations

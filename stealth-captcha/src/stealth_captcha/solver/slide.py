@@ -1,13 +1,29 @@
 """GoCaptcha / NetEase / GeeTest v3/v4 slide captcha solver.
 
-Pipeline (matches the ACT step in @stealth/core):
+WARUM: Slide-Captchas blockieren den Survey-Flow bei fast jeder Platform.
+Vision-Modelle können keine präzisen Pixel-Koordinaten liefern (Research
+2026-05-05). DOM-basierte Gap-Detection + menschenähnliche Trajektorien
+sind die einzige zuverlässige Lösung.
+
+ARCHITEKTUR: 7-Stufen-Pipeline (ACT-Muster aus stealth/core):
   1. Stealth-inject via Page.addScriptToEvaluateOnNewDocument
   2. Hit-test .gc-drag-block → neutralize overlays
-  3. Gap detection via DOM getBoundingClientRect (100x more accurate than vision)
-  4. Episodic memory lookup (Agent-S3 pattern) → reuse successful trajectories
-  5. Fresh Bezier trajectory if no memory hit
-  6. Stream CDP Input.dispatchMouseEvent (trusted element-level PointerEvents)
-  7. DOM polling for success/failure
+  3. Gap detection via DOM getBoundingClientRect (100x genauer als Vision)
+  4. Episodic memory lookup → erfolgreiche Trajektorien wiederverwenden
+  5. Fresh Bezier trajectory wenn kein Memory-Hit
+  6. CDP Input.dispatchMouseEvent (trusted element-level PointerEvents)
+  7. DOM polling für success/failure
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
   8. Persist trajectory to episodic memory on success
 
 Key insight: CDP Input.dispatchMouseEvent is the only method that produces

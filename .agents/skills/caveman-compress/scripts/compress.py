@@ -1,9 +1,27 @@
 #!/usr/bin/env python3
-"""
-Caveman Memory Compression Orchestrator
+"""Caveman Memory Compression Orchestrator.
 
-Usage:
-    python scripts/compress.py <filepath>
+WARUM: Agent-Sessions generieren riesige Kontexte (10k+ Tokens).
+Dieses Modul komprimiert natürlichsprachliche Markdown-Dateien
+(AGENTS.md, brain.md, learn.md) in caveman-Format: 75% weniger
+Tokens bei voller technischer Substanz.
+
+ARCHITEKTUR: Ein-Pass-Transformer mit Regex-Pipeline.
+1. detect.py klassifiziert Datei (compressible vs code/config)
+2. compress.py entfernt Füllwörter, Artikel, Floskeln
+3. validate.py prüft Integrität (URLs, Code-Blöcke, Struktur)
+4. benchmark.py misst Token-Ersparnis.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 import os

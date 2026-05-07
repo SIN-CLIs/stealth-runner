@@ -1,7 +1,25 @@
 """Centralized configuration via Pydantic Settings (12-factor, env-based).
 
-All settings are camelCase in code but use UPPER_SNAKE_CASE env prefixes.
-Override any value via STEALTH_CDP__PORT, STEALTH_TRAJ__DURATION_MAX_MS, etc.
+WARUM: Konfiguration darf nicht hardcodiert sein. Pydantic Settings
+laden aus Umgebungsvariablen mit Prefix (STEALTH_). 12-Factor-konform:
+Config im Env, nicht im Code. Jede Änderung ohne Redeploy möglich.
+
+ARCHITEKTUR: BaseSettings mit SettingsConfigDict(env_prefix="STEALTH_").
+Felder sind camelCase im Code, UPPER_SNAKE_CASE im Env.
+Beispiele: STEALTH_CDP__PORT, STEALTH_TRAJ__DURATION_MAX_MS.
+@lru_cache auf get_settings() für Singleton-Pattern.
+Kein manuelles Parsing, validiert bei Startup.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 from __future__ import annotations

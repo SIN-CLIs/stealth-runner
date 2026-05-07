@@ -1,4 +1,25 @@
-"""Tests for CDPConnection — retry, reconnect, ID routing, backoff."""
+"""Tests for CDPConnection — retry, reconnect, ID routing, backoff.
+
+WARUM: CDPConnection ist das Herzstück der Browser-Kommunikation.
+Verbindungsabbrüche, Timeout-Handling und ID-Routing müssen robust sein,
+sonst bricht der gesamte Survey-Loop ab.
+
+ARCHITEKTUR: Unittest mit unittest.mock (MagicMock, patch, call).
+websocket.create_connection und recv/send werden gepatcht.
+Es werden Retry-Logik, Reconnect, exponentieller Backoff und
+Fehlerbehandlung getestet — kein echter WebSocket.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
+"""
 
 import unittest
 from unittest.mock import MagicMock, patch, call

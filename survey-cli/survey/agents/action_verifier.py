@@ -1,20 +1,30 @@
 """
 survey/agents/action_verifier.py — Action Verifier Agent (2026-05-06)
 
-FUNKTION: Verifiziert dass Action erfolgreich war (Zustand geändert).
-CDP verify: prüft ob Radio selected, Text gefüllt, Button enabled.
-CUA verify: prüft AX-Tree nach Action auf selected=true, value gesetzt.
+WARUM: CUA/CDP sagt "Performed" auch wenn nichts passierte.
+Der Agent muss den Zustand VOR und NACH der Action vergleichen.
+Ohne Verify-Box werden 10 Schritte blind weiter gemacht → Survey
+wird disqualifiziert. Verify ist die einzige Absicherung gegen
+"False Success".
 
- Thread: 5 von 5 im ParallelOrchestrator
- Model:  mistral-small (80ms, MICRO) — quick verification
- Input:  action_executed, ws_url, page_before_hash, page_after_text
- Output: {verified: bool, state_changed: bool, diff, ms}
+ARCHITEKTUR: Agent 5/5 im ParallelOrchestrator. Model: mistral-small
+(80ms, MICRO) — schnelle Verifikation ohne LLM-Overhead.
+Input: action_executed, ws_url, page_before_hash, page_after_text.
+Output: {verified, state_changed, diff, ms}.
+Strategien: Radio → checked===true, Text → value.length>0,
+Button → disabled===false OR page changed, Page → hash diff.
+Verify-Box Regel: Jeder Klick/jede Eingabe MUSS verified werden.
 
-VERIFICATION STRATEGY:
-    - Radio click → check element.checked === true
-    - Text fill → check element.value.length > 0
-    - Button click → check button.disabled === false (or page changed)
-    - Page change → compare page_text hash before/after
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 from __future__ import annotations

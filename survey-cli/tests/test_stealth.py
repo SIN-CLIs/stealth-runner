@@ -1,13 +1,23 @@
 """Tests: Stealth injection in chrome.py and runner.py.
 
-Verifies that:
-1. _get_stealth_js() loads injection.js or returns fallback
-2. inject_stealth_to_tab() sends Page.addScriptToEvaluateOnNewDocument
-3. navigate_tab() sends Page.navigate
-4. create_blank_tab() creates tab at about:blank
-5. _create_tab() in runner.py uses stealth injection
+WARUM: Stealth-Patches verhindern Bot-Erkennung (Cloudflare, Kasada, etc.).
+Fehlende oder veraltete Injection.js führt zu sofortiger Disqualifikation.
 
-Strategy: mock websocket.create_connection (imported locally in chrome.py functions).
+ARCHITEKTUR: Unittest mit unittest.mock (MagicMock, patch).
+websocket.create_connection (lokal in chrome.py importiert) wird gepatcht.
+Datei-IO (injection.js) wird über tempfile/mock simuliert.
+Kein echter Chrome, kein echter WebSocket.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 import unittest

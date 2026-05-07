@@ -1,7 +1,25 @@
 """Abstract solver interface — uniform contract across captcha families.
 
-Every solver implements solve(session) → SolveResult following the same
-pipeline with the same retry/backoff semantics.
+WARUM: Jedes Captcha (text, slide, drag_drop, geetest, lemin) braucht
+dieselbe Retry/Backoff-Logik und dasselbe Result-Format. Ohne gemeinsames
+Interface muss jeder Solver Fehlerbehandlung und State-Management selbst
+implementieren → Bugs und Inkonsistenzen.
+
+ARCHITEKTUR: ABC (abstract base class) mit solve(session) → SolveResult.
+SolveOutcome Enum (SUCCESS, FAILURE, UNKNOWN) und SolveResult dataclass
+sind die universalen Rückgabetypen. Retry-Logik und Backoff werden in
+der Basisklasse oder einem Decorator zentral bereitgestellt.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 from __future__ import annotations

@@ -1,13 +1,25 @@
 """Test suite for SemanticAnalyzer module.
 
-Tests the semantic analysis functionality including:
-- Session classification using NVIDIA NIM API
-- Documentation unit generation
-- Message summarization
-- Error handling for API failures
-- Classification parsing
+WARUM: SemanticAnalyzer klassifiziert OpenCode Sessions via NVIDIA NIM.
+Falsche Klassifizierung führt zu falscher Dokumentation und verlorenem
+Wissen. Diese Tests sichern die Logik (Parsing, Retry, Error-Handling)
+ohne echte API-Calls.
 
-Uses mocking to avoid actual API calls while testing logic.
+ARCHITEKTUR: pytest + unittest.mock (Mock, MagicMock, patch).
+NVIDIA NIM API-Calls werden gepatcht. Es werden Classification-Parsing,
+Message-Summarization, Retry-Logik und Error-Handling getestet.
+Kein echter Netzwerk-IO.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 import pytest

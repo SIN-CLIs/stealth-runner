@@ -1,11 +1,23 @@
 """Test survey/snapshot.py — NEMO compact snapshot generation.
 
-Tests:
-  - _detect_questions: label text >5 chars, excludes "powered by"
-  - _detect_progress: text with "%" and digit
-  - asdict: nested dataclass → dict conversion
-  - CompactSnapshot.to_dict: round-trip correctness
-  - generate_snapshot: CDP WS → CompactSnapshot (2 Runtime.evaluate calls)
+WARUM: Sicherstellung der Snapshot-Qualität.
+Der Snapshot muss Fragen, Progress, Provider und StealthScore korrekt
+extrahieren, damit der NIM-Client valide Entscheidungen treffen kann.
+
+ARCHITEKTUR: Unittest mit unittest.mock (patch, MagicMock).
+CDP WebSocket-Aufrufe werden gepatcht; es wird nur die Logik der
+Snapshot-Generierung getestet, nicht der eigentliche Browser.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 import unittest

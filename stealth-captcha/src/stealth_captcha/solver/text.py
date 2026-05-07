@@ -1,12 +1,26 @@
 """Text/OCR captcha solver — captures the captcha image, sends to vision model,
 types the recognized text, and submits.
 
-Designed for the Legacy/Simple text captchas that present a distorted image
-with characters to transcribe. Uses pluggable OCR backends — default is
-Mistral Pixtral Large via the Stealth Suite AI Gateway.
+WARUM: Legacy-Captchas (distorted text images) müssen gelöst werden, bevor
+der Survey-Fortschritt blockiert. Pixtral Large ist das einzige Modell,
+das zuverlässig "QXem34" aus verzerrten Bildern liest (Benchmark 2026-05-05).
+Falsche OCR → Captcha-Fail → Survey-Disqualifikation.
 
-See research/2026-05-05-vision-benchmarks.md: pixtral-large was the only
-model that correctly transcribed "QXem34" from a captcha image.
+ARCHITEKTUR: VisionOCRBackend Protocol für austauschbare OCR-Engines.
+CDPSession macht Screenshot (Runtime.evaluate → captureScreenshot),
+sendet Base64-PNG an Backend, tippt Ergebnis in Textfeld.
+Retry mit exponentiellem Backoff bei Failure.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 from __future__ import annotations

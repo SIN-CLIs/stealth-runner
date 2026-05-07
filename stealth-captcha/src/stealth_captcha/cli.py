@@ -1,13 +1,24 @@
 """Click-based CLI for the stealth-captcha solver.
 
-Allows launching Chrome, connecting to an existing instance, solving
-captchas, and managing the experience memory.
+WARUM: Captcha-Solving muss manuell debug- und testbar sein.
+Dieses CLI stellt Commands bereit für: Chrome-Start, Target-Discovery,
+Slide/Drag/Text-Captcha-Lösung, Memory-Stats. Kein Survey-Automation —
+rein für Entwicklung und Troubleshooting.
 
-Usage:
-    stealth-captcha solve-slide --url https://example.com/captcha
-    stealth-captcha solve-slide --url ... --use-existing-chrome
-    stealth-captcha targets
-    stealth-captcha memory-stats
+ARCHITEKTUR: Asyncio-basierte CLI (argparse). Delegiert an Solver-Klassen
+und Experience-Memory. Support für --use-existing-chrome (verbindet zu
+laufender Instanz statt neu zu starten). Exit-Codes: 0 = Success, 1 = Failure.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 from __future__ import annotations

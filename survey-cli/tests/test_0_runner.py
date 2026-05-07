@@ -1,6 +1,24 @@
 """Test SurveyRunner — NEMO loop, anti-stuck, error detection.
 
-Uses unittest.mock to mock Chrome WebSocket calls and NIM responses.
+WARUM: Sicherstellung des SurveyRunner-Verhaltens ohne echten Browser.
+Jeder Test isoliert eine Einheit (simple_actions, NIM-decide, anti-stuck,
+circuit-breaker) und validiert gegen geshapte Mocks.
+
+ARCHITEKTUR: Mock-basierte Unittests (unittest.mock MagicMock/patch).
+Kein echter Chrome, kein echter NIM, kein echter WebSocket.
+SurveyRunner-Instanz wird mit RunnerConfig konfiguriert und Methoden
+gepatcht um externe Calls abzufangen.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 import unittest

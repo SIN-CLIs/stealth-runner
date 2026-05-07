@@ -1,6 +1,24 @@
 """Tests: In-Page Modal Flow — clickSurvey() statt Target.createTarget.
 
-Verifies the ROOT CAUSE fix: surveys open as in-page modals, not new tabs.
+WARUM: Regressionsschutz für den Root-Cause-Fix (2026-05-04).
+Surveys öffnen sich als In-Page-Modals im Dashboard-Tab, nicht als neue Tabs.
+Falscher Provider-Override auf "generic" würde den Batch-Executor
+mit falschen Provider-Commands laufen lassen.
+
+ARCHITEKTUR: Unittest mit unittest.mock (MagicMock, patch).
+SurveyRunner-Methoden (find_dashboard_ws, find_bot_tabs, _click_survey_card)
+werden gepatcht um das In-Page-Modal-Verhalten zu simulieren.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 import unittest

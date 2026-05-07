@@ -1,13 +1,25 @@
 """Tests for the Bezier trajectory generator.
 
-Covers:
-  - Endpoint accuracy (must arrive at target within 0.01px)
-  - Timing monotonicity (t must never decrease)
-  - Minimum sample count (must produce at least sample_count_min points)
-  - Zero-distance edge case (must not crash)
-  - Deterministic behavior with fixed seed
-  - Overshoot correction endpoint accuracy
-  - Jitter bounds (jitter must not exceed ±3σ)
+WARUM: Die Trajektorie ist das Herzstück der Captcha-Überwindung.
+Falsche Endpunkte (>0.01px), rückläufige Timestamps oder unplausible
+Jitter-Werte (>3σ) werden von modernen Captcha-Engines sofort als Bot
+erkannt. Diese Tests validieren jede Eigenschaft deterministisch.
+
+ARCHITEKTUR: Unittest (keine Mocks — pure Mathematik).
+Tests prüfen: Endpunkt-Genauigkeit, Zeit-Monotonie, Mindest-Sample-Count,
+Zero-Distance Edge-Case, Determinismus bei fixem Seed,
+Übersteuerungs-Korrektur, Jitter-Grenzen (±3σ).
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 from __future__ import annotations

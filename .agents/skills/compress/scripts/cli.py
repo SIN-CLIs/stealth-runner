@@ -1,9 +1,24 @@
 #!/usr/bin/env python3
-"""
-Caveman Compress CLI
+"""Caveman Compress CLI — Entry Point für Kompressions-Pipeline.
 
-Usage:
-    caveman <filepath>
+WARUM: Einheitliches CLI-Interface für alle Compress-Operationen.
+Agenten und Skripte rufen NUR diesen Entry Point auf, nie die
+Einzelmodule direkt. Zentrale Fehlerbehandlung und Exit-Codes.
+
+ARCHITEKTUR: argparse-basierte CLI. Unterstützt direct-execution
+und module-import (python -m scripts.cli). Ruft compress() auf,
+validiert Ergebnis, gibt Exit-Code 0/1 zurück.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 import sys

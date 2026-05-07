@@ -1,10 +1,25 @@
 """StealthInjector: ships JS patches to the browser via CDP.
 
-Uses Page.addScriptToEvaluateOnNewDocument so patches run on every
-new document (including iframes) BEFORE the page's own scripts.
+WARUM: Chrome mit --enable-automation setzt window.navigator.webdriver = true.
+Sites wie Cloudflare prüfen das sofort. Dieses Modul injiziert JS-Patches
+VOR dem Laden der Seite (addScriptToEvaluateOnNewDocument) um Fingerprints
+zu entfernen und anti-detection Properties zu setzen.
 
-The bundle is built once by build_stealth_bundle() and reused across
-injections to the same session.
+ARCHITEKTUR: build_stealth_bundle() baut das JS-Bundle einmalig.
+Injektion erfolgt pro Session via CDP Page.addScriptToEvaluateOnNewDocument.
+Das Bundle wird für alle nachfolgenden Documents (iframes) wiederverwendet.
+Kein State außerhalb des Bundles — idempotent und thread-safe.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 from __future__ import annotations

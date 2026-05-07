@@ -1,11 +1,26 @@
 """Integration test suite for stealth-sync full pipeline.
 
-Tests the complete workflow:
-1. Database polling (poll)
-2. Semantic analysis (analyze)
-3. Output generation (generate)
+WARUM: stealth-sync besteht aus 3 Komponenten (DBPoller, SemanticAnalyzer,
+OutputGenerator). Jede Komponente für sich ist getestet, aber die
+Integration kann fehlschlagen (Format-Mismatch, State-Drift, Race-Conditions).
+Diese Tests prüfen den gesamten Workflow End-to-End.
 
-This ensures all components work together correctly.
+ARCHITEKTUR: pytest + unittest.mock (Mock, MagicMock, patch).
+SQLite wird als tempfile angelegt, Sessions werden eingefügt,
+Poll → Analyze → Generate wird ausgeführt und Outputs verifiziert.
+Kein echter Netzwerk-IO (NIM gepatcht), kein echter Dateisystem-IO
+außer tempfiles.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 import pytest

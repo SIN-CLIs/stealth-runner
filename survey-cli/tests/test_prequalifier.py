@@ -1,15 +1,25 @@
 """Regression tests: Pre-qualifier handling in run_loop().
 
-Tests verify that:
-1. run_loop() calls handle_pre_qualifier() instead of skipping pre-qualifiers
-2. handle_pre_qualifier() correctly answers CPX API questions and returns href
-3. Pre-qualifier survey dict is rewritten after answering
+WARUM: Pre-Qualifiers filtern Teilnehmer vor dem eigentlichen Survey.
+Falsche Beantwortung oder Überspringen führt zu 0.02€ Compensation statt
+vollem Verdienst. Der CPX-API-Call muss korrekt simuliert werden.
 
-Test strategy:
-- Mock chrome.find_dashboard_ws to return None → get_details_url uses fallback DETAILS_URL
-- Mock survey.runner.urllib.request.urlopen with side_effect returning proper responses
-- Response must have status: "success" + href for handle_pre_qualifier to return href
-- Profile age 32 maps to answer_idx=2 → need 6+ answers to avoid index bound check
+ARCHITEKTUR: Unittest mit unittest.mock (MagicMock, patch).
+chrome.find_dashboard_ws und urllib.request.urlopen werden gepatcht.
+Der Runner verwendet Fallback-DETAILS_URL wenn kein Dashboard-WS gefunden.
+Profile-Alter (32) mapped zu answer_idx=2 — Tests prüfen Index-Bounds.
+Kein echter Chrome, kein echter CPX-Server.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 import unittest

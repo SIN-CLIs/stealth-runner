@@ -1,15 +1,27 @@
 """
 survey/agents/persona_checker.py — Persona Checker Agent (2026-05-06)
 
-FUNKTION: Validiert Antwort-Optionen gegen das Persona-Profil.
-Berechnet: welche Option passt am besten zur Persona (Alter, Geschlecht, Ort, etc.)
+WARUM: Falsche Antworten (z.B. Alter 16-25 statt 26-39 für einen 32-Jährigen)
+führen sofort zur Disqualifikation. Dieser Agent matched jede Option
+gegen das Persona-Profil (Alter aus date_of_birth, Geschlecht, Ort, etc.)
+und gibt ranked preferred_answers zurück.
 
- Thread: 2 von 5 im ParallelOrchestrator
- Model:  nemotron-nano (500ms, MID) — braucht reasoning für komplexe Mapping
- Input:  page_text, element_map, profile (Persona-Dict)
- Output: {preferred_answers: [{idx, text, score, reason}], persona_match_score, ms}
+ARCHITEKTUR: Thread 2/5 im ParallelOrchestrator.
+Model: nemotron-nano (500ms, MID) — braucht reasoning für komplexes Mapping.
+Input: page_text, element_map, profile-Dict.
+Output: {preferred_answers: [{idx, text, score, reason}], persona_match_score, ms}.
+Kein State außerhalb des Function-Calls.
 
-Das ist KRITISCH für Survey-Erfolg: falsche Antworten → Disqualifikation.
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 from __future__ import annotations

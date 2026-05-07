@@ -1,10 +1,24 @@
 """Drag-drop puzzle captcha solver (PureSpectrum, FunCaptcha-style).
 
-These captchas present a piece that must be dragged to a specific drop zone.
-Unlike slide captchas (single axis), drag-drop can be multi-directional.
+WARUM: PureSpectrum und FunCaptcha nutzen Puzzle-Captchas bei denen ein
+Stück in eine Drop-Zone gezogen werden muss (multi-achsig, nicht nur Slide).
+Ohne Solver blockiert der Survey-Flow an dieser Stelle dauerhaft.
 
-The solver iterates over (source, target) selector pairs, performing a
-CDP Input.dispatchMouseEvent drag for each pair.
+ARCHITEKTUR: TrajectoryGenerator erzeugt menschenähnliche Drag-Pfade.
+CDP Input.dispatchMouseEvent (mousePressed → mouseMoved → mouseReleased)
+wird für jedes (source, target)-Paar ausgeführt.
+Verifier prüft Erfolg über DOM-Change oder Success-Indicator.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 from __future__ import annotations

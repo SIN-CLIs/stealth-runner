@@ -1,4 +1,26 @@
 #!/usr/bin/env python3
+"""Caveman Compression Validator — Integritätsprüfung nach Kompression.
+
+WARUM: Kompression darf NIEMALS URLs, Code-Fences, Heading-Struktur
+oder Bullet-Listen zerstören. Ein verlorener Link oder ein zerbrochener
+Code-Block macht die komprimierte Datei wertlos.
+
+ARCHITEKTUR: Regex-basierte statische Analyse (kein LLM, kein Parsing).
+Prüft: URL-Count, Code-Fence-Balance, Heading-Count, Bullet-Count.
+Warnungen bei Abweichungen > Threshold. Fails fast bei korrupten Dateien.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
+"""
+
 import re
 from collections import Counter
 from pathlib import Path

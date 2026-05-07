@@ -1,10 +1,23 @@
 """Tests: Balance reading timing fix — read BEFORE survey tab opens.
 
-Verifies that:
-1. balance_before is read before tab creation (not after)
-2. Earned = max(0, balance_after - balance_before)
-3. Graceful handling of balance read failures
-4. Zero earned when status != "completed"
+WARUM: Der Verdienst wird aus (balance_after - balance_before) berechnet.
+Wenn balance_before NACH Tab-Öffnung gelesen wird, ist der Wert verfälscht
+(Pre-Qualifier Compensation 0.02€ würde als Verdienst gezählt).
+
+ARCHITEKTUR: Unittest mit unittest.mock (MagicMock, patch).
+chrome.find_dashboard_ws, read_balance und runner-Methoden werden gepatcht.
+Kein echter Chrome, keine echten Balance-Reads.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 import unittest

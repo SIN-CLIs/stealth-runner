@@ -1,14 +1,25 @@
 """Test suite for OutputGenerator module.
 
-Tests the output generation functionality including:
-- YAML file generation
-- JSON file generation
-- Changelog updates
-- Logbook updates
-- Error handling for file operations
-- Path handling
+WARUM: OutputGenerator erzeugt Dokumentationseinheiten (YAML, JSON,
+Markdown, Logbook). Falsche Formatierung oder korrupte Pfade führen
+zu unlesbarer Dokumentation. Diese Tests validieren alle Output-Formate
+und Edge-Cases (leere Sessions, sehr lange Texte, Unicode).
 
-Tests both happy paths and edge cases.
+ARCHITEKTUR: pytest + tempfile. Tests generieren echte Dateien in
+temporären Verzeichnissen und lesen sie zurück. Keine Mocks für File-IO
+— tatsächlicher Write/Read-Zyklus wird verifiziert. API-Calls werden
+gepatcht. Kein echter Netzwerk-IO.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 import pytest

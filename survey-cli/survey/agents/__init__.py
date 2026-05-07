@@ -1,28 +1,29 @@
 """
 survey/agents/__init__.py — SOTA Parallel AI Framework (2026-05-06)
 
-ARCHITEKTUR: 5 Agenten parallel auf allen verfügbaren NVIDIA/Mistral Modellen.
-Jeder Agent läuft in einem eigenen Thread, Ergebnisse werden nach ~80-500ms
-zusammengeführt. Das ist ~5-10× schneller als sequentielle Agent-Aufrufe.
+WARUM: Survey-Automation braucht mehrere Spezial-Agenten (Element-Scan,
+Persona-Matching, Page-Klassifizierung, Action-Generierung, Verify).
+Sequentielle Ausführung dauert 5-10s. Parallelisierung via
+ThreadPoolExecutor reduziert auf ~500ms (determiniert durch den
+langsamsten Thread = nemotron-nano mit 500ms).
 
-    ┌─────────────────────────────────────────────────────────────────┐
-    │              PARALLELORCHESTRATOR (ThreadPoolExecutor)          │
-    │                                                                  │
-    │  Thread-1: ElementMapper  → mistral-small  (80ms, micro)       │
-    │  Thread-2: PersonaChecker→ nemotron-nano   (500ms, mid)        │
-    │  Thread-3: PageClassifier→ mistral-small   (80ms, micro)       │
-    │  Thread-4: AnswerGenerator→ nemotron-nano  (500ms, mid)        │
-    │  Thread-5: ActionVerifier → mistral-small  (80ms, micro)       │
-    │                                                                  │
-    │  → Gesamtzeit: max(alle) = ~500ms statt sum(alle) = ~1240ms   │
-    └─────────────────────────────────────────────────────────────────┘
+ARCHITEKTUR: Package-Root. Exportiert ParallelOrchestrator, TaskRouter,
+ElementMapper, PersonaChecker, PageClassifier, AnswerGenerator,
+ActionVerifier. Jeder Agent ist eine eigenständige Klasse mit
+.call()-Interface. ThreadPoolExecutor mit max_workers=5.
+Gesamtzeit = max(80ms, 500ms, 80ms, 500ms, 80ms) = ~500ms.
+Kein globaler State — jeder Call ist stateless.
 
-VERWENDUNG:
-    from survey.agents import ParallelOrchestrator
-    
-    orch = ParallelOrchestrator(profile, learnings)
-    result = orch.run_full_pipeline(page_text, ax_tree, cdp_elements)
-    # result = {page_type, actions, confidence, all_agent_results}
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 from .parallel_orchestrator import ParallelOrchestrator

@@ -1,5 +1,25 @@
 #!/usr/bin/env python3
-"""Detect whether a file is natural language (compressible) or code/config (skip)."""
+"""Detect whether a file is natural language (compressible) or code/config (skip).
+
+WARUM: Code, Config und Binärdateien dürfen NICHT komprimiert werden.
+Falsche Klassifizierung würde funktionskritische Dateien (z.B. .py, .json)
+zerstören. Nur .md, .txt, .rst etc. sind compressible.
+
+ARCHITEKTUR: Datei-Erweiterungs-Whitelist + Content-Sniffing.
+COMPRESSIBLE_EXTENSIONS definiert erlaubte Endungen.
+Kein ML, keine Heuristik — deterministisch und falsch-sicher.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
+"""
 
 import json
 import re

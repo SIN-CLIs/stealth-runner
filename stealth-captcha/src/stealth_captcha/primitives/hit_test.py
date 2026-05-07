@@ -1,13 +1,27 @@
 """Pre-drag hit-test: the missing piece in every captcha solver.
 
-Root cause of the "CGEvent fires on document but not on element" bug:
-an SVG/canvas overlay with pointer-events:auto sits above the captcha
-block and absorbs mouse events before they reach .gc-drag-block.
+WARUM: Root-Cause des "CGEvent fires on document but not on element" Bugs:
+Ein SVG/Canvas-Overlay mit pointer-events:auto sitzt über dem Captcha-Block
+und absorbiert Mouse-Events bevor sie .gc-drag-block erreichen.
+Ohne Hit-Test wird der Drag ins Leere gefeuert → Captcha-Fail.
 
-This module:
-  1. Runs elementFromPoint at the block's center
-  2. Walks up the DOM from whatever it hits
-  3. Temporarily disables pointer-events on the blocker(s)
+ARCHITEKTUR: 3-Stufen-Fix via CDP Runtime.evaluate:
+  1. elementFromPoint() am Block-Center ausführen
+  2. Vom getroffenen Element den DOM-Tree hochwalken
+  3. pointer-events auf Blocker(s) temporär auf "none" setzen
+Nach Drag wird pointer-events wiederhergestellt.
+Keine Koordinaten-Raten, keine blinden Clicks.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
   4. Returns an opaque token for restoring after the drag
 
 Without this step, NO event dispatch method (CGEvent, JS dispatchEvent,

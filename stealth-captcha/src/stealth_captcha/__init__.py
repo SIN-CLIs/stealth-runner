@@ -1,13 +1,27 @@
 """Stealth Captcha — Production-grade CDP-based captcha solver for Stealth Suite.
 
-Architecture:
+WARUM: Jeder Survey-Run trifft auf Captchas. Ohne automatische Lösung
+bricht der Flow ab. Dieses Paket bietet CDP-basierte Solver für alle
+gebräuchlichen Captcha-Typen (GoCaptcha, NetEase, GeeTest, PureSpectrum,
+Text/OCR). Keine Vision-Modelle für Koordinaten — DOM ist Ground-Truth.
+
+ARCHITEKTUR: 7-Stufen-Pipeline:
   Launch Chrome (--remote-debugging-port) → CDP connect → stealth-inject →
   hit-test target → detect gap via DOM → generate Bezier trajectory →
   stream Input.dispatchMouseEvent → verify → persist to experience memory.
+getBoundingClientRect ist 100× genauer als VLM (Research 2026-05-05).
+Exportiert alle public APIs (Settings, Exceptions, Solvers, Primitives).
 
-Solves GoCaptcha, NetEase, GeeTest v3/v4 slides, PureSpectrum drag-drop,
-and text/OCR captchas. Zero vision-model dependency for coordinates
-(getBoundingClientRect is ground truth, 100× more accurate than VLM).
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 from stealth_captcha.config import Settings, get_settings

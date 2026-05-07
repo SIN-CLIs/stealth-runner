@@ -1,6 +1,24 @@
 """Test SOTA execution functions: _build_js, cdp_keyboard_enter, cdp_click_element_by_text.
 
-Uses unittest.mock to mock CDP WebSocket connections.
+WARUM: BatchExecutor führt NIM-Actions im Browser aus.
+Falsche JS-Generierung oder Race-Conditions bei DOM-Interaktionen führen
+zu disqualifizierten Surveys. Verify-Box-Logik muss Stale-State erkennen.
+
+ARCHITEKTUR: Unittest mit unittest.mock (MagicMock, patch).
+CDP WebSocket-Verbindungen und DOM-Responses werden gepatcht.
+Es werden JS-Builder, Keyboard-Events, Element-Finding und
+State-Change-Verifikation getestet — kein echter Browser.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 import unittest

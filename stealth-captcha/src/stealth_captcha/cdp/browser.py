@@ -1,8 +1,25 @@
 """Chrome launcher with hardened flags for stealth automation.
 
-No --enable-automation, no --headless=new without compensating patches.
-Every flag is chosen to (a) keep CDP functional and (b) avoid the well-known
-automation fingerprints that sites like Cloudflare and Kasada check for.
+WARUM: Standard-Chrome-Start mit --enable-automation wird sofort als Bot
+erkannt (Cloudflare, Kasada, GeeTest). Dieses Modul startet Chrome mit
+hardened Flags, die CDP offen halten UND gleichzeitig Automation-Patches
+entfernen. Jeder Flag ist bewusst gewählt.
+
+ARCHITEKTUR: Async-Chrome-Launcher (asyncio).
+Stealth-Flags sind in _STEALTH_FLAGS zentral definiert.
+Profil wird dynamisch unter /tmp/ erzeugt (NIEMALS festes Profil).
+CDP WebSocket-URL wird über get_browser_ws ausgelesen.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 from __future__ import annotations

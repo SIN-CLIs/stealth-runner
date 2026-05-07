@@ -1,4 +1,24 @@
-"""Test SOTA detection functions: detect_error_page, detect_progress, detect_completion."""
+"""Test SOTA detection functions: detect_error_page, detect_progress, detect_completion.
+
+WARUM: Fehler-Erkennung entscheidet über Abort vs. Retry.
+Falsche Klassifizierung einer "Survey not available"-Seite als Fortschritt
+verschwendet Aktionen und führt zu Blockierung.
+
+ARCHITEKTUR: Unittest (keine Mocks nötig — pure Funktionen).
+Tests rufen detect_error_page, detect_progress und detect_completion
+mit statischen Strings auf und prüfen Regex/Keyword-Matching.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
+"""
 
 import unittest
 import sys

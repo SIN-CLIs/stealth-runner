@@ -1,16 +1,24 @@
 """survey-cli — Standalone Survey Automation CLI (NVIDIA NIM + CDP).
 
-Not a coding agent. Only fills surveys at maximum speed.
-Architecture:
-  Chrome → Login → Scan → NEMO Loop → AutoDoc → Done
+WARUM: survey-cli ist KEIN Coding-Agent. Seine einzige Aufgabe ist:
+Surveys so schnell und zuverlässig wie möglich ausfüllen.
+NVIDIA Nemotron 3 Nano Omni für Entscheidungen, CDP WebSocket
+für Browser-Interaktionen, Append-Only JSONL für Auto-Doku.
 
-Usage:
-  python3 survey.py login         # Login to heypiggy
-  python3 survey.py scan          # Scan dashboard for surveys
-  python3 survey.py run --id X    # Run one survey
-  python3 survey.py loop --max 10 # Auto-loop
-  python3 survey.py watch         # Continuous poller
-  python3 survey.py balance       # Show current balance
-  python3 survey.py doctor        # Self-diagnostic
-  python3 survey.py opencode      # Delegate coding task
+ARCHITEKTUR: Single-Entry-Point (survey.py). Commands: login, scan,
+run, loop, watch, balance, doctor, opencode. Login → Dashboard-Scan
+→ NEMO Loop (Compact Snapshot → NIM Decision → Batch Execute) →
+AutoDoc (earnings.jsonl) → Done. Kein State zwischen Runs.
+Nur CLI, kein Library-Import von außen.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """

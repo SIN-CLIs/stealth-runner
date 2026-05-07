@@ -1,7 +1,24 @@
 """Test survey/autodoc.py — append-only logging and summary generation.
 
-Tests log_earnings, log_decision, log_error, log_session, generate_summary,
-print_summary with real tmp files (not mocked — verifies actual write/read cycle).
+WARUM: Auto-Dokumentation ist die einzige Quelle für Debugging und Learning.
+Append-only JSONL muss atomar schreiben, auch bei Race-Conditions.
+Falsche Datei-Pfade oder korrupte JSON-Zeilen zerstören den Lern-Loop.
+
+ARCHITEKTUR: Unittest mit ECHTEN temporären Dateien (tempfile.mkdtemp).
+Nicht gemockt — write/read-Zyklus wird tatsächlich ausgeführt,
+um Datei-System-Verhalten zu verifizieren.
+Kein Chrome, kein WebSocket, kein NIM.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 import unittest

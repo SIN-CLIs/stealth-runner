@@ -1,4 +1,26 @@
 #!/usr/bin/env python3
+"""Caveman Compression Benchmark — Token-Ersparnis messen.
+
+WARUM: Kompression muss messbar sein. "Fühlt sich kürzer an" reicht nicht.
+Dieses Modul zählt Tokens vor/nach und berechnet %-Einsparung.
+Nur messbare Ersparnis > 30% rechtfertigt das Risiko einer Transformation.
+
+ARCHITEKTUR: Einfacher Token-Counter (Whitespace-Split als Proxy).
+Vergleicht Original vs komprimierte Datei. Ausgabe als Markdown-Tabelle.
+Keine externen Abhängigkeiten außer pathlib/sys.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
+"""
+
 from pathlib import Path
 import sys
 

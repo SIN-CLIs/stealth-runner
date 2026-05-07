@@ -1,16 +1,28 @@
 """Auto-Documentation Engine — append-only JSONL logs.
 
-NO LLM writes documentation. This engine automatically captures:
-- All survey attempts (earnings.jsonl)
-- All errors with context (errors.jsonl)
-- All sessions with metadata (sessions.jsonl)
-- Auto-generated markdown summaries (summary.md)
+WARUM: Jeder Survey-Run, jeder Fehler und jede Session generiert
+Wissen. Ohne Auto-Dokumentation geht dieses Wissen verloren.
+LLMs sollen Dokumentation NICHT schreiben (Halluzinations-Risiko).
+Diese Engine schreibt append-only JSONL — atomar, strukturiert,
+maschinenlesbar. Jeder Eintrag ist immutable.
 
-Design:
-- Append-only (never modifies existing entries)
-- Structured JSONL (easy to parse, query, analyze)
-- Automatic rotation (new file per day)
-- Rich context capture (URL, provider, error type, etc.)
+ARCHITEKTUR: 4 Log-Streams: earnings.jsonl (Verdienst), errors.jsonl
+(Fehler mit Kontext), sessions.jsonl (Metadaten), summary.md
+(Markdown-Übersicht). Append-only: existierende Zeilen werden NIE
+modifiziert. Rotation: neuer File pro Tag (YYYY-MM-DD.jsonl).
+Rich Context: URL, Provider, Error-Type, PID, WID, Timestamp.
+Kein LLM-Call für Doku — reines Logging.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 import json

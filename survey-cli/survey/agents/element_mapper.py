@@ -1,22 +1,28 @@
 """
 survey/agents/element_mapper.py — Universal Element Mapper Agent (2026-05-06)
 
-FUNKTION: Scannt ALLE Elemente einer Survey-Seite (radios, checkboxes, text inputs,
-textareas, buttons, selects, Angular Material, React [role=button], etc.).
-Output: Element-Map mit Koordinaten, Selector, Framework-Detection.
+WARUM: Survey-Seiten nutzen verschiedene Frameworks (Angular, React,
+Standard HTML). Ein generischer Selector (z.B. input[type=radio]) findet
+auf Angular-Material-Seiten nichts. Dieser Agent scannt ALLE Elemente
+und klassifiziert das Framework für nachfolgende Agenten.
 
- Thread: 1 von 5 im ParallelOrchestrator
- Model:  mistral-small (80ms, MICRO) — instant regex + CDP DOM scan
- Input:  ws_url, page_text
- Output: {elements: {radios:[], checkboxes:[], text_inputs:[], textareas:[],
-            buttons:[], submit_btns:[], role_buttons:[], selects:[]},
-          framework: "angular" | "react" | "standard", coordinates: {}, ms}
+ARCHITEKTUR: Agent 1/5 im ParallelOrchestrator. Model: mistral-small
+(80ms, MICRO) — kein LLM-Call nötig, rein Regex + CDP DOM-Scan.
+Input: ws_url, page_text. Output: Element-Map mit Typen (radios,
+checkboxes, text_inputs, buttons, etc.), Framework-Detection
+(angular/react/standard), und Koordinaten. CDP DOM.getDocument +
+DOM.querySelectorAll + getContentQuads für Angular v19.
 
-UNIVERSAL ELEMENT SCAN (alle Frameworks):
-    Standard HTML:  document.querySelectorAll('input[type=radio]')
-    Angular v19:    CDP DOM.getDocument + DOM.querySelectorAll + getContentQuads
-    React:          document.querySelectorAll('[role=button]')
-    Angular Material: document.querySelectorAll('.mat-radio-button, .md-radio-button')
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 from __future__ import annotations

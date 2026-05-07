@@ -1,14 +1,27 @@
 """CDP Batch Executor — Execute survey actions via WebSocket.
 
-Translates high-level actions (@eN refs) to provider-specific CDP JS.
-Supports: qualtrics, tolunastart, strat7, brand_ambassador, generic.
+WARUM: NIM-Entscheidungen (@eN refs) müssen im Browser ausgeführt werden.
+Dieses Modul übersetzt Actions in provider-spezifisches JavaScript
+und feuert es via CDP Runtime.evaluate. Ohne korrekte Execution
+bleibt der Survey-Loop stehen.
 
-SOTA PATTERNS APPLIED (2026-05-06):
-- Keyboard-first fallback (Tab+Enter) for Angular/React buttons
-- CDP dispatchMouseEvent PRIMARY for zone.js compatibility
-- State change verification after every click (DOM hash comparison)
-- Comprehensive error page detection
-- Anti-stuck adaptive backoff
+ARCHITEKTUR: BatchExecutor mit provider-spezifischen Command-Maps.
+Providers: qualtrics, tolunastart, strat7, brand_ambassador, generic.
+SOTA Patterns: Keyboard-Fallback (Tab+Enter) für Angular/React,
+CDP dispatchMouseEvent PRIMARY (zone.js Kompatibilität),
+State-Change-Verify nach jedem Click (DOM-Hash-Vergleich),
+Error-Page-Detection, Anti-Stuck adaptive Backoff.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 import json

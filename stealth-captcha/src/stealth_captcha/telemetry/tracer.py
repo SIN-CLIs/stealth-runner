@@ -1,8 +1,25 @@
 """Structured logging with structlog + optional OpenTelemetry tracing.
 
-We keep telemetry lightweight: structlog for structured JSON logs by default,
-with an OpenTelemetry TracerProvider that writes spans to stderr (console)
-during development. In production, point OTEL_EXPORTER at your collector.
+WARUM: Debugging von CDP-Interaktionen und Captcha-Solvern erfordert
+strukturierte Logs. Unstrukturierte print()-Statements verlieren Kontext
+(Race-Conditions, Timing, Session-IDs). structlog garantiert JSON-kompatible
+Ausgabe für ELK/CloudWatch.
+
+ARCHITEKTUR: structlog als Default-Logger (JSON nach stderr).
+OpenTelemetry TracerProvider optional (OTEL_EXPORTER env var).
+Kein globaler State — Logger wird pro Modul via get_logger(__name__) geholt.
+Production: OTEL_EXPORTER an Collector binden. Development: stderr.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 from __future__ import annotations

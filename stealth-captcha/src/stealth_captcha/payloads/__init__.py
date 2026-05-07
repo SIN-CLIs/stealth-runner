@@ -1,8 +1,24 @@
 """Embedded JS payloads for reference — legacy dispatchEvent approach.
 
-These payloads are preserved for reference. The new CDP-based engine
-does NOT use dispatchEvent — it uses Input.dispatchMouseEvent on the
-CDP protocol instead, which produces trusted element-level PointerEvents.
+WARUM: Historische JS-Snippets für ältere Captcha-Engines.
+DIESE PAYLOADS WERDEN NICHT MEHR AKTIV VERWENDET. Die neue CDP-basierte
+Engine nutzt Input.dispatchMouseEvent (trusted PointerEvents).
+dispatchEvent erzeugt isTrusted=false und wird von modernen Engines
+blockiert. Payloads bleiben aus Archivierungsgründen erhalten.
+
+ARCHITEKTUR: load(name) lädt JS-Dateien aus dem Package via importlib.resources.
+Nur Referenz — kein Produktiv-Code. Kein State, keine Side-Effects.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 from importlib import resources

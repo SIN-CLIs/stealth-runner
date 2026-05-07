@@ -1,26 +1,28 @@
 """
 survey/agents/parallel_orchestrator.py — Parallel Orchestrator (2026-05-06)
 
-FUNKTION: Führt alle 5 Agenten parallel aus via ThreadPoolExecutor.
-Koordiniert Pipeline: ElementMapper → [PersonaChecker, PageClassifier] → AnswerGenerator → ActionVerifier.
+WARUM: Survey-Seiten haben 5-20 Elemente. Ein sequentieller Agent-Aufruf
+pro Element würde 10+ Sekunden dauern. Parallelisierung via
+ThreadPoolExecutor reduziert auf ~500ms (max der langsamen Threads).
+NEMO-Prinzip: 1 LLM-Call pro Seite, nicht pro Element.
 
- Thread: Coordinator (main thread)
- Model:  — (koordiniert nur, kein eigener LLM-Call)
- Input:  ws_url, page_text, profile
- Output: {final_actions: [], page_type, persona_match_score, verified, ms}
+ARCHITEKTUR: ThreadPoolExecutor mit 5 Worker-Threads.
+Pipeline: ElementMapper → [PersonaChecker, PageClassifier] → AnswerGenerator → ActionVerifier.
+NUR 2 echte LLM-Calls: PersonaChecker + AnswerGenerator.
+ElementMapper + PageClassifier = instant Regex/CDP (kein LLM).
+ActionVerifier = mistral-small MICRO (80ms, rein für Verify-Logik).
+Koordinator merged Ergebnisse und gibt final_actions zurück.
 
-PIPELINE:
-  Thread 1: ElementMapper      → element_map (RADIOS, BUTTONS, FRAMEWORK)
-  Thread 2: PageClassifier     → page_type, provider, is_trap, is_terminal
-  Thread 3: PersonaChecker     → scored answers (top 3 preferred)
-  [parallel: 1+2+3, then 4+5]
-  Thread 4: AnswerGenerator    → actions list (CDP clicks, fill, submit)
-  Thread 5: ActionVerifier     → verify each action
-
-NEMO STYLE: 1 LLM-Call pro SEITE, nicht pro Element.
-Hier: 5 Agenten parallel, aber NUR 2 LLM-Calls total (PersonaChecker + AnswerGenerator).
-ElementMapper + PageClassifier = instant regex, kein LLM.
-ActionVerifier = mistral-small MICRO, 80ms.
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 from __future__ import annotations

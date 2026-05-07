@@ -1,11 +1,25 @@
 """OpenCode CLI Bridge — delegate coding tasks to opencode.
 
-Survey-cli is NOT a coding agent. When coding is needed:
-1. Write the task to a file
-2. Invoke opencode cli as subprocess
-3. Return result
+WARUM: survey-cli ist KEIN Coding-Agent. Wenn während eines Surveys
+eine Code-Änderung nötig wird (z.B. neuer Provider-Pattern, Bugfix),
+wird die Aufgabe an die opencode-CLI delegiert. Das trennt Concerns:
+Survey-Loop bleibt fokussiert, Coding passiert in einem separaten Prozess.
 
-This keeps survey-cli focused ONLY on surveys.
+ARCHITEKTUR: File-based Delegation. Task wird als JSON-Datei geschrieben,
+opencode CLI wird als Subprocess aufgerufen, Ergebnis wird aus stdout/
+JSON geparst. Keine direkten Imports zwischen survey-cli und opencode.
+Timeout-basiert (default 120s). Fehler werden als BridgeError propagiert.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 import json

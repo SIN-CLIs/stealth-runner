@@ -1,13 +1,27 @@
 """Human-like Bezier mouse trajectory generator.
 
-Produces a sequence of (t_ms, x, y) samples that mimic a real human drag:
-  - Bezier curve with two perpendicular control points → natural arc
-  - Ease-out-quint velocity curve → fast start, slow finish (human-like)
-  - Micro-jitter on both axes → defeats jerk/acceleration heuristics
-  - Optional overshoot + correction → mimics natural imprecision
-  - Pre-release micro-pause → human hesitation before release
+WARUM: Moderne Captchas analysieren Beschleunigungs-Profile (Jerk, Beschleunigung,
+Geschwindigkeits-Konstanz). Ein linearer Drag mit konstanter Geschwindigkeit
+wird sofort als Bot erkannt. Dieses Modul erzeugt menschenähnliche Bezier-Pfade
+mit natürlicher Beschleunigung, Mikro-Jitter und Übersteuerung.
 
-This is the single most important component for defeating modern captcha
+ARCHITEKTUR: Sequenz von (t_ms, x, y) Samples.
+  - Bezier-Kurve mit zwei senkrechten Kontrollpunkten → natürlicher Bogen
+  - Ease-out-quint Geschwindigkeits-Kurve → schneller Start, langsames Ende
+  - Mikro-Jitter auf beiden Achsen → besiegt Jerk/Acceleration-Heuristiken
+  - Optionale Übersteuerung + Korrektur → menschliche Unpräzision
+  - Pre-release Mikro-Pause → menschliches Zögern vor Loslassen
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 velocity analysis (GoCaptcha, hCaptcha, DataDome).
 """
 

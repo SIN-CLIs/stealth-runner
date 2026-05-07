@@ -1,13 +1,28 @@
 """Captcha verification via DOM polling.
 
-After the mouse drag is complete, we poll the DOM for visual indicators of
-success or failure. This is faster and more reliable than vision-based verify
-(no latency, no API cost, no hallucination).
+WARUM: Nach dem Drag muss der Erfolg verifiziert werden.
+Vision-basierte Verifikation hat Latenz, API-Kosten und Halluzinations-Risiko.
+DOM-Polling ist 100x schneller, kostenlos und deterministisch.
+Falsche Verifikation → Captcha als "gelöst" markiert obwohl blockiert →
+Survey disqualifiziert nach Timeout.
 
-Success selectors are configurable per captcha provider:
+ARCHITEKTUR: Polling-Loop mit exponentiellem Backoff.
+Erfolgs-Indikatoren sind per Provider konfigurierbar:
   - GoCaptcha:   .gc-success, .gc-status-success
   - NetEase:     .yidun--success
   - GeeTest v3:  .gt_success, .gt_ajax_tip.gt_success
+Fehler-Indikatoren werden parallel geprüft. Timeout nach konfigurierbarer Dauer.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
   - GeeTest v4:  .geetest_success
   - hCaptcha:    [data-hcaptcha-state="verified"]
   - Friendly:    .fc-solve-result.fc-success

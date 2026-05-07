@@ -1,20 +1,27 @@
 """Bridge adapter: backward-compatible GoCaptchaSolver API → new CDP engine.
 
-The old GoCaptchaSolver class (py-packages/captchas/gocaptcha.py) used:
-  - JS dispatchEvent(PointerEvent) → isTrusted: false → always blocked
-  - style.left manipulation → visual illusion, no real drag
-  - cua-driver page execute_javascript → Apple Events, not CDP
+WARUM: Der alte GoCaptchaSolver (py-packages/captchas/gocaptcha.py) nutzte:
+  - JS dispatchEvent(PointerEvent) → isTrusted: false → IMMER blockiert
+  - style.left manipulation → visuelle Illusion, kein echter Drag
+  - cua-driver page execute_javascript → Apple Events, nicht CDP
+Dieser Bridge bietet DIESELBE Public API (observe, reason, act, verify, correct, solve)
+aber routed intern durch die neue CDP-Pipeline.
 
-This bridge provides the SAME public API (observe, reason, act, verify, correct, solve)
-but routes through the new CDP-based pipeline under the hood.
+ARCHITEKTUR: Wrapper-Klasse GoCaptchaSolver. Externe API unverändert,
+interne Implementierung ersetzt durch CDPClient, GapDetector,
+TrajectoryGenerator, Input.dispatchMouseEvent. Für NEUEN Code direkt
+SlideCaptchaSolver nutzen — dieser Bridge ist nur für Legacy-Compatibility.
 
-Usage:
-    from stealth_captcha.bridge import GoCaptchaSolver
-    solver = GoCaptchaSolver(cdp_ws="ws://127.0.0.1:9222/...")
-    result = await solver.solve(max_retries=3)
-    # result == {"solved": True, "attempts": 1, ...}
-
-For NEW code, use SlideCaptchaSolver directly instead.
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 from __future__ import annotations

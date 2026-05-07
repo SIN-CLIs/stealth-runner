@@ -1,19 +1,28 @@
 """
 survey/agents/answer_generator.py — Answer Generator Agent (2026-05-06)
 
-FUNKTION: Generiert optimierte Action-Sequenz basierend auf Page-Type + Persona + Elements.
-Output: Liste von Actions mit Click-Coordinaten für CDP dispatchMouseEvent.
+WARUM: Der NIM-Client gibt Actions als @eN refs zurück. Dieser Agent
+übersetzt die abstrakten Actions in konkrete CDP/JS Commands.
+Falsche Method-Selection (z.B. JS .click() auf Angular) führt zu
+Nicht-Funktion — der Survey-Flow bleibt stehen.
 
- Thread: 4 von 5 im ParallelOrchestrator
- Model:  nemotron-nano (500ms, MID)
- Input:  element_map, page_classifier, persona_checker, page_text
- Output: {actions: [{action, ref, value, x, y, selector, method}], confidence, ms}
+ARCHITEKTUR: Agent 4/5 im ParallelOrchestrator. Model: nemotron-nano (500ms, MID).
+Input: element_map, page_classifier, persona_checker, page_text.
+Output: Actions-Liste mit {action, ref, value, x, y, selector, method}.
+Method-Selection: Angular v19 → CDP dispatchMouseEvent ONLY (JS .click()
+wird von Zone.js ignoriert). React → CDP für [role=button].
+Standard HTML → JS .click() OK. Unknown → CDP Fallback (universell sicher).
 
-METHOD SELECTION (CDP vs JS):
-    Angular v19:    CDP dispatchMouseEvent ONLY (JS .click() ignored)
-    React:          CDP dispatchMouseEvent (for [role=button] divs)
-    Standard HTML:  JS .click() OK (Qualtrics, Toluna, Strat7)
-    Unknown:        CDP dispatchMouseEvent (universal, safe fallback)
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 from __future__ import annotations

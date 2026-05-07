@@ -1,13 +1,27 @@
 """Async CDP WebSocket client with multiplexed sessions and event streaming.
 
-Design:
-  - Single WebSocket connection → multiplexed sessions via CDP Target.attachToTarget
-  - Auto-incrementing message IDs with Future-based dispatch
-  - Background reader task that routes responses to pending futures and events to handlers
-  - Tenacity-based reconnection (exponential backoff, 5 attempts)
-  - Context manager support for both client and sessions
+WARUM: CDP ist das Rückgrat aller Browser-Interaktionen. Ohne robusten
+WebSocket-Client brechen Snapshot, Batch-Execute und Captcha-Solver ab.
+Dieser Client multiplexed mehrere Tabs über EINE WebSocket-Verbindung
+und reconnected automatisch bei Verbindungsabbruch.
 
-CDP protocol primer: https://chromedevtools.github.io/devtools-protocol/
+ARCHITEKTUR: Asyncio-basierter CDP-Client.
+  - Single WS → multiplexed Sessions via Target.attachToTarget
+  - Auto-incrementing message IDs mit Future-basiertem Dispatch
+  - Background reader task routed Responses zu pending Futures
+  - Tenacity: 5 Reconnect-Versuche mit exponentiellem Backoff
+  - Context-Manager Support für Client und Sessions
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 from __future__ import annotations

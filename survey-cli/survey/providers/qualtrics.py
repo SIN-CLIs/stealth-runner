@@ -1,10 +1,26 @@
 """Qualtrics provider patterns.
 
-Key differences from other providers:
-  - .NextButton for page advancement (not button)
-  - input[type=radio] with global indices
-  - table.ChoiceStructure for matrix tables
-  - SPA with webpack, needs 3-5s wait for JS load
+WARUM: Qualtrics ist der dominanteste Survey-Provider. Seine SPA-Architektur
+(webpack) lädt JS asynchron — generische Clicks auf <button> schlagen fehl
+weil der NextButton erst nach JS-Init existiert (.NextButton, nicht button).
+Dieses Modul liefert die korrekten NEMO-Actions und Wartezeiten.
+
+ARCHITEKTUR: Statische Command-Map (COMMANDS) + Detection-Heuristik.
+Commands: click_next (.NextButton), click_radio (input[type=radio]),
+fill_textarea (id=QR~...), fill_matrix (table.ChoiceStructure).
+Wartezeit: 3-5s nach Seitenwechsel (JS-Ladezeit).
+Completion-Marker: "zurück zur website", "gutgeschrieben", etc.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 COMPLETION_MARKERS = [

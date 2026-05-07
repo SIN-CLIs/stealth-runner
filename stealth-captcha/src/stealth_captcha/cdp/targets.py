@@ -1,7 +1,24 @@
 """Target discovery via CDP HTTP endpoints.
 
-Chrome exposes /json and /json/version HTTP endpoints on the remote debugging
-port. These provide the WebSocket URLs needed to connect via CDPClient.
+WARUM: Um eine CDP WebSocket-Verbindung aufzubauen, muss die WS-URL
+bekannt sein. Chrome exposed /json und /json/version auf dem Remote-Debugging-Port.
+Diese liefern die WS-URLs für jeden Tab. Ohne Target-Discovery kein CDP-Connect.
+
+ARCHITEKTUR: Sync HTTP-Calls (httpx) gegen Chrome's JSON-API.
+TargetInfo dataclass kapselt ws_url, id, title, url, type.
+list_targets() returned alle Targets; find_page() filtert nach Page-Typ.
+Kein State, keine Caching — bei jedem Call frisch aus Chrome gelesen.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 from __future__ import annotations

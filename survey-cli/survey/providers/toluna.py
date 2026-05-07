@@ -1,11 +1,26 @@
 """TolunaStart provider patterns.
 
-Key patterns:
-  - .cf-radio for single select (use JS .click(), NOT MouseEvent!)
-  - .cf-checkbox for multi select
-  - button for page advance
-  - input[type=number] for numeric
-  - .cf-ranking-answer for ranking questions
+WARUM: Toluna nutzt Angular-basierte Custom-Form-Controls (.cf-radio,
+.cf-checkbox). JS .click() funktioniert hier, MouseEvent/Dispatch NICHT
+(Zone.js ignoriert synthetische Events). Falsche Methode → keine Selektion.
+Dieses Modul liefert die korrekten NEMO-Actions für Toluna.
+
+ARCHITEKTUR: Statische Command-Map (COMMANDS) + Detection-Heuristik.
+Commands: click_radio (cf-radio), click_checkbox (cf-checkbox),
+click_next (button), fill_number (input[type=number]),
+fill_ranking (cf-ranking-answer).
+Completion-Marker: "zurück zur website", "vielen dank", etc.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 COMPLETION_MARKERS = [

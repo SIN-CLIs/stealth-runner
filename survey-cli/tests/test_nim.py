@@ -1,7 +1,24 @@
 """Test NIMClient — decide(), parse_response(), build_survey_prompt(), get_nim().
 
-Covers: JSON parsing (list/dict/fenced), regex extraction, keyword fallbacks,
-API mocking, error handling, token counting, and singleton behavior.
+WARUM: Sicherstellung der NVIDIA NIM Integration.
+Die NIM-API liefert Actions für den Survey-Loop; Parsing-Fehler oder
+falsche Prompt-Konstruktion disqualifizieren den Agent sofort.
+
+ARCHITEKTUR: Unittest mit unittest.mock (MagicMock, patch).
+HTTP-Requests an die NVIDIA NIM API werden gepatcht.
+Es werden JSON-Parsing, Regex-Extraktion, Keyword-Fallbacks,
+Token-Counting und Singleton-Verhalten getestet.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 import unittest

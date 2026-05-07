@@ -1,7 +1,24 @@
 """Chrome DevTools Protocol client + browser launcher.
 
-Provides async CDP over WebSocket with auto-reconnect, session management,
-and target discovery. All CDP commands used by the solvers go through this.
+WARUM: Jede Captcha-Interaktion braucht CDP. Dieses Paket bündelt
+alle CDP-Komponenten (Browser-Launcher, WebSocket-Client, Target-Discovery)
+in einem Import. Kein Modul außerhalb dieses Packages darf direkt
+mit Chrome kommunizieren.
+
+ARCHITEKTUR: Package-Root. Exportiert StealthBrowser, CDPClient,
+CDPSession, TargetInfo, find_page, get_browser_ws, list_targets.
+Alle Klassen sind async und verwenden tenacity für Reconnect.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 from stealth_captcha.cdp.browser import StealthBrowser

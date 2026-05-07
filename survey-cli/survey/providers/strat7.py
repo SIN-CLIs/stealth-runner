@@ -1,9 +1,25 @@
 """Strat7 Audiences provider patterns.
 
-Key patterns:
-  - .bsbutton grid for consent/targeting
-  - input[type=radio] for single choice
-  - .bsbutton:not([disabled]) for page advance
+WARUM: Strat7 nutzt ein proprietäres Button-Grid (.bsbutton) für Consent
+und Targeting. Ohne Provider-spezifische Commands würden generische
+Selektoren fehlschlagen (z.B. button statt .bsbutton).
+Dieses Modul liefert die NEMO-kompatiblen Actions für Strat7.
+
+ARCHITEKTUR: Statische Command-Map (COMMANDS) + Detection-Heuristik.
+Commands: click_next (bsbutton:not([disabled])), click_element (radio).
+Completion-Marker: "umfrage beendet", "vielen dank", "gutgeschrieben".
+Kein State, keine Klassen — reine Datenstruktur.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 COMPLETION_MARKERS = [

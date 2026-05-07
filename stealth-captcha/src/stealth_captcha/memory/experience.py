@@ -1,12 +1,27 @@
 """Episodic experience memory: caches successful trajectories per (host, captcha-type, delta_x).
 
-Implements the Agent-S3 pattern from the CAPTCHA-X SOTA research:
-successful action sequences are stored and replayed (with fresh noise)
-when the same or similar state is encountered again.
+WARUM: CAPTCHA-Engines lernen. Ein frischer Bezier-Pfad funktioniert
+auf derselben Seite nicht immer wieder (zufällige Verzögerung, veränderte
+Gap-Größe). Agent-S3 Pattern (CAPTCHA-X Research): erfolgreiche Trajektorien
+werden gespeichert und mit frischem Noise wiederverwendet.
+Nach 5 erfolgreichen Lösungen auf derselben Domain ist die Trajektorie
+auf das spezifische Widget (Gap-Size, Sensitivität) kalibriert.
 
-This dramatically increases first-try success rate: after 5 successful
-solves on the same domain, the trajectory shape is tuned to that site's
-specific captcha widget (gap size, sensitivity, timing tolerance).
+ARCHITEKTUR: Keyed by (host, captcha_type, delta_x). SQLite-Backend
+mit JSON-Serialisierung. Trajektorien werden mit Gaussian-Noise
+leicht variiert (Replay ≠ 1:1 Copy). TTL-basiertes Expiry für alte
+Einträge. Thread-safe via sqlite3 WAL mode.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 from __future__ import annotations

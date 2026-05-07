@@ -1,13 +1,28 @@
 """DOM-based gap detection — 100x more accurate than vision models.
 
-Per the CAPTCHA-X research (see py-packages/research/): vision models CANNOT
-output precise pixel coordinates. getBoundingClientRect() is ground truth.
+WARUM: Vision-Modelle können KEINE präzisen Pixel-Koordinaten liefern
+(CAPTCHA-X Research, siehe py-packages/research/). Ein Drag um 5 Pixel
+zu wenig → Captcha-Fail. getBoundingClientRect() ist Ground-Truth.
+Dieses Modul berechnet den exakten Offset aus DOM-Element-Positionen.
 
-We compute the drag offset directly from the block and target elements:
-  delta_x = target_center.x - block_center.x
-
-Selectors are configurable so the same module works for:
+ARCHITEKTUR: Runtime.evaluate ruft getBoundingClientRect() auf block + target.
+Berechnung: delta_x = target_center.x - block_center.x.
+Selektoren sind konfigurierbar (Provider-Agnostic):
   - GoCaptcha:   .gc-drag-block → .gc-drag-target
+  - NetEase:     .yidun--block → .yidun--target
+  - GeeTest:     .gt_slider_knob → .gt_slice
+Keine Vision-API, keine Kosten, keine Latenz.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
   - NetEase:     .yidun_slider → .yidun_slide-target
   - GeeTest v3:  .gt_slider_knob → .gt_slider_bg
   - GeeTest v4:  .geetest_slider_button → .geetest_slider_bg

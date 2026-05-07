@@ -1,28 +1,31 @@
 """
 survey/agents/task_router.py — SOTA Task-Complexity Routing (2026-05-06)
 
-Basierend auf stealth-axiom/router.py (AxiomRouter) — das bewährte Routing-System.
+WARUM: Große Modelle für kleine Tasks = Token-Verschwendung + Latenz.
+Mistral-small (80ms) reicht für Element-Klassifizierung.
+Nemotron-nano (500ms) für Mid-Tasks. Nur bei 3 aufeinanderfolgenden
+Failures wird auf mistral-medium (2400ms) eskaliert. Das spart
+~80% der Tokens und ist 5× schneller als "immer großes Modell".
 
-PRINZIP: Nie ein großes Modell für kleine Tasks. Routing by complexity.
-→ mistral-small (80ms) für Mikro-Tasks
-→ nemotron-nano (500ms) für Mid-Tasks
-→ nemotron-omni (600ms) für Reasoning-Tasks
-→ nemoretriever-ocr (500ms) für OCR
-→ mistral-medium (2400ms) für Heavy-Tasks (nur nach 3 Failures)
+ARCHITEKTUR: TaskRouter mappt Task-Typen auf Modelle.
+Task-Types: micro, mid, reasoning, ocr, heavy.
+Modelle (alle FREE via NVIDIA NIM + Mistral API):
+  mistral-small → 80ms, 100 tokens, MICRO
+  nvidia/nemotron-3-nano-30b-a3b-reasoning → 600ms, 300 tokens, REASONING
+  nvidia/nemoretriever-ocr-v1 → 500ms, 300 tokens, OCR
+  mistral-medium-latest → 2400ms, 500 tokens, HEAVY (nur nach 3 Failures).
+Eskalation: 3x Fail auf Mid → Auto-Switch zu Heavy.
 
-MODELLE (alle FREE via NVIDIA NIM + Mistral API):
-    mistral-small-latest        → 80ms, 100 tokens, MICRO
-    nvidia/nemotron-3-nano-30b-a3b  → 500ms, 400 tokens, MID
-    nvidia/nemotron-3-nano-omni-30b-a3b-reasoning → 600ms, 300 tokens, REASONING
-    nvidia/nemoretriever-ocr-v1  → 500ms, 300 tokens, OCR
-    mistral-medium-latest       → 2400ms, 500 tokens, HEAVY (escalated)
-
-TASK TYPES:
-    micro:       classify_element, verify_state, quick_lookup
-    mid:         classify_page, pick_answer, plan_next_action, detect_question_type
-    reasoning:   analyze_context, solve_math, multi_step_reasoning
-    ocr:         ocr_image, solve_captcha
-    heavy:       analyze_new_provider, complex_survey_flow (escalated only)
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 from __future__ import annotations

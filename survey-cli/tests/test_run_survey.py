@@ -1,18 +1,23 @@
 """SOTA tests for SurveyRunner.run_survey() — NEMO loop with 15 scenarios.
 
-Tests the full run_survey lifecycle:
-  1. Connect dashboard WS, clean zombie tabs
-  2. Get survey URL (pre-qualifier handling)
-  3. Create tab with stealth injection
-  4. Find survey tab WS
-  5. NEMO Loop: snapshot → NIM decision → execute actions → detect completion
-  6. Circuit breaker: 5 consecutive fails → blocked
-  7. Loop detection: same page hash 10× → error
-  8. Anti-stuck: same progress 5× → error
-  9. Max actions safety: 80 actions → stop
-  10. Tab close + rate survey + balance calculation
+WARUM: Regressionsschutz für den vollständigen Survey-Lifecycle.
+Jeder Szenario testet eine spezifische Phase (Pre-Qualifier, Stealth-Injektion,
+NEMO-Loop, Anti-Stuck, Circuit-Breaker, Balance-Berechnung).
 
-All tests use unittest.mock — no real Chrome, no real NIM, no real WebSocket.
+ARCHITEKTUR: Unittest mit unittest.mock (MagicMock, patch, PropertyMock).
+Externe Abhängigkeiten (chrome.find_dashboard_ws, NIMClient, WebSocket)
+werden vollständig gepatcht. Kein echter Browser, kein NIM-API-Call.
+
+BANNED METHODS — NIEMALS VERWENDEN:
+❌ playstealth launch
+❌ webauto-nodriver — ABSOLUT BANNED
+❌ cua-driver click (raw index)
+❌ --remote-allow-origins=* (ohne Quotes)
+❌ /tmp/heypiggy-bot (fixed profile)
+❌ Hardcoded PIDs
+❌ pkill -f "Google Chrome"
+❌ killall Google Chrome
+❌ skylight-cli click --element-index
 """
 
 import unittest
