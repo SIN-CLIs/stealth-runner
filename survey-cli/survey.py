@@ -32,7 +32,11 @@ import argparse
 from pathlib import Path
 
 # Add parent to path for imports
+# Robuster Import-Pfad: Workspace-Root (stealth-runner/) für cli.modules
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+_stealth_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _stealth_root not in sys.path:
+    sys.path.insert(0, _stealth_root)
 
 
 def cmd_login(args):
@@ -190,8 +194,8 @@ def cmd_watch(args):
 
     # ── Auto-Login if needed (via cua-driver verified flow) ──
     print("[WATCH] Checking login state...")
-        from cli.modules.auto_google_login import execute as google_login
-        # Quick check: does dashboard show Umfragen + Abmelden?
+    from cli.modules.auto_google_login import execute as google_login
+    # Quick check: does dashboard show Umfragen + Abmelden?
         logged_in = False
         dash_ws = find_dashboard_ws(args.port)
         if dash_ws:

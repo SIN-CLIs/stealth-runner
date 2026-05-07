@@ -98,7 +98,7 @@ def _dispatch_step(tool, params, payload):
             result["exit_code"] = 1
             result["stdout"] = f"login failed: {login_result.get('reason', 'unknown')}"
     elif tool == "survey_heypiggy_cua_only":
-        from app.flows.learning.survey_heypiggy import execute_survey_step
+        from app.flows.learning.survey_heypiggy import execute as execute_survey_step
         pid = payload.get("pid")
         phase = params.get("phase", "answer")
         if pid:

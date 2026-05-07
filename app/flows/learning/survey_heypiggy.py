@@ -147,20 +147,34 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent))
 
 
 def _launch():
-    # Startet Chrome via playstealth mit Heypiggy Dashboard URL
+    # Startet Chrome MANUELL mit korrekten Flags
+    # ❌ BANNED: playstealth launch — setzt NICHT --force-renderer-accessibility!
     # Returns: int — PID des gestarteten Chrome-Prozesses oder None
-    # WICHTIG: playstealth gibt MEHRERE JSON-Zeilen zurück, nicht eine!
-    r = subprocess.run(
-        ["playstealth", "launch", "--url", "https://heypiggy.com/?page=dashboard"],
-        capture_output=True, text=True, timeout=30
-    )
-    for line in r.stdout.strip().split("\n"):
-        try:
-            d = json.loads(line)
-            if d.get("pid"):
-                return d.get("pid")
-        except:
-            pass
+    import time
+    profile_dir = f"/tmp/heypiggy-new-{int(time.time())}"
+    cmd = [
+        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+        "--remote-debugging-port=9999",
+        "--remote-allow-origins=\"*\"",
+        "--force-renderer-accessibility",
+        "--no-first-run",
+        "--no-default-browser-check",
+        f"--user-data-dir={profile_dir}",
+        "https://heypiggy.com/?page=dashboard",
+    ]
+    subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    time.sleep(8)
+
+    # PID finden
+    ps_out = subprocess.run(["ps", "aux"], capture_output=True, text=True).stdout
+    for line in ps_out.split('\n'):
+        if profile_dir in line and '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' in line:
+            parts = line.split()
+            if len(parts) > 1:
+                try:
+                    return int(parts[1])
+                except ValueError:
+                    pass
     return None
 
 

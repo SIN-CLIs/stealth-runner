@@ -1,5 +1,22 @@
 #!/usr/bin/env python3
 # Session Manager — SOTA Multi-Instance Chrome Management
+#
+# BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
+#   ❌ playstealth launch — setzt NICHT --force-renderer-accessibility
+#   ❌ webauto-nodriver — ABSOLUT BANNED
+#   ❌ cua-driver click (raw index) — instabil, nutze tool_click.py
+#   ❌ --remote-allow-origins=* (ohne Quotes) — zsh glob expansion
+#   ❌ /tmp/heypiggy-bot (fixed profile) — korruptiert nach Neustart
+#   ❌ Hardcoded PIDs — dynamisch, niemals hardcodieren
+#   ❌ pkill -f "Google Chrome" — tötet USER Chrome
+#   ❌ killall Google Chrome — tötet ALLE Chrome
+#   ❌ skylight-cli click --element-index — Index instabil
+#
+# KORREKT:
+#   ✅ --remote-allow-origins="*" (MIT Anführungszeichen)
+#   ✅ --user-data-dir="/tmp/heypiggy-new-$(date +%s)"
+#   ✅ --force-renderer-accessibility
+#   ✅ NUR tool_*.py verwenden (nicht rohes cua-driver)
 
 import os, json, subprocess, time, re, signal
 
@@ -17,7 +34,7 @@ def _main_chrome_pids():
     main_pids = set()
     profile_map = {}
     for line in r.stdout.split('\n'):
-        if '--user-data-dir=/tmp/heypiggy-bot-' not in line:
+        if '--user-data-dir=/tmp/heypiggy-new-' not in line:
             continue
         parts = line.split()
         if len(parts) < 11:
@@ -132,16 +149,35 @@ class SessionManager:
             return {"status": "ok", "pid": pid, "wid": wid,
                     "profile_dir": profile_dir, "reused": True}
 
-        r = _run(["playstealth", "launch", "--url", url])
-        pid, profile_dir = None, None
-        for line in r.stdout.strip().split("\n"):
-            try:
-                d = json.loads(line)
-                if d.get("pid"):
-                    pid, profile_dir = d["pid"], d.get("profile", "")
-                    break
-            except:
-                pass
+        # ❌ BANNED: playstealth launch — setzt NICHT --force-renderer-accessibility!
+        # Stattdessen: Chrome MANUELL starten mit korrekten Flags
+        import time
+        profile_dir = f"/tmp/heypiggy-new-{int(time.time())}"
+        cmd = [
+            "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
+            f"--remote-debugging-port=9999",
+            "--remote-allow-origins=\"*\"",
+            "--force-renderer-accessibility",
+            "--no-first-run",
+            "--no-default-browser-check",
+            f"--user-data-dir={profile_dir}",
+            url,
+        ]
+        subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        time.sleep(8)
+
+        # PID finden
+        pid = None
+        ps_out = subprocess.run(["ps", "aux"], capture_output=True, text=True).stdout
+        for line in ps_out.split('\n'):
+            if profile_dir in line and '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' in line:
+                parts = line.split()
+                if len(parts) > 1:
+                    try:
+                        pid = int(parts[1])
+                        break
+                    except ValueError:
+                        pass
 
         if not pid:
             return {"status": "error", "reason": "chrome_launch_failed"}

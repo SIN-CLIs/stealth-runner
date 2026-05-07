@@ -133,7 +133,7 @@ class StealthBrowser:
         flags = list(_STEALTH_FLAGS) + [
             f"--remote-debugging-port={self.port}",
             f"--user-data-dir={self.user_data_dir}",
-            "--remote-allow-origins=*",
+            "--remote-allow-origins=\"*\"",  # 🔥 MIT Quotes! Ohne Quotes expandiert zsh * → "no matches found"
         ]
 
         if self.headless:

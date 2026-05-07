@@ -12,6 +12,21 @@ Usage:
     result = click(pid, wid, label="Weiter", role="AXButton")
     # → {"status": "ok", "element_index": 42, "verified": True}
     # → {"status": "error", "reason": "AXPressFailed", "retries": 3}
+
+BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
+  ❌ playstealth launch — setzt NICHT --force-renderer-accessibility
+  ❌ webauto-nodriver — ABSOLUT BANNED
+  ❌ cua-driver click (raw index) — instabil, nutze dieses Tool stattdessen
+  ❌ --remote-allow-origins=* (ohne Quotes) — zsh glob expansion
+  ❌ /tmp/heypiggy-bot (fixed profile) — korruptiert nach Neustart
+  ❌ Hardcoded PIDs — dynamisch, niemals hardcodieren
+  ❌ skylight-cli click --element-index — Index instabil
+
+KORREKT:
+  ✅ --remote-allow-origins="*" (MIT Anführungszeichen)
+  ✅ --user-data-dir="/tmp/heypiggy-new-$(date +%s)"
+  ✅ --force-renderer-accessibility
+  ✅ NUR tool_*.py verwenden (nicht rohes cua-driver)
 """
 
 from __future__ import annotations

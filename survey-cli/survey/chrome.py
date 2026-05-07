@@ -3,8 +3,27 @@
 RULES:
 - NEVER kill user Chrome (no pkill, no killall)
 - ONLY manage /tmp/heypiggy-new-* profiles
-- Use playstealth launch when available, fallback to raw subprocess
+- Timestamped profile: /tmp/heypiggy-new-$(date +%s)
 """
+
+# ╔════════════════════════════════════════════════════════════════════════════╗
+# ║  BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md)                    ║
+# ║                                                                           ║
+# ║  ❌ playstealth launch — setzt NICHT --force-renderer-accessibility        ║
+# ║  ❌ webauto-nodriver — ABSOLUT BANNED                                      ║
+# ║  ❌ cua-driver click (raw index) — instabil, nutze tool_click.py          ║
+# ║  ❌ --remote-allow-origins=* (ohne Quotes) — zsh glob expansion            ║
+# ║  ❌ /tmp/heypiggy-bot (fixed profile) — korruptiert nach Neustart          ║
+# ║  ❌ Hardcoded PIDs — dynamisch, niemals hardcodieren                       ║
+# ║  ❌ pkill -f "Google Chrome" — tötet USER Chrome                          ║
+# ║  ❌ killall Google Chrome — tötet ALLE Chrome                             ║
+# ║  ❌ skylight-cli click --element-index — Index instabil                    ║
+# ║                                                                           ║
+# ║  ✅ Korrekt: --remote-allow-origins="*" (MIT Anführungszeichen)           ║
+# ║  ✅ Korrekt: --user-data-dir="/tmp/heypiggy-new-$(date +%s)"               ║
+# ║  ✅ Korrekt: --force-renderer-accessibility                                ║
+# ║  ✅ Korrekt: NUR tool_*.py verwenden (nicht rohes cua-driver)             ║
+# ╚════════════════════════════════════════════════════════════════════════════╝
 
 import json
 import os
@@ -155,7 +174,7 @@ def launch_chrome(url="https://www.heypiggy.com/?page=dashboard", port=9999):
     cmd = [
         "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
         f"--remote-debugging-port={port}",
-        "--remote-allow-origins=*",
+        "--remote-allow-origins=\"*\"",  # 🔥 MIT Quotes! Ohne Quotes expandiert zsh * → "no matches found"
         "--force-renderer-accessibility",
         "--no-first-run",
         "--no-default-browser-check",

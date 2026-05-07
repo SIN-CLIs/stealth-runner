@@ -13,6 +13,21 @@ Usage:
     # Verify specific element state
     result = verify_element_state(pid, wid, element_index=42, expected_role="AXRadioButton")
     # -> {"status": "ok", "found": True, "role": "AXRadioButton", "text": "Mannlich"}
+
+BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
+  ❌ playstealth launch — setzt NICHT --force-renderer-accessibility
+  ❌ webauto-nodriver — ABSOLUT BANNED
+  ❌ cua-driver click (raw index) — instabil, nutze tool_click.py
+  ❌ --remote-allow-origins=* (ohne Quotes) — zsh glob expansion
+  ❌ /tmp/heypiggy-bot (fixed profile) — korruptiert nach Neustart
+  ❌ Hardcoded PIDs — dynamisch, niemals hardcodieren
+  ❌ skylight-cli click --element-index — Index instabil
+
+KORREKT:
+  ✅ --remote-allow-origins="*" (MIT Anführungszeichen)
+  ✅ --user-data-dir="/tmp/heypiggy-new-$(date +%s)"
+  ✅ --force-renderer-accessibility
+  ✅ NUR tool_*.py verwenden (nicht rohes cua-driver)
 """
 
 from __future__ import annotations

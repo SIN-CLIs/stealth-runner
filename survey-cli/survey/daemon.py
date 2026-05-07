@@ -29,6 +29,24 @@ CRITICAL RULES:
     - Daemon state persisted in ~/.stealth/daemon_state.json
     - Logs in survey/logs/daemon/*.jsonl
 
+===============================================================================
+
+BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
+  ❌ playstealth launch — setzt NICHT --force-renderer-accessibility
+  ❌ webauto-nodriver — ABSOLUT BANNED
+  ❌ cua-driver click (raw index) — instabil, nutze tool_click.py
+  ❌ --remote-allow-origins=* (ohne Quotes) — zsh glob expansion
+  ❌ /tmp/heypiggy-bot (fixed profile) — korruptiert nach Neustart
+  ❌ Hardcoded PIDs — dynamisch, niemals hardcodieren
+  ❌ pkill -f "Google Chrome" — tötet USER Chrome
+  ❌ killall Google Chrome — tötet ALLE Chrome
+  ❌ skylight-cli click --element-index — Index instabil
+
+KORREKT:
+  ✅ --remote-allow-origins="*" (MIT Anführungszeichen)
+  ✅ --user-data-dir="/tmp/heypiggy-new-$(date +%s)"
+  ✅ --force-renderer-accessibility
+  ✅ NUR tool_*.py verwenden (nicht rohes cua-driver)
 ==============================================================================="""
 
 import atexit
@@ -172,7 +190,7 @@ def launch_chrome(url: str = HEYPIGGY_URL, port: int = CHROME_PORT) -> bool:
     cmd = [
         "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
         f"--remote-debugging-port={port}",
-        "--remote-allow-origins=*",
+        "--remote-allow-origins=\"*\"",  # 🔥 MIT Quotes! Ohne Quotes expandiert zsh * → "no matches found"
         "--force-renderer-accessibility",
         "--no-first-run",
         "--no-default-browser-check",
@@ -214,6 +232,13 @@ def ensure_login(port: int = CHROME_PORT) -> bool:
 
     print("[DAEMON] Not logged in — running google_login...")
     try:
+        # Robuster Import: Workspace-Root in sys.path einfügen
+        # (daemon.py läuft aus survey-cli/survey/, cli/modules ist auf stealth-runner/)
+        import sys
+        from pathlib import Path
+        _root = str(Path(__file__).parent.parent.parent)
+        if _root not in sys.path:
+            sys.path.insert(0, _root)
         from cli.modules.auto_google_login import execute as google_login
         result = google_login()
         logged_in = result.get("status") == "ok"

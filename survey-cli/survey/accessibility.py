@@ -103,9 +103,21 @@ def ensure_accessibility(port=9999, url="https://www.heypiggy.com/?page=dashboar
     grant_accessibility()
 
     # Restart Chrome to apply permission (kill + relaunch)
+    # 🔥 GEFÄHRLICH: NIE "pkill -f Google Chrome" — tötet USER Chrome!
+    # Stattdessen NUR Bot-Chrome beenden (profile=/tmp/heypiggy-new-*)
     print("[ACCESS] Restarting Chrome to apply permission...")
-    import subprocess as sp
-    sp.run(["pkill", "-f", "Google Chrome"], capture_output=True)
+    import subprocess as sp, re
+    ps_out = sp.run(["ps", "aux"], capture_output=True, text=True).stdout
+    for line in ps_out.split('\n'):
+        if '--user-data-dir=/tmp/heypiggy-new-' in line:
+            parts = line.split()
+            if len(parts) > 1:
+                try:
+                    pid = int(parts[1])
+                    sp.run(["kill", str(pid)], capture_output=True)
+                    print(f"[ACCESS] Killed bot Chrome PID {pid}")
+                except ValueError:
+                    pass
     time.sleep(3)
 
     launch_chrome_with_accessibility(port=port, url=url)

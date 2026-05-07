@@ -5,29 +5,54 @@
 AUTO-GOOGLE-LOGIN — CUA-ONLY 6-Step Login für Heypiggy.com
 ================================================================================
 Repo    : /Users/jeremy/dev/stealth-runner/cli/modules/auto_google_login.py
-Stand   : 2026-05-05
+Stand   : 2026-05-07
 Version : 1.0 (LIVE TESTED ✅)
 Ersetzt : cli/modules/heypiggy_login_box.py (GELÖSCHT!)
+
+BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
+  ❌ playstealth launch — setzt NICHT --force-renderer-accessibility
+  ❌ webauto-nodriver — ABSOLUT BANNED
+  ❌ cua-driver click (raw index) — instabil, nutze tool_click.py
+  ❌ --remote-allow-origins=* (ohne Quotes) — zsh glob expansion
+  ❌ /tmp/heypiggy-bot (fixed profile) — korruptiert nach Neustart
+  ❌ Hardcoded PIDs — dynamisch, niemals hardcodieren (71104, 56640 waren Beispiele!)
+  ❌ pkill -f "Google Chrome" — tötet USER Chrome
+  ❌ killall Google Chrome — tötet ALLE Chrome
+  ❌ skylight-cli click --element-index — Index instabil
+
+KORREKT:
+  ✅ Chrome MANUELL starten (NICHT playstealth!)
+  ✅ --remote-allow-origins="*" (MIT Anführungszeichen — zsh expandiert * sonst!)
+  ✅ --user-data-dir="/tmp/heypiggy-new-$(date +%s)" (timestamped, nie fixed!)
+  ✅ --force-renderer-accessibility (MUSS für AX-Tree!)
+  ✅ NUR tool_*.py verwenden (nicht rohes cua-driver)
 
 ================================================================================
 SHELL COMMANDS (DOKUMENTIERT - learning-by-doing):
 ================================================================================
 
-## Chrome starten (isoliertes Bot-Profil via playstealth):
-playstealth launch --url 'https://heypiggy.com/?page=dashboard'
-→ Antwort: {"pid": 71104, "profile": "/tmp/heypiggy-bot-1777981361", "cdp_port": 58239}
-→ WICHTIG: profile enthält "heypiggy-bot-XXXXXXXX" als Identifikation!
+## Chrome starten (MANUELL — playstealth ist BANNED, setzt NICHT --force-renderer-accessibility!):
+"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --user-data-dir="/tmp/heypiggy-new-$(date +%s)" \
+  --remote-debugging-port=9999 \
+  --remote-allow-origins="*" \
+  --force-renderer-accessibility \
+  --no-first-run \
+  --no-default-browser-check \
+  "https://www.heypiggy.com/?page=dashboard"
+→ Profile: /tmp/heypiggy-new-XXXXXXXXXX (frisch, timestamped!)
+→ WICHTIG: NIE /tmp/heypiggy-bot (fixed profile = corrupted!)
 
 ## Windows finden (cua-driver list_windows):
 cua-driver call list_windows
 → Antwort: {"windows": [...]} — NICHT Array, sondern Dict mit "windows" key!
 → Filter: height>100 AND is_on_screen=true AND "chrome" in app_name.lower()
-→ BOT Chrome: DYNAMIC_PID, profile=/tmp/heypiggy-bot-1777981361
+→ BOT Chrome: DYNAMIC_PID, profile=/tmp/heypiggy-new-XXXXXXXXXX
 
 ## AX-Tree lesen (cua-driver get_window_state):
-echo '{"pid": 71104, "window_id": 56640}' | cua-driver call get_window_state
+echo '{"pid": DYNAMIC, "window_id": DYNAMIC}' | cua-driver call get_window_state
 → Antwort: {"tree_markdown": "...", "element_count": 672, ...}
-→ Speichern: > /tmp/bot_71104_tree.json
+→ Speichern: > /tmp/bot_DYNAMIC_tree.json
 → Parsen: re.search(r'- \[(\d+)\]', line) für element_index
 
 ## Element klicken (cua-driver click):
@@ -88,11 +113,10 @@ BOT Chrome (isoliert via playstealth):
 
 USER Chrome (NIEMALS TOUCHEN!):
   DYNAMIC_PID, DeepSeek, API keys (Chrome UI)
-  Andere Chrome-Instanzen OHNE "heypiggy-bot-" im path = USER
+  Andere Chrome-Instanzen OHNE "heypiggy-new-" im path = USER
 
-REGEL: Bei mehreren Chrome-Instanzen:
-  → ps aux | grep "user-data-dir" → prüfe ob "heypiggy-bot-" im path
-  → NUR Chrome mit "heypiggy-bot-XXXXXXXX" ist BOT → INTERAGIEREN
+  → ps aux | grep "user-data-dir" → prüfe ob "heypiggy-new-" im path
+  → NUR Chrome mit "heypiggy-new-XXXXXXXXXX" ist BOT → INTERAGIEREN
   → ALLE ANDEREN Chrome = USER → IGNORIEREN
 
 ================================================================================
@@ -313,7 +337,7 @@ def execute(pid=None, url="https://heypiggy.com/?page=dashboard"):
     AUTO-GOOGLE-LOGIN — CUA-ONLY 6-Step Flow (LIVE TESTED 2026-05-05)
 
     Args:
-      pid : int  — optional, wenn Chrome schon läuft (von playstealth launch)
+      pid : int  — optional, wenn Chrome schon läuft (MANUELL gestartet, NICHT playstealth!)
       url : str  — Heypiggy URL (default: dashboard)
 
     Returns:
@@ -321,19 +345,20 @@ def execute(pid=None, url="https://heypiggy.com/?page=dashboard"):
       {"status": "error", "reason": "..."}   — Login fehlgeschlagen
 
     ========================================================================
-    NEUE LOGIK (2026-05-05): Check ALREADY LOGGED IN FIRST!
+    NEUE LOGIK (2026-05-07): Check ALREADY LOGGED IN FIRST!
     ========================================================================
 
     1. _find_logged_in_heypiggy() → wenn found: return sofort mit pid/wid
-    2. NUR wenn nicht eingeloggt: playstealth launch → 6-Step Login
+    2. NUR wenn nicht eingeloggt: Chrome MANUELL starten → 6-Step Login
+       (playstealth ist BANNED — setzt NICHT --force-renderer-accessibility!)
     3. Mehrere BOT Chrome Instanzen möglich → _find_bot_wid sortiert nach z_index
 
     STEP-BY-STEP FLOW (live dokumentiert via Shell Commands):
     ========================================================================
 
-    STEP 1: playstealth launch → get BOT PID
-      r = _run(["playstealth", "launch", "--url", url])
-      → JSON parsen → pid = d["pid"]
+    STEP 1: Chrome MANUELL starten → get BOT PID
+      Chrome mit --force-renderer-accessibility + --remote-allow-origins="*" starten
+      → PID via ps aux | grep "heypiggy-new" finden
       → wait 3s
 
     STEP 2: list_windows → find Dashboard WID
