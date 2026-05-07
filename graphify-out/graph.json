@@ -14471,90 +14471,90 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L79",
-      "id": "survey_runner_rationale_79",
       "community": 1,
-      "norm_label": "run a single survey from id to completion.          args:             survey_id:"
+      "norm_label": "run a single survey from id to completion.          args:             survey_id:",
+      "id": "survey_runner_rationale_79"
     },
     {
       "label": "Auto-loop: scan \u2192 filter \u2192 run \u2192 repeat.          Args:             max_surveys:",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L509",
-      "id": "survey_runner_rationale_509",
       "community": 1,
-      "norm_label": "auto-loop: scan \u2192 filter \u2192 run \u2192 repeat.          args:             max_surveys:"
+      "norm_label": "auto-loop: scan \u2192 filter \u2192 run \u2192 repeat.          args:             max_surveys:",
+      "id": "survey_runner_rationale_509"
     },
     {
       "label": "Create a new browser tab with stealth injection before navigation.          Uses",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L606",
-      "id": "survey_runner_rationale_606",
       "community": 1,
-      "norm_label": "create a new browser tab with stealth injection before navigation.          uses"
+      "norm_label": "create a new browser tab with stealth injection before navigation.          uses",
+      "id": "survey_runner_rationale_606"
     },
     {
       "label": "Click a survey card IN-PAGE on the dashboard (modal flow).          Unlike _crea",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L634",
-      "id": "survey_runner_rationale_634",
       "community": 1,
-      "norm_label": "click a survey card in-page on the dashboard (modal flow).          unlike _crea"
+      "norm_label": "click a survey card in-page on the dashboard (modal flow).          unlike _crea",
+      "id": "survey_runner_rationale_634"
     },
     {
       "label": "Click the 'hier klicken' link on CPX redirect page.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L665",
-      "id": "survey_runner_rationale_665",
       "community": 1,
-      "norm_label": "click the 'hier klicken' link on cpx redirect page."
+      "norm_label": "click the 'hier klicken' link on cpx redirect page.",
+      "id": "survey_runner_rationale_665"
     },
     {
       "label": "Find WebSocket URL for the actual survey tab after CPX redirect.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L690",
-      "id": "survey_runner_rationale_690",
       "community": 1,
-      "norm_label": "find websocket url for the actual survey tab after cpx redirect."
+      "norm_label": "find websocket url for the actual survey tab after cpx redirect.",
+      "id": "survey_runner_rationale_690"
     },
     {
       "label": "Close a browser tab. Tolerates already-closed tabs.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L727",
-      "id": "survey_runner_rationale_727",
       "community": 1,
-      "norm_label": "close a browser tab. tolerates already-closed tabs."
+      "norm_label": "close a browser tab. tolerates already-closed tabs.",
+      "id": "survey_runner_rationale_727"
     },
     {
       "label": "Re-discover WebSocket URL for tab after navigation.          After executing act",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L754",
-      "id": "survey_runner_rationale_754",
       "community": 1,
-      "norm_label": "re-discover websocket url for tab after navigation.          after executing act"
+      "norm_label": "re-discover websocket url for tab after navigation.          after executing act",
+      "id": "survey_runner_rationale_754"
     },
     {
       "label": "Detect provider from URL.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L793",
-      "id": "survey_runner_rationale_793",
       "community": 1,
-      "norm_label": "detect provider from url."
+      "norm_label": "detect provider from url.",
+      "id": "survey_runner_rationale_793"
     },
     {
       "label": "Handle CPX pre-qualifier in browser. Answer via CDP \u2192 wait for redirect.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L798",
-      "id": "survey_runner_rationale_798",
       "community": 1,
-      "norm_label": "handle cpx pre-qualifier in browser. answer via cdp \u2192 wait for redirect."
+      "norm_label": "handle cpx pre-qualifier in browser. answer via cdp \u2192 wait for redirect.",
+      "id": "survey_runner_rationale_798"
     },
     {
       "label": "Rate completed survey for +0.01\u20ac bonus.",
@@ -14570,36 +14570,36 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L1051",
-      "id": "survey_runner_rationale_1051",
       "community": 1,
-      "norm_label": "check page text for completion markers (delegates to frozen tools.detect_complet"
+      "norm_label": "check page text for completion markers (delegates to frozen tools.detect_complet",
+      "id": "survey_runner_rationale_1051"
     },
     {
       "label": "Detect new tab opened by clickSurvey() \u2014 delegates to frozen tools.find_new_tab.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L1055",
-      "id": "survey_runner_rationale_1055",
       "community": 1,
-      "norm_label": "detect new tab opened by clicksurvey() \u2014 delegates to frozen tools.find_new_tab."
+      "norm_label": "detect new tab opened by clicksurvey() \u2014 delegates to frozen tools.find_new_tab.",
+      "id": "survey_runner_rationale_1055"
     },
     {
       "label": "Close all stacked modals \u2014 delegates to frozen tools.close_modals.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L1059",
-      "id": "survey_runner_rationale_1059",
       "community": 1,
-      "norm_label": "close all stacked modals \u2014 delegates to frozen tools.close_modals."
+      "norm_label": "close all stacked modals \u2014 delegates to frozen tools.close_modals.",
+      "id": "survey_runner_rationale_1059"
     },
     {
       "label": "Handle PureSpectrum pre-survey flow: cookie + ROBOT + captcha + puzzle.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L1063",
-      "id": "survey_runner_rationale_1063",
       "community": 1,
-      "norm_label": "handle purespectrum pre-survey flow: cookie + robot + captcha + puzzle."
+      "norm_label": "handle purespectrum pre-survey flow: cookie + robot + captcha + puzzle.",
+      "id": "survey_runner_rationale_1063"
     },
     {
       "label": "Close all stacked modals before interacting with survey.                  heypig",
@@ -14615,27 +14615,27 @@
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L1093",
-      "id": "survey_runner_rationale_1093",
       "community": 1,
-      "norm_label": "simple auto-pilot when nim not available. smart selection + verify.          str"
+      "norm_label": "simple auto-pilot when nim not available. smart selection + verify.          str",
+      "id": "survey_runner_rationale_1093"
     },
     {
       "label": "Load profile from JSON file or fallback. Calculates age dynamically.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L1150",
-      "id": "survey_runner_rationale_1150",
       "community": 1,
-      "norm_label": "load profile from json file or fallback. calculates age dynamically."
+      "norm_label": "load profile from json file or fallback. calculates age dynamically.",
+      "id": "survey_runner_rationale_1150"
     },
     {
       "label": "Answer pre-qualifier questions via CPX API. Handles MULTI-STEP qualifiers.",
       "file_type": "rationale",
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L1195",
-      "id": "survey_runner_rationale_1195",
       "community": 1,
-      "norm_label": "answer pre-qualifier questions via cpx api. handles multi-step qualifiers."
+      "norm_label": "answer pre-qualifier questions via cpx api. handles multi-step qualifiers.",
+      "id": "survey_runner_rationale_1195"
     },
     {
       "label": "scanner.py",
@@ -78155,8 +78155,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L19",
       "weight": 0.8,
-      "_src": "survey_snapshot_compactsnapshot",
-      "_tgt": "survey_runner_rationale_68",
+      "_src": "survey_runner_rationale_68",
+      "_tgt": "survey_snapshot_compactsnapshot",
       "confidence_score": 0.5,
       "source": "survey_runner_rationale_68",
       "target": "survey_snapshot_compactsnapshot"
@@ -78167,8 +78167,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L20",
       "weight": 0.8,
-      "_src": "survey_nim_nimclient",
-      "_tgt": "survey_runner_rationale_68",
+      "_src": "survey_runner_rationale_68",
+      "_tgt": "survey_nim_nimclient",
       "confidence_score": 0.5,
       "source": "survey_runner_rationale_68",
       "target": "survey_nim_nimclient"
@@ -78179,8 +78179,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L21",
       "weight": 0.8,
-      "_src": "survey_execute_batchexecutor",
-      "_tgt": "survey_runner_rationale_68",
+      "_src": "survey_runner_rationale_68",
+      "_tgt": "survey_execute_batchexecutor",
       "confidence_score": 0.5,
       "source": "survey_runner_rationale_68",
       "target": "survey_execute_batchexecutor"
@@ -78193,9 +78193,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_68",
       "_tgt": "survey_cdp_client_cdpconnection",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_68",
-      "target": "survey_cdp_client_cdpconnection",
-      "confidence_score": 0.5
+      "target": "survey_cdp_client_cdpconnection"
     },
     {
       "relation": "uses",
@@ -78205,9 +78205,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_79",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_79",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -78217,9 +78217,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_79",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_79",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -78229,9 +78229,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_79",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_79",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "uses",
@@ -78241,9 +78241,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_79",
       "_tgt": "survey_cdp_client_cdpconnection",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_79",
-      "target": "survey_cdp_client_cdpconnection",
-      "confidence_score": 0.5
+      "target": "survey_cdp_client_cdpconnection"
     },
     {
       "relation": "uses",
@@ -78253,9 +78253,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_509",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_509",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -78265,9 +78265,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_509",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_509",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -78277,9 +78277,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_509",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_509",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "uses",
@@ -78289,9 +78289,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_509",
       "_tgt": "survey_cdp_client_cdpconnection",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_509",
-      "target": "survey_cdp_client_cdpconnection",
-      "confidence_score": 0.5
+      "target": "survey_cdp_client_cdpconnection"
     },
     {
       "relation": "uses",
@@ -78301,9 +78301,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_606",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_606",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -78313,9 +78313,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_606",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_606",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -78325,9 +78325,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_606",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_606",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "uses",
@@ -78337,9 +78337,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_606",
       "_tgt": "survey_cdp_client_cdpconnection",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_606",
-      "target": "survey_cdp_client_cdpconnection",
-      "confidence_score": 0.5
+      "target": "survey_cdp_client_cdpconnection"
     },
     {
       "relation": "uses",
@@ -78349,9 +78349,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_634",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_634",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -78361,9 +78361,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_634",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_634",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -78373,9 +78373,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_634",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_634",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "uses",
@@ -78385,9 +78385,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_634",
       "_tgt": "survey_cdp_client_cdpconnection",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_634",
-      "target": "survey_cdp_client_cdpconnection",
-      "confidence_score": 0.5
+      "target": "survey_cdp_client_cdpconnection"
     },
     {
       "relation": "uses",
@@ -78397,9 +78397,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_665",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_665",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -78409,9 +78409,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_665",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_665",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -78421,9 +78421,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_665",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_665",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "uses",
@@ -78433,9 +78433,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_665",
       "_tgt": "survey_cdp_client_cdpconnection",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_665",
-      "target": "survey_cdp_client_cdpconnection",
-      "confidence_score": 0.5
+      "target": "survey_cdp_client_cdpconnection"
     },
     {
       "relation": "uses",
@@ -78445,9 +78445,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_690",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_690",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -78457,9 +78457,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_690",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_690",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -78469,9 +78469,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_690",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_690",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "uses",
@@ -78481,9 +78481,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_690",
       "_tgt": "survey_cdp_client_cdpconnection",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_690",
-      "target": "survey_cdp_client_cdpconnection",
-      "confidence_score": 0.5
+      "target": "survey_cdp_client_cdpconnection"
     },
     {
       "relation": "uses",
@@ -78493,9 +78493,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_727",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_727",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -78505,9 +78505,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_727",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_727",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -78517,9 +78517,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_727",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_727",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "uses",
@@ -78529,9 +78529,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_727",
       "_tgt": "survey_cdp_client_cdpconnection",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_727",
-      "target": "survey_cdp_client_cdpconnection",
-      "confidence_score": 0.5
+      "target": "survey_cdp_client_cdpconnection"
     },
     {
       "relation": "uses",
@@ -78541,9 +78541,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_754",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_754",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -78553,9 +78553,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_754",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_754",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -78565,9 +78565,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_754",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_754",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "uses",
@@ -78577,9 +78577,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_754",
       "_tgt": "survey_cdp_client_cdpconnection",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_754",
-      "target": "survey_cdp_client_cdpconnection",
-      "confidence_score": 0.5
+      "target": "survey_cdp_client_cdpconnection"
     },
     {
       "relation": "uses",
@@ -78589,9 +78589,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_793",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_793",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -78601,9 +78601,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_793",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_793",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -78613,9 +78613,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_793",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_793",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "uses",
@@ -78625,9 +78625,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_793",
       "_tgt": "survey_cdp_client_cdpconnection",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_793",
-      "target": "survey_cdp_client_cdpconnection",
-      "confidence_score": 0.5
+      "target": "survey_cdp_client_cdpconnection"
     },
     {
       "relation": "uses",
@@ -78637,9 +78637,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_798",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_798",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -78649,9 +78649,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_798",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_798",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -78661,9 +78661,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_798",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_798",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "uses",
@@ -78673,9 +78673,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_798",
       "_tgt": "survey_cdp_client_cdpconnection",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_798",
-      "target": "survey_cdp_client_cdpconnection",
-      "confidence_score": 0.5
+      "target": "survey_cdp_client_cdpconnection"
     },
     {
       "relation": "uses",
@@ -78683,8 +78683,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L20",
       "weight": 0.8,
-      "_src": "survey_snapshot_compactsnapshot",
-      "_tgt": "survey_runner_rationale_987",
+      "_src": "survey_runner_rationale_987",
+      "_tgt": "survey_snapshot_compactsnapshot",
       "confidence_score": 0.5,
       "source": "survey_runner_rationale_987",
       "target": "survey_snapshot_compactsnapshot"
@@ -78695,8 +78695,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L21",
       "weight": 0.8,
-      "_src": "survey_nim_nimclient",
-      "_tgt": "survey_runner_rationale_987",
+      "_src": "survey_runner_rationale_987",
+      "_tgt": "survey_nim_nimclient",
       "confidence_score": 0.5,
       "source": "survey_runner_rationale_987",
       "target": "survey_nim_nimclient"
@@ -78707,8 +78707,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L22",
       "weight": 0.8,
-      "_src": "survey_execute_batchexecutor",
-      "_tgt": "survey_runner_rationale_987",
+      "_src": "survey_runner_rationale_987",
+      "_tgt": "survey_execute_batchexecutor",
       "confidence_score": 0.5,
       "source": "survey_runner_rationale_987",
       "target": "survey_execute_batchexecutor"
@@ -78719,8 +78719,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L690",
       "weight": 0.8,
-      "_src": "survey_cdp_client_cdpconnection",
-      "_tgt": "survey_runner_rationale_987",
+      "_src": "survey_runner_rationale_987",
+      "_tgt": "survey_cdp_client_cdpconnection",
       "confidence_score": 0.5,
       "source": "survey_runner_rationale_987",
       "target": "survey_cdp_client_cdpconnection"
@@ -78733,9 +78733,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1051",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1051",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -78745,9 +78745,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1051",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1051",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -78757,9 +78757,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1051",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1051",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "uses",
@@ -78769,9 +78769,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1051",
       "_tgt": "survey_cdp_client_cdpconnection",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1051",
-      "target": "survey_cdp_client_cdpconnection",
-      "confidence_score": 0.5
+      "target": "survey_cdp_client_cdpconnection"
     },
     {
       "relation": "uses",
@@ -78781,9 +78781,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1055",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1055",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -78793,9 +78793,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1055",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1055",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -78805,9 +78805,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1055",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1055",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "uses",
@@ -78817,9 +78817,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1055",
       "_tgt": "survey_cdp_client_cdpconnection",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1055",
-      "target": "survey_cdp_client_cdpconnection",
-      "confidence_score": 0.5
+      "target": "survey_cdp_client_cdpconnection"
     },
     {
       "relation": "uses",
@@ -78829,9 +78829,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1059",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1059",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -78841,9 +78841,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1059",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1059",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -78853,9 +78853,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1059",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1059",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "uses",
@@ -78865,9 +78865,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1059",
       "_tgt": "survey_cdp_client_cdpconnection",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1059",
-      "target": "survey_cdp_client_cdpconnection",
-      "confidence_score": 0.5
+      "target": "survey_cdp_client_cdpconnection"
     },
     {
       "relation": "uses",
@@ -78877,9 +78877,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1063",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1063",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -78889,9 +78889,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1063",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1063",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -78901,9 +78901,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1063",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1063",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "uses",
@@ -78913,9 +78913,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1063",
       "_tgt": "survey_cdp_client_cdpconnection",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1063",
-      "target": "survey_cdp_client_cdpconnection",
-      "confidence_score": 0.5
+      "target": "survey_cdp_client_cdpconnection"
     },
     {
       "relation": "uses",
@@ -78973,9 +78973,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1093",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1093",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -78985,9 +78985,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1093",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1093",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -78997,9 +78997,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1093",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1093",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "uses",
@@ -79009,9 +79009,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1093",
       "_tgt": "survey_cdp_client_cdpconnection",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1093",
-      "target": "survey_cdp_client_cdpconnection",
-      "confidence_score": 0.5
+      "target": "survey_cdp_client_cdpconnection"
     },
     {
       "relation": "uses",
@@ -79021,9 +79021,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1150",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1150",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -79033,9 +79033,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1150",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1150",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -79045,9 +79045,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1150",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1150",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "uses",
@@ -79057,9 +79057,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1150",
       "_tgt": "survey_cdp_client_cdpconnection",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1150",
-      "target": "survey_cdp_client_cdpconnection",
-      "confidence_score": 0.5
+      "target": "survey_cdp_client_cdpconnection"
     },
     {
       "relation": "uses",
@@ -79069,9 +79069,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1195",
       "_tgt": "survey_snapshot_compactsnapshot",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1195",
-      "target": "survey_snapshot_compactsnapshot",
-      "confidence_score": 0.5
+      "target": "survey_snapshot_compactsnapshot"
     },
     {
       "relation": "uses",
@@ -79081,9 +79081,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1195",
       "_tgt": "survey_nim_nimclient",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1195",
-      "target": "survey_nim_nimclient",
-      "confidence_score": 0.5
+      "target": "survey_nim_nimclient"
     },
     {
       "relation": "uses",
@@ -79093,9 +79093,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1195",
       "_tgt": "survey_execute_batchexecutor",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1195",
-      "target": "survey_execute_batchexecutor",
-      "confidence_score": 0.5
+      "target": "survey_execute_batchexecutor"
     },
     {
       "relation": "uses",
@@ -79105,9 +79105,9 @@
       "weight": 0.8,
       "_src": "survey_runner_rationale_1195",
       "_tgt": "survey_cdp_client_cdpconnection",
+      "confidence_score": 0.5,
       "source": "survey_runner_rationale_1195",
-      "target": "survey_cdp_client_cdpconnection",
-      "confidence_score": 0.5
+      "target": "survey_cdp_client_cdpconnection"
     },
     {
       "relation": "imports_from",
@@ -79931,8 +79931,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L755",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_59",
-      "_tgt": "survey_cdp_client_cdpconnection",
+      "_src": "survey_cdp_client_cdpconnection",
+      "_tgt": "survey_runner_rationale_59",
       "confidence_score": 0.5,
       "source": "survey_cdp_client_cdpconnection",
       "target": "survey_runner_rationale_59"
@@ -79943,8 +79943,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L755",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_70",
-      "_tgt": "survey_cdp_client_cdpconnection",
+      "_src": "survey_cdp_client_cdpconnection",
+      "_tgt": "survey_runner_rationale_70",
       "confidence_score": 0.5,
       "source": "survey_cdp_client_cdpconnection",
       "target": "survey_runner_rationale_70"
@@ -79955,8 +79955,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L755",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_500",
-      "_tgt": "survey_cdp_client_cdpconnection",
+      "_src": "survey_cdp_client_cdpconnection",
+      "_tgt": "survey_runner_rationale_500",
       "confidence_score": 0.5,
       "source": "survey_cdp_client_cdpconnection",
       "target": "survey_runner_rationale_500"
@@ -79967,8 +79967,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L755",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_597",
-      "_tgt": "survey_cdp_client_cdpconnection",
+      "_src": "survey_cdp_client_cdpconnection",
+      "_tgt": "survey_runner_rationale_597",
       "confidence_score": 0.5,
       "source": "survey_cdp_client_cdpconnection",
       "target": "survey_runner_rationale_597"
@@ -79979,8 +79979,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L755",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_625",
-      "_tgt": "survey_cdp_client_cdpconnection",
+      "_src": "survey_cdp_client_cdpconnection",
+      "_tgt": "survey_runner_rationale_625",
       "confidence_score": 0.5,
       "source": "survey_cdp_client_cdpconnection",
       "target": "survey_runner_rationale_625"
@@ -79991,8 +79991,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L755",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_656",
-      "_tgt": "survey_cdp_client_cdpconnection",
+      "_src": "survey_cdp_client_cdpconnection",
+      "_tgt": "survey_runner_rationale_656",
       "confidence_score": 0.5,
       "source": "survey_cdp_client_cdpconnection",
       "target": "survey_runner_rationale_656"
@@ -80003,8 +80003,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L755",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_681",
-      "_tgt": "survey_cdp_client_cdpconnection",
+      "_src": "survey_cdp_client_cdpconnection",
+      "_tgt": "survey_runner_rationale_681",
       "confidence_score": 0.5,
       "source": "survey_cdp_client_cdpconnection",
       "target": "survey_runner_rationale_681"
@@ -80015,8 +80015,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L755",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_718",
-      "_tgt": "survey_cdp_client_cdpconnection",
+      "_src": "survey_cdp_client_cdpconnection",
+      "_tgt": "survey_runner_rationale_718",
       "confidence_score": 0.5,
       "source": "survey_cdp_client_cdpconnection",
       "target": "survey_runner_rationale_718"
@@ -80027,8 +80027,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L755",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_745",
-      "_tgt": "survey_cdp_client_cdpconnection",
+      "_src": "survey_cdp_client_cdpconnection",
+      "_tgt": "survey_runner_rationale_745",
       "confidence_score": 0.5,
       "source": "survey_cdp_client_cdpconnection",
       "target": "survey_runner_rationale_745"
@@ -80039,8 +80039,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L755",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_784",
-      "_tgt": "survey_cdp_client_cdpconnection",
+      "_src": "survey_cdp_client_cdpconnection",
+      "_tgt": "survey_runner_rationale_784",
       "confidence_score": 0.5,
       "source": "survey_cdp_client_cdpconnection",
       "target": "survey_runner_rationale_784"
@@ -80051,8 +80051,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L755",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_789",
-      "_tgt": "survey_cdp_client_cdpconnection",
+      "_src": "survey_cdp_client_cdpconnection",
+      "_tgt": "survey_runner_rationale_789",
       "confidence_score": 0.5,
       "source": "survey_cdp_client_cdpconnection",
       "target": "survey_runner_rationale_789"
@@ -80063,8 +80063,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L755",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_978",
-      "_tgt": "survey_cdp_client_cdpconnection",
+      "_src": "survey_cdp_client_cdpconnection",
+      "_tgt": "survey_runner_rationale_978",
       "confidence_score": 0.5,
       "source": "survey_cdp_client_cdpconnection",
       "target": "survey_runner_rationale_978"
@@ -80075,8 +80075,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L755",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1042",
-      "_tgt": "survey_cdp_client_cdpconnection",
+      "_src": "survey_cdp_client_cdpconnection",
+      "_tgt": "survey_runner_rationale_1042",
       "confidence_score": 0.5,
       "source": "survey_cdp_client_cdpconnection",
       "target": "survey_runner_rationale_1042"
@@ -80087,8 +80087,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L755",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1047",
-      "_tgt": "survey_cdp_client_cdpconnection",
+      "_src": "survey_cdp_client_cdpconnection",
+      "_tgt": "survey_runner_rationale_1047",
       "confidence_score": 0.5,
       "source": "survey_cdp_client_cdpconnection",
       "target": "survey_runner_rationale_1047"
@@ -80099,8 +80099,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L755",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1101",
-      "_tgt": "survey_cdp_client_cdpconnection",
+      "_src": "survey_cdp_client_cdpconnection",
+      "_tgt": "survey_runner_rationale_1101",
       "confidence_score": 0.5,
       "source": "survey_cdp_client_cdpconnection",
       "target": "survey_runner_rationale_1101"
@@ -80111,8 +80111,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L755",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1106",
-      "_tgt": "survey_cdp_client_cdpconnection",
+      "_src": "survey_cdp_client_cdpconnection",
+      "_tgt": "survey_runner_rationale_1106",
       "confidence_score": 0.5,
       "source": "survey_cdp_client_cdpconnection",
       "target": "survey_runner_rationale_1106"
@@ -80123,8 +80123,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L755",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1131",
-      "_tgt": "survey_cdp_client_cdpconnection",
+      "_src": "survey_cdp_client_cdpconnection",
+      "_tgt": "survey_runner_rationale_1131",
       "confidence_score": 0.5,
       "source": "survey_cdp_client_cdpconnection",
       "target": "survey_runner_rationale_1131"
@@ -80135,8 +80135,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L755",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1188",
-      "_tgt": "survey_cdp_client_cdpconnection",
+      "_src": "survey_cdp_client_cdpconnection",
+      "_tgt": "survey_runner_rationale_1188",
       "confidence_score": 0.5,
       "source": "survey_cdp_client_cdpconnection",
       "target": "survey_runner_rationale_1188"
@@ -80147,8 +80147,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L755",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1233",
-      "_tgt": "survey_cdp_client_cdpconnection",
+      "_src": "survey_cdp_client_cdpconnection",
+      "_tgt": "survey_runner_rationale_1233",
       "confidence_score": 0.5,
       "source": "survey_cdp_client_cdpconnection",
       "target": "survey_runner_rationale_1233"
@@ -81443,8 +81443,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L23",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_59",
-      "_tgt": "survey_execute_batchexecutor",
+      "_src": "survey_execute_batchexecutor",
+      "_tgt": "survey_runner_rationale_59",
       "confidence_score": 0.5,
       "source": "survey_execute_batchexecutor",
       "target": "survey_runner_rationale_59"
@@ -81455,8 +81455,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L23",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_70",
-      "_tgt": "survey_execute_batchexecutor",
+      "_src": "survey_execute_batchexecutor",
+      "_tgt": "survey_runner_rationale_70",
       "confidence_score": 0.5,
       "source": "survey_execute_batchexecutor",
       "target": "survey_runner_rationale_70"
@@ -81467,8 +81467,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L23",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_500",
-      "_tgt": "survey_execute_batchexecutor",
+      "_src": "survey_execute_batchexecutor",
+      "_tgt": "survey_runner_rationale_500",
       "confidence_score": 0.5,
       "source": "survey_execute_batchexecutor",
       "target": "survey_runner_rationale_500"
@@ -81479,8 +81479,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L23",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_597",
-      "_tgt": "survey_execute_batchexecutor",
+      "_src": "survey_execute_batchexecutor",
+      "_tgt": "survey_runner_rationale_597",
       "confidence_score": 0.5,
       "source": "survey_execute_batchexecutor",
       "target": "survey_runner_rationale_597"
@@ -81491,8 +81491,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L23",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_625",
-      "_tgt": "survey_execute_batchexecutor",
+      "_src": "survey_execute_batchexecutor",
+      "_tgt": "survey_runner_rationale_625",
       "confidence_score": 0.5,
       "source": "survey_execute_batchexecutor",
       "target": "survey_runner_rationale_625"
@@ -81503,8 +81503,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L23",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_656",
-      "_tgt": "survey_execute_batchexecutor",
+      "_src": "survey_execute_batchexecutor",
+      "_tgt": "survey_runner_rationale_656",
       "confidence_score": 0.5,
       "source": "survey_execute_batchexecutor",
       "target": "survey_runner_rationale_656"
@@ -81515,8 +81515,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L23",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_681",
-      "_tgt": "survey_execute_batchexecutor",
+      "_src": "survey_execute_batchexecutor",
+      "_tgt": "survey_runner_rationale_681",
       "confidence_score": 0.5,
       "source": "survey_execute_batchexecutor",
       "target": "survey_runner_rationale_681"
@@ -81527,8 +81527,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L23",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_718",
-      "_tgt": "survey_execute_batchexecutor",
+      "_src": "survey_execute_batchexecutor",
+      "_tgt": "survey_runner_rationale_718",
       "confidence_score": 0.5,
       "source": "survey_execute_batchexecutor",
       "target": "survey_runner_rationale_718"
@@ -81539,8 +81539,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L23",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_745",
-      "_tgt": "survey_execute_batchexecutor",
+      "_src": "survey_execute_batchexecutor",
+      "_tgt": "survey_runner_rationale_745",
       "confidence_score": 0.5,
       "source": "survey_execute_batchexecutor",
       "target": "survey_runner_rationale_745"
@@ -81551,8 +81551,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L23",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_784",
-      "_tgt": "survey_execute_batchexecutor",
+      "_src": "survey_execute_batchexecutor",
+      "_tgt": "survey_runner_rationale_784",
       "confidence_score": 0.5,
       "source": "survey_execute_batchexecutor",
       "target": "survey_runner_rationale_784"
@@ -81563,8 +81563,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L23",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_789",
-      "_tgt": "survey_execute_batchexecutor",
+      "_src": "survey_execute_batchexecutor",
+      "_tgt": "survey_runner_rationale_789",
       "confidence_score": 0.5,
       "source": "survey_execute_batchexecutor",
       "target": "survey_runner_rationale_789"
@@ -81575,8 +81575,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L23",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_978",
-      "_tgt": "survey_execute_batchexecutor",
+      "_src": "survey_execute_batchexecutor",
+      "_tgt": "survey_runner_rationale_978",
       "confidence_score": 0.5,
       "source": "survey_execute_batchexecutor",
       "target": "survey_runner_rationale_978"
@@ -81587,8 +81587,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L23",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1042",
-      "_tgt": "survey_execute_batchexecutor",
+      "_src": "survey_execute_batchexecutor",
+      "_tgt": "survey_runner_rationale_1042",
       "confidence_score": 0.5,
       "source": "survey_execute_batchexecutor",
       "target": "survey_runner_rationale_1042"
@@ -81599,8 +81599,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L23",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1047",
-      "_tgt": "survey_execute_batchexecutor",
+      "_src": "survey_execute_batchexecutor",
+      "_tgt": "survey_runner_rationale_1047",
       "confidence_score": 0.5,
       "source": "survey_execute_batchexecutor",
       "target": "survey_runner_rationale_1047"
@@ -81611,8 +81611,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L23",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1101",
-      "_tgt": "survey_execute_batchexecutor",
+      "_src": "survey_execute_batchexecutor",
+      "_tgt": "survey_runner_rationale_1101",
       "confidence_score": 0.5,
       "source": "survey_execute_batchexecutor",
       "target": "survey_runner_rationale_1101"
@@ -81623,8 +81623,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L23",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1106",
-      "_tgt": "survey_execute_batchexecutor",
+      "_src": "survey_execute_batchexecutor",
+      "_tgt": "survey_runner_rationale_1106",
       "confidence_score": 0.5,
       "source": "survey_execute_batchexecutor",
       "target": "survey_runner_rationale_1106"
@@ -81635,8 +81635,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L23",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1131",
-      "_tgt": "survey_execute_batchexecutor",
+      "_src": "survey_execute_batchexecutor",
+      "_tgt": "survey_runner_rationale_1131",
       "confidence_score": 0.5,
       "source": "survey_execute_batchexecutor",
       "target": "survey_runner_rationale_1131"
@@ -81647,8 +81647,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L23",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1188",
-      "_tgt": "survey_execute_batchexecutor",
+      "_src": "survey_execute_batchexecutor",
+      "_tgt": "survey_runner_rationale_1188",
       "confidence_score": 0.5,
       "source": "survey_execute_batchexecutor",
       "target": "survey_runner_rationale_1188"
@@ -81659,8 +81659,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L23",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1233",
-      "_tgt": "survey_execute_batchexecutor",
+      "_src": "survey_execute_batchexecutor",
+      "_tgt": "survey_runner_rationale_1233",
       "confidence_score": 0.5,
       "source": "survey_execute_batchexecutor",
       "target": "survey_runner_rationale_1233"
@@ -85055,8 +85055,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L22",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_59",
-      "_tgt": "survey_nim_nimclient",
+      "_src": "survey_nim_nimclient",
+      "_tgt": "survey_runner_rationale_59",
       "confidence_score": 0.5,
       "source": "survey_nim_nimclient",
       "target": "survey_runner_rationale_59"
@@ -85067,8 +85067,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L22",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_70",
-      "_tgt": "survey_nim_nimclient",
+      "_src": "survey_nim_nimclient",
+      "_tgt": "survey_runner_rationale_70",
       "confidence_score": 0.5,
       "source": "survey_nim_nimclient",
       "target": "survey_runner_rationale_70"
@@ -85079,8 +85079,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L22",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_500",
-      "_tgt": "survey_nim_nimclient",
+      "_src": "survey_nim_nimclient",
+      "_tgt": "survey_runner_rationale_500",
       "confidence_score": 0.5,
       "source": "survey_nim_nimclient",
       "target": "survey_runner_rationale_500"
@@ -85091,8 +85091,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L22",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_597",
-      "_tgt": "survey_nim_nimclient",
+      "_src": "survey_nim_nimclient",
+      "_tgt": "survey_runner_rationale_597",
       "confidence_score": 0.5,
       "source": "survey_nim_nimclient",
       "target": "survey_runner_rationale_597"
@@ -85103,8 +85103,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L22",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_625",
-      "_tgt": "survey_nim_nimclient",
+      "_src": "survey_nim_nimclient",
+      "_tgt": "survey_runner_rationale_625",
       "confidence_score": 0.5,
       "source": "survey_nim_nimclient",
       "target": "survey_runner_rationale_625"
@@ -85115,8 +85115,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L22",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_656",
-      "_tgt": "survey_nim_nimclient",
+      "_src": "survey_nim_nimclient",
+      "_tgt": "survey_runner_rationale_656",
       "confidence_score": 0.5,
       "source": "survey_nim_nimclient",
       "target": "survey_runner_rationale_656"
@@ -85127,8 +85127,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L22",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_681",
-      "_tgt": "survey_nim_nimclient",
+      "_src": "survey_nim_nimclient",
+      "_tgt": "survey_runner_rationale_681",
       "confidence_score": 0.5,
       "source": "survey_nim_nimclient",
       "target": "survey_runner_rationale_681"
@@ -85139,8 +85139,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L22",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_718",
-      "_tgt": "survey_nim_nimclient",
+      "_src": "survey_nim_nimclient",
+      "_tgt": "survey_runner_rationale_718",
       "confidence_score": 0.5,
       "source": "survey_nim_nimclient",
       "target": "survey_runner_rationale_718"
@@ -85151,8 +85151,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L22",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_745",
-      "_tgt": "survey_nim_nimclient",
+      "_src": "survey_nim_nimclient",
+      "_tgt": "survey_runner_rationale_745",
       "confidence_score": 0.5,
       "source": "survey_nim_nimclient",
       "target": "survey_runner_rationale_745"
@@ -85163,8 +85163,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L22",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_784",
-      "_tgt": "survey_nim_nimclient",
+      "_src": "survey_nim_nimclient",
+      "_tgt": "survey_runner_rationale_784",
       "confidence_score": 0.5,
       "source": "survey_nim_nimclient",
       "target": "survey_runner_rationale_784"
@@ -85175,8 +85175,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L22",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_789",
-      "_tgt": "survey_nim_nimclient",
+      "_src": "survey_nim_nimclient",
+      "_tgt": "survey_runner_rationale_789",
       "confidence_score": 0.5,
       "source": "survey_nim_nimclient",
       "target": "survey_runner_rationale_789"
@@ -85187,8 +85187,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L22",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_978",
-      "_tgt": "survey_nim_nimclient",
+      "_src": "survey_nim_nimclient",
+      "_tgt": "survey_runner_rationale_978",
       "confidence_score": 0.5,
       "source": "survey_nim_nimclient",
       "target": "survey_runner_rationale_978"
@@ -85199,8 +85199,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L22",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1042",
-      "_tgt": "survey_nim_nimclient",
+      "_src": "survey_nim_nimclient",
+      "_tgt": "survey_runner_rationale_1042",
       "confidence_score": 0.5,
       "source": "survey_nim_nimclient",
       "target": "survey_runner_rationale_1042"
@@ -85211,8 +85211,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L22",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1047",
-      "_tgt": "survey_nim_nimclient",
+      "_src": "survey_nim_nimclient",
+      "_tgt": "survey_runner_rationale_1047",
       "confidence_score": 0.5,
       "source": "survey_nim_nimclient",
       "target": "survey_runner_rationale_1047"
@@ -85223,8 +85223,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L22",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1101",
-      "_tgt": "survey_nim_nimclient",
+      "_src": "survey_nim_nimclient",
+      "_tgt": "survey_runner_rationale_1101",
       "confidence_score": 0.5,
       "source": "survey_nim_nimclient",
       "target": "survey_runner_rationale_1101"
@@ -85235,8 +85235,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L22",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1106",
-      "_tgt": "survey_nim_nimclient",
+      "_src": "survey_nim_nimclient",
+      "_tgt": "survey_runner_rationale_1106",
       "confidence_score": 0.5,
       "source": "survey_nim_nimclient",
       "target": "survey_runner_rationale_1106"
@@ -85247,8 +85247,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L22",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1131",
-      "_tgt": "survey_nim_nimclient",
+      "_src": "survey_nim_nimclient",
+      "_tgt": "survey_runner_rationale_1131",
       "confidence_score": 0.5,
       "source": "survey_nim_nimclient",
       "target": "survey_runner_rationale_1131"
@@ -85259,8 +85259,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L22",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1188",
-      "_tgt": "survey_nim_nimclient",
+      "_src": "survey_nim_nimclient",
+      "_tgt": "survey_runner_rationale_1188",
       "confidence_score": 0.5,
       "source": "survey_nim_nimclient",
       "target": "survey_runner_rationale_1188"
@@ -85271,8 +85271,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L22",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1233",
-      "_tgt": "survey_nim_nimclient",
+      "_src": "survey_nim_nimclient",
+      "_tgt": "survey_runner_rationale_1233",
       "confidence_score": 0.5,
       "source": "survey_nim_nimclient",
       "target": "survey_runner_rationale_1233"
@@ -88571,8 +88571,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L21",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_59",
-      "_tgt": "survey_snapshot_compactsnapshot",
+      "_src": "survey_snapshot_compactsnapshot",
+      "_tgt": "survey_runner_rationale_59",
       "confidence_score": 0.5,
       "source": "survey_snapshot_compactsnapshot",
       "target": "survey_runner_rationale_59"
@@ -88583,8 +88583,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L21",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_70",
-      "_tgt": "survey_snapshot_compactsnapshot",
+      "_src": "survey_snapshot_compactsnapshot",
+      "_tgt": "survey_runner_rationale_70",
       "confidence_score": 0.5,
       "source": "survey_snapshot_compactsnapshot",
       "target": "survey_runner_rationale_70"
@@ -88595,8 +88595,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L21",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_500",
-      "_tgt": "survey_snapshot_compactsnapshot",
+      "_src": "survey_snapshot_compactsnapshot",
+      "_tgt": "survey_runner_rationale_500",
       "confidence_score": 0.5,
       "source": "survey_snapshot_compactsnapshot",
       "target": "survey_runner_rationale_500"
@@ -88607,8 +88607,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L21",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_597",
-      "_tgt": "survey_snapshot_compactsnapshot",
+      "_src": "survey_snapshot_compactsnapshot",
+      "_tgt": "survey_runner_rationale_597",
       "confidence_score": 0.5,
       "source": "survey_snapshot_compactsnapshot",
       "target": "survey_runner_rationale_597"
@@ -88619,8 +88619,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L21",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_625",
-      "_tgt": "survey_snapshot_compactsnapshot",
+      "_src": "survey_snapshot_compactsnapshot",
+      "_tgt": "survey_runner_rationale_625",
       "confidence_score": 0.5,
       "source": "survey_snapshot_compactsnapshot",
       "target": "survey_runner_rationale_625"
@@ -88631,8 +88631,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L21",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_656",
-      "_tgt": "survey_snapshot_compactsnapshot",
+      "_src": "survey_snapshot_compactsnapshot",
+      "_tgt": "survey_runner_rationale_656",
       "confidence_score": 0.5,
       "source": "survey_snapshot_compactsnapshot",
       "target": "survey_runner_rationale_656"
@@ -88643,8 +88643,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L21",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_681",
-      "_tgt": "survey_snapshot_compactsnapshot",
+      "_src": "survey_snapshot_compactsnapshot",
+      "_tgt": "survey_runner_rationale_681",
       "confidence_score": 0.5,
       "source": "survey_snapshot_compactsnapshot",
       "target": "survey_runner_rationale_681"
@@ -88655,8 +88655,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L21",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_718",
-      "_tgt": "survey_snapshot_compactsnapshot",
+      "_src": "survey_snapshot_compactsnapshot",
+      "_tgt": "survey_runner_rationale_718",
       "confidence_score": 0.5,
       "source": "survey_snapshot_compactsnapshot",
       "target": "survey_runner_rationale_718"
@@ -88667,8 +88667,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L21",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_745",
-      "_tgt": "survey_snapshot_compactsnapshot",
+      "_src": "survey_snapshot_compactsnapshot",
+      "_tgt": "survey_runner_rationale_745",
       "confidence_score": 0.5,
       "source": "survey_snapshot_compactsnapshot",
       "target": "survey_runner_rationale_745"
@@ -88679,8 +88679,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L21",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_784",
-      "_tgt": "survey_snapshot_compactsnapshot",
+      "_src": "survey_snapshot_compactsnapshot",
+      "_tgt": "survey_runner_rationale_784",
       "confidence_score": 0.5,
       "source": "survey_snapshot_compactsnapshot",
       "target": "survey_runner_rationale_784"
@@ -88691,8 +88691,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L21",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_789",
-      "_tgt": "survey_snapshot_compactsnapshot",
+      "_src": "survey_snapshot_compactsnapshot",
+      "_tgt": "survey_runner_rationale_789",
       "confidence_score": 0.5,
       "source": "survey_snapshot_compactsnapshot",
       "target": "survey_runner_rationale_789"
@@ -88703,8 +88703,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L21",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_978",
-      "_tgt": "survey_snapshot_compactsnapshot",
+      "_src": "survey_snapshot_compactsnapshot",
+      "_tgt": "survey_runner_rationale_978",
       "confidence_score": 0.5,
       "source": "survey_snapshot_compactsnapshot",
       "target": "survey_runner_rationale_978"
@@ -88715,8 +88715,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L21",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1042",
-      "_tgt": "survey_snapshot_compactsnapshot",
+      "_src": "survey_snapshot_compactsnapshot",
+      "_tgt": "survey_runner_rationale_1042",
       "confidence_score": 0.5,
       "source": "survey_snapshot_compactsnapshot",
       "target": "survey_runner_rationale_1042"
@@ -88727,8 +88727,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L21",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1047",
-      "_tgt": "survey_snapshot_compactsnapshot",
+      "_src": "survey_snapshot_compactsnapshot",
+      "_tgt": "survey_runner_rationale_1047",
       "confidence_score": 0.5,
       "source": "survey_snapshot_compactsnapshot",
       "target": "survey_runner_rationale_1047"
@@ -88739,8 +88739,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L21",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1101",
-      "_tgt": "survey_snapshot_compactsnapshot",
+      "_src": "survey_snapshot_compactsnapshot",
+      "_tgt": "survey_runner_rationale_1101",
       "confidence_score": 0.5,
       "source": "survey_snapshot_compactsnapshot",
       "target": "survey_runner_rationale_1101"
@@ -88751,8 +88751,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L21",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1106",
-      "_tgt": "survey_snapshot_compactsnapshot",
+      "_src": "survey_snapshot_compactsnapshot",
+      "_tgt": "survey_runner_rationale_1106",
       "confidence_score": 0.5,
       "source": "survey_snapshot_compactsnapshot",
       "target": "survey_runner_rationale_1106"
@@ -88763,8 +88763,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L21",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1131",
-      "_tgt": "survey_snapshot_compactsnapshot",
+      "_src": "survey_snapshot_compactsnapshot",
+      "_tgt": "survey_runner_rationale_1131",
       "confidence_score": 0.5,
       "source": "survey_snapshot_compactsnapshot",
       "target": "survey_runner_rationale_1131"
@@ -88775,8 +88775,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L21",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1188",
-      "_tgt": "survey_snapshot_compactsnapshot",
+      "_src": "survey_snapshot_compactsnapshot",
+      "_tgt": "survey_runner_rationale_1188",
       "confidence_score": 0.5,
       "source": "survey_snapshot_compactsnapshot",
       "target": "survey_runner_rationale_1188"
@@ -88787,8 +88787,8 @@
       "source_file": "survey-cli/survey/runner.py",
       "source_location": "L21",
       "weight": 0.8,
-      "_src": "survey_runner_rationale_1233",
-      "_tgt": "survey_snapshot_compactsnapshot",
+      "_src": "survey_snapshot_compactsnapshot",
+      "_tgt": "survey_runner_rationale_1233",
       "confidence_score": 0.5,
       "source": "survey_snapshot_compactsnapshot",
       "target": "survey_runner_rationale_1233"
