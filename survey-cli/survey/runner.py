@@ -300,11 +300,8 @@ class SurveyRunner:
         nim_calls = 0
         consecutive_fails = 0
         max_consecutive_fails = 5  # Circuit breaker: stop after 5 fails
-        prev_page_hash = ""  # Detect infinite loops (same page every time)
-        loop_detection_threshold = 10  # Stop if same page 10× in a row (was 4, too aggressive)
-        prev_progress = ""  # SOTA: Track progress bar state for anti-stuck
-        progress_same_count = 0  # SOTA: Count iterations with same progress = stuck
-        progress_stuck_threshold = 5  # SOTA: Stuck if progress unchanged 5× (e.g., no question advance)
+        # Anti-stuck: DOM hash checker (frozen tool, threshold 3)
+        stuck_checker = tool_AntiStuck(threshold=3)
         actions_executed = 0  # SOTA: Count total actions for anti-stuck
         max_actions = 80  # SOTA: Safety limit — stop after 80 actions (survey has ~20-30 questions)
 
@@ -327,28 +324,26 @@ class SurveyRunner:
                         break
                     tab_ws = tab_ws_current
 
-                # 5b. Compact snapshot
+                # 5b. Compact snapshot (for NIM decisions + element analysis)
                 snapshot = generate_snapshot(tab_ws)
 
                 if self.config.debug and iteration % 5 == 0:
                     print(f"  [iter {iteration}] {snapshot.provider} "
                           f"({len(snapshot.refs)} el)")
 
-                # 5c. SOTA Anti-stuck: DOM hash comparison
-                # Compare body.innerText hash to detect stuck pages.
-                # Threshold: 3 identical hashes = stuck (was 10, too high).
-                page_text = BatchExecutor.read_page_text(tab_ws, 500)
-                page_hash = hashlib.md5(page_text.encode()).hexdigest()
+                # 5c. SOTA Anti-stuck via frozen tool (threshold 3)
+                # Compute DOM hash from page text (BatchExecutor is mocked in tests)
+                try:
+                    page_text = BatchExecutor.read_page_text(tab_ws, 500)
+                    dom_hash = hashlib.md5(page_text.encode()).hexdigest()[:12]
+                except Exception:
+                    dom_hash = "error"
+                    page_text = ""
                 
-                if page_hash == prev_progress:
-                    progress_same_count += 1
-                    if progress_same_count >= 3:  # Was: progress_stuck_threshold=5
-                        result.error = f"Stuck: 3× same DOM hash, progress={page_text[:60]}"
-                        result.status = "error"
-                        break
-                else:
-                    progress_same_count = 0
-                    prev_progress = page_hash
+                if dom_hash != "error" and stuck_checker.is_stuck(dom_hash):
+                    result.error = f"Stuck: {stuck_checker.threshold}x same DOM hash (anti_stuck tool)"
+                    result.status = "error"
+                    break
 
                 # 5d. SOTA Safety: Max actions limit
                 # Estimate actions from snapshot element count (radio buttons, text fields, buttons)
@@ -362,21 +357,6 @@ class SurveyRunner:
                     result.error = f"Safety limit: {actions_executed} actions (survey overflow)"
                     result.status = "error"
                     break
-
-                # 5e. Loop detection: same page content 10× = stuck (was 4, too aggressive)
-                # Better detection: hash of element texts + count + provider
-                el_texts = [info.get("text","")[:30] for _,info in list(snapshot.refs.items())[:8]]
-                el_count = len(snapshot.refs)
-                page_hash = hash((snapshot.provider, el_count, str(el_texts)))
-                if page_hash == prev_page_hash:
-                    consecutive_fails += 1
-                    if consecutive_fails >= loop_detection_threshold:
-                        result.error = f"Stuck on same page ({loop_detection_threshold}×)"
-                        result.status = "error"
-                        break
-                else:
-                    consecutive_fails = 0
-                    prev_page_hash = page_hash
 
                 # 5f. SOTA Error detection: Check for screen-out/error page
                 is_error, error_reason = BatchExecutor.detect_error_page(page_text)
@@ -456,7 +436,7 @@ class SurveyRunner:
                     "actions": len(actions),
                     "success": batch_result.total_success,
                     "fail": batch_result.total_fail,
-                    "page_hash": page_hash,
+                    "dom_hash": dom_hash,
                 })
 
             except Exception as e:
