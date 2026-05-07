@@ -22,6 +22,7 @@ class CompactSnapshot:
     title: str = ""
     provider: str = "unknown"
     timestamp: str = ""
+    modal_center: Optional[float] = None  # dist to viewport center, null = no modal
 
     def to_dict(self) -> Dict:
         return asdict(self)
@@ -29,10 +30,47 @@ class CompactSnapshot:
 
 # ── JS Element Extractor ───────────────────────────────
 
+# MODIFIED: Scan ONLY the topmost visible modal overlay.
+# Everything outside the active modal is dashboard/background — irrelevant.
+# Multiple modals can stack (survey preview + account setup + rating prompt).
+# We use element position (z-index, center-point) to find the TOPMOST modal.
 ELEMENT_EXTRACTOR_JS = '''
 (function(){
     var out = [];
     var seen = new Set();
+
+    // ── Find TOPMOST modal overlay ──────────────────────────────────
+    // Strategy: find element whose center is closest to viewport center.
+    // The active survey modal will have its center near viewport center,
+    // while background modals (rating prompt, account setup) are usually
+    // on the sides or off-center.
+    function getCenter(el) {
+        var r = el.getBoundingClientRect();
+        if (!r || r.width === 0 || r.height === 0) return null;
+        return {x: r.left + r.width/2, y: r.top + r.height/2};
+    }
+    function distToCenter(c) {
+        var vw = window.innerWidth, vh = window.innerHeight;
+        var vc = {x: vw/2, y: vh/2};
+        return Math.sqrt((c.x-vc.x)*(c.x-vc.x) + (c.y-vc.y)*(c.y-vc.y));
+    }
+
+    var modalCandidates = Array.from(document.querySelectorAll(
+        '[class*=modal], [role=dialog], .overlay, .dialog'
+    ));
+    var topModal = null;
+    var bestDist = Infinity;
+    modalCandidates.forEach(function(m) {
+        var s = window.getComputedStyle(m);
+        if (s.display === 'none' || s.visibility === 'hidden') return;
+        var c = getCenter(m);
+        if (!c) return;
+        var d = distToCenter(c);
+        if (d < bestDist) { bestDist = d; topModal = m; }
+    });
+
+    // Fallback: if no modal found, scan whole document (new-tab survey)
+    var scanRoot = topModal || document.body;
 
     function add(el, role) {
         if (!el || seen.has(el)) return;
@@ -48,55 +86,56 @@ ELEMENT_EXTRACTOR_JS = '''
             value: el.value || '',
             type: el.type || '',
             enabled: !el.disabled && visible,
+            inModal: !!topModal,
         };
         out.push(info);
     }
 
-    // Buttons
-    document.querySelectorAll('button, input[type=submit], input[type=button], .NextButton, .bsbutton, [role=button]').forEach(function(el) {
+    // Buttons — ONLY inside topModal (or document body if no modal)
+    scanRoot.querySelectorAll('button, input[type=submit], input[type=button], .NextButton, .bsbutton, [role=button]').forEach(function(el) {
         add(el, 'button');
     });
 
     // Radio buttons
-    document.querySelectorAll('input[type=radio], .cf-radio').forEach(function(el) {
+    scanRoot.querySelectorAll('input[type=radio], .cf-radio').forEach(function(el) {
         add(el, el.checked ? 'radio-selected' : 'radio');
     });
 
     // Checkboxes
-    document.querySelectorAll('input[type=checkbox], .cf-checkbox').forEach(function(el) {
+    scanRoot.querySelectorAll('input[type=checkbox], .cf-checkbox').forEach(function(el) {
         add(el, el.checked ? 'checkbox-checked' : 'checkbox');
     });
 
     // Text inputs
-    document.querySelectorAll('input[type=text], input[type=number], input[type=email], input:not([type])').forEach(function(el) {
+    scanRoot.querySelectorAll('input[type=text], input[type=number], input[type=email], input:not([type])').forEach(function(el) {
         add(el, 'textbox');
     });
 
     // Textareas
-    document.querySelectorAll('textarea').forEach(function(el) {
+    scanRoot.querySelectorAll('textarea').forEach(function(el) {
         if (!el.classList.contains('g-recaptcha-response')) {
             add(el, 'textbox');
         }
     });
 
     // Selects
-    document.querySelectorAll('select').forEach(function(el) {
+    scanRoot.querySelectorAll('select').forEach(function(el) {
         add(el, 'select');
     });
 
     // Labels (for question detection)
-    document.querySelectorAll('label, .QuestionText, .question-text, legend, strong').forEach(function(el) {
+    scanRoot.querySelectorAll('label, .QuestionText, .question-text, legend, strong').forEach(function(el) {
         var t = (el.innerText || el.textContent || '').trim();
         if (t && t.length > 3 && t.length < 200) {
             out.push({
                 role: 'label', tag: el.tagName ? el.tagName.toLowerCase() : '',
                 text: t, label: '', name: '', value: '', type: '',
-                enabled: true,
+                enabled: true, inModal: !!topModal,
             });
         }
     });
 
-    return JSON.stringify(out);
+    return JSON.stringify({elements: out, modalCenter: bestDist === Infinity ? null : bestDist});
 })()
 '''
 
@@ -133,9 +172,20 @@ def generate_snapshot(ws_url, include_semantic=True):
     r2 = json.loads(ws.recv())
     ws.close()
 
-    raw_elements = json.loads(
-        r2.get("result", {}).get("result", {}).get("value", "[]")
-    )
+    # New format: {elements: [...], modalCenter: number|null}
+    # Legacy format: [...] (plain list, old tests) or "[]" (string)
+    raw_val = r2.get("result", {}).get("result", {}).get("value", '{"elements":[]}')
+    parsed = json.loads(raw_val)
+    # Handle legacy list format (old tests) or string "[]"
+    if isinstance(parsed, list):
+        raw_elements = parsed
+        modal_center = None
+    elif isinstance(parsed, dict):
+        raw_elements = parsed.get("elements", [])
+        modal_center = parsed.get("modalCenter")
+    else:
+        raw_elements = []
+        modal_center = None
 
     # Build @eN refs
     refs = {}
@@ -159,9 +209,13 @@ def generate_snapshot(ws_url, include_semantic=True):
             e.get("text") for e in raw_elements
             if e.get("role") == "button" and e.get("text")
         ][:5]
+        semantic["in_page_modal"] = modal_center is not None
 
     url = meta.get("url", "")
     provider = detect_provider(url)
+    # In-page modal: URL is always dashboard, provider unknown until survey starts
+    if modal_center is not None and provider == "heypiggy":
+        provider = "in_page_modal"
 
     return CompactSnapshot(
         refs=refs,
@@ -170,6 +224,7 @@ def generate_snapshot(ws_url, include_semantic=True):
         title=meta.get("title", ""),
         provider=provider,
         timestamp=time.strftime("%Y-%m-%dT%H:%M:%S"),
+        modal_center=modal_center,
     )
 
 

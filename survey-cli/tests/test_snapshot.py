@@ -294,12 +294,15 @@ class TestGenerateSnapshot(unittest.TestCase):
         elements_resp = json.dumps({
             "result": {
                 "result": {
-                    "value": json.dumps([
-                        {"role": "button", "tag": "button", "text": "Weiter",
-                         "label": "", "name": "", "value": "", "type": "", "enabled": True},
-                        {"role": "radio", "tag": "input", "text": "Option A",
-                         "label": "", "name": "", "value": "", "type": "radio", "enabled": True},
-                    ])
+                    "value": json.dumps({
+                        "elements": [
+                            {"role": "button", "tag": "button", "text": "Weiter",
+                             "label": "", "name": "", "value": "", "type": "", "enabled": True},
+                            {"role": "radio", "tag": "input", "text": "Option A",
+                             "label": "", "name": "", "value": "", "type": "radio", "enabled": True},
+                        ],
+                        "modalCenter": None,
+                    })
                 }
             }
         })
@@ -324,14 +327,17 @@ class TestGenerateSnapshot(unittest.TestCase):
                 {"url": "https://test.com", "title": "Test", "innerText": ""})}}
         })
         elements_resp = json.dumps({
-            "result": {"result": {"value": json.dumps([
-                {"role": "button", "tag": "button", "text": "A",
-                 "label": "", "name": "", "value": "", "type": "", "enabled": True},
-                {"role": "button", "tag": "button", "text": "B",
-                 "label": "", "name": "", "value": "", "type": "", "enabled": True},
-                {"role": "button", "tag": "button", "text": "C",
-                 "label": "", "name": "", "value": "", "type": "", "enabled": True},
-            ])}}
+            "result": {"result": {"value": json.dumps({
+                "elements": [
+                    {"role": "button", "tag": "button", "text": "A",
+                     "label": "", "name": "", "value": "", "type": "", "enabled": True},
+                    {"role": "button", "tag": "button", "text": "B",
+                     "label": "", "name": "", "value": "", "type": "", "enabled": True},
+                    {"role": "button", "tag": "button", "text": "C",
+                     "label": "", "name": "", "value": "", "type": "", "enabled": True},
+                ],
+                "modalCenter": None,
+            })}}
         })
         mock_ws = MockWs([meta_resp, elements_resp])
         with patch('websocket.create_connection', return_value=mock_ws):
@@ -346,12 +352,15 @@ class TestGenerateSnapshot(unittest.TestCase):
                 {"url": "https://test.com", "title": "Test", "innerText": ""})}}
         })
         elements_resp = json.dumps({
-            "result": {"result": {"value": json.dumps([
-                {"role": "label", "tag": "label", "text": "Was ist Ihr Geschlecht?",
-                 "label": "", "name": "", "value": "", "type": "", "enabled": True},
-                {"role": "button", "tag": "button", "text": "Weiter",
-                 "label": "", "name": "", "value": "", "type": "", "enabled": True},
-            ])}}
+            "result": {"result": {"value": json.dumps({
+                "elements": [
+                    {"role": "label", "tag": "label", "text": "Was ist Ihr Geschlecht?",
+                     "label": "", "name": "", "value": "", "type": "", "enabled": True},
+                    {"role": "button", "tag": "button", "text": "Weiter",
+                     "label": "", "name": "", "value": "", "type": "", "enabled": True},
+                ],
+                "modalCenter": None,
+            })}}
         })
         mock_ws = MockWs([meta_resp, elements_resp])
         with patch('websocket.create_connection', return_value=mock_ws):
@@ -365,14 +374,17 @@ class TestGenerateSnapshot(unittest.TestCase):
                 {"url": "https://test.com", "title": "Test", "innerText": ""})}}
         })
         elements_resp = json.dumps({
-            "result": {"result": {"value": json.dumps([
-                {"role": "button", "tag": "button", "text": "Start",
-                 "label": "", "name": "", "value": "", "type": "", "enabled": True},
-                {"role": "button", "tag": "button", "text": "Weiter",
-                 "label": "", "name": "", "value": "", "type": "", "enabled": True},
-                {"role": "button", "tag": "button", "text": "Zurück",
-                 "label": "", "name": "", "value": "", "type": "", "enabled": True},
-            ])}}
+            "result": {"result": {"value": json.dumps({
+                "elements": [
+                    {"role": "button", "tag": "button", "text": "Start",
+                     "label": "", "name": "", "value": "", "type": "", "enabled": True},
+                    {"role": "button", "tag": "button", "text": "Weiter",
+                     "label": "", "name": "", "value": "", "type": "", "enabled": True},
+                    {"role": "button", "tag": "button", "text": "Zurück",
+                     "label": "", "name": "", "value": "", "type": "", "enabled": True},
+                ],
+                "modalCenter": None,
+            })}}
         })
         mock_ws = MockWs([meta_resp, elements_resp])
         with patch('websocket.create_connection', return_value=mock_ws):
@@ -425,11 +437,14 @@ class TestGenerateSnapshot(unittest.TestCase):
                 {"url": "https://test.com", "title": "Test", "innerText": ""})}}
         })
         elements_resp = json.dumps({
-            "result": {"result": {"value": json.dumps([
-                {"role": "textbox", "tag": "input", "text": "Berlin",
-                 "label": "Stadt", "name": "city", "value": "Berlin",
-                 "type": "text", "enabled": True},
-            ])}}
+            "result": {"result": {"value": json.dumps({
+                "elements": [
+                    {"role": "textbox", "tag": "input", "text": "Berlin",
+                     "label": "Stadt", "name": "city", "value": "Berlin",
+                     "type": "text", "enabled": True},
+                ],
+                "modalCenter": None,
+            })}}
         })
         mock_ws = MockWs([meta_resp, elements_resp])
         with patch('websocket.create_connection', return_value=mock_ws):
@@ -450,10 +465,13 @@ class TestGenerateSnapshot(unittest.TestCase):
                 {"url": "https://test.com", "title": "Test", "innerText": ""})}}
         })
         elements_resp = json.dumps({
-            "result": {"result": {"value": json.dumps([
-                {"role": "button", "tag": "button", "text": "Submit",
-                 "label": "", "name": "", "value": "", "type": "", "enabled": False},
-            ])}}
+            "result": {"result": {"value": json.dumps({
+                "elements": [
+                    {"role": "button", "tag": "button", "text": "Submit",
+                     "label": "", "name": "", "value": "", "type": "", "enabled": False},
+                ],
+                "modalCenter": None,
+            })}}
         })
         mock_ws = MockWs([meta_resp, elements_resp])
         with patch('websocket.create_connection', return_value=mock_ws):

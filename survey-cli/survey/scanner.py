@@ -268,17 +268,20 @@ def read_balance(port=9999):
         var m = t.match(/(\\d+[.,]\\d+)/);
         if (m) return m[1].replace(",", ".");
     }
-    // Fallback: find the largest number near € in the full text
+    // Fallback: find number next to € that is NOT a survey reward (reward lines have "Min" nearby)
     var t = document.body.innerText;
-    var re = /(\\d+[.,]\\d+)\\s*\\n?\\s*[€$]/g;
-    var matches = [];
-    var match;
-    while ((match = re.exec(t)) !== null) {
-        matches.push(parseFloat(match[1].replace(",", ".")));
+    var lines = t.split("\\n");
+    for (var i = 0; i < lines.length; i++) {
+        var line = lines[i].trim();
+        var m = line.match(/^(\\d+[.,]\\d+)\\s*€?$/);
+        // Skip lines that are survey rewards (have "Min" in adjacent lines or are small)
+        if (m && !/Min|Level|Umfragen/.test(lines[Math.max(0,i-1)] || "")) {
+            var val = parseFloat(m[1].replace(",", "."));
+            // Balance is typically > 1.0 and not a round number like survey rewards
+            if (val > 1.0 && val < 1000) return val.toString();
+        }
     }
-    // Filter out very small values (< 0.01) and return the largest
-    var valid = matches.filter(function(v) { return v > 0.01; });
-    return valid.length > 0 ? Math.max.apply(null, valid).toString() : "0";
+    return "0";
 })()
 '''
             }
