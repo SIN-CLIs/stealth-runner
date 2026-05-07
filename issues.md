@@ -207,6 +207,85 @@
 | SR-36 | deferred | Generated Docs De-Duplication |
 | SR-37 | done | OpenCode Fix: Zod v4 Crash + GitNexus + Graphify |
 
+---
+
+## New Issues (2026-05-08 Automated Analysis)
+
+---
+
+### #12: Login-Loop Failure — 0 Surveys seit Tagen
+**Priority**: P0 | **Labels**: `bug`, `login` | **Component**: survey.py, auto_google_login.py
+**Status**: OPEN | **Found**: 2026-05-08 | **Assignee**: stealth-orchestrator
+**Blocking**: Payouts — Watch-Loop wiederholt "Not logged in" endlos
+
+**Problem**: Watch-Loop (`cmd_watch()`) fails 100% with identical pattern: "NEUE TAB! Aber NICHT eingeloggt! Login first:". `surveys_completed: 0` since 2026-05-07 06:53.
+**Root Causes** (4 hypotheses):
+1. Chrome Accessibility not active — `ensure_accessibility()` warns but continues
+2. cua-driver daemon not running — `start_cua_daemon()` called but not verified
+3. Google OAuth popup not detected — wrong tab detected
+4. Keychain Auto-Fill inactive — "Fortfahren" button missing, password field appears instead
+
+**Fix approach**: Hard-stop on accessibility failure, daemon health-check, OAuth tab detection, Keychain fallback path. See `issues/001-login-loop-failure.md`
+
+---
+
+### #13: Daemon State Management — No Auto-Recovery
+**Priority**: P0 | **Labels**: `bug`, `daemon` | **Component**: survey.py, session_manager.py
+**Status**: OPEN | **Found**: 2026-05-08 | **Assignee**: stealth-orchestrator
+**Blocking**: All CUA operations — no daemon = no login = no surveys
+
+**Problem**: `~/.stealth/daemon_state.json` shows `running: false` since 2026-05-07 06:53. Watch-Loop checks if Chrome is running but NOT if cua-driver daemon is running. No auto-restart on crash.
+**Fix approach**: `DaemonManager` class with state machine (STOPPED → STARTING → HEALTHY → DEGRADED → FAILED), auto-restart with exponential backoff, health-check via `list_windows`. See `issues/002-daemon-state-management.md`
+
+---
+
+### #14: Chrome Startup Flags Not Enforced
+**Priority**: P0 | **Labels**: `bug`, `chrome` | **Component**: auto_google_login.py, session_manager.py
+**Status**: OPEN | **Found**: 2026-05-08 | **Assignee**: stealth-orchestrator
+**Blocking**: CUA operations — AX-Tree empty without `--force-renderer-accessibility`
+
+**Problem**: `playstealth launch` does NOT set `--force-renderer-accessibility` → AX-Tree empty. `--remote-allow-origins=*` (without quotes) → zsh expands `*` → Chrome fails to start. Fixed profile path `/tmp/heypiggy-bot` corrupts after restart.
+**Fix approach**: `ChromeLauncher` class with post-start verification (CDP reachable? AX-Tree has elements? Flags in cmdline?), timestamped profile paths, hard enforcement of required flags. See `issues/003-chrome-startup-flags.md`
+
+---
+
+### #15: Session File Corruption — 2965 Files with 2 Bytes
+**Priority**: P1 | **Labels**: `bug`, `session` | **Component**: opencode sessions
+**Status**: OPEN | **Found**: 2026-05-08 | **Assignee**: stealth-orchestrator
+
+**Problem**: `~/.local/share/opencode/sessions/` contains 2965 files, each only 2 bytes. No session history, no error analysis possible, no learning data for agents.
+**Fix approach**: Session-write verification (file size > 100 bytes + JSON validation), session-cleanup with backup (archive before delete), monitoring alert on empty sessions. See `issues/004-session-file-corruption.md`
+
+---
+
+### #16: Code-Completeness-Verification Missing
+**Priority**: P0 | **Labels**: `enhancement`, `ci` | **Component**: scripts, pre-commit
+**Status**: OPEN | **Found**: 2026-05-08 | **Assignee**: stealth-orchestrator
+
+**Problem**: No automated check ensures: (1) every function has docstring, (2) every constant has `WARUM` comment, (3) every action has verify-step, (4) every file has BANNED-methods header, (5) every public function has ≥3 tests, (6) no hardcoded credentials/PIDs.
+**Fix approach**: `scripts/verify_completeness.py` — pre-commit hook blocking commits with banned patterns, hardcoded PIDs, missing docstrings. See `issues/005-code-completeness-verification.md`
+
+---
+
+### #17: NIM Runtime Failures — No Fallback Strategy
+**Priority**: P0 | **Labels**: `bug`, `nim` | **Component**: survey_agent.py, nim_client.py
+**Status**: OPEN | **Found**: 2026-05-08 | **Assignee**: stealth-orchestrator
+**Blocking**: Payouts — NIM failure = 0 surveys when `use_nim=True`
+
+**Problem**: `NIMSurveyClient.decide()` has no timeout/error handling. On API key expired, rate limit, or network error → Survey loop fails completely. No fallback to auto-pilot.
+**Fix approach**: `NIMSurveyClient` with retry (1s, 2s, 4s backoff), error-type differentiation (401 = permanent, 429 = retry), `available` property with auto-recovery after 5min. `SurveyAgent.run_survey()` falls back to `_simple_actions()` after 3 consecutive NIM failures. See `issues/006-nim-runtime-failures.md`
+
+---
+
+## Summary (All 17 Issues)
+
+| Priority | Count | Issues |
+|----------|-------|--------|
+| P0 (Critical — blocking payouts) | 9 | #1-3 Qualtrics/completion/tabs, #12 Login-loop, #13 Daemon, #14 Chrome-flags, #16 Code-verification, #17 NIM-fallback |
+| P1 (High — quality of life) | 5 | #4 Validation errors, #5 Anti-stuck loop, #6 Leaf-node filter, #15 Session corruption |
+| P2 (Medium — architecture) | 2 | #7 Accessibility flag, #8 Qualtrics selectors |
+| P3 (Low — nice to have) | 1 | #11 Tab switching test |
+
 ### Survey Routing Status
 
 | Provider | Status | Payout |
