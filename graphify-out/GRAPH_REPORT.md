@@ -1,12 +1,12 @@
 # Graph Report - stealth-runner  (2026-05-07)
 
 ## Corpus Check
-- 120 files · ~221,938 words
+- 120 files · ~221,813 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2684 nodes · 6206 edges · 251 communities detected
-- Extraction: 41% EXTRACTED · 59% INFERRED · 0% AMBIGUOUS · INFERRED: 3690 edges (avg confidence: 0.56)
+- 2698 nodes · 6265 edges · 251 communities detected
+- Extraction: 40% EXTRACTED · 60% INFERRED · 0% AMBIGUOUS · INFERRED: 3749 edges (avg confidence: 0.56)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -263,18 +263,20 @@
 - [[_COMMUNITY_Community 257|Community 257]]
 
 ## God Nodes (most connected - your core abstractions)
-1. `CompactSnapshot` - 432 edges
-2. `SurveyRunner` - 372 edges
-3. `BatchExecutor` - 368 edges
+1. `CompactSnapshot` - 446 edges
+2. `BatchExecutor` - 382 edges
+3. `SurveyRunner` - 372 edges
 4. `RunnerConfig` - 354 edges
-5. `NIMClient` - 298 edges
+5. `NIMClient` - 312 edges
 6. `SurveyResult` - 224 edges
-7. `CDPConnection` - 169 edges
+7. `CDPConnection` - 186 edges
 8. `OutputGenerator` - 119 edges
 9. `SemanticAnalyzer` - 105 edges
 10. `BatchResult` - 93 edges
 
 ## Surprising Connections (you probably didn't know these)
+- `_run_solver()` --calls--> `create_tab()`  [INFERRED]
+  stealth-captcha/src/stealth_captcha/cli.py → survey-cli/survey/chrome.py
 - `list_targets()` --calls--> `CDPConnectionError`  [INFERRED]
   stealth-captcha/src/stealth_captcha/cdp/targets.py → survey-cli/survey/cdp_client.py
 - `get_browser_ws()` --calls--> `CDPConnectionError`  [INFERRED]
@@ -283,98 +285,96 @@
   stealth-captcha/src/stealth_captcha/cdp/targets.py → survey-cli/survey/cdp_client.py
 - `connect()` --calls--> `CDPConnectionError`  [INFERRED]
   stealth-captcha/src/stealth_captcha/cdp/client.py → survey-cli/survey/cdp_client.py
-- `_find_chrome()` --calls--> `CDPConnectionError`  [INFERRED]
-  stealth-captcha/src/stealth_captcha/cdp/browser.py → survey-cli/survey/cdp_client.py
 
 ## Communities
 
 ### Community 0 - "Community 0"
-Cohesion: 0.02
-Nodes (325): patch(), _get_stealth_js(), Load stealth injection bundle, or fallback to inline minimal overrides., cmd_loop(), cmd_profile(), Continuous poller: scan → run → wait → repeat., 24/7 Watch Daemon — continuous poller with crash recovery.      Features:     -, Show current balance + summary. (+317 more)
+Cohesion: 0.01
+Nodes (360): Scan all elements on current page., build_survey_prompt(), decide(), _parse_response(), NIM Survey Client — Nemotron 3 Omni via NVIDIA NIM API.  Reuses the OpenAI clien, Ask Nemotron to decide using tool-use mode.          For when the LLM should sel, Build a prompt for Nemotron to decide next batch actions.      Args:         sna, CDPConnection (+352 more)
 
 ### Community 1 - "Community 1"
 Cohesion: 0.02
-Nodes (333): CDPConnection, CDPConnectionError, CDPError, create_cdp(), Lightweight sync CDP WebSocket client with retry, reconnect, and ID routing.  So, Send a CDP command and return the result dict.          Args:             method, Read WebSocket messages until we find one with the matching ID.          This so, CDP command returned an error. (+325 more)
+Nodes (322): _get_stealth_js(), inject_stealth_to_tab(), Load stealth injection bundle, or fallback to inline minimal overrides., Inject stealth JS into a tab via Page.addScriptToEvaluateOnNewDocument.      The, cmd_loop(), cmd_profile(), cmd_run(), _print_result() (+314 more)
 
 ### Community 2 - "Community 2"
-Cohesion: 0.01
-Nodes (206): auto_doc(), check_infisical(), monitor(), Start the stealth-sync daemon with optional Infisical integration., Check Infisical integration status., Display Infisical setup guide., setup_infisical(), summarize() (+198 more)
+Cohesion: 0.02
+Nodes (169): ABC, BaseSettings, BaseSolver, _find_chrome(), Chrome launcher with hardened flags for stealth automation.  No --enable-automat, Launch Chrome with stealth flags.          Blocks until the CDP endpoint becomes, Open a URL in the default tab (creates one if none exist).          Requires tha, Kill the Chrome process gracefully (SIGTERM → SIGKILL after 5s). (+161 more)
 
 ### Community 3 - "Community 3"
 Cohesion: 0.02
-Nodes (166): ABC, BaseSettings, BaseSolver, _find_chrome(), Chrome launcher with hardened flags for stealth automation.  No --enable-automat, Launch Chrome with stealth flags.          Blocks until the CDP endpoint becomes, Open a URL in the default tab (creates one if none exist).          Requires tha, Kill the Chrome process gracefully (SIGTERM → SIGKILL after 5s). (+158 more)
+Nodes (149): auto_doc(), check_infisical(), monitor(), Start the stealth-sync daemon with optional Infisical integration., Check Infisical integration status., Display Infisical setup guide., setup_infisical(), summarize() (+141 more)
 
 ### Community 4 - "Community 4"
 Cohesion: 0.02
-Nodes (97): cdp_click(), cdp_click_button(), fill_opinion_textarea(), handle_cookie_consent(), PureSpectrum provider patterns — CAPTCHA blocked.  All current PureSpectrum surv, Recursive __ngContext__ search → dropListRef.drop()., CDP Input.dispatchMouseEvent — real OS event (isTrusted=true)., Run full PureSpectrum preflight: cookie → ROBOT → captcha → puzzle. (+89 more)
+Nodes (106): Exception, patch(), patch(), Semantic analysis engine using NVIDIA NIM API for OpenCode session classificatio, Parse the classification response from NVIDIA NIM API.                  The LLM, Generate structured summary of OpenCode session messages using NVIDIA NIM., Parse the classification response from NVIDIA NIM API.                  The LLM, Generate a structured documentation unit from session analysis. (+98 more)
 
 ### Community 5 - "Community 5"
-Cohesion: 0.04
-Nodes (73): check_nvidia_api(), cmd_legacy(), cmd_loop(), cmd_nim_survey(), cmd_scan(), cmd_snapshot(), load_profile(), main() (+65 more)
+Cohesion: 0.02
+Nodes (119): cdp_click(), cdp_click_button(), fill_opinion_textarea(), handle_cookie_consent(), PureSpectrum provider patterns — CAPTCHA blocked.  All current PureSpectrum surv, Recursive __ngContext__ search → dropListRef.drop()., CDP Input.dispatchMouseEvent — real OS event (isTrusted=true)., Run full PureSpectrum preflight: cookie → ROBOT → captcha → puzzle. (+111 more)
 
 ### Community 6 - "Community 6"
-Cohesion: 0.02
-Nodes (78): Exception, build_survey_prompt(), decide(), _parse_response(), NIM Survey Client — Nemotron 3 Omni via NVIDIA NIM API.  Reuses the OpenAI clien, Ask Nemotron to decide using tool-use mode.          For when the LLM should sel, Build a prompt for Nemotron to decide next batch actions.      Args:         sna, build_survey_prompt() (+70 more)
+Cohesion: 0.03
+Nodes (77): check_nvidia_api(), cmd_legacy(), cmd_loop(), cmd_nim_survey(), cmd_scan(), cmd_snapshot(), load_profile(), main() (+69 more)
 
 ### Community 7 - "Community 7"
 Cohesion: 0.04
 Nodes (57): ActionVerifier, survey/agents/action_verifier.py — Action Verifier Agent (2026-05-06)  FUNKTION:, Verify a click action was successful., Verify text was filled into field., Verify survey completion page., Get current page content hash for comparison., Verifies actions were successful by comparing before/after state.      FUNCTIONS, Verify an action was executed successfully. (+49 more)
 
 ### Community 8 - "Community 8"
-Cohesion: 0.03
-Nodes (42): _detect_progress(), _detect_questions(), cmd_scan(), survey-cli — Standalone Survey Automation CLI (NVIDIA NIM + CDP).  Not a coding, detect_provider(), filter_surveys(), print_survey_table(), Dashboard scanner — survey ID extraction + provider detection.  Uses CDP JS to e (+34 more)
+Cohesion: 0.06
+Nodes (59): CDPConnectionError, CDPError, create_cdp(), Lightweight sync CDP WebSocket client with retry, reconnect, and ID routing.  So, Send a CDP command and return the result dict.          Args:             method, Read WebSocket messages until we find one with the matching ID.          This so, CDP command returned an error., Send a CDP command and return 'result' dict directly.          Shorthand for: se (+51 more)
 
 ### Community 9 - "Community 9"
-Cohesion: 0.05
-Nodes (33): Scan all elements on current page., capture_dom_hash(), cdp_click_element_by_text(), cdp_keyboard_enter(), Execute single action with SOTA verification.          SOTA patterns:         -, CDP click on element (for Angular pages). js format: __CDP_CLICK__:selector:idx, CDP click on button by text. js format: __CDP_CLICK_BUTTON__:text, CDP click on [role=button] element by index. For CloudResearch. (+25 more)
-
-### Community 10 - "Community 10"
-Cohesion: 0.05
-Nodes (43): ModelConfig, Return routing statistics., Model configuration as dict with attribute access., dict, _balance(), _click(), _cua(), execute() (+35 more)
-
-### Community 11 - "Community 11"
 Cohesion: 0.06
 Nodes (33): compile(), FlowCompiler, FlowStatus, get_status(), record_run(), dispatch(), _dispatch_step(), _execute_yaml_flow() (+25 more)
 
-### Community 12 - "Community 12"
+### Community 10 - "Community 10"
 Cohesion: 0.04
 Nodes (5): Test SOTA detection functions: detect_error_page, detect_progress, detect_comple, Test BatchExecutor.detect_error_page() — comprehensive error detection., Test detect_progress() — SOTA progress state detection., TestDetectErrorPage, TestDetectProgress
 
-### Community 13 - "Community 13"
+### Community 11 - "Community 11"
+Cohesion: 0.06
+Nodes (37): ModelConfig, Return routing statistics., Model configuration as dict with attribute access., dict, _balance(), _click(), _cua(), execute() (+29 more)
+
+### Community 12 - "Community 12"
 Cohesion: 0.07
 Nodes (12): Cache response by prompt hash + model., _main_chrome_pids(), _run(), SessionManager, _wid_from_pid(), ================================================================================, AntiStuck, check_stuck() (+4 more)
 
-### Community 14 - "Community 14"
+### Community 13 - "Community 13"
 Cohesion: 0.09
 Nodes (33): _bezier(), _ease_out_quint(), Human-like Bezier mouse trajectory generator.  Produces a sequence of (t_ms, x,, A single point in the mouse trajectory.      Attributes:         t_ms: Milliseco, Ease-out quintic: fast start, smooth stop.      This matches human motor control, Cubic Bezier interpolation at parameter t ∈ [0, 1]., Generates human-like drag trajectories.      Usage:         gen = TrajectoryGene, Generate a human-like drag trajectory from start to end.          Args: (+25 more)
 
-### Community 15 - "Community 15"
+### Community 14 - "Community 14"
 Cohesion: 0.04
 Nodes (3): generate_repo(), main(), Generate all missing files for one repo.
 
-### Community 16 - "Community 16"
+### Community 15 - "Community 15"
 Cohesion: 0.05
 Nodes (9): Test survey/autodoc.py — append-only logging and summary generation.  Tests log_, End-to-end: log + regenerate summary from same tmp dir., TestAutodocIntegration, TestGenerateSummary, TestLogDecision, TestLogEarnings, TestLogError, TestLogSession (+1 more)
 
-### Community 17 - "Community 17"
+### Community 16 - "Community 16"
 Cohesion: 0.09
 Nodes (33): _cdp_click(), cdp_login(), _find_tab(), _js(), CDP Google Login — Fallback when cua-driver AX-Tree is empty.  Uses CDP Runtime., CDP mouse click at coordinates., Execute JS, return value string., Find first tab URL containing substring. Returns WebSocket URL. (+25 more)
 
+### Community 17 - "Community 17"
+Cohesion: 0.12
+Nodes (4): detect_completion(), SOTA: Check if survey is completed based on page text.      Provider-specific co, Test detect_completion() — provider-specific completion detection., TestDetectCompletion
+
 ### Community 18 - "Community 18"
+Cohesion: 0.12
+Nodes (13): ExperienceMemory, Episodic experience memory: caches successful trajectories per (host, captcha-ty, Store a trajectory in the experience database.          Args:             record, Find successful trajectories with similar gap distance.          Args:, Get memory statistics., Close the database connection., A stored trajectory from a solved captcha.      Attributes:         host: The do, Episodic memory backed by SQLite (WAL mode for concurrent access).      Usage: (+5 more)
+
+### Community 19 - "Community 19"
 Cohesion: 0.29
 Nodes (13): _make_urlopen_response(), test_all_prequalifiers_no_early_return(), test_answer_idx_bound_check(), test_loops_on_multiple_questions(), test_mixed_prequalifier_and_normal(), test_normal_survey_unchanged(), test_prequalifier_answered_via_api(), test_prequalifier_skipped_when_api_fails() (+5 more)
 
-### Community 19 - "Community 19"
+### Community 20 - "Community 20"
 Cohesion: 0.24
 Nodes (5): CaptchaSolver, Convert DOM (viewport) coordinates to window coordinates, Execute drag via cua-driver CGEvent, Solve slide captcha (gc-drag-block on gc-drag-slide-bar), Generic: drag element from drag_selector to drop_selector
 
-### Community 20 - "Community 20"
+### Community 21 - "Community 21"
 Cohesion: 0.6
 Nodes (5): is_registered(), list_tools(), _load(), register(), _save()
-
-### Community 21 - "Community 21"
-Cohesion: 0.4
-Nodes (5): get_logger(), init_telemetry(), Structured logging with structlog + optional OpenTelemetry tracing.  We keep tel, Initialize structlog once. Idempotent., Get a structlog logger. Init telemetry first if needed.
 
 ### Community 22 - "Community 22"
 Cohesion: 0.47
@@ -1751,17 +1751,17 @@ Nodes (1): Public API: Vorqualifizierung durchführen.
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `SurveyRunner` connect `Community 0` to `Community 8`, `Community 1`, `Community 18`, `Community 4`?**
-  _High betweenness centrality (0.133) - this node is a cross-community bridge._
-- **Why does `CaptchaError` connect `Community 3` to `Community 6`, `Community 14`?**
-  _High betweenness centrality (0.128) - this node is a cross-community bridge._
-- **Why does `BatchExecutor` connect `Community 1` to `Community 0`, `Community 2`, `Community 4`, `Community 5`, `Community 9`, `Community 12`?**
-  _High betweenness centrality (0.115) - this node is a cross-community bridge._
-- **Are the 428 inferred relationships involving `CompactSnapshot` (e.g. with `TestCompleteImmediately` and `TestCircuitBreaker`) actually correct?**
-  _`CompactSnapshot` has 428 INFERRED edges - model-reasoned connections that need verification._
+- **Why does `SurveyRunner` connect `Community 1` to `Community 0`, `Community 19`, `Community 5`?**
+  _High betweenness centrality (0.146) - this node is a cross-community bridge._
+- **Why does `CaptchaError` connect `Community 2` to `Community 4`, `Community 13`?**
+  _High betweenness centrality (0.130) - this node is a cross-community bridge._
+- **Why does `BatchExecutor` connect `Community 0` to `Community 1`, `Community 4`, `Community 5`, `Community 6`, `Community 10`, `Community 17`?**
+  _High betweenness centrality (0.119) - this node is a cross-community bridge._
+- **Are the 442 inferred relationships involving `CompactSnapshot` (e.g. with `TestCompleteImmediately` and `TestCircuitBreaker`) actually correct?**
+  _`CompactSnapshot` has 442 INFERRED edges - model-reasoned connections that need verification._
+- **Are the 372 inferred relationships involving `BatchExecutor` (e.g. with `TestSimpleActions` and `TestRunSurveyLoopDetection`) actually correct?**
+  _`BatchExecutor` has 372 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 350 inferred relationships involving `SurveyRunner` (e.g. with `Login to heypiggy via Google OAuth.` and `Scan dashboard for surveys.`) actually correct?**
   _`SurveyRunner` has 350 INFERRED edges - model-reasoned connections that need verification._
-- **Are the 358 inferred relationships involving `BatchExecutor` (e.g. with `TestSimpleActions` and `TestRunSurveyLoopDetection`) actually correct?**
-  _`BatchExecutor` has 358 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 352 inferred relationships involving `RunnerConfig` (e.g. with `Login to heypiggy via Google OAuth.` and `Scan dashboard for surveys.`) actually correct?**
   _`RunnerConfig` has 352 INFERRED edges - model-reasoned connections that need verification._
