@@ -12,10 +12,8 @@ Jeder erfolgreich getestete Shell-Command wird als separate `.md` Datei in `/com
 
 Format: `<tool>-<aktion>.md` (z.B. `cua-driver-click.md`, `playstealth-launch.md`)
 
-### R2: Jeder fehlgeschlagener/verbotener Command → `banned-<name>.md`
-Commands die NIEMALS verwendet werden dürfen, kommen als `banned-*.md`.
-
-Format: `banned-<tool>-<grund>.md` (z.B. `banned-pkill-heypiggy-bot.md`)
+### R2: Banned Patterns → zentrale `banned.md`
+Verbotene Patterns werden in der zentralen `banned.md` dokumentiert (nicht mehr einzeln).
 
 ### R3: SOFORT nach erfolgreichem Test dokumentieren
 Nicht warten — direkt nach dem ersten erfolgreichen Test die .md Datei erstellen.
@@ -36,23 +34,21 @@ Provider = Tool, Plattform, oder Service:
 - `google` → [cli/modules/auto_google_login.py](cli/modules/auto_google_login.py) (VERIFIED 6-Step Flow)
 - `bot-chrome` → `/commands/bot-chrome/`
 
-### R5: Banned Commands INS Provider-Verzeichnis
-**Banned Commands die zu einem Provider gehören, kommen INS Provider-Verzeichnis.**
+### R5: Banned Patterns → zentrale `banned.md`
+**Verbotene Patterns werden NICHT mehr einzeln in `/commands/` dokumentiert.**
 
-Beispiele:
-- `banned-pkill-heypiggy-bot.md` → gehört zu `bot-chrome` → `/commands/bot-chrome/banned-pkill-heypiggy-bot.md`
-- `banned-killall-chrome.md` → gehört zu `bot-chrome` → `/commands/bot-chrome/banned-killall-chrome.md`
+→ Siehe zentrale Datei: [`banned.md`](/banned.md)
 
-### R6: Generische Banned Commands bleiben im Root
-Banned Commands die KEINEM spezifischen Provider zugeordnet werden können, bleiben im Root:
-- `banned-pyautogui.md`
-- `banned-pynput.md`
-- `banned-coordinates-click.md`
-- `banned-skylight-cli.md`
-- `banned-webauto-nodriver.md`
-- `banned-cdp-commands.md`
-- `banned-applescript-chrome.md`
-- `banned-recovery-mode.md` (DEPRECATED)
+### R6: Veraltete Einzel-Banned-Files wurden gelöscht
+Folgende Dateien wurden konsolidiert in `banned.md`:
+- ~~`banned-pyautogui.md`~~
+- ~~`banned-pynput.md`~~
+- ~~`banned-coordinates-click.md`~~
+- ~~`banned-skylight-cli.md`~~
+- ~~`banned-webauto-nodriver.md`~~
+- ~~`banned-cdp-commands.md`~~
+- ~~`banned-applescript-chrome.md`~~
+- ~~`banned-recovery-mode.md`~~
 
 ---
 
@@ -119,8 +115,7 @@ alternative-command
 | Typ | Muster | Beispiel |
 |-----|--------|---------|
 | Verified | `<tool>-<aktion>.md` | `cua-driver-click.md` |
-| Banned (provider) | `banned-<tool>-<grund>.md` | `banned-pkill-heypiggy-bot.md` |
-| Banned (generic) | `banned-<tool>.md` | `banned-pyautogui.md` |
+| Banned | → `banned.md` (zentral) | Alle verbotenen Patterns |
 | Provider Config | `<provider>-credentials.md` | `heypiggy-credentials.md` |
 | Flow | `<provider>-<flow>.md` | `auto_google_login.py` |
 
@@ -152,33 +147,20 @@ NUR: `a-z`, `0-9`, `-` (Bindestrich), `.md`
 │   ├── login.md
 │   └── secrets.md
 │
-├── google/                         ← 1 Command (kann bleiben)
-│   └── login-flow.md
-│
 ├── playstealth/                    ← 1 Command
 │   └── launch.md
 │
 ├── session-manager/                ← 1 Command
 │   └── launch.md
 │
-├── bot-chrome/                     ← 4 Commands (2 verified + 2 banned)
+├── bot-chrome/                     ← 2 Commands (verified)
 │   ├── kill-bot-chrome.md
-│   ├── find-bot-pids.md
-│   ├── banned-pkill-heypiggy-bot.md
-│   ├── banned-killall-chrome.md
-│   └── banned-hardcoded-pids.md
+│   └── find-bot-pids.md
 │
 ├── macos-recovery-mode.md          ← 1 Command (Root)
 │
-└── [banned]                        ← Root-Level Banned Commands
-    ├── banned-pyautogui.md
-    ├── banned-pynput.md
-    ├── banned-coordinates-click.md
-    ├── banned-skylight-cli.md
-    ├── banned-webauto-nodriver.md
-    ├── banned-cdp-commands.md
-    ├── banned-applescript-chrome.md
-    └── banned-recovery-mode.md     (DEPRECATED)
+└── [banned]                        ← Konsolidiert in `banned.md`
+    → Siehe [`banned.md`](/banned.md) für alle verbotenen Patterns
 ```
 
 ---

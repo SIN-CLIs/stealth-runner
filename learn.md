@@ -1031,7 +1031,7 @@ Unser `scan_dashboard()` findet NUR Surveys via CPX API. Aber das Dashboard zeig
 |---|-------|-----------|--------|--------|
 | **1** | `runner.py` | `run_survey()` NEMO Loop (Circuit Breaker, Loop Detection, Anti-Stuck) | ~450 | 🔴 P0 |
 | **2** | `nim.py` | `NIMClient.decide()` + `parse_response()` — gesamte AI-Pipeline | ~180 | 🔴 P0 |
-| **3** | `google_login.py` | Kompletter Login-Flow (cua-driver, OAuth, Passkey) | ~530 | 🔴 P0 |
+| **3** | `cli/modules/auto_google_login.py` | Kompletter Login-Flow (cua-driver, OAuth, Fortfahren) | ~498 | ✅ DONE |
 | **4** | `execute.py` | `_cdp_click_button()` — Angular/React Mouse-Dispatch | ~200 | 🔴 P0 |
 | **5** | `runner.py` | `_handle_pre_qualifier_browser()` — Browser Pre-Qualifier | ~100 | 🟡 P1 |
 | **6** | `agents/task_router.py` | Model-Routing + Escalation | ~400 | 🟡 P1 |
