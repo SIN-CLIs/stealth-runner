@@ -198,7 +198,7 @@ async def click_by_label(pid, cdp_port, label, role):
   1. `passkey_popup.py`: cua-only → `cua.get_window_state(popup_wid)` → find "Fortfahren" → `cua.click`
   2. `consent_screen.py`: cua-only → kein skylight-Fallback mehr
   3. `ax_scan.py`: stderr capture, robust JSON parsing
-   4. `survey/google_login.py` (cua-driver PRIMARY, CDP FALLBACK): 15× Retry mit 1.5s, _safe_click für FaceID-Timeout
+   4. `cli/modules/auto_google_login.py` (cua-driver PRIMARY, CDP FALLBACK): VERIFIED 6-Step Flow mit Fortfahren-Click
   5. `cua_popup.py`: "Passkey" zu title_patterns
 
 ## ✅ MACOS-AX-CLI `find` funktioniert, `windows list` crashed
@@ -255,7 +255,7 @@ async def click_by_label(pid, cdp_port, label, role):
 
 ## ❌ CRITICAL: orchestrator.py importiert gelöschte Datei — 2026-05-05
 
-> **(2026-05-06: heypiggy_login_box.py replaced by survey/google_login.py)**
+> **(2026-05-06: heypiggy_login_box.py replaced by cli/modules/auto_google_login.py)**
 
 ### Symptom
 `heypiggy_login_box.py` wurde gelöscht, ABER `orchestrator.py` (line 90) importiert noch daraus:

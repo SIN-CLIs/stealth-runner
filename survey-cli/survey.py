@@ -37,7 +37,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
 def cmd_login(args):
     """Login to heypiggy via Google OAuth (cua-driver flow)."""
-    from survey.google_login import google_login
+    from cli.modules.auto_google_login import execute as google_login
     result = google_login()
     status = result.get("status")
     if status == "ok":
@@ -190,27 +190,27 @@ def cmd_watch(args):
 
     # ── Auto-Login if needed (via cua-driver verified flow) ──
     print("[WATCH] Checking login state...")
-    from survey.google_login import google_login
-    # Quick check: does dashboard show Umfragen + Abmelden?
-    logged_in = False
-    dash_ws = find_dashboard_ws(args.port)
-    if dash_ws:
-        try:
-            ws = websocket.create_connection(dash_ws, timeout=10)
-            ws.send(json.dumps({"id":0,"method":"Runtime.evaluate",
-                "params":{"expression": "document.title.includes('Umfragen') || document.body.innerText.includes('Abmelden')"}}))
-            r = json.loads(ws.recv()); ws.close()
-            logged_in = r.get("result",{}).get("result",{}).get("value",False)
-        except: pass
-    
-    if not logged_in:
-        print("[WATCH] Not logged in — running cua-driver Google OAuth login...")
-        login_result = google_login()
-        if login_result.get("status") != "ok":
-            print(f"[WATCH] ❌ Login failed: {login_result.get('reason')} — retrying later")
-        else:
-            print(f"[WATCH] ✅ Login successful")
-            time.sleep(3)
+        from cli.modules.auto_google_login import execute as google_login
+        # Quick check: does dashboard show Umfragen + Abmelden?
+        logged_in = False
+        dash_ws = find_dashboard_ws(args.port)
+        if dash_ws:
+            try:
+                ws = websocket.create_connection(dash_ws, timeout=10)
+                ws.send(json.dumps({"id":0,"method":"Runtime.evaluate",
+                    "params":{"expression": "document.title.includes('Umfragen') || document.body.innerText.includes('Abmelden')"}}))
+                r = json.loads(ws.recv()); ws.close()
+                logged_in = r.get("result",{}).get("result",{}).get("value",False)
+            except: pass
+        
+        if not logged_in:
+            print("[WATCH] Not logged in — running cua-driver Google OAuth login...")
+            login_result = google_login()
+            if login_result.get("status") != "ok":
+                print(f"[WATCH] ❌ Login failed: {login_result.get('reason')} — retrying later")
+            else:
+                print(f"[WATCH] ✅ Login successful")
+                time.sleep(3)
 
     # ── Main Loop ──────────────────────────────────
     while state["running"]:

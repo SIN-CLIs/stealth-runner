@@ -56,7 +56,7 @@
 ### Auth & Credentials
 | Command | File | Status |
 |---------|------|--------|
-| Google Login Flow | [commands/google/login-flow.md](commands/google/login-flow.md) | ✅ |
+| Google Login Flow | [cli/modules/auto_google_login.py](cli/modules/auto_google_login.py) | ✅ VERIFIED 6-Step |
 | Infisical Login | [commands/infisical/login.md](commands/infisical/login.md) | ✅ |
 | Infisical Secrets | [commands/infisical/secrets.md](commands/infisical/secrets.md) | ✅ |
 | Heypiggy Credentials | [commands/heypiggy/credentials.md](commands/heypiggy/credentials.md) | ✅ |

@@ -6,7 +6,7 @@
 
 ## C‑google‑login
 **Command**: Google Login Flow (7 Steps, CUA-ONLY)
-**File**: [commands/google/login-flow.md](commands/google/login-flow.md)
+**File**: [cli/modules/auto_google_login.py](cli/modules/auto_google_login.py) (VERIFIED 6-Step CUA-ONLY Flow)
 **Purpose**: Automatisierter Google Login für Heypiggy Dashboard
 **Zugehörige Commands**: [infisical‑secrets](#c‑infisical‑secrets)
 

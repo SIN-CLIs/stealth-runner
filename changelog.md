@@ -66,7 +66,7 @@
 |-----|-------------|----------|
 | **FIX** | Skylight-cli Widersprüche in AGENTS.md, sinrules.md, brain.md behoben | [AGENTS.md](AGENTS.md) |
 | **NEW** | Banned Commands: pyautogui, pynput, coordinates, applescript, skylight, webauto, CDP | [banned.md](banned.md) |
-| **NEW** | Google Login PASSKEY Flow: 7-Step Dokumentation | [google/login-flow.md](commands/google/login-flow.md) |
+| **NEW** | Google Login: 6-Step CUA-ONLY Flow VERIFIED | [cli/modules/auto_google_login.py](cli/modules/auto_google_login.py) |
 | **NEW** | macOS Recovery Mode als SECRET WAY dokumentiert | [macos-recovery-mode.md](commands/macos-recovery-mode.md) |
 | **NEW** | Infisical EU Login + Secrets dokumentiert | [infisical/](commands/infisical/) |
 

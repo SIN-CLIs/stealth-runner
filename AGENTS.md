@@ -77,9 +77,6 @@
 ├── infisical/           (2 commands)
 │   ├── login.md, secrets.md
 │
-├── google/              (1 command)
-│   └── login-flow.md
-│
 ├── bot-chrome/          (5 commands: 2 verified + 3 banned)
 │   ├── kill-bot-chrome.md, find-bot-pids.md
 │   ├── banned-pkill-heypiggy-bot.md, banned-killall-chrome.md

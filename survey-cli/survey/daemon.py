@@ -214,8 +214,8 @@ def ensure_login(port: int = CHROME_PORT) -> bool:
 
     print("[DAEMON] Not logged in — running google_login...")
     try:
-        from survey.google_login import google_login
-        result = google_login(port=port)
+        from cli.modules.auto_google_login import execute as google_login
+        result = google_login()
         logged_in = result.get("status") == "ok"
         if logged_in:
             log("login_success")

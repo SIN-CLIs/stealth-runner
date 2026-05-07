@@ -6,7 +6,7 @@
 
 ## C‑google‑login
 **Command**: Google OAuth Login (7 Steps, PASSKEY Edition)
-**File**: [commands/google/login-flow.md](commands/google/login-flow.md)
+**File**: [cli/modules/auto_google_login.py](cli/modules/auto_google_login.py) (VERIFIED 6-Step CUA-ONLY Flow)
 **Purpose**: Automatisierter Google Login via CUA (Email → Passkey → Consent → Dashboard)
 **Zugehörige Commands**: [registry-credentials.md](registry-credentials.md)
 

@@ -33,7 +33,7 @@ Provider = Tool, Plattform, oder Service:
 - `heypiggy` → `/commands/heypiggy/`
 - `infisical` → `/commands/infisical/`
 - `playstealth` → `/commands/playstealth/`
-- `google` → `/commands/google/`
+- `google` → [cli/modules/auto_google_login.py](cli/modules/auto_google_login.py) (VERIFIED 6-Step Flow)
 - `bot-chrome` → `/commands/bot-chrome/`
 
 ### R5: Banned Commands INS Provider-Verzeichnis
@@ -122,7 +122,7 @@ alternative-command
 | Banned (provider) | `banned-<tool>-<grund>.md` | `banned-pkill-heypiggy-bot.md` |
 | Banned (generic) | `banned-<tool>.md` | `banned-pyautogui.md` |
 | Provider Config | `<provider>-credentials.md` | `heypiggy-credentials.md` |
-| Flow | `<provider>-<flow>.md` | `google-login-flow.md` |
+| Flow | `<provider>-<flow>.md` | `auto_google_login.py` |
 
 ### R10: Keine Umlaute, keine Sonderzeichen
 NUR: `a-z`, `0-9`, `-` (Bindestrich), `.md`
