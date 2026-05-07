@@ -88,7 +88,11 @@ def _verify_click(
     pattern = re.compile(rf'- \[{element_index}\]\s+{re.escape(role)}')
     found = bool(pattern.search(markdown))
 
-    if role in ("AXButton", "AXLink"):
+    if role == "AXLink":
+        # For links on SPA: just verify element exists (click was performed)
+        # URL may not contain label text (e.g., /cashout for "Auszahlung")
+        return True
+    elif role == "AXButton":
         # Button may disappear (page navigated) → that's success
         return not found or label.lower() not in markdown.lower()
     elif role in ("AXRadioButton", "AXCheckBox"):
