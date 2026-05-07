@@ -27,6 +27,45 @@
 
 ---
 
+## 🚨 ARCHÄOLOGIE-TSUNAMI — PFLICHT VOR JEDER AKTION
+
+**REGEL: Jeder Agent MUSS vor dem ersten Code-Edit einen vollständigen Archäologie-Tsunami starten.**
+
+### Warum?
+- Alter Code = extrem gefährlich (tötet User Chrome, leaked Credentials)
+- Falscher Code = verwirrt Agents unnötig
+- Lügen-Code = das Schlimmste was in einer Entwicklung geschehen kann
+- Nicht ausreichend kommentierter Code = nächster Agent zerstört alles wieder
+
+### Pflicht-Prozedur (IN DIESER REIHENFOLGE):
+1. **Explore Subagent starten**: Scan ALLER Repos und Code-Dateien
+2. **Kategorisieren**: 🔥 DELETE (alt/broken/banned) | ⚠️ LEGACY | ✅ ACTIVE
+3. **BANNED-Patterns prüfen**: playstealth, webauto-nodriver, pkill -f Google Chrome, hardcoded PIDs, --remote-allow-origins=* ohne Quotes
+4. **Löschen**: Alle 🔥 DELETE Dateien SOFORT entfernen
+5. **Kommentieren**: Jede verbleibende Code-Datei mit extremen Kommentaren ausstatten:
+   - Was macht diese Datei?
+   - Warum existiert sie?
+   - Was ist die Architektur?
+   - Was sind die Abhängigkeiten?
+   - BANNED-Methoden als Warnung
+   - Jede Funktion dokumentieren
+   - Jede Konstante erklären
+   - Warum-Fragen beantworten
+6. **Test-Dateien**: Kein Tool ohne Test-Dateien!
+
+### Selbst wenn sich ein Agent "alles wissen" einbildet:
+- **ER LÜGT**. Immer. Jeder Agent denkt er weiß es, aber er liegt.
+- **Er MUSS trotzdem recherchieren**. Keine Ausnahmen.
+- **Er MUSS die aktuellen Commits prüfen**. Gestern war alles anders.
+
+### Bei Abweichung (Code entspricht nicht Schema):
+1. SOFORT Deep-Recherche starten (alle Repos, Issues, Commits)
+2. ALLE betroffenen Dateien identifizieren
+3. Kommentare/Dokumentation in ALLEN betroffenen Dateien nachholen
+4. BANNED-Patterns in Code UND Doku markieren
+
+---
+
 ## 🚨 EXPLICITE VERBOTE (UNVERBRÜCHLICH)
 
 ### 🔥 CHROME NUR MIT ACCESSIBILITY + CDP STARTEN
