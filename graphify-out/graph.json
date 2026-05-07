@@ -7442,9 +7442,9 @@
       "file_type": "rationale",
       "source_file": "survey-cli/tools/__init__.py",
       "source_location": "L1",
-      "id": "tools_init_rationale_1",
       "community": 12,
-      "norm_label": "================================================================================"
+      "norm_label": "================================================================================",
+      "id": "tools_init_rationale_1"
     },
     {
       "label": "tool_find_new_tab.py",
@@ -47908,9 +47908,9 @@
       "weight": 0.8,
       "_src": "tools_init_rationale_1",
       "_tgt": "tools_tool_anti_stuck_antistuck",
+      "confidence_score": 0.5,
       "source": "tools_init_rationale_1",
-      "target": "tools_tool_anti_stuck_antistuck",
-      "confidence_score": 0.5
+      "target": "tools_tool_anti_stuck_antistuck"
     },
     {
       "relation": "contains",
