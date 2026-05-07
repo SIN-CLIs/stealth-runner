@@ -6,6 +6,8 @@ Loop per page:
   3. Batch Execute (CDP)
   4. AutoDoc (append-only)
   5. Repeat until completion
+
+SOTA: All operations delegate to frozen tools in tools/.
 """
 
 import json
@@ -23,6 +25,13 @@ from .nim import NIMClient, get_nim
 from .execute import BatchExecutor
 from .autodoc import log_earnings, log_error, log_session, log_decision
 from .scanner import scan_dashboard, read_balance
+# Frozen tools — atomar, __frozen__=True, NICHT aendern
+from tools import (click as tool_click, fill as tool_fill,
+                   snapshot as tool_snapshot, detect_completion as tool_detect,
+                   close_modals as tool_close_modals, find_new_tab as tool_find_new_tab,
+                   get_tab_ids as tool_get_tab_ids, select_language as tool_select_language,
+                   AntiStuck as tool_AntiStuck, find_submit as tool_find_submit,
+                   find_unfilled as tool_find_unfilled)
 
 
 @dataclass
@@ -1039,63 +1048,16 @@ class SurveyRunner:
             print(f"[CASH] Cash-out trigger failed: {e}")
 
     def _detect_completion_text(self, ws_url):
-        """Check page text for completion markers (body text only, no URL check)."""
-        text = BatchExecutor.read_page_text(ws_url)
-        return detect_completion(text)
+        """Check page text for completion markers (delegates to frozen tools.detect_completion)."""
+        return tool_detect(ws_url) != "running"
 
     def _find_new_tab_after_click(self, known_tab_ids: set) -> Optional[str]:
-        """Detect new tab opened by clickSurvey() — no tab_id needed.
-        
-        After clickSurvey() in the dashboard, the survey may open in a new tab
-        (Qualtrics, Samplicio). This method detects that new tab and returns
-        its WebSocket URL.
-        """
-        time.sleep(3)
-        try:
-            all_tabs = chrome.find_bot_tabs(self.config.cdp_port)
-            for tab in all_tabs:
-                tid = tab.get("id", "")
-                if tid not in known_tab_ids:
-                    ws_url = tab.get("webSocketDebuggerUrl")
-                    url = tab.get("url", "")
-                    if ws_url and url and "heypiggy" not in url and url != "about:blank":
-                        return ws_url
-        except Exception:
-            return None
-        return None
+        """Detect new tab opened by clickSurvey() — delegates to frozen tools.find_new_tab."""
+        return tool_find_new_tab(self.config.cdp_port, known_tab_ids)
 
     def _pre_survey_cleanup(self, tab_ws: str) -> int:
-        """Close all stacked modals before interacting with survey.
-        
-        heypiggy dashboard has 7-9 layered modals at identical coordinates.
-        Returns count of closed modals.
-        """
-        try:
-            import websocket as ws_lib
-            ws = ws_lib.create_connection(tab_ws, timeout=10)
-            ws.send(json.dumps({
-                "id": 0, "method": "Runtime.evaluate",
-                "params": {"expression": """
-(function() {
-    var closed = 0;
-    var btns = document.querySelectorAll('button');
-    btns.forEach(function(b) {
-        var t = b.textContent.trim();
-        if (['Schlie\\u00dfen','Close','x','X','Ablehnen'].includes(t)) {
-            try { b.click(); closed++; } catch(e) {}
-        }
-    });
-    // Also press Escape key
-    document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',code:'Escape',keyCode:27,bubbles:true}));
-    return closed;
-})()
-"""}
-            }))
-            r = json.loads(ws.recv())
-            ws.close()
-            return r.get("result", {}).get("result", {}).get("value", 0)
-        except Exception:
-            return 0
+        """Close all stacked modals — delegates to frozen tools.close_modals."""
+        return tool_close_modals(tab_ws)
 
     def _handle_purespectrum_preflight(self, tab_ws, survey_id):
         """Handle PureSpectrum pre-survey flow: cookie + ROBOT + captcha + puzzle."""
