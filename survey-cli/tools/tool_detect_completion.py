@@ -41,7 +41,7 @@ SCREEN_OUT_MARKERS = [
 ]
 
 DASHBOARD_MARKERS = [
-    "heypiggy.com", "prolific.co/submissions", "mturk.com/mturk/preview"
+    "prolific.co/submissions", "mturk.com/mturk/preview"
 ]
 
 
@@ -66,6 +66,14 @@ def detect(ws_url: str, timeout: int = 10) -> str:
         title = data.get("title","")
         text = data.get("text","")
         combined = url + " " + title + " " + text
+        
+        # If page contains interactive survey elements, it's NOT completed
+        # (prevents false positives on in-page modal surveys)
+        interactivity_markers = ["weiter", "nächste", "submit", "next",
+                                 "fortfahren", "umfrage starten", "antwort"]
+        interactive_count = sum(1 for m in interactivity_markers if m in text)
+        if interactive_count >= 2:
+            return "running"
 
         for marker in DASHBOARD_MARKERS:
             if marker in url:
