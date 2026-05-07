@@ -199,6 +199,22 @@ model: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning
 endpoint: https://integrate.api.nvidia.com/v1/chat/completions
 ```
 
+### ❌ `--remote-allow-origins=*` ohne Anführungszeichen (2026-05-07)
+
+```bash
+# ❌ FALSCH — zsh/bash expandiert * als Glob-Muster!
+--remote-allow-origins=*
+# → zsh: no matches found: --remote-allow-origins=*
+# → Chrome startet GAR NICHT!
+```
+
+**Korrekt**: IMMER mit Anführungszeichen:
+```bash
+--remote-allow-origins="*"
+```
+
+**Belege**: `commands/banned-commands.md` Zeile 121, `commands/chrome/cdp-start.md` Zeile 14.
+
 ## 🔥 TRIO LAYER (DIE EINZIG RICHTIGE METHODE)
 
 ```

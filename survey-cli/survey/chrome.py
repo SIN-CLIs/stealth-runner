@@ -144,18 +144,18 @@ def is_chrome_alive(port=9999):
 
 
 def launch_chrome(url="https://www.heypiggy.com/?page=dashboard", port=9999):
-    """Launch Chrome with BOTH --force-renderer-accessibility AND --remote-allow-origins=*.
+    """Launch Chrome with BOTH --force-renderer-accessibility AND --remote-allow-origins="*".
 
     ⚠️ UNVERBRÜCHLICHE REGEL: Chrome NUR mit diesen beiden Flags starten.
     --force-renderer-accessibility = cua-driver kann AX-Tree lesen
-    --remote-allow-origins=* = CDP WebSocket funktioniert
+    --remote-allow-origins="*" = CDP WebSocket funktioniert
     Ohne diese Flags: Login UNMÖGLICH. Surveys UNMÖGLICH.
     """
     profile_dir = "/tmp/heypiggy-bot"
     cmd = [
         "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
         f"--remote-debugging-port={port}",
-        "--remote-allow-origins=*",
+        "--remote-allow-origins="*"",
         "--force-renderer-accessibility",
         "--no-first-run",
         "--no-default-browser-check",

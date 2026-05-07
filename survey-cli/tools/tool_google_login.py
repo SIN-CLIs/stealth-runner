@@ -20,7 +20,7 @@ Ablauf (single call):
 
 Chrome Flags (UNVERBRÜCHLICH):
     --remote-debugging-port=9999
-    --remote-allow-origins=*
+    --remote-allow-origins="*"
     --force-renderer-accessibility
 
 BANNED:
@@ -319,7 +319,7 @@ def login(launch_url: str = "https://www.heypiggy.com/?page=dashboard",
         subprocess.Popen([
             "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
             f"--remote-debugging-port={CDP_PORT}",
-            "--remote-allow-origins=*",
+            "--remote-allow-origins="*"",
             "--force-renderer-accessibility",
             "--no-first-run",
             "--user-data-dir=/tmp/heypiggy-bot",

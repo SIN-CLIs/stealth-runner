@@ -30,11 +30,11 @@
 ## 🚨 EXPLICITE VERBOTE (UNVERBRÜCHLICH)
 
 ### 🔥 CHROME NUR MIT ACCESSIBILITY + CDP STARTEN
-**REGEL: Chrome MUSS IMMER mit `--force-renderer-accessibility` UND `--remote-allow-origins=*` gestartet werden.**
+**REGEL: Chrome MUSS IMMER mit `--force-renderer-accessibility` UND `--remote-allow-origins="*"` gestartet werden.**
 - ❌ `playstealth launch` — setzt NICHT beide Flags
 - ❌ Chrome OHNE `--force-renderer-accessibility` — cua-driver AX-Tree LEER
-- ❌ Chrome OHNE `--remote-allow-origins=*` — CDP WebSocket 403
-- ✅ `/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9999 --remote-allow-origins=* --force-renderer-accessibility --no-first-run --user-data-dir=/tmp/heypiggy-bot URL`
+- ❌ Chrome OHNE `--remote-allow-origins="*"` — CDP WebSocket 403
+- ✅ `/Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome --remote-debugging-port=9999 --remote-allow-origins="*" --force-renderer-accessibility --no-first-run --user-data-dir=/tmp/heypiggy-bot URL`
 - ✅ cua-driver + CDP BEIDE nutzen — eine Chrome-Instanz, beide Tools
 
 ### NIEMALS user Chrome/Prozesse töten!
@@ -658,11 +658,11 @@ Chrome blockiert eingehende CDP WebSocket Verbindungen:
 ```
 WebSocketBadStatusException: Handshake status 403 Forbidden
 Rejected an incoming WebSocket connection from the http://localhost:XXXXX origin.
-Use --remote-allow-origins=* to allow connections from this origin.
+Use --remote-allow-origins="*" to allow connections from this origin.
 ```
 
 ### Lösung
-Chrome MUSS mit `--remote-allow-origins=*` gestartet werden:
+Chrome MUSS mit `--remote-allow-origins="*"` gestartet werden:
 ```bash
 playstealth launch --url '...'  # ⚠️ playstealth setzt NICHT --force-renderer-accessibility!
 ```
@@ -695,7 +695,7 @@ print('AX Enabled:', data.get('spAccessibilityDataType', {}).get('AXEnhancedAcce
 | Symptom | Ursache | Fix |
 |---------|---------|-----|
 | `get_window_state` → 0 children | Accessibility nicht aktiv | System Settings → Accessibility einschalten |
-| CDP WS 403 Forbidden | Chrome Origin check | Chrome mit `--remote-allow-origins=*` starten |
+| CDP WS 403 Forbidden | Chrome Origin check | Chrome mit `--remote-allow-origins="*"` starten |
 | Alle Windows height=0 | Falsches Window | WID mit height>100 suchen |
 | AXButton/AXLink nicht gefunden | depth<5 filter | Apple-Menüleiste hat depth 1-4 |
 

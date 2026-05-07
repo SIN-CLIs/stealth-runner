@@ -58,7 +58,7 @@ def grant_accessibility():
 
 
 def launch_chrome_with_accessibility(port=9999, url="https://www.heypiggy.com/?page=dashboard"):
-    """Launch Chrome with BOTH --force-renderer-accessibility AND --remote-allow-origins=*.
+    """Launch Chrome with BOTH --force-renderer-accessibility AND --remote-allow-origins="*".
 
     ⚠️ This is the ONLY valid way to launch Chrome. Never use playstealth.
     """
@@ -67,7 +67,7 @@ def launch_chrome_with_accessibility(port=9999, url="https://www.heypiggy.com/?p
     cmd = [
         "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
         f"--remote-debugging-port={port}",
-        "--remote-allow-origins=*",
+        "--remote-allow-origins="*"",
         "--force-renderer-accessibility",
         "--no-first-run",
         "--no-default-browser-check",

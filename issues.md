@@ -89,10 +89,10 @@
 **Status**: OPEN | **Found**: 2026-05-07 | **Assignee**: stealth-orchestrator
 
 **Problem**: Chrome lacks `--force-renderer-accessibility` flag when launched, causing cua-driver AX-Tree to return 0 children. cua-driver is the legacy fallback and must work.
-**Expected**: Chrome always launched with `--force-renderer-accessibility` and `--remote-allow-origins=*`.
+**Expected**: Chrome always launched with `--force-renderer-accessibility` and `--remote-allow-origins="*"`.
 **Actual**: `playstealth launch` does not set accessibility flag; manual Chrome launch required.
 **Files**: `survey-cli/survey/chrome.py`
-**Fix approach**: Add Chrome launch wrapper that always includes `--force-renderer-accessibility --remote-allow-origins=*`, validate AX-Tree after launch.
+**Fix approach**: Add Chrome launch wrapper that always includes `--force-renderer-accessibility --remote-allow-origins="*"`, validate AX-Tree after launch.
 
 ---
 

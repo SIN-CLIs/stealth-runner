@@ -24,7 +24,7 @@ NEMO ARCHITECTURE UPDATE (2026-05-06):
 ```
 WebSocketBadStatusException: Handshake status 403 Forbidden
 Rejected an incoming WebSocket connection from the http://localhost:XXXXX origin.
-Use --remote-allow-origins=* to allow connections from this origin.
+Use --remote-allow-origins="*" to allow connections from this origin.
 ```
 
 ## Verbote

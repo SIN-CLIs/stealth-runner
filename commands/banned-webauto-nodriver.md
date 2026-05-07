@@ -41,7 +41,7 @@
 # RICHTIG:
 /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
   --remote-debugging-port=9999 \
-  --remote-allow-origins=* \
+  --remote-allow-origins="*" \
   --force-renderer-accessibility \
   --no-first-run \
   --no-default-browser-check \

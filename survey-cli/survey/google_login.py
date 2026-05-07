@@ -9,7 +9,7 @@ Architektur:
 
 Abhängigkeiten:
   - cua-driver daemon: nohup cua-driver serve &
-  - Chrome: --force-renderer-accessibility --remote-allow-origins=*
+  - Chrome: --force-renderer-accessibility --remote-allow-origins="*"
   - Accessibility: System Settings → Privacy → Accessibility → Chrome AN
 
 Usage:
@@ -51,7 +51,7 @@ def _verify_invariants():
         import urllib.request
         urllib.request.urlopen("http://127.0.0.1:9999/json", timeout=3)
     except Exception:
-        errors.append("Chrome NOT running on port 9999. Start with --remote-debugging-port=9999 --force-renderer-accessibility --remote-allow-origins=*")
+        errors.append("Chrome NOT running on port 9999. Start with --remote-debugging-port=9999 --force-renderer-accessibility --remote-allow-origins="*"")
     
     # 3. Chrome Accessibility enabled (tree_markdown has elements)
     try:
@@ -380,7 +380,7 @@ def _cua_login(launch_url):
         subprocess.Popen([
             "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
             "--remote-debugging-port=9999",
-            "--remote-allow-origins=*",
+            "--remote-allow-origins="*"",
             "--force-renderer-accessibility",
             "--no-first-run",
             "--user-data-dir=/tmp/heypiggy-bot",

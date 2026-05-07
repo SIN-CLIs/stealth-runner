@@ -471,7 +471,7 @@ class LatentState:
 # IMMER mit BEIDEN Flags:
 /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
   --remote-debugging-port=9999 \
-  --remote-allow-origins=* \
+  --remote-allow-origins="*" \
   --force-renderer-accessibility \
   --no-first-run \
   --user-data-dir=/tmp/heypiggy-bot \
@@ -518,7 +518,7 @@ class LatentState:
 
 ### Vor jeder Survey Session
 
-- [ ] Chrome läuft MIT `--force-renderer-accessibility` + `--remote-allow-origins=*`
+- [ ] Chrome läuft MIT `--force-renderer-accessibility` + `--remote-allow-origins="*"`
 - [ ] cua-driver daemon läuft (`pgrep -f "cua-driver serve"`)
 - [ ] NVIDIA_API_KEY gesetzt (`echo $NVIDIA_API_KEY | head -c 8`)
 - [ ] Dashboard ist eingeloggt ("Abmelden" + "Umfragen" sichtbar)
@@ -1360,7 +1360,7 @@ cdp_real_click(ws, center_x, center_y)
 # FALSCH (cua-driver sieht nichts):
 /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
   --remote-debugging-port=9999 \
-  --remote-allow-origins=* \
+  --remote-allow-origins="*" \
   --user-data-dir=/tmp/bot-profile \
   'https://heypiggy.com'
 
@@ -1370,7 +1370,7 @@ $ cua-driver call get_window_state '{"pid":12345,"window_id":56789}'
 # RICHTIG (cua-driver sieht ALLES):
 /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
   --remote-debugging-port=9999 \
-  --remote-allow-origins=* \
+  --remote-allow-origins="*" \
   --force-renderer-accessibility \
   --user-data-dir=/tmp/bot-profile \
   'https://heypiggy.com'
@@ -1407,7 +1407,7 @@ def verify_accessibility(pid, wid):
 # Muss MANUELL hinzugefügt werden oder Chrome direkt starten:
 /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
   --remote-debugging-port=9999 \
-  --remote-allow-origins=* \
+  --remote-allow-origins="*" \
   --force-renderer-accessibility \
   --no-first-run \
   --user-data-dir=/tmp/heypiggy-bot-$(date +%s) \
