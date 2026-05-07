@@ -2,7 +2,7 @@
 
 RULES:
 - NEVER kill user Chrome (no pkill, no killall)
-- ONLY manage /tmp/heypiggy-bot-* profiles
+- ONLY manage /tmp/heypiggy-new-* profiles
 - Use playstealth launch when available, fallback to raw subprocess
 """
 
@@ -85,7 +85,7 @@ def find_bot_pids():
         )
         pids = []
         for line in result.stdout.split("\n"):
-            if "/tmp/heypiggy-bot-" in line and "/Contents/MacOS/Google Chrome" in line:
+            if "/tmp/heypiggy-new-" in line and "/Contents/MacOS/Google Chrome" in line:
                 parts = line.split()
                 if parts and parts[1].isdigit():
                     pids.append(int(parts[1]))

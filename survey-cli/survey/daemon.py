@@ -186,11 +186,11 @@ def launch_chrome(url: str = HEYPIGGY_URL, port: int = CHROME_PORT) -> bool:
 
 
 def _kill_bot_chrome() -> None:
-    """Kill ONLY bot Chrome (profile /tmp/heypiggy-bot). NEVER user Chrome."""
+    """Kill ONLY bot Chrome (profile /tmp/heypiggy-new-*). NEVER user Chrome."""
     try:
         result = subprocess.run(["ps", "aux"], capture_output=True, text=True, timeout=5)
         for line in result.stdout.split("\n"):
-            if "/tmp/heypiggy-bot" in line and "/Contents/MacOS/Google Chrome" in line:
+            if "/tmp/heypiggy-new-" in line and "/Contents/MacOS/Google Chrome" in line:
                 parts = line.split()
                 if parts and parts[1].isdigit():
                     pid = int(parts[1])
