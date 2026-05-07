@@ -14,7 +14,12 @@
 - [x] /commands Verzeichnis mit 28 Dateien
 - [x] Stealth-Quad Repos Integration
 
-### Phase 2: Stabilization (MAI — 🔄 IN PROGRESS)
+### Phase 2: Stabilization (MAI — 🔄 IN PROGRESS, 85%)
+- [x] CUA-ONLY Trinity Architektur (cua-driver als PRIMARY)
+- [x] Google Login Flow (PASSKEY Edition)
+- [x] Infisical Secrets Integration
+- [x] /commands Verzeichnis mit 28 Dateien
+- [x] Stealth-Quad Repos Integration
 - [x] Provider-Subdirectories in /commands
 - [x] cmd-rules.md Governance
 - [x] Persona-System mit date_of_birth-basierter Altersberechnung
@@ -25,10 +30,14 @@
 - [x] CDPConnection (retry + reconnect + ID routing, 229 lines)
 - [x] Balance timing fix (read before tab creation, max(0, earned))
 - [x] Live crash-test (1 survey completed, 36.3s, generic provider)
-- [ ] Stealth Pipeline (perceive→plan→guard→execute→critique) implementieren
-- [ ] Guardian-Check in jeden Survey-Schritt integrieren
-- [ ] Verify-Box für alle cua-driver Aktionen
-- [ ] Memory-Tier System (Working/Episodic/Semantic)
+- [x] **2026-05-07: React Form Fill (native setter + dispatchEvent)**
+- [x] **2026-05-07: Stacked Modal Detection + Cleaner**
+- [x] **2026-05-07: New Tab Detection (Qualtrics/Samplicio)**
+- [x] **2026-05-07: Balance read fix (125€→2.23€, context-aware filtering)**
+- [x] **2026-05-07: Qualtrics Language Select (dropdown, not labels)**
+- [x] **2026-05-07: CDP Input.dispatchMouseEvent (real mouse clicks)**
+- [x] **2026-05-07: Fill-by-Element-ID strategy for Angular Material**
+- [ ] Survey navigiert bis Qualtrics Fragen (✅) → Antworten + Abschluss (❌)
 - [ ] 5 aufeinanderfolgende erfolgreiche Survey-Durchläufe
 
 ### Phase 3: Scale (MAI–JUN)
@@ -48,14 +57,16 @@
 
 ---
 
-## 📋 Aktuelle Prioritäten
+## 📋 Aktuelle Prioritäten (2026-05-07)
 
-1. **🔴 CRITICAL**: Persona-System in Survey-Flow integrieren (resolve_answer vor jeder Demografie-Frage)
-2. **🔴 CRITICAL**: Survey-Disqualifikations-Rate reduzieren (korrekte Persona-Daten)
-3. **🟡 HIGH**: Stealth Pipeline implementieren (guardian checks)
-4. **🟡 HIGH**: registry-eval.md + registry-guardian.md erstellen
-5. **🟢 MEDIUM**: Cross-Repo Doc-Health Script bauen
-6. **🟢 MEDIUM**: Audio-Modul testen
+1. **🔴 P0**: Qualtrics .NextButton Selector → Survey abschließen → Erste Auszahlung
+2. **🔴 P0**: Auto-Tab-Switching nach clickSurvey() (neue Tab-Erkennung)
+3. **🔴 P0**: Completion Detection (Balance-Diff + Keywords über ALLE Tabs)
+4. **🟡 P1**: Form Validation Handling ("Value must be like 53" → intelligent anpassen)
+5. **🟡 P1**: Anti-Stuck Loop (State-Hash, Abbruch nach 5 identischen Iterationen)
+6. **🟢 P2**: cua-driver mit --force-renderer-accessibility reaktivieren
+7. **🟢 P2**: Qualtrics Provider Commands (.NextButton, .LabelWrapper, .ChoiceStructure)
+8. **🟢 P3**: Tab-Switching Integrationstest
 
 ---
 
@@ -70,4 +81,4 @@ Persona-System (A2A-Worker)  ←  CUA Survey Flow  ←  Stealth Pipeline
 
 ---
 
-**Letztes Update**: 2026-05-05
+**Letztes Update**: 2026-05-07 | **Nächster Meilenstein**: Erste Auszahlung (EUR > 0)

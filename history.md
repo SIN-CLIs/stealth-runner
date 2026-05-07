@@ -36,3 +36,13 @@
 | — | Stealth-Orchestrator | Banned Commands erweitert (pyautogui, pynput, coordinates, applescript) | 8 neue banned-*.md Dateien | [banned.md](banned.md) |
 | — | Stealth-Orchestrator | Google Login PASSKEY Flow dokumentiert | 7-Step Flow mit Indices | [google/login-flow.md](commands/google/login-flow.md) |
 | — | Stealth-Orchestrator | macOS Recovery Mode als SECRET WAY für SIP-Disabling erkannt | csrutil disable dokumentiert | [macos-recovery-mode.md](commands/macos-recovery-mode.md) |
+
+## 2026-05-07 (20:00-03:00) — LIVE CRASH-TEST: 10 Discoveries, 0 Payouts
+- Balance: 125€ bug → fixed → 2.23€ correct
+- React forms: .value silent failure → native setter solution
+- Stacked modals: 7-9 layers at same coordinates on dashboard
+- Tab detection: Surveys open in NEW tabs, CDP was on wrong tab
+- Qualtrics: Language select is dropdown, not clickable labels
+- Survey progression: heypiggy → Angular pre-form → Qualtrics (stuck on language page)
+- 6 commits pushed, 9 GitHub issues created, 19 repos synced
+- [session-log-2026-05-07.md](session-log-2026-05-07.md)

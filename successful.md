@@ -82,3 +82,36 @@ click [62] Fortfahren → click [41] Weiter
 | 71104 | heypiggy-bot-1777981361 | AKTUELL |
 | 70293 | heypiggy-bot-1777981087 | geschlossen |
 | 68317 | heypiggy-bot-1777979455 | geschlossen |
+
+## 2026-05-07 — What Actually Worked 💪
+
+### Balance Reading (FIX VERIFIED)
+- Balance now reads 2.23€ consistently (was: 125€ → Level progress)
+- Filter by value range + context keywords prevents false reads
+
+### React Form Fill (FIX VERIFIED)
+- Zip=10785 accepted via native setter + dispatchEvent
+- Age=53 accepted (was: "Value must be something like '53'" error)
+- Survey advanced past Angular pre-qualifier form
+
+### Tab Connection (WORKS)
+- Manual tab detection via http://127.0.0.1:9999/json works
+- Can connect to Qualtrics tab's WebSocket and read survey questions
+- Body shows: "In welchem der folgenden Länder/Regionen leben Sie?"
+
+### Stacked Modal Cleaner (WORKS)
+- Closing all "Schließen" buttons via JS reveals survey underneath
+- After closing: 0 visible modals, survey questions fully visible
+
+### Fill-by-Element-ID (WORKS)
+- document.getElementById('Zip'), getElementById('Age'), getElementById('mat-radio-0-input')
+- Most reliable approach for Angular Material components
+
+### Language Selection (WORKS)
+- Qualtrics <select class="Q_lang"> identified
+- selectedIndex set + dispatchEvent('change') → Deutsch selected
+- Country options reorder: Deutschland moves to top
+
+### CDP Input.dispatchMouseEvent (WORKS)
+- Real mouse events at coordinates work when element.click() fails
+- Use Input.dispatchMouseEvent with mousePressed + mouseReleased

@@ -173,3 +173,36 @@ grep "heypiggy_login_box" .
 - Jeder Ansatz-Wechsel wirft die bisherige Arbeit weg
 - 10 tiefe Fehlschläge > 100 oberflächliche Versuche
 - Siehe [incidents/2026-05-06-gocaptcha-slide-cdp.md](incidents/2026-05-06-gocaptcha-slide-cdp.md)
+
+## ❌ CDP Runtime.evaluate für Mausklicks verwenden (2026-05-07)
+**NIEMALS** `element.click()` via Runtime.evaluate für layered React/iframe Komponenten.
+- ❌ `cdp("document.querySelector('button').click()")` → silent failure bei stacked modals
+- ❌ `document.querySelectorAll('button')[i].click()` → klickt falschen Button bei gleichen Koordinaten
+- ✅ CDP `Input.dispatchMouseEvent` mit exakten Koordinaten (mousePressed + mouseReleased)
+- ✅ `document.getElementById('next_0').click()` NUR wenn Element-ID bekannt und unique
+**Grund**: React synthetic events, iframe boundaries, und z-index stacking machen DOM-Clicks unzuverlässig.
+
+## ❌ Math.max() für Balance-Read verwenden (2026-05-07)
+**NIEMALS** den größten €-Wert auf der Seite als Balance interpretieren.
+- ❌ `Math.max(...alle €-Werte)` → "125" (Level-Fortschritt) statt 2.23€ Guthaben
+- ❌ Keine Kontext-Prüfung → beliebige Zahlen neben € werden interpretiert
+- ✅ Filtere auf plausible Werte (1.0 - 1000€)
+- ✅ Prüfe benachbarte Zeilen auf "Level", "Min", "Umfragen"
+**Grund**: Dashboard zeigt viele €-Werte (Survey-Rewards, Level-Progress) — Balance ist nur einer davon.
+
+## ❌ Page Reload während Survey läuft (2026-05-07)
+**NIEMALS** `location.reload()` während eine Survey aktiv ist.
+- ❌ Reload zerstört Survey-State → Umfrage verschwindet
+- ❌ Willkommensbonus-Modal erscheint nach Reload → blockiert erste Survey-Interaktion
+- ✅ Nur ESC oder "Schließen"-Buttons zum Modal-Management
+- ✅ Reload NUR wenn KEINE Survey aktiv (bodyLen < 400)
+**Grund**: heypiggy Sessions sind stateful. Reload = Neustart mit Bonus-Modal.
+
+## ❌ .value = 'X' bei React/Angular Inputs (2026-05-07)
+**NIEMALS** `.value = 'X'` ohne native setter + Event-Dispatch bei React/Angular Formularen.
+- ❌ `el.value = '10785'` → React erkennt Änderung nicht
+- ❌ Nur `dispatchEvent('change')` ohne native setter → Wert wird nicht gespeichert
+- ✅ `Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, '10785')`
+- ✅ Dann `el.dispatchEvent(new Event('input', {bubbles:true}))`
+- ✅ Dann `el.dispatchEvent(new Event('change', {bubbles:true}))`
+**Grund**: React/Qualtrics patchen den native value setter. Ohne native setter wird der Wert nicht persistiert.

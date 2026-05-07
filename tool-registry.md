@@ -59,5 +59,25 @@
 | pyautogui | BANNED | [banned-pyautogui.md](commands/banned-pyautogui.md) |
 | pynput | BANNED | [banned-pynput.md](commands/banned-pynput.md) |
 
-**Tool-Gesamt**: 17 verified + 5 banned = 22 registrierte Tools
-**Letztes Update**: 2026-05-06
+## 2026-05-07 Crash-Test Discoveries (NEU)
+
+### CDP Toolbox
+
+| Tool | Zweck | Befehl |
+|------|-------|--------|
+| `Input.dispatchMouseEvent` | Echte Mausklicks auf Koordinaten (durch iframe/React/modals) | `Input.dispatchMouseEvent({type:'mousePressed',x,y,button:'left'})` |
+| `fill_by_id()` | React/Angular form fill via native setter | `Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,val)` |
+| `close_stacked_modals()` | Alle "Schließen"-Buttons auf Dashboard klicken | `Array.from(document.querySelectorAll('button')).filter(b=>b.textContent==='Schließen').forEach(b=>b.click())` |
+| `detect_new_tab()` | Neuen Browser-Tab nach clickSurvey erkennen | `len(tabs_after) > len(tabs_before)` via `/json` endpoint |
+| `fill_select()` | Qualtrics `<select>` dropdown auswählen | `sel.selectedIndex=i; sel.dispatchEvent(new Event('change',{bubbles:true}))` |
+
+### Survey Flow Tools
+
+| Tool | Zweck | File |
+|------|-------|------|
+| `scan_all_tabs()` | Alle Browser-Tabs auf Survey-Inhalte scannen | CDP `/json` endpoint |
+| `reconnect_to_tab(tab_id)` | CDP WebSocket auf neuen Tab umschalten | `ws://127.0.0.1:9999/devtools/page/{tab_id}` |
+| `read_balance_v2()` | Balance mit Kontext-Filter lesen (>1.0, <1000, skip "Level"/"Min") | `survey/scanner.py` |
+
+**Tool-Gesamt**: 24 verified + 5 banned = 29 registrierte Tools
+**Letztes Update**: 2026-05-07

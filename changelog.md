@@ -77,3 +77,42 @@
 | **NEW** | CUA-ONLY Trinity Architektur aktiviert | [AGENTS.md](AGENTS.md) |
 | **NEW** | Heypiggy Credentials dokumentiert | [heypiggy/credentials.md](commands/heypiggy/credentials.md) |
 | **NEW** | Session Manager Launch dokumentiert | [session-manager/launch.md](commands/session-manager/launch.md) |
+
+## 2026-05-07 — LIVE CRASH-TEST: 10+ Discoveries, 5 Fixes, 0 Payouts
+
+### Balance Fix (P3 → fixed)
+- Fixed: read_balance() no longer returns 125€ (Level progress) instead of 2.23€
+- Root cause: Math.max() of all € values on page picked up Level progress
+- Fix: filter by value range (1.0-1000) + context check for "Level"/"Min" keywords
+- File: survey-cli/survey/scanner.py, read_balance()
+
+### React Form Fill (P1 → fixed)
+- Fixed: React-controlled inputs now accept values via native setter
+- Root cause: .value = 'X' silent failure on React synthetic events
+- Fix: Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, val)
+- Alternative: document.execCommand('insertText', false, val)
+
+### Stacked Modals (P1 → fixed)
+- Fixed: 7-9 layered modals at identical coordinates on heypiggy dashboard
+- Fix: Close all "Schließen" buttons via JS before survey interaction
+
+### Survey Tab Detection (P0 → discovered)
+- Discovered: Surveys open in NEW Chrome tabs (Qualtrics/Samplicio URLs)
+- CDP was connected to wrong tab for 90% of session
+- Fix approach: check tab count via /json before/after clickSurvey()
+
+### Qualtrics Language Select (P1 → discovered)
+- Discovered: Language picker is <select class="Q_lang"> dropdown, not clickable labels
+- Must use selectedIndex + dispatchEvent('change')
+
+### Documentation
+- learn.md §Q: 8 crash-test discoveries
+- fix.md: 5 new fixes documented
+- issues.md: 11 SOTA-formatted GitHub issues created
+- session-log-2026-05-07.md: full timeline
+- sessions/2026-05-07.md: architecture flow + root causes
+- 19 stealth repos synced with learn.md §Q + fix.md #5-#9
+
+### Tests
+- 362 pass, 4 skipped
+- test_snapshot.py: all mocks updated to dict format for new element responses
