@@ -743,9 +743,9 @@ class SessionManager:
 # CLI INTERFACE
 # ═════════════════════════════════════════════════════════════════════════════
 # WARUM __main__?
-   SessionManager ist auch als CLI nutzbar (ohne Python-Import).
-   → python session_manager.py <command> [args]
-   → Praktisch fuer schnelle Diagnose ohne Code-Aenderung.
+   # SessionManager ist auch als CLI nutzbar (ohne Python-Import).
+   # → python session_manager.py <command> [args]
+   # → Praktisch fuer schnelle Diagnose ohne Code-Aenderung.
 # =============================================================================
 
 if __name__ == "__main__":
