@@ -116,3 +116,30 @@
 ### Tests
 - 362 pass, 4 skipped
 - test_snapshot.py: all mocks updated to dict format for new element responses
+
+## 2026-05-08 — OPENCODE FIX: Zod v4 Crash + GitNexus + Graphify
+
+### OpenCode Crash Fix (P0 → fixed)
+- Root cause: `oh-my-opencode@3.11.2` and `opencode-antigravity-auth@1.6.5-beta.0` bundle Zod v4.
+  OpenCode 1.14.41 uses Zod v3's `_zod.def` API. Tool resolution pipeline crashes.
+- Fixed: uninstalled all banned plugins from npm/bun global, deleted plugin directories
+  in `infra-sin-opencode-stack/`, deleted all `oh-my-*.json` files, reset opencode config
+- File: `infra-sin-opencode-stack/banned.md` created with recovery procedure
+
+### Provider Config Fix (P0 → fixed)
+- Root cause: custom provider configs with model lists created DUPLICATES
+- Fixed: empty `"provider": {}` — built-in providers auto-discover from auth.json
+
+### GitNexus + Graphify Integration (P1 → done)
+- GitNexus: 14,594 nodes, 18,562 edges, 300 flows
+- Graphify: 2,110 nodes, 4,953 edges, 118 communities
+- Binary: `/Users/jeremy/Library/pnpm/nodejs/22.14.0/bin/gitnexus`
+
+### Model ID Corrections (P1 → done)
+- Fireworks: `minimax-m2p7` (dash), `kimi-k2p6` (dash)
+- Vercel: `vercel/deepseek/deepseek-v4-flash` (provider prefix required)
+
+### OpenCode Run Bug (P0 → known issue, no fix)
+- `opencode run "hello"` crashes from real HOME even with clean config
+- Bug exists in all tested versions (1.4.11 to 1.14.41)
+- Workaround: use TUI (`opencode`)
