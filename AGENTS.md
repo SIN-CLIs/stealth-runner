@@ -832,3 +832,9 @@ pip install -r requirements.txt
 ### GitHub
 - **Repo**: https://github.com/SIN-CLIs/survey-cli
 - **Location**: `survey-cli/` im stealth-runner workspace
+
+### Skill Integration
+- **OpenCode Skill**: `/survey-runner` — in `infra-sin-opencode-stack/skills/survey-runner/SKILL.md`
+- **Catalog**: `infra-sin-opencode-stack/skills/catalog.json`
+- **Install**: `infra-sin-opencode-stack/install.sh` via `sync_dir_additive skills/`
+- **Stealth Suite**: 23+ Repos — `stealth-runner/`, `stealth-core/`, `stealth-session/`, `stealth-guardian/`, `stealth-memory/`, `stealth-captcha/`, `stealth-skills/`, `playstealth-cli/`, `skylight-cli/`, `cua-touch/`, `macos-ax-cli/`, `A2A-SIN-Worker-heypiggy/`

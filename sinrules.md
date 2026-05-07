@@ -248,6 +248,12 @@ cli/modules/                   ← LEGACY (nur Fallback)
 ├── passkey_popup.py            Passkey-Erkennung
 ├── consent_screen.py           Consent-Screen
 └── dashboard_verify.py         Balance-Verifikation
+
+### OpenCode Skill
+- **survey-runner** Skill: `infra-sin-opencode-stack/skills/survey-runner/SKILL.md`
+- Installiert via `sync_dir_additive` in `infra-sin-opencode-stack/install.sh`
+- Dokumentiert in `stealth-runner/AGENTS.md` §SURVEY-CLI
+- Stealth Suite (23+ Repos): stealth-runner, stealth-core, stealth-session, stealth-guardian, stealth-memory, stealth-captcha, stealth-skills, playstealth-cli, skylight-cli, cua-touch, macos-ax-cli
 ```
 
 ---
