@@ -1,12 +1,12 @@
 # Graph Report - stealth-runner  (2026-05-07)
 
 ## Corpus Check
-- 125 files · ~223,584 words
+- 119 files · ~237,690 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 2918 nodes · 6467 edges · 351 communities detected
-- Extraction: 42% EXTRACTED · 58% INFERRED · 0% AMBIGUOUS · INFERRED: 3776 edges (avg confidence: 0.56)
+- 2990 nodes · 6544 edges · 354 communities detected
+- Extraction: 42% EXTRACTED · 58% INFERRED · 0% AMBIGUOUS · INFERRED: 3780 edges (avg confidence: 0.56)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -40,12 +40,15 @@
 - [[_COMMUNITY_Community 27|Community 27]]
 - [[_COMMUNITY_Community 28|Community 28]]
 - [[_COMMUNITY_Community 29|Community 29]]
+- [[_COMMUNITY_Community 30|Community 30]]
 - [[_COMMUNITY_Community 31|Community 31]]
 - [[_COMMUNITY_Community 32|Community 32]]
 - [[_COMMUNITY_Community 33|Community 33]]
 - [[_COMMUNITY_Community 34|Community 34]]
 - [[_COMMUNITY_Community 35|Community 35]]
-- [[_COMMUNITY_Community 36|Community 36]]
+- [[_COMMUNITY_Community 39|Community 39]]
+- [[_COMMUNITY_Community 41|Community 41]]
+- [[_COMMUNITY_Community 42|Community 42]]
 - [[_COMMUNITY_Community 43|Community 43]]
 - [[_COMMUNITY_Community 44|Community 44]]
 - [[_COMMUNITY_Community 45|Community 45]]
@@ -375,122 +378,122 @@
 10. `BatchResult` - 93 edges
 
 ## Surprising Connections (you probably didn't know these)
-- `_run_solver()` --calls--> `create_tab()`  [INFERRED]
-  stealth-captcha/src/stealth_captcha/cli.py → survey-cli/survey/chrome.py
-- `list_targets()` --calls--> `CDPConnectionError`  [INFERRED]
-  stealth-captcha/src/stealth_captcha/cdp/targets.py → survey-cli/survey/cdp_client.py
-- `get_browser_ws()` --calls--> `CDPConnectionError`  [INFERRED]
-  stealth-captcha/src/stealth_captcha/cdp/targets.py → survey-cli/survey/cdp_client.py
-- `create_tab()` --calls--> `CDPConnectionError`  [INFERRED]
-  stealth-captcha/src/stealth_captcha/cdp/targets.py → survey-cli/survey/cdp_client.py
-- `connect()` --calls--> `CDPConnectionError`  [INFERRED]
-  stealth-captcha/src/stealth_captcha/cdp/client.py → survey-cli/survey/cdp_client.py
+- `Test Infisical utilities.` --uses--> `StealthSyncDaemon`  [INFERRED]
+  stealth-sync/test_infisical_integration.py → src/stealth_sync/daemon.py
+- `Test that daemon can be imported with Infisical integration.` --uses--> `StealthSyncDaemon`  [INFERRED]
+  stealth-sync/test_infisical_integration.py → src/stealth_sync/daemon.py
+- `Test that CLI commands are available.` --uses--> `StealthSyncDaemon`  [INFERRED]
+  stealth-sync/test_infisical_integration.py → src/stealth_sync/daemon.py
+- `Test that all required files exist.` --uses--> `StealthSyncDaemon`  [INFERRED]
+  stealth-sync/test_infisical_integration.py → src/stealth_sync/daemon.py
+- `Start the stealth-sync daemon with optional Infisical integration.` --uses--> `StealthSyncDaemon`  [INFERRED]
+  stealth-sync/cli/main.py → src/stealth_sync/daemon.py
 
 ## Communities
 
 ### Community 0 - "Community 0"
-Cohesion: 0.02
-Nodes (342): _get_stealth_js(), inject_stealth_to_tab(), Load stealth injection bundle, or fallback to inline minimal overrides., Inject stealth JS into a tab via Page.addScriptToEvaluateOnNewDocument.      The, cmd_kill(), cmd_login(), cmd_loop(), cmd_opencode() (+334 more)
+Cohesion: 0.01
+Nodes (343): patch(), _get_stealth_js(), inject_stealth_to_tab(), Load stealth injection bundle, or fallback to inline minimal overrides., Inject stealth JS into a tab via Page.addScriptToEvaluateOnNewDocument.      The, cmd_loop(), cmd_profile(), cmd_run() (+335 more)
 
 ### Community 1 - "Community 1"
 Cohesion: 0.01
-Nodes (367): Scan all elements on current page., build_survey_prompt(), decide(), _parse_response(), NIM Survey Client — Nemotron 3 Omni via NVIDIA NIM API.  Reuses the OpenAI clien, Ask Nemotron to decide using tool-use mode.          For when the LLM should sel, Build a prompt for Nemotron to decide next batch actions.      Args:         sna, CDPConnection (+359 more)
+Nodes (357): Scan all elements on current page., build_survey_prompt(), decide(), _parse_response(), NIM Survey Client — Nemotron 3 Omni via NVIDIA NIM API.  Reuses the OpenAI clien, Ask Nemotron to decide using tool-use mode.          For when the LLM should sel, Build a prompt for Nemotron to decide next batch actions.      Args:         sna, CDPConnection (+349 more)
 
 ### Community 2 - "Community 2"
-Cohesion: 0.02
-Nodes (169): ABC, BaseSettings, BaseSolver, _find_chrome(), Chrome launcher with hardened flags for stealth automation.  No --enable-automat, Launch Chrome with stealth flags.          Blocks until the CDP endpoint becomes, Open a URL in the default tab (creates one if none exist).          Requires tha, Kill the Chrome process gracefully (SIGTERM → SIGKILL after 5s). (+161 more)
+Cohesion: 0.01
+Nodes (170): patch(), main(), Main daemon module for stealth-sync.  This module implements the core daemon tha, Initialize Infisical integration and validate setup., Stop the daemon gracefully.                  Shuts down the scheduler and perfor, Handle shutdown signals (SIGINT, SIGTERM).                  Args:             si, Load secrets from Infisical if available., Poll for new sessions and process them.                  This is the main work f (+162 more)
 
 ### Community 3 - "Community 3"
 Cohesion: 0.02
-Nodes (149): auto_doc(), check_infisical(), monitor(), Start the stealth-sync daemon with optional Infisical integration., Check Infisical integration status., Display Infisical setup guide., setup_infisical(), summarize() (+141 more)
+Nodes (170): ABC, BaseSettings, BaseSolver, _find_chrome(), Chrome launcher with hardened flags for stealth automation.  No --enable-automat, Launch Chrome with stealth flags.          Blocks until the CDP endpoint becomes, Open a URL in the default tab (creates one if none exist).          Requires tha, Kill the Chrome process gracefully (SIGTERM → SIGKILL after 5s). (+162 more)
 
 ### Community 4 - "Community 4"
-Cohesion: 0.02
-Nodes (108): Exception, jitter(), patch(), rng(), patch(), Semantic analysis engine using NVIDIA NIM API for OpenCode session classificatio, Parse the classification response from NVIDIA NIM API.                  The LLM, Generate structured summary of OpenCode session messages using NVIDIA NIM. (+100 more)
+Cohesion: 0.03
+Nodes (78): check_nvidia_api(), cmd_legacy(), cmd_loop(), cmd_nim_survey(), cmd_scan(), cmd_snapshot(), load_profile(), main() (+70 more)
 
 ### Community 5 - "Community 5"
 Cohesion: 0.03
-Nodes (89): check_nvidia_api(), cmd_legacy(), cmd_loop(), cmd_nim_survey(), cmd_scan(), cmd_snapshot(), load_profile(), main() (+81 more)
+Nodes (58): ActionVerifier, survey/agents/action_verifier.py — Action Verifier Agent (2026-05-06)  FUNKTION:, Verify a click action was successful., Verify text was filled into field., Verify survey completion page., Get current page content hash for comparison., Verifies actions were successful by comparing before/after state.      FUNCTIONS, Verify an action was executed successfully. (+50 more)
 
 ### Community 6 - "Community 6"
-Cohesion: 0.04
-Nodes (57): ActionVerifier, survey/agents/action_verifier.py — Action Verifier Agent (2026-05-06)  FUNKTION:, Verify a click action was successful., Verify text was filled into field., Verify survey completion page., Get current page content hash for comparison., Verifies actions were successful by comparing before/after state.      FUNCTIONS, Verify an action was executed successfully. (+49 more)
+Cohesion: 0.03
+Nodes (80): ensure_accessibility(), grant_accessibility(), is_accessibility_enabled(), launch_chrome_with_accessibility(), Chrome Accessibility Manager — grant + verify + maintain.  SOTA: NEVER kill Chro, Start cua-driver daemon if not running., Check if cua-driver can read Chrome's AX-Tree., Grant Accessibility permission to Google Chrome via tccutil. (+72 more)
 
 ### Community 7 - "Community 7"
 Cohesion: 0.03
-Nodes (58): cdp_click(), cdp_click_button(), fill_opinion_textarea(), handle_cookie_consent(), PureSpectrum provider patterns — CAPTCHA blocked.  All current PureSpectrum surv, Recursive __ngContext__ search → dropListRef.drop()., CDP Input.dispatchMouseEvent — real OS event (isTrusted=true)., Run full PureSpectrum preflight: cookie → ROBOT → captcha → puzzle. (+50 more)
+Nodes (57): Cache response by prompt hash + model., AUTO-GOOGLE-LOGIN — CUA-ONLY 6-Step Flow (LIVE TESTED 2026-05-05)      Args:, _main_chrome_pids(), Findet ALLE Bot-Chrome Main-Prozesse.          RETURNS:         list: [(pid, pro, Findet Window-ID (WID) fuer gegebene Chrome-PID.          ARGS:         pid (int, Initialisiert SessionManager und laedt existierende Sessions.                  W, Laedt Sessions aus JSON-Datei.                  RETURNS:             dict: {"nam, Speichert Sessions als JSON.                  WARUM indent=2?           Human-re (+49 more)
 
 ### Community 8 - "Community 8"
 Cohesion: 0.04
-Nodes (62): create_blank_tab(), create_tab(), find_bot_pids(), find_bot_tabs(), find_dashboard_ws(), find_survey_tab(), get_details_url(), get_survey_details() (+54 more)
+Nodes (64): compile(), FlowCompiler, FlowStatus, get_status(), Initialisiert FlowStatus aus YAML-Pfad oder leer.                  Args:, Pfad zur Status-JSON-Datei.                  → Format: <STATE_DIR>/flow_<flow_na, Lädt persistierten Status aus JSON.                  WARUM KEIN except Exception, Speichert Status als JSON.                  WARUM json.dumps(indent=2)? (+56 more)
 
 ### Community 9 - "Community 9"
-Cohesion: 0.06
-Nodes (59): CDPConnectionError, CDPError, create_cdp(), Lightweight sync CDP WebSocket client with retry, reconnect, and ID routing.  So, Send a CDP command and return the result dict.          Args:             method, Read WebSocket messages until we find one with the matching ID.          This so, CDP command returned an error., Send a CDP command and return 'result' dict directly.          Shorthand for: se (+51 more)
+Cohesion: 0.04
+Nodes (37): cdp_click(), cdp_click_button(), fill_opinion_textarea(), handle_cookie_consent(), PureSpectrum provider patterns — CAPTCHA blocked.  All current PureSpectrum surv, Recursive __ngContext__ search → dropListRef.drop()., CDP Input.dispatchMouseEvent — real OS event (isTrusted=true)., Run full PureSpectrum preflight: cookie → ROBOT → captcha → puzzle. (+29 more)
 
 ### Community 10 - "Community 10"
-Cohesion: 0.05
-Nodes (43): ModelConfig, Return routing statistics., Model configuration as dict with attribute access., dict, _balance(), _click(), _cua(), execute() (+35 more)
+Cohesion: 0.04
+Nodes (49): ModelConfig, Return routing statistics., Model configuration as dict with attribute access., dict, _balance(), _click(), _cua(), execute() (+41 more)
 
 ### Community 11 - "Community 11"
 Cohesion: 0.05
-Nodes (57): click(), _click_raw(), _get_state(), press_key(), Click Tool — __frozen__=True  Agent nutzt rohes cua-driver call click — DARF NIC, Click an element by label (boundary-match) or index.      Args:         pid, wid, Set value in AXTextField by label or index.      Args:         pid, wid: Window, Press a key (return, tab, etc.) via cua-driver.      Args:         pid: Process (+49 more)
+Nodes (63): Exception, CDPConnectionError, CDPError, create_cdp(), Lightweight sync CDP WebSocket client with retry, reconnect, and ID routing.  So, Send a CDP command and return the result dict.          Args:             method, Read WebSocket messages until we find one with the matching ID.          This so, CDP command returned an error. (+55 more)
 
 ### Community 12 - "Community 12"
-Cohesion: 0.06
-Nodes (33): compile(), FlowCompiler, FlowStatus, get_status(), record_run(), dispatch(), _dispatch_step(), _execute_yaml_flow() (+25 more)
+Cohesion: 0.05
+Nodes (32): capture_dom_hash(), _cdp_call(), cdp_click_element_by_text(), cdp_keyboard_enter(), CDP Batch Executor — Execute survey actions via WebSocket.  Translates high-leve, Execute a CDP command with retry + auto-reconnect via CDPConnection., Capture DOM state as hash — SOTA anti-stuck detection.      Uses element count +, Verify DOM changed after action (SOTA anti-stuck).      After a click/fill actio (+24 more)
 
 ### Community 13 - "Community 13"
-Cohesion: 0.06
-Nodes (13): Cache response by prompt hash + model., AUTO-GOOGLE-LOGIN — CUA-ONLY 6-Step Flow (LIVE TESTED 2026-05-05)      Args:, _main_chrome_pids(), _run(), SessionManager, _wid_from_pid(), ================================================================================, AntiStuck (+5 more)
+Cohesion: 0.05
+Nodes (37): cmd_scan(), survey-cli — Standalone Survey Automation CLI (NVIDIA NIM + CDP).  Not a coding, detect_provider(), filter_surveys(), print_survey_table(), Dashboard scanner — survey ID extraction + provider detection.  Uses CDP JS to e, Pretty-print filtered survey results., Scan dashboard DOM for survey cards with rewards.      heypiggy renders survey c (+29 more)
 
 ### Community 14 - "Community 14"
+Cohesion: 0.05
+Nodes (57): click(), _click_raw(), _get_state(), press_key(), Click Tool — __frozen__=True  Agent nutzt rohes cua-driver call click — DARF NIC, Click an element by label (boundary-match) or index.      Args:         pid, wid, Set value in AXTextField by label or index.      Args:         pid, wid: Window, Press a key (return, tab, etc.) via cua-driver.      Args:         pid: Process (+49 more)
+
+### Community 15 - "Community 15"
 Cohesion: 0.04
 Nodes (5): Test SOTA detection functions: detect_error_page, detect_progress, detect_comple, Test BatchExecutor.detect_error_page() — comprehensive error detection., Test detect_progress() — SOTA progress state detection., TestDetectErrorPage, TestDetectProgress
 
-### Community 15 - "Community 15"
+### Community 16 - "Community 16"
 Cohesion: 0.09
 Nodes (33): _bezier(), _ease_out_quint(), Human-like Bezier mouse trajectory generator.  Produces a sequence of (t_ms, x,, A single point in the mouse trajectory.      Attributes:         t_ms: Milliseco, Ease-out quintic: fast start, smooth stop.      This matches human motor control, Cubic Bezier interpolation at parameter t ∈ [0, 1]., Generates human-like drag trajectories.      Usage:         gen = TrajectoryGene, Generate a human-like drag trajectory from start to end.          Args: (+25 more)
 
-### Community 16 - "Community 16"
+### Community 17 - "Community 17"
 Cohesion: 0.04
 Nodes (3): generate_repo(), main(), Generate all missing files for one repo.
 
-### Community 17 - "Community 17"
+### Community 18 - "Community 18"
 Cohesion: 0.05
 Nodes (9): Test survey/autodoc.py — append-only logging and summary generation.  Tests log_, End-to-end: log + regenerate summary from same tmp dir., TestAutodocIntegration, TestGenerateSummary, TestLogDecision, TestLogEarnings, TestLogError, TestLogSession (+1 more)
 
-### Community 18 - "Community 18"
-Cohesion: 0.12
-Nodes (4): detect_completion(), SOTA: Check if survey is completed based on page text.      Provider-specific co, Test detect_completion() — provider-specific completion detection., TestDetectCompletion
-
 ### Community 19 - "Community 19"
+Cohesion: 0.06
+Nodes (40): auto_doc(), check_infisical(), monitor(), Session-Monitoring Daemon (STUB).          WARUM STUB?       Die echte Monitor-L, Automatische Dokumentationsgenerierung (STUB).          WARUM STUB?       Die ec, Session-Zusammenfassung (STUB).          WARUM STUB?       Session-Zusammenfassu, AX-Dokumentation Validierung (STUB).          WARUM STUB?       AX-Doku ist in A, Start the stealth-sync daemon with optional Infisical integration. (+32 more)
+
+### Community 20 - "Community 20"
 Cohesion: 0.13
 Nodes (23): classify_question(), decide_actions_for_snapshot(), load_profile(), match_age_bracket(), match_income(), match_option(), match_single_option(), _normalize() (+15 more)
 
-### Community 20 - "Community 20"
-Cohesion: 0.21
-Nodes (13): _get_cdp_pages(), _get_state(), State Verification Tool — __frozen__=True  After jeder Aktion: verify dass Zusta, Verify page state by URL, text content, or element counts.      Args:         ur, Verify heypiggy dashboard shows logged-in state., Verify survey page loaded (has questions/radio buttons)., Verify survey completion page (Vielen Dank, etc.)., Verify an element exists with expected role/text.      Returns:         {"status (+5 more)
-
 ### Community 21 - "Community 21"
-Cohesion: 0.24
-Nodes (5): CaptchaSolver, Convert DOM (viewport) coordinates to window coordinates, Execute drag via cua-driver CGEvent, Solve slide captcha (gc-drag-block on gc-drag-slide-bar), Generic: drag element from drag_selector to drop_selector
+Cohesion: 0.29
+Nodes (13): _make_urlopen_response(), test_all_prequalifiers_no_early_return(), test_answer_idx_bound_check(), test_loops_on_multiple_questions(), test_mixed_prequalifier_and_normal(), test_normal_survey_unchanged(), test_prequalifier_answered_via_api(), test_prequalifier_skipped_when_api_fails() (+5 more)
 
 ### Community 22 - "Community 22"
 Cohesion: 0.21
-Nodes (11): ensure_accessibility(), grant_accessibility(), is_accessibility_enabled(), launch_chrome_with_accessibility(), Chrome Accessibility Manager — grant + verify + maintain.  SOTA: NEVER kill Chro, Start cua-driver daemon if not running., Check if cua-driver can read Chrome's AX-Tree., Grant Accessibility permission to Google Chrome via tccutil. (+3 more)
+Nodes (13): _get_cdp_pages(), _get_state(), State Verification Tool — __frozen__=True  After jeder Aktion: verify dass Zusta, Verify page state by URL, text content, or element counts.      Args:         ur, Verify heypiggy dashboard shows logged-in state., Verify survey page loaded (has questions/radio buttons)., Verify survey completion page (Vielen Dank, etc.)., Verify an element exists with expected role/text.      Returns:         {"status (+5 more)
 
 ### Community 23 - "Community 23"
-Cohesion: 0.33
-Nodes (8): _click_rating_button(), _get_cdp_pages(), rate_survey(), Survey Rating Tool — __frozen__=True  Rate completed surveys for +0.01€ bonus. A, Click first button on rating page via CDP., Verify rating tab closed or no longer on rating page., Rate a completed survey for +0.01€ bonus.      Args:         port: CDP port, _verify_rating_done()
+Cohesion: 0.24
+Nodes (5): CaptchaSolver, Convert DOM (viewport) coordinates to window coordinates, Execute drag via cua-driver CGEvent, Solve slide captcha (gc-drag-block on gc-drag-slide-bar), Generic: drag element from drag_selector to drop_selector
 
 ### Community 24 - "Community 24"
 Cohesion: 0.25
-Nodes (7): check_pending_tasks(), delegate_task(), OpenCode CLI Bridge — delegate coding tasks to opencode.  Survey-cli is NOT a co, Delegate a coding task to opencode cli.      Creates a temporary task file and i, Check for pending tasks that were dispatched., Submit a GitHub issue via gh CLI.      Used to report bugs or request features d, submit_issue()
+Nodes (10): is_registered(), list_tools(), _load(), Listet alle registrierten Tools auf.          RETURNS:         list: Liste aller, Prueft ob Flow bereits als Tool registriert ist.          ARGS:         flow_nam, Lädt opencode.json oder Default-Struktur.          RETURNS:         dict: {"tool, Speichert opencode.json.          WARUM indent=2?       Human-readable fuer git, Registriert kompilierten Flow als Tool in opencode.json.          ARGS: (+2 more)
 
 ### Community 25 - "Community 25"
-Cohesion: 0.6
-Nodes (5): is_registered(), list_tools(), _load(), register(), _save()
+Cohesion: 0.33
+Nodes (8): _click_rating_button(), _get_cdp_pages(), rate_survey(), Survey Rating Tool — __frozen__=True  Rate completed surveys for +0.01€ bonus. A, Click first button on rating page via CDP., Verify rating tab closed or no longer on rating page., Rate a completed survey for +0.01€ bonus.      Args:         port: CDP port, _verify_rating_done()
 
 ### Community 26 - "Community 26"
 Cohesion: 0.47
@@ -502,63 +505,75 @@ Nodes (2): jitter(), rng()
 
 ### Community 28 - "Community 28"
 Cohesion: 0.5
-Nodes (3): load(), Embedded JS payloads for reference — legacy dispatchEvent approach.  These paylo, Load a JS payload by filename.      Args:         name: Filename (e.g., "gocaptc
+Nodes (2): jitter(), rng()
 
 ### Community 29 - "Community 29"
+Cohesion: 0.5
+Nodes (3): load(), Embedded JS payloads for reference — legacy dispatchEvent approach.  These paylo, Load a JS payload by filename.      Args:         name: Filename (e.g., "gocaptc
+
+### Community 30 - "Community 30"
 Cohesion: 0.5
 Nodes (3): get_action_for_question(), Qualtrics provider patterns.  Key differences from other providers:   - .NextBut, Match a question to profile data.      Returns:         {"index": int, "value":
 
 ### Community 31 - "Community 31"
-Cohesion: 1.0
-Nodes (1): Tests for stealth-captcha.
+Cohesion: 0.67
+Nodes (2): Fuehrt gefrorenen Flow aus.          ARGS:         path (str): Absoluter Pfad zu, run()
 
 ### Community 32 - "Community 32"
 Cohesion: 1.0
-Nodes (1): Embedded JavaScript payloads loaded at import time via importlib.resources.
+Nodes (1): Tests for stealth-captcha.
 
 ### Community 33 - "Community 33"
 Cohesion: 1.0
-Nodes (1): Structured logging and OpenTelemetry integration.
+Nodes (1): Strat7 Audiences provider patterns.  Key patterns:   - .bsbutton grid for consen
 
 ### Community 34 - "Community 34"
 Cohesion: 1.0
-Nodes (1): Strat7 Audiences provider patterns.  Key patterns:   - .bsbutton grid for consen
+Nodes (1): Provider-specific survey patterns.  Each provider module exports:   - detect(pag
 
 ### Community 35 - "Community 35"
 Cohesion: 1.0
-Nodes (1): Provider-specific survey patterns.  Each provider module exports:   - detect(pag
-
-### Community 36 - "Community 36"
-Cohesion: 1.0
 Nodes (1): TolunaStart provider patterns.  Key patterns:   - .cf-radio for single select (u
 
-### Community 43 - "Community 43"
+### Community 39 - "Community 39"
+Cohesion: 1.0
+Nodes (1): Zählt wie oft aktueller Hash wiederholt wurde.                  RETURNS:
+
+### Community 41 - "Community 41"
 Cohesion: 1.0
 Nodes (1): Read the current page text for completion detection.
 
-### Community 44 - "Community 44"
+### Community 42 - "Community 42"
 Cohesion: 1.0
 Nodes (1): Check if survey is completed.
 
-### Community 45 - "Community 45"
+### Community 43 - "Community 43"
 Cohesion: 1.0
 Nodes (1): Ask Nemotron to decide the next batch of actions.          Args:             sna
 
-### Community 46 - "Community 46"
+### Community 44 - "Community 44"
 Cohesion: 1.0
 Nodes (1): Parse the LLM response into a list of actions.          Handles:         - Pure
 
-### Community 47 - "Community 47"
+### Community 45 - "Community 45"
 Cohesion: 1.0
 Nodes (1): Extract question texts from elements.
 
-### Community 48 - "Community 48"
+### Community 46 - "Community 46"
 Cohesion: 1.0
 Nodes (1): Detect survey progress if visible.
 
-### Community 49 - "Community 49"
+### Community 47 - "Community 47"
 Cohesion: 1.0
 Nodes (1): Detect survey provider from URL.
+
+### Community 48 - "Community 48"
+Cohesion: 1.0
+Nodes (1): Embedded JavaScript payloads loaded at import time via importlib.resources.
+
+### Community 49 - "Community 49"
+Cohesion: 1.0
+Nodes (1): Structured logging and OpenTelemetry integration.
 
 ### Community 50 - "Community 50"
 Cohesion: 1.0
@@ -1793,35 +1808,41 @@ Cohesion: 1.0
 Nodes (1): Public API: Vorqualifizierung durchführen.
 
 ## Knowledge Gaps
-- **665 isolated node(s):** `Ring 1: Signierte & unveränderliche Flow-Artefakte. Jeder kompilierte Flow wird`, `Generiert Ed25519-Schlüsselpaar falls nicht vorhanden.`, `Signiert einen Flow und speichert .sig + flow_hash + lock.json.`, `Prüft Signatur und Hash eines Flows.     Returns: (is_valid, reason)`, `Boolean wrapper für Vorbedingungs-Check (Semgrep-Regel).` (+660 more)
+- **740 isolated node(s):** `Dispatcht Tool-Ausfuehrung mit Hard Enforcement.          ARGS:         tool_nam`, `Ring 1: Signierte & unveränderliche Flow-Artefakte. Jeder kompilierte Flow wird`, `Generiert Ed25519-Schlüsselpaar falls nicht vorhanden.`, `Signiert einen Flow und speichert .sig + flow_hash + lock.json.`, `Prüft Signatur und Hash eines Flows.     Returns: (is_valid, reason)` (+735 more)
   These have ≤1 connection - possible missing edges or undocumented components.
-- **Thin community `Community 27`** (5 nodes): `get()`, `jitter()`, `rng()`, `safe()`, `injection.js`
+- **Thin community `Community 27`** (5 nodes): `get()`, `jitter()`, `rng()`, `safe()`, `stealth_main.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 31`** (2 nodes): `__init__.py`, `Tests for stealth-captcha.`
+- **Thin community `Community 28`** (5 nodes): `get()`, `jitter()`, `rng()`, `safe()`, `injection.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 32`** (2 nodes): `Embedded JavaScript payloads loaded at import time via importlib.resources.`, `__init__.py`
+- **Thin community `Community 31`** (3 nodes): `executor.py`, `Fuehrt gefrorenen Flow aus.          ARGS:         path (str): Absoluter Pfad zu`, `run()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 33`** (2 nodes): `__init__.py`, `Structured logging and OpenTelemetry integration.`
+- **Thin community `Community 32`** (2 nodes): `__init__.py`, `Tests for stealth-captcha.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 34`** (2 nodes): `Strat7 Audiences provider patterns.  Key patterns:   - .bsbutton grid for consen`, `strat7.py`
+- **Thin community `Community 33`** (2 nodes): `Strat7 Audiences provider patterns.  Key patterns:   - .bsbutton grid for consen`, `strat7.py`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 35`** (2 nodes): `Provider-specific survey patterns.  Each provider module exports:   - detect(pag`, `__init__.py`
+- **Thin community `Community 34`** (2 nodes): `Provider-specific survey patterns.  Each provider module exports:   - detect(pag`, `__init__.py`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 36`** (2 nodes): `TolunaStart provider patterns.  Key patterns:   - .cf-radio for single select (u`, `toluna.py`
+- **Thin community `Community 35`** (2 nodes): `TolunaStart provider patterns.  Key patterns:   - .cf-radio for single select (u`, `toluna.py`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 43`** (1 nodes): `Read the current page text for completion detection.`
+- **Thin community `Community 39`** (1 nodes): `Zählt wie oft aktueller Hash wiederholt wurde.                  RETURNS:`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 44`** (1 nodes): `Check if survey is completed.`
+- **Thin community `Community 41`** (1 nodes): `Read the current page text for completion detection.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 45`** (1 nodes): `Ask Nemotron to decide the next batch of actions.          Args:             sna`
+- **Thin community `Community 42`** (1 nodes): `Check if survey is completed.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 46`** (1 nodes): `Parse the LLM response into a list of actions.          Handles:         - Pure`
+- **Thin community `Community 43`** (1 nodes): `Ask Nemotron to decide the next batch of actions.          Args:             sna`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 47`** (1 nodes): `Extract question texts from elements.`
+- **Thin community `Community 44`** (1 nodes): `Parse the LLM response into a list of actions.          Handles:         - Pure`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 48`** (1 nodes): `Detect survey progress if visible.`
+- **Thin community `Community 45`** (1 nodes): `Extract question texts from elements.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 49`** (1 nodes): `Detect survey provider from URL.`
+- **Thin community `Community 46`** (1 nodes): `Detect survey progress if visible.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 47`** (1 nodes): `Detect survey provider from URL.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 48`** (1 nodes): `Embedded JavaScript payloads loaded at import time via importlib.resources.`
+  Too small to be a meaningful cluster - may be noise or needs more connections extracted.
+- **Thin community `Community 49`** (1 nodes): `Structured logging and OpenTelemetry integration.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 - **Thin community `Community 50`** (1 nodes): `SURVEY_HEYPIGGY — CUA-ONLY Survey Flow      Args:       payload : dict   — optio`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
@@ -2443,12 +2464,12 @@ Nodes (1): Public API: Vorqualifizierung durchführen.
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `SurveyRunner` connect `Community 0` to `Community 8`, `Community 1`, `Community 5`, `Community 7`?**
-  _High betweenness centrality (0.115) - this node is a cross-community bridge._
-- **Why does `NIMClient` connect `Community 1` to `Community 0`?**
-  _High betweenness centrality (0.114) - this node is a cross-community bridge._
-- **Why does `CaptchaError` connect `Community 2` to `Community 4`, `Community 15`?**
-  _High betweenness centrality (0.103) - this node is a cross-community bridge._
+- **Why does `SurveyRunner` connect `Community 0` to `Community 1`, `Community 6`, `Community 9`, `Community 13`, `Community 21`?**
+  _High betweenness centrality (0.121) - this node is a cross-community bridge._
+- **Why does `CaptchaError` connect `Community 3` to `Community 16`, `Community 11`?**
+  _High betweenness centrality (0.104) - this node is a cross-community bridge._
+- **Why does `NIMClient` connect `Community 1` to `Community 0`, `Community 10`, `Community 11`?**
+  _High betweenness centrality (0.098) - this node is a cross-community bridge._
 - **Are the 442 inferred relationships involving `CompactSnapshot` (e.g. with `TestCompleteImmediately` and `TestCircuitBreaker`) actually correct?**
   _`CompactSnapshot` has 442 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 361 inferred relationships involving `SurveyRunner` (e.g. with `Login to heypiggy via Google OAuth (cua-driver flow).` and `Scan dashboard for surveys.`) actually correct?**

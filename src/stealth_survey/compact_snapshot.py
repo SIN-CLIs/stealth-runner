@@ -1,8 +1,62 @@
-"""Compact Snapshot Generator — Token-efficient DOM snapshots with @eN refs.
+"""================================================================================
+COMPACT SNAPSHOT GENERATOR — DOM → Token-effiziente @eN Snapshots
+================================================================================
 
-Inspired by Vercel agent-browser's compact snapshot format.
-Uses CDP WebSocket to extract interactive elements from a survey page.
-"""
+WAS IST DAS?
+  Wandelt eine komplette Webseite in einen kompakten, LLM-freundlichen
+  Snapshot um. Nutzt @eN Referenzen (z.B. @e0, @e12) statt komplexer
+  CSS-Selektoren oder instabiler Indizes.
+
+ARCHITEKTUR:
+  ┌─────────────────────┐
+  │  CDP WebSocket      │
+  │  Runtime.evaluate   │
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  JS Extractor       │
+  │  (im Browser)       │
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  ElementRef         │
+  │  (Dataclass)        │
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  CompactSnapshot    │
+  │  {@e0: {...}, ...} │
+  └─────────────────────┘
+
+WARUM @eN Referenzen?
+  - CSS-Selektoren: zu lang (500+ Zeichen), verschwenden Tokens
+  - cua-driver Indices: instabil (ändert sich bei jedem Reload)
+  - @eN: Kurz (3-5 Zeichen), stabil pro Seite, menschlich lesbar
+  → Optimal für LLM-Kontext (weniger Tokens = mehr Kontext für Fragen).
+
+WARUM Token-Effizienz wichtig?
+  Nemotron 3 Omni hat 256K Kontext. Bei 50 Fragen × 2000 Tokens
+  = 100K Tokens. Kompakte Snapshots (200 Tokens) = 10K Tokens.
+  → 90% Einsparung = mehr Kontext für komplexe Fragen.
+
+DEPENDENZEN:
+  - CDP WebSocket Verbindung (chrome.py)
+  - websocket-client (pip install websocket-client)
+
+BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
+  ❌ playstealth launch
+  ❌ webauto-nodriver — ABSOLUT BANNED
+  ❌ cua-driver click (raw index)
+  ❌ --remote-allow-origins=* (ohne Quotes)
+  ❌ /tmp/heypiggy-bot (fixed profile)
+  ❌ Hardcoded PIDs
+  ❌ pkill -f "Google Chrome"
+  ❌ killall Google Chrome
+  ❌ skylight-cli click --element-index
+================================================================================"""
 
 import json
 import time

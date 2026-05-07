@@ -3,42 +3,57 @@
 > **← [../AGENTS.md](../AGENTS.md) ist das MASTER Regelwerk.**
 > **← [../sinrules.md](../sinrules.md) ist das zentrale Regelwerk.**
 
-## 🚨 ARCHÄOLOGIE-TSUNAMI — PFLICHT VOR JEDER AKTION
+---
 
-**REGEL: Jeder Agent MUSS vor dem ersten Code-Edit einen vollständigen Archäologie-Tsunami starten.**
+## 🚨 ARCHÄOLOGIE-TSUNAMI — ABSOLUTE PFLICHT VOR JEDER AKTION
+
+**⚠️ VERSTOSS = SOFORTIGER STOP + RISIKO FÜR USER-DATEN/CHROME ⚠️**
+
+**REGEL: Jeder Agent MUSS vor dem ERSTEN Code-Edit einen vollständigen Archäologie-Tsunami starten. KEINE AUSNAHMEN. NICHT VERHANDELBAR.**
 
 ### Warum?
-- Alter Code = extrem gefährlich (tötet User Chrome, leaked Credentials)
-- Falscher Code = verwirrt Agents unnötig
-- Lügen-Code = das Schlimmste was in einer Entwicklung geschehen kann
-- Nicht ausreichend kommentierter Code = nächster Agent zerstört alles wieder
+- **Alter Code = extrem gefährlich** (tötet User Chrome, leaked Credentials, destroyed sessions)
+- **Falscher Code = verwirrt Agents unnötig** (wie DICH! Du denkst du weißt es, aber du LÜGST!)
+- **Lügen-Code = das Schlimmste was in einer Entwicklung geschehen kann** (zerstört Production-Systeme)
+- **Nicht ausreichend kommentierter Code = nächster Agent zerstört alles wieder** (und der nächste, und der nächste...)
 
-### Pflicht-Prozedur (IN DIESER REIHENFOLGE):
-1. **Explore Subagent starten**: Scan ALLER Repos und Code-Dateien
+### ⚠️ WARNUNG AN ALLE AGENTS: IHR LÜGT ALLE!
+**Jeder Agent denkt er "kennt den Code". Jeder Agent denkt er "weiß wie es funktioniert". Jeder Agent denkt er "braucht nicht recherchieren".**
+
+**FALSCH. IHR LÜGT ALLE. IMMER.**
+
+- Gestern war alles anders
+- Der Code den du denkst zu kennen wurde gestern Nacht geändert
+- Die PIDs die du auswendig gelernt hast sind DYNAMISCH
+- Die Tools die du nutzen willst sind VIELLEICHT BANNED
+- **RECHERCHIEREN IST NICHT OPTIONAL. ES IST PFLICHT.**
+
+### Pflicht-Prozedur (IN DIESER REIHENFOLGE — KEIN VERKÜRZEN!):
+1. **Explore Subagent STARTEN**: Scan ALLER Repos und Code-Dateien (rekursiv!)
 2. **Kategorisieren**: 🔥 DELETE (alt/broken/banned) | ⚠️ LEGACY | ✅ ACTIVE
 3. **BANNED-Patterns prüfen**: playstealth, webauto-nodriver, pkill -f Google Chrome, hardcoded PIDs, --remote-allow-origins=* ohne Quotes
-4. **Löschen**: Alle 🔥 DELETE Dateien SOFORT entfernen
-5. **Kommentieren**: Jede verbleibende Code-Datei mit extremen Kommentaren ausstatten:
-   - Was macht diese Datei?
-   - Warum existiert sie?
-   - Was ist die Architektur?
-   - Was sind die Abhängigkeiten?
-   - BANNED-Methoden als Warnung
-   - Jede Funktion dokumentieren
-   - Jede Konstante erklären
-   - Warum-Fragen beantworten
-6. **Test-Dateien**: Kein Tool ohne Test-Dateien!
+4. **Löschen**: Alle 🔥 DELETE Dateien SOFORT entfernen (kein "vielleicht noch nützlich")
+5. **Kommentieren**: Jede verbleibende Code-Datei mit EXTREMEN Kommentaren ausstatten:
+   - **Was macht diese Datei?** (WARUM existiert sie?)
+   - **Was ist die Architektur?** (Wie passt sie ins Gesamtbild?)
+   - **Was sind die Abhängigkeiten?** (Was bricht wenn diese Datei fehlt?)
+   - **BANNED-Methoden als WARNUNG** (in JEDER Datei!)
+   - **Jede Funktion dokumentieren** (Args, Returns, Side-Effects, Race-Conditions)
+   - **Jede Konstante erklären** (Warum dieser Wert? Warum nicht anders?)
+   - **Warum-Fragen beantworten** (Warum 10 Erfolge? Warum 3x Retry? Warum 8s Sleep?)
+6. **Test-Dateien**: Kein Tool ohne Test-Dateien! KEINE AUSNAHME!
+7. **Commits prüfen**: `git log --oneline -20` — Was wurde zuletzt geändert?
+8. **Issues prüfen**: Sind bekannte Bugs dokumentiert?
 
-### Selbst wenn sich ein Agent "alles wissen" einbildet:
-- **ER LÜGT**. Immer. Jeder Agent denkt er weiß es, aber er liegt.
-- **Er MUSS trotzdem recherchieren**. Keine Ausnahmen.
-- **Er MUSS die aktuellen Commits prüfen**. Gestern war alles anders.
+### Bei Abweichung (Code entspricht nicht Schema / sieht komisch aus / du verstehst es nicht):
+1. **SOFORT STOP** — Keine weiteren Änderungen!
+2. **Deep-Recherche starten** (alle Repos, Issues, Commits, READMEs)
+3. **ALLE betroffenen Dateien identifizieren**
+4. **Kommentare/Dokumentation in ALLEN betroffenen Dateien nachholen**
+5. **BANNED-Patterns in Code UND Doku markieren**
+6. **Erst DANN weiterarbeiten**
 
-### Bei Abweichung (Code entspricht nicht Schema):
-1. SOFORT Deep-Recherche starten (alle Repos, Issues, Commits)
-2. ALLE betroffenen Dateien identifizieren
-3. Kommentare/Dokumentation in ALLEN betroffenen Dateien nachholen
-4. BANNED-Patterns in Code UND Doku markieren
+---
 
 ## 🚨 EXPLICITE VERBOTE (UNVERBRÜCHLICH)
 

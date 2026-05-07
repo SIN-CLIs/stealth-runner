@@ -1,8 +1,72 @@
-"""Compact DOM Snapshot — @eN token-efficient element references.
+"""================================================================================
+COMPACT DOM SNAPSHOT — @eN Token-Efficient Element Extraction
+================================================================================
 
-Extracts interactive elements via CDP Runtime.evaluate.
-Inspired by Vercel agent-browser's compact snapshot format.
-"""
+WAS IST DAS?
+  Erzeugt kompakte DOM-Snapshots mit @eN Referenzen aus einer Webseite.
+  Nutzt CDP Runtime.evaluate im Browser (nicht cua-driver).
+  
+  UNTERscheidet sich von src/stealth_survey/compact_snapshot.py:
+  - Diese Datei: Survey-CLI-Version (für survey.py)
+  - src/stealth_survey/compact_snapshot.py: NEMO-Version (für run_survey.py)
+  → BEIDE erfüllen denselben Zweck, aber für verschiedene Entry Points.
+
+ARCHITEKTUR:
+  ┌─────────────────────┐
+  │  snapshot()         │
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  CDP WebSocket      │
+  │  Runtime.evaluate   │
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  ELEMENT_EXTRACTOR_JS│
+  │  (im Browser)       │
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  Modal Detection    │
+  │  (topmost overlay)  │
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  CompactSnapshot    │
+  │  {@e0, @e1, ...}   │
+  └─────────────────────┘
+
+WARUM Modal Detection?
+  HeyPiggy Dashboard hat OVERLAYS (Survey-Preview, Account-Setup,
+  Rating-Prompt). Wir müssen das TOPMOST Modal finden.
+  → Strategie: Element dessen Center am nähesten zum Viewport-Center ist.
+  → Hintergrund-Modals (Rating) sind oft seitlich/verschoben.
+
+WARUM @eN Referenzen?
+  - Kurz: @e0 = 3 Zeichen (vs. CSS-Selektor = 50+ Zeichen)
+  - Stabil: Pro Seite eindeutig (vs. cua-driver Index = instabil)
+  - LLM-freundlich: Weniger Tokens = mehr Kontext für Fragen
+
+DEPENDENZEN:
+  - .scanner (Provider Detection)
+  - websocket-client (pip install websocket-client)
+  - CDP WebSocket Verbindung
+
+BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
+  ❌ playstealth launch
+  ❌ webauto-nodriver — ABSOLUT BANNED
+  ❌ cua-driver click (raw index)
+  ❌ --remote-allow-origins=* (ohne Quotes)
+  ❌ /tmp/heypiggy-bot (fixed profile)
+  ❌ Hardcoded PIDs
+  ❌ pkill -f "Google Chrome"
+  ❌ killall Google Chrome
+  ❌ skylight-cli click --element-index
+================================================================================"""
 
 import json
 import time

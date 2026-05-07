@@ -1,8 +1,72 @@
-"""Batch Executor — Execute NIM-decided batch actions via CDP WebSocket.
+"""================================================================================
+BATCH EXECUTOR — Batch-Actions → CDP WebSocket Execution
+================================================================================
 
-Translates high-level actions (click @e42, fill @e15 "text") into
-CDP Runtime.evaluate calls, respecting per-provider DOM patterns.
-"""
+WAS IST DAS?
+  Führt vom Nemotron 3 Omni entschiedene Batch-Actions aus.
+  Übersetzt high-level Actions ("click @e42", "fill @e15 'Berlin'")
+  in CDP Runtime.evaluate Calls mit provider-spezifischem JavaScript.
+
+ARCHITEKTUR:
+  ┌─────────────────────┐
+  │  Batch Actions      │
+  │  [{"ref":"@e0",     │
+  │   "action":"click"}]│
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  BatchExecutor      │
+  │  .execute()         │
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  Provider-Routing   │
+  │  (Qualtrics,        │
+  │   Toluna, Strat7)   │
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  CDP Runtime.       │
+  │  evaluate(JS)         │
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  ActionResult[]     │
+  │  (Success/Error)    │
+  └─────────────────────┘
+
+WARUM Batch statt Einzel-Actions?
+  Legacy: Agent ruft 20× get_window_state(), 20× click().
+  NEMO: Eine Decision = 5 Actions → Ein WebSocket Call.
+  → 5× schneller, weniger Round-Trips, stabiler.
+
+PROVIDER-SPEZIFISCH:
+  Jeder Survey-Provider hat unterschiedliche DOM-Strukturen:
+  - Qualtrics: .NextButton, .LabelWrapper, input[type=radio]
+  - TolunaStart: .cf-radio, button
+  - Strat7: .bsbutton, input[type=radio]
+  → BatchExecutor mappt Actions auf provider-spezifisches JS.
+
+DEPENDENZEN:
+  - CDP WebSocket Verbindung
+  - websocket-client (pip install websocket-client)
+  - Provider-Konfiguration (PROVIDER_COMMANDS dict)
+
+BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
+  ❌ playstealth launch
+  ❌ webauto-nodriver — ABSOLUT BANNED
+  ❌ cua-driver click (raw index)
+  ❌ --remote-allow-origins=* (ohne Quotes)
+  ❌ /tmp/heypiggy-bot (fixed profile)
+  ❌ Hardcoded PIDs
+  ❌ pkill -f "Google Chrome"
+  ❌ killall Google Chrome
+  ❌ skylight-cli click --element-index
+================================================================================"""
 
 import json
 import time

@@ -1,31 +1,70 @@
 #!/usr/bin/env python3
-"""
-===============================================================================
-RUN_SURVEY — Single Entry Point for Heypiggy Survey Automation
-===============================================================================
-Version : 2.0 (NEMO Architecture — 2026-05-06)
-Modes   : legacy | nim | scan | loop | snapshot
+"""================================================================================
+RUN_SURVEY — Single Entry Point for Heypiggy Survey Automation (NEMO v2.0)
+================================================================================
+
+WAS IST DAS?
+  Haupt-Einstiegspunkt für Survey-Automation. Unterstützt mehrere Modi:
+  - legacy: Alte cua-driver-basierte Flows (DEPRECATED)
+  - nim: NEMO-Architektur (Compact Snapshot → Nemotron → Batch Execute)
+  - scan: Dashboard nach verfügbaren Surveys scannen
+  - loop: Automatisch Surveys ausführen (scan + nim wiederholt)
+  - snapshot: Compact Snapshot einer Survey-Seite generieren
+
+ARCHITEKTUR:
+  ┌─────────────────────┐
+  │   run_survey.py     │  ← DU BIST HIER (Entry Point)
+  └─────────────────────┘
+         │
+    ┌────┴────────┬────────┬────────┐
+    ▼             ▼        ▼        ▼
+  legacy        nim      scan     snapshot
+    │             │        │        │
+    ▼             ▼        ▼        ▼
+  cua-driver   NEMO     scanner   compact_snapshot
+  (DEPRECATED)  Engine   (chrome)  (snapshot.py)
+
+WARUM argparse statt Typer?
+  Einfachheit. run_survey.py ist ein Standalone-Script,
+  nicht ein komplexes CLI-Tool. argparse ist in der Standardlib.
+  → Keine externe Dependency nötig.
+
+WARUM sys.path.insert(0, os.path.dirname(__file__))?
+  Ermöglicht relative Imports innerhalb des Repos.
+  → Wichtig wenn Script aus anderem Verzeichnis aufgerufen wird.
+
+WARUM Hardcoded Fallback-Profile?
+  Wenn config/profiles/ fehlt (z.B. frische Installation),
+  → Fallback-Profile garantiert Funktionalität.
+  → Sollte später in Infisical oder Env-Vars ausgelagert werden.
+
+BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
+  ❌ playstealth launch — setzt NICHT --force-renderer-accessibility
+  ❌ webauto-nodriver — ABSOLUT BANNED
+  ❌ cua-driver click (raw index) — instabil
+  ❌ --remote-allow-origins=* (ohne Quotes) — zsh glob expansion
+  ❌ /tmp/heypiggy-bot (fixed profile) — korruptiert nach Neustart
+  ❌ Hardcoded PIDs — dynamisch, niemals hardcodieren
+  ❌ pkill -f "Google Chrome" — tötet USER Chrome
+  ❌ killall Google Chrome — tötet ALLE Chrome
+  ❌ skylight-cli click --element-index — Index instabil
 
 USAGE:
-  # Legacy survey flow (cua-driver, old)
+  # Legacy survey flow (cua-driver, DEPRECATED — nutze NEMO!)
   python3 run_survey.py --mode legacy
 
-  # NEMO: Run one survey by ID
+  # NEMO: Einzelne Survey per ID
   python3 run_survey.py --mode nim --survey-id 66846193
 
-  # NEMO: Auto-scan dashboard and run surveys
+  # NEMO: Automatisch Surveys ausführen (scan + nim Loop)
   python3 run_survey.py --mode loop --max 5
 
-  # NEMO: Just scan dashboard for IDs
+  # NEMO: Dashboard scannen
   python3 run_survey.py --mode scan
 
-  # NEMO: Generate compact snapshot of current survey tab
+  # NEMO: Compact Snapshot generieren
   python3 run_survey.py --mode snapshot --tab-id <TAB_ID>
-
-  # Test: Run against a known working Qualtrics URL directly
-  python3 run_survey.py --mode nim --url "https://eu.qualtrics.com/jfe/form/SV_XXXXX"
-===============================================================================
-"""
+================================================================================"""
 
 import sys
 import os

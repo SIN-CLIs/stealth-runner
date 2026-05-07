@@ -1,23 +1,65 @@
-"""SurveyAgent — Ultra-fast survey automation with Nemotron 3 Omni + CDP.
+"""================================================================================
+SURVEY AGENT — NEMO Loop: Compact Snapshot → Nemotron Decision → Batch Execute
+================================================================================
 
-Architecture:
-    Compact Snapshot → Nemotron Decision → Batch Execute → Memory/Guardian → Loop
+WAS IST DAS?
+  Die Haupt-NEMO-Engine (Nemotron 3 Omni + CDP). Automatisiert Survey-
+  Teilnahmen mit minimalen LLM-Calls durch Compact Snapshots und Batch-Execution.
 
-Flow:
-    1. Open survey URL via CDP Target.createTarget
-    2. Generate compact DOM snapshot with @eN refs
-    3. Send to Nemotron 3 Omni for decision
-    4. Execute batch actions via CDP
-    5. Log to stealth-memory + stealth-guardian
-    6. Repeat until completion detected
-    7. Rate survey (+0.01€ bonus)
-    8. Return earnings
+ARCHITEKTUR (NEMO Loop):
+  ┌─────────────────────┐
+  │   SurveyAgent.run() │
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐     ┌─────────────────────┐
+  │  Compact Snapshot    │────▶│  Nemotron 3 Omni    │
+  │  (@eN Element Refs)  │     │  (Decision)         │
+  └─────────────────────┘     └─────────────────────┘
+         │                              │
+         ▼                              ▼
+  ┌─────────────────────┐     ┌─────────────────────┐
+  │  Batch Executor     │◄────│  Batch Actions      │
+  │  (CDP WebSocket)    │     │  (click/fill/...)   │
+  └─────────────────────┘     └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  Memory + Guardian  │
+  │  (Logging, Heal)    │
+  └─────────────────────┘
+         │
+         ▼
+    [Loop bis Complete]
 
-This is the NEXT-GEN replacement for survey_heypigpy.py.
-Uses CDP WebSocket directly (no cua-driver dependency).
-Token-efficient through compact snapshots.
-Batch mode for minimal LLM calls.
-"""
+VORTEILE gegenüber Legacy (cua-driver Loop):
+  - 1 LLM-Call PRO SEITE (nicht pro Element)
+  - ~500 tokens in, ~100 tokens out (statt ~5000+)
+  - 5× schneller als cua-driver Loop
+  - Keine Index-Instabilität (Compact Snapshots)
+
+WARUM NEMO?
+  Legacy cua-driver Loop: Agent ruft 20-50x get_window_state(),
+  klickt einzelne Elemente, vergisst Zwischenstände.
+  NEMO: Ein Snapshot → Eine Decision → Batch Execute → Next Page.
+
+DEPENDENZEN:
+  - nim_client.py: Nemotron 3 Omni API Client
+  - compact_snapshot.py: DOM → @eN Snapshot Generator
+  - batch_executor.py: Actions → CDP WebSocket Execution
+  - Optional: stealth_memory (Logging), stealth_guardian (Heal)
+
+BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
+  ❌ playstealth launch — setzt NICHT --force-renderer-accessibility
+  ❌ webauto-nodriver — ABSOLUT BANNED
+  ❌ cua-driver click (raw index) — instabil, nutze BatchExecutor
+  ❌ --remote-allow-origins=* (ohne Quotes) — zsh glob expansion
+  ❌ /tmp/heypiggy-bot (fixed profile) — korruptiert nach Neustart
+  ❌ Hardcoded PIDs — dynamisch, niemals hardcodieren
+  ❌ pkill -f "Google Chrome" — tötet USER Chrome
+  ❌ killall Google Chrome — tötet ALLE Chrome
+  ❌ skylight-cli click --element-index — Index instabil
+================================================================================"""
 
 import json
 import time

@@ -1,3 +1,68 @@
+"""================================================================================
+FCTES ORCHESTRATOR — Flow Execution with Gatekeeper + Intent Tracking
+================================================================================
+
+WAS IST DAS?
+  Zentrale Orchestration für FCTES (Freeze & Compile Tool Enforcement System).
+  Führt Flows aus mit:
+  - Gatekeeper (Blockierung bei Konflikten)
+  - Intent Tracking (was wollten wir erreichen?)
+  - Verifikation (wurde es erreicht?)
+  - Learning (Erfolge/Fehler loggen)
+
+ARCHITEKTUR:
+  ┌─────────────────────┐
+  │   run()             │
+  │   (Entry Point)     │
+  └─────────────────────┘
+         │
+    ┌────┴────────────────────────────┐
+    ▼                                  ▼
+  _gatekeeper_check()              _intent_wrap()
+    │                                  │
+    ▼                                  ▼
+  stealth_guardian                 stealth_memory
+  (Block if conflict)              (Track intent)
+         │                              │
+         └────────┬─────────────────────┘
+                  ▼
+         _execute_yaml_flow()
+                  │
+         ┌────────┴────────┐
+         ▼                  ▼
+    Learning Flow      Compiled Tool
+    (YAML steps)       (Production)
+         │                  │
+         ▼                  ▼
+    tracker.record()   registry/dispatch
+
+WARUM Gatekeeper?
+  Verhindert, dass mehrere Agents gleichzeitig denselben Flow ausführen.
+  → Konflikte: Doppelte Chrome-Starts, überschriebene Sessions.
+
+WARUM Intent Tracking?
+  "Was wollten wir erreichen?" vs "Was haben wir gemacht?"
+  → Verifikation: Wurde das Ziel erreicht?
+  → Learning: Welche Intents scheitern oft?
+
+DEPENDENZEN:
+  - app.core.tracker (Success-Counter)
+  - app.core.registry (Flow-Registry)
+  - app.core.compiler (FlowCompiler)
+  - Optional: stealth_guardian, stealth_memory
+
+BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
+  ❌ playstealth launch
+  ❌ webauto-nodriver — ABSOLUT BANNED
+  ❌ cua-driver click (raw index)
+  ❌ --remote-allow-origins=* (ohne Quotes)
+  ❌ /tmp/heypiggy-bot (fixed profile)
+  ❌ Hardcoded PIDs
+  ❌ pkill -f "Google Chrome"
+  ❌ killall Google Chrome
+  ❌ skylight-cli click --element-index
+================================================================================"""
+
 from app.core import tracker, registry
 from app.core.compiler import FlowCompiler, compile as compile_flow
 

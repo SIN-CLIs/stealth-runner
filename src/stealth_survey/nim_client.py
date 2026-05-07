@@ -1,8 +1,67 @@
-"""NIM Survey Client — Nemotron 3 Omni via NVIDIA NIM API.
+"""================================================================================
+NIM CLIENT — Nemotron 3 Omni API für Survey-Entscheidungen
+================================================================================
 
-Reuses the OpenAI client pattern from stealth-sync/semantic_engine.py.
-Focused on survey decisions: analyze compact snapshot → return batch actions.
-"""
+WAS IST DAS?
+  Client für NVIDIA NIM API (Nemotron 3 Nano Omni 30B). Analysiert Compact
+  Snapshots und gibt Batch-Actions zurück (click, fill, select, submit, ...).
+
+ARCHITEKTUR:
+  ┌─────────────────────┐
+  │  build_survey_prompt │
+  │  (Snapshot + Profile)│
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  NIMSurveyClient    │
+  │  .decide()          │
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  OpenAI API         │
+  │  (NVIDIA NIM)       │
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  JSON Batch Actions │
+  │  [{"ref":"@e0",...}]│
+  └─────────────────────┘
+
+WARUM Nemotron 3 Omni?
+  - 30B-A3B Mixture-of-Experts (Video + Audio + Bild + Text)
+  - 256K Kontext (ganze Survey-Sessions in einem Call)
+  - SSE Streaming (tokenweise Antwort)
+  - Spezialisiert auf Entscheidungen mit wenig Tokens
+
+WARUM OpenAI-Client-Pattern?
+  NVIDIA NIM ist OpenAI-kompatibel (v1/chat/completions).
+  → Nutzen existierende openai Library statt custom HTTP.
+  → Wiederverwendbar, getestet, dokumentiert.
+
+KONFIGURATION:
+  API Key: $NVIDIA_API_KEY (Prefix: nvapi-...)
+  Model: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning
+  Base URL: https://integrate.api.nvidia.com/v1
+
+DEPENDENZEN:
+  - openai (pip install openai)
+  - tenacity (pip install tenacity) — Retry-Logik
+  - $NVIDIA_API_KEY muss gesetzt sein
+
+BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
+  ❌ playstealth launch
+  ❌ webauto-nodriver — ABSOLUT BANNED
+  ❌ cua-driver click (raw index)
+  ❌ --remote-allow-origins=* (ohne Quotes)
+  ❌ /tmp/heypiggy-bot (fixed profile)
+  ❌ Hardcoded PIDs
+  ❌ pkill -f "Google Chrome"
+  ❌ killall Google Chrome
+  ❌ skylight-cli click --element-index
+================================================================================"""
 
 import os
 import json
