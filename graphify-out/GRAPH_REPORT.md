@@ -1,7 +1,7 @@
 # Graph Report - stealth-runner  (2026-05-07)
 
 ## Corpus Check
-- 111 files · ~215,655 words
+- 111 files · ~216,739 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
