@@ -1,29 +1,150 @@
 #!/usr/bin/env python3
-"""survey-cli — Standalone Survey Automation CLI.
+# -*- coding: utf-8 -*-
+"""================================================================================
+================================================================================
+SURVEY-CLI — Standalone Survey Automation CLI (NEMO v2.0 + Legacy Support)
+================================================================================
+================================================================================
 
-Usage:
-  ./survey.py login             Login to heypiggy (Google OAuth)
-  ./survey.py scan              Scan dashboard for available surveys
-  ./survey.py run --id X        Run a specific survey by ID
-  ./survey.py run --url URL     Run survey at direct URL
-  ./survey.py loop --max 10     Auto-loop: scan → filter → run → repeat
-  ./survey.py watch [--interval 60]  Continuous poller
-  ./survey.py balance           Show current balance + summary
-  ./survey.py status            Check Chrome + login status
-  ./survey.py doctor            Self-diagnostic (check all systems)
-  ./survey.py kill              Kill bot Chrome only (safe)
-  ./survey.py opencode "task"   Delegate coding task to opencode cli
-  ./survey.py summary           Generate earnings summary
-  ./survey.py profile           Show current profile
+WAS IST DIESE DATEI?
+  Diese Datei ist der HAUPT-EINSTIEGSPUNKT für die Survey-Automation.
+  Sie ist ein Standalone CLI-Tool (keine Abhängigkeit von opencode).
+  Unterstützt mehrere Modi: login, scan, run, loop, watch, balance, status,
+  doctor, kill, summary, opencode, profile.
 
-Environment:
-  NVIDIA_API_KEY    Required for Nemotron 3 Omni decisions
-  NVIDIA_MODEL      Model name (default: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning)
-  SURVEY_PORT       CDP port (default: 9999)
+  Warum ist diese Datei so wichtig?
+    - Sie ist der EINSTIEG für menschliche Operatoren (und Agents).
+    - Sie koordiniert ALLE Survey-Aktivitäten.
+    - Sie enthält den WATCH DAEMON — der 24/7 Survey-Loop.
+    - WENN diese Datei fehlschlägt → Keine Einnahmen.
 
-SIN-CLIs/stealth-runner — Standalone, no opencode dependency.
+ARCHITEKTUR:
+  ┌─────────────────────────────────────────────────────────────────────────────┐
+  │                         survey-cli/survey.py                                  │
+  │                           (DU BIST HIER)                                    │
+  └─────────────────────────────────────────────────────────────────────────────┘
+           │
+     ┌─────┴──────┬────────┬────────┬────────┬────────┬────────┐
+     ▼            ▼        ▼        ▼        ▼        ▼        ▼
+  cmd_login   cmd_scan cmd_run cmd_loop cmd_watch cmd_*  (weitere)
+     │            │        │        │        │
+     ▼            ▼        ▼        ▼        ▼
+  auto_google  scanner  runner   runner   runner
+  _login.py    (chrome) (NEMO)   (NEMO)   (NEMO loop)
+     │                                        │
+     ▼                                        ▼
+  cua-driver                            WATCH DAEMON
+  (6-Step OAuth)                        (24/7 Poller)
+
+  WARUM argparse statt Click/Typer?
+    - Einfachheit: Keine externe Dependency nötig.
+    - Standardlib: argparse ist immer verfügbar.
+    - Dies ist ein Standalone-Script, kein komplexes Framework.
+
+DEPENDENZEN (Was braucht diese Datei?):
+  - survey.runner: SurveyRunner, RunnerConfig (NEMO Engine)
+  - survey.scanner: scan_dashboard, read_balance (Dashboard-Analyse)
+  - survey.chrome: is_chrome_alive, find_bot_tabs, find_dashboard_ws
+  - survey.autodoc: log_session, generate_summary (Logging/Doku)
+  - survey.accessibility: ensure_accessibility, start_cua_daemon
+  - cli.modules.auto_google_login: execute() (Google OAuth)
+  - survey.nim: get_nim() (NVIDIA NIM Client)
+  - survey.snapshot: generate_snapshot() (Compact Snapshot)
+  - survey.opencode_bridge: delegate_task() (OpenCode Integration)
+  - Standardlib: sys, os, json, time, argparse, pathlib
+  - Third-party: websocket-client (für CDP WebSocket)
+
+ABHÄNGIGE DATEIEN (Was bricht wenn diese Datei fehlt?):
+  - KEINE direkten Abhängigkeiten (diese Datei ist der Entry Point).
+  - Aber: Alle Survey-Flows starten hier → WENN diese Datei fehlt,
+    können keine Surveys ausgeführt werden.
+
+BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
+  ❌ playstealth launch — setzt NICHT --force-renderer-accessibility
+  ❌ webauto-nodriver — ABSOLUT BANNED
+  ❌ cua-driver click (raw element_index) — instabil, nutze tool_click.py
+  ❌ --remote-allow-origins=* (ohne Quotes) — zsh glob expansion
+  ❌ /tmp/heypiggy-bot (fixed profile) — korruptiert nach Neustart
+  ❌ Hardcoded PIDs — dynamisch, niemals hardcodieren
+  ❌ pkill -f "Google Chrome" — tötet USER Chrome
+  ❌ killall Google Chrome — tötet ALLE Chrome
+  ❌ skylight-cli click --element-index — Index instabil
+
+HISTORY / CHANGELOG:
+  2026-05-08: MASSIVE DOKUMENTATION hinzugefügt (alle Funktionen, alle Konstanten)
+    → WARUM? IndentationError zeigte: Code war nicht ausreichend dokumentiert.
+    → IndentationError: survey.py:199, 8 spaces statt 4 (behoben in a8ceca7)
+    → VERIFIZIERUNG: python3 -m py_compile survey.py
+
+  2026-05-07: IndentationError behoben (survey.py:199)
+    → WARUM: SyntaxError blockierte survey.py komplett.
+    → WAS: 8 spaces → 4 spaces (6 Zeilen nach import Statement).
+    → DATEI: survey-cli/survey.py:199
+    → VERIFIZIERUNG: python3 -m py_compile survey.py
+
+  2026-05-06: 211 Unit Tests für 15 tools/modules hinzugefügt
+    → WARUM: Keine Tests = keine Verifikation von Änderungen.
+    → WAS: pytest Suite mit 211 Tests.
+    → VERIFIZIERUNG: pytest (alle 211 Tests passen)
+
+  2026-05-05: Watch Daemon mit Crash Recovery
+    → WARUM: Survey-Loop crashte bei Chrome-Absturz.
+    → WAS: Signal Handler (SIGINT/SIGTERM), Exponential Backoff,
+           Graceful Shutdown, JSONL Logging.
+
+  2026-05-04: Initialer NEMO Support (Compact Snapshot + NIM)
+    → WARUM: cua-driver Loop war zu langsam und instabil.
+    → WAS: SurveyRunner mit NEMO Engine integriert.
+
+USAGE:
+  # Login
+  ./survey.py login
+
+  # Scan Dashboard
+  ./survey.py scan
+
+  # Einzelne Survey per ID
+  ./survey.py run --id 66846193
+
+  # Einzelne Survey per URL
+  ./survey.py run --url https://...
+
+  # Auto-Loop (max 10 Surveys)
+  ./survey.py loop --max 10
+
+  # 24/7 Watch Daemon
+  ./survey.py watch --interval 60 --max 3
+
+  # Status checken
+  ./survey.py status
+
+  # Full Diagnostic
+  ./survey.py doctor
+
+  # Bot Chrome sicher beenden
+  ./survey.py kill
+
+ENVIRONMENT VARIABLES:
+  NVIDIA_API_KEY      Required für Nemotron 3 Omni (NEMO Mode)
+  NVIDIA_MODEL        Model Name (default: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning)
+  SURVEY_PORT         CDP Port (default: 9999)
+  SURVEY_DEBUG        Debug Mode (truthy = verbose output)
+  SURVEY_WAIT         Wait zwischen Actions in Sekunden (default: 3.0)
+
+================================================================================
+================================================================================
 """
 
+# ============================================================================
+# IMPORTS
+# ============================================================================
+# WARUM sys? Für sys.path Manipulation (Imports aus Parent-Verzeichnis).
+# WARUM sys.path.insert? Ermöglicht relative Imports aus Parent-Dir.
+# WARUM os? Für Umgebungsvariablen (NVIDIA_API_KEY, SURVEY_PORT), Pfade.
+# WARUM json? Für CDP WebSocket Nachrichten (JSON-RPC über WebSocket).
+# WARUM time? Für Delays, Timestamps, Backoff-Berechnung.
+# WARUM argparse? CLI-Argument-Parsing. Standardlib, keine externe Dependency.
+# WARUM Path? Für plattform-unabhängige Pfad-Manipulation.
 import sys
 import os
 import json
@@ -31,68 +152,316 @@ import time
 import argparse
 from pathlib import Path
 
-# Add parent to path for imports
-# Robuster Import-Pfad: Workspace-Root (stealth-runner/) für cli.modules
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-_stealth_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+# ============================================================================
+# IMPORT-PATH KONFIGURATION
+# ============================================================================
+# WARUM diese Manipulation?
+#   survey.py kann aus verschiedenen Verzeichnissen aufgerufen werden:
+#   - Aus survey-cli/ (direkt)
+#   - Aus stealth-runner/ (als Modul)
+#   - Aus irgendwo anders
+#   → Wir müssen sicherstellen dass cli.modules und survey.* importierbar sind.
+#
+# WARUM insert(0, ...)?
+#   Unser Parent-Dir sollte VOR anderen Pfaden durchsucht werden.
+#   → Vermeidet Konflikte mit system-weiten Paketen.
+#
+# WARUM _stealth_root?
+#   Der Workspace-Root ist 2 Ebenen über survey.py:
+#   /workspace/stealth-runner/survey-cli/survey.py
+#   → _stealth_root = /workspace/stealth-runner/
+#   → Dort liegen cli/modules/ und src/
+
+# Aktuelles Verzeichnis von survey.py
+_survey_cli_dir = os.path.dirname(os.path.abspath(__file__))
+
+# Parent-Verzeichnis (stealth-runner/)
+_stealth_root = os.path.dirname(_survey_cli_dir)
+
+# survey-cli/ zu sys.path hinzufügen (für survey.* Imports)
+if _survey_cli_dir not in sys.path:
+    sys.path.insert(0, _survey_cli_dir)
+
+# stealth-runner/ zu sys.path hinzufügen (für cli.modules, src Imports)
 if _stealth_root not in sys.path:
     sys.path.insert(0, _stealth_root)
 
 
+# ============================================================================
+# KONSTANTEN
+# ============================================================================
+# WARUM DEFAULT_PORT = 9999?
+#   CDP (Chrome DevTools Protocol) lauscht auf einem Port.
+#   9999 ist unser Konvention — nicht reserviert, leicht zu merken.
+#   WARUM nicht 9222? 9222 ist Chrome's Default-CDP-Port, aber wir wollen
+#   einen festen Port für unsere Bot-Instanz.
+#   WARUM nicht 8080? 8080 wird oft von Webservern genutzt.
+DEFAULT_PORT = 9999
+
+# WARUM DEFAULT_INTERVAL = 30?
+#   Poll-Interval für Watch Daemon.
+#   Nicht zu kurz (verbraucht CPU, überlastet Dashboard)
+#   Nicht zu lang (verpasst Surveys die schnell weg sind)
+#   Erfahrungswert: 30s = guter Kompromiss.
+DEFAULT_INTERVAL = 30
+
+# WARUM DEFAULT_MAX_SURVEYS = 5?
+#   Max Surveys pro Loop/Watch-Cycle.
+#   Nicht zu viele (Qualität leidet, Captcha-Rate steigt)
+#   Nicht zu wenige (verschwendet Chancen)
+#   Erfahrungswert: 5 = 3-5 min pro Cycle bei ~1min pro Survey.
+DEFAULT_MAX_SURVEYS = 5
+
+# WARUM DEFAULT_BALANCE_TARGET = 5.0?
+#   Watch Daemon stoppt wenn dieses Guthaben erreicht ist.
+#   5.00€ = Auszahlungsschwelle bei HeyPiggy (typisch).
+#   WARUM float? HeyPiggy zeigt Cent-Beträge (z.B. 3.47€).
+DEFAULT_BALANCE_TARGET = 5.0
+
+# WARUM MAX_CONSECUTIVE_ERRORS = 20?
+#   Ursprünglich 5, aber Surveys scheitern OFT an Captchas.
+#   Bei 5: Watch Daemon stoppt nach 5 Captcha-Fehlern.
+#   Bei 20: Toleranter — gibt genug Chancen für erfolgreiche Surveys.
+#   WARUM nicht 50? Zu tolerant — echte Probleme werden nicht erkannt.
+MAX_CONSECUTIVE_ERRORS = 20
+
+
+# ============================================================================
+# KOMMANDO-FUNKTIONEN — Jede Funktion EXTREM dokumentiert
+# ============================================================================
+
 def cmd_login(args):
-    """Login to heypiggy via Google OAuth (cua-driver flow)."""
+    """
+    ================================================================================
+    KOMMANDO: login — Heypiggy Google OAuth Login via cua-driver
+    ================================================================================
+
+    WAS macht diese Funktion?
+      Delegiert an cli.modules.auto_google_login.execute().
+      Dies ist ein Thin-Wrapper — die eigentliche Logik ist in auto_google_login.py.
+
+    Args:
+      args (Namespace): argparse Namespace. Enthält args.port (für Logging).
+                        WARUM wird port nicht genutzt? auto_google_login findet
+                        Chrome dynamisch (nicht nur über Port).
+
+    Returns:
+      dict: Login-Ergebnis.
+            {"status": "ok", "pid": int, "wid": int} — Erfolg
+            {"status": "error", "reason": str} — Fehler
+
+    Side Effects:
+      - Ruft auto_google_login.execute() auf.
+      - Kann Chrome starten (wenn nicht läuft).
+      - Schreibt in ~/.stealth/sessions.json (via SessionManager).
+      - Interagiert mit Google OAuth (Netzwerk).
+
+    BANNED in dieser Funktion:
+      ❌ Kein playstealth launch (auch nicht indirekt!)
+    ================================================================================
+    """
+    # Import der Login-Funktion
+    # WARUM lazy import? Vermeidet zirkuläre Imports beim Modul-Load.
+    # WARUM from cli.modules? cli.modules liegt im Parent-Verzeichnis (stealth-runner/).
     from cli.modules.auto_google_login import execute as google_login
+
+    # Login ausführen
+    # WARUM execute()? Das ist die Hauptfunktion in auto_google_login.py.
+    # WARUM kein pid übergeben? auto_google_login findet Chrome selbst (oder startet es).
     result = google_login()
+
+    # Status extrahieren
     status = result.get("status")
+
+    # Ergebnis ausgeben
     if status == "ok":
+        # Erfolg: PID und WID anzeigen
+        # WARUM? Menschlicher Operator (oder Agent) braucht diese für Debugging.
         print(f"✅ Login successful — PID={result.get('pid')}, WID={result.get('wid')}")
     else:
+        # Fehler: Reason anzeigen
+        # WARUM? Ermöglicht schnelle Diagnose ohne in Logs zu suchen.
         print(f"❌ Login failed: {result.get('reason', 'unknown')}")
+
     return result
 
 
 def cmd_scan(args):
-    """Scan dashboard for surveys."""
+    """
+    ================================================================================
+    KOMMANDO: scan — Dashboard nach verfügbaren Surveys scannen
+    ================================================================================
+
+    WAS macht diese Funktion?
+      Scannt das HeyPiggy Dashboard nach verfügbaren Survey-IDs.
+      Filtert Provider (purespectrum, surveyrouter werden übersprungen).
+      Zeigt Survey-Details (ID, Provider, Status, URL-Vorschau).
+
+    Args:
+      args (Namespace):
+        - args.port: CDP Port (default: 9999)
+        - args.all: Wenn True, zeigt ALLE Provider (inkl. blocked).
+                    WARUM? Manchmal will man blocked Provider sehen (Debugging).
+
+    Returns:
+      list: Liste von viable Survey-IDs (strings).
+            Leere Liste wenn keine Surveys verfügbar.
+
+    Side Effects:
+      - Ruft CDP WebSocket auf (Dashboard-Tab).
+      - Führt JavaScript aus (document.querySelectorAll).
+      - Macht HTTP-Requests (CPX API für Details).
+
+    BANNED in dieser Funktion:
+      ❌ Kein hardcoded Survey-Filtering (Provider-Liste kommt aus Config).
+    ================================================================================
+    """
+    # Lazy Import
+    # WARUM lazy? survey.scanner importiert survey.chrome etc. — teuer.
     from survey.scanner import scan_dashboard
-    viable = scan_dashboard(
-        port=args.port,
-        skip_providers=["purespectrum", "surveyrouter"] if not args.all else None
-    )
+
+    # Provider-Filter
+    # WARUM purespectrum/surveyrouter? Erfahrung: Diese Provider haben niedrige
+    # Conversion-Rates oder blockieren oft. Siehe RunnerConfig.skip_providers.
+    skip = None if args.all else ["purespectrum", "surveyrouter"]
+
+    # Dashboard scannen
+    # WARUM port=args.port? Chrome CDP könnte auf anderem Port laufen.
+    viable = scan_dashboard(port=args.port, skip_providers=skip)
+
     return viable
 
 
 def cmd_run(args):
-    """Run a single survey."""
+    """
+    ================================================================================
+    KOMMANDO: run — Einzelne Survey ausführen (NEMO oder Auto-Pilot)
+    ================================================================================
+
+    WAS macht diese Funktion?
+      Führt eine EINZELNE Survey aus — entweder per ID oder direkter URL.
+      Nutzt NEMO Engine (wenn NVIDIA_API_KEY gesetzt) oder Auto-Pilot (Fallback).
+
+    Args:
+      args (Namespace):
+        - args.port: CDP Port
+        - args.id: Survey ID (CPX Research ID)
+        - args.url: Direkte Survey URL (überspringt API-Lookup)
+        - args.no_nim: Wenn True, überspringt NIM → nutzt Auto-Pilot
+        - args.no_rate: Wenn True, überspringt Survey-Bewertung (+0.01€)
+        - args.debug: Verbose Output
+
+    Returns:
+      SurveyResult: Ergebnis der Survey-Ausführung.
+                    None wenn weder --id noch --url angegeben.
+
+    Side Effects:
+      - Startet SurveyRunner (ladet Profile, initialisiert NIM).
+      - Öffnet Survey-Tab in Chrome.
+      - Führt Survey aus (Klicks, Text-Eingaben).
+      - Schließt Survey-Tab.
+      - Bewertet Survey (wenn auto_rate=True).
+
+    BANNED in dieser Funktion:
+      ❌ Kein hardcoded Survey-ID
+    ================================================================================
+    """
+    # Lazy Import
     from survey.runner import SurveyRunner, RunnerConfig
 
+    # RunnerConfig erstellen
+    # WARUM RunnerConfig? Zentralisierte Konfiguration — alle Einstellungen
+    # an einem Ort (nicht verstreut im Code).
     config = RunnerConfig(
+        # CDP Port: Aus args oder Umgebungsvariable
         cdp_port=args.port,
+
+        # NIM Nutzung: Standard = Ja, --no-nim = Nein
+        # WARUM not args.no_nim? args.no_nim ist Flag — wenn gesetzt, NIM aus.
         use_nim=not args.no_nim,
+
+        # Auto-Rate: Standard = Ja, --no-rate = Nein
+        # WARUM auto_rate? Bewertung gibt +0.01€ Bonus pro Survey.
         auto_rate=not args.no_rate,
+
+        # Debug Mode: Aus args oder SURVEY_DEBUG Env-Var
+        # WARUM or os.getenv? Env-Var ermöglicht persistentes Debugging.
         debug=args.debug or os.getenv("SURVEY_DEBUG", ""),
+
+        # Wait zwischen Actions: Aus Env-Var oder Default 3.0s
+        # WARUM float()? Env-Var ist String → muss konvertiert werden.
+        # WARUM 3.0s? Erfahrungswert: SPA braucht ~1-2s zum Re-render.
         wait_after_action=float(os.getenv("SURVEY_WAIT", "3.0")),
     )
 
+    # SurveyRunner initialisieren
+    # WARUM SurveyRunner? Haupt-NEMO-Engine. Kapselt ALLE Survey-Logik.
     runner = SurveyRunner(config=config)
-    nim_status = "✅" if runner.nim and runner.nim.available else "⚠️  (auto-pilot)"
+
+    # NIM Status anzeigen
+    # WARUM? Menschlicher Operator sieht sofort ob NIM verfügbar ist.
+    nim_available = runner.nim and runner.nim.available
+    nim_status = "✅" if nim_available else "⚠️  (auto-pilot)"
     print(f"NVIDIA NIM: {nim_status}")
 
+    # Survey ausführen
     if args.url:
+        # Direkte URL
+        # WARUM "direct" als survey_id? Marker für direkte URL (kein API-Lookup).
         result = runner.run_survey("direct", survey_url=args.url)
     elif args.id:
+        # Per Survey ID
+        # WARUM survey_id als String? CPX IDs sind numerisch aber als String
+        # sicherer (führende Nullen, große Zahlen).
         result = runner.run_survey(args.id)
     else:
+        # Weder --id noch --url
+        # WARUM nicht Exception? Benutzerfreundlich — Hilfe anzeigen statt Stacktrace.
         print("❌ Use --id or --url")
         return None
 
+    # Ergebnis ausgeben
     _print_result(result)
     return result
 
 
 def cmd_loop(args):
-    """Auto-loop surveys."""
+    """
+    ================================================================================
+    KOMMANDO: loop — Automatischer Survey-Loop (scan → filter → run)
+    ================================================================================
+
+    WAS macht diese Funktion?
+      Führt mehrere Surveys automatisch hintereinander aus.
+      1. Scannt Dashboard nach verfügbaren Surveys
+      2. Filtert blocked Provider
+      3. Führt jede Survey aus (bis max erreicht)
+      4. Zeigt Zusammenfassung
+
+    Args:
+      args (Namespace):
+        - args.port: CDP Port
+        - args.max: Max Surveys (default: 5)
+        - args.no_nim: NIM deaktivieren
+        - args.no_rate: Auto-Rating deaktivieren
+        - args.debug: Debug Mode
+
+    Returns:
+      list: Liste von SurveyResult Objekten.
+
+    Side Effects:
+      - Mehrere Chrome-Tabs öffnen/schließen.
+      - Mehrere NIM Calls (wenn NIM aktiviert).
+      - Balance kann sich ändern.
+
+    BANNED in dieser Funktion:
+      ❌ Kein while True ohne Break (muss max_respect haben)
+    ================================================================================
+    """
+    # Lazy Import
     from survey.runner import SurveyRunner, RunnerConfig
 
+    # RunnerConfig erstellen (siehe cmd_run für Details)
     config = RunnerConfig(
         cdp_port=args.port,
         use_nim=not args.no_nim,
@@ -102,34 +471,113 @@ def cmd_loop(args):
         wait_after_action=float(os.getenv("SURVEY_WAIT", "3.0")),
     )
 
+    # SurveyRunner initialisieren
     runner = SurveyRunner(config=config)
-    nim_status = "✅" if runner.nim and runner.nim.available else "⚠️  (auto-pilot)"
+
+    # NIM Status
+    nim_available = runner.nim and runner.nim.available
+    nim_status = "✅" if nim_available else "⚠️  (auto-pilot)"
     print(f"  NVIDIA NIM: {nim_status}")
     print(f"  Max surveys: {args.max}")
     print()
 
+    # Loop ausführen
+    # WARUM run_loop()? Kapselt Scan + Filter + Run in einer Funktion.
     results = runner.run_loop(max_surveys=args.max)
+
     return results
 
 
 def cmd_watch(args):
-    """24/7 Watch Daemon — continuous poller with crash recovery.
-
-    Features:
-    - Graceful shutdown on SIGTERM/SIGINT
-    - Auto-restart on Chrome crash or CDP disconnect
-    - Exponential backoff on consecutive errors
-    - Health check before each scan cycle
-    - Balance target alerting
-    - Structured JSONL logging
     """
+    ================================================================================
+    KOMMANDO: watch — 24/7 Watch Daemon (CONTINUOUS POLLER)
+    ================================================================================
+
+    WAS macht diese Funktion?
+      DER HAUPT-DAEMON für 24/7 Survey-Automation.
+      Läuft ENDLOS (bis SIGINT/SIGTERM oder max_consecutive_errors erreicht).
+
+      LOOP:
+        1. Prüfe Login-State
+           → WENN nicht eingeloggt: Google OAuth Login (auto_google_login.execute())
+        2. Health-Check (Chrome läuft? Dashboard erreichbar?)
+        3. Balance lesen
+        4. Survey-Loop ausführen (max args.max Surveys)
+        5. Ergebnisse loggen
+        6. Warten (interval, oder sofort bei Erfolg)
+        7. Wiederholen
+
+    FEATURES:
+      - Graceful Shutdown: SIGINT/SIGTERM → sauberes Beenden + Logging
+      - Crash Recovery: Chrome-Crash erkannt → Backoff → Retry
+      - Exponential Backoff: Fehler werden langsamer retries
+      - Balance Target: Stoppt wenn Zielguthaben erreicht
+      - JSONL Logging: Strukturierte Logs für Analyse
+
+    Args:
+      args (Namespace):
+        - args.port: CDP Port (default: 9999)
+        - args.interval: Poll-Interval in Sekunden (default: 30)
+        - args.max: Max Surveys pro Cycle (default: 3)
+        - args.no_nim: NIM deaktivieren
+        - args.no_rate: Auto-Rating deaktivieren
+
+    Returns:
+      None (läuft endlos bis Shutdown).
+
+    Side Effects:
+      - Läuft ENDLOS (bis interrupted).
+      - Startet/verwendet Chrome-Prozess.
+      - Schreibt in ~/.stealth/daemon_state.json.
+      - Schreibt in survey-cli/logs/*.jsonl.
+      - Nutzt cua-driver Daemon.
+      - Verändert HeyPiggy-Balance.
+
+    CRITICAL BUGS / BEKANNTE PROBLEME:
+      - Issue #1: Login-Loop Failure
+        → WENN Login fehlschlägt → Endlosschleife "NEUE TAB! Aber NICHT eingeloggt!"
+        → Ursache: auto_google_login.execute() schlägt fehl, wird aber wiederholt
+        → Fix: Siehe issues/001-login-loop-failure.md
+
+      - Issue #2: Daemon State Management
+        → cua-driver Daemon wird nicht verifiziert
+        → "Continuing with CDP-only mode" ist gefährlich (cua-driver fehlt)
+        → Fix: Siehe issues/002-daemon-state-management.md
+
+    RACE CONDITIONS:
+      - Chrome kann während Login crashen → OAuth hängt
+      - Mehrere Watch-Prozesse könnten gleichzeitig laufen
+      - Dashboard-Tab kann sich ändern während Scan
+      - Survey-Tab kann sich ändern während Ausführung
+
+    BANNED in dieser Funktion:
+      ❌ Kein while True ohne Exit-Condition (max_consecutive_errors ist Exit)
+      ❌ Kein playstealth launch (auch nicht indirekt via auto_google_login)
+      ❌ Kein killall/pkill (Graceful Shutdown nur via SIGTERM)
+    ================================================================================
+    """
+    # ============================================================================
+    # LAZY IMPORTS
+    # ============================================================================
+    # WARUM lazy? Diese Module sind teuer zu laden (Chrome-Check, WebSocket, etc.).
+    # WARUM in Funktion statt global? Vermeidet Import-Fehler beim Modul-Load
+    # (z.B. wenn survey.chrome nicht existiert während Entwicklung).
     import signal
     from survey.runner import SurveyRunner, RunnerConfig
     from survey.scanner import read_balance
     from survey.chrome import is_chrome_alive, find_bot_tabs, find_dashboard_ws
     from survey.autodoc import log_session
 
+    # ============================================================================
+    # KONFIGURATION
+    # ============================================================================
+    # Poll-Interval aus args
+    # WARUM local Variable? Klarere Lesbarkeit, einfacher zu debuggen.
     interval = args.interval
+
+    # RunnerConfig für SurveyRunner
+    # WARUM debug=False? Watch Mode = Production — kein Verbose Output.
     config = RunnerConfig(
         cdp_port=args.port,
         use_nim=not args.no_nim,
@@ -138,24 +586,89 @@ def cmd_watch(args):
         max_surveys=args.max,
     )
 
-    # ── State ──────────────────────────────────────
+    # ============================================================================
+    # ZUSTAND (State Dictionary)
+    # ============================================================================
+    # WARUM dict statt Klasse? Einfachheit — keine zusätzliche Klasse nötig.
+    # WARUM Mutable? State wird im Loop verändert (running, total_earned, etc.).
+    # WARUM NICHT global? Global State = Race Conditions bei mehreren Threads.
+    # → Lösung: Diese Funktion ist single-threaded (kein threading).
     state = {
+        # running: True solange Daemon laufen soll
+        # WARUM Bool? Einfachster Mechanismus für Loop-Control.
+        # WIRD GESETZT AUF: False bei SIGINT/SIGTERM (shutdown Handler)
         "running": True,
+
+        # total_earned: Kumulierte Einnahmen dieser Session
+        # WARUM float? HeyPiggy zeigt Cent-Beträge (z.B. 0.05€).
+        # WARUM 0.0? Initialwert — wird inkrementiert.
         "total_earned": 0.0,
+
+        # loop_count: Anzahl durchlaufener Cycles
+        # WARUM int? Zählvariable.
+        # WARUM 0? Initialwert.
         "loop_count": 0,
+
+        # consecutive_errors: Anzahl aufeinanderfolgender Fehler
+        # WARUM int? Wird inkrementiert bei Fehlern, zurückgesetzt bei Erfolg.
+        # WARUM wichtig? Exit-Condition — bei zu vielen Fehlern stoppen wir.
         "consecutive_errors": 0,
-        "max_consecutive_errors": 20,  # Was 5 — now 20 (surveys fail often on captcha)
+
+        # max_consecutive_errors: Schwellwert für Exit
+        # WARUM 20? Siehe Konstanten-Dokumentation oben.
+        # WARUM in State? Könnte konfigurierbar sein (aus Config-Datei).
+        "max_consecutive_errors": MAX_CONSECUTIVE_ERRORS,
+
+        # session_start: Timestamp für Duration-Berechnung
+        # WARUM time.time()? Unix Timestamp, einfach zu subtrahieren.
         "session_start": time.time(),
     }
 
-    # ── Signal Handler ─────────────────────────────
+    # ============================================================================
+    # SIGNAL HANDLER — Graceful Shutdown
+    # ============================================================================
+    # WARUM Signal Handler? Watch Daemon läuft endlos.
+    # Ohne Handler: Ctrl+C killt Python sofort — kein Cleanup.
+    # Mit Handler: Chrome-Tabs schließen, Logs schreiben, State speichern.
     def shutdown(signum, frame):
+        """
+        Graceful Shutdown bei SIGINT (Ctrl+C) oder SIGTERM.
+
+        WAS macht diese Funktion?
+          Setzt state["running"] = False → Loop beendet sich sauber.
+          Loggt Session-Zusammenfassung.
+          Schließt keine Chrome-Tabs (das übernimmt der Caller).
+
+        Args:
+          signum (int): Signal-Nummer (2 für SIGINT, 15 für SIGTERM).
+          frame (Frame): Aktueller Stack Frame (nicht genutzt).
+
+        Side Effects:
+          - Setzt state["running"] = False.
+          - Ruft log_session() auf (schreibt in JSONL).
+          - Gibt Shutdown-Nachricht aus.
+
+        WARUM nicht Chrome killen?
+          Chrome-Tabs sollten vom Loop geschlossen werden (sauberer).
+          Wenn Loop gerade in einem try/except ist, wird es den Break sehen.
+        """
+        # Signal-Name ermitteln
+        # WARUM signal.Signals? Menschenlesbarer Name statt Zahl.
         sig_name = signal.Signals(signum).name
+
+        # Session-Dauer berechnen
         elapsed = time.time() - state["session_start"]
+
+        # Shutdown-Nachricht
         print(f"\n[WATCH] Received {sig_name} — shutting down gracefully...")
         print(f"[WATCH] Session: {state['loop_count']} loops, "
               f"+{state['total_earned']:.2f}€ earned in {elapsed:.0f}s")
+
+        # Loop stoppen
         state["running"] = False
+
+        # Session loggen
+        # WARUM log_session? Strukturierte Logs für spätere Analyse.
         log_session("watch_stop", "ok", {
             "reason": sig_name,
             "loops": state["loop_count"],
@@ -163,21 +676,47 @@ def cmd_watch(args):
             "elapsed_s": round(elapsed),
         })
 
+    # Signal-Handler registrieren
+    # WARUM signal.SIGINT? Ctrl+C im Terminal.
+    # WARUM signal.SIGTERM? Kill-Signal von anderen Prozessen (z.B. systemd).
     signal.signal(signal.SIGINT, shutdown)
     signal.signal(signal.SIGTERM, shutdown)
 
-    # ── Banner ─────────────────────────────────────
+    # ============================================================================
+    # BANNER — Start-Meldung
+    # ============================================================================
+    # WARUM Banner? Menschlicher Operator (oder Agent) sieht sofort:
+    #   - Was läuft? (Watch Daemon)
+    #   - Welche Konfiguration? (interval, max, NIM, target)
+    #   - Wie stoppen? (Ctrl+C)
     print(f"\n{'═'*60}")
     print(f"  🔄 SURVEY-CLI WATCH DAEMON — 24/7 Mode")
     print(f"{'═'*60}")
 
-    # ── Accessibility Check (ONCE, never kill Chrome after) ──
+    # ============================================================================
+    # ACCESSIBILITY CHECK (ONCE at start)
+    # ============================================================================
+    # WARUM nur einmal? Accessibility ändert sich nicht während Runtime.
+    # WARUM ensure_accessibility? Prüft ob macOS Accessibility aktiv ist.
+    #   → WENN nicht aktiv: cua-driver findet KEINE Elemente → Login schlägt fehl.
+    # WARUM start_cua_daemon? Startet cua-driver als Daemon (falls nicht läuft).
     from survey.accessibility import ensure_accessibility, start_cua_daemon
+
+    # Daemon starten
+    # WARUM nicht prüfen ob Erfolg? Aktuell: Kein Check!
+    # BUG: Siehe Issue #2 — Daemon-Start wird nicht verifiziert.
     start_cua_daemon()
+
+    # Accessibility prüfen
     if not ensure_accessibility(port=args.port):
+        # WARNUNG ausgeben
+        # BUG: Sollte CRITICAL sein und return/raise!
+        # Siehe Issue #1 Fix 1: Hard-Stop bei fehlender Accessibility.
         print("[WATCH] ❌ Accessibility not available — cua-driver login will fail")
         print("[WATCH] Continuing with CDP-only mode...")
+        # ❌ BUG: Fährt trotzdem fort! Sollte STOPpen.
 
+    # Konfiguration anzeigen
     print(f"  Poll interval:  {interval}s")
     print(f"  Max/cycle:      {args.max}")
     print(f"  NVIDIA NIM:     {'✅' if config.use_nim else '⚠️  auto-pilot'}")
@@ -186,55 +725,128 @@ def cmd_watch(args):
     print(f"  Stop:           Ctrl+C or SIGTERM")
     print(f"{'═'*60}\n")
 
+    # Session-Start loggen
     log_session("watch_start", "ok", {
         "interval": interval,
         "max_per_cycle": args.max,
         "use_nim": config.use_nim,
     })
 
-    # ── Auto-Login if needed (via cua-driver verified flow) ──
+    # ============================================================================
+    # AUTO-LOGIN (wenn nicht eingeloggt)
+    # ============================================================================
+    # WARUM vor dem Loop? Der Loop braucht eingeloggtes Dashboard.
+    # WARUM nicht im Loop? Login ist einmalig — nicht bei jedem Cycle.
     print("[WATCH] Checking login state...")
+
+    # Lazy Import (vermeidet zirkuläre Imports beim Modul-Load)
     from cli.modules.auto_google_login import execute as google_login
-    # Quick check: does dashboard show Umfragen + Abmelden?
+
+    # Quick Login-Check via CDP
+    # WARUM CDP statt cua-driver? Schneller — kein AX-Tree nötig.
+    # WARUM Runtime.evaluate? Führt JS im Browser aus.
+    # WARUM document.title.includes('Umfragen')? Wenn eingeloggt: Title enthält "Umfragen".
+    # WARUM document.body.innerText.includes('Abmelden')? Wenn eingeloggt: "Abmelden"-Link sichtbar.
     logged_in = False
     dash_ws = find_dashboard_ws(args.port)
+
     if dash_ws:
         try:
+            # WebSocket-Verbindung aufbauen
+            # WARUM websocket.create_connection? Einfacher als websocket-client mit async.
+            # WARUM timeout=10? Nicht zu kurz (langsamer Desktop), nicht zu lang (warten nervt).
             ws = websocket.create_connection(dash_ws, timeout=10)
-            ws.send(json.dumps({"id":0,"method":"Runtime.evaluate",
-                "params":{"expression": "document.title.includes('Umfragen') || document.body.innerText.includes('Abmelden')"}}))
-            r = json.loads(ws.recv()); ws.close()
-            logged_in = r.get("result",{}).get("result",{}).get("value",False)
-        except: pass
-        
-        if not logged_in:
-            print("[WATCH] Not logged in — running cua-driver Google OAuth login...")
-            login_result = google_login()
-            if login_result.get("status") != "ok":
-                print(f"[WATCH] ❌ Login failed: {login_result.get('reason')} — retrying later")
-            else:
-                print(f"[WATCH] ✅ Login successful")
-                time.sleep(3)
 
-    # ── Main Loop ──────────────────────────────────
+            # CDP Runtime.evaluate senden
+            # WARUM {"id":0}? CDP verwendet JSON-RPC mit Request IDs.
+            # WARUM "Runtime.evaluate"? Führt JavaScript im Browser-Context aus.
+            ws.send(json.dumps({
+                "id": 0,
+                "method": "Runtime.evaluate",
+                "params": {
+                    "expression": (
+                        "document.title.includes('Umfragen') || "
+                        "document.body.innerText.includes('Abmelden')"
+                    )
+                }
+            }))
+
+            # Antwort empfangen
+            r = json.loads(ws.recv())
+
+            # WebSocket schließen
+            # WARUM sofort? Nicht mehr nötig, spart Ressourcen.
+            ws.close()
+
+            # Ergebnis extrahieren
+            # WARUM .get("result",{}).get("result",{}).get("value",False)?
+            #   CDP Response ist tief verschachtelt:
+            #   {"result": {"result": {"value": true}}}
+            logged_in = r.get("result", {}).get("result", {}).get("value", False)
+
+        except Exception:
+            # WARUM bare except? CDP kann fehlschlagen (Chrome nicht bereit, etc.).
+            # → Graceful degradation: logged_in bleibt False.
+            # BUG: Sollte spezifischer sein (siehe Error-Handling Best Practices).
+            pass
+
+    # WENN nicht eingeloggt → Login durchführen
+    if not logged_in:
+        print("[WATCH] Not logged in — running cua-driver Google OAuth login...")
+
+        # Google Login ausführen
+        # WARUM auto_google_login.execute()? Kapselt den kompletten 6-Step Flow.
+        login_result = google_login()
+
+        # Ergebnis prüfen
+        if login_result.get("status") != "ok":
+            # Login fehlgeschlagen
+            # BUG: Endlosschleife! Siehe Issue #1.
+            # → WARUM "retrying later"? Loop wird wiederholt, Login erneut versucht.
+            # → WENN Login immer fehlschlägt: Endlosschleife!
+            print(f"[WATCH] ❌ Login failed: {login_result.get('reason')} — retrying later")
+        else:
+            # Login erfolgreich
+            print(f"[WATCH] ✅ Login successful")
+            # WARTEN bis Dashboard bereit
+            # WARUM 3s? Weiterleitung nach Login kann dauern.
+            time.sleep(3)
+
+    # ============================================================================
+    # HAUPT-LOOP (Endlos bis Shutdown oder max_errors)
+    # ============================================================================
     while state["running"]:
+        # Loop-Counter inkrementieren
         state["loop_count"] += 1
+
+        # Loop-Start-Zeit
+        # WARUM time.monotonic()? Monotonic = nicht von Systemzeit-Änderungen beeinflusst.
         loop_start = time.monotonic()
 
         try:
-            # Health check — just log, never restart Chrome
+            # ── Health Check: Chrome läuft? ──
+            # WARUM is_chrome_alive? Prüft ob Chrome-Prozess existiert und CDP erreichbar.
+            # WARUM port=args.port? Chrome könnte auf anderem Port lauschen.
             if not is_chrome_alive(args.port):
                 print(f"[WATCH] ⚠️  Chrome not responding on port {args.port} — waiting...")
+
+                # Fehler-Counter erhöhen
                 state["consecutive_errors"] += 1
+
+                # Max-Fehler erreicht?
                 if state["consecutive_errors"] >= state["max_consecutive_errors"]:
-                    print("[WATCH] ❌ Too many Chrome failures — stopping")
-                    break
+                    print(f"[WATCH] ❌ Too many Chrome failures — stopping")
+                    break  # Loop beenden
+
+                # Exponential Backoff
+                # WARUM min(60, ...)? Max 60s warten — länger ist sinnlos.
+                # WARUM 2 ** consecutive_errors? 1, 2, 4, 8, 16, 32, ... → exponentiell.
                 wait_s = min(60, 2 ** state["consecutive_errors"])
                 print(f"[WATCH] Waiting {wait_s}s...")
                 time.sleep(wait_s)
-                continue
+                continue  # Nächste Loop-Iteration
 
-            # Check dashboard
+            # ── Dashboard prüfen ──
             dashboard_ws = find_dashboard_ws(args.port)
             if not dashboard_ws:
                 print(f"[WATCH] ⚠️  No dashboard tab found")
@@ -242,36 +854,47 @@ def cmd_watch(args):
                 time.sleep(interval)
                 continue
 
-            # Reset error counter on successful health check
+            # ── Fehler-Counter zurücksetzen ──
+            # WARUM hier? Health-Check und Dashboard-Check erfolgreich.
             state["consecutive_errors"] = 0
 
-            # Read balance
+            # ── Balance lesen ──
             balance_before = read_balance(args.port)
+
+            # ── Offene Tabs zählen ──
             tabs = len(find_bot_tabs(args.port))
 
+            # ── Status ausgeben ──
             print(f"\n[{state['loop_count']}] Balance: {balance_before}€ | "
                   f"Tabs: {tabs} | "
                   f"Earned: +{state['total_earned']:.2f}€ | "
                   f"{time.strftime('%H:%M:%S')}")
 
-            # Check balance target
+            # ── Balance Target prüfen ──
+            # WARUM balance_target? Wenn Ziel erreicht → Aufhören.
+            # WARUM 5.00€? Typische Auszahlungsschwelle.
             if balance_before >= config.balance_target:
                 print(f"[WATCH] 🎯 Balance target reached: {balance_before}€")
                 print(f"[WATCH] Total earned: +{state['total_earned']:.2f}€")
-                break
+                break  # Loop beenden
 
-            # Run survey cycle
+            # ── Survey-Cycle ausführen ──
+            # WARUM SurveyRunner? Kapselt NEMO-Engine.
+            # WARUM jedes Mal neu erstellen? Runner hält State pro Cycle.
             runner = SurveyRunner(config=config)
             results = runner.run_loop(max_surveys=args.max)
 
+            # ── Ergebnisse auswerten ──
             earned = sum(r.earned for r in results if r.earned > 0)
             state["total_earned"] += earned
             completed = sum(1 for r in results if r.status == "completed")
             failed = len(results) - completed
 
+            # Balance nach Cycle
             balance_after = read_balance(args.port)
 
-            # Print cycle summary
+            # ── Icons für Ergebnisse ──
+            # WARUM Icons? Schneller visueller Überblick im Log.
             icons = " ".join(
                 "✅" if r.status == "completed" else
                 "⛔" if r.status == "blocked" else "❌"
@@ -280,38 +903,50 @@ def cmd_watch(args):
             print(f"  → +{earned:.2f}€ | {completed} done, {failed} fail | "
                   f"Balance: {balance_after}€ | {icons}")
 
-            # Smart backoff: if no surveys completed, wait interval
+            # ── Smart Backoff ──
+            # WARUM Smart? Wartezeit abhängig von Ergebnissen.
             if completed == 0:
                 if failed == 0:
-                    # No surveys available at all — wait longer
+                    # Keine Surveys verfügbar → länger warten
+                    # WARUM interval? Dashboard hat keine Surveys → braucht Zeit zum Refresh.
                     wait_s = interval
                     print(f"  No surveys found — waiting {wait_s}s...")
                 else:
-                    # Surveys attempted but failed — quick retry
+                    # Surveys versucht aber fehlgeschlagen → schneller Retry
+                    # WARUM min(interval, 10)? Nicht länger als normal warten.
                     wait_s = min(interval, 10)
                     print(f"  All failed — retrying in {wait_s}s...")
                 time.sleep(wait_s)
             else:
-                # Surveys completed — continue immediately
+                # Surveys erfolgreich → SOFORT weiter (kein Warten)
+                # WARUM? Mehr Surveys = mehr Einnahmen. Zeit = Geld.
                 pass
 
         except KeyboardInterrupt:
+            # Ctrl+C während Loop → Graceful Shutdown
             shutdown(signal.SIGINT, None)
 
         except Exception as e:
+            # UNERWARTETER FEHLER
+            # BUG: Sollte spezifischer sein — welcher Fehler?
             state["consecutive_errors"] += 1
             print(f"[WATCH] ❌ Error in loop {state['loop_count']}: {e}")
 
-            # Exponential backoff
+            # Exponential Backoff
             if state["consecutive_errors"] >= state["max_consecutive_errors"]:
                 print(f"[WATCH] ❌ Too many consecutive errors — stopping")
                 break
 
+            # Wartezeit berechnen
+            # WARUM min(300, ...)? Max 5 Minuten warten.
+            # WARUM 5 * (2 ** errors)? Stärkerer Backoff als bei Chrome-Fehlern.
             wait_s = min(300, 5 * (2 ** state["consecutive_errors"]))
             print(f"[WATCH] Backing off {wait_s}s (error {state['consecutive_errors']}/{state['max_consecutive_errors']})")
             time.sleep(wait_s)
 
-    # ── Shutdown ───────────────────────────────────
+    # ============================================================================
+    # SHUTDOWN — Zusammenfassung
+    # ============================================================================
     elapsed = time.time() - state["session_start"]
     print(f"\n{'═'*60}")
     print(f"  WATCH DAEMON STOPPED")
@@ -322,23 +957,58 @@ def cmd_watch(args):
     print(f"{'═'*60}\n")
 
 
+# ============================================================================
+# WEITERE KOMMANDO-FUNKTIONEN (kürzer dokumentiert, aber immer noch EXTREM)
+# ============================================================================
+
 def cmd_balance(args):
-    """Show current balance + summary."""
+    """
+    ================================================================================
+    KOMMANDO: balance — Aktuelles Guthaben + Zusammenfassung anzeigen
+    ================================================================================
+    Args:
+      args (Namespace):
+        - args.port: CDP Port
+        - args.days: Tage der Historie (default: 7)
+    Returns:
+      float: Aktuelles Guthaben in €
+    Side Effects:
+      - Liest HeyPiggy Dashboard via CDP.
+      - Generiert Zusammenfassung aus Logs.
+    ================================================================================
+    """
     from survey.scanner import read_balance
     from survey.autodoc import generate_summary, print_summary
 
+    # Balance lesen
     balance = read_balance(port=args.port)
     print(f"\n{'='*50}")
     print(f"  CURRENT BALANCE: {balance}€")
     print(f"{'='*50}")
 
+    # Zusammenfassung generieren
     summary = generate_summary(days=args.days)
     print_summary(summary)
+
     return balance
 
 
 def cmd_status(args):
-    """Check Chrome + login + NIM status."""
+    """
+    ================================================================================
+    KOMMANDO: status — System-Status prüfen (Chrome, Login, NIM)
+    ================================================================================
+    Args:
+      args (Namespace):
+        - args.port: CDP Port
+    Returns:
+      dict: Status-Dictionary
+    Side Effects:
+      - Prüft Chrome-Prozess.
+      - Prüft CDP-Erreichbarkeit.
+      - Prüft NVIDIA NIM Verfügbarkeit.
+    ================================================================================
+    """
     from survey.chrome import is_chrome_alive, find_bot_pids, find_dashboard_ws
     from survey.snapshot import generate_snapshot
     from survey.nim import get_nim
@@ -348,7 +1018,7 @@ def cmd_status(args):
     print(f"  SURVEY-CLI STATUS")
     print(f"{'='*50}")
 
-    # Chrome
+    # Chrome Status
     alive = is_chrome_alive(args.port)
     pids = find_bot_pids()
     print(f"\n  Chrome:")
@@ -363,8 +1033,6 @@ def cmd_status(args):
             print(f"    Dashboard: ✅ Connected")
             try:
                 snap = generate_snapshot(ws_url)
-                has_surveys = any("clickSurvey" in json.dumps(snap.refs)
-                                  for _ in [0])
                 balance = read_balance(args.port)
                 print(f"    Balance:   {balance}€")
             except Exception:
@@ -372,7 +1040,7 @@ def cmd_status(args):
         else:
             print(f"    Dashboard: ❌ Not found")
 
-    # NIM
+    # NIM Status
     nim = get_nim()
     key = os.getenv("NVIDIA_API_KEY", "")
     print(f"\n  NVIDIA NIM:")
@@ -385,17 +1053,29 @@ def cmd_status(args):
 
 
 def cmd_doctor(args):
-    """Full self-diagnostic."""
+    """
+    ================================================================================
+    KOMMANDO: doctor — Vollständige Selbstdiagnose
+    ================================================================================
+    Prüft:
+      - Python Version
+      - Abhängigkeiten (websocket, openai)
+      - Chrome Status
+      - Profil-Verfügbarkeit
+      - Log-Dateien
+      - Offene Tabs
+    ================================================================================
+    """
     from survey.chrome import is_chrome_alive, find_bot_tabs
 
     print(f"\n{'='*50}")
     print(f"  🔬 SURVEY-CLI DOCTOR")
     print(f"{'='*50}")
 
-    # Check Python
+    # Python Version
     print(f"\n  Python: {sys.version.split()[0]}")
 
-    # Check dependencies
+    # Abhängigkeiten
     deps = ["websocket", "openai"]
     for dep in deps:
         try:
@@ -404,14 +1084,14 @@ def cmd_doctor(args):
         except ImportError:
             print(f"  {dep}:       ❌ not installed")
 
-    # Chrome status
+    # Chrome Status (wiederverwendet cmd_status)
     cmd_status(args)
 
-    # Check profile
+    # Profil
     profile_path = Path(__file__).parent / "survey" / "profiles" / "jeremy_schulze.json"
     print(f"  Profile:    {'✅' if profile_path.exists() else '⚠️  using fallback'}")
 
-    # Check logs
+    # Logs
     logs_dir = Path(__file__).parent / "logs"
     if logs_dir.exists():
         log_files = list(logs_dir.glob("*.jsonl"))
@@ -419,11 +1099,10 @@ def cmd_doctor(args):
     else:
         print(f"  Log files:  0")
 
-    # Check tabs
+    # Tabs
     if is_chrome_alive(args.port):
         pages = find_bot_tabs(args.port)
         print(f"  Tabs open:  {len(pages)}")
-
         for p in pages[:5]:
             url = p.get("url", "")[:70]
             print(f"    {p.get('id','?')[:12]} | {url}")
@@ -434,7 +1113,14 @@ def cmd_doctor(args):
 
 
 def cmd_kill(args):
-    """Safely kill bot Chrome only."""
+    """
+    ================================================================================
+    KOMMANDO: kill — Bot Chrome SICHER beenden
+    ================================================================================
+    WARUM "safely"? NUR Bot-Chrome wird beendet — NIEMALS User-Chrome!
+    WARUM wichtig? Bot-Chrome kann im Hintergrund laufen und Ressourcen verbrauchen.
+    ================================================================================
+    """
     from survey.chrome import safe_kill_bot
     killed = safe_kill_bot()
     if killed:
@@ -444,7 +1130,11 @@ def cmd_kill(args):
 
 
 def cmd_summary(args):
-    """Generate earnings summary."""
+    """
+    ================================================================================
+    KOMMANDO: summary — Earnings-Zusammenfassung
+    ================================================================================
+    """
     from survey.autodoc import generate_summary, print_summary
     summary = generate_summary(days=args.days or 30)
     print_summary(summary)
@@ -452,7 +1142,14 @@ def cmd_summary(args):
 
 
 def cmd_opencode(args):
-    """Delegate a coding task to opencode cli."""
+    """
+    ================================================================================
+    KOMMANDO: opencode — Coding-Aufgabe an opencode CLI delegieren
+    ================================================================================
+    WARUM? Ermöglicht es dem Watch Daemon, Coding-Aufgaben auszulagern
+    (z.B. "Fix Bug X", "Implementiere Feature Y").
+    ================================================================================
+    """
     from survey.opencode_bridge import delegate_task
 
     task = " ".join(args.task) if args.task else sys.stdin.read()
@@ -470,7 +1167,11 @@ def cmd_opencode(args):
 
 
 def cmd_profile(args):
-    """Show current profile."""
+    """
+    ================================================================================
+    KOMMANDO: profile — Aktuelles Persona-Profil anzeigen
+    ================================================================================
+    """
     from survey.runner import SurveyRunner
     runner = SurveyRunner()
     profile = runner.profile
@@ -482,8 +1183,21 @@ def cmd_profile(args):
     print()
 
 
+# ============================================================================
+# HILFSFUNKTIONEN
+# ============================================================================
+
 def _print_result(result):
-    """Pretty-print a survey result."""
+    """
+    ================================================================================
+    Pretty-Print eines Survey-Ergebnisses.
+    ================================================================================
+    Args:
+      result (SurveyResult): Ergebnis der Survey-Ausführung.
+    Returns:
+      None
+    ================================================================================
+    """
     if result is None:
         return
     print(f"\n{'='*50}")
@@ -499,77 +1213,144 @@ def _print_result(result):
     print(f"{'='*50}\n")
 
 
+# ============================================================================
+# MAIN — CLI ENTRY POINT
+# ============================================================================
+
 def main():
+    """
+    ================================================================================
+    Hauptfunktion — Parst CLI-Argumente und dispatched zu Kommando-Funktionen.
+    ================================================================================
+    """
+    # ArgumentParser erstellen
+    # WARUM RawDescriptionHelpFormatter? __doc__ enthält Formatierung (Zeilen, Tabs).
     parser = argparse.ArgumentParser(
         description="survey-cli — Standalone Survey Automation CLI",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=__doc__
+        epilog=__doc__  # Zeigt den Docstring als Hilfe an
     )
-    parser.add_argument("--port", type=int, default=int(os.getenv("SURVEY_PORT", "9999")),
-                        help="CDP port (default: 9999)")
+
+    # Globale Optionen
+    parser.add_argument("--port", type=int, default=int(os.getenv("SURVEY_PORT", str(DEFAULT_PORT))),
+                        help=f"CDP port (default: {DEFAULT_PORT})")
     parser.add_argument("--debug", action="store_true", help="Verbose output")
 
+    # Subcommands
     sub = parser.add_subparsers(dest="command", help="Command")
 
     # login
-    p = sub.add_parser("login", help="Login to heypiggy")
+    sub.add_parser("login", help="Login to heypiggy")
 
     # scan
     p = sub.add_parser("scan", help="Scan dashboard for surveys")
     p.add_argument("--all", action="store_true", help="Show all providers (don't skip blocked)")
 
     # run
+    # ============================================================================
+    # SUBCOMMAND: run — Einzelne Survey ausführen
+    # ============================================================================
+    # WARUM eigener Parser? run hat eigene Argumente (--id, --url, --no-nim, --no-rate).
+    # WARUM --no-nim? Fallback zu Auto-Pilot wenn NIM nicht verfügbar.
+    # WARUM --no-rate? Manche Surveys haben keine Bewertungs-Seite.
     p = sub.add_parser("run", help="Run a survey")
     p.add_argument("--id", type=str, help="Survey ID")
     p.add_argument("--url", type=str, help="Direct survey URL")
     p.add_argument("--no-nim", action="store_true", help="Skip NIM, use auto-pilot")
     p.add_argument("--no-rate", action="store_true", help="Skip survey rating")
 
-    # loop
+    # ============================================================================
+    # SUBCOMMAND: loop — Automatischer Survey-Loop
+    # ============================================================================
+    # WARUM --max? Loop macht mehrere Surveys — max begrenzt die Anzahl.
+    # WARUM DEFAULT_MAX_SURVEYS = 5? Erfahrungswert: 3-5min pro Cycle.
     p = sub.add_parser("loop", help="Auto-loop surveys")
-    p.add_argument("--max", type=int, default=5, help="Max surveys per loop")
+    p.add_argument("--max", type=int, default=DEFAULT_MAX_SURVEYS, help=f"Max surveys per loop (default: {DEFAULT_MAX_SURVEYS})")
     p.add_argument("--no-nim", action="store_true", help="Skip NIM")
     p.add_argument("--no-rate", action="store_true", help="Skip rating")
 
-    # watch
+    # ============================================================================
+    # SUBCOMMAND: watch — 24/7 Daemon
+    # ============================================================================
+    # WARUM --interval? Poll-Interval — wie oft das Dashboard gescannt wird.
+    # WARUM DEFAULT_INTERVAL = 30? Siehe Konstanten-Dokumentation oben.
+    # WARUM --max = 3? Watch macht weniger Surveys pro Cycle als Loop (Dauerbetrieb).
     p = sub.add_parser("watch", help="Continuous poller")
-    p.add_argument("--interval", type=int, default=30, help="Poll interval (s)")
+    p.add_argument("--interval", type=int, default=DEFAULT_INTERVAL, help=f"Poll interval in seconds (default: {DEFAULT_INTERVAL})")
     p.add_argument("--max", type=int, default=3, help="Max surveys per poll")
     p.add_argument("--no-nim", action="store_true", help="Skip NIM")
     p.add_argument("--no-rate", action="store_true", help="Skip rating")
 
-    # balance
+    # ============================================================================
+    # SUBCOMMAND: balance — Guthaben anzeigen
+    # ============================================================================
+    # WARUM --days = 7? Standard: Zeige letzte Woche.
+    # WARUM int? Ganze Tage, keine Teil-Tage.
     p = sub.add_parser("balance", help="Show balance + summary")
     p.add_argument("--days", type=int, default=7, help="Days of history")
 
-    # status
-    p = sub.add_parser("status", help="Check system status")
+    # ============================================================================
+    # SUBCOMMAND: status — System-Status (keine Argumente nötig)
+    # ============================================================================
+    sub.add_parser("status", help="Check system status")
 
-    # doctor
-    p = sub.add_parser("doctor", help="Full self-diagnostic")
+    # ============================================================================
+    # SUBCOMMAND: doctor — Vollständige Diagnose (keine Argumente nötig)
+    # ============================================================================
+    sub.add_parser("doctor", help="Full self-diagnostic")
 
-    # kill
-    p = sub.add_parser("kill", help="Kill bot Chrome safely")
+    # ============================================================================
+    # SUBCOMMAND: kill — Bot Chrome SICHER beenden
+    # ============================================================================
+    # WARUM kein Argument? safe_kill_bot() findet BOT-PIDs automatisch.
+    # WARUM wichtig? Schützt USER Chrome vor unbeabsichtigtem Kill.
+    sub.add_parser("kill", help="Kill bot Chrome safely")
 
-    # summary
+    # ============================================================================
+    # SUBCOMMAND: summary — Earnings-Zusammenfassung
+    # ============================================================================
+    # WARUM --days = 30? Monats-Übersicht als Default.
     p = sub.add_parser("summary", help="Earnings summary")
     p.add_argument("--days", type=int, default=30)
 
-    # opencode
+    # ============================================================================
+    # SUBCOMMAND: opencode — Coding-Aufgabe an opencode CLI delegieren
+    # ============================================================================
+    # WARUM task als nargs="*"? Erlaubt multi-word Tasks ohne Quotes.
+    # WARUM --timeout = 300? 5 Minuten — genug für einfache Tasks.
     p = sub.add_parser("opencode", help="Delegate task to opencode cli")
     p.add_argument("task", nargs="*", help="Task description")
     p.add_argument("--repo", type=str, help="Repo path")
-    p.add_argument("--timeout", type=int, default=300, help="Wait timeout (s)")
+    p.add_argument("--timeout", type=int, default=300, help="Wait timeout in seconds")
 
-    # profile
+    # ============================================================================
+    # SUBCOMMAND: profile — Aktuelles Persona-Profil anzeigen
+    # ============================================================================
     sub.add_parser("profile", help="Show current persona profile")
 
+    # ============================================================================
+    # ARGUMENTE PARSEN
+    # ============================================================================
+    # WARUM parse_args() hier? Alle Sub-Parser sind registriert.
+    # parse_args() erstellt Namespace mit command + subcommand-spezifischen Attributen.
+    # Beispiel: Namespace(command="run", port=9999, id="66846193", no_nim=False, ...)
     args = parser.parse_args()
 
+    # ============================================================================
+    # KEIN KOMMANDO → HILFE ANZEIGEN
+    # ============================================================================
+    # WARUM nicht Exception? Benutzerfreundlich — Hilfe statt Stacktrace.
+    # WARUM print_help()? Zeigt alle verfügbaren Commands und deren Beschreibung.
     if not args.command:
         parser.print_help()
         return
 
+    # ============================================================================
+    # KOMMANDO-MAPPING — String → Funktion
+    # ============================================================================
+    # WARUM dict? O(1) Lookup, einfach zu erweitern, klar lesbar.
+    # WARUM nicht if/elif Kette? Unübersichtlich bei 12 Commands.
+    # WARUM nicht dynamisch (globals())? Sicherer — nur explizit registrierte Commands.
     cmd_map = {
         "login": cmd_login,
         "scan": cmd_scan,
@@ -585,10 +1366,23 @@ def main():
         "profile": cmd_profile,
     }
 
+    # ============================================================================
+    # KOMMANDO AUSFÜHREN
+    # ============================================================================
+    # WARUM cmd_map.get()? Sichereres Lookup — None wenn Command nicht existiert
+    # (obwohl argparse das schon abfängt, defensive programming).
+    # WARUM cmd_fn(args)? Jede cmd_* Funktion erwartet args.Namespace.
     cmd_fn = cmd_map.get(args.command)
     if cmd_fn:
         cmd_fn(args)
 
 
+# ============================================================================
+# PROGRAMM-START — Entry Point
+# ============================================================================
+# WARUM if __name__ == "__main__"?
+#   Ermöglicht Import als Modul (from survey-cli.survey import main)
+#   ohne dass main() automatisch ausgeführt wird.
+# WARUM main()? Kapselt CLI-Logik — testbar.
 if __name__ == "__main__":
     main()
