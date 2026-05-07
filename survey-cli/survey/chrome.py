@@ -151,11 +151,11 @@ def launch_chrome(url="https://www.heypiggy.com/?page=dashboard", port=9999):
     --remote-allow-origins="*" = CDP WebSocket funktioniert
     Ohne diese Flags: Login UNMÖGLICH. Surveys UNMÖGLICH.
     """
-    profile_dir = "/tmp/heypiggy-bot"
+    profile_dir = f"/tmp/heypiggy-new-{int(time.time())}"
     cmd = [
         "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
         f"--remote-debugging-port={port}",
-        "--remote-allow-origins="*"",
+        "--remote-allow-origins=*",
         "--force-renderer-accessibility",
         "--no-first-run",
         "--no-default-browser-check",

@@ -172,11 +172,11 @@ def launch_chrome(url: str = HEYPIGGY_URL, port: int = CHROME_PORT) -> bool:
     cmd = [
         "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
         f"--remote-debugging-port={port}",
-        "--remote-allow-origins="*"",
+        "--remote-allow-origins=*",
         "--force-renderer-accessibility",
         "--no-first-run",
         "--no-default-browser-check",
-        "--user-data-dir=/tmp/heypiggy-bot",
+        f"--user-data-dir=/tmp/heypiggy-new-{int(time.time())}",
         url,
     ]
     subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)

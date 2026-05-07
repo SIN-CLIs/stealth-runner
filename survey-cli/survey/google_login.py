@@ -380,10 +380,10 @@ def _cua_login(launch_url):
         subprocess.Popen([
             "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
             "--remote-debugging-port=9999",
-            "--remote-allow-origins="*"",
+            "--remote-allow-origins=*",
             "--force-renderer-accessibility",
             "--no-first-run",
-            "--user-data-dir=/tmp/heypiggy-bot",
+            "--user-data-dir=/tmp/heypiggy-new",  # Timestamp added by caller
             launch_url,
         ], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
         time.sleep(8)

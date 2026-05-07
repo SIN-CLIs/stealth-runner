@@ -63,11 +63,11 @@ def launch_chrome_with_accessibility(port=9999, url="https://www.heypiggy.com/?p
     ⚠️ This is the ONLY valid way to launch Chrome. Never use playstealth.
     """
     import subprocess as sp
-    profile_dir = "/tmp/heypiggy-bot"
+    profile_dir = f"/tmp/heypiggy-new-{int(time.time())}"
     cmd = [
         "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
         f"--remote-debugging-port={port}",
-        "--remote-allow-origins="*"",
+        "--remote-allow-origins=*",
         "--force-renderer-accessibility",
         "--no-first-run",
         "--no-default-browser-check",

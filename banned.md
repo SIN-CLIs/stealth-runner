@@ -213,7 +213,24 @@ endpoint: https://integrate.api.nvidia.com/v1/chat/completions
 --remote-allow-origins="*"
 ```
 
-**Belege**: `commands/banned-commands.md` Zeile 121, `commands/chrome/cdp-start.md` Zeile 14.
+**Belege**: `session-log-2026-05-06.md` (VERIFIED nach Reboot), `commands/chrome/cdp-start.md` Zeile 14.
+
+### ❌ `--user-data-dir=/tmp/heypiggy-bot` (fixed profile) (2026-05-07)
+
+```bash
+# ❌ FALSCH — Corrupted profile, stale cookies, login state broken!
+--user-data-dir=/tmp/heypiggy-bot
+
+# ❌ AUCH FALSCH (commit 637d2c1, 1685138, 1ff848a — ALLE FALSCH!)
+profile_dir = "/tmp/heypiggy-bot"  # FIXED, not timestamped!
+```
+
+**Korrekt**: IMMER timestamped, frisches Profil:
+```bash
+--user-data-dir="/tmp/heypiggy-new-$(date +%s)"
+```
+
+**Belege**: `session-log-2026-05-06.md` Zeile 12-17 (VERIFIED nach MAC Reboot, Balance 1.26€, 12 Surveys).
 
 ## 🔥 TRIO LAYER (DIE EINZIG RICHTIGE METHODE)
 
