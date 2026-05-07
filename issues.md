@@ -1,148 +1,220 @@
-# Issues — Stealth Runner
+# Issues — Stealth-Runner SOTA (2026-05-07)
 
-> Alle Issues sind in `issues/ISSUE-SR-*.md`.  
-> Pläne sind in `plan-sr-XX-*.md`.
-
----
-
-## 📊 Übersicht
-
-| Status | Count |
-|--------|-------|
-| ✅ Completed | 17 (SR-11 bis SR-27) |
-| 📋 Active | 9 (SR-28 bis SR-36) |
-| 🚧 Blocked | 1 (PureSpectrum CAPTCHA) |
+> **Live Debugging Session 2026-05-07** — All issues discovered during survey loop execution.
+> **Assignee**: `stealth-orchestrator` (default) | **Repo**: [stealth-runner](https://github.com/SIN-CLIs/stealth-runner) | **Board**: [GitHub Projects](https://github.com/orgs/SIN-CLIs/projects)
 
 ---
 
-## 📋 AKTIV — Offene Coding-Aufgaben
-
-| Issue | Priority | Status | Titel | Plan |
-|-------|----------|--------|-------|------|
-| [SR-28](issues/ISSUE-SR-28.md) | 🔴 P0 | 📋 PARTIAL: CDPConnection + BatchExecutor implemented, NEMO loop needs work | **CDP Survey Module** — cua-driver → CDP WebSocket Rewrite | [plan-sr-28](plan-sr-28-cdp-survey-module.md) |
-| [SR-29](issues/ISSUE-SR-29.md) | 🔴 P0 | 🚧 BLOCKED | **PureSpectrum CAPTCHA OCR Solver** | [plan-sr-29](plan-sr-29-ps-captcha-ocr.md) |
-| [SR-30](issues/ISSUE-SR-30.md) | 🔴 P0 | 📋 TODO | **Dashboard Poller + Auto-Loop** | [plan-sr-30](plan-sr-30-dashboard-poller.md) |
-| [SR-31](issues/ISSUE-SR-31.md) | 🟠 P1 | 📋 TODO | **Flow Compiler FCTES — Production Promotion** | [plan-sr-31](plan-sr-31-fctes-promotion.md) |
-| [SR-32](issues/ISSUE-SR-32.md) | 🟠 P1 | 📋 TODO | **Provider Auto-Detect Engine** | [plan-sr-32](plan-sr-32-provider-detect.md) |
-| [SR-33](issues/ISSUE-SR-33.md) | 🟠 P1 | 📋 TODO | **Persona System** — Dynamic Profile statt Hardcode | [plan-sr-33](plan-sr-33-persona-system.md) |
-| [SR-34](issues/ISSUE-SR-34.md) | 🟡 P2 | 📋 TODO | **Survey Flow Test Suite** | [plan-sr-34](plan-sr-34-test-suite.md) |
-| [SR-35](issues/ISSUE-SR-35.md) | 🟡 P2 | 📋 TODO | **Chrome Lease Manager + Safety** | [plan-sr-35](plan-sr-35-chrome-safety.md) |
-| [SR-36](issues/ISSUE-SR-36.md) | 🟢 P3 | 📋 TODO | **Generated Docs De-Duplication** | [plan-sr-36](plan-sr-36-docs-cleanup.md) |
-
-### Priority Map
-
-```
-P0 (BLOCKER — kein Einkommen ohne):
-  SR-28  CDP Survey Module        ← JEDER Survey braucht das
-  SR-29  PureSpectrum OCR          ← 12 Survey-IDs blockiert
-  SR-30  Dashboard Poller          ← Automatischer Loop
-
-P1 (Enabler — macht alles schneller):
-  SR-31  FCTES Promotion           ← 10× → frozen → 1-Click
-  SR-32  Provider Detect           ← URL → Pattern auto
-  SR-33  Persona System            ← Keine Disqualifikation mehr
-
-P2 (Qualität):
-  SR-34  Test Suite                ← Stabilität
-  SR-35  Chrome Safety             ← User-Chrome-Schutz
-
-P3 (Nice-to-have):
-  SR-36  Docs Cleanup              ← 470+ Dateien aufräumen
-```
-
-### Sub-Issues pro Issue
-
-| Issue | Sub-Count | Sub-Issues |
-|-------|-----------|------------|
-| SR-28 | 5 | CDP Client, Provider Registry, Answer Engine, Full Runner, Demographics |
-| SR-29 | 4 | Image Extraction, OCR Selection, Auto-Submit, Integration |
-| SR-30 | 5 | ID Extractor, API Filter, Provider Router, Auto-Loop, Balance Tracker |
-| SR-31 | 5 | Flow Definition, Tracker Repair, Compiler Hardening, Signature, opencode.json |
-| SR-32 | 4 | URL Detection, DOM Fallback, Pre-Qualifier, Provider Stats |
-| SR-33 | 4 | Profile File, Age Calculator, Question Matcher, Integration |
-| SR-34 | 5 | Provider Detect Tests, Answer Pattern Tests, Persona Tests, Mock Server, E2E |
-| SR-35 | 4 | KillGuard, Lease System, PID Registry, Auto-Recovery |
-| SR-36 | 4 | Inventar, Quality Scoring, De-Duplication, Cleanup Script |
+## Open Issues (11)
 
 ---
 
-## ✅ COMPLETED — Abgeschlossene Issues
+### #1: Qualtrics survey loop stuck on language page
+**Priority**: P0 | **Labels**: `bug`, `providers` | **Component**: execute, snapshot
+**Status**: OPEN | **Found**: 2026-05-07 | **Assignee**: stealth-orchestrator
+**Blocking**: Payouts — cant complete any Qualtrics survey
 
-| Issue | Status | Priority | Titel |
+**Problem**: Clicking "Deutschland" country option via CDP `Input.dispatchMouseEvent` does not advance the survey. The Qualtrics `>>` (next) button is not detected by element scan because the leaf-node walker skips it.
+**Expected**: Country radio selection + `>>` click advances to next page.
+**Actual**: 50 iterations wasted clicking same element; `.NextButton` not found in snapshot.
+**Files**: `survey-cli/survey/execute.py`, `survey-cli/survey/snapshot.py`, `survey-cli/survey/providers/qualtrics.py`
+**Fix approach**: Add Qualtrics-specific `.NextButton` selector + proper radio selection via `.LabelWrapper` click + broader element scan including parent containers.
+
+---
+
+### #2: Survey completion not detected
+**Priority**: P0 | **Labels**: `bug`, `runner` | **Component**: runner, scanner
+**Status**: OPEN | **Found**: 2026-05-07 | **Assignee**: stealth-orchestrator
+**Blocking**: Payouts — no balance verification after completing survey
+
+**Problem**: After completing all survey questions and reaching the end, the runner does not detect completion. No payout verification triggers. Balance diff check never runs.
+**Expected**: Detection of completion keywords ("Vielen Dank", "Thank you", "Survey Complete") + automatic balance diff check across all tabs.
+**Actual**: Runner stays in question-loop, eventually times out.
+**Files**: `survey-cli/survey/runner.py`, `survey-cli/survey/scanner.py`, `src/stealth_survey/survey_agent.py`
+**Fix approach**: Add completion keyword detection via `document.body.innerText` scan across all tabs, then trigger balance diff via `survey.py balance` subcommand.
+
+---
+
+### #3: Tab switching not automated in run_survey()
+**Priority**: P0 | **Labels**: `bug`, `runner` | **Component**: runner, cdp_client
+**Status**: OPEN | **Found**: 2026-05-07 | **Assignee**: stealth-orchestrator
+**Blocking**: Payouts — survey opens in new tab, runner stuck on old tab
+
+**Problem**: Manual tab detection via `list_tabs` works, but `run_survey()` does not auto-switch when a survey opens in a new tab. The CDP connection stays on the dashboard tab while the survey is running in a different tab.
+**Expected**: Automatic CDP reconnection to the tab containing the active survey URL.
+**Actual**: Runner executes actions on wrong tab (dashboard), survey tab ignored.
+**Files**: `survey-cli/survey/runner.py`, `survey-cli/survey/cdp_client.py`
+**Fix approach**: Add URL-change watcher + auto `switch_tab` in `run_survey()` main loop, reconnect CDP WebSocket to new target.
+
+---
+
+### #4: Form validation errors not handled
+**Priority**: P1 | **Labels**: `bug`, `execute` | **Component**: execute, nim_client
+**Status**: OPEN | **Found**: 2026-05-07 | **Assignee**: stealth-orchestrator
+
+**Problem**: Validation error `"Value must be something like '53'"` on age field. No retry logic with adjusted value. Survey disqualifies after invalid input.
+**Expected**: Parse validation message, extract expected format/range, adjust value, retry automatically.
+**Actual**: Invalid value submitted, survey screen-out or page stuck.
+**Files**: `survey-cli/survey/execute.py`, `src/stealth_survey/nim_client.py`
+**Fix approach**: Add `parse_validation_error()` that extracts hint from error text + `adjust_value()` that corrects the input + retry loop (max 3 attempts).
+
+---
+
+### #5: Anti-stuck loop on language selection
+**Priority**: P1 | **Labels**: `bug`, `runner` | **Component**: runner, snapshot
+**Status**: OPEN | **Found**: 2026-05-07 | **Assignee**: stealth-orchestrator
+
+**Problem**: 50 iterations wasted clicking same element on language selection page. No mechanism to detect that the page state hasn't changed and break the infinite loop.
+**Expected**: State hash comparison detects same page → breaks loop after N unchanged iterations.
+**Actual**: Infinite retry loop burns CDP calls and wastes session time.
+**Files**: `survey-cli/survey/runner.py`, `survey-cli/survey/snapshot.py`, `src/stealth_survey/survey_agent.py`
+**Fix approach**: Add `state_hash = md5(visible_text + element_count)` — if hash unchanged for 3+ iterations, trigger escape (skip page or switch strategy).
+
+---
+
+### #6: Element leaf-node filter too aggressive
+**Priority**: P1 | **Labels**: `bug`, `snapshot` | **Component**: snapshot, execute
+**Status**: OPEN | **Found**: 2026-05-07 | **Assignee**: stealth-orchestrator
+
+**Problem**: TextNode walker returns 0 results on Qualtrics page because it only targets leaf-level text nodes. Qualtrics buttons and labels are nested in `.LabelWrapper` and `.ChoiceStructure` containers that are filtered out.
+**Expected**: Element scan finds all interactive elements regardless of nesting depth.
+**Actual**: 0 elements returned → runner has nothing to interact with.
+**Files**: `survey-cli/survey/snapshot.py`, `src/stealth_survey/compact_snapshot.py`
+**Fix approach**: Broaden element scan to include parent containers (`.LabelWrapper`, `.ChoiceStructure`, `.InputText`) — not just leaf text nodes.
+
+---
+
+### #7: cua-driver unavailable without accessibility flag
+**Priority**: P2 | **Labels**: `architecture`, `chrome` | **Component**: chrome, cua
+**Status**: OPEN | **Found**: 2026-05-07 | **Assignee**: stealth-orchestrator
+
+**Problem**: Chrome lacks `--force-renderer-accessibility` flag when launched, causing cua-driver AX-Tree to return 0 children. cua-driver is the legacy fallback and must work.
+**Expected**: Chrome always launched with `--force-renderer-accessibility` and `--remote-allow-origins=*`.
+**Actual**: `playstealth launch` does not set accessibility flag; manual Chrome launch required.
+**Files**: `survey-cli/survey/chrome.py`
+**Fix approach**: Add Chrome launch wrapper that always includes `--force-renderer-accessibility --remote-allow-origins=*`, validate AX-Tree after launch.
+
+---
+
+### #8: No provider-specific Qualtrics commands
+**Priority**: P2 | **Labels**: `enhancement`, `providers` | **Component**: execute, providers
+**Status**: OPEN | **Found**: 2026-05-07 | **Assignee**: stealth-orchestrator
+
+**Problem**: `execute.py` has `qualtrics`/`tolunastart`/`strat7` dispatch but the JS selectors don't match actual Qualtrics DOM elements (`.NextButton`, `.LabelWrapper`, `.ChoiceStructure`).
+**Expected**: Provider-specific JS commands that match actual DOM on each platform.
+**Actual**: Generic `document.querySelectorAll('button')` fails to find Qualtrics next button.
+**Files**: `survey-cli/survey/execute.py`, `survey-cli/survey/providers/qualtrics.py`
+**Fix approach**: Update `PROVIDER_COMMANDS` dict with Qualtrics-specific selectors: `.NextButton` for advance, `.LabelWrapper` for radio click, `.ChoiceStructure` for matrix questions.
+
+---
+
+### #9: Balance read timing issue
+**Priority**: P2 | **Labels**: `bug`, `scanner` | **Component**: scanner, runner
+**Status**: OPEN | **Found**: 2026-05-07 | **Assignee**: stealth-orchestrator
+
+**Problem**: After dashboard reload, balance reads `0.00€` temporarily (DOM not updated yet). No retry logic. Runner assumes payout failed and aborts.
+**Expected**: Retry balance read with exponential backoff until stable non-zero value.
+**Actual**: First read returns 0.00€ → false negative on payout detection.
+**Files**: `survey-cli/survey/scanner.py`, `survey-cli/survey/runner.py`
+**Fix approach**: Add `read_balance_with_backoff()` — retry up to 5× with 2s, 4s, 8s backoff until value > 0 or stabilizes.
+
+---
+
+### #10: Graphify auto-rebuild on every commit
+**Priority**: P3 | **Labels**: `enhancement`, `ci` | **Component**: hooks
+**Status**: OPEN | **Found**: 2026-05-07 | **Assignee**: stealth-orchestrator
+
+**Problem**: Pre-commit hook rebuilds the full graphify visualization on every commit, including non-Python file changes (`.md`, `.json`, `.yml`). This adds ~3s latency to every commit.
+**Expected**: Selective rebuild only when `.py` files in `survey-cli/` or `src/` change.
+**Actual**: Full graph rebuild on every commit regardless of changed file types.
+**Files**: `.pre-commit-config.yaml`, `scripts/graphify.py`
+**Fix approach**: Filter pre-commit hook to only trigger on `*.py` file changes in relevant directories.
+
+---
+
+### #11: Test coverage gap — in-page vs new-tab
+**Priority**: P3 | **Labels**: `testing`, `runner` | **Component**: tests
+**Status**: OPEN | **Found**: 2026-05-07 | **Assignee**: stealth-orchestrator
+
+**Problem**: No integration test for the tab switching flow. Surveys that open in new tabs (vs in-page modals) have no automated coverage.
+**Expected**: Integration test that simulates survey opening in new tab, verifies CDP reconnection, tab switch, and question answering.
+**Actual**: Only in-page modal tests exist (`test_in_page_modal.py`).
+**Files**: `survey-cli/tests/` (new: `test_tab_switching.py`)
+**Fix approach**: Create `test_tab_switching.py` with mock CDP + multi-tab scenario, verify `run_survey()` auto-detects and switches.
+
+---
+
+## Summary
+
+| Priority | Count | Issues |
+|----------|-------|--------|
+| P0 (Critical — blocking payouts) | 3 | #1 Qualtrics lang page, #2 completion detection, #3 tab switching |
+| P1 (High — quality of life) | 3 | #4 validation errors, #5 anti-stuck loop, #6 leaf-node filter |
+| P2 (Medium — architecture) | 3 | #7 accessibility flag, #8 Qualtrics selectors, #9 balance timing |
+| P3 (Low — nice to have) | 2 | #10 graphify rebuild, #11 tab switching test |
+
+## Component Affected
+
+| Component | Issues |
+|-----------|--------|
+| **runner** (`runner.py`, `survey_agent.py`) | #2, #3, #5, #9 |
+| **execute** (`execute.py`, `batch_executor.py`) | #1, #4, #8 |
+| **snapshot** (`snapshot.py`, `compact_snapshot.py`) | #1, #5, #6 |
+| **providers** (`qualtrics.py`, `toluna.py`) | #1, #8 |
+| **scanner** (`scanner.py`) | #2, #9 |
+| **chrome** (`chrome.py`) | #7 |
+| **nim** (`nim_client.py`) | #4 |
+| **cdp** (`cdp_client.py`) | #3 |
+| **tests** | #11 |
+| **hooks** | #10 |
+
+---
+
+## Completed (Historical Reference)
+
+| Issue | Status | Priority | Title |
 |-------|--------|----------|-------|
-| [SR-11](issues/ISSUE-SR-11.md) | ✅ | 🔴 | CI/CD — GitHub Actions, Pre-Commit, Auto-Release |
-| [SR-12](issues/ISSUE-SR-12.md) | ✅ | 🔴 | Test Suite — Unit, Integration, E2E |
-| [SR-13](issues/ISSUE-SR-13.md) | ✅ | 🟠 | Survey Provider Adapter — Samplicio.us, Cint, Nfield |
-| [SR-14](issues/ISSUE-SR-14.md) | ✅ | 🟠 | Audio Capture Module — BlackHole + ffmpeg + Omni |
-| [SR-15](issues/ISSUE-SR-15.md) | ✅ | 🟡 | Captcha Solving — Simple, GeeTest v4, Lemin Puzzle |
-| [SR-16](issues/ISSUE-SR-16.md) | ✅ | 🟡 | Error Recovery — Disqualification, Modal Error, Timeout |
-| [SR-17](issues/ISSUE-SR-17.md) | ✅ | 🔴 | CUA-ONLY Migration — skylight-cli → cua-driver |
-| [SR-18](issues/ISSUE-SR-18.md) | ✅ | 🔴 | stealth-session — Warm Daemon for <50ms Command Execution |
-| [SR-19](issues/ISSUE-SR-19.md) | ✅ | 🔴 | stealth-axiom — 3-Tier Hierarchical Model Router |
-| [SR-20](issues/ISSUE-SR-20.md) | ✅ | 🔴 | RecursiveMAS — RecursiveLink + Survey MAS Pipeline |
-| [SR-21](issues/ISSUE-SR-21.md) | ✅ | 🔴 | stealth-sota — Chaos/Security/Healing/Observability/Determinism |
-| [SR-22](issues/ISSUE-SR-22.md) | ✅ | 🔴 | stealth-core + stealth-dynamic — Basis-Klassen + Dynamic Engine |
-| [SR-23](issues/ISSUE-SR-23.md) | ✅ | 🔴 | stealth-memory — Eternal Memory (opencode.db Poller) |
-| [SR-24](issues/ISSUE-SR-24.md) | ✅ | 🔴 | E2E Test: GoCaptcha Slide with Real Browser |
-| [SR-25](issues/ISSUE-SR-25.md) | ✅ | 🟠 | README.md + CLI Documentation for @stealth/captcha |
-| [SR-26](issues/ISSUE-SR-26.md) | ✅ | 🟠 | Unit Tests: CDP Client + HitTester + Memory |
-| [SR-27](issues/ISSUE-SR-27.md) | ✅ | 🟡 | stealth-suite: Incident Resolution + Monitoring |
+| SR-11 | done | P0 | CI/CD — GitHub Actions, Pre-Commit, Auto-Release |
+| SR-12 | done | P0 | Test Suite — Unit, Integration, E2E |
+| SR-13 | done | P1 | Survey Provider Adapter — Samplicio.us, Cint, Nfield |
+| SR-14 | done | P1 | Audio Capture Module — BlackHole + ffmpeg + Omni |
+| SR-15 | done | P2 | Captcha Solving — Simple, GeeTest v4, Lemin Puzzle |
+| SR-16 | done | P2 | Error Recovery — Disqualification, Modal Error, Timeout |
+| SR-17 | done | P0 | CUA-ONLY Migration — skylight-cli → cua-driver |
+| SR-18 | done | P0 | stealth-session — Warm Daemon for <50ms Command Execution |
+| SR-19 | done | P0 | stealth-axiom — 3-Tier Hierarchical Model Router |
+| SR-20 | done | P0 | RecursiveMAS — RecursiveLink + Survey MAS Pipeline |
+| SR-21 | done | P0 | stealth-sota — Chaos/Security/Healing/Observability/Determinism |
+| SR-22 | done | P0 | stealth-core + stealth-dynamic — Basis-Klassen + Dynamic Engine |
+| SR-23 | done | P0 | stealth-memory — Eternal Memory |
+| SR-24 | done | P0 | E2E Test: GoCaptcha Slide with Real Browser |
+| SR-25 | done | P1 | README.md + CLI Documentation for @stealth/captcha |
+| SR-26 | done | P1 | Unit Tests: CDP Client + HitTester + Memory |
+| SR-27 | done | P2 | stealth-suite: Incident Resolution + Monitoring |
 
----
+### Previously Active (Merged into SOTA above)
 
-## 🏭 SURVEY FINDINGS (2026-05-06)
+| Issue | Status | Title |
+|-------|--------|-------|
+| SR-28 | deferred → #1, #6, #8 | CDP Survey Module |
+| SR-29 | blocked | PureSpectrum CAPTCHA OCR Solver |
+| SR-30 | deferred → #2, #9 | Dashboard Poller + Auto-Loop |
+| SR-31 | pending | Flow Compiler FCTES |
+| SR-32 | merged → #1, #8 | Provider Auto-Detect Engine |
+| SR-33 | done | Persona System |
+| SR-34 | merged → #11 | Survey Flow Test Suite |
+| SR-35 | merged → #7 | Chrome Lease Manager + Safety |
+| SR-36 | deferred | Generated Docs De-Duplication |
 
-### Qualtrics HUK Coburg (+0.38€)
-- **File**: `commands/surveys/qualtrics-huk-survey.md`
-- **Pattern**: `.NextButton` + `input[type=radio]` global indices + `table.ChoiceStructure` matrix
-- **Flow**: 21 pages, insurance brand perception study
-- **Balance impact**: 1.77€ → 2.15€
+### Survey Routing Status
 
-### TolunaStart (+0.09€, 92%)
-- **File**: `commands/tolunastart-survey.md`
-- **Pattern**: JS `.click()` on `.cf-radio`/`.cf-checkbox` (NOT MouseEvent!)
-- **Remaining**: Demographics section (8%)
-
-### Strat7 Audiences (+0.03-0.09€)
-- **File**: `commands/strat7-survey.md`
-- **Pattern**: `.bsbutton` grid + consent flow
-
-### Brand Ambassador (+0.02€)
-- **File**: `commands/brand-ambassador-survey.md`
-- **Pattern**: Attention checks with hidden inputs
-
-### Insights-Today (Screen-out)
-- **File**: `commands/insights-today-survey.md`
-- **Pattern**: `<select>` for age, LABEL click for income
-- **Issue**: Universitätsabschluss → screen-out. Try Abitur.
-
-### PureSpectrum (BLOCKED — CAPTCHA)
-- **File**: `commands/purespectrum-survey.md`
-- **Issue**: Base64 PNG text CAPTCHA blocks all 12 current survey IDs
-- **Blocked by**: Need OCR solver (SR-29)
-
-### Survey Routing
-```
-heypiggy → CPX API → click.cpx-research.com →
-  → eu.qualtrics.com          ✅ +0.38€
-  → tolunastart.com           ✅ +0.09€
-  → strat7audiences.com       ✅ +0.03-0.09€
-  → brand-ambassador.com      ✅ +0.02€
-  → insights-today.com        ❌ Screen-out
-  → purespectrum.com          ❌ CAPTCHA (12 IDs)
-  → surveyrouter.com          ❌ Hangs
-  → surveys.com (GfK)         ❌ Cookie wall
-```
-
----
-
-## 🚨 PERSISTENT ISSUES (nicht in SR-Nummern)
-
-| # | Titel | Status | Fix |
-|---|-------|--------|-----|
-| 1 | **PureSpectrum CAPTCHA** | 🚧 BLOCKED | SR-29 — OCR Solver |
-| 2 | **Surveyrouter** | ❌ HANGS | Tab schließen, nächsten Survey |
-| 3 | **CPX URL Single-Use** | ⚠️ BEKANNT | Immer neuen API-Call machen |
-| 4 | **Balance-Desync** | ✅ FIXED (2026-05-06): balance_before VOR tab creation, try/except wrapper | Dashboard-Reload nach jedem Survey |
-| 5 | **Insights-Today Education** | ⚠️ PENDING | Abitur statt Universität (SR-33) |
-| 6 | **orchestrator.py Import** | ✅ FIXED | `auto_google_login` statt `heypiggy_login_box` |
+| Provider | Status | Payout |
+|----------|--------|--------|
+| Qualtrics (HUK) | blocked (#1) | +0.38€ |
+| TolunaStart | partial (#4) | +0.09€ |
+| Strat7 Audiences | ok | +0.03-0.09€ |
+| Brand Ambassador | ok | +0.02€ |
+| Insights-Today | screen-out | — |
+| PureSpectrum | blocked (CAPTCHA) | 12 IDs |
+| surveyrouter | hangs | — |
+| surveys.com (GfK) | cookie wall | — |

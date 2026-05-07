@@ -57,13 +57,32 @@ Heypiggy.com automatisieren: Google-Login → Surveys abschließen → EUR > 0 v
 - ✅ `commands.md` – Neue CDP+AX Befehle
 - ✅ `sinrules.md` – Neue Regeln
 
-## Nächste Schritte
+## Nächste Schritte (2026-05-07)
 
-> **2026-05-06: Dies sind LEGACY/DEPRECATED Schritte.** CDP+AX Trinity wurde durch NEMO (Compact Snapshot + NIM + Batch Execute) abgelöst. `cdp_click.py` ist obsolet.
->
-> 2026-05-06: 4 Root Causes gefixt (P0 pre-qualifier, P1 stealth, P1 CDPConnection, P3 balance). 282 Tests. 1 Survey crash-tested.
+> **CRASH-TEST STATUS**: 10+ Live-Entdeckungen. Survey navigiert zu Qualtrics im NEUEN TAB. Balance lesen funktioniert. React-Formulare per native Setter füllbar. 5 neue Fixes dokumentiert.
 
-1. ~~`cdp_click.py` implementieren (WebSocket + queryAXTree + AXPress)~~ → LEGACY/DEPRECATED
-2. ~~Google Login via CDP+AX testen~~ → LEGACY/DEPRECATED
-3. ~~Fallback-Kette validieren~~ → LEGACY/DEPRECATED
-4. ~~10× stabiler Durchlauf~~ → LEGACY/DEPRECATED
+### P0 — Auszahlung erreichen
+1. **Qualtrics-Loop vollenden**: Sprache wählen → Land auswählen → Fragen beantworten → ">>"/Weiter → Abschluss erkennen → Balance-Check
+2. **Tab-Wechsel automatisieren**: Nach clickSurvey() Tabs prüfen, neuen Tab erkennen, CDP umschalten
+3. **Completion Detection**: Balance vorher/nachher vergleichen, "Danke"/"abgeschlossen" Keywords über ALLE Tabs scannen
+
+### P1 — Stabilisierung
+4. **Qualtrics-Provider-Selektoren**: `.NextButton`, `.LabelWrapper`, `.ChoiceStructure` in PROVIDER_COMMANDS
+5. **Form-Validierung**: Age-Feld "Value must be like '53'" → intelligent auf 53 anpassen
+6. **Anti-Stuck**: State-Hash detection (kein DOM-Change nach 5 Iterationen → Abbruch)
+
+### P2 — Architektur
+7. **cua-driver reaktivieren**: Chrome mit `--force-renderer-accessibility` starten für AX-Tree-Zugriff
+8. **Tab-Switching Integrationstest**: `test_tab_switching.py`
+9. **Stacked-Modal Cleaner**: Vor jeder Survey-Interaktion alle "Schließen"-Buttons klicken
+
+### Meilenstein-Tracker
+| Datum | Meilenstein | Status |
+|-------|-------------|--------|
+| 2026-05-03 | Google Login | ✅ |
+| 2026-05-06 | NEMO Architektur + 4 Root Causes gefixt | ✅ |
+| 2026-05-07 | **Live Crash-Test: 10+ Discoveries, Survey bis Qualtrics navigiert** | ✅ |
+| 2026-05-07 | Balance-Fix + React-Form-Fill + Tab-Detection | ✅ |
+| 🔜 | **Erste Auszahlung (EUR > 0)** | 🔴 |
+| 🔜 | 10× stabiler Survey-Durchlauf | 🔴 |
+| 🔜 | cua-driver AX-Tree aktiv | 🔴 |
