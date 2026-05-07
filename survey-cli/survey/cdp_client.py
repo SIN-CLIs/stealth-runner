@@ -1,11 +1,69 @@
-"""Lightweight sync CDP WebSocket client with retry, reconnect, and ID routing.
+"""================================================================================
+CDP WEBSOCKET CLIENT — Synchron, Retry, Reconnect, ID Routing
+================================================================================
 
-Solves the core problems without requiring async/await refactor:
-1. ID-based response routing — avoids "response consumed" errors
-2. Exponential backoff retry — 5 attempts on transient failures
-3. Auto-reconnect on "No such target" errors
-4. Drop-in replacement for ws.send()/ws.recv() patterns
-"""
+WAS IST DAS?
+  Leichtgewichtiger synchroner CDP WebSocket Client.
+  Löst Kernprobleme OHNE async/await Refactor:
+  1. ID-basiertes Response-Routing (verhindert "response consumed" Fehler)
+  2. Exponentieller Backoff Retry (5 Versuche bei transienten Fehlern)
+  3. Auto-Reconnect bei "No such target" Fehlern
+  4. Drop-in Replacement für ws.send()/ws.recv() Patterns
+
+ARCHITEKTUR:
+  ┌─────────────────────┐
+  │  CDPConnection      │
+  │  (Klasse)           │
+  └─────────────────────┘
+         │
+    ┌────┴────────┬────────┬────────┐
+    ▼             ▼        ▼        ▼
+  connect()    send()   recv()   close()
+    │             │        │        │
+    ▼             ▼        ▼        ▼
+  WebSocket   Request   Response  Cleanup
+    │             │        │
+    └─────────────┴────────┘
+              │
+              ▼
+         ID Routing
+         (request_id)
+
+WARUM Synchron statt Async?
+  - Einfachheit: Keine async/await im gesamten Code
+  - Kompatibilität: Funktioniert mit allen existierenden Tools
+  - Performance: Für Survey-Automation ist async nicht nötig
+  → 99% der Operationen sind sequentiell (Snapshot → Decision → Execute).
+
+WARUM ID-basiertes Routing?
+  CDP WebSocket ist bidirektional. Antworten kommen asynchron.
+  Ohne ID-Routing: recv() konsumiert falsche Antwort (z.B. Console-Log
+  statt Runtime.evaluate Ergebnis).
+  → request_id matching = zuverlässige Antwort-Zuordnung.
+
+WARUM Exponentieller Backoff?
+  Transiente Fehler (Netzwerk, Chrome-Restart) sollten retryed werden.
+  - Versuch 1: sofort
+  - Versuch 2: 1s warten
+  - Versuch 3: 2s warten
+  - Versuch 4: 4s warten
+  - Versuch 5: 8s warten
+  → Vermeidet Overload bei schnellen Retries.
+
+DEPENDENZEN:
+  - websocket-client (pip install websocket-client)
+
+BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
+  ❌ playstealth launch
+  ❌ webauto-nodriver — ABSOLUT BANNED
+  ❌ cua-driver click (raw index)
+  ❌ --remote-allow-origins=* (ohne Quotes)
+  ❌ /tmp/heypiggy-bot (fixed profile)
+  ❌ Hardcoded PIDs
+  ❌ pkill -f "Google Chrome"
+  ❌ killall Google Chrome
+  ❌ skylight-cli click --element-index
+================================================================================"""
 
 from __future__ import annotations
 

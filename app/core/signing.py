@@ -1,7 +1,72 @@
-"""
-Ring 1: Signierte & unveränderliche Flow-Artefakte.
-Jeder kompilierte Flow wird Ed25519-signiert. Vor Ausführung wird geprüft.
-"""
+"""================================================================================
+FCTES FLOW SIGNING — Ed25519 Signatur für Gefrorene Flows
+================================================================================
+
+WAS IST DAS?
+  Kryptographische Signatur für gefrorene (production) Flows.
+  Jeder kompilierte Flow wird Ed25519-signiert. Vor Ausführung wird
+  die Signatur geprüft. Verhindert Manipulation gefrorener Flows.
+
+ARCHITEKTUR (Ring 1 — Sicherheit):
+  ┌─────────────────────┐
+  │  compile()          │
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  sign_flow()        │
+  │  (Ed25519)          │
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  .sig Datei         │
+  │  (neben .py)         │
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  verify_signature() │
+  │  (vor Execution)    │
+  └─────────────────────┘
+
+WARUM Ed25519?
+  - Schnell: Signieren/Verifizieren in <1ms
+  - Sicher: Elliptic Curve Cryptography (256-bit)
+  - Kurze Signaturen: 64 Bytes (vs. RSA 2048+ Bytes)
+  - Keine Dependencies: cryptography Library (optional)
+
+WARUM Signatur?
+  Gefrorene Flows sind immutable. Aber Filesystem ist mutable.
+  → Ein Agent/Process könnte eine .py Datei modifizieren.
+  → Signatur prüft Integrität vor Ausführung.
+  → Falls Signatur ungültig: Execution abgebrochen.
+
+WARUM Ring 1?
+  Defense in Depth (Multi-Ring Security):
+  - Ring 0: Registry (JSON, wer ist gefroren?)
+  - Ring 1: Signatur (kryptographisch, wurde manipuliert?)
+  - Ring 2: Dispatcher (nur versionierte Tools)
+  - Ring 3: Gatekeeper (konkurrierende Zugriffe blockieren)
+  → Mehrere Schutzschichten, jede unabhängig.
+
+DEPENDENZEN:
+  - cryptography (pip install cryptography) — OPTIONAL
+    Wenn nicht verfügbar: Signatur wird übersprungen (Warnung).
+  - ~/.stealth/flow_signing_key.pem (Private Key)
+  - ~/.stealth/flow_public_key.pem (Public Key)
+
+BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
+  ❌ playstealth launch
+  ❌ webauto-nodriver — ABSOLUT BANNED
+  ❌ cua-driver click (raw index)
+  ❌ --remote-allow-origins=* (ohne Quotes)
+  ❌ /tmp/heypiggy-bot (fixed profile)
+  ❌ Hardcoded PIDs
+  ❌ pkill -f "Google Chrome"
+  ❌ killall Google Chrome
+  ❌ skylight-cli click --element-index
+================================================================================"""
 import json
 import hashlib
 from pathlib import Path

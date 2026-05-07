@@ -1,10 +1,63 @@
-"""Chrome lifecycle — launch, connect, identify, kill.
+"""================================================================================
+CHROME LIFECYCLE MANAGER — Launch, Connect, Identify, Kill (Survey-CLI)
+================================================================================
 
-RULES:
-- NEVER kill user Chrome (no pkill, no killall)
-- ONLY manage /tmp/heypiggy-new-* profiles
-- Timestamped profile: /tmp/heypiggy-new-$(date +%s)
-"""
+WAS IST DAS?
+  Zentrale Chrome-Verwaltung für Survey-CLI. Startet Chrome mit korrekten
+  Flags, verwaltet Profile, findet Tabs, und beendet Prozesse sicher.
+
+ARCHITEKTUR:
+  ┌─────────────────────┐
+  │  launch_chrome()    │
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  find_bot_chrome()  │
+  │  (via ps aux)       │
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  get_tabs()         │
+  │  (CDP HTTP /json)   │
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  kill_bot_chrome()   │
+  │  (NUR /tmp/heypiggy  │
+  │   -new-*)            │
+  └─────────────────────┘
+
+SICHERHEIT (KRITISCH):
+  - NUR /tmp/heypiggy-new-* Profile werden verwaltet
+  - NIE pkill -f "Google Chrome" (tötet USER Chrome!)
+  - NIE killall Google Chrome
+  - Timestamped Profile: /tmp/heypiggy-new-$(date +%s)
+  - --force-renderer-accessibility MUSS gesetzt sein
+  - --remote-allow-origins="*" MIT Quotes (zsh expandiert * sonst!)
+
+WARUM NICHT playstealth?
+  playstealth launch setzt NICHT --force-renderer-accessibility.
+  → cua-driver AX-Tree ist LEER → keine Elemente gefunden.
+
+DEPENDENZEN:
+  - subprocess (ps aux, Chrome starten)
+  - urllib.request (CDP HTTP /json API)
+  - CDP WebSocket (Runtime.evaluate)
+
+BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
+  ❌ playstealth launch — setzt NICHT --force-renderer-accessibility
+  ❌ webauto-nodriver — ABSOLUT BANNED
+  ❌ cua-driver click (raw index) — instabil, nutze tool_click.py
+  ❌ --remote-allow-origins=* (ohne Quotes) — zsh glob expansion
+  ❌ /tmp/heypiggy-bot (fixed profile) — korruptiert nach Neustart
+  ❌ Hardcoded PIDs — dynamisch, niemals hardcodieren
+  ❌ pkill -f "Google Chrome" — tötet USER Chrome
+  ❌ killall Google Chrome — tötet ALLE Chrome
+  ❌ skylight-cli click --element-index — Index instabil
+================================================================================"""
 
 # ╔════════════════════════════════════════════════════════════════════════════╗
 # ║  BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md)                    ║

@@ -1,13 +1,88 @@
 #!/usr/bin/env python3
-"""
-Stealth Suite Doc-Health Mass Generator
-========================================
-Erstellt ALLE fehlenden generischen Pflichtdateien für beliebig viele Repos.
-Repo-spezifische Dateien (agents.md, brain.md, registry.md) werden mit
-minimalen Templates vorbefüllt — Explore Agents personalisieren später.
+"""================================================================================
+DOC-HEALTH MASS GENERATOR — Erstellt fehlende Pflichtdateien für alle Repos
+================================================================================
 
-Usage: python3 scripts/generate_missing_docs.py [--dry-run] [--repo NAME]
-"""
+WAS IST DAS?
+  Automatischer Generator für fehlende Dokumentations-Pflichtdateien
+  in allen Stealth-Suite Repos. Erstellt Templates für:
+  - README.md
+  - AGENTS.md
+  - brain.md
+  - sinrules.md
+  - banned.md
+  - Und 15+ weitere generische Dateien
+
+ARCHITEKTUR:
+  ┌─────────────────────┐
+  │  main()             │
+  └─────────────────────┘
+         │
+    ┌────┴──────────────────────────────┐
+    ▼                                     ▼
+  scan_repos()                        generate_docs()
+  (23 Repos scannen)                   (Templates)
+         │                                     │
+         ▼                                     ▼
+  Fehlende Dateien                    Template auswählen
+  identifizieren                      → Generisch oder Repo-spezifisch
+                                              │
+                                              ▼
+                                        Datei schreiben
+
+WARUM Automatisierung?
+  23+ Repos manuell pflegen = unmöglich.
+  → Automatischer Generator garantiert:
+  - Alle Repos haben minimale Doku
+  - Einheitliche Struktur
+  - Kein Repo ohne AGENTS.md (wichtig für Agent-Anweisungen!)
+
+WARUM Templates?
+  Generische Templates = sofort nutzbar.
+  Repo-spezifische Anpassungen = später durch Explore Agents.
+  → 80/20 Regel: 80% generisch, 20% personalisiert.
+
+WARUM 23 Repos?
+  Stealth-Suite ist modular:
+  - playstealth-cli (Chrome Launcher)
+  - cua-touch (CUA Interaktionen)
+  - macos-ax-cli (macOS Accessibility)
+  - screen-follow (Screen Following)
+  - unmask-cli (Unmasking)
+  - stealth-captcha (Captcha Solving)
+  - secret-manager-cli (Secrets)
+  - stealth-memory (Memory)
+  - stealth-skills (Skills)
+  - stealth-guardian (Guardian)
+  - stealth-axiom (Axiom)
+  - stealth-core (Core)
+  - stealth-dynamic (Dynamic)
+  - stealth-session (Session)
+  - stealth-sota (SOTA)
+  - stealth-config (Config)
+  - stealth-cache (Cache)
+  - stealth-compressor (Compressor)
+  - stealth-optimizer (Optimizer)
+  - stealth-batch (Batch)
+  - stealth-cost (Cost)
+  - stealth-lora (LoRA)
+  - stealth-runner (Hauptrepo — dieses hier!)
+
+DEPENDENZEN:
+  - Standardlib: pathlib, datetime, sys
+  - Keine externen Dependencies!
+
+BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
+  ❌ playstealth launch
+  ❌ webauto-nodriver — ABSOLUT BANNED
+  ❌ cua-driver click (raw index)
+  ❌ --remote-allow-origins=* (ohne Quotes)
+  ❌ /tmp/heypiggy-bot (fixed profile)
+  ❌ Hardcoded PIDs
+  ❌ pkill -f "Google Chrome"
+  ❌ killall Google Chrome
+  ❌ skylight-cli click --element-index
+================================================================================"""
 from __future__ import annotations
 
 import sys

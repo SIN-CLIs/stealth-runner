@@ -1,11 +1,67 @@
-"""NVIDIA NIM Client v2 — Nemotron 3 Omni with Chain-of-Thought.
+"""================================================================================
+NVIDIA NIM CLIENT v2 — Nemotron 3 Omni mit Chain-of-Thought
+================================================================================
 
-Key findings (2026-05-06):
-- Reasoning models need chain-of-thought prompts (NOT system prompts)
-- max_tokens must be ≥500 for reasoning overhead
-- The model needs to "think" before outputting JSON
-- Short imperative prompts ("Return ONLY JSON") cause empty responses
-"""
+WAS IST DAS?
+  Client für NVIDIA NIM API (Nemotron 3 Nano Omni 30B-A3B).
+  Optimiert für Survey-Entscheidungen mit Chain-of-Thought Prompts.
+
+ARCHITEKTUR:
+  ┌─────────────────────┐
+  │  build_survey_      │
+  │  prompt()           │
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  NIMClient          │
+  │  .decide()          │
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  OpenAI API         │
+  │  (NVIDIA NIM)       │
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  Chain-of-Thought   │
+  │  + JSON Batch Actions│
+  └─────────────────────┘
+
+KEY FINDINGS (2026-05-06):
+  - Reasoning Models brauchen Chain-of-Thought (NICHT System-Prompts)
+  - max_tokens muss ≥500 sein (Reasoning-Overhead!)
+  - Das Modell muss "denken" bevor es JSON ausgibt
+  - Kurze imperative Prompts ("Return ONLY JSON") verursachen leere Responses
+  → Lösung: Detaillierte Chain-of-Thought Anweisungen
+
+WARUM Chain-of-Thought?
+  Nemotron 3 Omni ist ein Reasoning-Modell (30B-A3B).
+  Es MUSS denken bevor es antwortet. Kurze Prompts blockieren das.
+  → Chain-of-Thought = "Denkprozess" im Prompt, dann JSON-Output.
+
+WARUM max_tokens=600?
+  Reasoning-Overhead: 200-300 Tokens für Denkprozess.
+  JSON-Output: 100-200 Tokens.
+  → 600 = Puffer für komplexe Entscheidungen.
+
+DEPENDENZEN:
+  - openai (pip install openai)
+  - NVIDIA_API_KEY (env var, Prefix: nvapi-...)
+
+BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
+  ❌ playstealth launch
+  ❌ webauto-nodriver — ABSOLUT BANNED
+  ❌ cua-driver click (raw index)
+  ❌ --remote-allow-origins=* (ohne Quotes)
+  ❌ /tmp/heypiggy-bot (fixed profile)
+  ❌ Hardcoded PIDs
+  ❌ pkill -f "Google Chrome"
+  ❌ killall Google Chrome
+  ❌ skylight-cli click --element-index
+================================================================================"""
 
 import json
 import os

@@ -1,12 +1,61 @@
-"""Chrome Accessibility Manager — grant + verify + maintain.
+"""================================================================================
+CHROME ACCESSIBILITY MANAGER — Grant, Verify, Maintain
+================================================================================
 
-SOTA: NEVER kill Chrome after granting Accessibility. Chrome must stay
-running with --force-renderer-accessibility. cua-driver needs this.
+WAS IST DAS?
+  Verwaltet Chrome Accessibility Permissions für cua-driver.
+  cua-driver kann NUR mit --force-renderer-accessibility den AX-Tree lesen.
+  Ohne Accessibility: AX-Tree ist LEER → keine Elemente gefunden.
 
-Usage:
-    from survey.accessibility import ensure_accessibility
-    ensure_accessibility()  # Call ONCE at daemon startup
-"""
+ARCHITEKTUR:
+  ┌─────────────────────┐
+  │  ensure_accessibility│
+  └─────────────────────┘
+         │
+    ┌────┴────────┬────────┐
+    ▼             ▼        ▼
+  is_enabled()  grant()   verify()
+    │             │        │
+    ▼             ▼        ▼
+  cua-driver    macOS      cua-driver
+  list_windows  tccutil    get_window_state
+
+SOTA REGEL:
+  NIE Chrome killen nach Accessibility-Grant!
+  Chrome MUSS mit --force-renderer-accessibility laufen.
+  cua-driver braucht diesen Flag für AX-Tree-Zugriff.
+
+WARUM tccutil?
+  macOS TCC (Transparency, Consent, Control) verwaltet Permissions.
+  tccutil reset Accessibility com.google.Chrome → Permission zurücksetzen
+  → macOS fragt erneut nach (User muss "Erlauben" klicken).
+  
+  WARUM reset statt grant?
+  macOS erlaubt keine automatische Grant ohne User-Interaktion.
+  Reset = User muss erneut bestätigen (Sicherheit).
+  → Alternative: Manuelles Grant in System Settings.
+
+WARUM is_accessibility_enabled()?
+  Prüft ob cua-driver den AX-Tree lesen kann.
+  → Wenn 0 Children = Accessibility nicht aktiviert.
+  → Wenn >0 Children = Accessibility funktioniert.
+
+DEPENDENZEN:
+  - cua-driver (Muss installiert sein)
+  - tccutil (macOS System-Tool)
+  - subprocess (für System-Aufrufe)
+
+BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
+  ❌ playstealth launch — setzt NICHT --force-renderer-accessibility
+  ❌ webauto-nodriver — ABSOLUT BANNED
+  ❌ cua-driver click (raw index) — instabil
+  ❌ --remote-allow-origins=* (ohne Quotes)
+  ❌ /tmp/heypiggy-bot (fixed profile)
+  ❌ Hardcoded PIDs
+  ❌ pkill -f "Google Chrome" — tötet USER Chrome
+  ❌ killall Google Chrome — tötet ALLE Chrome
+  ❌ skylight-cli click --element-index
+================================================================================"""
 
 import subprocess
 import json
