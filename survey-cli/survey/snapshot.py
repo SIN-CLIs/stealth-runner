@@ -87,6 +87,7 @@ ELEMENT_EXTRACTOR_JS = '''
             type: el.type || '',
             enabled: !el.disabled && visible,
             inModal: !!topModal,
+            y: rect ? Math.round(rect.y) : 0,
         };
         out.push(info);
     }
@@ -118,9 +119,36 @@ ELEMENT_EXTRACTOR_JS = '''
         }
     });
 
-    // Selects
+    // Selects (Qualtrics language picker, Angular dropdowns)
     scanRoot.querySelectorAll('select').forEach(function(el) {
         add(el, 'select');
+    });
+
+    // Qualtrics-specific: LabelWrapper, ChoiceStructure (radio groups)
+    scanRoot.querySelectorAll('.LabelWrapper, .ChoiceStructure').forEach(function(el) {
+        var inp = el.querySelector('input[type=radio], input[type=checkbox]');
+        if (inp) {
+            var txt = (el.textContent || '').trim().substring(0, 80);
+            out.push({
+                role: inp.checked ? 'radio-selected' : 'radio',
+                tag: 'div', text: txt, label: '', name: inp.name || '',
+                value: inp.value || '', type: 'radio',
+                enabled: !inp.disabled, inModal: !!topModal,
+            });
+        }
+    });
+    // Qualtrics: ChoiceBody / QuestionBody for radio/text containers
+    scanRoot.querySelectorAll('.QuestionBody .ChoiceRow, .ChoiceRow > label').forEach(function(el) {
+        var inp = el.querySelector('input[type=radio]');
+        if (inp) {
+            var txt = (el.textContent || '').trim().substring(0, 80);
+            out.push({
+                role: inp.checked ? 'radio-selected' : 'radio',
+                tag: 'label', text: txt, label: '', name: inp.name || '',
+                value: inp.value || '', type: 'radio',
+                enabled: !inp.disabled, inModal: !!topModal,
+            });
+        }
     });
 
     // Labels (for question detection)
@@ -133,6 +161,11 @@ ELEMENT_EXTRACTOR_JS = '''
                 enabled: true, inModal: !!topModal,
             });
         }
+    });
+
+    // Sort by Y position (top-to-bottom) so answers come after questions
+    out.sort(function(a, b) {
+        return (a.y || 0) - (b.y || 0);
     });
 
     return JSON.stringify({elements: out, modalCenter: bestDist === Infinity ? null : bestDist});

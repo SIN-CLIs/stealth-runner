@@ -11,6 +11,7 @@ Loop per page:
 import json
 import re
 import time
+import hashlib
 import urllib.request
 import urllib.parse
 import websocket
@@ -173,6 +174,22 @@ class SurveyRunner:
         # 3. Open survey — IN-PAGE MODAL (preferred) or NEW TAB (fallback)
         is_in_page = (provider == "in_page_modal")
         tab_id = None  # Only set for new-tab flow
+        
+        # 3a. Pre-survey cleanup: close all stacked modals on dashboard
+        if is_in_page and dashboard_ws:
+            n_closed = self._pre_survey_cleanup(dashboard_ws)
+            if self.config.debug and n_closed > 0:
+                print(f"[CLEANUP] Closed {n_closed} stacked modals")
+        
+        # 3b. Capture tabs before clickSurvey() for new-tab detection
+        tabs_before = set()
+        if is_in_page:
+            try:
+                for p in chrome.find_bot_tabs(self.config.cdp_port):
+                    tabs_before.add(p.get("id", ""))
+            except Exception:
+                pass
+        
         if is_in_page:
             # In-page modal: click survey card on dashboard (no new tab!)
             tab_ws = self._click_survey_card(survey_id)
@@ -181,6 +198,14 @@ class SurveyRunner:
                 result.status = "error"
                 return result
             time.sleep(self.config.wait_page_load)
+            
+            # Check if a new tab opened (Qualtrics sometimes opens new tab anyway)
+            new_ws = self._find_new_tab_after_click(tabs_before)
+            if new_ws:
+                tab_ws = new_ws
+                is_in_page = False  # It's actually a new tab!
+                if self.config.debug:
+                    print(f"[TAB] Survey opened in NEW tab (Qualtrics redirect)")
         else:
             # Legacy: open new browser tab via Target.createTarget
             tab_id = self._create_tab(dashboard_ws, survey_url)
@@ -300,24 +325,21 @@ class SurveyRunner:
                     print(f"  [iter {iteration}] {snapshot.provider} "
                           f"({len(snapshot.refs)} el)")
 
-                # 5c. SOTA Anti-stuck: Progress bar tracking
-                # If progress bar stays same for 5+ iterations = stuck (no question advance)
+                # 5c. SOTA Anti-stuck: DOM hash comparison
+                # Compare body.innerText hash to detect stuck pages.
+                # Threshold: 3 identical hashes = stuck (was 10, too high).
                 page_text = BatchExecutor.read_page_text(tab_ws, 500)
-                progressed, pstatus = detect_progress(page_text)
-
-                # Extract progress indicator (e.g., "3/10" → "3/10")
-                prog_match = re.search(r"(\d+)\s*/\s*(\d+)", page_text)
-                current_progress = prog_match.group(0) if prog_match else str(len(snapshot.refs))
-
-                if current_progress == prev_progress and pstatus not in ("loading", "error_page"):
+                page_hash = hashlib.md5(page_text.encode()).hexdigest()
+                
+                if page_hash == prev_progress:
                     progress_same_count += 1
-                    if progress_same_count >= progress_stuck_threshold:
-                        result.error = f"Stuck: no progress (same state {progress_stuck_threshold}×, progress={current_progress})"
+                    if progress_same_count >= 3:  # Was: progress_stuck_threshold=5
+                        result.error = f"Stuck: 3× same DOM hash, progress={page_text[:60]}"
                         result.status = "error"
                         break
                 else:
                     progress_same_count = 0
-                    prev_progress = current_progress
+                    prev_progress = page_hash
 
                 # 5d. SOTA Safety: Max actions limit
                 # Estimate actions from snapshot element count (radio buttons, text fields, buttons)
@@ -416,11 +438,8 @@ class SurveyRunner:
                         result.status = "blocked"
                         break
 
-                # 5m. SOTA Adaptive backoff: If page didn't progress, wait longer
-                if not progressed or pstatus in ("loading",):
-                    time.sleep(self.config.wait_page_load)  # Wait for page to load/render
-                else:
-                    time.sleep(self.config.wait_after_action)
+                # 5m. SOTA Adaptive backoff: Use configured delay
+                time.sleep(self.config.wait_after_action)
 
                 # 5n. Record history
                 self.history.append({
@@ -429,8 +448,6 @@ class SurveyRunner:
                     "success": batch_result.total_success,
                     "fail": batch_result.total_fail,
                     "page_hash": page_hash,
-                    "progress": current_progress,
-                    "pstatus": pstatus,
                 })
 
             except Exception as e:
@@ -1022,9 +1039,63 @@ class SurveyRunner:
             print(f"[CASH] Cash-out trigger failed: {e}")
 
     def _detect_completion_text(self, ws_url):
-        """Check page text for completion markers."""
+        """Check page text for completion markers (body text only, no URL check)."""
         text = BatchExecutor.read_page_text(ws_url)
         return detect_completion(text)
+
+    def _find_new_tab_after_click(self, known_tab_ids: set) -> Optional[str]:
+        """Detect new tab opened by clickSurvey() — no tab_id needed.
+        
+        After clickSurvey() in the dashboard, the survey may open in a new tab
+        (Qualtrics, Samplicio). This method detects that new tab and returns
+        its WebSocket URL.
+        """
+        time.sleep(3)
+        try:
+            all_tabs = chrome.find_bot_tabs(self.config.cdp_port)
+            for tab in all_tabs:
+                tid = tab.get("id", "")
+                if tid not in known_tab_ids:
+                    ws_url = tab.get("webSocketDebuggerUrl")
+                    url = tab.get("url", "")
+                    if ws_url and url and "heypiggy" not in url and url != "about:blank":
+                        return ws_url
+        except Exception:
+            return None
+        return None
+
+    def _pre_survey_cleanup(self, tab_ws: str) -> int:
+        """Close all stacked modals before interacting with survey.
+        
+        heypiggy dashboard has 7-9 layered modals at identical coordinates.
+        Returns count of closed modals.
+        """
+        try:
+            import websocket as ws_lib
+            ws = ws_lib.create_connection(tab_ws, timeout=10)
+            ws.send(json.dumps({
+                "id": 0, "method": "Runtime.evaluate",
+                "params": {"expression": """
+(function() {
+    var closed = 0;
+    var btns = document.querySelectorAll('button');
+    btns.forEach(function(b) {
+        var t = b.textContent.trim();
+        if (['Schlie\\u00dfen','Close','x','X','Ablehnen'].includes(t)) {
+            try { b.click(); closed++; } catch(e) {}
+        }
+    });
+    // Also press Escape key
+    document.dispatchEvent(new KeyboardEvent('keydown',{key:'Escape',code:'Escape',keyCode:27,bubbles:true}));
+    return closed;
+})()
+"""}
+            }))
+            r = json.loads(ws.recv())
+            ws.close()
+            return r.get("result", {}).get("result", {}).get("value", 0)
+        except Exception:
+            return 0
 
     def _handle_purespectrum_preflight(self, tab_ws, survey_id):
         """Handle PureSpectrum pre-survey flow: cookie + ROBOT + captcha + puzzle."""

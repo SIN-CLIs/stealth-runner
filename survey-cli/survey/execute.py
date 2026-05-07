@@ -38,16 +38,46 @@ class BatchResult:
 
 PROVIDER_COMMANDS = {
     "qualtrics": {
-        "click_next": 'document.querySelector(".NextButton").click()',
+        "click_next": '''(function(){
+            var btn=document.querySelector('.NextButton,.btn-next,#NextButton,button[id*=Next],.btn-primary');
+            if(!btn)btn=Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()==='>>'||b.textContent.trim()==='Nächster'||b.textContent.trim()==='Weiter');
+            if(btn){btn.click();return'clicked';}return'no button';
+        })()''',
         "click_element": 'document.querySelectorAll("input[type=radio],input[type=checkbox]")[{idx}].click()',
         "fill_text": '''(function(v){
             var t=document.querySelector("textarea:not(.g-recaptcha-response)");
             if(!t){var i=document.querySelector("input[type=text],input[type=number]");
-            if(i){i.value=v;i.dispatchEvent(new Event("input",{bubbles:true}));
+            if(i){var s=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value');
+            if(s&&s.set)s.set.call(i,v);else i.value=v;
+            i.dispatchEvent(new Event("input",{bubbles:true}));
             i.dispatchEvent(new Event("change",{bubbles:true}));}}
-            else{t.value=v;t.dispatchEvent(new Event("input",{bubbles:true}));
+            else{var s2=Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype,'value');
+            if(s2&&s2.set)s2.set.call(t,v);else t.value=v;
+            t.dispatchEvent(new Event("input",{bubbles:true}));
             t.dispatchEvent(new Event("change",{bubbles:true}));}
         })("{value}")''',
+        "click_select": '''(function(val){
+            var s=document.querySelector("select.Q_lang,select[id*=lang],select");
+            if(s){for(var i=0;i<s.options.length;i++){
+                if(s.options[i].text.trim()===val||s.options[i].value===val){
+                    s.selectedIndex=i;
+                    s.dispatchEvent(new Event("change",{bubbles:true}));
+                    s.dispatchEvent(new Event("input",{bubbles:true}));
+                    break;
+                }
+            }}
+        })("{value}")''',
+        "click_qualtrics_label": '''(function(){
+            var labels=document.querySelectorAll('.LabelWrapper,.ChoiceRow label,.choice');
+            for(var i=0;i<labels.length;i++){
+                var t=labels[i].textContent.trim();
+                if(t.indexOf('{label}')>=0||t.toLowerCase().indexOf('{label}')>=0){
+                    var inp=labels[i].querySelector('input');
+                    if(inp&&!inp.checked){inp.click();return'clicked';}
+                }
+            }
+            return'not found';
+        })()''',
     },
     "tolunastart": {
         "click_next": 'document.querySelector("button").click()',
@@ -318,12 +348,20 @@ class BatchExecutor:
                     ws_url, before_hash, EXECUTION_VERIFY_MS
                 )
                 if not changed:
-                    # State didn't change — try keyboard Tab+Enter as emergency fallback
-                    if self.config and getattr(self.config, 'debug', False):
-                        pass  # Would log but we don't have debug access here
-                    # Try keyboard enter as last resort
-                    kb_success = cdp_keyboard_enter(ws_url)
-                    if kb_success:
+                    # Angular v19 / React: DOM click() fails (isTrusted=false).
+                    # Retry with CDP dispatchMouseEvent — real OS-level mouse event.
+                    # _cdp_click_button already implements this correctly.
+                    # Re-execute JS to find element and get coordinates
+                    self._cdp_click_element(ws, js)
+                    method_used += "+dispatchMouseEvent"
+                    # Re-verify
+                    changed2, after_hash2 = verify_state_change(
+                        ws_url, before_hash, EXECUTION_VERIFY_MS * 2
+                    )
+                    if not changed2:
+                        # Last resort: try keyboard Enter
+                        try: cdp_keyboard_enter(ws_url)
+                        except: pass
                         method_used += "+keyboard_fallback"
 
             if action_type == "wait":

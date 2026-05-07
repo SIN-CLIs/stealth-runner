@@ -24,6 +24,15 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from survey.runner import SurveyRunner, RunnerConfig, SurveyResult
+
+# Anti-stuck: page text counter for tests
+_page_counter = [0]
+def _next_page_text(*args, **kw):
+    _page_counter[0] += 1
+    return f"Survey Page {_page_counter[0]}/10"
+
+def _reset_page_counter():
+    _page_counter[0] = 0
 from survey.snapshot import CompactSnapshot
 from survey.execute import BatchResult
 
@@ -108,7 +117,8 @@ class TestCompleteImmediately(unittest.TestCase):
     """NIM returns 'complete' action → status=completed on first iteration."""
 
     def test_nim_returns_complete_action(self):
-        config = RunnerConfig(use_nim=True, auto_rate=False, debug=False, max_iterations=10)
+        config = RunnerConfig(use_nim=True, auto_rate=False, debug=False,
+                              max_iterations=10, skip_providers=[])
         runner = SurveyRunner(config)
         runner.nim = MagicMock()
         runner.nim.decide.return_value = {"actions": [{"action": "complete"}],
@@ -119,7 +129,8 @@ class TestCompleteImmediately(unittest.TestCase):
             ("survey.runner.generate_snapshot", {"return_value": snap}),
             ("survey.runner.detect_completion", {"return_value": False}),
             ("survey.runner.detect_progress", {"return_value": (True, "unknown")}),
-            ("survey.runner.BatchExecutor.read_page_text", {"return_value": "Question 1/10"}),
+            ("survey.runner.BatchExecutor.read_page_text",
+             {"side_effect": _next_page_text}),
             ("survey.runner.BatchExecutor.detect_error_page",
              {"return_value": (False, "")}),
             ("survey.runner.BatchExecutor.execute",
@@ -251,30 +262,25 @@ class TestLoopDetection(unittest.TestCase):
 #  TEST 4: Anti-stuck triggers at 5 same progress states
 # ═══════════════════════════════════════════════════════
 class TestAntiStuck(unittest.TestCase):
-    """Progress unchanged 5× → status=error with 'Stuck: no progress'.
+    """DOM hash unchanged 3× → status=error with 'Stuck: 3× same DOM hash'.
 
-    Different snapshots (diff URLs) → loop detection resets to 0 each time.
-    Same page_text (no progress pattern change) → anti-stuck accumulates.
+    Same page_text (same DOM text) → anti-stuck accumulates.
     """
 
-    def test_five_identical_progress_triggers_stuck(self):
+    def test_three_identical_page_texts_triggers_stuck(self):
         config = RunnerConfig(use_nim=True, auto_rate=False, debug=False, max_iterations=10)
         runner = SurveyRunner(config)
         runner.nim = MagicMock()
         runner.nim.decide.return_value = {"actions": [{"action": "submit"}],
                                            "tokens": {"total": 100}, "elapsed_ms": 300}
 
-        # Different snapshots each iteration (diff URLs + seeds → diff hashes → no loop detection)
-        # BUT: page_text has NO "N/M" pattern → current_progress = str(len(snapshot.refs)) = "5"
-        # Since prev_progress="5" every time → anti-stuck fires after 5 iterations
-        snaps = [_make_snapshot(n_refs=5, url=f"https://q.com/page{i}", title=f"Q {i}", seed=i)
-                 for i in range(10)]
+        # Same page_text every iteration → same DOM hash → anti-stuck fires after 3
         patches = _base_patches() + [
-            ("survey.runner.generate_snapshot", {"side_effect": snaps}),
+            ("survey.runner.generate_snapshot", {"return_value": _make_snapshot(n_refs=5)}),
             ("survey.runner.detect_completion", {"return_value": False}),
             ("survey.runner.detect_progress", {"return_value": (True, "unknown")}),
-            # No numeric progress → progress = str(len(refs)) = "5", same every iteration
-            ("survey.runner.BatchExecutor.read_page_text", {"return_value": "Plain question text"}),
+            ("survey.runner.BatchExecutor.read_page_text",
+             {"return_value": "Identical page text every iteration"}),
             ("survey.runner.BatchExecutor.detect_error_page",
              {"return_value": (False, "")}),
             ("survey.runner.BatchExecutor.execute",
@@ -296,8 +302,8 @@ class TestAntiStuck(unittest.TestCase):
 
         self.assertEqual(result.status, "error")
         self.assertIn("Stuck", result.error)
-        self.assertIn("no progress", result.error)
-        self.assertGreaterEqual(result.iterations, 5)
+        self.assertIn("DOM hash", result.error)
+        self.assertGreaterEqual(result.iterations, 3)
 
 
 # ═══════════════════════════════════════════════════════
@@ -461,7 +467,7 @@ class TestExpiredSurveyUrl(unittest.TestCase):
             # read_page_text returns "no app id" — BEFORE calling detect_error_page
             # The runner directly checks for "no app id" in page_text
             ("survey.runner.BatchExecutor.read_page_text",
-             {"return_value": "Error: No app id was specified"}),
+             {"side_effect": ["no app id was specified", "no app id was specified", "no app id was specified"]}),
             ("survey.runner.read_balance", {"return_value": 2.00}),
         ]
         with patch.object(runner, "_find_survey_tab_ws",
@@ -510,7 +516,7 @@ class TestZombieTabCleanup(unittest.TestCase):
             ("survey.runner.detect_completion", {"return_value": False}),
             ("survey.runner.detect_progress", {"return_value": (True, "unknown")}),
             ("survey.runner.BatchExecutor.read_page_text",
-             {"return_value": "Question 1/10"}),
+             {"side_effect": _next_page_text}),
             ("survey.runner.BatchExecutor.detect_error_page",
              {"return_value": (False, "")}),
             ("survey.runner.BatchExecutor.execute",
@@ -560,7 +566,7 @@ class TestBalanceCalculated(unittest.TestCase):
             ("survey.runner.detect_completion", {"return_value": False}),
             ("survey.runner.detect_progress", {"return_value": (True, "unknown")}),
             ("survey.runner.BatchExecutor.read_page_text",
-             {"return_value": "Question 1/10"}),
+             {"side_effect": _next_page_text}),
             ("survey.runner.BatchExecutor.detect_error_page",
              {"return_value": (False, "")}),
             ("survey.runner.BatchExecutor.execute",
@@ -603,7 +609,7 @@ class TestRateSurveyCalled(unittest.TestCase):
             ("survey.runner.detect_completion", {"return_value": False}),
             ("survey.runner.detect_progress", {"return_value": (True, "unknown")}),
             ("survey.runner.BatchExecutor.read_page_text",
-             {"return_value": "Question 1/10"}),
+             {"side_effect": _next_page_text}),
             ("survey.runner.BatchExecutor.detect_error_page",
              {"return_value": (False, "")}),
             ("survey.runner.BatchExecutor.execute",
@@ -648,7 +654,7 @@ class TestCaptchaHandling(unittest.TestCase):
             ("survey.runner.detect_completion", {"return_value": False}),
             ("survey.runner.detect_progress", {"return_value": (True, "unknown")}),
             ("survey.runner.BatchExecutor.read_page_text",
-             {"return_value": "Question 1/10"}),
+             {"side_effect": _next_page_text}),
             ("survey.runner.BatchExecutor.detect_error_page",
              {"return_value": (False, "")}),
             ("survey.runner.BatchExecutor.execute",
@@ -701,7 +707,7 @@ class TestErrorDuringLoopContinues(unittest.TestCase):
             ("survey.runner.detect_completion", {"return_value": False}),
             ("survey.runner.detect_progress", {"return_value": (True, "unknown")}),
             ("survey.runner.BatchExecutor.read_page_text",
-             {"return_value": "Question 3/10"}),
+             {"side_effect": _next_page_text}),
             ("survey.runner.BatchExecutor.detect_error_page",
              {"return_value": (False, "")}),
             ("survey.runner.BatchExecutor.execute",
@@ -754,7 +760,7 @@ class TestMultipleIterations(unittest.TestCase):
             ("survey.runner.detect_completion", {"side_effect": detect_side_effect}),
             ("survey.runner.detect_progress", {"return_value": (True, "unknown")}),
             ("survey.runner.BatchExecutor.read_page_text",
-             {"return_value": "Question 4/10"}),
+             {"side_effect": _next_page_text}),
             ("survey.runner.BatchExecutor.detect_error_page",
              {"return_value": (False, "")}),
             ("survey.runner.BatchExecutor.execute",
@@ -835,7 +841,7 @@ class TestRunSurveyEdgeCases(unittest.TestCase):
             ("survey.runner.detect_completion", {"return_value": False}),
             ("survey.runner.detect_progress", {"return_value": (True, "unknown")}),
             ("survey.runner.BatchExecutor.read_page_text",
-             {"return_value": "Question 1/10"}),
+             {"side_effect": _next_page_text}),
             ("survey.runner.BatchExecutor.detect_error_page",
              {"return_value": (False, "")}),
             ("survey.runner.BatchExecutor.execute",
@@ -865,7 +871,7 @@ class TestRunSurveyEdgeCases(unittest.TestCase):
 
         patches = _base_patches() + [
             ("survey.runner.BatchExecutor.read_page_text",
-             {"return_value": "Loading, just getting things ready..."}),
+             {"return_value": "still loading just getting things ready please wait"}),
             ("survey.runner.read_balance", {"return_value": 2.00}),
         ]
         with patch.object(runner, "_find_survey_tab_ws",
@@ -900,7 +906,7 @@ class TestRunSurveyEdgeCases(unittest.TestCase):
             ("survey.runner.detect_completion", {"return_value": False}),
             ("survey.runner.detect_progress", {"return_value": (True, "unknown")}),
             ("survey.runner.BatchExecutor.read_page_text",
-             {"return_value": "Question 1/10"}),
+             {"side_effect": _next_page_text}),
             ("survey.runner.BatchExecutor.detect_error_page",
              {"return_value": (False, "")}),
             ("survey.runner.BatchExecutor.execute",
@@ -938,7 +944,7 @@ class TestRunSurveyEdgeCases(unittest.TestCase):
             ("survey.runner.detect_completion", {"return_value": False}),
             ("survey.runner.detect_progress", {"return_value": (True, "unknown")}),
             ("survey.runner.BatchExecutor.read_page_text",
-             {"return_value": "Question 1/10"}),
+             {"side_effect": _next_page_text}),
             ("survey.runner.BatchExecutor.detect_error_page",
              {"return_value": (False, "")}),
             # 3 fails per batch → +2 to consecutive_fails each iteration
