@@ -29,7 +29,7 @@ CRITICAL RULES:
     - Daemon state persisted in ~/.stealth/daemon_state.json
     - Logs in survey/logs/daemon/*.jsonl
 
-===============================================================================""""
+==============================================================================="""
 
 import atexit
 import json
