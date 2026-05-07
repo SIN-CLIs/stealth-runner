@@ -59,3 +59,6 @@ logbook.stealth.yaml
 
 stealth-skills/
 graphify-out/cache/
+
+# GitNexus Knowledge Graph Index
+.gitnexus/
