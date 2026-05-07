@@ -1,14 +1,93 @@
-"""NEMO Survey Runner — the core execution engine.
+"""================================================================================
+NEMO SURVEY RUNNER — Core Execution Engine (1291 Zeilen, Herzstück)
+================================================================================
 
-Loop per page:
-  1. Compact Snapshot (CDP)
-  2. NIM Decision (Nemotron 3 Omni)
-  3. Batch Execute (CDP)
-  4. AutoDoc (append-only)
-  5. Repeat until completion
+WAS IST DAS?
+  Die Haupt-Ausführungs-Engine für Survey-Automation. Führt den NEMO-Loop
+  für JEDE Survey-Seite aus:
+  
+  NEMO LOOP (pro Seite):
+  1. Compact Snapshot (CDP) → @eN Element-Refs
+  2. NIM Decision (Nemotron 3 Omni) → Batch Actions
+  3. Batch Execute (CDP) → JavaScript im Browser
+  4. AutoDoc (append-only) → JSONL Log
+  5. Completion Detection → Fertig oder nächste Seite?
+  6. Repeat bis completion
 
-SOTA: All operations delegate to frozen tools in tools/.
-"""
+ARCHITEKTUR:
+  ┌─────────────────────┐
+  │  run_survey()       │
+  │  (Haupt-Funktion)   │
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  NEMO LOOP          │
+  │  (pro Seite)        │
+  └─────────────────────┘
+         │
+    ┌────┴──────────────────────────────┐
+    ▼                  ▼                 ▼
+  snapshot()        NIMClient          BatchExecutor
+  (CDP eval)       .decide()          .execute()
+    │                  │                 │
+    ▼                  ▼                 ▼
+  @eN Refs        Actions[]           CDP JS
+    │                                    │
+    └────────────────┬─────────────────┘
+                     ▼
+              detect_completion()
+                     │
+            ┌────────┴────────┐
+            ▼                 ▼
+        completed          running
+            │                 │
+            ▼                 ▼
+        rate_survey()    next iteration
+
+SOTA FEATURES:
+  - Anti-Stuck Detection: DOM-Hash Vergleich, 3x gleich = stuck
+  - Circuit Breaker: Max 50 Iterationen pro Survey
+  - Provider Detection: Qualtrics, Toluna, Strat7, PureSpectrum
+  - Auto-Doc: Append-only JSONL (kein LLM schreibt Doku!)
+  - Balance Tracking: Verdienst-Tracking pro Session
+  - Modal Handling: Close-Modals vor jeder Aktion
+
+DEPENDENZEN (ALLE __frozen__=True):
+  - chrome.py: Chrome Lifecycle (start/connect/kill)
+  - snapshot.py: Compact Snapshot Generator
+  - nim.py: Nemotron 3 Omni Client
+  - execute.py: Batch Executor (CDP)
+  - autodoc.py: Append-only JSONL Logger
+  - scanner.py: Dashboard Scanner
+  - tools/*.py: Frozen Tools (click, fill, detect, etc.)
+
+WARUM 1291 Zeilen?
+  Dies ist die zentrale Logik. Jede Zeile ist notwendig:
+  - Error-Handling: 15+ verschiedene Fehler-Szenarien
+  - Provider-Support: 5+ verschiedene Survey-Provider
+  - Anti-Stuck: 3 verschiedene Detection-Methoden
+  - State-Management: 10+ verschiedene Zustände
+  → Aufteilung in Sub-Module würde Komplexität erhöhen (mehr Imports,
+    mehr Kontext-Wechsel, schwerer zu debuggen).
+
+WARUM frozen tools?
+  Sicherheit. Wenn ein Tool funktioniert (10x getestet), wird es
+  eingefroren (__frozen__=True). Kein Agent darf es mehr ändern.
+  → Verhindert, dass Agenten "clevere" Änderungen machen die alles
+    kaputt machen.
+
+BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
+  ❌ playstealth launch — setzt NICHT --force-renderer-accessibility
+  ❌ webauto-nodriver — ABSOLUT BANNED
+  ❌ cua-driver click (raw index) — instabil, nutze tool_click.py
+  ❌ --remote-allow-origins=* (ohne Quotes) — zsh glob expansion
+  ❌ /tmp/heypiggy-bot (fixed profile) — korruptiert nach Neustart
+  ❌ Hardcoded PIDs — dynamisch, niemals hardcodieren
+  ❌ pkill -f "Google Chrome" — tötet USER Chrome
+  ❌ killall Google Chrome — tötet ALLE Chrome
+  ❌ skylight-cli click --element-index — Index instabil
+================================================================================"""
 
 import json
 import re

@@ -1,7 +1,56 @@
-"""Dashboard scanner — survey ID extraction + provider detection.
+"""================================================================================
+DASHBOARD SCANNER — Survey ID Extraction + Provider Detection
+================================================================================
 
-Uses CDP JS to extract onclick handlers and CPX API to filter.
-"""
+WAS IST DAS?
+  Scannt das Heypiggy Dashboard nach verfügbaren Surveys.
+  Extrahiert Survey-IDs aus onclick-Handlern und erkennt den Provider
+  (Qualtrics, Toluna, Strat7, PureSpectrum, etc.).
+
+ARCHITEKTUR:
+  ┌─────────────────────┐
+  │  scan_dashboard()   │
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  CDP JS Extractor   │
+  │  (onclick handlers) │
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  Provider Detection │
+  │  (URL Patterns)     │
+  └─────────────────────┘
+         │
+         ▼
+  ┌─────────────────────┐
+  │  [{id, title,      │
+  │   payout, provider}]│
+  └─────────────────────┘
+
+WARUM onclick-Handler?
+  Heypiggy Survey-Cards haben onclick="clickSurvey('12345')".
+  → Wir extrahieren die ID aus dem Handler-String.
+  → Zuverlässiger als Text-Matching (Titel ändern sich).
+
+WARUM Provider Detection?
+  Verschiedene Provider = verschiedene DOM-Strukturen.
+  → BatchExecutor braucht provider-spezifisches JavaScript.
+  → Erkennung via URL-Patterns (qualtrics.com, tolunastart.com, etc.).
+
+BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
+  ❌ playstealth launch
+  ❌ webauto-nodriver — ABSOLUT BANNED
+  ❌ cua-driver click (raw index)
+  ❌ --remote-allow-origins=* (ohne Quotes)
+  ❌ /tmp/heypiggy-bot (fixed profile)
+  ❌ Hardcoded PIDs
+  ❌ pkill -f "Google Chrome"
+  ❌ killall Google Chrome
+  ❌ skylight-cli click --element-index
+================================================================================"""
 
 import json
 import time
