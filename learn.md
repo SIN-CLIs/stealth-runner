@@ -1082,6 +1082,127 @@ Unser `scan_dashboard()` findet NUR Surveys via CPX API. Aber das Dashboard zeig
 
 ---
 
+## §R — OPENCODE TROUBLESHOOTING (2026-05-08) 🔥
+
+> **Alles was beim Fixen von OpenCode nach dem `/connect vercel` Crash gelernt wurde.**
+
+### §R1 — Zod v4/v3 Conflict (ROOT CAUSE)
+
+```
+TypeError: n._zod.def is not a function
+  at /snapshot/build/src/builtInPlugins/openCodeCli.js ...
+  at getToolDefinition (...)
+```
+
+OpenCode 1.14.41 intern nutzt Zod v3 (`_zod.def`). Plugins die Zod v4 nutzen
+(`oh-my-opencode`, `opencode-antigravity-auth`) crashen im Tool-Resolution-Pipeline.
+
+**BANNED Plugins (Zod v4 Bundler):**
+- `oh-my-opencode@3.11.2` (npm global)
+- `opencode-antigravity-auth@1.6.5-beta.0` (bun global)
+- `opencode-openrouter-auth` (unmaintained)
+- `opencode-qwen-auth` (unmaintained)
+- `opencode-modal-pool-auth` (unmaintained)
+
+**Recovery Procedure:**
+```bash
+# 1. Uninstall globally
+npm uninstall -g oh-my-opencode opencode-openrouter-auth opencode-qwen-auth opencode-modal-pool-auth
+bun pm rm -g oh-my-opencode opencode-antigravity-auth opencode-openrouter-auth opencode-qwen-auth
+
+# 2. Delete plugin directories in infra-sin-opencode-stack/
+rm -rf plugins/local-plugins/opencode-openrouter-auth
+rm -rf local-plugins/opencode-qwen-auth
+rm -rf vendor/opencode-antigravity-auth-1.6.5-beta.0
+
+# 3. Delete oh-my files
+rm -f ~/.config/opencode/oh-my-*.json
+
+# 4. Reset config
+rm -rf ~/.config/opencode/
+```
+
+### §R2 — Provider Config Creates DUPLICATES
+
+**Problem:** Adding `"fireworks-ai"` or `"vercel"` providers with custom model lists
+causes OpenCode to show each model TWICE (provider config + built-in auto-discovery).
+
+**Lösung:** Use empty `"provider": {}` — let built-in providers auto-discover from `auth.json`.
+NEVER manually add provider configs for built-in providers.
+
+### §R3 — Correct Model IDs from `opencode models`
+
+```
+# Vercel (prefix with "vercel/"!)
+vercel/deepseek/deepseek-v4-flash
+vercel/deepseek/deepseek-v4-pro
+vercel/deepseek/deepseek-v3.2-thinking
+vercel/deepseek/deepseek-r1
+
+# Fireworks (no prefix, accounts/fireworks path)
+accounts/fireworks/models/deepseek-v4-pro
+accounts/fireworks/models/minimax-m2p7          # DASH, not dot!
+accounts/fireworks/models/qwen3p6-plus
+accounts/fireworks/models/kimi-k2p6             # DASH, not dot!
+accounts/fireworks/models/deepseek-r1
+accounts/fireworks/models/gpt-4o-mini
+accounts/fireworks/models/gpt-4o
+accounts/fireworks/models/accounts/fireworks/models/llama-4-scout-17b-16e-instruct
+```
+
+### §R4 — `opencode run` Bug (UNRESOLVED)
+
+`opencode run "hello"` crashes in real HOME even with clean config.
+Root cause: bundled provider SDKs in the binary (`ai-gateway-provider`, `venice-ai-sdk-provider`)
+use Zod v4 (`_zod.def`). Bug exists in ALL tested versions (1.4.11 to 1.14.41).
+
+**Workaround:** Use TUI (`opencode`). `opencode run` only works from isolated HOME with no config.
+
+### §R5 — Reasoning Config (Verified against docs)
+
+```json
+{
+  "agents": {
+    "default": {
+      "model": "accounts/fireworks/models/deepseek-r1",
+      "reasoningEffort": "high",
+      "reasoning": true
+    }
+  }
+}
+```
+
+- `reasoningEffort: "high"` + `reasoning: true` on AGENT level (not provider level)
+- Fireworks supports `thinking: { type: "enabled", budget_tokens: >= 1024 }` (Anthropic-compatible)
+- CANNOT use both `reasoning_effort` AND `thinking` simultaneously
+
+### §R6 — GitNexus MCP Setup
+
+Binary installed via pnpm globally: `/Users/jeremy/Library/pnpm/nodejs/22.14.0/bin/gitnexus`
+
+Config in opencode.json:
+```json
+{
+  "mcpServers": {
+    "gitnexus": {
+      "command": "/Users/jeremy/Library/pnpm/nodejs/22.14.0/bin/gitnexus",
+      "args": ["mcp", "serve"]
+    }
+  }
+}
+```
+
+Run analysis: `gitnexus analyze` (14,594 nodes, 18,562 edges, 300 flows)
+
+### §R7 — Graphify is NOT an MCP Server
+
+Graphify is a file-based skill with `tool.execute.before` hook.
+Installed via `graphify opencode install` → creates `.opencode/plugins/graphify.js`.
+
+Run: `graphify update .` (2,110 nodes, 4,953 edges, 118 communities)
+
+---
+
 ### §Q1 — SURVEYS OPEN IN NEW TABS (KRITISCH)
 
 **Entdeckung:** Qualtrics/Samplicio Surveys öffnen in NEUEN Chrome Tabs mit anderen URLs (z.B. `bceconsulting.az1.qualtrics.com`). Unser CDP war 90% der Session mit dem FALSCHEN Tab verbunden.

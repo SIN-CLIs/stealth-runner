@@ -205,6 +205,7 @@
 | SR-34 | merged → #11 | Survey Flow Test Suite |
 | SR-35 | merged → #7 | Chrome Lease Manager + Safety |
 | SR-36 | deferred | Generated Docs De-Duplication |
+| SR-37 | done | OpenCode Fix: Zod v4 Crash + GitNexus + Graphify |
 
 ### Survey Routing Status
 

