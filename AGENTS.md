@@ -5,28 +5,37 @@ content: |
   ## ⚠️⚠️⚠️ CHROME START CONFIG — ZEILE 1 — NIEMALS ÄNDERN — NIEMALS VERGESSEN ⚠️⚠️⚠️
   
   ```bash
-  PROFILE="/tmp/heypiggy-new-$(date +%s)" && mkdir -p "$PROFILE"
+  # ABSOLUTE WAHRHEIT — Chrome Profil 902 (Jeremy) — NIEMALS ÄNDERN
   /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
-    --remote-debugging-port=9999 \
+    --remote-debugging-port=9222 \
     --remote-allow-origins="*" \
     --force-renderer-accessibility \
     --no-first-run \
-    --user-data-dir="$PROFILE" \
+    --user-data-dir="/Users/jeremy/Library/Application Support/Google Chrome" \
+    --profile-directory="Profile 902" \
     "https://www.heypiggy.com/?page=dashboard" &>/dev/null &
   ```
   
   | Flag | Wert | Warum |
   |------|------|-------|
-  | `--remote-debugging-port` | **9999** | CDP Port — IMMER 9999 |
+  | `--remote-debugging-port` | **9222** | CDP Port — Chrome wählt 9222 wenn verfügbar |
   | `--remote-allow-origins` | `"*"` | MIT Quotes — sonst 403 |
   | `--force-renderer-accessibility` | required | CUA AX-Tree — sonst LEER |
   | `--no-first-run` | required | Blockiert First-Run-Dialog |
-  | `--user-data-dir` | `/tmp/heypiggy-new-$(date +%s)` | Timestamped — ISOLATED |
+  | `--user-data-dir` | `/Users/jeremy/Library/Application Support/Google Chrome` | Jeremy's echtes Profil |
+  | `--profile-directory` | `Profile 902` | SIN-Agent (Heypiggy) — Profilname in Chrome |
+  
+  **WICHTIG:**
+  - Chrome startet mit Jeremy's PROFIL 902 (nicht temporär, nicht simoneschulze)
+  - Cookies sind in diesem Profil gespeichert und verschlüsselt
+  - Playwright `context.cookies()` extrahiert entschlüsselte Cookies
+  - Keychain-Entschlüsselung funktioniert NICHT (MAC-Check failed) — Playwright ist der einzige Weg
   
   **BANNED:**
-  - `pkill -f "Google Chrome"` = tötet USER Chrome
-  - `--user-data-dir=/tmp/heypiggy-bot` FIXED = korruptiert
-  - Port 8888 direkt = SINator-method, nicht stealth-runner
+  - `pkill -f "Google Chrome"` = tötet USER Chrome und zerstört Session
+  - Frische `/tmp/` Profile = verlieren alle Cookies, Login nötig
+  - Port 8888 = alt/deprecated, nicht verwenden
+  - `sed 's/8888/9999/g'` in Kommentaren = zerstört Doku
   
   ---
   

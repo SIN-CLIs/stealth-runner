@@ -1,79 +1,49 @@
 {
   "metadata": {
-    "created_at": "2026-05-08T23:00:32.214857",
-    "count": 7,
+    "created_at": "2026-05-09T00:05:35.126613",
+    "count": 4,
     "source": "heypiggy",
-    "profile": "Profile 73 (simoneschulze)",
-    "user_data_dir": "/tmp/sinator-chrome-*",
-    "cdp_port": 9999
+    "profile": "Profile 902 (jeremy - SIN-Agent Heypiggy)",
+    "user_data_dir": "/Users/jeremy/Library/Application Support/Google Chrome",
+    "cdp_port": 9222
   },
   "cookies": [
+    {
+      "name": "user_a_b_group",
+      "value": "2",
+      "domain": "www.heypiggy.com",
+      "path": "/",
+      "expires": 1780869077.090963,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
     {
       "name": "lang_pig",
       "value": "de",
       "domain": "www.heypiggy.com",
       "path": "/",
-      "expires": 1780853674.103307,
-      "httpOnly": false,
-      "secure": false,
-      "sameSite": "Lax"
-    },
-    {
-      "name": "user_a_b_group",
-      "value": "1",
-      "domain": "www.heypiggy.com",
-      "path": "/",
-      "expires": 1780853674.103294,
-      "httpOnly": false,
-      "secure": false,
-      "sameSite": "Lax"
-    },
-    {
-      "name": "g_state",
-      "value": "{\"i_l\":0,\"i_ll\":1778262047195,\"i_b\":\"NUEKr/pguFiCeSDL6Wp5o53QWfFO4DwFA7r4IZPRhrU\",\"i_e\":{\"enable_itp_optimization\":0},\"i_et\":1778261674667}",
-      "domain": "www.heypiggy.com",
-      "path": "/",
-      "expires": 1793814047,
-      "httpOnly": false,
-      "secure": false,
-      "sameSite": "Lax"
-    },
-    {
-      "name": "referer",
-      "value": "www.heypiggy.com",
-      "domain": "www.heypiggy.com",
-      "path": "/",
-      "expires": 1778348555.402166,
-      "httpOnly": false,
-      "secure": false,
-      "sameSite": "Lax"
-    },
-    {
-      "name": "user_id",
-      "value": "2525530",
-      "domain": "www.heypiggy.com",
-      "path": "/",
-      "expires": 1780854155.40221,
-      "httpOnly": false,
-      "secure": false,
-      "sameSite": "Lax"
-    },
-    {
-      "name": "user_session",
-      "value": "adIDT8NdHFQGChqxRpph",
-      "domain": "www.heypiggy.com",
-      "path": "/",
-      "expires": 1780854155.402222,
+      "expires": 1780869077.090989,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
     },
     {
       "name": "PHPSESSID",
-      "value": "nr92o4dfbauk8ndg9dqctss7pi",
+      "value": "n0hm6ch75tosn8kj5qn84khto9",
       "domain": "www.heypiggy.com",
       "path": "/",
       "expires": -1,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "g_state",
+      "value": "{\"i_l\":0,\"i_ll\":1778277808545,\"i_b\":\"HiGtEt6gW55jIm3ZZqcoAnP8gvD3gXOVuMaPL6oONQM\",\"i_e\":{\"enable_itp_optimization\":0},\"i_et\":1778277077703}",
+      "domain": "www.heypiggy.com",
+      "path": "/",
+      "expires": 1793829808,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
