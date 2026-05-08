@@ -193,7 +193,7 @@ async def scan_dashboard(req: DashboardScanRequest):
     
     Args:
         req: DashboardScanRequest
-            - cdp_port: CDP Port (default: 8888).
+            - cdp_port: CDP Port (default: 9999).
     
     Returns:
         DashboardScanResponse:
@@ -208,7 +208,7 @@ async def scan_dashboard(req: DashboardScanRequest):
     
     Example:
         POST /dashboard/scan
-        {"cdp_port": 8888}
+        {"cdp_port": 9999}
         → {"status": "success", "balance_eur": 12.35,
             "available_surveys": [
                 {"survey_id": "12345", "reward_eur": 0.35, "duration_min": 5, "provider": "qualtrics", "title": "Umfrage zu Lebensmitteln"},
@@ -433,7 +433,7 @@ async def get_balance(req: BalanceRequest):
     
     Args:
         req: BalanceRequest
-            - cdp_port: CDP Port (default: 8888).
+            - cdp_port: CDP Port (default: 9999).
     
     Returns:
         BalanceResponse:
@@ -447,7 +447,7 @@ async def get_balance(req: BalanceRequest):
     
     Example:
         POST /dashboard/balance
-        {"cdp_port": 8888}
+        {"cdp_port": 9999}
         → {"status": "success", "balance_eur": 12.35, "currency": "EUR",
             "message": "Balance: 12.35€"}
     """

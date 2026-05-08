@@ -41,7 +41,7 @@
 ║  │ ├── stop()             → Chrome beenden → Temp-Profil löschen    │    ║
 ║  │ ├── health()           → Status: läuft? idle-seit?                   │    ║
 ║  │ ├── _copy_profile()    → Profil 73 → /tmp/sinator-chrome-XXXX      │    ║
-║  │ ├── _launch_chrome()   → subprocess.Popen mit CDP-Port 8888        │    ║
+║  │ ├── _launch_chrome()   → subprocess.Popen mit CDP-Port 9999        │    ║
 ║  │ ├── _wait_for_cdp()    → Polling auf /json/version (max 15s)       │    ║
 ║  │ ├── _inject_stealth()  → navigator.webdriver überschreiben         │    ║
 ║  │ └── _cleanup()         → Alles aufräumen (Browser, Playwright,    │    ║
@@ -63,14 +63,14 @@
 ║  • --force-renderer-accessibility MUSS gesetzt sein                         ║
 ║    → Ohne dieses Flag ist der AX-Tree LEER (CUA-driver sieht nichts).      ║
 ║                                                                              ║
-║  CDP PORT 8888:                                                              ║
+║  CDP PORT 9999:                                                              ║
 ║  ──────────────                                                              ║
-║  WARUM 8888 statt 9222 (Chrome Default)?                                     ║
+║  WARUM 9999 statt 9222 (Chrome Default)?                                     ║
 ║  → 9222 wird oft vom User-Chrome belegt (wenn User --remote-debugging-port  ║
 ║     in seinen Chrome-Flags hat).                                              ║
-║  → 8888 ist ein freier Port der nicht standardmäßig verwendet wird.         ║
-║  → Wir verwenden 8888 als isolierten Bot-Chrome-Port.                        ║
-║  → Wichtig: API-Server läuft auf 8889 (NICHT 8888!) um Konflikt zu         ║
+║  → 9999 ist ein freier Port der nicht standardmäßig verwendet wird.         ║
+║  → Wir verwenden 9999 als isolierten Bot-Chrome-Port.                        ║
+║  → Wichtig: API-Server läuft auf 8889 (NICHT 9999!) um Konflikt zu         ║
 ║     vermeiden.                                                               ║
 ║                                                                              ║
 ║  PLAYWRIGHT CONNECT_OVER_CDP():                                              ║
@@ -213,7 +213,7 @@ class BrowserManager:
     ATTRIBUTES (öffentlich):
     - chrome_path: Pfad zur Chrome Binary (z.B. "/Applications/Google Chrome.app/...").
     - profile_name: Name des Profil-Ordners (z.B. "Profile 73").
-    - cdp_port: Port für Chrome DevTools Protocol (default: 8888).
+    - cdp_port: Port für Chrome DevTools Protocol (default: 9999).
     - headless: Sichtbarer oder unsichtbarer Modus (default: False für Debugging).
     
     ATTRIBUTES (privat — beginnen mit _):
@@ -238,7 +238,7 @@ class BrowserManager:
         chrome_path: Optional[str] = None,
         source_profile: Optional[str] = None,
         profile_name: str = "Profile 73",
-        cdp_port: int = 8888,
+        cdp_port: int = 9999,
         headless: bool = False,
     ):
         """
@@ -268,9 +268,13 @@ class BrowserManager:
                 WARUM "Profile 73"? Das ist das Profil mit der HeyPiggy-Session.
                 Chrome erstellt Profile als "Default", "Profile 1", "Profile 2", etc.
                 "Profile 73" wurde bei der manuellen Einrichtung erstellt.
+                WICHTIG: Dieses Profil liegt im user-data-dir von simoneschulze
+                (nicht im aktuellen Benutzer!).
             cdp_port: Port für Chrome DevTools Protocol.
-                Default: 8888.
-                WARUM 8888? Siehe Modul-Docstring (nicht 9222 wegen User-Chrome Konflikt).
+                Default: 9999.
+                WARUM 9999? Stealth-Runner Standard (nicht 9222 wegen User-Chrome Konflikt).
+                NICHT 9999 (alt) — Stealth-Runner verwendet seit 2026-05-08 Port 9999.
+                AGENTS.md bestätigt: stealth-runner CDP Port ist IMMER 9999.
             headless: Headless-Modus.
                 Default: False.
                 WARUM False? Sichtbarer Browser ist einfacher zu debuggen.
@@ -284,7 +288,7 @@ class BrowserManager:
         Example:
             manager = BrowserManager(
                 profile_name="Profile 73",
-                cdp_port=8888,
+                cdp_port=9999,
                 headless=False
             )
             # Chrome läuft NOCH NICHT!
@@ -300,12 +304,12 @@ class BrowserManager:
         self.chrome_path = chrome_path or "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
         
         # source_user_data_dir: Pfad zum Chrome user-data-dir.
-        # WARUM Path.home()? Gibt das Home-Verzeichnis des aktuellen Users zurück.
-        # ~/Library/Application Support/Google/Chrome = macOS Standard.
-        # Hinweis: Path("~/...") funktioniert NICHT ohne expanduser()!
-        self.source_user_data_dir = source_profile or str(
-            Path.home() / "Library/Application Support/Google/Chrome"
-        )
+        # WARUM simoneschulze statt Path.home()? Profile 73 liegt im user-data-dir
+        # von simoneschulze (nicht im aktuellen Benutzer jeremy!).
+        # Der Agent startet Chrome mit einem KOPIERTEN Profil (--user-data-dir=/tmp/...),
+        # daher kann er ein Profil aus einem anderen Benutzer-Home verwenden.
+        # WICHTIG: source_profile Parameter überschreibt diesen Default.
+        self.source_user_data_dir = source_profile or "/Users/simoneschulze/Library/Application Support/Google Chrome"
         
         # profile_name: Name des Profil-Ordners.
         # WARUM String? Chrome verwendet Ordner-Namen wie "Profile 73".
@@ -314,7 +318,9 @@ class BrowserManager:
         
         # cdp_port: CDP Port.
         # WARUM int? Port ist eine Integer-Zahl (0-65535).
-        # 8888 ist ein High-Port (kein Root-Rechte nötig).
+        # 9999 ist der Stealth-Runner Standard-Port (High-Port, kein Root nötig).
+        # NIE 9222 verwenden (User-Chrome Konflikt).
+        # NIE 9999 verwenden (alt, deprecated seit 2026-05-08).
         self.cdp_port = cdp_port
         
         # headless: Sichtbar oder unsichtbar.
@@ -446,8 +452,8 @@ class BrowserManager:
         
         Example:
             alive = self._check_cdp_alive()
-            # True → Chrome auf Port 8888 erreichbar.
-            # False → Kein Chrome auf Port 8888.
+            # True → Chrome auf Port 9999 erreichbar.
+            # False → Kein Chrome auf Port 9999.
         """
         try:
             # Importiere urllib.request lokal (wird selten gebraucht).
@@ -507,7 +513,7 @@ class BrowserManager:
         
         WARUM _check_cdp_alive Fallback?
         → Chrome könnte extern gestartet worden sein (nicht von uns).
-        → Beispiel: User hat Chrome manuell mit --remote-debugging-port=8888 gestartet.
+        → Beispiel: User hat Chrome manuell mit --remote-debugging-port=9999 gestartet.
         → Wir verbinden Playwright mit diesem Chrome (wiederverwenden).
         
         Args:
@@ -865,7 +871,7 @@ class BrowserManager:
             #   "profile": "Profile 73",
             #   "last_used": 1778261390.45,
             #   "idle_seconds": 45.2,
-            #   "cdp_port": 8888,
+            #   "cdp_port": 9999,
             #   "cdp_reachable": True,
             # }
         """
@@ -1097,7 +1103,7 @@ class BrowserManager:
         Example:
             proc = self._launch_chrome()
             # proc.pid = 12345
-            # Chrome läuft jetzt auf Port 8888.
+            # Chrome läuft jetzt auf Port 9999.
         """
         # Baue Chrome-Argument-Liste.
         # WARUM Liste statt String? subprocess.Popen mit Liste = sicherer
@@ -1503,12 +1509,12 @@ def get_browser_manager() -> BrowserManager:
     → Wenn wir keine globale Variable verwenden → Instanz wird nach Funktionsende
     → zerstört (Garbage Collection) → Chrome läuft aber Referenz ist weg.
     
-    WARUM cdp_port=8888?
+    WARUM cdp_port=9999?
     → Default-Port für Bot-Chrome (nicht 9222 wegen User-Chrome Konflikt).
     → Kann über BrowserManager(cdp_port=...) geändert werden.
     
     Returns:
-        BrowserManager: Die Singleton-Instanz (Port 8888, Profile 73).
+        BrowserManager: Die Singleton-Instanz (Port 9999, Profile 73).
     
     Example:
         bm = get_browser_manager()
@@ -1523,8 +1529,8 @@ def get_browser_manager() -> BrowserManager:
     # Wenn Instanz noch nicht existiert → erstelle sie.
     if _browser_manager is None:
         # Erstelle BrowserManager mit Default-Parametern.
-        # cdp_port=8888: Bot-Chrome Port.
-        _browser_manager = BrowserManager(cdp_port=8888)
+        # cdp_port=9999: Bot-Chrome Port.
+        _browser_manager = BrowserManager(cdp_port=9999)
     
     # Gib die Singleton-Instanz zurück.
     return _browser_manager
@@ -1537,7 +1543,7 @@ def get_browser_manager() -> BrowserManager:
 #
 # Diese Datei implementiert den BrowserManager (SINator-Style):
 #   - Profil-Kopie (NICHT Symlink!) für funktionierende Cookies.
-#   - Chrome als subprocess mit CDP-Port 8888.
+#   - Chrome als subprocess mit CDP-Port 9999.
 #   - Playwright connect_over_cdp() für Browser-Automation.
 #   - Stealth-JS Injection für Bot-Detection-Umgehung.
 #   - Warm-Start (Wiederverwendung) statt Cold-Start.

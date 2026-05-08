@@ -1,16 +1,19 @@
 {
   "metadata": {
-    "created_at": "2026-05-08T19:42:49.825044",
+    "created_at": "2026-05-08T23:00:32.214857",
     "count": 7,
-    "source": "heypiggy"
+    "source": "heypiggy",
+    "profile": "Profile 73 (simoneschulze)",
+    "user_data_dir": "/tmp/sinator-chrome-*",
+    "cdp_port": 9999
   },
   "cookies": [
     {
-      "name": "PHPSESSID",
-      "value": "k66nljr4qinrues6b18fcjlela",
+      "name": "lang_pig",
+      "value": "de",
       "domain": "www.heypiggy.com",
       "path": "/",
-      "expires": -1,
+      "expires": 1780853674.103307,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
@@ -21,16 +24,6 @@
       "domain": "www.heypiggy.com",
       "path": "/",
       "expires": 1780853674.103294,
-      "httpOnly": false,
-      "secure": false,
-      "sameSite": "Lax"
-    },
-    {
-      "name": "lang_pig",
-      "value": "de",
-      "domain": "www.heypiggy.com",
-      "path": "/",
-      "expires": 1780853674.103307,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"
@@ -71,6 +64,16 @@
       "domain": "www.heypiggy.com",
       "path": "/",
       "expires": 1780854155.402222,
+      "httpOnly": false,
+      "secure": false,
+      "sameSite": "Lax"
+    },
+    {
+      "name": "PHPSESSID",
+      "value": "nr92o4dfbauk8ndg9dqctss7pi",
+      "domain": "www.heypiggy.com",
+      "path": "/",
+      "expires": -1,
       "httpOnly": false,
       "secure": false,
       "sameSite": "Lax"

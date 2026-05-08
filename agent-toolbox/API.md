@@ -12,7 +12,7 @@ Die Agent-Toolbox API bietet Endpunkte für Browser-Automation, Survey-Ausführu
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
-│                    Chrome (CDP Port 8888)                     │
+│                    Chrome (CDP Port 9999)                     │
 │  ┌─────────────────────────────────────────────────────┐   │
 │  │  Profil 73 (kopiert nach /tmp/sinator-chrome-*)      │   │
 │  │  ┌─────────────────────────────────────────────────┐  │   │
@@ -42,11 +42,11 @@ Die Agent-Toolbox API bietet Endpunkte für Browser-Automation, Survey-Ausführu
 Chrome wird mit der **SINator-Methode** gestartet:
 
 1. **Profil kopieren**: `Local State` + `Profile 73` → `/tmp/sinator-chrome-{timestamp}`
-2. **Chrome starten**: `subprocess.Popen` mit `--remote-debugging-port=8888`
-3. **Playwright verbinden**: `connect_over_cdp("http://127.0.0.1:8888")`
+2. **Chrome starten**: `subprocess.Popen` mit `--remote-debugging-port=9999`
+3. **Playwright verbinden**: `connect_over_cdp("http://127.0.0.1:9999")`
 
 **Wichtige Flags**:
-- `--remote-debugging-port=8888` — CDP Endpoint
+- `--remote-debugging-port=9999` — CDP Endpoint
 - `--remote-allow-origins=*` — WebSocket Origin (OHNE Quotes!)
 - `--user-data-dir=/tmp/sinator-chrome-*` — Kopiertes Profil
 - `--profile-directory=Profile 73` — Profil-Name
@@ -63,7 +63,7 @@ Chrome starten oder wiederverwenden.
 {
   "profile_name": "Profile 73",
   "headless": false,
-  "cdp_port": 8888
+  "cdp_port": 9999
 }
 ```
 
@@ -73,7 +73,7 @@ Chrome starten oder wiederverwenden.
   "status": "success",
   "profile": "Profile 73",
   "headless": false,
-  "cdp_port": 8888,
+  "cdp_port": 9999,
   "message": "Browser started (warm)"
 }
 ```
@@ -111,7 +111,7 @@ Survey-Karte auf Dashboard klicken.
 ```json
 {
   "survey_id": null,
-  "cdp_port": 8888,
+  "cdp_port": 9999,
   "profile_name": "default"
 }
 ```
@@ -134,7 +134,7 @@ Modal-Inhalt lesen (Buttons, Felder, Text).
 **Request**:
 ```json
 {
-  "cdp_port": 8888,
+  "cdp_port": 9999,
   "profile_name": "default"
 }
 ```
@@ -162,7 +162,7 @@ Button im Modal klicken.
 ```json
 {
   "button_label": "Weiter",
-  "cdp_port": 8888,
+  "cdp_port": 9999,
   "profile_name": "default",
   "timeout_ms": 5000
 }
@@ -175,7 +175,7 @@ Radio/Checkbox auswählen.
 ```json
 {
   "option_text": "Männlich",
-  "cdp_port": 8888,
+  "cdp_port": 9999,
   "profile_name": "default",
   "wait_after_ms": 1000
 }
@@ -189,7 +189,7 @@ Text-Eingabe füllen.
 {
   "input_label": "Alter",
   "value": "32",
-  "cdp_port": 8888,
+  "cdp_port": 9999,
   "profile_name": "default"
 }
 ```
@@ -201,7 +201,7 @@ Komplette Survey ausführen (Step-by-step Loop).
 ```json
 {
   "survey_id": null,
-  "cdp_port": 8888,
+  "cdp_port": 9999,
   "profile_name": "default",
   "max_pages": 20
 }
@@ -228,7 +228,7 @@ HeyPiggy Login via Google OAuth.
 ```json
 {
   "profile_name": "default",
-  "cdp_port": 8888,
+  "cdp_port": 9999,
   "pid": null
 }
 ```
@@ -377,7 +377,7 @@ Alle Fehler werden als JSON mit `status: "error"` zurückgegeben:
 {
   "status": "error",
   "error_code": "internal_error",
-  "message": "Chrome not reachable on port 8888"
+  "message": "Chrome not reachable on port 9999"
 }
 ```
 
@@ -385,7 +385,7 @@ Alle Fehler werden als JSON mit `status: "error"` zurückgegeben:
 
 | Service | Port | Zweck |
 |---------|------|-------|
-| Chrome CDP | 8888 | Chrome DevTools Protocol |
+| Chrome CDP | 9999 | Chrome DevTools Protocol |
 | FastAPI | 8889 | API Endpunkte |
 
 **Wichtig**: Chrome CDP und FastAPI müssen auf unterschiedlichen Ports laufen!
@@ -408,7 +408,7 @@ python3 -m uvicorn api.main:app --port 8889 --host 127.0.0.1
 # 2. Chrome starten
 curl -X POST http://127.0.0.1:8889/browser/start \
   -H "Content-Type: application/json" \
-  -d '{"profile_name": "Profile 73", "cdp_port": 8888}'
+  -d '{"profile_name": "Profile 73", "cdp_port": 9999}'
 
 # 3. Zu HeyPiggy navigieren
 curl -X POST http://127.0.0.1:8889/tools/navigate \
@@ -423,7 +423,7 @@ curl -X POST http://127.0.0.1:8889/tools/screenshot \
 # 5. Survey ausführen
 curl -X POST http://127.0.0.1:8889/survey/run-one \
   -H "Content-Type: application/json" \
-  -d '{"cdp_port": 8888, "max_pages": 20}'
+  -d '{"cdp_port": 9999, "max_pages": 20}'
 
 # 6. Chrome stoppen
 curl -X POST http://127.0.0.1:8889/browser/stop
@@ -436,10 +436,10 @@ curl -X POST http://127.0.0.1:8889/browser/stop
 ```python
 from core.browser_manager import BrowserManager
 
-# Chrome mit Profil 73 auf Port 8888
+# Chrome mit Profil 73 auf Port 9999
 bm = BrowserManager(
     profile_name="Profile 73",
-    cdp_port=8888,
+    cdp_port=9999,
     headless=False
 )
 
@@ -460,7 +460,7 @@ import urllib.request, json
 
 # Tabs auflisten
 pages = json.loads(urllib.request.urlopen(
-    "http://127.0.0.1:8888/json"
+    "http://127.0.0.1:9999/json"
 ).read())
 
 # WebSocket URL für Dashboard
@@ -474,8 +474,8 @@ ws_url = next(
 ## Status
 
 ### Funktioniert ✅
-- Chrome starten mit Profil 73 auf Port 8888
-- Playwright via CDP verbinden (Port 8888)
+- Chrome starten mit Profil 73 auf Port 9999
+- Playwright via CDP verbinden (Port 9999)
 - API Server auf Port 8889
 - Navigate, Screenshot, Page Content
 - Health Check mit CDP-Reachability
@@ -539,24 +539,24 @@ curl -s -X POST http://127.0.0.1:8889/cookies/verify | jq
 # 2. Dashboard scannen
 curl -s -X POST http://127.0.0.1:8889/dashboard/scan \
   -H "Content-Type: application/json" \
-  -d '{"cdp_port": 8888}' | jq '.available_surveys[] | {id: .survey_id, reward: .reward_eur, duration: .duration_min}'
+  -d '{"cdp_port": 9999}' | jq '.available_surveys[] | {id: .survey_id, reward: .reward_eur, duration: .duration_min}'
 
 # 3. Survey Card klicken
 curl -s -X POST http://127.0.0.1:8889/survey/click-card \
   -H "Content-Type: application/json" \
-  -d '{"survey_id": "67006251", "cdp_port": 8888}' | jq
+  -d '{"survey_id": "67006251", "cdp_port": 9999}' | jq
 
 # 4. "Umfrage starten" klicken
 curl -s -X POST http://127.0.0.1:8889/survey/click-button \
   -H "Content-Type: application/json" \
-  -d '{"button_label": "umfrage starten", "cdp_port": 8888}' | jq
+  -d '{"button_label": "umfrage starten", "cdp_port": 9999}' | jq
 ```
 
 ## Bekannte Probleme
 
 1. **Google Login (Passkey)**: Shadow DOM Buttons nicht via CDP/JS automatisierbar. Manuelle Eingabe nötig. Workaround: Einmalig einloggen → Cookies extrahieren → Session persistiert.
 
-2. **Port-Konflikt**: Chrome CDP und FastAPI dürfen nicht auf demselben Port laufen. Chrome: 8888, API: 8889.
+2. **Port-Konflikt**: Chrome CDP und FastAPI dürfen nicht auf demselben Port laufen. Chrome: 9999, API: 8889.
 
 3. **Profil-Kopie**: Chrome verschlüsselt Cookies mit dem Pfad als Key. Kopieren (nicht Symlink!) ist nötig.
 
@@ -568,7 +568,7 @@ curl -s -X POST http://127.0.0.1:8889/survey/click-button \
 - **2026-05-08**: `/dashboard/scan` — 12 Surveys, 2.07€ total rewards
 - **2026-05-08**: `/dashboard/balance` — 2.23€ Balance ausgelesen
 - **2026-05-08**: `/cookies/extract`, `/cookies/inject`, `/cookies/verify` — Session-Persistenz
-- **2026-05-08**: API auf Port 8889, Chrome CDP auf 8888
+- **2026-05-08**: API auf Port 8889, Chrome CDP auf 9999
 - **2026-05-08**: SINator-Style BrowserManager mit Profil-Kopie
 - **2026-05-08**: `--remote-allow-origins=*` ohne Quotes (zsh glob fix)
 - **2026-05-08**: Survey Actions mit CDP WebSocket + Origin Header

@@ -88,7 +88,7 @@ print(r.json())
 
 # 3. Run one survey (demo/proof-of-concept)
 r = httpx.post("http://localhost:8000/survey/run-one",
-               json={"profile_name": "default", "cdp_port": 8888, "max_pages": 20})
+               json={"profile_name": "default", "cdp_port": 9999, "max_pages": 20})
 print(r.json())
 # {"status": "completed", "pages_completed": 5, "elapsed_s": 45.2, ...}
 

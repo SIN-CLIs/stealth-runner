@@ -46,7 +46,7 @@
 ║  │       ▼                                                             │    ║
 ║  │  ┌───────────────────────────────────────────────────────────────┐   │    ║
 ║  │  │  Core Modules                                                 │   │    ║
-║  │  │  ├── BrowserManager  → Chrome starten/stoppen (CDP Port 8888)│   │    ║
+║  │  │  ├── BrowserManager  → Chrome starten/stoppen (CDP Port 9999)│   │    ║
 ║  │  │  ├── CookieManager   → Cookies speichern/laden (JSON)       │   │    ║
 ║  │  │  └── survey_actions  → CDP-WebSocket JS-Execution           │   │    ║
 ║  │  └───────────────────────────────────────────────────────────────┘   │    ║
@@ -54,7 +54,7 @@
 ║  │       ▼                                                             │    ║
 ║  │  ┌───────────────────────────────────────────────────────────────┐   │    ║
 ║  │  │  Chrome Process (Bot-Profile, isoliert)                       │   │    ║
-║  │  │  ├── CDP Port 8888  → DevTools Protocol                      │   │    ║
+║  │  │  ├── CDP Port 9999  → DevTools Protocol                      │   │    ║
 ║  │  │  └── Playwright     → connect_over_cdp()                     │   │    ║
 ║  │  └───────────────────────────────────────────────────────────────┘   │    ║
 ║  └─────────────────────────────────────────────────────────────────────┘    ║
@@ -499,7 +499,7 @@ async def browser_start(req: BrowserStartRequest):
        - Sonst → lese aus Umgebungsvariable BROWSER_HEADLESS ("true"/"false").
        - Sonst → default true (headless).
     3. Rufe bm.start() auf mit Profil, headless, CDP-Port.
-    4. BrowserManager startet Chrome via subprocess mit CDP-Port 8888.
+    4. BrowserManager startet Chrome via subprocess mit CDP-Port 9999.
     5. Warte bis CDP erreichbar ist (Polling auf /json/version).
     6. Verbinde Playwright via connect_over_cdp().
     7. Injiziere Stealth-JS (Bot-Detection-Umgehung).
@@ -538,7 +538,7 @@ async def browser_start(req: BrowserStartRequest):
         POST /browser/start
         {"profile_name": "default", "headless": false}
         → {"status": "success", "profile": "default", "headless": false,
-            "cdp_port": 8888, "message": "Browser started (cold)"}
+            "cdp_port": 9999, "message": "Browser started (cold)"}
     """
     # Versuche Browser zu starten.
     # Jeder Fehler wird als HTTPException(500) zurückgegeben.
@@ -563,7 +563,7 @@ async def browser_start(req: BrowserStartRequest):
         ctx = await bm.start(
             profile_name=req.profile_name,  # Profil-Name (default: "default")
             headless=headless,              # Sichtbar oder unsichtbar
-            cdp_port=req.cdp_port,          # CDP Port (default: 8888)
+            cdp_port=req.cdp_port,          # CDP Port (default: 9999)
         )
         
         # Erstelle Response.
@@ -744,7 +744,7 @@ async def heypiggy_login(req: LoginRequest):
     
     WARUM lsof?
     → lsof (List Open Files) zeigt welcher Prozess auf einem Port hört.
-    → "lsof -i TCP:8888 -t" gibt nur die PID zurück (keine Extra-Output).
+    → "lsof -i TCP:9999 -t" gibt nur die PID zurück (keine Extra-Output).
     → Das ist schneller und zuverlässiger als "ps aux | grep Chrome".
     → WARNUNG: lsof funktioniert nur auf macOS/Linux (nicht Windows).
     
@@ -765,12 +765,12 @@ async def heypiggy_login(req: LoginRequest):
     
     Example:
         POST /services/heypiggy/login
-        {"mode": "cookie", "cdp_port": 8888}
+        {"mode": "cookie", "cdp_port": 9999}
         → {"status": "already_logged_in", "service": "heypiggy", "profile": "default",
             "message": "Session valid via cookies", "details": {"pid": 34852}}
         
         POST /services/heypiggy/login
-        {"mode": "cua", "cdp_port": 8888}
+        {"mode": "cua", "cdp_port": 9999}
         → {"status": "success", "service": "heypiggy", "profile": "default",
             "message": "Login successful", "details": {"pid": 34852, "wid": 56640}}
     """

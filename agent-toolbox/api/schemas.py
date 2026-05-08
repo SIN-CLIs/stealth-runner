@@ -30,9 +30,9 @@
 ║                                                                              ║
 ║  ARCHITEKTUR-ENTSCHEIDUNGEN:                                                 ║
 ║  ────────────────────────────                                                ║
-║  • cdp_port = 8888 DEFAULT: Chrome DevTools Protocol Port.                 ║
-║    NICHT 9222 (Chrome Default) weil 9222 oft von User-Chrome belegt ist.    ║
-║    Wir verwenden 8888 als isolierten Bot-Chrome-Port.                         ║
+  ║  • cdp_port = 9999 DEFAULT: Chrome DevTools Protocol Port.                 ║
+  ║    NICHT 9222 (Chrome Default) weil 9222 oft von User-Chrome belegt ist.    ║
+  ║    Stealth-Runner Standard seit 2026-05-08: 9999 (nicht 9999 alt).           ║
 ║  • profile_name = "default" DEFAULT: Playwright-Profil-Name.                 ║
 ║    Kann auf "heypiggy" oder andere Profile erweitert werden.                  ║
 ║  • Literal[...] statt str: Enforced Enum-Werte bei API-Responses.           ║
@@ -104,7 +104,7 @@ class BrowserStartRequest(BaseModel):
       oder "gmail" hinzukommen für unterschiedliche Cookie-Sets.
     • headless: None = aus .env lesen, True/False = explizit setzen.
       headless=True = unsichtbar (schneller), headless=False = sichtbar (debug).
-    • cdp_port: None = Default 8888 (siehe unten).
+    • cdp_port: None = Default 9999 (siehe unten).
     
     WARUM headless Optional[Bool] statt bool?
     → None erlaubt es, aus der Umgebungsvariable BROWSER_HEADLESS zu lesen.
@@ -127,13 +127,13 @@ class BrowserStartRequest(BaseModel):
     )
     
     # cdp_port: Chrome DevTools Protocol Port.
-    # WARUM default=None statt 8888?
+    # WARUM default=None statt 9999?
     # → None bedeutet "Default des BrowserManagers verwenden".
-    # → Der BrowserManager hat 8888 als Default (siehe browser_manager.py).
+    # → Der BrowserManager hat 9999 als Default (siehe browser_manager.py).
     # → So haben wir EINEN zentralen Default, nicht verteilt über mehrere Dateien.
     cdp_port: Optional[int] = Field(
         default=None,
-        description="CDP debugging port. None = use BrowserManager default (8888)"
+        description="CDP debugging port. None = use BrowserManager default (9999)"
     )
 
 
@@ -286,7 +286,7 @@ class LoginRequest(BaseModel):
     • pid: Bestehende Chrome PID. Wenn gesetzt, wird KEIN neuer Chrome gestartet.
       Das ist wichtig für Cookie-basierte Re-Login (Session persistieren).
     • cdp_port: Port für CDP-Kommunikation. MUSS mit Chrome übereinstimmen.
-      Wenn Chrome auf 8888 läuft aber Request sendet 9223 → Verbindung fehlschlägt.
+      Wenn Chrome auf 9999 läuft aber Request sendet 9223 → Verbindung fehlschlägt.
     
     WARUM timeout_ms default=30000?
     → Google OAuth kann langsam sein (Redirects, 2FA-Fenster, etc.).
@@ -326,10 +326,11 @@ class LoginRequest(BaseModel):
     )
     
     # cdp_port: CDP Port.
-    # WARUM default=8888? Siehe BrowserStartRequest.cdp_port Erklärung.
+    # WARUM default=9999? Stealth-Runner Standard seit 2026-05-08.
+    # NICHT 9999 (alt, deprecated). NICHT 9222 (User-Chrome Konflikt).
     # MUSS mit tatsächlichem Chrome-Port übereinstimmen!
     cdp_port: int = Field(
-        default=8888,
+        default=9999,
         description="CDP port for Chrome communication (must match actual Chrome port)"
     )
 
@@ -438,9 +439,9 @@ class SurveyClickCardRequest(BaseModel):
     )
     
     # cdp_port: CDP Port.
-    # WARUM 8888? Siehe BrowserStartRequest Erklärung.
+    # WARUM 9999? Siehe BrowserStartRequest Erklärung.
     cdp_port: int = Field(
-        default=8888,
+        default=9999,
         description="CDP port for Chrome communication"
     )
     
@@ -529,12 +530,12 @@ class SurveyGetModalRequest(BaseModel):
     
     WARUM brauchen wir einen eigenen Request-Body für GET?
     → FastAPI erlaubt GET mit Request-Body (nicht standard REST, aber praktisch).
-    → Alternative: Query-Parameter (cdp_port=8888&profile=default).
+    → Alternative: Query-Parameter (cdp_port=9999&profile=default).
     → Wir verwenden Body für Konsistenz mit anderen Endpoints.
     """
     # cdp_port: CDP Port für Chrome-Verbindung.
     cdp_port: int = Field(
-        default=8888,
+        default=9999,
         description="CDP port for Chrome communication"
     )
     
@@ -762,7 +763,7 @@ class SurveyClickButtonRequest(BaseModel):
     
     # cdp_port: CDP Port.
     cdp_port: int = Field(
-        default=8888,
+        default=9999,
         description="CDP port for Chrome communication"
     )
     
@@ -879,7 +880,7 @@ class SurveySelectOptionRequest(BaseModel):
     
     # cdp_port: CDP Port.
     cdp_port: int = Field(
-        default=8888,
+        default=9999,
         description="CDP port for Chrome communication"
     )
     
@@ -989,7 +990,7 @@ class SurveyFillTextRequest(BaseModel):
     
     # cdp_port: CDP Port.
     cdp_port: int = Field(
-        default=8888,
+        default=9999,
         description="CDP port for Chrome communication"
     )
     
@@ -1088,7 +1089,7 @@ class SurveyRunOneRequest(BaseModel):
     
     # cdp_port: CDP Port.
     cdp_port: int = Field(
-        default=8888,
+        default=9999,
         description="CDP port for Chrome communication"
     )
     
@@ -1268,7 +1269,7 @@ class DashboardScanRequest(BaseModel):
     """
     # cdp_port: CDP Port.
     cdp_port: int = Field(
-        default=8888,
+        default=9999,
         description="CDP port for Chrome communication"
     )
 
@@ -1345,7 +1346,7 @@ class BalanceRequest(BaseModel):
     """
     # cdp_port: CDP Port.
     cdp_port: int = Field(
-        default=8888,
+        default=9999,
         description="CDP port for Chrome communication"
     )
 
@@ -2015,7 +2016,7 @@ class WorkflowRunBestRequest(BaseModel):
     → "efficiency": Wähle Survey mit bestem Reward/Dauer-Verhältnis.
     → "duration": Wähle kürzeste Survey (schnell fertig).
     """
-    cdp_port: int = Field(default=8888, description="CDP port for Chrome communication")
+    cdp_port: int = Field(default=9999, description="CDP port for Chrome communication. Stealth-Runner standard: 9999")
     max_reward_filter: float = Field(default=0.0, description="Minimum reward in EUR to consider (0.0 = no filter)")
     strategy: Literal["reward", "efficiency", "duration"] = Field(default="efficiency", description="Survey selection strategy")
 

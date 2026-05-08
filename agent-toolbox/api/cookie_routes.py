@@ -82,7 +82,7 @@ from fastapi import APIRouter, HTTPException
 # BrowserManager: Chrome-Verwaltung (Singleton, SINator-Style).
 # WARUM? - Wir brauchen einen laufenden Chrome um Cookies zu extrahieren/injizieren.
 #        - BrowserManager.start() startet/verwendet Chrome (oder wiederverwendet bestehenden).
-#        - get_browser_manager() gibt Singleton-Instanz zurück (Port 8888).
+#        - get_browser_manager() gibt Singleton-Instanz zurück (Port 9999).
 from core.browser_manager import get_browser_manager
 
 # CookieManager: Cookie-Verwaltung (Singleton).
@@ -226,7 +226,7 @@ async def extract_cookies(request: CookieExtractRequest):
     # SCHRITT 2: BrowserManager holen
     # ═══════════════════════════════════════════════════════════════════════
     
-    # Singleton-Instanz des BrowserManagers (Port 8888, Profile 73).
+    # Singleton-Instanz des BrowserManagers (Port 9999, Profile 73).
     # WARUM Singleton? Es gibt nur EINEN Chrome-Prozess (keine Race Conditions).
     browser_mgr = get_browser_manager()
     

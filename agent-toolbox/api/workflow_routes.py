@@ -272,7 +272,7 @@ async def run_best(req: WorkflowRunBestRequest):
     
     Args:
         req: WorkflowRunBestRequest
-            - cdp_port: CDP Port (default: 8888).
+            - cdp_port: CDP Port (default: 9999).
             - max_reward_filter: Minimaler Reward (default: 0.0 = kein Filter).
             - strategy: Auswahlstrategie (default: "efficiency").
     

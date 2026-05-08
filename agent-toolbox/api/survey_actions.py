@@ -161,7 +161,7 @@ def _ws_origin(ws_url: str) -> str:
     
     LÖSUNG:
     Wir leiten den Origin aus der ws:// URL ab:
-    - ws://127.0.0.1:8888/devtools/page/ABC → http://127.0.0.1:8888
+    - ws://127.0.0.1:9999/devtools/page/ABC → http://127.0.0.1:9999
     - wss://example.com:443/ws → https://example.com:443
     
     WARUM manuell berechnen?
@@ -174,14 +174,14 @@ def _ws_origin(ws_url: str) -> str:
     → scheme: ws:// → http://, wss:// → https:// (ws ersetzt durch http).
     
     Args:
-        ws_url: WebSocket URL (z.B. "ws://127.0.0.1:8888/devtools/page/ABC123").
+        ws_url: WebSocket URL (z.B. "ws://127.0.0.1:9999/devtools/page/ABC123").
     
     Returns:
-        str: HTTP Origin (z.B. "http://127.0.0.1:8888").
+        str: HTTP Origin (z.B. "http://127.0.0.1:9999").
     
     Example:
-        >>> _ws_origin("ws://127.0.0.1:8888/devtools/page/ABC")
-        "http://127.0.0.1:8888"
+        >>> _ws_origin("ws://127.0.0.1:9999/devtools/page/ABC")
+        "http://127.0.0.1:9999"
         >>> _ws_origin("wss://example.com:443/ws")
         "https://example.com:443"
     """
@@ -197,8 +197,8 @@ def _ws_origin(ws_url: str) -> str:
     # "wss".replace("ws", "http") → "http" + "s" = "https".
     scheme = parsed.scheme.replace("ws", "http")
     
-    # Origin = scheme://netloc (z.B. http://127.0.0.1:8888).
-    # netloc enthält Host + Port (z.B. "127.0.0.1:8888").
+    # Origin = scheme://netloc (z.B. http://127.0.0.1:9999).
+    # netloc enthält Host + Port (z.B. "127.0.0.1:9999").
     return f"{scheme}://{parsed.netloc}"
 
 
@@ -250,18 +250,18 @@ def get_dashboard_ws(port: int) -> Optional[str]:
     → Kein Crash, kein Stack-Trace an Client.
     
     Args:
-        port: CDP Port (default: 8888).
+        port: CDP Port (default: 9999).
     
     Returns:
-        Optional[str]: WebSocket URL (z.B. "ws://127.0.0.1:8888/devtools/page/ABC")
+        Optional[str]: WebSocket URL (z.B. "ws://127.0.0.1:9999/devtools/page/ABC")
         oder None wenn kein Dashboard-Tab gefunden.
     
     Raises:
         None (alle Exceptions werden abgefangen).
     
     Example:
-        >>> get_dashboard_ws(8888)
-        "ws://127.0.0.1:8888/devtools/page/ABC123DEF456"
+        >>> get_dashboard_ws(9999)
+        "ws://127.0.0.1:9999/devtools/page/ABC123DEF456"
         >>> get_dashboard_ws(9999)  # Kein Chrome auf 9999
         None
     """
@@ -334,7 +334,7 @@ def ws_eval(ws_url: str, js: str, timeout: int = 10) -> Optional[dict]:
     → Chrome 111+ erfordert Origin Header für WebSocket-Verbindungen.
     → Ohne Origin → 403 Forbidden.
     → Wir berechnen den Origin aus der ws_url via _ws_origin().
-    → Header-Format: ["Origin: http://127.0.0.1:8888"].
+    → Header-Format: ["Origin: http://127.0.0.1:9999"].
     
     WARUM Runtime.evaluate?
     → CDP-Befehl um JavaScript im Browser-Kontext auszuführen.
@@ -359,7 +359,7 @@ def ws_eval(ws_url: str, js: str, timeout: int = 10) -> Optional[dict]:
     → Der Aufrufer prüft auf None → gibt Fehler-Response zurück.
     
     Args:
-        ws_url: WebSocket Debugger URL (z.B. "ws://127.0.0.1:8888/devtools/page/ABC").
+        ws_url: WebSocket Debugger URL (z.B. "ws://127.0.0.1:9999/devtools/page/ABC").
         js: JavaScript Code (MUST return a value!).
             Beispiel: "document.title" (gibt String zurück).
             Beispiel: "document.querySelector('button').click(); return 'clicked';"
@@ -376,7 +376,7 @@ def ws_eval(ws_url: str, js: str, timeout: int = 10) -> Optional[dict]:
         None (alle Exceptions werden abgefangen).
     
     Example:
-        >>> ws_eval("ws://127.0.0.1:8888/devtools/page/ABC", "document.title")
+        >>> ws_eval("ws://127.0.0.1:9999/devtools/page/ABC", "document.title")
         {"value": "HeyPiggy Dashboard", "type": "string"}
         >>> ws_eval("ws://...", "1 + 1")
         {"value": 2, "type": "number"}
@@ -620,7 +620,7 @@ def extract_elements_from_page(ws_url: str) -> dict:
         Bei Fehler: {"elements": [], "text": "", "title": "", "url": ""}.
     
     Example:
-        >>> extract_elements_from_page("ws://127.0.0.1:8888/devtools/page/ABC")
+        >>> extract_elements_from_page("ws://127.0.0.1:9999/devtools/page/ABC")
         {
             "elements": [
                 {"ref": "@r0", "role": "radio", "text": "Männlich", ...},
@@ -891,7 +891,7 @@ async def click_card(req: SurveyClickCardRequest):
     Args:
         req: SurveyClickCardRequest
             - survey_id: Optional. Wenn None → erste verfügbare Survey.
-            - cdp_port: CDP Port für Chrome Verbindung (default: 8888).
+            - cdp_port: CDP Port für Chrome Verbindung (default: 9999).
     
     Returns:
         SurveyClickCardResponse:
@@ -903,7 +903,7 @@ async def click_card(req: SurveyClickCardRequest):
     
     Example:
         POST /survey/click-card
-        {"survey_id": null, "cdp_port": 8888}
+        {"survey_id": null, "cdp_port": 9999}
         → {"status": "success", "survey_id": "first_available",
             "modal_visible": true, "modal_text": "...",
             "modal_buttons": ["Umfrage starten", "Schließen"]}
@@ -1118,7 +1118,7 @@ async def get_modal(req: SurveyGetModalRequest):
     
     WARUM Request-Body bei GET?
     → FastAPI erlaubt GET mit Request-Body (nicht standard REST, aber praktisch).
-    → Alternative: Query-Parameter (cdp_port=8888&profile=default).
+    → Alternative: Query-Parameter (cdp_port=9999&profile=default).
     → Wir verwenden Body für Konsistenz mit anderen Endpoints (alle POST).
     → WARNUNG: Manche Proxies/Clients blockieren GET mit Body.
     → Für maximale Kompatibilität → Query-Parameter verwenden.
@@ -1144,7 +1144,7 @@ async def get_modal(req: SurveyGetModalRequest):
     
     Args:
         req: SurveyGetModalRequest
-            - cdp_port: CDP Port für Chrome Verbindung (default: 8888).
+            - cdp_port: CDP Port für Chrome Verbindung (default: 9999).
     
     Returns:
         SurveyGetModalResponse:
@@ -1158,7 +1158,7 @@ async def get_modal(req: SurveyGetModalRequest):
     
     Example:
         GET /survey/modal
-        {"cdp_port": 8888}
+        {"cdp_port": 9999}
         → {"status": "success", "modal_visible": false,
             "elements": [{"ref": "@r0", "role": "radio", "text": "Männlich"}, ...],
             "text": "Seite 3 von 10...", "provider": "qualtrics", "progress": "3/10"}
@@ -1361,7 +1361,7 @@ async def click_button(req: SurveyClickButtonRequest):
     Args:
         req: SurveyClickButtonRequest
             - button_label: Text des Buttons (z.B. "Weiter", "Umfrage starten").
-            - cdp_port: CDP Port (default: 8888).
+            - cdp_port: CDP Port (default: 9999).
             - timeout_ms: Wartezeit nach Klick (default: 5000ms).
     
     Returns:
@@ -1372,7 +1372,7 @@ async def click_button(req: SurveyClickButtonRequest):
     
     Example:
         POST /survey/click-button
-        {"button_label": "Weiter", "cdp_port": 8888, "timeout_ms": 5000}
+        {"button_label": "Weiter", "cdp_port": 9999, "timeout_ms": 5000}
         → {"status": "success", "button_label": "Weiter",
             "page_changed": true, "new_text": "Seite 4 von 10..."}
     """
@@ -1581,7 +1581,7 @@ async def select_option(req: SurveySelectOptionRequest):
     Args:
         req: SurveySelectOptionRequest
             - option_text: Text der Option (z.B. "Männlich", "Deutschland").
-            - cdp_port: CDP Port (default: 8888).
+            - cdp_port: CDP Port (default: 9999).
             - wait_after_ms: Wartezeit nach Auswahl (default: 1000ms).
     
     Returns:
@@ -1591,7 +1591,7 @@ async def select_option(req: SurveySelectOptionRequest):
     
     Example:
         POST /survey/select-option
-        {"option_text": "Männlich", "cdp_port": 8888}
+        {"option_text": "Männlich", "cdp_port": 9999}
         → {"status": "success", "option_text": "Männlich", "selected": true}
     """
     # ═══════════════════════════════════════════════════════════════════════
@@ -1765,7 +1765,7 @@ async def fill_text(req: SurveyFillTextRequest):
         req: SurveyFillTextRequest
             - input_label: Label/Name/ID des Feldes (z.B. "Alter", "E-Mail").
             - value: Einzutragender Wert (z.B. "32", "test@example.com").
-            - cdp_port: CDP Port (default: 8888).
+            - cdp_port: CDP Port (default: 9999).
     
     Returns:
         SurveyFillTextResponse:
@@ -1774,7 +1774,7 @@ async def fill_text(req: SurveyFillTextRequest):
     
     Example:
         POST /survey/fill-text
-        {"input_label": "Alter", "value": "32", "cdp_port": 8888}
+        {"input_label": "Alter", "value": "32", "cdp_port": 9999}
         → {"status": "success", "input_label": "Alter", "value": "32"}
     """
     # ═══════════════════════════════════════════════════════════════════════
@@ -1992,7 +1992,7 @@ async def run_one_survey(req: SurveyRunOneRequest):
     Args:
         req: SurveyRunOneRequest
             - survey_id: Optional. Wenn None → erste verfügbare Survey.
-            - cdp_port: CDP Port (default: 8888).
+            - cdp_port: CDP Port (default: 9999).
             - max_pages: Maximale Anzahl Seiten (default: 20).
     
     Returns:
@@ -2005,7 +2005,7 @@ async def run_one_survey(req: SurveyRunOneRequest):
     
     Example:
         POST /survey/run-one
-        {"survey_id": null, "cdp_port": 8888, "max_pages": 20}
+        {"survey_id": null, "cdp_port": 9999, "max_pages": 20}
         → {"status": "completed", "pages_completed": 5, "elapsed_s": 45.2}
     """
     # Zeit-Messung für Performance-Monitoring.
