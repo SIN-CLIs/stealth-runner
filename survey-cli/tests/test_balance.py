@@ -38,7 +38,7 @@ class TestBalanceTiming(unittest.TestCase):
     @patch("survey.runner.chrome.find_bot_tabs")
     @patch("survey.runner.chrome.get_details_url")
     @patch("survey.runner.scan_dashboard")
-    @patch("survey.runner.read_balance")
+    @patch("survey.runner.read_balance_with_backoff")
     def test_balance_read_before_tab_creation(self, mock_read_balance, mock_scan,
                                                mock_details, mock_tabs, mock_dash_ws):
         """balance_before is read BEFORE run_survey opens the survey tab."""
@@ -76,7 +76,7 @@ class TestBalanceGracefulFailures(unittest.TestCase):
 
     @patch("survey.runner.chrome.find_dashboard_ws")
     @patch("survey.runner.chrome.find_bot_tabs")
-    @patch("survey.runner.read_balance")
+    @patch("survey.runner.read_balance_with_backoff")
     def test_earned_zero_when_balance_fails(self, mock_read_balance, mock_tabs,
                                               mock_dash_ws):
         """When balance_before or balance_after fails, earned = 0."""
@@ -95,7 +95,7 @@ class TestBalanceGracefulFailures(unittest.TestCase):
 
     @patch("survey.runner.chrome.find_dashboard_ws")
     @patch("survey.runner.chrome.find_bot_tabs")
-    @patch("survey.runner.read_balance")
+    @patch("survey.runner.read_balance_with_backoff")
     def test_earned_zero_on_screen_out(self, mock_read_balance, mock_tabs,
                                         mock_dash_ws):
         """Screen-out should log 0 earned."""

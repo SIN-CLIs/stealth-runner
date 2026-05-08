@@ -186,6 +186,26 @@ def check_repo(repo_path: Path) -> dict:
 
 
 def main():
+    """
+    ================================================================================
+    Doc-Health Checker für alle 23 Stealth-Suite Repos. Prüft Existenz der 14
+    Pflichtdateien und UPPER-case violations in jedem Repo.
+
+    WARUM existiert diese Funktion?
+      Agents MUSS vor jeder Aktion sinrules.md, brain.md, fix.md etc. lesen.
+      Diese Funktion validiert dass alle Pflichtdateien existieren und korrekt
+      benannt sind. Verhindert "Lügen-Code" durch fehlende Dokumentation.
+      Unterstützt --json für programmatische Auswertung, --repo für Single-Repo-Check,
+      --violations für Upper-Case-Only-Modus.
+
+    Returns:
+      None: Printet Ergebnisse nach stdout (human-readable oder JSON).
+
+    Side Effects:
+      - Keine Datei-Modificationen (read-only check)
+      - Exit-Code 0 bei Success, 1 bei Fehlern (implicit via sys.exit)
+    ================================================================================
+    """
     json_mode = "--json" in sys.argv
     repo_filter = None
     for i, arg in enumerate(sys.argv):

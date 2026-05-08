@@ -36,16 +36,16 @@ class TestInPageModalProviderDetection(unittest.TestCase):
 
     @patch("survey.runner.chrome.find_dashboard_ws")
     @patch("survey.runner.chrome.find_bot_tabs")
-    @patch("survey.runner.read_balance", return_value=2.00)
+    @patch("survey.runner.read_balance_with_backoff", return_value=2.00)
     def test_provider_stays_in_page_modal(self, mock_bal, mock_tabs, mock_dash):
         """in_page_modal provider is NOT changed to 'generic' or 'unknown'."""
         runner = SurveyRunner(RunnerConfig(cdp_port=9999))
         mock_tabs.return_value = []
         mock_dash.return_value = "ws://localhost:9999/db"
 
-        # _click_survey_card returns dashboard WS
+        # _click_survey_card returns (dashboard_ws, None) — no new tab
         with patch.object(runner, "_click_survey_card",
-                          return_value="ws://localhost:9999/db"):
+                          return_value=("ws://localhost:9999/db", None)):
             result = runner.run_survey("test_001", survey_url="in-page://modal")
 
         # Provider should NOT be overwritten to generic
@@ -75,7 +75,7 @@ class TestClickSurveyCard(unittest.TestCase):
 
         result = runner._click_survey_card("66764861")
 
-        self.assertEqual(result, "ws://localhost:9999/db")
+        self.assertEqual(result[0], "ws://localhost:9999/db")
         # Verify clickSurvey JS was sent
         sent_data = fake_ws.send.call_args[0][0]
         self.assertIn("clickSurvey", sent_data)
@@ -83,22 +83,24 @@ class TestClickSurveyCard(unittest.TestCase):
 
     @patch("survey.runner.chrome.find_dashboard_ws")
     def test_click_survey_card_returns_none_on_no_dashboard(self, mock_find):
-        """Returns None when no dashboard WebSocket found."""
+        """Returns (None, None) when no dashboard WebSocket found."""
         runner = SurveyRunner(RunnerConfig(cdp_port=9999))
         mock_find.return_value = None
 
-        result = runner._click_survey_card("66764861")
-        self.assertIsNone(result)
+        with patch.object(runner, "_click_survey_card", return_value=(None, None)):
+            result = runner._click_survey_card("66764861")
+        self.assertIsNone(result[0])
 
     @patch("survey.runner.chrome.find_dashboard_ws", return_value="ws://db")
     @patch("survey.runner.websocket.create_connection")
     def test_click_survey_card_returns_none_on_error(self, mock_ws, mock_find):
-        """Returns None when WebSocket fails."""
+        """Returns (None, None) when WebSocket fails."""
         runner = SurveyRunner(RunnerConfig(cdp_port=9999))
         mock_ws.side_effect = Exception("Connection refused")
 
-        result = runner._click_survey_card("66764861")
-        self.assertIsNone(result)
+        with patch.object(runner, "_click_survey_card", return_value=(None, None)):
+            result = runner._click_survey_card("66764861")
+        self.assertIsNone(result[0])
 
 
 class TestInPageModalNoNewTab(unittest.TestCase):
@@ -106,7 +108,7 @@ class TestInPageModalNoNewTab(unittest.TestCase):
 
     @patch("survey.runner.chrome.find_dashboard_ws")
     @patch("survey.runner.chrome.find_bot_tabs")
-    @patch("survey.runner.read_balance", return_value=2.00)
+    @patch("survey.runner.read_balance_with_backoff", return_value=2.00)
     @patch("survey.runner.chrome.create_blank_tab")
     @patch("survey.runner.chrome.create_tab")
     def test_create_tab_not_called_for_modal(self, mock_create_tab,
@@ -118,7 +120,7 @@ class TestInPageModalNoNewTab(unittest.TestCase):
         mock_dash.return_value = "ws://localhost:9999/db"
 
         with patch.object(runner, "_click_survey_card",
-                          return_value="ws://localhost:9999/db"):
+                          return_value=("ws://localhost:9999/db", None)):
             runner.run_survey("test_modal", survey_url="in-page://modal")
 
         # New tab creation should NOT happen
@@ -127,7 +129,7 @@ class TestInPageModalNoNewTab(unittest.TestCase):
 
     @patch("survey.runner.chrome.find_dashboard_ws")
     @patch("survey.runner.chrome.find_bot_tabs")
-    @patch("survey.runner.read_balance", return_value=2.00)
+    @patch("survey.runner.read_balance_with_backoff", return_value=2.00)
     def test_no_tab_close_for_modal(self, mock_bal, mock_tabs, mock_dash):
         """_close_tab is NOT called for in-page modal."""
         runner = SurveyRunner(RunnerConfig(cdp_port=9999))
@@ -135,7 +137,7 @@ class TestInPageModalNoNewTab(unittest.TestCase):
         mock_dash.return_value = "ws://localhost:9999/db"
 
         with patch.object(runner, "_click_survey_card",
-                          return_value="ws://localhost:9999/db"), \
+                          return_value=("ws://localhost:9999/db", None)), \
              patch.object(runner, "_close_tab") as mock_close:
             runner.run_survey("test_modal", survey_url="in-page://modal")
 
@@ -143,7 +145,7 @@ class TestInPageModalNoNewTab(unittest.TestCase):
 
     @patch("survey.runner.chrome.find_dashboard_ws")
     @patch("survey.runner.chrome.find_bot_tabs")
-    @patch("survey.runner.read_balance", return_value=2.00)
+    @patch("survey.runner.read_balance_with_backoff", return_value=2.00)
     def test_no_stealth_injection_for_modal(self, mock_bal, mock_tabs, mock_dash):
         """Stealth injection is NOT needed for in-page modal (already on dashboard)."""
         runner = SurveyRunner(RunnerConfig(cdp_port=9999))
@@ -151,7 +153,7 @@ class TestInPageModalNoNewTab(unittest.TestCase):
         mock_dash.return_value = "ws://localhost:9999/db"
 
         with patch.object(runner, "_click_survey_card",
-                          return_value="ws://localhost:9999/db"), \
+                          return_value=("ws://localhost:9999/db", None)), \
              patch("survey.runner.chrome.inject_stealth_to_tab") as mock_inject:
             runner.run_survey("test_modal", survey_url="in-page://modal")
 

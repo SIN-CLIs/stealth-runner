@@ -92,6 +92,18 @@ class TestProviderDetection(unittest.TestCase):
 class TestCpxApi(unittest.TestCase):
     """Test _get_details_url and _get_survey_url."""
 
+    def setUp(self):
+        self._env = patch.dict(os.environ, {
+            "CPX_APP_ID": "test_app",
+            "CPX_EXT_USER_ID": "test_user",
+            "CPX_SECURE_HASH": "test_hash",
+            "CPX_EMAIL": "test@example.invalid",
+        })
+        self._env.start()
+
+    def tearDown(self):
+        self._env.stop()
+
     def test_get_details_url_returns_string(self):
         from tools.tool_open_survey import _get_details_url
         url = _get_details_url()
@@ -101,8 +113,8 @@ class TestCpxApi(unittest.TestCase):
     def test_get_details_url_includes_params(self):
         from tools.tool_open_survey import _get_details_url
         url = _get_details_url()
-        self.assertIn("app_id=11644", url)
-        self.assertIn("ext_user_id=2525530", url)
+        self.assertIn("app_id=test_app", url)
+        self.assertIn("ext_user_id=test_user", url)
 
 
 class TestCdpHelpers(unittest.TestCase):

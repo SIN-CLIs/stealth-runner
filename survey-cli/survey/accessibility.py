@@ -106,34 +106,14 @@ def grant_accessibility():
         return False
 
 
-def launch_chrome_with_accessibility(port=9999, url="https://www.heypiggy.com/?page=dashboard"):
-    """Launch Chrome with BOTH --force-renderer-accessibility AND --remote-allow-origins="*".
-
-    ⚠️ This is the ONLY valid way to launch Chrome. Never use playstealth.
-    """
-    import subprocess as sp
-    profile_dir = f"/tmp/heypiggy-new-{int(time.time())}"
-    cmd = [
-        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-        f"--remote-debugging-port={port}",
-        "--remote-allow-origins=*",
-        "--force-renderer-accessibility",
-        "--no-first-run",
-        "--no-default-browser-check",
-        f"--user-data-dir={profile_dir}",
-        url,
-    ]
-    try:
-        sp.Popen(cmd, stdout=sp.DEVNULL, stderr=sp.DEVNULL)
-        print(f"[ACCESS] Chrome launched: port={port}, accessibility=ON, cdp=ON")
-        time.sleep(8)
-        return True
-    except Exception as e:
-        print(f"[ACCESS] Chrome launch failed: {e}")
-        return False
+def launch_chrome_with_accessibility(port=9223, url="https://www.heypiggy.com/?page=dashboard"):
+    """DEPRECATED: Use ChromeLauncher.launch_and_verify() instead."""
+    from survey.chrome import ChromeLauncher
+    result = ChromeLauncher(port=port).launch_and_verify(url=url)
+    return result.get("ok", False)
 
 
-def ensure_accessibility(port=9999, url="https://www.heypiggy.com/?page=dashboard"):
+def ensure_accessibility(port=9223, url="https://www.heypiggy.com/?page=dashboard"):
     """Ensure Chrome is running with Accessibility enabled.
 
     Call this ONCE at daemon startup. Will restart Chrome if needed
@@ -169,7 +149,8 @@ def ensure_accessibility(port=9999, url="https://www.heypiggy.com/?page=dashboar
                     pass
     time.sleep(3)
 
-    launch_chrome_with_accessibility(port=port, url=url)
+    from survey.chrome import ChromeLauncher
+    ChromeLauncher(port=port).launch_and_verify(url=url)
 
     # Wait and re-check
     time.sleep(8)

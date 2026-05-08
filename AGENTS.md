@@ -2,6 +2,34 @@
 content: |
   # AGENTS.md - Stealth-Runner NEXT-GEN (2026-05-06)
   
+  ## ⚠️⚠️⚠️ CHROME START CONFIG — ZEILE 1 — NIEMALS ÄNDERN — NIEMALS VERGESSEN ⚠️⚠️⚠️
+  
+  ```bash
+  PROFILE="/tmp/heypiggy-new-$(date +%s)" && mkdir -p "$PROFILE"
+  /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
+    --remote-debugging-port=9999 \
+    --remote-allow-origins="*" \
+    --force-renderer-accessibility \
+    --no-first-run \
+    --user-data-dir="$PROFILE" \
+    "https://www.heypiggy.com/?page=dashboard" &>/dev/null &
+  ```
+  
+  | Flag | Wert | Warum |
+  |------|------|-------|
+  | `--remote-debugging-port` | **9999** | CDP Port — IMMER 9999 |
+  | `--remote-allow-origins` | `"*"` | MIT Quotes — sonst 403 |
+  | `--force-renderer-accessibility` | required | CUA AX-Tree — sonst LEER |
+  | `--no-first-run` | required | Blockiert First-Run-Dialog |
+  | `--user-data-dir` | `/tmp/heypiggy-new-$(date +%s)` | Timestamped — ISOLATED |
+  
+  **BANNED:**
+  - `pkill -f "Google Chrome"` = tötet USER Chrome
+  - `--user-data-dir=/tmp/heypiggy-bot` FIXED = korruptiert
+  - Port 8888 direkt = SINator-method, nicht stealth-runner
+  
+  ---
+  
   **-< [sinrules.md](sinrules.md) ist das zentrale Regelwerk. Alle Golden Rules sind DORT.**
   **-< [brain.md](brain.md) dokumentiert die Architektur im Detail.**
   **-< [registry.md](registry.md) ist der Master Command Index.**

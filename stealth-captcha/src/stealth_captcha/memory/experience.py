@@ -100,6 +100,21 @@ class ExperienceMemory:
 
     @property
     def db_path(self) -> Path:
+        """
+        ================================================================================
+        Pfad zur SQLite-Datenbankdatei für Experience-Memory.
+
+        Liefert den konfigurierten db_path aus den MemorySettings.
+        Wird von init() genutzt um das Verzeichnis zu erstellen und
+        die Datenbankverbindung zu öffnen.
+
+        Returns:
+          Path: Absoluter Pfad zur .sqlite Datei.
+
+        Side Effects:
+          - Keine (reine Property)
+        ================================================================================
+        """
         return self.settings.db_path
 
     async def init(self) -> None:
@@ -238,4 +253,19 @@ class ExperienceMemory:
 
     @staticmethod
     def now() -> int:
+        """
+        ================================================================================
+        Aktuelle Unix-Zeit als Integer (Sekunden seit Epoch).
+
+        Wird als Zeitstempel für TrajectoryRecord entries genutzt.
+        Statisch damit sie auch ohne Instanz aufrufbar ist (z.B. in
+        Record-Konstruktoren).
+
+        Returns:
+          int: Sekunden seit 1970-01-01 00:00:00 UTC.
+
+        Side Effects:
+          - Keine (deterministisch für gleichen Zeitpunkt)
+        ================================================================================
+        """
         return int(time.time())

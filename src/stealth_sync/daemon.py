@@ -7,8 +7,18 @@ The daemon uses:
   - OpenCodeDBPoller: Polls the OpenCode SQLite database
   - SemanticAnalyzer: Classifies sessions using NVIDIA NIM API
   - OutputGenerator: Creates YAML/JSON documentation units
-  - APScheduler: Handles periodic polling tasks
+   - APScheduler: Handles periodic polling tasks
 """
+
+# BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
+#   ❌ playstealth launch — setzt NICHT --force-renderer-accessibility
+#   ❌ webauto-nodriver — ABSOLUT BANNED
+#   ❌ cua-driver click (raw index) — instabil
+#   ❌ --remote-allow-origins=* (ohne Quotes) — zsh glob expansion
+#   ❌ /tmp/heypiggy-bot (fixed profile) — korruptiert nach Neustart
+#   ❌ Hardcoded PIDs — dynamisch, niemals hardcodieren
+#   ❌ pkill -f "Google Chrome" — tötet USER Chrome
+#   ❌ killall Google Chrome — tötet ALLE Chrome
 
 import signal
 import sys

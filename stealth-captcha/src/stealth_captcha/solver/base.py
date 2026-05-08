@@ -32,6 +32,24 @@ from stealth_captcha.cdp.client import CDPSession
 
 
 class SolveOutcome(Enum):
+    """
+    ================================================================================
+    Ergebnis eines Captcha-Solve-Versuchs.
+
+    Wird von allen Solver-Backends (Text, GeeTest, Lemin) zurückgegeben
+    um den Outcome einheitlich zu klassifizieren.
+
+    Werte:
+      SUCCESS  - Captcha erfolgreich gelöst
+      FAILURE  - Lösung fehlgeschlagen (falsches Ergebnis, Timeout, etc.)
+      UNKNOWN  - Status nicht bestimmbar (z.B. Netzwerkfehler ohne Retry)
+
+    Nutzung:
+      result = await solver.solve(...)
+      if result.outcome == SolveOutcome.SUCCESS:
+          # Weiter mit Survey
+    ================================================================================
+    """
     SUCCESS = "success"
     FAILURE = "failure"
     UNKNOWN = "unknown"

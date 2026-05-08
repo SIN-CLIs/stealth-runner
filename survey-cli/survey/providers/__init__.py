@@ -1,25 +1,48 @@
-"""Provider-specific survey patterns.
+"""Provider registry for survey-specific adapters."""
 
-WARUM: Jeder Survey-Provider (Qualtrics, Toluna, Strat7, PureSpectrum,
-Cint, Samplicio, etc.) nutzt unterschiedliche DOM-Strukturen und Events.
-Ein generischer Solver schlägt bei jedem Provider fehl. Dieses Paket
-kapselt provider-spezifische Selektoren, Commands und Completion-Marker.
+from __future__ import annotations
 
-ARCHITEKTUR: Jedes Modul exportiert drei Funktionen:
-  - detect(page_text): bool — prüft ob dieser Provider aktiv ist
-  - get_actions(snapshot, profile, provider): list — NEMO-kompatible Actions
-  - is_completed(page_text): bool — prüft Fertigstellungs-Marker
-Keine Klassen, kein State — reine Funktionen und Datenstrukturen.
-Neue Provider werden als neues Modul hinzugefügt.
+from importlib import import_module
+from typing import Dict
 
-BANNED METHODS — NIEMALS VERWENDEN:
-❌ playstealth launch
-❌ webauto-nodriver — ABSOLUT BANNED
-❌ cua-driver click (raw index)
-❌ --remote-allow-origins=* (ohne Quotes)
-❌ /tmp/heypiggy-bot (fixed profile)
-❌ Hardcoded PIDs
-❌ pkill -f "Google Chrome"
-❌ killall Google Chrome
-❌ skylight-cli click --element-index
-"""
+from .base import CompletionState, ProviderAdapter
+from .generic import GenericAdapter
+
+
+_ADAPTERS = {
+    "qualtrics": ("survey.providers.qualtrics", "QualtricsAdapter"),
+    "toluna": ("survey.providers.toluna", "TolunaAdapter"),
+    "tolunastart": ("survey.providers.toluna", "TolunaAdapter"),
+    "strat7": ("survey.providers.strat7", "Strat7Adapter"),
+    "purespectrum": ("survey.providers.purespectrum", "PureSpectrumAdapter"),
+}
+
+
+def get_provider_adapter(provider: str) -> ProviderAdapter:
+    """Return the adapter for provider, falling back to GenericAdapter."""
+    key = (provider or "generic").lower()
+    target = _ADAPTERS.get(key)
+    if not target:
+        return GenericAdapter()
+    module_name, class_name = target
+    module = import_module(module_name)
+    return getattr(module, class_name)()
+
+
+def get_provider_commands(provider: str) -> Dict[str, str]:
+    """Return provider command templates for BatchExecutor."""
+    return get_provider_adapter(provider).get_commands()
+
+
+def detect_provider_completion(provider: str, text: str, url: str = "") -> CompletionState:
+    """Classify completion state through the provider adapter."""
+    return get_provider_adapter(provider).detect_completion(text, url)
+
+
+__all__ = [
+    "CompletionState",
+    "ProviderAdapter",
+    "get_provider_adapter",
+    "get_provider_commands",
+    "detect_provider_completion",
+]

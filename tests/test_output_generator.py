@@ -592,6 +592,26 @@ class TestOutputGeneratorLogbook:
         import time
         
         def add_entry(entry_id):
+            """
+            ================================================================================
+            Helper-Funktion für Thread-basierten Logbook-Update-Test.
+
+            WAS MACHT DAS?
+              Erstellt einen minimalen doc_unit und ruft update_logbook auf.
+              Wird als Target für threading.Thread verwendet um gleichzeitige
+              Logbook-Updates zu simulieren (Race-Condition-Test).
+
+            Args:
+              entry_id (int): Eindeutige ID für den Entry (wird in session_id verwendet).
+
+            Returns:
+              None
+
+            Side Effects:
+              - Schreibt Eintrag ins Logbook (kann bei Threads zu Race Conditions führen)
+              - time.sleep(0.01) für kleine Verzögerung zwischen Threads
+            ================================================================================
+            """
             doc_unit = {
                 "session_id": f"ses_concurrent_{entry_id}",
                 "timestamp": int(time.time() * 1000) + entry_id,

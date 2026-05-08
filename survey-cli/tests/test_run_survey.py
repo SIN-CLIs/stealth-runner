@@ -25,6 +25,7 @@ from unittest.mock import MagicMock, patch, PropertyMock, call
 import time
 import sys
 import os
+import websocket
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -36,8 +37,16 @@ def _next_page_text(*args, **kw):
     _page_counter[0] += 1
     return f"Survey Page {_page_counter[0]}/10"
 
+_constant_page_counter = [0]
+def _constant_page_text(*args, **kw):
+    _constant_page_counter[0] += 1
+    return "Survey Page 1/10"
+
 def _reset_page_counter():
     _page_counter[0] = 0
+
+def _reset_constant_page_counter():
+    _constant_page_counter[0] = 0
 from survey.snapshot import CompactSnapshot
 from survey.execute import BatchResult
 
@@ -91,6 +100,8 @@ SPEED_PATCHES = [
     ("survey.runner.time.monotonic", {"return_value": 0.0}),
     ("time.sleep", {}),
     ("time.monotonic", {"return_value": 0.0}),
+    # opener.open() calls websocket.create_connection before patches loop starts
+    ("survey.opener.websocket.create_connection", {"side_effect": Exception("mock ws")}),
 ]
 
 
@@ -107,7 +118,7 @@ def _base_patches(survey_url="https://click.cpx-research.com/s?id=abc&k=survey12
          {"return_value": "ws://localhost:9999/tab"}),
         ("survey.runner.chrome.get_survey_details",
          {"return_value": {"type": "okay", "href": survey_url}}),
-        ("survey.runner.read_balance", {"return_value": 2.00}),
+        ("survey.runner.read_balance_with_backoff", {"return_value": 2.00}),
         ("survey.runner.log_earnings", {}),
         ("survey.runner.log_error", {}),
         ("survey.runner.log_decision", {}),
@@ -140,6 +151,7 @@ class TestCompleteImmediately(unittest.TestCase):
              {"return_value": (False, "")}),
             ("survey.runner.BatchExecutor.execute",
              {"return_value": _batch_ok(1, 0)}),
+            ("survey.runner.get_nim", {"return_value": runner.nim}),
         ]
         with patch.object(runner, "_find_survey_tab_ws",
                           return_value=("ws://t1", "https://survey.example.com/q1")), \
@@ -290,6 +302,7 @@ class TestAntiStuck(unittest.TestCase):
              {"return_value": (False, "")}),
             ("survey.runner.BatchExecutor.execute",
              {"return_value": _batch_ok(1, 0)}),
+            ("survey.runner.get_nim", {"return_value": runner.nim}),
         ]
         with patch.object(runner, "_find_survey_tab_ws",
                           return_value=("ws://t1", "https://q.com/page0")), \
@@ -373,7 +386,7 @@ class TestTabDisappears(unittest.TestCase):
         # Don't patch generate_snapshot — it won't be called because
         # _refresh_tab_ws returns None on first iteration
         patches = _base_patches() + [
-            ("survey.runner.read_balance", {"return_value": 2.00}),
+            ("survey.runner.read_balance_with_backoff", {"return_value": 2.00}),
         ]
         with patch.object(runner, "_find_survey_tab_ws",
                           return_value=("ws://t1", "https://survey.example.com/q1")), \
@@ -409,8 +422,10 @@ class TestPreQualifierScreenOut(unittest.TestCase):
              {"return_value": {"type": "question", "question": "What is your age?",
                                "question_key": "cpxq_1",
                                "answers": {"1": {"text": "Under 18", "key": "1"}}}}),
+            ("survey.chrome.get_details_url",
+             {"return_value": "http://localhost:9999/details?app_id=x&uid=y&hash=z&email=x@example.invalid"}),
         ]
-        with patch.object(runner, "handle_pre_qualifier", return_value=None), \
+        with patch.object(runner.pre_qualifier, "handle_pre_qualifier_api", return_value=None), \
              patch.object(runner, "_close_tab"), \
              patch.object(runner, "_rate_survey"):
             for spec, kwargs in patches:
@@ -440,7 +455,7 @@ class TestBlockedProvider(unittest.TestCase):
         patches = _base_patches(
             survey_url="https://surveys.com/abc123"
         ) + [
-            ("survey.runner.read_balance", {"return_value": 2.00}),
+            ("survey.runner.read_balance_with_backoff", {"return_value": 2.00}),
         ]
         with patch.object(runner, "_close_tab"), \
              patch.object(runner, "_rate_survey"):
@@ -473,7 +488,7 @@ class TestExpiredSurveyUrl(unittest.TestCase):
             # The runner directly checks for "no app id" in page_text
             ("survey.runner.BatchExecutor.read_page_text",
              {"side_effect": ["no app id was specified", "no app id was specified", "no app id was specified"]}),
-            ("survey.runner.read_balance", {"return_value": 2.00}),
+            ("survey.runner.read_balance_with_backoff", {"return_value": 2.00}),
         ]
         with patch.object(runner, "_find_survey_tab_ws",
                           return_value=("ws://t1", "https://screener.example.com/expired")), \
@@ -566,7 +581,7 @@ class TestBalanceCalculated(unittest.TestCase):
         snap = _make_snapshot(n_refs=5)
         patches = _base_patches() + [
             # read_balance: first call=2.00 (before survey), second=3.50 (after)
-            ("survey.runner.read_balance", {"side_effect": [2.00, 3.50]}),
+            ("survey.runner.read_balance_with_backoff", {"side_effect": [2.00, 3.50]}),
             ("survey.runner.generate_snapshot", {"return_value": snap}),
             ("survey.runner.detect_completion", {"return_value": False}),
             ("survey.runner.detect_progress", {"return_value": (True, "unknown")}),
@@ -605,6 +620,7 @@ class TestRateSurveyCalled(unittest.TestCase):
         config = RunnerConfig(use_nim=True, auto_rate=True, debug=False)
         runner = SurveyRunner(config)
         runner.nim = MagicMock()
+        runner.nim.consecutive_fails = 0  # Prevent circuit breaker (MagicMock >= 5 → True)
         runner.nim.decide.return_value = {"actions": [{"action": "complete"}],
                                            "tokens": {"total": 200}, "elapsed_ms": 500}
 
@@ -616,15 +632,16 @@ class TestRateSurveyCalled(unittest.TestCase):
             ("survey.runner.BatchExecutor.read_page_text",
              {"side_effect": _next_page_text}),
             ("survey.runner.BatchExecutor.detect_error_page",
-             {"return_value": (False, "")}),
+              {"return_value": (False, "")}),
             ("survey.runner.BatchExecutor.execute",
              {"return_value": _batch_ok(1, 0)}),
+            ("survey.runner.get_nim", {"return_value": runner.nim}),
         ]
         with patch.object(runner, "_find_survey_tab_ws",
                           return_value=("ws://t1", "https://survey.example.com/q1")), \
              patch.object(runner, "_refresh_tab_ws", return_value="ws://t1"), \
              patch.object(runner, "_close_tab"), \
-             patch.object(runner, "_rate_survey") as mock_rate:
+             patch.object(runner.survey_rater, "rate") as mock_rate:
             for spec, kwargs in patches:
                 patch(spec, **kwargs).start()
             try:
@@ -747,6 +764,7 @@ class TestMultipleIterations(unittest.TestCase):
         config = RunnerConfig(use_nim=True, auto_rate=True, debug=False, max_iterations=10)
         runner = SurveyRunner(config)
         runner.nim = MagicMock()
+        runner.nim.consecutive_fails = 0  # Prevent circuit breaker (MagicMock >= 5 → True)
         runner.nim.decide.return_value = {"actions": [{"action": "submit"}],
                                            "tokens": {"total": 100}, "elapsed_ms": 300}
 
@@ -767,15 +785,16 @@ class TestMultipleIterations(unittest.TestCase):
             ("survey.runner.BatchExecutor.read_page_text",
              {"side_effect": _next_page_text}),
             ("survey.runner.BatchExecutor.detect_error_page",
-             {"return_value": (False, "")}),
+              {"return_value": (False, "")}),
             ("survey.runner.BatchExecutor.execute",
              {"return_value": _batch_ok(1, 0)}),
+            ("survey.runner.get_nim", {"return_value": runner.nim}),
         ]
         with patch.object(runner, "_find_survey_tab_ws",
                           return_value=("ws://t1", "https://q.com/page0")), \
              patch.object(runner, "_refresh_tab_ws", return_value="ws://t1"), \
              patch.object(runner, "_close_tab"), \
-             patch.object(runner, "_rate_survey") as mock_rate:
+             patch.object(runner.survey_rater, "rate") as mock_rate:
             for spec, kwargs in patches:
                 patch(spec, **kwargs).start()
             try:
@@ -839,7 +858,7 @@ class TestRunSurveyEdgeCases(unittest.TestCase):
 
         snap = _make_snapshot(n_refs=5)
         patches = _base_patches() + [
-            ("survey.runner.read_balance", {"side_effect": [
+            ("survey.runner.read_balance_with_backoff", {"side_effect": [
                 2.00, Exception("Balance read failed")  # before ok, after fail
             ]}),
             ("survey.runner.generate_snapshot", {"return_value": snap}),
@@ -877,7 +896,7 @@ class TestRunSurveyEdgeCases(unittest.TestCase):
         patches = _base_patches() + [
             ("survey.runner.BatchExecutor.read_page_text",
              {"return_value": "still loading just getting things ready please wait"}),
-            ("survey.runner.read_balance", {"return_value": 2.00}),
+            ("survey.runner.read_balance_with_backoff", {"return_value": 2.00}),
         ]
         with patch.object(runner, "_find_survey_tab_ws",
                           return_value=("ws://t1", "https://survey.example.com/loading")), \

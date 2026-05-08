@@ -30,3 +30,18 @@ COMMANDS = {
     "click_next": 'document.querySelector(".bsbutton:not([disabled])").click()',
     "click_element": 'document.querySelectorAll("input[type=radio]")[{idx}].click()',
 }
+
+
+from .base import ProviderAdapter
+
+
+class Strat7Adapter(ProviderAdapter):
+    """Strat7 adapter for .bsbutton and radio grids."""
+
+    def __init__(self):
+        super().__init__(
+            name="strat7",
+            url_patterns=["strat7", "strat7audiences.com", "bsbutton"],
+            commands=COMMANDS,
+            completion_markers=COMPLETION_MARKERS,
+        )

@@ -66,6 +66,8 @@ import subprocess # Fuer ps aux, Chrome starten, cua-driver Aufrufe
 import time       # Fuer Zeitstempel (created_at, last_seen)
 import re         # Fuer Regex-Pattern-Matching in ps-Ausgabe
 import signal     # Fuer SIGTERM, SIGKILL (Graceful -> Force)
+import tempfile   # Fuer Atomic Writes (tempfile.mkstemp)
+import shutil     # Fuer shutil.move (Atomic Rename)
 
 # ═════════════════════════════════════════════════════════════════════════════
 # KONSTANTEN
@@ -257,6 +259,29 @@ def _wid_from_pid(pid):
 # =============================================================================
 
 class SessionManager:
+    """
+    ================================================================================
+    Zentrale Verwaltung aller Bot-Chrome-Sessions (Lifecycle & Safety).
+
+    WAS IST DAS?
+      Orchestriert Start, Stopp, Reconciliation und Persistenz von Chrome-
+      Instanzen. Jede Session = Ein Chrome-Prozess mit eindeutigem Namen.
+      Sessions persistieren in ~/.stealth/sessions.json (überleben Crashes).
+
+    WARUM existiert diese Klasse?
+      Verhindert: Doppelte Chrome-Starts (Ressourcen-Verschwendung),
+      verwaiste Prozesse (Memory-Leaks), Verwechslung mit User-Chrome
+      (SICHERHEIT!). NUR /tmp/heypiggy-new-* Profile werden verwaltet —
+      NIEMALS User-Chrome berühren (kein pkill, kein killall).
+
+    Side Effects:
+      - Liest/schreibt ~/.stealth/sessions.json bei jeder Operation
+      - Startet Chrome-Prozesse mit spezifischen Flags (launch)
+      - Sendet SIGTERM/SIGKILL an Prozesse (close)
+      - Ruft ps aux und cua-driver auf (reconcile, scan_active)
+      - Erzeugt Auth-State-Dateien (save_auth_state)
+    ================================================================================
+    """
     def __init__(self):
         """Initialisiert SessionManager und laedt existierende Sessions.
         
@@ -286,18 +311,77 @@ class SessionManager:
         return {}
 
     def _save(self):
-        """Speichert Sessions als JSON.
-        
+        """Speichert Sessions als JSON mit ATOMIC WRITE (verhindert Corruption).
+
+        WARUM atomic write?
+          Normales write (open+write) kann bei Crash/Power-Loss zu
+          korrupter JSON-Datei fuehren (halbe Daten geschrieben).
+          Atomic write schreibt erst in Temp-Datei, dann rename.
+          → Rename ist atomar auf POSIX-Systemen.
+          → Entweder alte ODER neue Datei — nie halbe Daten.
+
+        ALGORITHMUS:
+          1. Temp-Datei im gleichen Verzeichnis erstellen (mkstemp)
+          2. JSON in Temp-Datei schreiben
+          3. fsync() — sicherstellen dass Daten auf Disk sind
+          4. Temp-Datei schliessen
+          5. os.rename() — atomares Ersetzen der alten Datei
+          6. Bei Fehler: Temp-Datei loeschen, alte Datei bleibt intakt
+
         WARUM indent=2?
           Human-readable. Agent kann `cat` fuer Debug nutzen.
-          
-        WARUM sofort speichern?
-          Datenpersistenz. Jede Aenderung ist sofort persistent.
-          → Crash nach register() aber vor _save() = Session verloren.
-          → Acceptable (Chrome-Prozess laeuft noch, kann wieder gefunden werden).
+
+        WARUM im gleichen Verzeichnis?
+          os.rename() funktioniert nur innerhalb desselben Dateisystems.
+          /tmp hat oft anderes Dateisystem als ~/.stealth/.
+
+        RACE CONDITION:
+          Zwei Prozesse schreiben gleichzeitig → letzter gewinnt.
+          → Acceptable (SessionManager ist single-threaded).
+          → Bei Multi-Thread: Lock hinzufuegen.
         """
-        with open(SESSIONS_FILE, 'w') as f:
-            json.dump(self.sessions, f, indent=2)
+        # Sicherstellen dass Verzeichnis existiert
+        # WARUM exist_ok=True? Verhindert FileNotFoundError bei erstem Start.
+        os.makedirs(os.path.dirname(SESSIONS_FILE), exist_ok=True)
+
+        # Temp-Datei im GLEICHEN Verzeichnis wie Ziel-Datei
+        # WARUM mkstemp? Erstellt atomare Temp-Datei mit unique Namen.
+        # WARUM dir=...? os.rename() braucht gleiches Dateisystem.
+        try:
+            fd, tmp_path = tempfile.mkstemp(
+                dir=os.path.dirname(SESSIONS_FILE),
+                prefix=".sessions_",
+                suffix=".tmp"
+            )
+        except OSError as e:
+            # Fallback: Wenn mkstemp fehlschlaegt (z.B. Permission),
+            # normales write nutzen — besser als gar nicht speichern.
+            print(f"[SESSION] Warning: mkstemp failed ({e}), using direct write")
+            with open(SESSIONS_FILE, 'w') as f:
+                json.dump(self.sessions, f, indent=2)
+            return
+
+        try:
+            # JSON in Temp-Datei schreiben
+            # WARUM os.fdopen? mkstemp gibt file descriptor (int), nicht file object.
+            with os.fdopen(fd, 'w') as f:
+                json.dump(self.sessions, f, indent=2)
+                f.flush()
+                os.fsync(f.fileno())  # Sicherstellen dass auf Disk geschrieben
+
+            # Atomares Rename: Temp-Datei → Ziel-Datei
+            # WARUM os.rename? POSIX garantiert atomar innerhalb selben Dateisystems.
+            # → Entweder alte ODER neue Datei existiert — nie korrupte Mischung.
+            os.replace(tmp_path, SESSIONS_FILE)
+
+        except Exception as e:
+            # Bei FEHLER: Temp-Datei aufraeumen, alte Datei bleibt intakt
+            try:
+                os.unlink(tmp_path)
+            except OSError:
+                pass  # Temp-Datei schon geloescht oder existiert nicht
+            print(f"[SESSION] Error saving sessions.json: {e}")
+            raise  # Re-raise — Aufrufer soll wissen dass Save fehlgeschlagen
 
     def register(self, name, pid, profile_dir, wid=None, url=None):
         """Registriert neue Session.

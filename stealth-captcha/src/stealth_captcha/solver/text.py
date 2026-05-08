@@ -201,6 +201,30 @@ class PixtralLargeOCR:
     api_key: str | None = None
 
     async def transcribe(self, image_png_base64: str) -> str:
+        """
+        ================================================================================
+        Captcha-Bild via Pixtral Large (NVIDIA NIM) transkribieren.
+
+        Sendet das Base64-kodierte PNG an die NVIDIA API und extrahiert
+        den reinen Text ohne Erklärungen. Temperatur=0.0 für deterministische
+        Ergebnisse.
+
+        Args:
+          image_png_base64 (str): Base64-kodiertes PNG-Bild des Captchas.
+
+        Returns:
+          str: Transkribierter Text (leer bei fehlendem API-Key oder Fehler).
+
+        Side Effects:
+          - HTTP POST an NVIDIA NIM API
+          - Log-Entry bei fehlendem API-Key (warning)
+          - httpx Client wird pro Aufruf erstellt (kein Connection-Pooling)
+
+        BANNED:
+          - KEIN OpenAI Fallback (nur NVIDIA NIM!)
+          - KEIN lokales OCR (zu ungenau für Captchas)
+        ================================================================================
+        """
         import os
 
         import httpx

@@ -67,13 +67,18 @@ import json
 import os
 import time
 import re
-from openai import OpenAI
+import logging
+from openai import OpenAI, APIConnectionError, APITimeoutError, RateLimitError, AuthenticationError
 from typing import Dict, List, Any, Optional
+
+logger = logging.getLogger("nim_client")
 
 DEFAULT_MODEL = "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning"
 DEFAULT_BASE_URL = "https://integrate.api.nvidia.com/v1"
 MAX_TOKENS = 600
 RETRIES = 3
+CIRCUIT_BREAKER_THRESHOLD = 3
+CIRCUIT_BREAKER_RECOVERY_S = 300
 
 
 def build_survey_prompt(snapshot, profile, learnings=None, history=None):
@@ -167,7 +172,7 @@ def parse_response(raw):
 
 
 class NIMClient:
-    """NVIDIA Nemotron 3 Omni client for survey decisions."""
+    """NVIDIA Nemotron 3 Omni client with circuit breaker and retry."""
 
     def __init__(self, api_key=None, model=None):
         self.api_key = api_key or os.getenv("NVIDIA_API_KEY")
@@ -178,53 +183,119 @@ class NIMClient:
                 api_key=self.api_key,
                 base_url=DEFAULT_BASE_URL
             )
+        self.consecutive_failures = 0
+        self.last_failure_time = 0.0
+        self._available = self.client is not None
 
     @property
     def available(self):
-        return self.client is not None
+        if self._available:
+            return True
+        if self.consecutive_failures > 0 and time.time() - self.last_failure_time > CIRCUIT_BREAKER_RECOVERY_S:
+            logger.info("NIM auto-recovery: circuit breaker closed after %ds",
+                        CIRCUIT_BREAKER_RECOVERY_S)
+            self._available = True
+            self.consecutive_failures = 0
+        return self._available
+
+    def _record_failure(self, error_type, error_msg):
+        self.consecutive_failures += 1
+        self.last_failure_time = time.time()
+        logger.warning("NIM failure [%s]: %s (consecutive: %d/%d)",
+                       error_type, error_msg,
+                       self.consecutive_failures, CIRCUIT_BREAKER_THRESHOLD)
+        if self.consecutive_failures >= CIRCUIT_BREAKER_THRESHOLD:
+            self._available = False
+            logger.error("NIM circuit breaker OPEN after %d consecutive failures",
+                         self.consecutive_failures)
+
+    def _record_success(self):
+        if self.consecutive_failures > 0:
+            logger.info("NIM success: resetting circuit breaker (was %d failures)",
+                        self.consecutive_failures)
+        self.consecutive_failures = 0
+        self._available = True
+
+    def _call_api(self, prompt, temperature):
+        response = self.client.chat.completions.create(
+            model=self.model,
+            messages=[{"role": "user", "content": prompt}],
+            temperature=temperature,
+            max_tokens=MAX_TOKENS,
+        )
+        return response
 
     def decide(self, snapshot, profile,
                learnings=None, history=None,
                temperature=0.0):
-        """Decide next batch actions with chain-of-thought.
-
-        Returns:
-            Dict with actions, tokens, elapsed_ms
-        """
         if not self.client:
             return {"actions": [{"action": "submit"}],
                     "model": "auto_pilot", "elapsed_ms": 0,
                     "tokens": {"total": 0}}
 
+        if not self.available:
+            logger.warning("NIM circuit breaker open — returning fallback")
+            return {"actions": [{"action": "submit"}],
+                    "model": "fallback", "elapsed_ms": 0,
+                    "tokens": {"total": 0}}
+
         prompt = build_survey_prompt(snapshot, profile, learnings, history)
 
-        start = time.monotonic()
-        try:
-            response = self.client.chat.completions.create(
-                model=self.model,
-                messages=[{"role": "user", "content": prompt}],
-                temperature=temperature,
-                max_tokens=MAX_TOKENS,
-            )
-            elapsed = time.monotonic() - start
-            raw = response.choices[0].message.content or ""
-            actions = parse_response(raw)
+        for attempt in range(1, RETRIES + 1):
+            start = time.monotonic()
+            try:
+                response = self._call_api(prompt, temperature)
+                elapsed = time.monotonic() - start
+                raw = response.choices[0].message.content or ""
+                actions = parse_response(raw)
 
-            return {
-                "actions": actions,
-                "raw_response": raw[:200],
-                "model": self.model,
-                "elapsed_ms": round(elapsed * 1000),
-                "tokens": {
-                    "total": response.usage.total_tokens if response.usage else 0,
-                },
-            }
-        except Exception as e:
-            elapsed = time.monotonic() - start
-            return {"actions": [{"action": "submit"}],
-                    "model": f"fallback",
+                self._record_success()
+
+                return {
+                    "actions": actions,
+                    "raw_response": raw[:200],
+                    "model": self.model,
                     "elapsed_ms": round(elapsed * 1000),
-                    "tokens": {"total": 0}}
+                    "tokens": {
+                        "total": response.usage.total_tokens if response.usage else 0,
+                    },
+                }
+
+            except AuthenticationError as e:
+                self._record_failure("auth", str(e))
+                return {"actions": [{"action": "submit"}],
+                        "model": "fallback",
+                        "elapsed_ms": round((time.monotonic() - start) * 1000),
+                        "tokens": {"total": 0}}
+
+            except RateLimitError as e:
+                self._record_failure("rate_limit", str(e))
+                if attempt < RETRIES:
+                    wait = min(2 ** attempt, 10)
+                    time.sleep(wait)
+                    continue
+                return {"actions": [{"action": "submit"}],
+                        "model": "fallback",
+                        "elapsed_ms": round((time.monotonic() - start) * 1000),
+                        "tokens": {"total": 0}}
+
+            except (APIConnectionError, APITimeoutError) as e:
+                self._record_failure("network", str(e))
+                if attempt < RETRIES:
+                    wait = min(2 ** attempt, 10)
+                    time.sleep(wait)
+                    continue
+                return {"actions": [{"action": "submit"}],
+                        "model": "fallback",
+                        "elapsed_ms": round((time.monotonic() - start) * 1000),
+                        "tokens": {"total": 0}}
+
+            except Exception as e:
+                self._record_failure("unknown", str(e))
+                return {"actions": [{"action": "submit"}],
+                        "model": "fallback",
+                        "elapsed_ms": round((time.monotonic() - start) * 1000),
+                        "tokens": {"total": 0}}
 
 
 _default_client = None

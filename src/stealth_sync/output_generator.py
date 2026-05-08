@@ -9,8 +9,18 @@ The documentation units follow a consistent schema:
   - timestamp: Unix timestamp of generation
   - classification: Dict with category and confidence
   - message_count: Number of messages in session
-  - summary: Text summary of session content
+   - summary: Text summary of session content
 """
+
+# BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
+#   ❌ playstealth launch — setzt NICHT --force-renderer-accessibility
+#   ❌ webauto-nodriver — ABSOLUT BANNED
+#   ❌ cua-driver click (raw index) — instabil
+#   ❌ --remote-allow-origins=* (ohne Quotes) — zsh glob expansion
+#   ❌ /tmp/heypiggy-bot (fixed profile) — korruptiert nach Neustart
+#   ❌ Hardcoded PIDs — dynamisch, niemals hardcodieren
+#   ❌ pkill -f "Google Chrome" — tötet USER Chrome
+#   ❌ killall Google Chrome — tötet ALLE Chrome
 
 import json
 import yaml

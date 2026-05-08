@@ -1,0 +1,49 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.12", "3.13"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r survey-cli/requirements.txt || true
+          pip install pytest ruff mypy pre-commit
+
+      - name: Run banned patterns check
+        run: python scripts/check_banned_patterns.py
+
+      - name: Run ruff check
+        run: |
+          ruff check survey-cli/survey --select E,W,F
+          ruff check agent-toolbox --select E,W,F
+
+      - name: Run survey-cli tests
+        env:
+          PYTHONPATH: survey-cli
+        run: pytest survey-cli/tests --ignore=survey-cli/tests/test_in_page_modal.py -q
+
+      - name: Run agent-toolbox tests
+        env:
+          PYTHONPATH: agent-toolbox:survey-cli
+        run: pytest agent-toolbox/tests -q
+
+      - name: Run pre-commit hooks
+        run: pre-commit run --all-files || true

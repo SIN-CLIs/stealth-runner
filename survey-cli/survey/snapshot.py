@@ -157,8 +157,18 @@ ELEMENT_EXTRACTOR_JS = '''
     }
 
     // Buttons — ONLY inside topModal (or document body if no modal)
-    scanRoot.querySelectorAll('button, input[type=submit], input[type=button], .NextButton, .bsbutton, [role=button]').forEach(function(el) {
+    scanRoot.querySelectorAll('button, input[type=submit], input[type=button], .NextButton, .bsbutton, [role=button], [aria-label*=Next], [aria-label*=Weiter], [aria-label*=Submit], span[onclick]').forEach(function(el) {
         add(el, 'button');
+    });
+
+    // Qualtrics: scan for bare >> arrow buttons rendered as spans/divs
+    scanRoot.querySelectorAll('[class*=next], [class*=btn], [class*=button], [onclick]').forEach(function(el) {
+        if (el.offsetWidth > 0 && el.offsetHeight > 0 && !seen.has(el)) {
+            var t = (el.textContent || '').trim();
+            if (t === '>>' || t === 'Next' || t === 'Weiter' || t === 'Nächster') {
+                add(el, 'button');
+            }
+        }
     });
 
     // Radio buttons

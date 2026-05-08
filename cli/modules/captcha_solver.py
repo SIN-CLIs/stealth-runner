@@ -29,6 +29,29 @@ BANNED METHODS — NIEMALS VERWENDEN:
 import subprocess, json, time, re
 
 class CaptchaSolver:
+    """
+    ================================================================================
+    Löst Slide-Captchas via CUA-ONLY (cua-driver CGEvent + AppleEvents JS).
+
+    WAS IST DAS?
+      2-Phasen-Ansatz: DOM-Phase extrahiert Koordinaten via JS querySelectorAll,
+      Drag-Phase nutzt cua-driver list_windows für Fenster-Position und
+      AX-Tree für Toolbar-Höhe, um DOM-Koordinaten in globale Bildschirm-
+      koordinaten umzurechnen. Dann CGEvent-drag via cua-driver.
+
+    WARUM existiert diese Klasse?
+      Slide-Captchas (GoCaptcha, NetEase, GeeTest) verlangen echte Mouse-
+      Drag-Events. JS dispatchEvent(PointerEvent) hat isTrusted=false und
+      wird sofort blockiert. Dieses Modul umgeht das durch native CGEvents.
+      LIVE GETESTET: 2026-05-05, GoCaptcha 5/5 erfolgreich.
+
+    Side Effects:
+      - Ruft cua-driver subprocess auf (list_windows, get_window_state, drag)
+      - Führt JS in Chrome aus (querySelector, getBoundingClientRect)
+      - Ändert DOM-Zustand durch Drag-Interaktion
+      - Wartet mit time.sleep() (0.5s Scroll, 2s Drag-Completion)
+    ================================================================================
+    """
     def __init__(self, pid, wid):
         self.pid = pid
         self.wid = wid
@@ -58,6 +81,25 @@ class CaptchaSolver:
                 break
 
     def js(self, code):
+        """
+        ================================================================================
+        Führt JavaScript in Chrome-Seite via cua-driver page execute_javascript.
+
+        Args:
+          code (str): JavaScript-Code als String. WARUM str?
+            Muss valides JS sein, wird direkt an cua-driver übergeben.
+            Keine Evaluierung/Sanitization — Vertrauen in Aufrufer!
+
+        Returns:
+          str: Output zwischen Markdown-Code-Backticks (```...```).
+            Leerer String wenn kein Backtick-Pattern gefunden.
+
+        Side Effects:
+          - Startet cua-driver subprocess (timeout=10s)
+          - Führt JS im Kontext der aktuellen Seite aus (pid + wid)
+          - Kann DOM manipulieren (je nach übergebenem Code)
+        ================================================================================
+        """
         p = subprocess.run(['cua-driver','page', json.dumps({
             'pid':self.pid,'window_id':self.wid,'action':'execute_javascript','javascript':code
         })], capture_output=True, text=True, timeout=10)

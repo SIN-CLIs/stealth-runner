@@ -40,3 +40,18 @@ COMMANDS = {
         i.dispatchEvent(new Event("change",{bubbles:true}));}
     })("{value}")''',
 }
+
+
+from .base import ProviderAdapter
+
+
+class TolunaAdapter(ProviderAdapter):
+    """TolunaStart adapter for .cf-radio/.cf-checkbox controls."""
+
+    def __init__(self):
+        super().__init__(
+            name="tolunastart",
+            url_patterns=["tolunastart.com", "toluna.com", "cf-radio"],
+            commands=COMMANDS,
+            completion_markers=COMPLETION_MARKERS,
+        )

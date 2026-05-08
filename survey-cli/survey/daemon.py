@@ -74,7 +74,7 @@ PID_FILE = STEALTH_DIR / "daemon.pid"
 
 # ── Constants ───────────────────────────────────────────────────────────────
 
-CHROME_PORT = 9999
+CHROME_PORT = 9223
 HEYPIGGY_URL = "https://www.heypiggy.com/?page=dashboard"
 MAX_CONSECUTIVE_ERRORS = 3
 MAX_SURVEYS_PER_RUN = 10
@@ -183,42 +183,10 @@ def is_logged_in(port: int = CHROME_PORT) -> bool:
 
 
 def launch_chrome(url: str = HEYPIGGY_URL, port: int = CHROME_PORT) -> bool:
-    """Launch Chrome with BOTH flags. Blocks 8s for startup."""
-    # Kill existing bot chrome first
-    _kill_bot_chrome()
-
-    cmd = [
-        "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome",
-        f"--remote-debugging-port={port}",
-        "--remote-allow-origins=\"*\"",  # 🔥 MIT Quotes! Ohne Quotes expandiert zsh * → "no matches found"
-        "--force-renderer-accessibility",
-        "--no-first-run",
-        "--no-default-browser-check",
-        f"--user-data-dir=/tmp/heypiggy-new-{int(time.time())}",
-        url,
-    ]
-    subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    print(f"[DAEMON] Chrome launched: port={port}")
-    time.sleep(8)
-    return is_chrome_alive(port)
-
-
-def _kill_bot_chrome() -> None:
-    """Kill ONLY bot Chrome (profile /tmp/heypiggy-new-*). NEVER user Chrome."""
-    try:
-        result = subprocess.run(["ps", "aux"], capture_output=True, text=True, timeout=5)
-        for line in result.stdout.split("\n"):
-            if "/tmp/heypiggy-new-" in line and "/Contents/MacOS/Google Chrome" in line:
-                parts = line.split()
-                if parts and parts[1].isdigit():
-                    pid = int(parts[1])
-                    try:
-                        os.kill(pid, 9)
-                        print(f"[DAEMON] Killed bot Chrome PID={pid}")
-                    except Exception:
-                        pass
-    except Exception:
-        pass
+    """DEPRECATED: Use ChromeLauncher.launch_and_verify() instead."""
+    from survey.chrome import ChromeLauncher
+    result = ChromeLauncher(port=port).launch_and_verify(url=url)
+    return result.get("ok", False)
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -250,6 +218,205 @@ def ensure_login(port: int = CHROME_PORT) -> bool:
     except Exception as e:
         log("login_error", {"error": str(e)[:200]})
         return False
+
+
+# ═══════════════════════════════════════════════════════════════════════════
+# CUA-DRIVER DAEMON MANAGER — state machine + auto-recovery
+# ═══════════════════════════════════════════════════════════════════════════
+
+CUA_DAEMON_STATE_FILE = STEALTH_DIR / "cua_daemon_state.json"
+CUA_DAEMON_LOG = "/tmp/cua-daemon.log"
+CUA_DAEMON_MAX_RESTART_INTERVAL = 60  # seconds — cap on backoff
+CUA_DAEMON_HEALTH_TIMEOUT = 5  # seconds — timeout for list_windows check
+
+
+class DaemonManager:
+    """Manages cua-driver daemon with state machine and auto-recovery.
+
+    State machine: STOPPED → STARTING → HEALTHY → DEGRADED → FAILED
+
+    - STOPPED:   No process running, no state file, intentional stop
+    - STARTING:  Process launched, waiting for readiness
+    - HEALTHY:   list_windows returns valid windows within timeout
+    - DEGRADED:  Process running but list_windows slow/unreliable
+    - FAILED:    Process crashed, unreachable, or stuck
+
+    WARUM separate von SessionManager?
+      SessionManager managed Chrome (Browser). DaemonManager managed cua-driver
+      (Accessibility Daemon). Zwei verschiedene Prozesse, zwei verschiedene
+      Lifecycles. cua-driver ist Legacy-Fallback, aber KRITISCH für Login.
+    """
+
+    STATE_STOPPED = "STOPPED"
+    STATE_STARTING = "STARTING"
+    STATE_HEALTHY = "HEALTHY"
+    STATE_DEGRADED = "DEGRADED"
+    STATE_FAILED = "FAILED"
+
+    def __init__(self):
+        self.state = self._load_state()
+        self._consecutive_failures = 0
+        self._last_restart_time = 0.0
+
+    def _load_state(self) -> str:
+        try:
+            with open(CUA_DAEMON_STATE_FILE) as f:
+                data = json.load(f)
+                return data.get("state", self.STATE_STOPPED)
+        except Exception:
+            return self.STATE_STOPPED
+
+    def _save_state(self):
+        STEALTH_DIR.mkdir(exist_ok=True)
+        with open(CUA_DAEMON_STATE_FILE, "w") as f:
+            json.dump({"state": self.state,
+                       "consecutive_failures": self._consecutive_failures,
+                       "updated_at": datetime.now().isoformat()}, f, indent=2)
+
+    def _is_process_alive(self) -> bool:
+        try:
+            result = subprocess.run(
+                ["pgrep", "-f", "cua-driver serve"],
+                capture_output=True, text=True, timeout=5)
+            return result.returncode == 0 and bool(result.stdout.strip())
+        except Exception:
+            return False
+
+    def start(self) -> bool:
+        if self._is_process_alive():
+            log("cua_daemon", {"msg": "Already running", "state": self.state})
+            self.state = self.STATE_HEALTHY
+            self._save_state()
+            return True
+
+        self.state = self.STATE_STARTING
+        self._save_state()
+        log("cua_daemon", {"msg": "Starting daemon"})
+
+        try:
+            subprocess.Popen(
+                ["nohup", "cua-driver", "serve"],
+                stdout=open(CUA_DAEMON_LOG, "a"),
+                stderr=subprocess.STDOUT,
+                start_new_session=True,
+            )
+        except Exception as e:
+            self.state = self.STATE_FAILED
+            self._save_state()
+            log("cua_daemon_error", {"error": str(e)[:200]})
+            return False
+
+        time.sleep(2)
+        if self._is_process_alive():
+            self.state = self.STATE_HEALTHY
+            self._consecutive_failures = 0
+            self._save_state()
+            log("cua_daemon", {"msg": "Started successfully", "state": self.STATE_HEALTHY})
+            return True
+        else:
+            self.state = self.STATE_FAILED
+            self._save_state()
+            log("cua_daemon_error", {"msg": "Process not found after launch"})
+            return False
+
+    def stop(self) -> bool:
+        if not self._is_process_alive():
+            self.state = self.STATE_STOPPED
+            self._save_state()
+            return True
+
+        try:
+            subprocess.run(["pkill", "-f", "cua-driver serve"], timeout=5, capture_output=True)
+            time.sleep(1)
+            if not self._is_process_alive():
+                self.state = self.STATE_STOPPED
+                self._save_state()
+                log("cua_daemon", {"msg": "Stopped"})
+                return True
+        except Exception:
+            pass
+
+        subprocess.run(["pkill", "-9", "-f", "cua-driver serve"], timeout=5, capture_output=True)
+        self.state = self.STATE_STOPPED
+        self._save_state()
+        return True
+
+    def health_check(self) -> Dict:
+        if not self._is_process_alive():
+            self.state = self.STATE_FAILED
+            self._save_state()
+            return {"healthy": False, "state": self.STATE_FAILED,
+                    "reason": "process_not_found"}
+
+        try:
+            result = subprocess.run(
+                ["cua-driver", "call", "list_windows"],
+                capture_output=True, text=True, timeout=CUA_DAEMON_HEALTH_TIMEOUT)
+            if result.returncode != 0:
+                self.state = self.STATE_DEGRADED
+                self._save_state()
+                return {"healthy": False, "state": self.STATE_DEGRADED,
+                        "reason": f"exit_code={result.returncode}"}
+            data = json.loads(result.stdout)
+            if not data.get("windows"):
+                self.state = self.STATE_DEGRADED
+                self._save_state()
+                return {"healthy": False, "state": self.STATE_DEGRADED,
+                        "reason": "no_windows_returned"}
+            self.state = self.STATE_HEALTHY
+            self._consecutive_failures = 0
+            self._save_state()
+            return {"healthy": True, "state": self.STATE_HEALTHY,
+                    "windows_count": len(data["windows"])}
+        except subprocess.TimeoutExpired:
+            self.state = self.STATE_DEGRADED
+            self._save_state()
+            return {"healthy": False, "state": self.STATE_DEGRADED,
+                    "reason": "health_check_timeout"}
+        except json.JSONDecodeError:
+            self.state = self.STATE_DEGRADED
+            self._save_state()
+            return {"healthy": False, "state": self.STATE_DEGRADED,
+                    "reason": "invalid_json_response"}
+        except Exception as e:
+            self.state = self.STATE_FAILED
+            self._save_state()
+            return {"healthy": False, "state": self.STATE_FAILED,
+                    "reason": f"exception: {str(e)[:100]}"}
+
+    def ensure_running(self) -> bool:
+        health = self.health_check()
+        if health["healthy"]:
+            return True
+
+        self._consecutive_failures += 1
+        log("cua_daemon", {"msg": "Not healthy — restarting",
+                           "state": health.get("state"),
+                           "reason": health.get("reason"),
+                           "failures": self._consecutive_failures})
+
+        now = time.time()
+        if now - self._last_restart_time < 10:
+            time.sleep(5)
+
+        backoff = min(2 ** self._consecutive_failures, CUA_DAEMON_MAX_RESTART_INTERVAL)
+        time.sleep(min(backoff, 30))
+
+        self.stop()
+        time.sleep(2)
+        self._last_restart_time = time.time()
+        return self.start()
+
+    def heartbeat(self) -> Dict:
+        chrome_ok = is_chrome_alive()
+        health = self.health_check()
+        return {
+            "chrome": "ok" if chrome_ok else "dead",
+            "cua_daemon": health.get("state", "UNKNOWN"),
+            "cua_healthy": health.get("healthy", False),
+            "surveys_completed": load_state().get("surveys_completed", 0),
+            "ts": datetime.now().isoformat(),
+        }
 
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -290,13 +457,28 @@ class DaemonProcess:
         self.consecutive_errors = 0
         self.surveys_completed = 0
         self._stop_event = threading.Event()
+        self.cua_manager = DaemonManager()
 
     def verify_chrome(self) -> bool:
-        """Ensure Chrome is alive on port 9999."""
         if not is_chrome_alive():
-            print("[DAEMON] Chrome dead — relaunching...")
+            print("[DAEMON] Chrome dead — relaunching via ChromeLauncher...")
             log("chrome_relaunch")
-            return launch_chrome()
+            from survey.chrome import ChromeLauncher
+            result = ChromeLauncher(port=CHROME_PORT).launch_and_verify(
+                url=HEYPIGGY_URL)
+            return result.get("ok", False)
+        return True
+
+    def verify_cua_daemon(self) -> bool:
+        if not self.cua_manager._is_process_alive():
+            print("[DAEMON] cua-driver daemon not running — starting...")
+            log("cua_daemon", {"msg": "Not running, starting"})
+            return self.cua_manager.ensure_running()
+        health = self.cua_manager.health_check()
+        if not health.get("healthy"):
+            print(f"[DAEMON] cua-driver degraded: {health.get('reason')} — restarting...")
+            log("cua_daemon", {"msg": "Degraded, restarting", "health": health})
+            return self.cua_manager.ensure_running()
         return True
 
     def verify_login(self) -> bool:
@@ -312,6 +494,7 @@ class DaemonProcess:
         chrome_ok = is_chrome_alive()
         logged_in = is_logged_in() if chrome_ok else False
         balance = get_balance() if logged_in else None
+        cua_health = self.cua_manager.health_check()
         return {
             "chrome": "ok" if chrome_ok else "dead",
             "logged_in": logged_in,
@@ -319,6 +502,8 @@ class DaemonProcess:
             "surveys_completed": self.surveys_completed,
             "consecutive_errors": self.consecutive_errors,
             "running": self.running,
+            "cua_daemon": cua_health.get("state", "UNKNOWN"),
+            "cua_healthy": cua_health.get("healthy", False),
             "ts": datetime.now().isoformat(),
         }
 
@@ -329,9 +514,16 @@ class DaemonProcess:
 
         while not self._stop_event.is_set():
             try:
-                # Verify invariants
                 if not self.verify_chrome():
                     self.consecutive_errors += 1
+                    time.sleep(10)
+                    continue
+
+                if not self.verify_cua_daemon():
+                    self.consecutive_errors += 1
+                    if self.consecutive_errors >= MAX_CONSECUTIVE_ERRORS:
+                        log("max_errors_reached", {"errors": self.consecutive_errors})
+                        break
                     time.sleep(10)
                     continue
 

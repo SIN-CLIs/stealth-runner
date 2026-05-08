@@ -27,11 +27,34 @@ COMPLETION_MARKERS = [
     "zurück zur website",
     "gutgeschrieben",
     "vielen dank für ihre teilnahme",
+    "thank you for completing",
+    "your response has been recorded",
+    "survey complete",
 ]
 
 COMMANDS = {
-    "click_next": 'document.querySelector(".NextButton").click()',
-    "click_element": 'document.querySelectorAll("input[type=radio],input[type=checkbox]")[{idx}].click()',
+    "click_next": '''(function(){
+        var btn = document.querySelector('.NextButton,#NextButton,input.NextButton,.Skin .NextButton');
+        if(!btn){
+            btn = Array.from(document.querySelectorAll('button,input[type=button],input[type=submit],[role=button],a,span[onclick]'))
+                .find(function(el){
+                    var t=(el.textContent||el.value||'').trim();
+                    return t==='>>'||t==='Weiter'||t==='Next'||t==='Nächster';
+                });
+        }
+        if(btn){btn.click(); return 'clicked';}
+        return 'not_found';
+    })()''',
+    "click_element": '''(function(idx){
+        var els = Array.from(document.querySelectorAll('.LabelWrapper,.ChoiceStructure,.ChoiceRow,label,input[type=radio],input[type=checkbox]'))
+            .filter(function(el){return el.offsetWidth>0 && el.offsetHeight>0;});
+        var el = els[idx];
+        if(!el) return 'not_found';
+        var input = el.matches('input') ? el : el.querySelector('input[type=radio],input[type=checkbox]');
+        if(input){input.click(); input.dispatchEvent(new Event('change',{bubbles:true})); return 'input_clicked';}
+        el.click();
+        return 'clicked';
+    })({idx})''',
     "fill_text": '''(function(v){
         var t=document.querySelector("textarea:not(.g-recaptcha-response)");
         if(!t){var i=document.querySelector("input[type=text],input[type=number]");
@@ -41,6 +64,21 @@ COMMANDS = {
         t.dispatchEvent(new Event("change",{bubbles:true}));}
     })("{value}")''',
 }
+
+
+from .base import ProviderAdapter
+
+
+class QualtricsAdapter(ProviderAdapter):
+    """Qualtrics adapter for labels, language pages, and NextButton."""
+
+    def __init__(self):
+        super().__init__(
+            name="qualtrics",
+            url_patterns=["qualtrics.com", "qualtrics", "jfe/form"],
+            commands=COMMANDS,
+            completion_markers=COMPLETION_MARKERS,
+        )
 
 
 def get_action_for_question(question_text, profile):

@@ -31,11 +31,13 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from survey.runner import SurveyRunner, RunnerConfig, SurveyResult
 from survey.snapshot import CompactSnapshot, detect_completion
+from survey.action_selector import ActionSelector
 
 
 class TestSimpleActions(unittest.TestCase):
-    """Test _simple_actions — rule-based action generation without NIM.
+    """Test ActionSelector.select_actions — rule-based action generation without NIM.
 
+    Extracted from SurveyRunner._simple_actions into ActionSelector.
     Strategy: select first radio, fill first textarea, click submit button.
     """
 
@@ -52,58 +54,50 @@ class TestSimpleActions(unittest.TestCase):
 
     def test_select_first_radio(self):
         """First radio button should be selected."""
-        runner = SurveyRunner(RunnerConfig())
         snap = self._make_snapshot({
             "@e0": {"role": "radio", "text": "Männlich", "label": "Gender"},
             "@e1": {"role": "radio", "text": "Weiblich", "label": "Gender"},
             "@e2": {"role": "button", "text": "Weiter", "label": ""},
         })
         snap.provider = "generic"
-        actions = runner._simple_actions(snap)
+        actions = ActionSelector.select_actions(snap)
 
-        # Should have select action for first radio
         self.assertTrue(any(a["action"] in ("select", "click") for a in actions))
 
     def test_fill_first_textarea(self):
         """First textarea filled ONLY if no submit button exists.
 
-        _simple_actions priority: radio > submit button > textarea fill.
+        ActionSelector priority: radio > submit button > textarea fill.
         If a submit/next button is found, it takes precedence over textarea fill.
         """
-        runner = SurveyRunner(RunnerConfig())
-
-        # Case 1: With submit button → submit action, no fill
         snap = self._make_snapshot({
             "@e0": {"role": "textbox", "text": "", "label": "Comment"},
             "@e1": {"role": "button", "text": "Weiter", "label": ""},
         })
         snap.provider = "generic"
-        actions = runner._simple_actions(snap)
-        # Submit button found first → submit action, no fill
+        actions = ActionSelector.select_actions(snap)
         self.assertTrue(len(actions) > 0)
         has_submit = any(a["action"] == "submit" for a in actions)
         has_fill = any(a["action"] == "fill" for a in actions)
         self.assertTrue(has_submit, "Submit button should be selected")
         self.assertFalse(has_fill, "No fill when submit button exists")
 
-        # Case 2: Without submit button → fill textarea
         snap2 = self._make_snapshot({
             "@e0": {"role": "textbox", "text": "", "label": "Comment"},
         })
         snap2.provider = "generic"
-        actions2 = runner._simple_actions(snap2)
+        actions2 = ActionSelector.select_actions(snap2)
         fill_actions = [a for a in actions2 if a["action"] == "fill"]
         self.assertTrue(len(fill_actions) > 0, "Textarea should be filled when no submit button")
 
     def test_submit_button(self):
         """Submit/next button should be clicked."""
-        runner = SurveyRunner(RunnerConfig())
         snap = self._make_snapshot({
             "@e0": {"role": "radio", "text": "Option 1", "label": ""},
             "@e1": {"role": "button", "text": "Weiter", "label": ""},
         })
         snap.provider = "generic"
-        actions = runner._simple_actions(snap)
+        actions = ActionSelector.select_actions(snap)
 
         submit_actions = [a for a in actions if a["action"] in ("submit", "click")]
         self.assertTrue(len(submit_actions) > 0)
@@ -111,29 +105,24 @@ class TestSimpleActions(unittest.TestCase):
     def test_empty_snapshot_returns_empty_list(self):
         """Empty snapshot → empty list (no elements to interact with).
 
-        _simple_actions has no "fallback submit" for empty snapshot.
+        ActionSelector has no "fallback submit" for empty snapshot.
         If there are no elements, there are no buttons to click.
         """
-        runner = SurveyRunner(RunnerConfig())
         snap = self._make_snapshot({})
         snap.provider = "generic"
-        actions = runner._simple_actions(snap)
+        actions = ActionSelector.select_actions(snap)
 
-        # Empty snapshot → no actions (nothing to click or fill)
         self.assertEqual(len(actions), 0)
 
     def test_provider_specific_selectors(self):
         """Different providers should use different element selectors."""
-        runner = SurveyRunner(RunnerConfig())
-
         for provider in ["qualtrics", "tolunastart", "purespectrum", "generic"]:
             snap = self._make_snapshot({
                 "@e0": {"role": "radio", "text": "Option", "label": ""},
                 "@e1": {"role": "button", "text": "Next", "label": ""},
             })
             snap.provider = provider
-            actions = runner._simple_actions(snap)
-            # Should not crash
+            actions = ActionSelector.select_actions(snap)
             self.assertIsInstance(actions, list)
 
 

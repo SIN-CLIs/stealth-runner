@@ -47,14 +47,7 @@ __version__ = "2026-05-07"
 CDP_PORT = 9999
 CUA_BIN = "cua-driver"
 
-# ═══════════════════════════════════════════════════════════════════════════
-# CPX API
-# ═══════════════════════════════════════════════════════════════════════════
-
-CPX_APP_ID = "11644"
-CPX_EXT_USER_ID = "2525530"
-CPX_SECURE_HASH = "ae75b0feca27c0f8eb356d7117d978ec"
-CPX_EMAIL = "zukunftsorientierte.energie@gmail.com"
+from survey.security import get_secrets
 
 
 def _get_details_url(port: int = CDP_PORT) -> str:
@@ -78,12 +71,13 @@ def _get_details_url(port: int = CDP_PORT) -> str:
                     return url
     except Exception:
         pass
-    # Fallback: hardcoded
+    # Fallback: configured credentials only. Missing secrets must fail closed.
+    cpx = get_secrets().get_cpx_credentials()
     return (
         "https://live-api.cpx-research.com/api/get-survey-details.php"
-        f"?output_method=jsscriptv1&app_id={CPX_APP_ID}"
-        f"&ext_user_id={CPX_EXT_USER_ID}&secure_hash={CPX_SECURE_HASH}"
-        f"&email={CPX_EMAIL}&extra_info_1=offerwall&main_info=true"
+        f"?output_method=jsscriptv1&app_id={cpx.app_id}"
+        f"&ext_user_id={cpx.ext_user_id}&secure_hash={cpx.secure_hash}"
+        f"&email={cpx.email}&extra_info_1=offerwall&main_info=true"
         "&extra_info_3=EUR&extra_info_4=nomobile"
     )
 

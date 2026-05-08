@@ -700,21 +700,26 @@ def cmd_watch(args):
     # WARUM ensure_accessibility? Prüft ob macOS Accessibility aktiv ist.
     #   → WENN nicht aktiv: cua-driver findet KEINE Elemente → Login schlägt fehl.
     # WARUM start_cua_daemon? Startet cua-driver als Daemon (falls nicht läuft).
-    from survey.accessibility import ensure_accessibility, start_cua_daemon
+    from survey.accessibility import ensure_accessibility
+    from survey.daemon import DaemonManager
 
-    # Daemon starten
-    # WARUM nicht prüfen ob Erfolg? Aktuell: Kein Check!
-    # BUG: Siehe Issue #2 — Daemon-Start wird nicht verifiziert.
-    start_cua_daemon()
+    cua_mgr = DaemonManager()
+    if not cua_mgr.ensure_running():
+        print("[WATCH] ❌ CRITICAL: cua-driver daemon failed to start")
+        print("[WATCH] → Install cua-driver oder manuell starten: nohup cua-driver serve &")
+        log_session("watch_stop", "error", {"reason": "daemon_start_failed"})
+        return
 
     # Accessibility prüfen
+    # FIX Issue #1: Hard-Stop bei fehlender Accessibility (nicht "Continuing...").
+    # WARUM? Ohne Accessibility ist AX-Tree LEER → Login unmöglich.
+    # → "Continuing with CDP-only mode" war ein BUG (CDP kann kein Login).
     if not ensure_accessibility(port=args.port):
-        # WARNUNG ausgeben
-        # BUG: Sollte CRITICAL sein und return/raise!
-        # Siehe Issue #1 Fix 1: Hard-Stop bei fehlender Accessibility.
-        print("[WATCH] ❌ Accessibility not available — cua-driver login will fail")
-        print("[WATCH] Continuing with CDP-only mode...")
-        # ❌ BUG: Fährt trotzdem fort! Sollte STOPpen.
+        print("[WATCH] ❌ CRITICAL: Chrome Accessibility not available")
+        print("[WATCH] → Chrome MUSS mit --force-renderer-accessibility gestartet werden")
+        print("[WATCH] → System Settings → Privacy & Security → Accessibility → Google Chrome")
+        log_session("watch_stop", "error", {"reason": "accessibility_unavailable"})
+        return  # HARD STOP — keine Survey ohne Accessibility möglich
 
     # Konfiguration anzeigen
     print(f"  Poll interval:  {interval}s")
@@ -800,11 +805,40 @@ def cmd_watch(args):
 
         # Ergebnis prüfen
         if login_result.get("status") != "ok":
-            # Login fehlgeschlagen
-            # BUG: Endlosschleife! Siehe Issue #1.
-            # → WARUM "retrying later"? Loop wird wiederholt, Login erneut versucht.
-            # → WENN Login immer fehlschlägt: Endlosschleife!
-            print(f"[WATCH] ❌ Login failed: {login_result.get('reason')} — retrying later")
+            # Login fehlgeschlagen — FIX Issue #1: Kein Endlos-Loop!
+            # WARUM max_retries? Verhindert Endlosschleife bei persistentem Fehler.
+            # → Bisher: Login failed → retrying later → Login failed → ... (endlos)
+            # → Neu: Nach 3 Fehlern → HARD STOP mit Fehlermeldung.
+            max_login_retries = 3
+            login_retry_count = 0
+
+            while login_retry_count < max_login_retries:
+                login_retry_count += 1
+                print(f"[WATCH] ❌ Login failed (attempt {login_retry_count}/{max_login_retries}): "
+                      f"{login_result.get('reason')}")
+
+                if login_retry_count >= max_login_retries:
+                    print(f"[WATCH] ❌ CRITICAL: Login failed after {max_login_retries} attempts")
+                    print(f"[WATCH] → Manual intervention required")
+                    log_session("watch_stop", "error", {
+                        "reason": "login_max_retries_exceeded",
+                        "attempts": login_retry_count,
+                        "last_error": login_result.get('reason'),
+                    })
+                    return  # HARD STOP — verhindert Endlosschleife
+
+                # Exponential Backoff vor Retry
+                wait_s = min(60, 2 ** login_retry_count)
+                print(f"[WATCH] Waiting {wait_s}s before retry...")
+                time.sleep(wait_s)
+
+                # Erneut versuchen
+                login_result = google_login()
+
+            # FALLBACK: Wenn alle Retries fehlschlagen
+            print(f"[WATCH] ❌ Login exhausted — stopping watch daemon")
+            log_session("watch_stop", "error", {"reason": "login_exhausted"})
+            return
         else:
             # Login erfolgreich
             print(f"[WATCH] ✅ Login successful")
@@ -845,6 +879,19 @@ def cmd_watch(args):
                 print(f"[WATCH] Waiting {wait_s}s...")
                 time.sleep(wait_s)
                 continue  # Nächste Loop-Iteration
+
+            # ── Health Check: cua-driver Daemon läuft? ──
+            cua_health = cua_mgr.health_check()
+            if not cua_health.get("healthy"):
+                print(f"[WATCH] ⚠️  cua-driver daemon unhealthy: {cua_health.get('reason')} — recovering...")
+                if not cua_mgr.ensure_running():
+                    state["consecutive_errors"] += 1
+                    if state["consecutive_errors"] >= state["max_consecutive_errors"]:
+                        print(f"[WATCH] ❌ Too many cua-daemon failures — stopping")
+                        break
+                    time.sleep(10)
+                    continue
+                state["consecutive_errors"] = 0
 
             # ── Dashboard prüfen ──
             dashboard_ws = find_dashboard_ws(args.port)

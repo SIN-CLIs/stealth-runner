@@ -1,5 +1,15 @@
 """Semantic analysis engine using NVIDIA NIM API for OpenCode session classification."""
 
+# BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
+#   ❌ playstealth launch — setzt NICHT --force-renderer-accessibility
+#   ❌ webauto-nodriver — ABSOLUT BANNED
+#   ❌ cua-driver click (raw index) — instabil
+#   ❌ --remote-allow-origins=* (ohne Quotes) — zsh glob expansion
+#   ❌ /tmp/heypiggy-bot (fixed profile) — korruptiert nach Neustart
+#   ❌ Hardcoded PIDs — dynamisch, niemals hardcodieren
+#   ❌ pkill -f "Google Chrome" — tötet USER Chrome
+#   ❌ killall Google Chrome — tötet ALLE Chrome
+
 import os
 from typing import Dict, List, Any, Optional
 import structlog

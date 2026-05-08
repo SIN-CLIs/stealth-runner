@@ -128,7 +128,7 @@ def extract_ids_from_dashboard(ws_url):
 
 # ── Survey Filtering ───────────────────────────────────
 
-def filter_surveys(survey_ids, skip_providers=None, max_ids=15, port=9999):
+def filter_surveys(survey_ids, skip_providers=None, max_ids=15, port=9223):
     """Filter surveys via CPX API.
 
     Args:
@@ -211,7 +211,7 @@ def print_survey_table(results):
 # ── DOM Survey Card Scanner (IN-PAGE MODAL) ─────────────
 
 
-def scan_dashboard_dom(port=9999):
+def scan_dashboard_dom(port=9223):
     """Scan dashboard DOM for survey cards with rewards.
 
     heypiggy renders survey cards with onclick=\"clickSurvey('ID')\".
@@ -248,7 +248,7 @@ JSON.stringify(
         return []
 
 
-def scan_dashboard(port=9999, skip_providers=None):
+def scan_dashboard(port=9223, skip_providers=None):
     """Full scan: connect → extract IDs → filter → print.
 
     Returns:
@@ -293,7 +293,7 @@ def read_page_text(ws_url, max_len=500):
         return ""
 
 
-def read_balance(port=9999):
+def read_balance(port=9223):
     """Read current balance from dashboard.
 
     The heypiggy dashboard shows balance in a .balance or .credit element.
@@ -341,3 +341,27 @@ def read_balance(port=9999):
         return float(val)
     except Exception as e:
         return 0.0
+
+
+def read_balance_with_backoff(port=9223, max_retries=5, base_delay=2.0):
+    """Read balance with exponential backoff — avoids false 0.00€ reads.
+
+    Dashboard DOM updates async after page load. Without backoff, first
+    read returns 0.00€ → false negative on payout detection.
+
+    Args:
+        port: CDP port
+        max_retries: Max retry attempts (default 5)
+        base_delay: Initial delay in seconds (doubles each retry)
+
+    Returns:
+        float balance value
+    """
+    for attempt in range(1, max_retries + 1):
+        balance = read_balance(port)
+        if balance > 0:
+            return balance
+        if attempt < max_retries:
+            delay = min(base_delay * (2 ** (attempt - 1)), 30.0)
+            time.sleep(delay)
+    return read_balance(port)

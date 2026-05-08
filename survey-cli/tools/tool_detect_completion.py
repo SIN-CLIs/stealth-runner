@@ -153,50 +153,19 @@ def detect(ws_url: str, timeout: int = 10) -> str:
         
     ALGORITHMUS:
       1. JavaScript ausführen: URL, Title, Body-Text extrahieren
-      2. Interaktivitäts-Check: 2+ INTERACTIVITY_MARKERS im Body?
-         → JA: return "running" (Survey läuft noch, False-Positive verhindern)
-      3. Dashboard-Check: URL enthält DASHBOARD_MARKERS?
+      2. Dashboard-Check: URL enthält DASHBOARD_MARKERS?
          → JA: return "completed" (zurück zum Panel = fertig)
-      4. URL-Check: URL enthält "complete", "success", "finished", "done", "thankyou"?
-         → JA: return "completed"
-      5. Screen-Out-Check: combined (URL + Title + Text) enthält SCREEN_OUT_MARKERS?
-         → JA: return "screen_out"
-      6. Completion-Check: combined enthält COMPLETION_MARKERS?
-         → JA: return "completed"
-      7. Default: return "running" (unsicher = noch läuft)
-      
-    WARUM Interaktivitäts-Check ZUERST?
-      Danke-Seiten können "Weiter" enthalten (z.B. "Weiter zum Dashboard").
-      → Wenn Survey-Elemente (2+ Marker) sichtbar = es läuft NOCH.
-      → Verhindert False-Positives auf Danke-Seiten mit Nav-Buttons.
-      
-    WARUM Threshold = 2 Marker?
-      Ein einzelnes Wort ("Weiter") kann auf einer Danke-Seite vorkommen
-      (z.B. "Klicken Sie Weiter zum Panel").
-      Zwei Marker ("Weiter" + "Antwort") = eindeutig interaktive Seite.
-      
-    WARUM combined = URL + Title + Text?
-      Ein Marker kann in URL (redirect), Title (Tab-Name), ODER Text sein.
-      → Kombination = maximale Erkennungsrate.
-      
-    WARUM lowercase?
-      Case-insensitive Vergleich. "Vielen Dank" = "vielen dank".
-      
-    WARUM substring statt exact match?
-      "vielen dank für ihre teilnahme" matched "vielen dank" (substring).
-      → Tolerant fuer Variationen.
-      
-    WARUM 2000 Zeichen Body-Text?
-      Ausreichend fuer Marker-Erkennung, aber nicht zu gross (Performance).
-      → 2000 Zeichen = ca. 300 Worte = deckt 99% der Marker ab.
-      
-    RACE CONDITION:
-      Seite kann sich aendern waehrend detect().
-      → Z.B. "running" → "completed" zwischen JavaScript-Ausführung und Return.
-      → Acceptable: Naechster Loop erkennt es.
-      
-    EXCEPTION HANDLING:
-      WebSocket-Fehler → return "running" (Conservative: lieber weiterlaufen).
+      3. SCREEN-OUT + COMPLETION VOR Interactivity:
+         Completion oder Screen-Out Marker → SOFORT return (Priority!)
+      4. Interaktivitäts-Check: 2+ INTERACTIVITY_MARKERS im Text?
+         → JA: return "running" (keine Completion/Screen-Out = läuft noch)
+      5. Default: return "running"
+       
+    WARUM Completion VOR Interactivity?
+      Completion-Seiten enthalten oft "Weiter" + "Antwort" (z.B.
+      "Ihre Antwort wurde gespeichert. Weiter zur Website.").
+      Diese Kombination matched 2+ interactivity = False-Positive "running".
+      Fix: Completion/Screen-Out prüfen VOR Interactivity-Check.
     """
     # JavaScript: URL, Title, Body-Text extrahieren
     js = """
@@ -224,35 +193,32 @@ def detect(ws_url: str, timeout: int = 10) -> str:
         text = data.get("text", "")
         combined = url + " " + title + " " + text
         
-        # SCHWELLE 1: Interaktivitäts-Check (Anti-False-Positive)
-        # Zähle wie viele Interaktivitäts-Marker im Text vorkommen
-        interactive_count = sum(1 for m in INTERACTIVITY_MARKERS if m in text)
-        if interactive_count >= 2:
-            # 2+ Marker = eindeutig laufende Survey
-            return "running"
-        
-        # SCHWELLE 2: Dashboard-Redirect (zurück zum Panel)
+        # SCHWELLE 1: Dashboard-Redirect (zurück zum Panel)
         for marker in DASHBOARD_MARKERS:
             if marker in url:
-                # URL enthält Panel-URL = Survey beendet, zurückgeleitet
                 return "completed"
         
-        # SCHWELLE 3: URL-Completion-Marker
+        # SCHWELLE 2: URL-Completion-Marker
         if any(m in url for m in ["complete", "success", "finished", "done", "thankyou"]):
-            # URL enthält Completion-Keyword = wahrscheinlich fertig
             return "completed"
         
-        # SCHWELLE 4: Screen-Out (Disqualifikation)
+        # SCHWELLE 3: Completion ODER Screen-Out – SOFORT return (PRIORITY!)
+        # Completion-Seiten enthalten oft "Weiter" + "Antwort" (z.B.
+        # "Ihre Antwort wurde gespeichert. Weiter zur Website.").
+        # Das matched 2+ INTERACTIVITY_MARKERS → False-Positive "running".
+        # Fix: Completion/Screen-Out PRÜFEN VOR dem Interactivity-Check.
         for marker in SCREEN_OUT_MARKERS:
             if marker in combined:
-                # Screen-Out Marker in URL/Title/Text
                 return "screen_out"
         
-        # SCHWELLE 5: Completion (Erfolg)
         for marker in COMPLETION_MARKERS:
             if marker in combined:
-                # Completion Marker in URL/Title/Text
                 return "completed"
+        
+        # SCHWELLE 4: Interaktivitäts-Check (nur wenn KEINE Completion/Screen-Out)
+        interactive_count = sum(1 for m in INTERACTIVITY_MARKERS if m in text)
+        if interactive_count >= 2:
+            return "running"
         
         # DEFAULT: Unsicher = läuft noch
         return "running"

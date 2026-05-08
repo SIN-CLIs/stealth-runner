@@ -24,6 +24,8 @@ import time
 # Must add workspace root so 'cli.modules.session_manager' is importable
 WS_ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.insert(0, WS_ROOT)
+# Also add project root so cli.modules is importable
+sys.path.insert(0, os.path.dirname(WS_ROOT))
 
 # Patch SESSIONS_FILE to a temp file BEFORE importing the module
 _temp_dir = tempfile.mkdtemp()
@@ -41,6 +43,27 @@ _mock_wid = _wid_patcher.start()
 _mock_wid.return_value = 999
 
 from cli.modules.session_manager import SessionManager
+
+
+def setUpModule():
+    """Ensure session_manager patches are active (re-start if stopall killed them)."""
+    global _fix_patcher, _main_pids_patcher, _wid_patcher
+    global _mock_main_pids, _mock_wid
+    # If any patcher was stopped by a prior tearDownModule, restart it.
+    # patch.stopall() creates a NEW mock on re-start(); update our globals.
+    for p in (_fix_patcher, _main_pids_patcher, _wid_patcher):
+        if p:
+            try:
+                new_mock = p.start()
+                # Re-wire globals to the new mock so tests still control return values
+                if p is _main_pids_patcher:
+                    _mock_main_pids = new_mock
+                    _mock_main_pids.return_value = []
+                elif p is _wid_patcher:
+                    _mock_wid = new_mock
+                    _mock_wid.return_value = 999
+            except Exception:
+                pass  # Already started or other issue
 
 
 class TestSessionManager(unittest.TestCase):

@@ -50,13 +50,8 @@
 
 ### #4: Form validation errors not handled
 **Priority**: P1 | **Labels**: `bug`, `execute` | **Component**: execute, nim_client
-**Status**: OPEN | **Found**: 2026-05-07 | **Assignee**: stealth-orchestrator
-
-**Problem**: Validation error `"Value must be something like '53'"` on age field. No retry logic with adjusted value. Survey disqualifies after invalid input.
-**Expected**: Parse validation message, extract expected format/range, adjust value, retry automatically.
-**Actual**: Invalid value submitted, survey screen-out or page stuck.
-**Files**: `survey-cli/survey/execute.py`, `src/stealth_survey/nim_client.py`
-**Fix approach**: Add `parse_validation_error()` that extracts hint from error text + `adjust_value()` that corrects the input + retry loop (max 3 attempts).
+**Status**: DONE | **Found**: 2026-05-07 | **Assignee**: stealth-orchestrator
+**Fix**: `BatchExecutor.detect_validation_error()` parses validation messages (DE/EN), extracts hints (range, example, min, max). `SurveyRunner.run_survey()` auto-retries fill actions with adjusted values after validation errors detected. Tests passing.
 
 ---
 
@@ -110,13 +105,8 @@
 
 ### #9: Balance read timing issue
 **Priority**: P2 | **Labels**: `bug`, `scanner` | **Component**: scanner, runner
-**Status**: OPEN | **Found**: 2026-05-07 | **Assignee**: stealth-orchestrator
-
-**Problem**: After dashboard reload, balance reads `0.00€` temporarily (DOM not updated yet). No retry logic. Runner assumes payout failed and aborts.
-**Expected**: Retry balance read with exponential backoff until stable non-zero value.
-**Actual**: First read returns 0.00€ → false negative on payout detection.
-**Files**: `survey-cli/survey/scanner.py`, `survey-cli/survey/runner.py`
-**Fix approach**: Add `read_balance_with_backoff()` — retry up to 5× with 2s, 4s, 8s backoff until value > 0 or stabilizes.
+**Status**: DONE | **Found**: 2026-05-07 | **Assignee**: stealth-orchestrator
+**Fix**: `read_balance_with_backoff()` in `scanner.py` retries up to 5× with exponential backoff (2s, 4s, 8s...) until balance > 0. All runner balance reads now use backoff version. Tests passing.
 
 ---
 
@@ -215,37 +205,22 @@
 
 ### #12: Login-Loop Failure — 0 Surveys seit Tagen
 **Priority**: P0 | **Labels**: `bug`, `login` | **Component**: survey.py, auto_google_login.py
-**Status**: OPEN | **Found**: 2026-05-08 | **Assignee**: stealth-orchestrator
-**Blocking**: Payouts — Watch-Loop wiederholt "Not logged in" endlos
-
-**Problem**: Watch-Loop (`cmd_watch()`) fails 100% with identical pattern: "NEUE TAB! Aber NICHT eingeloggt! Login first:". `surveys_completed: 0` since 2026-05-07 06:53.
-**Root Causes** (4 hypotheses):
-1. Chrome Accessibility not active — `ensure_accessibility()` warns but continues
-2. cua-driver daemon not running — `start_cua_daemon()` called but not verified
-3. Google OAuth popup not detected — wrong tab detected
-4. Keychain Auto-Fill inactive — "Fortfahren" button missing, password field appears instead
-
-**Fix approach**: Hard-stop on accessibility failure, daemon health-check, OAuth tab detection, Keychain fallback path. See `issues/001-login-loop-failure.md`
+**Status**: DONE | **Found**: 2026-05-08 | **Assignee**: stealth-orchestrator
+**Fix**: `cmd_watch()` already had hard-stops + max-retries. Integrated `DaemonManager` for cua-driver lifecycle (replaced raw `pgrep`/`start_cua_daemon()`). Added per-cycle cua-daemon health check in main loop alongside Chrome check. Hard-stop on accessibility failure, max 3 login retries with backoff, daemon auto-recovery.
 
 ---
 
 ### #13: Daemon State Management — No Auto-Recovery
 **Priority**: P0 | **Labels**: `bug`, `daemon` | **Component**: survey.py, session_manager.py
-**Status**: OPEN | **Found**: 2026-05-08 | **Assignee**: stealth-orchestrator
-**Blocking**: All CUA operations — no daemon = no login = no surveys
-
-**Problem**: `~/.stealth/daemon_state.json` shows `running: false` since 2026-05-07 06:53. Watch-Loop checks if Chrome is running but NOT if cua-driver daemon is running. No auto-restart on crash.
-**Fix approach**: `DaemonManager` class with state machine (STOPPED → STARTING → HEALTHY → DEGRADED → FAILED), auto-restart with exponential backoff, health-check via `list_windows`. See `issues/002-daemon-state-management.md`
+**Status**: DONE | **Found**: 2026-05-08 | **Assignee**: stealth-orchestrator
+**Fix**: `DaemonManager` class with state machine (STOPPED → STARTING → HEALTHY → DEGRADED → FAILED), auto-restart with exponential backoff, health-check via `list_windows`, integration into `DaemonProcess.run_loop()`. 12 tests passing.
 
 ---
 
 ### #14: Chrome Startup Flags Not Enforced
 **Priority**: P0 | **Labels**: `bug`, `chrome` | **Component**: auto_google_login.py, session_manager.py
-**Status**: OPEN | **Found**: 2026-05-08 | **Assignee**: stealth-orchestrator
-**Blocking**: CUA operations — AX-Tree empty without `--force-renderer-accessibility`
-
-**Problem**: `playstealth launch` does NOT set `--force-renderer-accessibility` → AX-Tree empty. `--remote-allow-origins=*` (without quotes) → zsh expands `*` → Chrome fails to start. Fixed profile path `/tmp/heypiggy-bot` corrupts after restart.
-**Fix approach**: `ChromeLauncher` class with post-start verification (CDP reachable? AX-Tree has elements? Flags in cmdline?), timestamped profile paths, hard enforcement of required flags. See `issues/003-chrome-startup-flags.md`
+**Status**: DONE | **Found**: 2026-05-08 | **Assignee**: stealth-orchestrator
+**Fix**: `ChromeLauncher` class implemented in `survey-cli/survey/chrome.py` with mandatory flag enforcement, CDP wait, cmdline flag verification, and AX-Tree verification. 21 tests passing.
 
 ---
 
@@ -269,11 +244,8 @@
 
 ### #17: NIM Runtime Failures — No Fallback Strategy
 **Priority**: P0 | **Labels**: `bug`, `nim` | **Component**: survey_agent.py, nim_client.py
-**Status**: OPEN | **Found**: 2026-05-08 | **Assignee**: stealth-orchestrator
-**Blocking**: Payouts — NIM failure = 0 surveys when `use_nim=True`
-
-**Problem**: `NIMSurveyClient.decide()` has no timeout/error handling. On API key expired, rate limit, or network error → Survey loop fails completely. No fallback to auto-pilot.
-**Fix approach**: `NIMSurveyClient` with retry (1s, 2s, 4s backoff), error-type differentiation (401 = permanent, 429 = retry), `available` property with auto-recovery after 5min. `SurveyAgent.run_survey()` falls back to `_simple_actions()` after 3 consecutive NIM failures. See `issues/006-nim-runtime-failures.md`
+**Status**: DONE | **Found**: 2026-05-08 | **Assignee**: stealth-orchestrator
+**Fix**: Circuit breaker, retry with exponential backoff (RateLimitError, network errors), error-type differentiation (auth=permanent, rate_limit=retry), auto-recovery after 5min, fallback to `_simple_actions()` in SurveyAgent. Both legacy `NIMClient` and new `NIMSurveyClient` updated. 43 tests passing.
 
 ---
 

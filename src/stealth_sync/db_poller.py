@@ -1,3 +1,13 @@
+# BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
+#   ❌ playstealth launch — setzt NICHT --force-renderer-accessibility
+#   ❌ webauto-nodriver — ABSOLUT BANNED
+#   ❌ cua-driver click (raw index) — instabil
+#   ❌ --remote-allow-origins=* (ohne Quotes) — zsh glob expansion
+#   ❌ /tmp/heypiggy-bot (fixed profile) — korruptiert nach Neustart
+#   ❌ Hardcoded PIDs — dynamisch, niemals hardcodieren
+#   ❌ pkill -f "Google Chrome" — tötet USER Chrome
+#   ❌ killall Google Chrome — tötet ALLE Chrome
+
 import asyncio
 import sqlite3
 import time
@@ -9,6 +19,15 @@ logger = structlog.get_logger(__name__)
 
 
 class OpenCodeDBPoller:
+    """Polls the OpenCode SQLite database for new session entries.
+    
+    Monitors ~/.local/share/opencode/opencode.db for newly created
+    survey sessions. Uses incremental polling (tracks last_check
+    timestamp) to avoid re-processing known sessions.
+    
+    Provides session dicts with created_at, status, and metadata
+    for the stealth_survey pipeline to consume.
+    """
 
     def __init__(self, db_path: Optional[str] = None):
         """Initialize the database poller with the OpenCode DB path.

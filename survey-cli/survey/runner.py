@@ -90,6 +90,7 @@ BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
 ================================================================================"""
 
 import json
+import os
 import re
 import time
 import hashlib
@@ -102,8 +103,17 @@ from . import chrome
 from .snapshot import generate_snapshot, detect_completion, detect_progress, CompactSnapshot
 from .nim import NIMClient, get_nim
 from .execute import BatchExecutor
+from .opener import SurveyOpener, SurveyTarget, OpenResult
+from .completion_detector import CompletionDetector
+from .balance_tracker import BalanceTracker
+from .action_selector import ActionSelector
+from .profile_loader import ProfileLoader
+from .pre_qualifier import PreQualifierHandler
+from .cash_out_trigger import CashOutTrigger
+from .survey_rater import SurveyRater
 from .autodoc import log_earnings, log_error, log_session, log_decision
-from .scanner import scan_dashboard, read_balance
+from .observability import get_logger, SurveyMetrics
+from .scanner import scan_dashboard, read_balance_with_backoff
 # Frozen tools — atomar, __frozen__=True, NICHT aendern
 from tools import (click as tool_click, fill as tool_fill,
                    snapshot as tool_snapshot, detect_completion as tool_detect,
@@ -128,7 +138,7 @@ class SurveyResult:
 
 @dataclass
 class RunnerConfig:
-    cdp_port: int = 9999
+    cdp_port: int = 8888
     max_iterations: int = 50
     max_surveys: int = 10
     wait_after_action: float = 3.0
@@ -149,9 +159,27 @@ class SurveyRunner:
     def __init__(self, config: Optional[RunnerConfig] = None):
         self.config = config or RunnerConfig()
         self.nim = get_nim() if self.config.use_nim else None
-        self.profile = self._load_profile()
+        self.profile = ProfileLoader.load_profile(os.path.dirname(__file__))
         self.learnings: List[str] = []
         self.history: List[Dict] = []
+        self.opener = SurveyOpener(
+            cdp_port=self.config.cdp_port, debug=self.config.debug
+        )
+        self.completion_detector = CompletionDetector(
+            cdp_port=self.config.cdp_port, debug=self.config.debug
+        )
+        self.balance_tracker = BalanceTracker(
+            cdp_port=self.config.cdp_port, debug=self.config.debug
+        )
+        self.pre_qualifier = PreQualifierHandler(
+            cdp_port=self.config.cdp_port, debug=self.config.debug
+        )
+        self.cash_out = CashOutTrigger(debug=self.config.debug)
+        self.survey_rater = SurveyRater(
+            cdp_port=self.config.cdp_port, debug=self.config.debug
+        )
+        get_logger(verbose=self.config.debug)
+        self.metrics = SurveyMetrics()
 
     def run_survey(self, survey_id: str,
                    survey_url: Optional[str] = None) -> SurveyResult:
@@ -189,8 +217,9 @@ class SurveyRunner:
                 except Exception:
                     pass
         tabs_after = len(chrome.find_bot_tabs(self.config.cdp_port))
-        if tabs_before != tabs_after and self.config.debug:
-            print(f"[RUN] Cleaned {tabs_before - tabs_after} zombie tabs")
+        if tabs_before != tabs_after:
+            get_logger().cleanup(tabs_before, tabs_after,
+                                 zombie_tabs=tabs_before - tabs_after)
 
         # 1. Get survey URL (skip CPX API for in-page modal)
         provider = None  # Will be set below
@@ -200,9 +229,10 @@ class SurveyRunner:
             # Check if it's a pre-qualifier
             details = chrome.get_survey_details(survey_id)
             if details.get("type") == "question":
-                if self.config.debug:
-                    print(f"[RUN] Pre-qualifier detected: {details.get('question','?')[:60]}")
-                survey_url = self.handle_pre_qualifier(survey_id, details)
+                get_logger().prequal(survey_id, details.get("question", "")[:60])
+                survey_url = self.pre_qualifier.handle_pre_qualifier_api(
+                    survey_id, details, self.profile
+                )
                 if not survey_url:
                     result.error = "Pre-qualifier failed"
                     result.status = "screen_out"
@@ -213,13 +243,14 @@ class SurveyRunner:
 
             if not survey_url:
                 # No survey URL from API — try browser-based pre-qualifier
-                if self.config.debug:
-                    print(f"[RUN] No href from API for {survey_id} — trying browser pre-qualifier")
-                preq_result = self._handle_pre_qualifier_browser(survey_id)
+                get_logger().warn(f"No href from API for {survey_id} — trying browser pre-qualifier",
+                                  survey_id=survey_id)
+                preq_result = self.pre_qualifier.handle_pre_qualifier_browser(
+                    survey_id, self._close_tab
+                )
                 if preq_result.get("redirect_url"):
                     survey_url = preq_result["redirect_url"]
-                    if self.config.debug:
-                        print(f"[RUN] Browser pre-qualifier → {survey_url[:60]}")
+                    get_logger().prequal(survey_id, result_url=survey_url)
                 else:
                     result.status = "screen_out"
                     result.error = "No survey URL (pre-qualifier failed or not available)"
@@ -242,106 +273,107 @@ class SurveyRunner:
         if provider == "unknown":
             provider = "generic"
             result.provider = "generic"
-            if self.config.debug:
-                print(f"[RUN] Unknown provider — using generic fallback commands")
+            get_logger().warn("Unknown provider — using generic fallback commands",
+                              survey_id=survey_id)
         elif provider == "in_page_modal":
-            if self.config.debug:
-                print(f"[RUN] In-page modal survey — clicking card on dashboard")
-
-        if self.config.debug:
-            print(f"[RUN] {survey_id} → {provider} (CPX: {survey_url[:60]})")
+            get_logger().info("In-page modal survey — clicking card on dashboard",
+                              survey_id=survey_id)
 
         # 2. Read balance BEFORE opening survey tab (dashboard WS still valid)
         try:
-            balance_before = read_balance(self.config.cdp_port)
+            balance_before = read_balance_with_backoff(self.config.cdp_port)
         except Exception:
             balance_before = 0.0
-        if self.config.debug:
-            print(f"[BALANCE] Before survey: {balance_before}€")
 
-        # 3. Open survey — IN-PAGE MODAL (preferred) or NEW TAB (fallback)
-        is_in_page = (provider == "in_page_modal")
-        tab_id = None  # Only set for new-tab flow
-        
+        get_logger().survey_start(survey_id, provider, survey_url, balance_before)
+
+        # 3. Open survey — DASHBOARD CLICK (PRIMARY) for all surveys.
+        #
+        # WARUM dashboard click instead of Target.createTarget?
+        #   Target.createTarget creates a NEW tab WITHOUT heypiggy session cookies.
+        #   CPX redirect (click.cpx-research.com) requires app_id from heypiggy session.
+        #   Without cookies → "No app id was specified" error page.
+        #   Dashboard click uses heypiggy's own clickSurvey() JavaScript → has session.
+        #
+        #   The fix (2026-05-08): Use _click_survey_card for ALL surveys (not just
+        #   in_page_modal). _click_survey_card clicks the survey card element via DOM,
+        #   which triggers the onclick handler with proper session context.
+        is_in_page = True  # Always use dashboard click approach
+        tab_id = None
+
         # 3a. Pre-survey cleanup: close all stacked modals on dashboard
-        if is_in_page and dashboard_ws:
+        if dashboard_ws:
             n_closed = self._pre_survey_cleanup(dashboard_ws)
-            if self.config.debug and n_closed > 0:
-                print(f"[CLEANUP] Closed {n_closed} stacked modals")
+            if n_closed > 0:
+                get_logger().cleanup(0, 0, zombie_tabs=n_closed)
         
         # 3b. Capture tabs before clickSurvey() for new-tab detection
         tabs_before = set()
-        if is_in_page:
+        try:
+            for p in chrome.find_bot_tabs(self.config.cdp_port):
+                tabs_before.add(p.get("id", ""))
+        except Exception:
+            pass
+        
+# 3c. Click survey card via DOM (reliable, has session cookies)
+        # NOTE: survey_id from API may not match DOM onclick IDs.
+        # _click_survey_card finds the card element and clicks it directly.
+        # Returns (ws_url, tab_id) — tab_id is set for new-tab flow.
+        tab_ws, detected_tab_id = self._click_survey_card(survey_id)
+        if not tab_ws:
+            result.error = "Failed to click survey card"
+            result.status = "error"
+            return result
+        time.sleep(self.config.wait_page_load)
+        
+        # 3d. Determine flow type (in-page vs new-tab)
+        if detected_tab_id:
+            tab_id = detected_tab_id
+            is_in_page = False  # Survey opened in new tab
+            get_logger().tab_switch(tab_id, reason="survey_new_tab")
+        else:
+            is_in_page = True   # In-page modal (survey within dashboard)
+        
+        # 3e. Verify survey tab content (handle stuck loading / error pages)
+        if tab_ws:
+            page_text = BatchExecutor.read_page_text(tab_ws, 500).lower()
+            if any(s in page_text for s in ["loading", "just getting things ready", "won't be long"]):
+                get_logger().warn("Stuck on loading page — skipping",
+                                  survey_id=survey_id, context="tab_creation")
+                result.status = "screen_out"
+                result.error = "Survey stuck on loading page"
+                log_earnings(survey_id, "unknown", 0, "screen_out", 0)
+                return result
+            
+            # Detect ALL expired survey error pages (case-insensitive)
+            if any(s in page_text for s in [
+                "no app id", "survey not available", "error - unable to start survey",
+                "survey closed", "link has expired", "survey has ended",
+                "leider ist ein fehler aufgetreten", "error occurred",
+                "this survey is no longer available", "survey unavailable",
+                "sie werden umgeleitet", "redirect", "no survey available",
+            ]):
+                get_logger().warn("Survey URL expired or error page — skipping",
+                                  survey_id=survey_id, context="tab_creation")
+                result.status = "screen_out"
+                result.error = "Survey URL expired/error page"
+                log_earnings(survey_id, "unknown", 0, "screen_out", 0)
+                return result
+        
+        # 3f. Get actual survey URL for provider detection
+        actual_url = ""
+        if not is_in_page:  # Only get URL for new-tab flow (in-page uses dashboard)
             try:
-                for p in chrome.find_bot_tabs(self.config.cdp_port):
-                    tabs_before.add(p.get("id", ""))
+                ws_check = websocket.create_connection(tab_ws, timeout=5)
+                ws_check.send(json.dumps({
+                    "id": 0, "method": "Runtime.evaluate",
+                    "params": {"expression": "document.location.href", "returnByValue": True},
+                }))
+                r = json.loads(ws_check.recv())
+                actual_url = r.get("result", {}).get("result", {}).get("value", "")
+                ws_check.close()
             except Exception:
                 pass
-        
-        if is_in_page:
-            # In-page modal: click survey card on dashboard (no new tab!)
-            tab_ws = self._click_survey_card(survey_id)
-            if not tab_ws:
-                result.error = "Failed to click survey card (in-page modal)"
-                result.status = "error"
-                return result
-            time.sleep(self.config.wait_page_load)
-            
-            # Check if a new tab opened (Qualtrics sometimes opens new tab anyway)
-            new_ws = self._find_new_tab_after_click(tabs_before)
-            if new_ws:
-                tab_ws = new_ws
-                is_in_page = False  # It's actually a new tab!
-                if self.config.debug:
-                    print(f"[TAB] Survey opened in NEW tab (Qualtrics redirect)")
-        else:
-            # Legacy: open new browser tab via Target.createTarget
-            tab_id = self._create_tab(dashboard_ws, survey_url)
-            if not tab_id:
-                result.error = "Failed to create browser tab"
-                result.status = "error"
-                return result
-
-            # Wait for CPX redirect + handle redirect page + detect REAL provider
-            tab_ws, actual_url = self._find_survey_tab_ws(tab_id)
-            
-            # Check for stuck loading pages
-            if tab_ws:
-                page_text = BatchExecutor.read_page_text(tab_ws, 500).lower()
-                if any(s in page_text for s in ["loading", "just getting things ready", "won't be long"]):
-                    if self.config.debug:
-                        print("[RUN] Stuck on loading page — skipping")
-                    self._close_tab(tab_id)
-                    result.status = "screen_out"
-                    result.error = "Survey stuck on loading page"
-                    log_earnings(survey_id, "unknown", 0, "screen_out", 0)
-                    return result
-            
-            time.sleep(self.config.wait_page_load)
-            
-            # Handle CPX redirect page (if stuck on "Sie werden umgeleitet")
-            tab_ws, actual_url = self._find_survey_tab_ws(tab_id)
-            if tab_ws:
-                page_text = BatchExecutor.read_page_text(tab_ws, 500).lower()
-                # Detect ALL expired survey error pages
-                if any(s in page_text for s in [
-                    "no app id", "survey not available", "error - unable to start survey",
-                    "survey closed", "link has expired", "survey has ended",
-                    "leider ist ein fehler aufgetreten", "error occurred",
-                    "this survey is no longer available", "survey unavailable",
-                ]):
-                    if self.config.debug:
-                        print(f"[RUN] Survey URL expired or error page — skipping")
-                    self._close_tab(tab_id)
-                    result.status = "screen_out"
-                    result.error = "Survey URL expired/error page"
-                    log_earnings(survey_id, "unknown", 0, "screen_out", 0)
-                    return result
-                if "umgeleitet" in page_text or "redirect" in page_text:
-                    if self.config.debug:
-                        print("[RUN] CPX redirect page — clicking link...")
-                    self._click_redirect_link(tab_ws)
-                    time.sleep(self.config.wait_page_load)
 
         # Post-tab-creation: provider + URL detection
         # For in-page modal: provider stays as "in_page_modal", URL is dashboard
@@ -354,8 +386,8 @@ class SurveyRunner:
             if real_provider != provider and real_provider != "unknown":
                 result.provider = real_provider
                 provider = real_provider
-                if self.config.debug:
-                    print(f"[RUN] Real provider: {provider} ({actual_url[:60]})")
+                get_logger().info(f"Real provider: {provider} ({actual_url[:60]})",
+                                  survey_id=survey_id, provider=provider)
 
         # 4. Handle PureSpectrum captcha preflight (if applicable)
         if provider == "purespectrum" and tab_ws:
@@ -406,9 +438,14 @@ class SurveyRunner:
                 # 5b. Compact snapshot (for NIM decisions + element analysis)
                 snapshot = generate_snapshot(tab_ws)
 
-                if self.config.debug and iteration % 5 == 0:
-                    print(f"  [iter {iteration}] {snapshot.provider} "
-                          f"({len(snapshot.refs)} el)")
+                dom_hash = "pending"  # Initialize before first use in iteration() call below
+                get_logger().iteration(
+                    iteration=iteration + 1,
+                    elements=len(snapshot.refs),
+                    actions=actions_executed,
+                    dom_hash=dom_hash if dom_hash != "error" else "",
+                    provider=snapshot.provider,
+                )
 
                 # 5c. SOTA Anti-stuck via frozen tool (threshold 3)
                 # Compute DOM hash from page text (BatchExecutor is mocked in tests)
@@ -419,7 +456,7 @@ class SurveyRunner:
                     dom_hash = "error"
                     page_text = ""
                 
-                if dom_hash != "error" and stuck_checker.is_stuck(dom_hash):
+                if dom_hash != "pending" and dom_hash != "error" and stuck_checker.is_stuck(dom_hash):
                     result.error = f"Stuck: {stuck_checker.threshold}x same DOM hash (anti_stuck tool)"
                     result.status = "error"
                     break
@@ -440,8 +477,8 @@ class SurveyRunner:
                 # 5f. SOTA Error detection: Check for screen-out/error page
                 is_error, error_reason = BatchExecutor.detect_error_page(page_text)
                 if is_error:
-                    if self.config.debug:
-                        print(f"[RUN] Error page detected: {error_reason}")
+                    get_logger().warn(f"Error page detected: {error_reason}",
+                                      survey_id=survey_id, context="nemo_loop")
                     result.status = "screen_out"
                     result.error = error_reason
                     self._close_tab(tab_id)
@@ -454,10 +491,23 @@ class SurveyRunner:
                     time.sleep(self.config.wait_page_load)
                     continue
 
-                # 5h. Check completion
+                # 5h. Check completion (survey tab + cross-tab)
+                completed = False
+
+                # Primary: check snapshot URL/title + survey tab body text
                 if detect_completion(snapshot.url + " " + snapshot.title) or \
                    self._detect_completion_text(tab_ws):
+                    completed = True
+
+                # Secondary: cross-tab scan — survey may redirect completion
+                # to a different tab (e.g., back to dashboard after payout)
+                if not completed:
+                    completed = self._scan_completion_all_tabs()
+
+                if completed:
                     result.status = "completed"
+                    log_earnings(survey_id, provider, 0, "completed", 0,
+                                {"source": "completion_detected_at_iteration", "iter": iteration})
                     break
 
                 # 5i. NIM decision (with retry on empty actions)
@@ -478,7 +528,7 @@ class SurveyRunner:
                                                   self.learnings, self.history)
                         actions = decision.get("actions", [])
                 else:
-                    actions = self._simple_actions(snapshot, tab_ws)
+                    actions = ActionSelector.select_actions(snapshot)
 
                 # 5j. Check for complete action
                 if any(a.get("action") == "complete" for a in actions):
@@ -494,13 +544,42 @@ class SurveyRunner:
 
                 # 5l. Execute batch with circuit breaker
                 executor = BatchExecutor(tab_ws, provider, config=self.config)
-                batch_result = executor.execute(actions)
+                batch_result = executor.execute(actions, snapshot.refs)
+
+                # 5la. SOTA Validation Error Detection + Auto-Recovery
+                # After executing, check if the page shows a validation error.
+                # If so, extract the hint, adjust the value, and retry once.
+                try:
+                    post_page = BatchExecutor.read_page_text(tab_ws, 800)
+                    val_err = BatchExecutor.detect_validation_error(post_page)
+                    if val_err:
+                        get_logger().warn(
+                            f"Validation error: {val_err.get('kind')} → hint={val_err.get('hint')}",
+                            survey_id=survey_id, context="nemo_loop", iteration=iteration + 1
+                        )
+                        retry_actions = []
+                        for a in actions:
+                            if a.get("action") == "fill" and a.get("value"):
+                                fixed_value = val_err.get("hint", a["value"])
+                                retry_actions.append({**a, "value": fixed_value})
+                            elif a.get("action") == "fill":
+                                pass
+                            else:
+                                retry_actions.append(a)
+                        if retry_actions:
+                            time.sleep(1.0)
+                            retry_result = executor.execute(retry_actions, snapshot.refs)
+                            batch_result = retry_result
+                except Exception:
+                    pass
 
                 # Circuit breaker: 3+ failed actions in batch = abort
                 if batch_result.total_fail >= 3:
                     consecutive_fails += 2
-                    if self.config.debug:
-                        print(f"  [iter {iteration}] Circuit breaker: {batch_result.total_fail} fails")
+                    get_logger().warn(
+                        f"Circuit breaker: {batch_result.total_fail} fails",
+                        survey_id=survey_id, context="nemo_loop", iteration=iteration + 1
+                    )
                     if consecutive_fails >= max_consecutive_fails:
                         result.error = f"Circuit breaker triggered ({batch_result.total_fail} fail, {consecutive_fails} streak)"
                         result.status = "blocked"
@@ -519,8 +598,8 @@ class SurveyRunner:
                 })
 
             except Exception as e:
-                if self.config.debug:
-                    print(f"  [iter {iteration}] Error: {e}")
+                get_logger().error(str(e), context="nemo_loop", survey_id=survey_id,
+                                   iteration=iteration + 1)
                 consecutive_fails += 1
                 if consecutive_fails >= max_consecutive_fails:
                     result.error = f"Circuit breaker: {str(e)[:100]}"
@@ -539,28 +618,26 @@ class SurveyRunner:
 
         # 7. Rate survey
         if result.status == "completed" and self.config.auto_rate:
-            self._rate_survey()
+            self.survey_rater.rate()
 
         # 8. Calculate earnings (balance read before tab creation, after survey close)
         time.sleep(2)
         try:
-            balance_after = read_balance(self.config.cdp_port)
-            result.earned = max(0, round(balance_after - balance_before, 2))
-            if self.config.debug:
-                print(f"[BALANCE] After: {balance_after}€ | Earned: +{result.earned}€")
+            balance_after = read_balance_with_backoff(self.config.cdp_port)
+            result.earned = self.balance_tracker.calculate_earned(
+                balance_before, balance_after
+            )
+            get_logger().balance(balance_before, balance_after, result.earned)
         except Exception:
             result.earned = 0.0
-            if self.config.debug:
-                print(f"[BALANCE] After read failed — earned=0 (before was {balance_before}€)")
+            get_logger().warn(f"Balance after read failed — earned=0 (before was {balance_before}€)",
+                              survey_id=survey_id, context="balance_read")
         result.elapsed_s = round(time.monotonic() - start_time, 1)
 
-        # 9. Log earnings
+        # 9. Log earnings + survey end
         log_earnings(survey_id, provider, result.earned, result.status,
                      result.elapsed_s, {"iterations": result.iterations})
-
-        if self.config.debug:
-            print(f"[RESULT] {survey_id}: {result.status} +{result.earned}€ "
-                  f"in {result.elapsed_s}s")
+        get_logger().survey_end(result.status, result.earned, result.elapsed_s, result.error)
 
         return result
 
@@ -604,24 +681,27 @@ class SurveyRunner:
                 # Skip recently failed pre-qualifiers to avoid redundant API calls
                 if survey_id in failed_preq_cache:
                     continue
-                survey_url = self.handle_pre_qualifier(survey_id, survey)
+                survey_url = self.pre_qualifier.handle_pre_qualifier_api(
+                    survey_id, survey, self.profile
+                )
                 if not survey_url:
-                    print(f"[LOOP] Pre-qualifier failed for {survey_id} → skipping")
+                    get_logger().prequal(survey_id, answered=False)
                     failed_preq_cache[survey_id] = True  # Cache failure
                     continue
-                # Update survey dict with real survey URL
                 survey = survey.copy()
                 survey["href"] = survey_url
                 survey["provider"] = "pre_qualifier_answered"
-                if self.config.debug:
-                    print(f"[LOOP] Pre-qualifier answered → survey URL: {survey_url[:60]}")
+                get_logger().prequal(survey_id, answered=True, result_url=survey_url)
 
             # Check balance target
-            balance = read_balance(self.config.cdp_port)
+            try:
+                balance = read_balance_with_backoff(self.config.cdp_port)
+            except Exception:
+                balance = 0.0
             if balance >= self.config.balance_target:
                 print(f"[LOOP] Balance target reached: {balance}€")
                 # Trigger cash-out flow
-                self._trigger_cash_out()
+                self.cash_out.trigger(self.config.balance_target)
                 break
 
             sid = survey["id"]
@@ -646,6 +726,16 @@ class SurveyRunner:
         # Summary
         total = sum(r.earned for r in results if r.earned > 0)
         complete = sum(1 for r in results if r.status == "completed")
+        failed = sum(1 for r in results if r.status == "error")
+        screen_out = sum(1 for r in results if r.status == "screen_out")
+        get_logger().loop_summary(
+            attempted=len(results),
+            completed=complete,
+            total_earned=total,
+            failed=failed,
+            screen_out=screen_out,
+        )
+        self.metrics.loop_completed()
         print(f"\n{'='*50}")
         print(f"  LOOP COMPLETE: {complete}/{len(results)} surveys")
         print(f"  +{total}€ earned")
@@ -664,189 +754,55 @@ class SurveyRunner:
     def _create_tab(self, dashboard_ws, url):
         """Create a new browser tab with stealth injection before navigation.
 
-        Uses stealth-injection to hide automation flags BEFORE the page loads:
-        1. Create blank tab (about:blank)
-        2. Inject stealth JS via Page.addScriptToEvaluateOnNewDocument
-        3. Navigate to survey URL
+        Delegates to SurveyOpener so tab lifecycle logic lives in one place.
         """
-        # 1. Create blank tab
-        tab_info = chrome.create_blank_tab(self.config.cdp_port)
-        if not tab_info:
-            if self.config.debug:
-                print("[STEALTH] Failed to create blank tab — falling back to direct navigation")
-            return chrome.create_tab(url, self.config.cdp_port)
-        
-        # 2. Inject stealth before navigation
-        injected = chrome.inject_stealth_to_tab(tab_info["ws_url"])
-        if self.config.debug:
-            print(f"[STEALTH] {'✅' if injected else '❌'} Injected stealth JS into tab {tab_info['id'][:8]}")
-        
-        # 3. Navigate to survey URL (stealth active before first byte)
-        navigated = chrome.navigate_tab(tab_info["ws_url"], url)
-        if not navigated:
-            if self.config.debug:
-                print("[STEALTH] Navigation failed — tab might already be on survey page")
-        
-        return tab_info["id"]
+        return self.opener._create_tab(url)
 
     def _click_survey_card(self, survey_id):
         """Click a survey card IN-PAGE on the dashboard (modal flow).
 
-        Unlike _create_tab which opens a NEW browser tab, this clicks the
-        survey card directly on the dashboard via CDP JS. The survey opens
-        as an in-page modal/overlay in the SAME tab.
-
-        Returns:
-            dashboard_ws URL if successful, None if failed
+        Delegates to SurveyOpener so tab lifecycle logic lives in one place.
         """
-        import websocket as ws_lib
         dash_ws = chrome.find_dashboard_ws(self.config.cdp_port)
         if not dash_ws:
             return None
-        try:
-            ws = ws_lib.create_connection(dash_ws, timeout=10)
-            ws.send(json.dumps({
-                "id": 1, "method": "Runtime.evaluate",
-                "params": {"expression": f'clickSurvey("{survey_id}")'}
-            }))
-            json.loads(ws.recv())
-            ws.close()
-            if self.config.debug:
-                print(f"[MODAL] Clicked survey card {survey_id}")
-            # Return dashboard WS — the survey runs IN-PAGE, not in a new tab
-            return dash_ws
-        except Exception as e:
-            if self.config.debug:
-                print(f"[MODAL] Failed to click survey card: {e}")
-            return None
+        return self.opener._click_survey_card(survey_id, dash_ws)
 
     def _click_redirect_link(self, tab_ws):
-        """Click the 'hier klicken' link on CPX redirect page."""
-        try:
-            ws = websocket.create_connection(tab_ws, timeout=10)
-            ws.send(json.dumps({
-                "id": 0, "method": "Runtime.evaluate",
-                "params": {"expression": '''
-(function() {
-    var links = document.querySelectorAll("a");
-    for (var i=0;i<links.length;i++) {
-        if ((links[i].textContent||"").includes("hier klicken")) {
-            links[i].click(); return "clicked";
-        }
-    }
-    // Fallback: any link
-    if (links.length > 0) { links[0].click(); return "fallback_click"; }
-    return "no_link";
-})()
-                '''
-            }}))
-            json.loads(ws.recv())
-            ws.close()
-        except Exception:
-            pass
+        """Click the 'hier klicken' link on CPX redirect page.
+
+        Delegates to SurveyOpener so tab lifecycle logic lives in one place.
+        """
+        self.opener._click_redirect_link(tab_ws)
 
     def _find_survey_tab_ws(self, tab_id):
         """Find WebSocket URL for the actual survey tab after CPX redirect.
-        
-        CPX URLs redirect through multiple hops. The original tab_id
-        may have been replaced or a new tab opened. Find the real
-        survey tab (not dashboard, not about:blank).
-        
-        Returns:
-            (ws_url, page_url) tuple or (None, None)
+
+        Delegates to SurveyOpener so tab lifecycle logic lives in one place.
         """
-        # 1. Try the original tab first
-        tab_info = chrome.get_ws_for_tab(tab_id, self.config.cdp_port)
-        if tab_info:
-            # Check if it's still the CPX redirect or has landed on a survey
-            try:
-                import websocket as ws_lib
-                ws = ws_lib.create_connection(tab_info, timeout=8)
-                ws.send(json.dumps({
-                    "id": 0, "method": "Runtime.evaluate",
-                    "params": {"expression": "document.location.href", "returnByValue": True}
-                }))
-                r = json.loads(ws.recv())
-                ws.close()
-                url = r.get("result", {}).get("result", {}).get("value", "")
-                if url and "click.cpx" not in url and "dashboard" not in url:
-                    return tab_info, url
-            except Exception:
-                pass
-        
-        # 2. Fallback: find any non-dashboard, non-blank tab
-        for p in chrome.find_bot_tabs(self.config.cdp_port):
-            url = p.get("url", "")
-            if url and "dashboard" not in url and "about:blank" not in url:
-                return p.get("webSocketDebuggerUrl"), url
-        
-        return None, None
+        return self.opener._find_survey_tab_ws(tab_id)
 
     def _close_tab(self, tab_id):
-        """Close a browser tab. Tolerates already-closed tabs."""
-        try:
-            # Try using the original tab's WS to close it
-            for p in chrome.find_bot_tabs(self.config.cdp_port):
-                if p.get("id") == tab_id:
-                    ws = websocket.create_connection(p["webSocketDebuggerUrl"], timeout=10)
-                    ws.send(json.dumps({
-                        "id": 1, "method": "Target.closeTarget",
-                        "params": {"targetId": tab_id}
-                    }))
-                    json.loads(ws.recv())
-                    ws.close()
-                    return
-            # If not found, try closing via dashboard WS
-            dash_ws = chrome.find_dashboard_ws(self.config.cdp_port)
-            if dash_ws:
-                ws = websocket.create_connection(dash_ws, timeout=10)
-                ws.send(json.dumps({
-                    "id": 1, "method": "Target.closeTarget",
-                    "params": {"targetId": tab_id}
-                }))
-                json.loads(ws.recv())
-                ws.close()
-        except Exception:
-            pass  # Tab already closed — that's fine
+        """Close a browser tab. Tolerates already-closed tabs.
+
+        Delegates to SurveyOpener so tab lifecycle logic lives in one place.
+        """
+        target = SurveyTarget(
+            survey_id="", provider="", ws_url="",
+            tab_id=tab_id, mode="new_tab",
+        )
+        self.opener.close(target)
 
     def _refresh_tab_ws(self, tab_id):
         """Re-discover WebSocket URL for tab after navigation.
 
-        After executing actions, the tab may have navigated to a new page
-        or been replaced. Re-find the WS URL to prevent stale WS errors.
-
-        Uses CDPConnection for retry + auto-reconnect on stale connections.
-
-        Returns:
-            Fresh WS URL or None if tab is gone (screen-out)
+        Delegates to SurveyOpener so tab lifecycle logic lives in one place.
         """
-        from .cdp_client import CDPConnection
-
-        # Try original tab first
-        tab_info = chrome.get_ws_for_tab(tab_id, self.config.cdp_port)
-        if tab_info:
-            try:
-                with CDPConnection(tab_info, max_retries=2, timeout=5) as cdp:
-                    cdp.call("Runtime.evaluate",
-                             {"expression": "document.location.href"})
-                    return tab_info
-            except Exception:
-                pass
-
-        # Fallback: find any non-dashboard tab
-        for p in chrome.find_bot_tabs(self.config.cdp_port):
-            url = p.get("url", "")
-            if url and "dashboard" not in url and "about:blank" not in url:
-                try:
-                    ws_url = p["webSocketDebuggerUrl"]
-                    with CDPConnection(ws_url, max_retries=2, timeout=5) as cdp:
-                        cdp.call("Runtime.evaluate",
-                                 {"expression": "document.readyState"})
-                        return ws_url
-                except Exception:
-                    continue
-
-        return None  # Tab is gone
+        target = SurveyTarget(
+            survey_id="", provider="", ws_url="",
+            tab_id=tab_id, mode="new_tab",
+        )
+        return self.opener.refresh_ws(target)
 
     def _detect_provider(self, url):
         """Detect provider from URL."""
@@ -854,269 +810,66 @@ class SurveyRunner:
         return detect_provider(url)
 
     def _handle_pre_qualifier_browser(self, survey_id):
-        """Handle CPX pre-qualifier in browser. Answer via CDP → wait for redirect.
+        """Handle CPX pre-qualifier in browser.
 
-        Returns:
-            {"redirect_url": "..."} on success
-            {"aborted": True} on failure
+        Delegates to PreQualifierHandler so pre-qualifier logic lives in one place.
         """
-        from .chrome import create_tab, find_bot_tabs
-
-        # Build CPX click URL using dashboard context
-        dash_ws = chrome.find_dashboard_ws(self.config.cdp_port)
-        if not dash_ws:
-            return {"aborted": True}
-
-        try:
-            # Execute clickSurvey in browser context to get the survey tab
-            ws = websocket.create_connection(dash_ws, timeout=10)
-            ws.send(json.dumps({
-                "id": 0, "method": "Runtime.evaluate",
-                "params": {"expression": f"clickSurvey('{survey_id}'); '';"}
-            }))
-            json.loads(ws.recv())
-            ws.close()
-        except Exception as e:
-            if self.config.debug:
-                print(f"[PREQ-BROWSER] clickSurvey failed: {e}")
-            return {"aborted": True}
-
-        # Wait for new tab to open
-        time.sleep(3)
-
-        # Find the pre-qualifier tab
-        preq_tab = None
-        for attempt in range(10):
-            for p in find_bot_tabs(self.config.cdp_port):
-                url = p.get("url", "")
-                if "click.cpx" in url or "cpx" in url.lower():
-                    preq_tab = p
-                    break
-            if preq_tab:
-                break
-            time.sleep(1)
-
-        if not preq_tab:
-            return {"aborted": True}
-
-        tab_ws = preq_tab.get("webSocketDebuggerUrl")
-        tab_id = preq_tab.get("id")
-
-        if self.config.debug:
-            print(f"[PREQ-BROWSER] Tab opened: {preq_tab.get('url','')[:60]}")
-
-        # Loop: answer pre-qualifier questions until redirect
-        max_steps = 8
-        for step in range(max_steps):
-            time.sleep(2)
-
-            # Check if we've been redirected to actual survey
-            try:
-                ws2 = websocket.create_connection(tab_ws, timeout=8)
-                ws2.send(json.dumps({
-                    "id": 0, "method": "Runtime.evaluate",
-                    "params": {"expression": "window.location.href"}
-                }))
-                r = json.loads(ws2.recv())
-                current_url = r.get("result", {}).get("result", {}).get("value", "")
-                ws2.close()
-
-                # Check if redirected to non-CPX URL
-                if current_url and "click.cpx" not in current_url and current_url != preq_tab.get("url", ""):
-                    # Redirected! Close pre-qualifier tab, return survey URL
-                    if current_url.startswith("http"):
-                        self._close_tab(tab_id)
-                        return {"redirect_url": current_url}
-
-            except Exception:
-                pass
-
-            # Read current page text
-            page_text = BatchExecutor.read_page_text(tab_ws, 1000)
-
-            if not page_text.strip():
-                time.sleep(2)
-                page_text = BatchExecutor.read_page_text(tab_ws, 1000)
-
-            if not page_text.strip():
-                continue  # Page not loaded yet
-
-            # Find radio buttons (pre-qualifier answers)
-            ws3 = websocket.create_connection(tab_ws, timeout=8)
-            ws3.send(json.dumps({
-                "id": 0, "method": "Runtime.evaluate",
-                "params": {"expression": """
-(function(){
-    // Try multiple answer element types
-    var selectors = [
-        'input[type=radio]',           // standard radio
-        '[role=radio]',                // ARIA radio
-        '.answer-option',              // custom class
-        '.survey-option',              // custom class
-        '.cp-answer'                   // CPX specific
-    ];
-    var results = {};
-    selectors.forEach(function(sel){
-        var els = document.querySelectorAll(sel);
-        if(els.length > 0){
-            results[sel] = els.length;
-        }
-    });
-    return JSON.stringify(results);
-})();
-"""
-                }
-            }))
-            r = json.loads(ws3.recv())
-            answer_types = json.loads(r.get("result", {}).get("result", {}).get("value", "{}"))
-            ws3.close()
-
-            if not answer_types:
-                if self.config.debug:
-                    print(f"[PREQ-BROWSER] Step {step}: No answer elements found")
-                time.sleep(2)
-                continue
-
-            # Select first non-"cannot answer" answer
-            ws4 = websocket.create_connection(tab_ws, timeout=8)
-            ws4.send(json.dumps({
-                "id": 0, "method": "Runtime.evaluate",
-                "params": {"expression": """
-(function(){
-    var els = document.querySelectorAll('input[type=radio]');
-    if(els.length === 0) els = document.querySelectorAll('[role=radio]');
-    for(var i=0;i<els.length;i++){
-        var el = els[i];
-        var label = el.closest('label') || el.parentElement;
-        var text = (label ? label.textContent : el.value || '').trim();
-        if(text && !text.includes('nicht beantworten') && !text.includes('cannot answer')){
-            el.click();
-            return 'selected:' + text.slice(0,40);
-        }
-    }
-    // Fallback: select first
-    if(els.length > 0){ els[0].click(); return 'fallback:first'; }
-    return 'no answers';
-})();
-"""
-                }
-            }))
-            r = json.loads(ws4.recv())
-            selected = r.get("result", {}).get("result", {}).get("value", "")
-            ws4.close()
-
-            if self.config.debug:
-                print(f"[PREQ-BROWSER] Step {step}: {selected}")
-
-            if "selected" in selected or "fallback" in selected:
-                time.sleep(1)
-                # Click submit button
-                ws5 = websocket.create_connection(tab_ws, timeout=8)
-                ws5.send(json.dumps({
-                    "id": 0, "method": "Runtime.evaluate",
-                    "params": {"expression": """
-(function(){
-    var btn = document.querySelector('button[type=submit],input[type=submit],.submit-btn,[onclick*="submit"],button:not([disabled])');
-    if(btn){ var r=btn.getBoundingClientRect(); return r.x+r.width/2+','+(r.y+r.height/2); }
-    return '0,0';
-})();
-"""
-                    }
-                }))
-                r = json.loads(ws5.recv())
-                coords = r.get("result", {}).get("result", {}).get("value", "0,0")
-                x, y = map(float, coords.split(","))
-                ws5.close()
-
-                if x > 0:
-                    for et in ["mouseMoved", "mousePressed", "mouseReleased"]:
-                        ws6 = websocket.create_connection(tab_ws, timeout=8)
-                        ws6.send(json.dumps({"id": 0, "method": "Input.dispatchMouseEvent",
-                            "params": {"type": et, "x": x, "y": y, "button": "left", "clickCount": 1}}))
-                        json.loads(ws6.recv())
-                        ws6.close()
-                    if self.config.debug:
-                        print(f"[PREQ-BROWSER] Clicked submit!")
-
-        # Max steps reached
-        self._close_tab(tab_id)
-        return {"aborted": True}
+        return self.pre_qualifier.handle_pre_qualifier_browser(
+            survey_id, self._close_tab
+        )
 
     def _trigger_cash_out(self):
         """Navigate to cash-out page when balance target is reached.
 
-        Uses cua-driver to click Auszahlung sidebar item (the one in the
-        main modal, not the mobile tab bar). Finds the correct element
-        via cua-driver list_windows → get_window_state → depth>5 filter.
+        Delegates to CashOutTrigger so cash-out logic lives in one place.
         """
-        try:
-            # Use cua-driver to click Auszahlung in sidebar
-            import subprocess, json as json_mod
-
-            # Get window
-            result = subprocess.run(
-                ["cua-driver", "call", "list_windows"],
-                capture_output=True, text=True, timeout=10
-            )
-            windows = json_mod.loads(result.stdout)
-            hp_window = next(
-                (w for w in windows.get("windows", []) if "HeyPiggy" in w.get("title", "")),
-                None
-            )
-            if not hp_window:
-                print("[CASH] HeyPiggy window not found")
-                return
-
-            pid = hp_window["pid"]
-            wid = hp_window["window_id"]
-
-            # Get AX tree and find "Auszahlung" element
-            result = subprocess.run(
-                ["cua-driver", "call", "get_window_state"],
-                input=json_mod.dumps({"pid": pid, "window_id": wid}).encode(),
-                capture_output=True, text=True, timeout=15
-            )
-            state = json_mod.loads(result.stdout)
-
-            # Find Auszahlung link in sidebar (depth > 5 for content)
-            # Look for AXLink with text "Auszahlung" in sidebar
-            import re
-            tree = state.get("tree_markdown", "")
-            lines = tree.split("\n")
-            idx = None
-            for i, line in enumerate(lines):
-                if re.search(r'\[(\d+)\].*Auszahlung', line):
-                    m = re.search(r'\[(\d+)\]', line)
-                    if m:
-                        idx = int(m.group(1))
-                        break
-
-            if idx is not None:
-                result = subprocess.run(
-                    ["cua-driver", "call", "click"],
-                    input=json_mod.dumps({"pid": pid, "window_id": wid,
-                                         "element_index": idx}).encode(),
-                    capture_output=True, text=True, timeout=15
-                )
-                print(f"[CASH] Clicked Auszahlung sidebar: {result.stdout[:100]}")
-                log_session("cash_out", "triggered", {"balance_target": self.config.balance_target})
-            else:
-                print("[CASH] Auszahlung element not found in AX tree")
-
-        except Exception as e:
-            print(f"[CASH] Cash-out trigger failed: {e}")
+        self.cash_out.trigger(self.config.balance_target)
 
     def _detect_completion_text(self, ws_url):
-        """Check page text for completion markers (delegates to frozen tools.detect_completion)."""
-        return tool_detect(ws_url) != "running"
+        """Check page text for completion markers.
+
+        Reads page text via BatchExecutor, then delegates text analysis
+        to CompletionDetector so completion logic lives in one place.
+        """
+        try:
+            text = BatchExecutor.read_page_text(ws_url, 500)
+            return self.completion_detector.detect(text)
+        except Exception:
+            return False
+
+    def _scan_completion_all_tabs(self):
+        """Scan ALL browser tabs for completion markers.
+
+        WHY: Survey completion may redirect to a different tab
+        (e.g., back to dashboard after payout). Scanning all tabs
+        ensures we don't miss completion signals.
+        """
+        try:
+            for tab in chrome.find_bot_tabs(self.config.cdp_port):
+                url = tab.get("url", "").lower()
+                # Skip dashboard and blank tabs
+                if "dashboard" in url or "about:blank" in url:
+                    continue
+                ws_url = tab.get("webSocketDebuggerUrl")
+                if ws_url and self._detect_completion_text(ws_url):
+                    return True
+        except Exception:
+            pass
+        return False
 
     def _find_new_tab_after_click(self, known_tab_ids: set) -> Optional[str]:
-        """Detect new tab opened by clickSurvey() — delegates to frozen tools.find_new_tab."""
-        return tool_find_new_tab(self.config.cdp_port, known_tab_ids)
+        """Detect new tab opened by clickSurvey().
+
+        Delegates to SurveyOpener so tab lifecycle logic lives in one place.
+        """
+        return self.opener._find_new_tab_after_click(known_tab_ids)
 
     def _pre_survey_cleanup(self, tab_ws: str) -> int:
-        """Close all stacked modals — delegates to frozen tools.close_modals."""
-        return tool_close_modals(tab_ws)
+        """Close all stacked modals.
+
+        Delegates to SurveyOpener so tab lifecycle logic lives in one place.
+        """
+        return self.opener._pre_survey_cleanup(tab_ws)
 
     def _handle_purespectrum_preflight(self, tab_ws, survey_id):
         """Handle PureSpectrum pre-survey flow: cookie + ROBOT + captcha + puzzle."""
@@ -1124,247 +877,17 @@ class SurveyRunner:
         return solve_purespectrum_preflight(tab_ws, debug=self.config.debug)
 
     def _rate_survey(self):
-        """Rate completed survey for +0.01€ bonus."""
-        try:
-            pages = chrome.find_bot_tabs(self.config.cdp_port)
-            for p in pages:
-                url = p.get("url", "")
-                if "rating.php" in url.lower() or "cpx-research" in url.lower():
-                    ws_url = p.get("webSocketDebuggerUrl")
-                    if ws_url:
-                        ws = websocket.create_connection(ws_url, timeout=15)
-                        ws.send(json.dumps({
-                            "id": 0, "method": "Runtime.evaluate",
-                            "params": {
-                                "expression":
-                                    'document.querySelector("button,.btn-blue,input[type=button]")'
-                                    '.click()'
-                            }
-                        }))
-                        json.loads(ws.recv())
-                        ws.close()
-                        time.sleep(2)
-                        break
-        except Exception:
-            pass
+        """Rate completed survey for +0.01€ bonus.
 
-    def _simple_actions(self, snapshot, tab_ws=None):
-        """Simple auto-pilot when NIM not available. Smart selection + verify.
-
-        Strategy:
-        1. Find first unchecked radio → select it
-        2. Find enabled submit button → click it
-        3. Fallback: fill first textarea with plausible persona answer
+        Delegates to SurveyRater so rating logic lives in one place.
         """
-        actions = []
-
-        # 1. Select first unchecked radio/checkbox
-        for ref, info in snapshot.refs.items():
-            role = info.get("role", "")
-            if role in ("radio", "checkbox") and info.get("enabled", True):
-                text = info.get("text", "").lower()
-                # Prefer common persona answers
-                preferred = ["berlin", "männlich", "weiblich", "deutsch",
-                            "angestellt", "verheiratet", "mittlere", "master"]
-                if any(p in text for p in preferred):
-                    actions.append({"ref": ref, "action": "select"})
-                    break
-        else:
-            # No preferred answer found — select first available
-            for ref, info in snapshot.refs.items():
-                if info.get("role") in ("radio", "checkbox") and info.get("enabled", True):
-                    actions.append({"ref": ref, "action": "select"})
-                    break
-
-        # 2. Find enabled submit/next button
-        for ref, info in snapshot.refs.items():
-            if info.get("role") == "button":
-                text = info.get("text", "").lower()
-                enabled = info.get("enabled", True)
-                if enabled and any(kw in text for kw in
-                    ["weiter", "next", "submit", "nächste", "submit", "forward", "fortfahren"]):
-                    actions.append({"action": "submit"})
-                    break
-        else:
-            # No submit button found — check for textarea (open-ended question)
-            for ref, info in snapshot.refs.items():
-                if info.get("role") == "textbox":
-                    # Fill with short plausible answer
-                    placeholder = info.get("placeholder", "").lower()
-                    if "gemüse" in placeholder or "hobby" in placeholder:
-                        actions.append({"ref": ref, "action": "fill",
-                                        "value": "Karotten werden von vielen Menschen gegessen, weil sie gesund und vielseitig sind."})
-                    elif "beschreiben" in placeholder:
-                        actions.append({"ref": ref, "action": "fill",
-                                        "value": "Ich finde das Thema interessant und nehme gerne an Umfragen teil."})
-                    else:
-                        actions.append({"ref": ref, "action": "fill",
-                                        "value": "Ja"})
-                    break
-
-        # Safety cap: never return more than 2 actions
-        return actions[:2]
-
-    def _load_profile(self):
-        """Load profile from JSON file or fallback. Calculates age dynamically."""
-        import os
-        from datetime import date
-        paths = [
-            os.path.join(os.path.dirname(__file__), "profiles", "jeremy_schulze.json"),
-            os.path.join(os.path.dirname(os.path.dirname(__file__)),
-                         "config", "profiles", "jeremy_schulze.json"),
-        ]
-        profile = None
-        for path in paths:
-            if os.path.exists(path):
-                try:
-                    profile = json.loads(open(path).read())
-                    break
-                except Exception:
-                    pass
-
-        if not profile:
-            profile = {
-                "name": "Jeremy Schulze",
-                "date_of_birth": "1993-11-13",
-                "gender": "male", "gender_label": "Männlich",
-                "city": "Berlin", "state": "Berlin", "zip": "10785",
-                "household_size": 3, "marital_status": "married",
-                "education": "abitur", "employment": "employed_fulltime",
-                "employment_label": "Angestellte",
-                "household_income": "3000-4000", "personal_income": "1000-2000",
-                "nationality": "Deutsch", "language": "Deutsch",
-            }
-
-        # Dynamically calculate age from date_of_birth
-        if "date_of_birth" in profile and "age" not in profile:
-            try:
-                dob = profile["date_of_birth"]
-                born = date.fromisoformat(dob)
-                today = date.today()
-                profile["age"] = today.year - born.year - (
-                    (today.month, today.day) < (born.month, born.day)
-                )
-            except (ValueError, TypeError):
-                profile["age"] = 32
-
-        return profile
+        self.survey_rater.rate()
 
     def handle_pre_qualifier(self, survey_id, survey_details):
-        """Answer pre-qualifier questions via CPX API. Handles MULTI-STEP qualifiers.
+        """Answer pre-qualifier questions via CPX API.
 
-        CPX asks 1-N questions before routing to actual survey. Loop until
-        we get type=okay with href, or hit max retries.
-
-        API response format:
-        {
-            "type": "question" | "okay",
-            "question_text": "...",    # for type=question
-            "question_key": "cpxq_...",  # POST parameter name
-            "answers": {key: {text, key}},  # DICT not list
-            "message_button": "einreichen"
-        }
+        Delegates to PreQualifierHandler so pre-qualifier logic lives in one place.
         """
-        from .chrome import get_details_url
-
-        max_retries = 8
-        details_url = get_details_url(self.config.cdp_port)
-        current_details = survey_details
-
-        for step in range(max_retries):
-            question_text = current_details.get("question_text", "")
-            question_key = current_details.get("question_key", "")
-            answers_raw = current_details.get("answers", {})
-
-            if not answers_raw or not question_key:
-                if self.config.debug:
-                    print(f"[PREQ] Step {step}: No answers/key — aborting")
-                return None
-
-            answer_keys = list(answers_raw.keys())
-            profile = self.profile
-            q_lower = question_text.lower()
-            answer_idx = None
-
-            # Match question to profile
-            if any(kw in q_lower for kw in ["alter", "age", "alters"]):
-                age = profile.get("age", 32)
-                if age < 18: answer_idx = 0
-                elif age < 25: answer_idx = 1
-                elif age < 35: answer_idx = 2
-                elif age < 45: answer_idx = 3
-                elif age < 55: answer_idx = 4
-                else: answer_idx = 5
-
-            elif any(kw in q_lower for kw in ["geschlecht", "gender"]):
-                answer_idx = 0 if profile.get("gender", "male") == "male" else 1
-
-            elif any(kw in q_lower for kw in ["bundesland", "wohnort", "region", "stadt"]):
-                for i, k in enumerate(answer_keys):
-                    if "berlin" in answers_raw[k].get("text", "").lower():
-                        answer_idx = i; break
-
-            elif any(kw in q_lower for kw in ["einkommen", "income"]):
-                answer_idx = 2  # middle bracket
-
-            elif any(kw in q_lower for kw in ["bildung", "education", "schulabschluss"]):
-                edu = profile.get("education", "abitur")
-                for i, k in enumerate(answer_keys):
-                    if edu in answers_raw[k].get("text", "").lower():
-                        answer_idx = i; break
-
-            elif any(kw in q_lower for kw in ["beschäftigung", "employment", "berufstätig"]):
-                answer_idx = 1  # employed
-
-            # Default: first non-"cannot answer" option
-            if answer_idx is None:
-                for i, k in enumerate(answer_keys):
-                    if "nicht beantworten" not in answers_raw[k].get("text", "").lower():
-                        answer_idx = i; break
-                if answer_idx is None:
-                    answer_idx = 0
-
-            if answer_idx >= len(answer_keys):
-                return None
-
-            selected_key = answer_keys[answer_idx]
-            selected_text = answers_raw[selected_key].get("text", "")
-
-            if self.config.debug:
-                print(f"[PREQ] Step {step}: Q={question_text[:50]}... → {selected_text[:50]}")
-
-            # POST answer (with message_button for CPX API compatibility)
-            try:
-                msg_button = current_details.get("message_button", "einreichen")
-                post_url = (details_url + "&survey_id=" + survey_id +
-                            "&" + urllib.parse.quote(question_key) + "=" +
-                            urllib.parse.quote(selected_key) +
-                            "&message_button=" + urllib.parse.quote(msg_button))
-                resp_json = json.loads(urllib.request.urlopen(post_url, timeout=8).read())
-
-                # Check if we got the real survey URL
-                if resp_json.get("status") == "success" and resp_json.get("href"):
-                    if self.config.debug:
-                        print(f"[PREQ] ✅ Got survey URL: {resp_json['href'][:60]}")
-                    return resp_json.get("href")
-
-                # Check if more questions (type still "question")
-                if resp_json.get("type") == "question":
-                    current_details = resp_json
-                    if self.config.debug:
-                        print(f"[PREQ] → Next question, retrying...")
-                    continue
-
-                # Other response type
-                if self.config.debug:
-                    print(f"[PREQ] Step {step}: unexpected response type: {resp_json.get('type')}")
-                return None
-
-            except Exception as e:
-                if self.config.debug:
-                    print(f"[PREQ] Step {step} POST failed: {e}")
-                return None
-
-        if self.config.debug:
-            print(f"[PREQ] Max retries ({max_retries}) exceeded")
-        return None
+        return self.pre_qualifier.handle_pre_qualifier_api(
+            survey_id, survey_details, self.profile
+        )

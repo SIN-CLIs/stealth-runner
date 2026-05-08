@@ -17,6 +17,36 @@ NIM_BASE_URL = "https://integrate.api.nvidia.com/v1"
 
 COMPLETION_MARKERS = ["zurück zur website", "vielen dank", "gutgeschrieben"]
 
+COMMANDS = {
+    "click_next": "__CDP_CLICK_BUTTON__:Nächste",
+    "click_element": "__CDP_CLICK__:input[type=radio]:{idx}",
+    "fill_text": '''(function(v){
+        var t=document.querySelector("textarea,input[type=text]");
+        if(t){
+            var proto = t.tagName === "TEXTAREA" ? window.HTMLTextAreaElement.prototype : window.HTMLInputElement.prototype;
+            var nativeSetter = Object.getOwnPropertyDescriptor(proto,'value').set;
+            if(nativeSetter) nativeSetter.call(t,v); else t.value=v;
+            t.dispatchEvent(new Event("input",{bubbles:true,cancelable:true}));
+            t.dispatchEvent(new Event("change",{bubbles:true,cancelable:true}));
+            t.dispatchEvent(new Event("blur",{bubbles:true,cancelable:true}));
+        }
+    })("{value}")''',
+}
+
+from .base import ProviderAdapter
+
+
+class PureSpectrumAdapter(ProviderAdapter):
+    """PureSpectrum adapter for Angular pages and captcha boundaries."""
+
+    def __init__(self):
+        super().__init__(
+            name="purespectrum",
+            url_patterns=["purespectrum.com", "purespectrum"],
+            commands=COMMANDS,
+            completion_markers=COMPLETION_MARKERS,
+        )
+
 # ── CDP Mouse Click (Angular-proof) ────────────────────
 
 def cdp_click(ws_url, x, y):

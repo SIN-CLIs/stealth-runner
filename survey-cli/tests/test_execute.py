@@ -34,6 +34,7 @@ from survey.execute import (
     cdp_keyboard_enter, cdp_click_element_by_text, capture_dom_hash,
     verify_state_change, EXECUTION_VERIFY_MS
 )
+from survey.providers import get_provider_commands
 
 
 def cdp_resp(d):
@@ -468,7 +469,7 @@ class TestBatchExecutorInit(unittest.TestCase):
 
     def test_unknown_provider_uses_generic_commands(self):
         executor = BatchExecutor("ws://localhost:9999", "completely_unknown_provider_xyz")
-        self.assertEqual(executor.commands, GENERIC_COMMANDS)
+        self.assertEqual(executor.commands, get_provider_commands("generic"))
 
 
 # =============================================================================
@@ -530,6 +531,26 @@ class MockWsForExecute:
 
     def close(self):
         pass
+
+
+def _restore_batch_executor_methods():
+    """Undo leaked MagicMock patches from other test modules (e.g. test_run_survey).
+
+    test_run_survey starts patches with `patch(spec, **kwargs).start()` but
+    stops them with `patch(spec).stop()` — which creates a NEW patcher and
+    stops it immediately.  The original patcher stays active and leaks
+    MagicMock onto BatchExecutor.execute, breaking execute tests.
+    """
+    import survey.execute
+    import survey.runner
+    for attr in ("execute", "read_page_text", "detect_error_page"):
+        val = getattr(survey.runner.BatchExecutor, attr, None)
+        if val is not None and getattr(val, "_mock_name", None):
+            # Leaked MagicMock — restore from original class dict
+            # (survey.runner.BatchExecutor IS survey.execute.BatchExecutor)
+            orig = survey.execute.BatchExecutor.__dict__.get(attr)
+            if orig is not None:
+                setattr(survey.execute.BatchExecutor, attr, orig)
 
 
 class TestBatchExecutorExecute(unittest.TestCase):

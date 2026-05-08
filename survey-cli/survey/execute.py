@@ -33,6 +33,7 @@ from typing import Dict, List, Any, Optional, Tuple
 from dataclasses import dataclass, field
 
 from .cdp_client import CDPConnection
+from .providers import get_provider_commands
 
 # SOTA: State verification — wait this long before checking DOM change
 EXECUTION_VERIFY_MS = 1500
@@ -52,11 +53,20 @@ class BatchResult:
 PROVIDER_COMMANDS = {
     "qualtrics": {
         "click_next": '''(function(){
-            var btn=document.querySelector('.NextButton,.btn-next,#NextButton,button[id*=Next],.btn-primary');
-            if(!btn)btn=Array.from(document.querySelectorAll('button')).find(b=>b.textContent.trim()==='>>'||b.textContent.trim()==='Nächster'||b.textContent.trim()==='Weiter');
-            if(btn){btn.click();return'clicked';}return'no button';
+            var start=Date.now();
+            function tryClick(){
+                var btn=document.querySelector('.NextButton,.btn-next,#NextButton,button[id*=Next],.btn-primary,[aria-label*=Next],[aria-label*=Weiter]');
+                if(!btn)btn=Array.from(document.querySelectorAll('button,[role=button],span[onclick]')).find(function(b){var t=(b.textContent||b.value||'').trim();return t==='>>'||t==='Nächster'||t==='Weiter'||t==='Next';});
+                if(btn){btn.click();return'clicked';}
+                if(Date.now()-start<8000){setTimeout(tryClick,500);return'waiting';}return'no button';
+            }
+            return tryClick();
         })()''',
-        "click_element": 'document.querySelectorAll("input[type=radio],input[type=checkbox]")[{idx}].click()',
+        "click_element": '''(function(idx){
+            var els=Array.from(document.querySelectorAll("input[type=radio],input[type=checkbox]"));
+            els.sort(function(a,b){return a.getBoundingClientRect().top-b.getBoundingClientRect().top});
+            if(els[idx])els[idx].click();
+        })({idx})''',
         "fill_text": '''(function(v){
             var t=document.querySelector("textarea:not(.g-recaptcha-response)");
             if(!t){var i=document.querySelector("input[type=text],input[type=number]");
@@ -220,7 +230,7 @@ class BatchExecutor:
     def __init__(self, ws_url, provider="unknown", config=None):
         self.ws_url = ws_url
         self.provider = provider
-        self.commands = PROVIDER_COMMANDS.get(provider, GENERIC_COMMANDS)
+        self.commands = get_provider_commands(provider) or PROVIDER_COMMANDS.get(provider, GENERIC_COMMANDS)
         self.config = config  # SOTA: access debug flag for logging
 
     # ── Static Helpers ──────────────────────────────────────
@@ -260,11 +270,52 @@ class BatchExecutor:
                 return True, reason
         return False, ""
 
-    def execute(self, actions):
+    @staticmethod
+    def detect_validation_error(page_text: str) -> Optional[Dict]:
+        """Detect form validation errors and extract hints for value adjustment.
+
+        Returns:
+            Dict with {'raw': str, 'hint': str, 'min': int|None, 'max': int|None}
+            or None if no validation error found.
+        """
+        text = (page_text or "").lower()
+        patterns = [
+            (r"value must be.*?between\s+(\d+)\s+and\s+(\d+)", "range"),
+            (r"value must be something like\s+'(\d+)'", "example"),
+            (r"value must be at least\s+(\d+)", "min"),
+            (r"value must be at most\s+(\d+)", "max"),
+            (r"please enter a valid\s+(\d+)", "example"),
+            (r"bitte geben sie.*?(\d+).*?ein", "example_de"),
+            (r"muss zwischen\s+(\d+)\s+und\s+(\d+)", "range_de"),
+            (r"ungefähr\s+(\d+)", "example_de2"),
+        ]
+        import re
+        for pattern, kind in patterns:
+            m = re.search(pattern, text, re.IGNORECASE)
+            if m:
+                result = {"raw": m.group(0), "kind": kind}
+                groups = m.groups()
+                if kind == "range" or kind == "range_de":
+                    result["min"] = int(groups[0])
+                    result["max"] = int(groups[1])
+                    result["hint"] = str((int(groups[0]) + int(groups[1])) // 2)
+                elif kind in ("example", "example_de", "example_de2"):
+                    result["hint"] = groups[0]
+                elif kind == "min":
+                    result["min"] = int(groups[0])
+                    result["hint"] = str(int(groups[0]))
+                elif kind == "max":
+                    result["max"] = int(groups[0])
+                    result["hint"] = str(int(groups[0]))
+                return result
+        return None
+
+    def execute(self, actions, snapshot_refs=None):
         """Execute batch of actions with auto-retry on stale connections.
 
         Args:
             actions: List of action dicts [{ref, action, value, ms}]
+            snapshot_refs: Optional CompactSnapshot.refs dict for text enrichment
 
         Returns:
             BatchResult with per-action results
@@ -279,7 +330,7 @@ class BatchExecutor:
 
         try:
             for action in actions:
-                ar = self._execute_single(ws, action)
+                ar = self._execute_single(ws, action, snapshot_refs)
                 result.actions.append(ar)
                 if ar.get("success"):
                     result.total_success += 1
@@ -291,11 +342,12 @@ class BatchExecutor:
         result.total_elapsed_ms = round((time.monotonic() - start) * 1000)
         return result
 
-    def _execute_single(self, ws, action):
+    def _execute_single(self, ws, action, snapshot_refs=None):
         """Execute single action with SOTA verification.
 
         SOTA patterns:
         - Normalizes ref prefix (@e handling)
+        - Enriches action with text from snapshot_refs for provider-specific matching
         - Captures DOM hash BEFORE action for state verification
         - Tries CDP click → verify state change → keyboard fallback if no change
         - Proper error handling with specific messages
@@ -307,19 +359,25 @@ class BatchExecutor:
         a_start = time.monotonic()
 
         # Get WebSocket URL for state verification calls
-        # self.ws_url is always available (set in __init__)
         ws_url = self.ws_url
 
         try:
             # Normalize ref: add @e prefix if missing
-            # (NIM output may return "e0" instead of "@e0" per the prompt example)
             if ref and not ref.startswith("@e"):
                 ref = "@" + ref
+
+            # Enrich action with text from snapshot refs for provider-specific JS
+            action_meta = {}
+            if snapshot_refs and ref in snapshot_refs:
+                action_meta = {
+                    "text": snapshot_refs[ref].get("text", ""),
+                    "role": snapshot_refs[ref].get("role", ""),
+                }
 
             # SOTA: Capture DOM state BEFORE action (anti-stuck)
             before_hash = capture_dom_hash(ws_url, 2000) if ws_url else ""
 
-            js = self._build_js(action_type, ref, value)
+            js = self._build_js(action_type, ref, value, action_meta)
 
             # Execute the action
             success = False
@@ -591,18 +649,35 @@ class BatchExecutor:
                     "params":{"type":et,"x":x,"y":y,"button":"left","clickCount":1}}))
                 json.loads(ws.recv())
 
-    def _build_js(self, action_type, ref, value):
-        """Build CDP JS string for action."""
+    def _build_js(self, action_type, ref, value, meta=None):
+        """Build CDP JS string for action.
+
+        Args:
+            action_type: 'select', 'click', 'fill', 'submit', etc.
+            ref: Element reference like '@e5'
+            value: Fill value or label text
+            meta: Optional dict with {'text', 'role'} from snapshot refs
+        """
         cmd = self.commands
 
         if action_type in ("click", "select", "check"):
             if ref and ref.startswith("@e"):
+                # Qualtrics: use text-based label matching for radio/checkbox
+                if self.provider == "qualtrics" and meta:
+                    m_role = meta.get("role", "")
+                    m_text = meta.get("text", "")
+                    if m_role in ("radio", "radio-selected", "checkbox", "checkbox-checked") and m_text:
+                        tpl = cmd.get("click_qualtrics_label", "")
+                        if tpl:
+                            label = m_text.replace('"', '\\"')
+                            return tpl.replace("{label}", label)
+
+                # Generic: click by index (sorts by Y to match snapshot order)
                 idx = int(ref[2:])
                 tpl = cmd.get("click_element", GENERIC_COMMANDS["click_element"])
-                # Use .replace() to avoid .format() conflicts with JS {} in templates
-                # Supports both {idx} (single) and {{idx}} (double-brace) patterns
                 return tpl.replace("{idx}", str(idx))
-            # Fallback: click next/submit
+
+            # Fallback: click next/submit button
             return cmd.get("click_next", GENERIC_COMMANDS["click_next"])
 
         elif action_type == "fill":
