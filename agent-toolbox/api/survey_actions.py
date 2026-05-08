@@ -943,8 +943,8 @@ async def click_card(req: SurveyClickCardRequest):
         var onclick = c.getAttribute("onclick");
         
         // Regex: clickSurvey('12345') oder clickSurvey("12345").
-        // \\d+ = eine oder mehrere Ziffern.
-        var m = onclick.match(/clickSurvey\\('?(\\d+)'?\\)/);
+        // [0-9]+ = eine oder mehrere Ziffern (kein Backslash, kein SyntaxWarning).
+        var m = onclick.match(/clickSurvey\\('?([0-9]+)'?\\)/);
         
         // Wenn ID übereinstimmt → klicken.
         if (m && m[1] === "{req.survey_id}") {{
@@ -1130,7 +1130,7 @@ async def get_modal(req: SurveyGetModalRequest):
     
     WARUM Progress-Erkennung?
     → Viele Surveys zeigen "Seite 3 von 10" oder "3/10".
-    → Wir extrahieren dies aus dem Text (Regex: (\d+)\s*/\s*(\d+)).
+    → Wir extrahieren dies aus dem Text (Regex: ([0-9]+)\\s*/\\s*([0-9]+)).
     → Nützlich für Monitoring und Entscheidungen (fast fertig = nicht aufgeben).
     
     WARUM provider-Feld? (WICHTIG: NUR Logging/Statistik!)
@@ -1272,9 +1272,9 @@ async def get_modal(req: SurveyGetModalRequest):
     progress = None
     
     # Regex: "Seite 3 von 10" oder "3/10".
-    # (\d+) = eine oder mehrere Ziffern (Gruppe 1 = aktuelle Seite).
+    # ([0-9]+) = eine oder mehrere Ziffern (Gruppe 1 = aktuelle Seite).
     # \s*/\s* = Slash mit optionalen Leerzeichen.
-    # (\d+) = eine oder mehrere Ziffern (Gruppe 2 = Gesamtseiten).
+    # ([0-9]+) = eine oder mehrere Ziffern (Gruppe 2 = Gesamtseiten).
     import re
     m = re.search(r'(\d+)\s*/\s*(\d+)', text)
     if m:
@@ -1749,7 +1749,7 @@ async def fill_text(req: SurveyFillTextRequest):
     → Wir escapen sie: "It\\'s fine".
     → WARUM? Unser JS-String ist in einfachen Anführungszeichen (Python).
     → JavaScript-String ist auch in einfachen Anführungszeichen.
-    → Konflikt: 'It\'s' → JavaScript sieht 'It's' (\ ist Escape in JS).
+    → Konflikt: 'It\\'s' → JavaScript sieht 'It\\'s' (Backslash ist Escape in JS).
     
     WARUM Textarea Fallback?
     → Manche offene Fragen verwenden <textarea> statt <input>.

@@ -32,7 +32,7 @@
 ║  ────────────────────────────                                                ║
   ║  • cdp_port = 9999 DEFAULT: Chrome DevTools Protocol Port.                 ║
   ║    NICHT 9222 (Chrome Default) weil 9222 oft von User-Chrome belegt ist.    ║
-  ║    Stealth-Runner Standard seit 2026-05-08: 9999 (nicht 9999 alt).           ║
+  ║    Stealth-Runner Standard seit 2026-05-08: 9999 (nicht 8888 alt).           ║
 ║  • profile_name = "default" DEFAULT: Playwright-Profil-Name.                 ║
 ║    Kann auf "heypiggy" oder andere Profile erweitert werden.                  ║
 ║  • Literal[...] statt str: Enforced Enum-Werte bei API-Responses.           ║
@@ -327,7 +327,7 @@ class LoginRequest(BaseModel):
     
     # cdp_port: CDP Port.
     # WARUM default=9999? Stealth-Runner Standard seit 2026-05-08.
-    # NICHT 9999 (alt, deprecated). NICHT 9222 (User-Chrome Konflikt).
+    # NICHT 8888 (alt, deprecated). NICHT 9222 (User-Chrome Konflikt).
     # MUSS mit tatsächlichem Chrome-Port übereinstimmen!
     cdp_port: int = Field(
         default=9999,
