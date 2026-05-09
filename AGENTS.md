@@ -338,9 +338,29 @@ content: |
   -  `killall Google Chrome` -> killt ALLE Chrome-Instanzen (USER + BOT!)
   -  NUR Main-Prozesse killen: Pattern `/Contents/MacOS/Google Chrome` + `--remote-debugging-port=9999` (HeyPiggy) oder `--remote-debugging-port=9222` (SINator)
   -  Registry leeren: `rm -f ~/.stealth/sessions.json`
-  -  SOTA: `SessionManager.close_all()` -> killt + leert Registry automatisch
-  
-  ## VISION-MODELL: Nemotron 3 Nano Omni (PRIMARY)
+-  SOTA: `SessionManager.close_all()` -> killt + leert Registry automatisch
+
+  ## 📋 STATUS.md — NACH JEDER SESSION UPdaten
+
+  **REGEL: Nach JEDER Survey-Session (erfolgreich oder fehlgeschlagen) → STATUS.md updaten.**
+
+  ```
+  Stealth-Runner STATUS.md Pflicht-Updates:
+  1. Balance vorher/nachher eintragen (nur WENN echte Änderung!)
+  2. Neue Blocker/Probleme dokumentieren (mit Root Cause)
+  3. Provider-Status updaten falls getestet
+  4. Session-Log erweitern (Datum, Aktion, Ergebnis)
+  ```
+
+  **WAS NIEMALS in STATUS.md:**
+  - ❌ "Surveys completed: X" — wenn nicht verifiziert
+  - ❌ "Surveys failed: Y" — wenn nicht verifiziert
+  - ❌ Hardcoded Survey-IDs — die ändern sich pro Session!
+  - ❌ Erfundene Zahlen oder Statistiken
+
+  **Location:** `stealth-runner/STATUS.md`
+
+   ## VISION-MODELL: Nemotron 3 Nano Omni (PRIMARY)
   
   - **30B-A3B Mixture-of-Experts** - Video + Audio + Bild + Text in EINEM Modell
   - **256K Kontext** - ganze Survey-Sessions in einem Call
