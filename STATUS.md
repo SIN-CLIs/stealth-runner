@@ -67,16 +67,11 @@ pkill -f "chrome-jeremy-heypiggy-9999"
 
 | Key | Value | Datum |
 |-----|-------|-------|
-| **Aktuelle Balance** | €2.60 | 2026-05-09 |
-| **Heute verdient** | €0.00 | 2026-05-09 |
-| **Gesamt verdient** | ~€0.50 | seit Beginn |
-| **Surveys completed** | 13 | seit Beginn |
-| **Surveys failed** | 107 | seit Beginn |
-| **Payouts bestätigt** | 0 | kein Survey hat je ausgezahlt! |
+| **Letzte bekannte Balance** | €2.60 | 2026-05-09 |
 
-### Warum 0€ Payouts?
-- **Unbekannt** — nie analysiert
-- Mögliche Gründe: CPX Profil-Screening, Disqualifikation, falsche Answers, Reward-Condition nicht erfüllt
+### Session-Regel
+- Balance NUR nach echter Survey-Completion prüfen (vorher/nachher)
+- NIEMALS "Surveys completed/failed" behaupten wenn nicht verifiziert
 
 ---
 
@@ -85,9 +80,7 @@ pkill -f "chrome-jeremy-heypiggy-9999"
 | Key | Value |
 |-----|-------|
 | **Dashboard URL** | `https://www.heypiggy.com/?page=dashboard` |
-| **Surveys verfügbar** | ~12 ( variiert ) |
-| **Survey-IDs (Beispiele)** | 66950684, 67064749, 67064991, 66949962 |
-| **Payout-Range** | €0.11 — €0.48 |
+| **Surveys verfügbar** | (nach jeder Session scannen via `document.querySelectorAll('.survey-item')`) |
 
 ---
 
@@ -172,12 +165,12 @@ pkill -f "chrome-jeremy-heypiggy-9999"
 ## NÄCHSTE SCHRITTE (nach jeder Session updaten)
 
 1. **Chrome starten** → Recipe oben
-2. **Balance prüfen** → `Balance: €2.60`
+2. **Balance prüfen** → aktuellen Wert eintragen
 3. **Survey scannen** → `document.querySelectorAll('.survey-item')`
-4. **Survey 66950684 öffnen** → window.open interception
+4. **Survey öffnen** → window.open interception
 5. **Manuell durchklicken** → CDP JS
-6. **Balance vorher/nachher** → prüfen ob €0.00€ verdient wurde!
-7. **STATUS.md updaten** → dieses Dokument
+6. **Balance vorher/nachher** → prüfen ob Balance gestiegen
+7. **STATUS.md updaten** → NUR verifizierte Werte eintragen, nichts erfinden
 
 ---
 
