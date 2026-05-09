@@ -23,5 +23,5 @@
   "contracts": ["mobilfunk", "strom"],
   "interests": ["technik", "auto", "sport"],
   "vehicles": ["motorrad"],
-  "pets": []
+  "pets": ["katze", "katze", "katze", "katze"]
 }
