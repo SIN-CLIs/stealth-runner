@@ -155,12 +155,14 @@ print(json.dumps({{"success": result}}))
   var ex = r2.left + r2.width/2;
   var ey = r2.top + r2.height/2;
 
-  // Try: use element.dispatchEvent with pointer events
-  var pd = new PointerEvent('pointerdown', {{bubbles:true, cancelable:true, pointerId:1, isPrimary:true, clientX:sx, clientY:sy, button:0}});
-  var pm = new PointerEvent('pointermove', {{bubbles:true, cancelable:true, pointerId:1, isPrimary:true, clientX:(sx+ex)/2, clientY:(sy+ey)/2, buttons:1}});
-  var pu = new PointerEvent('pointerup', {{bubbles:true, cancelable:true, pointerId:1, isPrimary:true, clientX:ex, clientY:ey, button:0}});
+// Angular CDK listens for pointermove/pointerup on document.body, NOT the source element.
+  var pd = new PointerEvent('pointerdown', {bubbles:true, cancelable:true, pointerId:1, isPrimary:true, clientX:sx, clientY:sy, button:0});
+  var pm = new PointerEvent('pointermove', {bubbles:true, cancelable:true, pointerId:1, isPrimary:true, clientX:(sx+ex)/2, clientY:(sy+ey)/2, buttons:1});
+  var pu = new PointerEvent('pointerup', {bubbles:true, cancelable:true, pointerId:1, isPrimary:true, clientX:ex, clientY:ey, button:0});
 
-  dragImg.dispatchEvent(pd);
+  dragImg.dispatchEvent(pd);           // pointerdown on img (source element)
+  document.body.dispatchEvent(pm);      // pointermove on document.body ✅
+  document.body.dispatchEvent(pu);      // pointerup on document.body ✅
   return 'POINTER_EVENTS_DISPATCHED:' + sx + ',' + sy + '->' + ex + ',' + ey;
 }})()
 """
