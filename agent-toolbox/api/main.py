@@ -75,7 +75,7 @@
 ║    POST /browser/stop     → Chrome stoppen                                   ║
 ║    GET  /browser/health   → Browser Status (running, idle_seconds)           ║
 ║  SERVICES:                                                                   ║
-║    POST /services/heypiggy/login → HeyPiggy Login (cookie default, CUA fb) ║
+║    POST /services/heypiggy/login → Google OAuth Login (CUA-basiert)         ║
 ║  SURVEY (aus survey_actions.py Router):                                     ║
 ║    POST /survey/click-card     → Survey-Karte klicken                        ║
 ║    GET  /survey/modal          → Modal-Inhalt lesen                         ║
@@ -98,15 +98,15 @@
 ║                                                                              ║
 ║  LAZY-LOADING PATTERN:                                                       ║
 ║  ──────────────────────                                                      ║
-║  Alle schweren Imports (Playwright, cua-driver) werden NICHT beim          ║
+║  Alle schweren Imports (Playwright, survey-cli, openai) werden NICHT beim  ║
 ║  Startup geladen, sondern erst bei ERSTEM Zugriff (Lazy-Loading).         ║
 ║  WARUM?                                                                      ║
 ║  • API startet in <1s (statt 5-10s mit Playwright-Import).                 ║
-║  • Wenn ein Modul fehlt (z.B. Playwright nicht installiert), crasht die API ║
+║  • Wenn ein Modul fehlt (z.B. openai nicht installiert), crasht die API    ║
 ║    NICHT beim Start, sondern erst beim Zugriff auf den betroffenen Endpoint.║
-║  • Fehlermeldung ist klar: "BrowserManager requires Playwright. Install: ..." ║
+║  • Fehlermeldung ist klar: "SurveyRunner requires openai. Install: ..."   ║
 ║  • Ermöglicht modulare Entwicklung: Browser-Endpoints funktionieren auch   ║
-║    ohne schwere Dependencies (cua-driver nur für Login-Fallback).         ║
+║    ohne survey-cli Dependencies.                                            ║
 ║                                                                              ║
 ║  FEHLERBEHANDLUNG:                                                           ║
 ║  ─────────────────                                                             ║
@@ -161,12 +161,10 @@ from fastapi.responses import JSONResponse
 # PATH SETUP: Import-Pfade konfigurieren
 # ═══════════════════════════════════════════════════════════════════════════════
 # WARUM sys.path.insert?
-# → survey/ ist ein Unterpaket von agent-toolbox (agent-toolbox/survey/).
-# → Python findet es automatisch wenn wir von agent-toolbox/ starten.
-# → ABER: survey-cli/ ist ein Fallback (alte Survey-CLI Module).
-# → Wir fügen BEIDE hinzu: agent-toolbox/ zuerst (hat Vorrang!), dann survey-cli/.
-# → Wenn ein Modul in agent-toolbox/survey/ existiert → wird verwendet.
-# → Wenn nicht → Fallback zu survey-cli/survey/.
+# → survey-cli/ ist ein separates Verzeichnis (kein Unterpaket von agent-toolbox).
+# → Python findet es nicht automatisch wenn wir von agent-toolbox/api/main.py starten.
+# → Lösung: Füge survey-cli/ zu sys.path hinzu (vor allen anderen Pfaden, Index 0).
+# → AUCH: Füge agent-toolbox/ selbst hinzu damit "from api.schemas" funktioniert.
 # WARNUNG: Keine circular imports! Reihenfolge der Imports ist wichtig.
 
 # Füge agent-toolbox/ zu sys.path hinzu (Parent von api/).
@@ -174,9 +172,7 @@ from fastapi.responses import JSONResponse
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 # Füge survey-cli/ zu sys.path hinzu (Sibling von agent-toolbox/).
-# WARUM Fallback? Manche Module (runner.py, scanner.py) sind noch in survey-cli/.
-# → Wenn sie später nach agent-toolbox/ migriert werden → werden automatisch verwendet.
-# → Weil agent-toolbox/ zuerst in sys.path steht (Zeile 172) hat es VORRANG.
+# WARUM? survey/ Module (runner.py, auth.py, chrome.py) sind hier.
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "survey-cli"))
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -201,6 +197,12 @@ from api.schemas import (
     LoginRequest,             # profile_name, headless, timeout_ms, pid, cdp_port
     # Response für POST /services/heypiggy/login
     LoginResponse,            # status, service, profile, message, details
+
+    # ── Survey Schemas ──
+    # Request/Response für POST /survey/run
+    SurveyRunRequest,         # profile_name, max_surveys, provider_filter, headless, cdp_port
+    SurveyRunResponse,        # status, profile, surveys_run, completed, total_earned, results, message
+    SurveyResult,             # survey_id, status, provider, earned, elapsed_s, error
 
     # ── Cookie Schemas ──
     # Request/Response für POST /tools/extract-cookies (Legacy-Endpoint)
@@ -228,9 +230,15 @@ from api.schemas import (
 # → Übersichtlichkeit: main.py bleibt schlank (~400 Lines statt 2000+).
 # → FastAPI-Router erben Prefix und Tags (z.B. prefix="/survey", tags=["survey"]).
 
-# survey_actions.py Router: Alle Survey-Interaktionen (click-card, modal, etc.)
+# survey_actions.py Router: Legacy Survey-Interaktionen (click-card, modal, etc.)
 # Prefix: /survey (definiert in survey_actions.py: APIRouter(prefix="/survey"))
+# DEPRECATED: Use survey_tools.py endpoints instead (POST /survey/open, /fill, /rate)
 from api.survey_actions import router as survey_router
+
+# survey_tools.py Router: MODERN Survey-Interaktionen (open, fill, rate)
+# Prefix: /survey (definiert in survey_tools.py: APIRouter(prefix="/survey"))
+# Diese Endpoints ersetzen den monolithischen POST /workflow/run-best
+from api.survey_tools import router as survey_tools_router
 
 # cookie_routes.py Router: Cookie-Management (extract, inject, verify)
 # Prefix: /cookies (definiert in cookie_routes.py)
@@ -239,7 +247,6 @@ from api.cookie_routes import router as cookie_router
 # dashboard_routes.py Router: Dashboard-Scanning und Balance
 # Prefix: /dashboard (definiert in dashboard_routes.py)
 from api.dashboard_routes import router as dashboard_router
-from api.workflow_routes import router as workflow_router
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -247,11 +254,11 @@ from api.workflow_routes import router as workflow_router
 # ═══════════════════════════════════════════════════════════════════════════════
 # WARUM Lazy-Loading?
 # → Playwright ist SCHWER (Chromium-Binary, ~150MB). Import dauert 2-5s.
-# → survey.chrome hat Dependency (websocket-client für CDP WebSocket).
+# → survey-cli hat Dependencies (openai, websocket-client). Import dauert 1-2s.
 # → Wenn die API startet, brauchen wir Playwright NICHT sofort (nur wenn ein
 #   Browser-Endpoint aufgerufen wird).
 # → Mit Lazy-Loading: API startet in <1s. Ohne: 5-10s.
-# → Wenn ein Modul fehlt (z.B. websocket-client nicht installiert), crasht die API NICHT
+# → Wenn ein Modul fehlt (z.B. openai nicht installiert), crasht die API NICHT
 #   beim Start, sondern erst beim Zugriff. Fehlermeldung ist klar und hilfreich.
 #
 # WIE funktioniert Lazy-Loading?
@@ -320,31 +327,78 @@ def _get_bm():
     return BrowserManager()
 
 
+def _get_survey_runner():
+    """
+    Lazy-Load SurveyRunner — Survey-Automation aus survey-cli.
+    
+    WARUM SurveyRunner lazy laden?
+    → SurveyRunner benötigt openai (NVIDIA NIM / Nemotron API).
+    → openai ist ein großes Paket (~50MB). Import dauert 1-2s.
+    → Wenn die API nur für Browser-Automation verwendet wird (keine Surveys),
+      brauchen wir openai nicht.
+    → Lazy-Loading = API startet schneller, Module werden nur bei Bedarf geladen.
+    
+    WARUM SurveyRunner UND RunnerConfig zurückgeben?
+    → SurveyRunner ist die HAUPT-Klasse (führt Surveys aus).
+    → RunnerConfig ist die KONFIGURATION (max_surveys, cdp_port, etc.).
+    → Beide werden vom Endpoint survey_run() benötigt.
+    → Wir gebe ein Tupel zurück: (SurveyRunner, RunnerConfig).
+    
+    WARUM RuntimeError mit "Install openai package"?
+    → Klare Fehlermeldung: Client weiß EXAKT was fehlt.
+    → Ohne Hinweis → Client müsste raten oder Stack-Trace lesen.
+    
+    Returns:
+        Tuple[Type[SurveyRunner], Type[RunnerConfig]]: Klassen für Survey-Ausführung.
+    
+    Raises:
+        RuntimeError: Wenn openai nicht installiert ist.
+    
+    Example:
+        SurveyRunner, RunnerConfig = _get_survey_runner()
+        config = RunnerConfig(max_surveys=5)
+        runner = SurveyRunner(config)
+    """
+    # Versuche survey-cli Module zu importieren.
+    # survey.runner: Enthält SurveyRunner und RunnerConfig.
+    try:
+        from survey.runner import SurveyRunner, RunnerConfig
+    except ImportError as e:
+        # Import fehlgeschlagen (wahrscheinlich openai fehlt).
+        raise RuntimeError(
+            "SurveyRunner requires openai. Install openai package."
+        ) from e
+    
+    # Gebe BEIDE Klassen zurück (Tuple).
+    # Der Aufrufer muss beide entpacken: SurveyRunner, RunnerConfig = _get_survey_runner()
+    return SurveyRunner, RunnerConfig
+
+
 def _get_auth_flow():
     """
-    Lazy-Load Auth-Flow Module — Google OAuth Login (CUA-Fallback).
+    Lazy-Load Auth-Flow Module — Google OAuth Login.
     
     WARUM Auth-Flow lazy laden?
-    → Google OAuth Flow benötigt cua-driver (macOS Accessibility Binary).
-    → cua-driver ist ein externes Binary, nicht immer verfügbar.
-    → Lazy-Loading = API startet schneller, Module nur bei CUA-Login geladen.
-    
-    WARUM survey.auth aus agent-toolbox/survey/ (NICHT survey-cli/)?
-    → Wir haben auth/ Module in agent-toolbox/survey/ kopiert (Self-Contained).
-    → sys.path hat agent-toolbox/ VOR survey-cli/ → agent-toolbox/survey/ gewinnt.
-    → Wenn Module nicht in agent-toolbox/ → Fallback zu survey-cli/.
+    → Google OAuth Flow benötigt survey-cli Dependencies (cua-driver, etc.).
+    → Diese sind schwer und nicht immer nötig (wenn Cookies funktionieren).
+    → Lazy-Loading = schnellerer Startup, Module nur bei Login-Endpoint geladen.
     
     WARUM drei Klassen zurückgeben?
     → GoogleOAuthFlow: Haupt-Login-Logik (CUA-basiert wegen Shadow-DOM).
     → LoginVerifier: Prüft ob Login erfolgreich war (Dashboard-Elemente).
     → CuaAdapter: Adapter für cua-driver Kommunikation.
-    → Alle drei werden von heypiggy_login() im mode="cua" benötigt.
+    → Alle drei werden von heypiggy_login() benötigt.
+    
+    WARUM f-string in Fehlermeldung?
+    → {e} enthält die ORIGINALE ImportError-Meldung.
+    → Das hilft beim Debuggen: "No module named 'survey.auth'" vs
+      "No module named 'cua_driver'".
     
     Returns:
         Tuple[Type, Type, Type]: (GoogleOAuthFlow, LoginVerifier, CuaAdapter)
     
     Raises:
-        RuntimeError: Wenn cua-driver fehlt oder survey.auth nicht importierbar.
+        RuntimeError: Wenn survey-cli Dependencies fehlen.
     
     Example:
         GoogleOAuthFlow, LoginVerifier, CuaAdapter = _get_auth_flow()
@@ -352,13 +406,12 @@ def _get_auth_flow():
     """
     # Versuche survey.auth zu importieren.
     # Enthält GoogleOAuthFlow, LoginVerifier, CuaAdapter.
-    # AUFGRUND sys.path (agent-toolbox/ zuerst) wird agent-toolbox/survey/ verwendet.
     try:
         from survey.auth import GoogleOAuthFlow, LoginVerifier, CuaAdapter
     except ImportError as e:
-        # Import fehlgeschlagen (cua-driver nicht installiert oder fehlende Dependencies).
+        # Import fehlgeschlagen (survey-cli nicht installiert oder fehlende Dependencies).
         raise RuntimeError(
-            f"Auth modules require cua-driver. Install: brew install cua-driver. Error: {e}"
+            f"Auth modules require survey-cli dependencies. Import error: {e}"
         ) from e
     
     # Gebe alle drei Klassen zurück.
@@ -456,7 +509,13 @@ app = FastAPI(
 
 # Registriere Survey-Router (prefix="/survey", tags=["survey"]).
 # Endpoints: POST /survey/click-card, GET /survey/modal, etc.
+# LEGACY — diese Endpoints werden durch survey_tools_router ersetzt.
 app.include_router(survey_router)
+
+# Registriere Survey-Tools-Router (prefix="/survey", tags=["survey-tools"]).
+# MODERN Endpoints: POST /survey/open, /survey/fill, /survey/rate
+# Diese ersetzen den monolithischen POST /workflow/run-best
+app.include_router(survey_tools_router)
 
 # Registriere Cookie-Router (prefix="/cookies", tags=["Cookie Management"]).
 # Endpoints: POST /cookies/extract, POST /cookies/inject, POST /cookies/verify.
@@ -465,10 +524,6 @@ app.include_router(cookie_router)
 # Registriere Dashboard-Router (prefix="/dashboard", tags=["Dashboard"]).
 # Endpoints: POST /dashboard/scan, POST /dashboard/balance.
 app.include_router(dashboard_router)
-
-# Registriere Workflow-Router (prefix="/workflow", tags=["Workflow"]).
-# Endpoints: POST /workflow/run-best.
-app.include_router(workflow_router)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -682,7 +737,7 @@ async def browser_health():
     
     Example:
         GET /browser/health
-        → {"running": true, "profile": "Profile 73", "last_used": 1778261390.45,
+        → {"running": true, "profile": "Profile 901 (Jeremy)", "last_used": 1778261390.45,
             "idle_seconds": 45.2}
     """
     # Lazy-Load BrowserManager.
@@ -765,189 +820,317 @@ async def heypiggy_login(req: LoginRequest):
     
     Example:
         POST /services/heypiggy/login
-        {"mode": "cookie", "cdp_port": 9999}
-        → {"status": "already_logged_in", "service": "heypiggy", "profile": "default",
-            "message": "Session valid via cookies", "details": {"pid": 34852}}
-        
-        POST /services/heypiggy/login
-        {"mode": "cua", "cdp_port": 9999}
+        {"pid": null, "cdp_port": 9999}
         → {"status": "success", "service": "heypiggy", "profile": "default",
             "message": "Login successful", "details": {"pid": 34852, "wid": 56640}}
     """
     try:
         # ═══════════════════════════════════════════════════════════════════════
-        # MODE: COOKIE (Schneller Cookie-Inject + Session-Verify)
+        # SCHRITT 1: PID bestimmen (bestehenden Chrome verwenden oder neu starten)
         # ═══════════════════════════════════════════════════════════════════════
-        if req.mode == "cookie":
-            # Lazy-Load CookieManager (nur im Cookie-Mode nötig).
-            from core.cookie_manager import get_cookie_manager
-            
-            # CookieManager mit absolutem Pfad erstellen.
-            # WARUM absoluter Pfad? API-CWD ist /Users/jeremy/dev/stealth-runner/
-            # → ./data wäre /Users/jeremy/dev/stealth-runner/data/ (FALSCH).
-            # → Absoluter Pfad: agent-toolbox/data/ (RICHTIG).
-            from core.cookie_manager import CookieManager
-            cookie_dir = Path(__file__).parent.parent / "data"
-            cookie_mgr = CookieManager(cookies_dir=str(cookie_dir))
-            
-            # Lazy-Load BrowserManager (für Cookie-Inject).
-            bm = _get_bm()
-            
-            # Browser starten (oder bestehenden verwenden).
-            # bm.start() startet Chrome mit Profil-Kopie und CDP-Verbindung.
-            ctx = await bm.start(profile_name=req.profile_name)
-            
-            # Cookies aus gespeicherter Datei laden und injecten.
-            # load_cookies(filename) liest agent-toolbox/data/heypiggy-cookies.json.
-            # inject_cookies(ctx, cookies) fügt sie in BrowserContext ein.
-            try:
-                cookies = cookie_mgr.load_cookies("heypiggy-cookies.json")
-                if cookies:
-                    await cookie_mgr.inject_cookies(ctx, cookies)
-            except FileNotFoundError:
-                # Cookie-Datei nicht vorhanden → Cookie-Login nicht möglich.
-                cookie_path = cookie_dir / "heypiggy-cookies.json"
-                return LoginResponse(
-                    status="error",
-                    service="heypiggy",
-                    profile=req.profile_name,
-                    message="No saved cookies found. Use mode='cua' for Google OAuth login.",
-                    details={"mode": "cookie", "hint": f"No cookie file at {cookie_path}"},
-                )
-            
-            # Seite neu laden damit Cookies wirksam werden.
-            page = ctx.pages[0] if ctx.pages else await ctx.new_page()
-            await page.goto("https://www.heypiggy.com/?page=dashboard")
-            await page.wait_for_load_state("networkidle")
-            
-            # Session verifizieren: Prüfe ob "abmelden" oder Balance sichtbar.
-            is_valid = await cookie_mgr.verify_session(ctx)
-            
-            if is_valid:
-                # Session gültig! Cookies haben funktioniert.
-                # PID aus BrowserManager holen (wenn verfügbar).
-                pid_info = None
-                if hasattr(bm, '_process') and bm._process:
-                    pid_info = bm._process.pid
-                
-                return LoginResponse(
-                    status="already_logged_in",
-                    service="heypiggy",
-                    profile=req.profile_name,
-                    message="Session valid via cookies",
-                    details={"pid": pid_info, "mode": "cookie"},
-                )
-            
-            # Cookies haben NICHT funktioniert → Session abgelaufen.
-            # Gib klare Fehlermeldung zurück mit Hinweis auf CUA-Mode.
-            return LoginResponse(
-                status="error",
-                service="heypiggy",
-                profile=req.profile_name,
-                message="Cookie session expired. Retry with mode='cua' for Google OAuth fallback.",
-                details={"mode": "cookie", "hint": "Use mode='cua' for full Google OAuth login"},
-            )
-        
-        # ═══════════════════════════════════════════════════════════════════════
-        # MODE: CUA (Vollständiger Google OAuth via macOS Accessibility)
-        # ═══════════════════════════════════════════════════════════════════════
-        # WARUM CUA? Google OAuth verwendet Shadow-DOM (nicht via CDP/Playwright).
-        # CUA (Accessibility API) ist der EINZIGE Weg diese Elemente zu erreichen.
-        # Dieser Mode klickt: Google-Login-Symbol → Email → Weiter → Fortfahren → Weiter.
         
         # Initialisiere pid mit Request-Wert (kann None sein).
         pid = req.pid
         
         # Wenn keine PID angegeben → suche bestehenden Chrome.
         if pid is None:
+            # Importiere subprocess nur hier (wird nicht immer gebraucht).
             import subprocess
             
             # lsof: List Open Files. "-i TCP:PORT" = zeige Netzwerk-Verbindungen auf diesem Port.
             # "-t" = nur PID ausgeben (keine Header, keine Extra-Info).
+            # timeout=5s: Wenn lsof hängt → breche ab (sollte nicht passieren, aber Safety).
             result = subprocess.run(
                 ["lsof", "-i", f"TCP:{req.cdp_port}", "-t"],
-                capture_output=True,
-                text=True,
-                timeout=5
+                capture_output=True,    # stdout/stderr in result.stdout/result.stderr
+                text=True,              # Dekodiere als Text (statt Bytes)
+                timeout=5               # Timeout in Sekunden
             )
             
+            # result.stdout enthält PIDs (eine pro Zeile, wenn mehrere Prozesse auf Port hören).
+            # Wir nehmen die ERSTE PID die wir finden (die Haupt-Chrome-Prozess).
             if result.stdout.strip():
+                # Splitte in Zeilen und iteriere.
                 for line in result.stdout.strip().split("\n"):
+                    # Prüfe ob die Zeile eine gültige Integer-PID ist.
                     if line.strip().isdigit():
+                        # Konvertiere zu int und verwende als PID.
                         pid = int(line.strip())
-                        break
+                        break  # Erste PID gefunden → aufhören.
         
-        # Chrome starten wenn keine PID gefunden.
+        # ═══════════════════════════════════════════════════════════════════════
+        # SCHRITT 2: Chrome starten wenn keine PID gefunden
+        # ═══════════════════════════════════════════════════════════════════════
+        
         if pid is None:
-            # Lazy-Load ChromeLauncher (aus survey.chrome, jetzt in agent-toolbox/survey/).
+            # Lazy-Load ChromeLauncher (aus survey-cli).
+            # WARUM survey.chrome? ChromeLauncher ist Teil der survey-cli Bibliothek.
             from survey.chrome import ChromeLauncher
             
+            # Erstelle Launcher mit CDP-Port und Debug-Modus.
+            # Debug=True → mehr Logging (nützlich für Troubleshooting).
             launcher = ChromeLauncher(port=req.cdp_port, debug=True)
+            
+            # Starte Chrome und navigiere zum HeyPiggy Dashboard.
+            # launch_and_verify():
+            # 1. Erstellt temporäres Profil-Verzeichnis.
+            # 2. Startet Chrome als subprocess mit CDP-Port und Flags.
+            # 3. Wartet bis CDP erreichbar ist (Polling auf /json/version).
+            # 4. Navigiert zur angegebenen URL.
+            # 5. Gibt {"ok": True, "pid": PID, "cdp_port": PORT} zurück.
             launch_result = launcher.launch_and_verify(
                 url="https://www.heypiggy.com/?page=dashboard"
             )
             
+            # Prüfe ob Start erfolgreich war.
             if not launch_result.get("ok"):
+                # Start fehlgeschlagen → gebe Error-Response zurück.
+                # Wir verwenden LoginResponse (nicht HTTPException) weil das ein
+                # erwarteter Fehlerfall ist (Chrome konnte nicht starten).
                 return LoginResponse(
                     status="error",
                     service="heypiggy",
                     profile=req.profile_name,
                     message=f"chrome_launch_failed: {launch_result.get('error', 'unknown')}",
-                    details={"step": launch_result.get("step"), "mode": "cua"},
+                    details={"step": launch_result.get("step")},
                 )
             
+            # Extrahiere PID aus Launch-Ergebnis.
             pid = launch_result.get("pid")
         
-        # Auth-Flow laden und ausführen.
+        # ═══════════════════════════════════════════════════════════════════════
+        # SCHRITT 3: Auth-Flow ausführen (CUA-basiert wegen Shadow-DOM)
+        # ═══════════════════════════════════════════════════════════════════════
+        
+        # Lazy-Load Auth-Flow Module.
+        # GoogleOAuthFlow: Haupt-Login-Logik.
+        # LoginVerifier: Prüft ob Login erfolgreich war.
+        # CuaAdapter: Kommunikation mit cua-driver.
         GoogleOAuthFlow, LoginVerifier, CuaAdapter = _get_auth_flow()
+        
+        # Erstelle Flow-Instanz.
+        # CuaAdapter() = neuer Adapter für CUA-Kommunikation.
+        # LoginVerifier() = neuer Verifier für Login-Prüfung.
         flow = GoogleOAuthFlow(CuaAdapter(), LoginVerifier())
+        
+        # Führe Login aus.
+        # pid=pid → verwende den Chrome mit dieser PID (CUA spricht mit diesem Prozess).
         result = flow.execute(pid=pid)
         
-        # Ergebnis verarbeiten.
+        # ═══════════════════════════════════════════════════════════════════════
+        # SCHRITT 4: Ergebnis verarbeiten
+        # ═══════════════════════════════════════════════════════════════════════
+        
         if result.status == "ok":
-            # Login erfolgreich! Cookies speichern für zukünftige Cookie-Logins.
-            try:
-                from core.cookie_manager import CookieManager
-                cookie_dir = Path(__file__).parent.parent / "data"
-                cookie_mgr = CookieManager(cookies_dir=str(cookie_dir))
-                bm = _get_bm()
-                ctx = await bm.start(profile_name=req.profile_name)
-                page = ctx.pages[0] if ctx.pages else await ctx.new_page()
-                await page.goto("https://www.heypiggy.com/?page=dashboard")
-                await page.wait_for_load_state("networkidle")
-                cookies = await cookie_mgr.extract_cookies(page, domain_filter="heypiggy")
-                cookie_mgr.save_cookies(cookies, "heypiggy-cookies.json")
-            except Exception:
-                # Cookie-Extraktion ist nice-to-have, nicht kritisch.
-                pass
-            
+            # Login erfolgreich!
+            # Gebe Success-Response mit pid und wid zurück.
+            # pid = Chrome Prozess-ID (für spätere Calls).
+            # wid = Window ID (für CUA-Operationen).
             return LoginResponse(
                 status="success",
                 service="heypiggy",
                 profile=req.profile_name,
-                message="Login successful via CUA (Google OAuth)",
-                details={"pid": result.pid, "wid": result.wid, "mode": "cua"},
+                message="Login successful",
+                details={"pid": result.pid, "wid": result.wid},
             )
         
         elif result.status == "already_logged_in":
+            # Bereits eingeloggt (Session noch gültig).
+            # Kein erneuter Login nötig.
             return LoginResponse(
                 status="already_logged_in",
                 service="heypiggy",
                 profile=req.profile_name,
-                message="Already logged in (CUA verified)",
-                details={"pid": result.pid, "wid": result.wid, "mode": "cua"},
+                message="Already logged in",
+                details={"pid": result.pid, "wid": result.wid},
             )
         
         else:
+            # Login fehlgeschlagen.
+            # result.reason enthält die Fehlermeldung (z.B. "shadow_dom_click_failed").
             return LoginResponse(
                 status="error",
                 service="heypiggy",
                 profile=req.profile_name,
                 message=result.reason or "unknown_error",
-                details={"pid": pid, "mode": "cua"},
+                details={"pid": pid},
             )
     
     except Exception as e:
+        # Unerwarteter Fehler (z.B. ImportError, subprocess Error, etc.).
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
+# SEKTION 3: SURVEY ENDPOINTS
+# ═══════════════════════════════════════════════════════════════════════════════
+# Dieser Endpoint führt mehrere Surveys aus (aggregiert).
+# Die einzelnen Survey-Aktionen (click-card, fill-text, etc.) sind im
+# survey_router (survey_actions.py) definiert.
+# ═══════════════════════════════════════════════════════════════════════════════
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@app.post("/survey/run", response_model=SurveyRunResponse)
+async def survey_run(req: SurveyRunRequest):
+    """
+    Führt mehrere Surveys auf dem HeyPiggy Dashboard aus.
+    
+    ABLAUF:
+    1. Lazy-Load SurveyRunner und RunnerConfig.
+    2. Erstelle RunnerConfig mit max_surveys und cdp_port.
+    3. Wenn provider_filter gesetzt → filtere skip_providers Liste.
+       (Nur erlaubte Provider ausführen, andere überspringen).
+    4. Erstelle SurveyRunner mit Config.
+    5. Rufe runner.run_loop() auf (führt Survey-Loop aus).
+    6. Konvertiere Ergebnisse in Pydantic SurveyResult-Objekte.
+    7. Berechne Statistiken:
+       - total_earned = Summe aller positiven Rewards.
+       - completed = Anzahl erfolgreich abgeschlossener Surveys.
+    8. Gib aggregierte Response zurück.
+    
+    WARUM SurveyRunner lazy laden?
+    → SurveyRunner benötigt openai (NVIDIA NIM API).
+    → openai ist schwer (~50MB) und wird nur hier gebraucht.
+    → Lazy-Loading = schnellerer Startup, Modul nur bei Bedarf geladen.
+    
+    WARUM provider_filter?
+    → Manche Provider sind zuverlässiger (Qualtrics) als andere (Samplicio).
+    → Client kann bevorzugte Provider angeben: ["qualtrics", "tolunastart"].
+    → Implementation: Wir filtern die skip_providers Liste.
+       Standard: skip_providers = ["samplicio"] (oft Disqualifikation).
+       Wenn provider_filter = ["qualtrics"] → skip_providers wird geleert
+       (außer Provider nicht in filter).
+    
+    WARUM total_earned nur positive Werte?
+    → Screen-Out Surveys geben 0.0€ (oder manchmal 0.02€ Compensation).
+    → Wir summieren nur >0 Werte um den tatsächlichen Gewinn zu zeigen.
+    → Wenn total_earned = 0.0 → alle Surveys waren Screen-Out oder Fehler.
+    
+    WARUM elapsed_s?
+    → Performance-Monitoring: Wie lange dauert ein Survey-Lauf?
+    → Wenn elapsed_s / surveys_run > 300s → ineffizient (zu viele Screen-Outs).
+    
+    Args:
+        req: SurveyRunRequest mit profile_name, max_surveys, provider_filter,
+             headless, cdp_port.
+    
+    Returns:
+        SurveyRunResponse: status, profile, surveys_run, completed,
+                           total_earned, results[], message.
+    
+    Raises:
+        HTTPException(500): Bei Fehlern im Survey-Runner.
+    
+    Example:
+        POST /survey/run
+        {"max_surveys": 5, "provider_filter": ["qualtrics", "tolunastart"]}
+        → {"status": "success", "profile": "default", "surveys_run": 5,
+            "completed": 3, "total_earned": 1.20,
+            "results": [...], "message": "Ran 5 surveys, 3 completed, +1.20€"}
+    """
+    # Zeit-Messung für Performance-Tracking.
+    # time.time() gibt Unix-Timestamp in Sekunden (mit Mikrosekunden-Präzision).
+    start_time = time.time()
+    
+    try:
+        # ═══════════════════════════════════════════════════════════════════════
+        # SCHRITT 1: SurveyRunner laden
+        # ═══════════════════════════════════════════════════════════════════════
+        
+        # Lazy-Load SurveyRunner und RunnerConfig.
+        # Wenn openai nicht installiert → RuntimeError mit Install-Hinweis.
+        SurveyRunner, RunnerConfig = _get_survey_runner()
+        
+        # ═══════════════════════════════════════════════════════════════════════
+        # SCHRITT 2: Konfiguration erstellen
+        # ═══════════════════════════════════════════════════════════════════════
+        
+        # Erstelle RunnerConfig mit Request-Parametern.
+        # max_surveys: Maximale Anzahl Surveys (Safety-Limit gegen Endlosschleifen).
+        # cdp_port: CDP-Port für Chrome-Kommunikation.
+        config = RunnerConfig(
+            max_surveys=req.max_surveys,
+            cdp_port=req.cdp_port,
+        )
+        
+        # Wenn provider_filter gesetzt → filtere skip_providers.
+        # Logik: Wir entfernen Provider aus skip_providers die im Filter sind.
+        # Beispiel:
+        #   skip_providers = ["samplicio", "cint"] (Standard)
+        #   provider_filter = ["qualtrics", "tolunastart"]
+        #   Ergebnis: skip_providers = ["samplicio", "cint"] (keine Änderung,
+        #             weil "qualtrics" und "tolunastart" nicht in skip_providers sind).
+        #   Wenn provider_filter = ["samplicio"] → skip_providers wird geleert
+        #   (weil "samplicio" aus skip_providers entfernt wird).
+        if req.provider_filter:
+            # Filtere skip_providers: Behalte nur Provider die NICHT im Filter sind.
+            # Das ermöglicht es, bestimmte Provider explizit zu erlauben.
+            config.skip_providers = [p for p in config.skip_providers
+                                      if p not in req.provider_filter]
+        
+        # ═══════════════════════════════════════════════════════════════════════
+        # SCHRITT 3: Survey ausführen
+        # ═══════════════════════════════════════════════════════════════════════
+        
+        # Erstelle Runner mit Config.
+        runner = SurveyRunner(config)
+        
+        # Führe Survey-Loop aus.
+        # run_loop() navigiert zum Dashboard, scannt Surveys, führt sie aus,
+        # und gibt eine Liste von Survey-Ergebnissen zurück.
+        results = runner.run_loop(max_surveys=req.max_surveys)
+        
+        # ═══════════════════════════════════════════════════════════════════════
+        # SCHRITT 4: Ergebnisse konvertieren
+        # ═══════════════════════════════════════════════════════════════════════
+        
+        # Konvertiere interne Ergebnisse in Pydantic-Modelle (SurveyResult).
+        # Das ist notwendig weil FastAPI Pydantic-Modelle für Response-Validation
+        # benötigt. Interne Objekte könnten nicht Pydantic-kompatibel sein.
+        survey_results = [
+            SurveyResult(
+                survey_id=r.survey_id,      # ID der Survey
+                status=r.status,            # "completed", "screen_out", "error"
+                provider=r.provider,        # "qualtrics", "tolunastart", etc.
+                earned=r.earned,            # Verdiente Belohnung in EUR
+                elapsed_s=r.elapsed_s,      # Dauer in Sekunden
+                error=r.error,              # Fehlermeldung (None bei Erfolg)
+            )
+            for r in results  # List comprehension für alle Ergebnisse
+        ]
+        
+        # ═══════════════════════════════════════════════════════════════════════
+        # SCHRITT 5: Statistiken berechnen
+        # ═══════════════════════════════════════════════════════════════════════
+        
+        # Summe aller positiven Rewards.
+        # WARUM nur >0? Screen-Outs geben 0.0€ (oder 0.02€ Compensation).
+        # Wir wollen den tatsächlichen Gewinn zeigen (nicht Compensation).
+        total_earned = sum(r.earned for r in survey_results if r.earned > 0)
+        
+        # Anzahl erfolgreich abgeschlossener Surveys.
+        # Status "completed" bedeutet: Survey wurde bis zum Ende ausgefüllt.
+        completed = sum(1 for r in survey_results if r.status == "completed")
+        
+        # ═══════════════════════════════════════════════════════════════════════
+        # SCHRITT 6: Response zurückgeben
+        # ═══════════════════════════════════════════════════════════════════════
+        
+        return SurveyRunResponse(
+            status="success",                   # Immer "success" wenn wir hier ankommen
+            profile=req.profile_name,            # Bestätigung: welches Profil
+            surveys_run=len(results),            # Anzahl gestarteter Surveys
+            completed=completed,                 # Anzahl erfolgreicher Surveys
+            total_earned=total_earned,           # Summe aller Rewards
+            results=survey_results,              # Liste aller Ergebnisse
+            # Human-readable Zusammenfassung.
+            message=f"Ran {len(results)} surveys, {completed} completed, +{total_earned:.2f}€",
+        )
+    
+    except Exception as e:
+        # Fehler im Survey-Runner (z.B. openai API Fehler, Chrome nicht erreichbar).
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1319,7 +1502,7 @@ async def generic_exception_handler(request, exc):
 # Sie definiert:
 #   - FastAPI App-Instanz (mit Title, Version, Docs-URLs).
 #   - Router-Registrierung (survey, cookies, dashboard).
-#   - Lazy-Loader für schwere Dependencies (Playwright, cua-driver).
+#   - Lazy-Loader für schwere Dependencies (Playwright, openai).
 #   - 10+ Endpoints für Browser, Login, Survey, Cookies, Tools.
 #   - Globalen Exception-Handler für einheitliche Fehler-Responses.
 #

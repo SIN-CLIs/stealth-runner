@@ -66,12 +66,10 @@
 ║  CDP PORT 9999:                                                              ║
 ║  ──────────────                                                              ║
 ║  WARUM 9999 statt 9222 (Chrome Default)?                                     ║
-║  → 9222 wird oft vom User-Chrome belegt (wenn User --remote-debugging-port  ║
-║     in seinen Chrome-Flags hat).                                              ║
-║  → 9999 ist ein freier Port der nicht standardmäßig verwendet wird.         ║
+║  → 9222 wird oft vom SINator-Chrome belegt (Profile 901).                     ║
+║  → 9999 ist der Bot-Chrome-Port für HeyPiggy (Profile 901 Kopie).           ║
 ║  → Wir verwenden 9999 als isolierten Bot-Chrome-Port.                        ║
-║  → Wichtig: API-Server läuft auf 8889 (NICHT 9999!) um Konflikt zu         ║
-║     vermeiden.                                                               ║
+║  → Wichtig: API-Server läuft auf 8889 um Konflikt zu vermeiden.             ║
 ║                                                                              ║
 ║  PLAYWRIGHT CONNECT_OVER_CDP():                                              ║
 ║  ──────────────────────────────                                              ║
@@ -212,7 +210,7 @@ class BrowserManager:
     
     ATTRIBUTES (öffentlich):
     - chrome_path: Pfad zur Chrome Binary (z.B. "/Applications/Google Chrome.app/...").
-    - profile_name: Name des Profil-Ordners (z.B. "Profile 73").
+    - profile_name: Name des Profil-Ordners (z.B. "Profile 901 (Jeremy)").
     - cdp_port: Port für Chrome DevTools Protocol (default: 9999).
     - headless: Sichtbarer oder unsichtbarer Modus (default: False für Debugging).
     
@@ -237,7 +235,7 @@ class BrowserManager:
         self,
         chrome_path: Optional[str] = None,
         source_profile: Optional[str] = None,
-        profile_name: str = "Profile 73",
+        profile_name: str = "Profile 901 (Jeremy)",
         cdp_port: int = 9999,
         headless: bool = False,
     ):
@@ -264,17 +262,11 @@ class BrowserManager:
                 WARUM? Chrome speichert Profile standardmäßig dort.
                 Wir kopieren von dort nach /tmp/.
             profile_name: Name des Profil-Ordners INNERHALB des user-data-dir.
-                Default: "Profile 73".
-                WARUM "Profile 73"? Das ist das Profil mit der HeyPiggy-Session.
-                Chrome erstellt Profile als "Default", "Profile 1", "Profile 2", etc.
-                "Profile 73" wurde bei der manuellen Einrichtung erstellt.
-                WICHTIG: Dieses Profil liegt im user-data-dir von simoneschulze
-                (nicht im aktuellen Benutzer!).
+                Default: "Profile 901 (Jeremy)".
+                WARUM "Profile 901 (Jeremy)"? Das ist das Profil mit der HeyPiggy-Session.
             cdp_port: Port für Chrome DevTools Protocol.
                 Default: 9999.
-                WARUM 9999? Stealth-Runner Standard (nicht 9222 wegen User-Chrome Konflikt).
-                NICHT 9999 (alt) — Stealth-Runner verwendet seit 2026-05-08 Port 9999.
-                AGENTS.md bestätigt: stealth-runner CDP Port ist IMMER 9999.
+                WARUM 9999? Siehe Modul-Docstring (nicht 9222 wegen SINator-Chrome Konflikt).
             headless: Headless-Modus.
                 Default: False.
                 WARUM False? Sichtbarer Browser ist einfacher zu debuggen.
@@ -287,7 +279,7 @@ class BrowserManager:
         
         Example:
             manager = BrowserManager(
-                profile_name="Profile 73",
+                profile_name="Profile 901 (Jeremy)",
                 cdp_port=9999,
                 headless=False
             )
@@ -304,23 +296,21 @@ class BrowserManager:
         self.chrome_path = chrome_path or "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
         
         # source_user_data_dir: Pfad zum Chrome user-data-dir.
-        # WARUM simoneschulze statt Path.home()? Profile 73 liegt im user-data-dir
-        # von simoneschulze (nicht im aktuellen Benutzer jeremy!).
-        # Der Agent startet Chrome mit einem KOPIERTEN Profil (--user-data-dir=/tmp/...),
-        # daher kann er ein Profil aus einem anderen Benutzer-Home verwenden.
-        # WICHTIG: source_profile Parameter überschreibt diesen Default.
-        self.source_user_data_dir = source_profile or "/Users/simoneschulze/Library/Application Support/Google Chrome"
+        # WARUM Path.home()? Gibt das Home-Verzeichnis des aktuellen Users zurück.
+        # ~/Library/Application Support/Google/Chrome = macOS Standard.
+        # Hinweis: Path("~/...") funktioniert NICHT ohne expanduser()!
+        self.source_user_data_dir = source_profile or str(
+            Path.home() / "Library/Application Support/Google/Chrome"
+        )
         
         # profile_name: Name des Profil-Ordners.
-        # WARUM String? Chrome verwendet Ordner-Namen wie "Profile 73".
+        # WARUM String? Chrome verwendet Ordner-Namen wie "Profile 901 (Jeremy)".
         # Der Ordner liegt INNERHALB von user-data-dir/.
         self.profile_name = profile_name
         
         # cdp_port: CDP Port.
         # WARUM int? Port ist eine Integer-Zahl (0-65535).
-        # 9999 ist der Stealth-Runner Standard-Port (High-Port, kein Root nötig).
-        # NIE 9222 verwenden (User-Chrome Konflikt).
-        # NIE 9999 verwenden (alt, deprecated seit 2026-05-08).
+        # 9999 ist ein High-Port (kein Root-Rechte nötig).
         self.cdp_port = cdp_port
         
         # headless: Sichtbar oder unsichtbar.
@@ -849,7 +839,7 @@ class BrowserManager:
         
         WICHTIGE FELDER:
         • running: True wenn Chrome aktiv (Playwright verbunden ODER CDP erreichbar).
-        • profile: Aktives Profil (z.B. "Profile 73").
+        • profile: Aktives Profil (z.B. "Profile 901 (Jeremy)").
         • last_used: Unix-Timestamp der letzten Nutzung.
         • idle_seconds: Sekunden seit letzter Nutzung.
           > 300s (5min) → könnte Memory-Leak haben, Neustart empfohlen.
@@ -868,7 +858,7 @@ class BrowserManager:
             health = await manager.health()
             # health = {
             #   "running": True,
-            #   "profile": "Profile 73",
+            #   "profile": "Profile 901 (Jeremy)",
             #   "last_used": 1778261390.45,
             #   "idle_seconds": 45.2,
             #   "cdp_port": 9999,
@@ -916,7 +906,7 @@ class BrowserManager:
         1. Erstelle temporäres Verzeichnis: /tmp/sinator-chrome-{timestamp}.
         2. Kopiere "Local State" Datei (Metadaten, Profil-Liste).
         3. Kopiere "Last Version" Datei (optional, Chrome Versions-Info).
-        4. Kopiere Profil-Ordner rekursiv (z.B. "Profile 73").
+        4. Kopiere Profil-Ordner rekursiv (z.B. "Profile 901 (Jeremy)").
         5. Erstelle "First Run" Datei (verhindert Welcome-Dialog).
         6. Lösche Lock-Dateien (*.lock, Singleton*) → verhindert "Profile in use".
         
@@ -964,7 +954,7 @@ class BrowserManager:
         temp_dir = f"/tmp/sinator-chrome-{int(time.time())}"
         
         # Quell-Profil-Pfad (innerhalb des user-data-dir).
-        # Beispiel: ~/Library/Application Support/Google/Chrome/Profile 73
+        # Beispiel: ~/Library/Application Support/Google/Chrome/Profile 901 (Jeremy)
         source_profile = os.path.join(self.source_user_data_dir, self.profile_name)
         
         # Logge Kopiervorgang (nützlich für Debugging).
@@ -1510,11 +1500,11 @@ def get_browser_manager() -> BrowserManager:
     → zerstört (Garbage Collection) → Chrome läuft aber Referenz ist weg.
     
     WARUM cdp_port=9999?
-    → Default-Port für Bot-Chrome (nicht 9222 wegen User-Chrome Konflikt).
+    → Default-Port für Bot-Chrome (nicht 9222 wegen SINator-Chrome Konflikt).
     → Kann über BrowserManager(cdp_port=...) geändert werden.
     
     Returns:
-        BrowserManager: Die Singleton-Instanz (Port 9999, Profile 73).
+        BrowserManager: Die Singleton-Instanz (Port 9999, Profile 901 (Jeremy)).
     
     Example:
         bm = get_browser_manager()
@@ -1529,8 +1519,8 @@ def get_browser_manager() -> BrowserManager:
     # Wenn Instanz noch nicht existiert → erstelle sie.
     if _browser_manager is None:
         # Erstelle BrowserManager mit Default-Parametern.
-        # cdp_port=9999: Bot-Chrome Port.
-        _browser_manager = BrowserManager(cdp_port=9999)
+        # cdp_port=9999, profile="Profile 901 (Jeremy)": HeyPiggy Bot-Chrome Port.
+        _browser_manager = BrowserManager(cdp_port=9999, profile_name="Profile 901 (Jeremy)")
     
     # Gib die Singleton-Instanz zurück.
     return _browser_manager

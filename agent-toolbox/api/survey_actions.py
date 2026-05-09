@@ -132,6 +132,10 @@ from api.schemas import (
     SurveyFillTextRequest,        # input_label, value, cdp_port, profile_name
     SurveyFillTextResponse,       # status, input_label, value, message
     
+    # Request/Response für POST /survey/click-custom-radio
+    SurveyClickCustomRadioRequest,  # css_selector, index, cdp_port, profile_name
+    SurveyClickCustomRadioResponse, # status, index, message
+    
     # Request/Response für POST /survey/run-one
     SurveyRunOneRequest,          # survey_id, cdp_port, profile_name, max_pages
     SurveyRunOneResponse,         # status, survey_id, pages_completed, earned, elapsed_s, error, message
@@ -309,6 +313,79 @@ def get_dashboard_ws(port: int) -> Optional[str]:
         pass
     
     # Kein Dashboard gefunden (entweder nicht vorhanden oder Fehler).
+    return None
+
+
+def get_any_tab_ws(port: int, url_pattern: Optional[str] = None, tab_id: Optional[str] = None) -> Optional[str]:
+    """
+    Findet die WebSocket URL für BELIEBIGE Tabs (nicht nur Dashboard).
+    
+    WICHTIG: Dies ist die BULLETPROOF-Version von get_dashboard_ws().
+    Sie sucht auf ALLEN Tabs, nicht nur dem Dashboard-Tab.
+    
+    ABLAUF:
+    1. HTTP GET auf /json (alle Tabs listen).
+    2. Filtere nach "page" Typ (keine Extensions/Service Worker).
+    3. WENN tab_id angegeben → suche EXAKT diesen Tab.
+    4. WENN url_pattern angegeben → suche Tab dessen URL das Pattern enthält.
+    5. SONST → gib den ERSTEN "page" Tab zurück (meistens der aktive Tab).
+    6. Wenn nichts gefunden → None.
+    
+    WARUM brauchen wir das?
+    → Surveys öffnen sich in NEUEN Tabs (nicht im Dashboard-Tab).
+    → Der alte click_button Endpoint suchte nur im Dashboard-Tab.
+    → Ergebnis: "Button not found" obwohl der Button auf dem Survey-Tab existierte.
+    
+    WARUM Fallback auf ersten Tab?
+    → Wenn der Client kein tab_id/url_pattern angibt → nehme den ersten Page-Tab.
+    → In 90% der Fälle ist das der aktive Tab (Survey-Seite).
+    → Damit ist der Endpoint auch ohne tab_id meistens korrekt.
+    
+    Args:
+        port: CDP Port.
+        url_pattern: Optional. Wenn angegeben → suche Tab mit URL die diesen String enthält.
+        tab_id: Optional. Wenn angegeben → suche EXAKT diesen Tab (über p['id']).
+    
+    Returns:
+        Optional[str]: WebSocket URL oder None.
+    """
+    try:
+        response = urllib.request.urlopen(
+            f"http://127.0.0.1:{port}/json",
+            timeout=5
+        )
+        pages = json.loads(response.read())
+        
+        # Nur "page" Tabs (keine background_page, service_worker, etc.)
+        page_tabs = [p for p in pages if p.get("type") == "page"]
+        
+        if not page_tabs:
+            return None
+        
+        # Priorität 1: Exakte tab_id Suche
+        if tab_id:
+            for p in page_tabs:
+                if p.get("id") == tab_id:
+                    return p.get("webSocketDebuggerUrl")
+        
+        # Priorität 2: URL Pattern Match
+        if url_pattern:
+            pattern_lower = url_pattern.lower()
+            for p in page_tabs:
+                if pattern_lower in p.get("url", "").lower():
+                    return p.get("webSocketDebuggerUrl")
+        
+        # Priorität 3: Dashboard-Tab (für Rückwärtskompatibilität)
+        for p in page_tabs:
+            if "dashboard" in p.get("url", "").lower():
+                return p.get("webSocketDebuggerUrl")
+        
+        # Priorität 4: Erster Page-Tab (meistens der aktive Tab)
+        return page_tabs[0].get("webSocketDebuggerUrl")
+    
+    except Exception:
+        pass
+    
     return None
 
 
@@ -651,9 +728,13 @@ def extract_elements_from_page(ws_url: str) -> dict:
     // RADIO BUTTONS (Single-Choice Fragen)
     // ═══════════════════════════════════════════════════════════
     // WARUM zuerst Radio? Die meisten Survey-Fragen sind Single-Choice.
+    // KRITISCH (2026-05-09): Manche Frameworks (CPX Research, etc.) verwenden
+    // versteckte <input type="radio" style="display:none"> + sichtbare <label>.
+    // Wir müssen auf das LABEL klicken, nicht auf das versteckte Input!
     var radios = document.querySelectorAll('input[type="radio"]');
     radios.forEach(function(r, i) {
         var label = '';
+        var isHidden = false;
         
         // Versuche: <label> Parent → Label-Text extrahieren.
         // closest('label') sucht das nächste <label> Element (Parent oder selbst).
@@ -665,6 +746,14 @@ def extract_elements_from_page(ws_url: str) -> dict:
         var container = r.closest('div, span, li, td');
         var text = container ? container.innerText.trim().substring(0, 100) : label;
         
+        // PRÜFE: Ist das Radio versteckt (display:none)?
+        // Wenn ja → click_target = 'label' (das sichtbare Element).
+        // Wenn nein → click_target = 'input' (das native Element).
+        var style = window.getComputedStyle(r);
+        if (style.display === 'none' || style.visibility === 'hidden') {
+            isHidden = true;
+        }
+        
         // Element zum Ergebnis hinzufügen.
         results.elements.push({
             ref: '@r' + i,          // @r0, @r1, ... für Radio
@@ -673,17 +762,24 @@ def extract_elements_from_page(ws_url: str) -> dict:
             name: r.name || '',     // HTML name Attribut (für Gruppierung)
             value: r.value || '',   // HTML value Attribut (z.B. "male")
             checked: r.checked,     // Aktuell ausgewählt? (true/false)
-            id: r.id || ''          // HTML id Attribut
+            id: r.id || '',          // HTML id Attribut
+            hidden: isHidden,       // Ist Input versteckt? (2026-05-09)
+            click_target: isHidden ? 'label' : 'input'  // Was soll geklickt werden?
         });
     });
     
     // ═══════════════════════════════════════════════════════════
     // CHECKBOXES (Multi-Choice Fragen)
     // ═══════════════════════════════════════════════════════════
+    // KRITISCH (2026-05-09): Gleiches Pattern wie Radios — versteckte Inputs + Labels.
     var checkboxes = document.querySelectorAll('input[type="checkbox"]');
     checkboxes.forEach(function(c, i) {
         var parent = c.closest('label') || c.parentElement;
         var text = parent ? parent.innerText.trim().substring(0, 100) : '';
+        
+        // PRÜFE: Ist die Checkbox versteckt?
+        var style = window.getComputedStyle(c);
+        var isHidden = (style.display === 'none' || style.visibility === 'hidden');
         
         results.elements.push({
             ref: '@c' + i,          // @c0, @c1, ... für Checkbox
@@ -692,7 +788,9 @@ def extract_elements_from_page(ws_url: str) -> dict:
             name: c.name || '',
             value: c.value || '',
             checked: c.checked,
-            id: c.id || ''
+            id: c.id || '',
+            hidden: isHidden,       // Ist Input versteckt? (2026-05-09)
+            click_target: isHidden ? 'label' : 'input'  // Was soll geklickt werden?
         });
     });
     
@@ -780,6 +878,46 @@ def extract_elements_from_page(ws_url: str) -> dict:
             role: 'select',
             text: label || s.id || s.name || '',
             id: s.id || ''
+        });
+    });
+    
+    // ═══════════════════════════════════════════════════════════
+    // CUSTOM DIV RADIOS (z.B. TolunaStart cf-radio-answer)
+    // ═════════════════════════════════════════════════════════==
+    // WARUM? Manche Survey-Provider (TolunaStart, anyaudience.ai) verwenden
+    // KEINE nativen <input type="radio">, sondern Custom DIVs.
+    // Klassen-Namen: "cf-radio-answer", "custom-radio", "radio-option", etc.
+    // Wir suchen nach bekannten Mustern und taggen sie als @cr0, @cr1, ...
+    var customRadioSelectors = [
+        '.cf-radio-answer',           // TolunaStart Standard
+        '.custom-radio',               // Generisch
+        '.radio-option',               // Alternative
+        '[role="radio"]',              // ARIA role (Accessibility)
+        '.survey-radio',               // Weitere Varianten
+    ];
+    
+    var customRadios = [];
+    for (var sel of customRadioSelectors) {
+        var found = document.querySelectorAll(sel);
+        if (found.length > 0) {
+            customRadios = Array.from(found);
+            break;  // Nimm den ersten Selector der Treffer hat
+        }
+    }
+    
+    customRadios.forEach(function(div, i) {
+        var text = (div.innerText || div.textContent || '').trim().substring(0, 100);
+        var isSelected = div.classList.contains('selected') || 
+                         div.classList.contains('active') || 
+                         div.getAttribute('aria-checked') === 'true';
+        
+        results.elements.push({
+            ref: '@cr' + i,         // @cr0, @cr1, ... für Custom Radio DIV
+            role: 'custom_radio',   // Semantische Rolle (NICHT native radio!)
+            text: text,
+            class: div.className || '',  // CSS Klassen (für Debugging)
+            selected: isSelected,
+            id: div.id || ''
         });
     });
     
@@ -1623,6 +1761,8 @@ async def select_option(req: SurveySelectOptionRequest):
     // ═══════════════════════════════════════════════════════════
     // RADIO BUTTONS (Single-Choice) - Zuerst prüfen!
     // ═════════════════════════════════════════════════════════==
+    // KRITISCH (2026-05-09): Versteckte Inputs (display:none) erfordern
+    // Klick auf das PARENT <label>, nicht auf das <input> selbst!
     var radios = document.querySelectorAll('input[type="radio"]');
     
     for (var r of radios) {{
@@ -1637,14 +1777,26 @@ async def select_option(req: SurveySelectOptionRequest):
         // Partial Match: Ist der Label-Text im Container-Text enthalten?
         // ODER: Ist der Label-Text im HTML value enthalten?
         if (text.includes("{label_lower}") || r.value.toLowerCase().includes("{label_lower}")) {{
-            r.click();
-            return "radio:" + r.value;
+            // 2026-05-09 BUGFIX: Prüfe ob Input versteckt ist.
+            var style = window.getComputedStyle(r);
+            var isHidden = (style.display === 'none' || style.visibility === 'hidden');
+            
+            if (isHidden && container) {{
+                // Klicke das sichtbare Container-Element (meist <label>)
+                container.click();
+                return "radio_label_clicked:" + r.value;
+            }} else {{
+                // Klicke direkt auf das Input (native Radios)
+                r.click();
+                return "radio:" + r.value;
+            }}
         }}
     }}
     
     // ═══════════════════════════════════════════════════════════
     // CHECKBOXES (Multi-Choice) - Fallback
     // ═════════════════════════════════════════════════════════==
+    // KRITISCH (2026-05-09): Gleicher Bug wie Radios — versteckte Inputs.
     var checks = document.querySelectorAll('input[type="checkbox"]');
     
     for (var c of checks) {{
@@ -1652,8 +1804,17 @@ async def select_option(req: SurveySelectOptionRequest):
         var text = (container ? container.innerText.trim() : '').toLowerCase();
         
         if (text.includes("{label_lower}")) {{
-            c.click();
-            return "checkbox:" + c.value;
+            // 2026-05-09 BUGFIX: Prüfe ob Input versteckt ist.
+            var style = window.getComputedStyle(c);
+            var isHidden = (style.display === 'none' || style.visibility === 'hidden');
+            
+            if (isHidden && container) {{
+                container.click();
+                return "checkbox_label_clicked:" + c.value;
+            }} else {{
+                c.click();
+                return "checkbox:" + c.value;
+            }}
         }}
     }}
     
@@ -1916,14 +2077,246 @@ async def fill_text(req: SurveyFillTextRequest):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# ENDPOINT 6: Run One Complete Survey (POST /survey/run-one)
+# ENDPOINT 6: Click Custom DIV Radio (POST /survey/click-custom-radio)
+# ═══════════════════════════════════════════════════════════════════════════════
+# Klickt Custom-DIV-Radio-Buttons (z.B. TolunaStart cf-radio-answer).
+# WARUM separater Endpoint?
+# → TolunaStart verwendet KEINE nativen <input type="radio">.
+# → Der normale /survey/select-option Endpoint funktioniert NICHT für DIVs.
+# → Dieser Endpoint klickt direkt auf DIVs mit JavaScript.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+@router.post("/click-custom-radio", response_model=SurveyClickCustomRadioResponse)
+async def click_custom_radio(req: SurveyClickCustomRadioRequest):
+    """
+    Klickt einen Custom-DIV-Radio-Button (z.B. TolunaStart cf-radio-answer).
+    
+    ABLAUF:
+    1. Finde Dashboard WebSocket (get_dashboard_ws).
+    2. Generiere JavaScript:
+       a. Suche alle DIVs mit req.div_class (z.B. .cf-radio-answer).
+       b. Wenn req.option_text gesetzt → suche DIV mit passendem Text.
+       c. Sonst → verwende req.index (0 = erstes, -1 = letztes).
+    3. Führe JavaScript aus (ws_eval).
+    4. Gib Response zurück.
+    
+    WARUM JavaScript .click()?
+    → Simuliert echten Click (inkl. Event-Bubbling).
+    → Feuert alle Event-Listener (React, Vue, Angular, Vanilla JS).
+    → Manche Frameworks brauchen zusätzlich CSS-Klassen-Toggle.
+    
+    WARUM option_text + index Fallback?
+    → Text-Match ist robuster (semantisch).
+    → Index ist schneller (kein Text-Parsing).
+    → Fallback-Kette: option_text → index → first DIV.
+    
+    WARUM "selected" CSS-Klasse togglen?
+    → Manche Frameworks (nicht React/Vue) verwenden CSS-Klassen für Zustand.
+    → Wir togglen .selected / .active als zusätzlicher Fallback.
+    
+    Args:
+        req: SurveyClickCustomRadioRequest
+            - div_class: CSS-Klasse (default: "cf-radio-answer").
+            - index: Index (default: 0, -1 = letztes).
+            - option_text: Optional Text-Match (case-insensitive).
+            - cdp_port: CDP Port (default: 9224).
+    
+    Returns:
+        SurveyClickCustomRadioResponse:
+            - status: "success", "not_found", "error".
+            - divs_found: Anzahl gefundener DIVs.
+            - clicked_index: Tatsächlich geklickter Index.
+            - selected_text: Text des geklickten DIVs.
+    
+    Example:
+        POST /survey/click-custom-radio
+        {"div_class": "cf-radio-answer", "index": 0, "cdp_port": 9224}
+        → {"status": "success", "divs_found": 4, "clicked_index": 0,
+            "selected_text": "Männlich", "message": "Clicked cf-radio-answer[0]: Männlich"}
+        
+        POST /survey/click-custom-radio
+        {"div_class": "cf-radio-answer", "option_text": "weiblich", "cdp_port": 9224}
+        → {"status": "success", "divs_found": 4, "clicked_index": 1,
+            "selected_text": "Weiblich", "message": "Clicked cf-radio-answer[1]: Weiblich"}
+    """
+    # ═══════════════════════════════════════════════════════════════════════
+    # SCHRITT 1: Dashboard WebSocket finden
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    ws_url = get_dashboard_ws(req.cdp_port)
+    
+    if not ws_url:
+        return SurveyClickCustomRadioResponse(
+            status="error",
+            div_class=req.div_class,
+            divs_found=0,
+            clicked_index=-1,
+            message="No dashboard found",
+        )
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # SCHRITT 2: JavaScript für Custom-DIV-Radio-Click generieren
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    # Option-Text in Kleinbuchstaben (case-insensitive matching).
+    option_lower = (req.option_text or "").lower()
+    
+    click_js = f"""
+(function() {{
+    // Suche alle DIVs mit der angegebenen CSS-Klasse.
+    var divs = document.querySelectorAll('.{req.div_class}');
+    
+    if (divs.length === 0) {{
+        return JSON.stringify({{
+            status: 'not_found',
+            divs_found: 0,
+            clicked_index: -1,
+            selected_text: null
+        }});
+    }}
+    
+    var clickedIndex = -1;
+    var selectedText = '';
+    var targetDiv = null;
+    
+    // STRATEGIE 1: Wenn option_text gesetzt → suche nach Text-Match.
+    if ('{option_lower}') {{
+        for (var i = 0; i < divs.length; i++) {{
+            var text = (divs[i].innerText || divs[i].textContent || '').trim().toLowerCase();
+            if (text.includes('{option_lower}')) {{
+                targetDiv = divs[i];
+                clickedIndex = i;
+                selectedText = text;
+                break;
+            }}
+        }}
+    }}
+    
+    // STRATEGIE 2: Wenn kein Text-Match → verwende Index.
+    if (!targetDiv) {{
+        var idx = {req.index};
+        if (idx === -1) idx = divs.length - 1;  // -1 = letztes
+        if (idx < 0) idx = 0;
+        if (idx >= divs.length) idx = divs.length - 1;
+        
+        targetDiv = divs[idx];
+        clickedIndex = idx;
+        selectedText = (targetDiv.innerText || targetDiv.textContent || '').trim();
+    }}
+    
+    // KLICK AUSFÜHREN
+    if (targetDiv) {{
+        // 1. Nativer JavaScript Click (feuert Event-Listener).
+        targetDiv.click();
+        
+        // 2. Optional: CSS-Klasse togglen (für Frameworks die auf Klassen hören).
+        targetDiv.classList.add('selected');
+        targetDiv.classList.add('active');
+        targetDiv.setAttribute('aria-checked', 'true');
+        
+        // 3. Optional: Geschwister deselektieren (Radio-Verhalten simulieren).
+        for (var i = 0; i < divs.length; i++) {{
+            if (divs[i] !== targetDiv) {{
+                divs[i].classList.remove('selected');
+                divs[i].classList.remove('active');
+                divs[i].setAttribute('aria-checked', 'false');
+            }}
+        }}
+        
+        return JSON.stringify({{
+            status: 'success',
+            divs_found: divs.length,
+            clicked_index: clickedIndex,
+            selected_text: selectedText.substring(0, 100)
+        }});
+    }}
+    
+    return JSON.stringify({{
+        status: 'error',
+        divs_found: divs.length,
+        clicked_index: -1,
+        selected_text: null
+    }});
+}})()
+"""
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # SCHRITT 3: WebSocket Verbindung aufbauen und ausführen
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    ws = websocket.create_connection(
+        ws_url,
+        timeout=10,
+        header=[f"Origin: {_ws_origin(ws_url)}"]
+    )
+    ws.send(json.dumps({
+        "id": 1,
+        "method": "Runtime.evaluate",
+        "params": {"expression": click_js, "returnByValue": True}
+    }))
+    response = ws.recv()
+    ws.close()
+    
+    parsed = json.loads(response)
+    result = parsed.get("result", {}).get("result", {}).get("value", "{}")
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # SCHRITT 4: Ergebnis parsen und Response zurückgeben
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    try:
+        result_data = json.loads(result)
+    except json.JSONDecodeError:
+        result_data = {"status": "error", "divs_found": 0, "clicked_index": -1, "selected_text": None}
+    
+    status = result_data.get("status", "error")
+    divs_found = result_data.get("divs_found", 0)
+    clicked_index = result_data.get("clicked_index", -1)
+    selected_text = result_data.get("selected_text")
+    
+    if status == "not_found":
+        return SurveyClickCustomRadioResponse(
+            status="not_found",
+            div_class=req.div_class,
+            divs_found=0,
+            clicked_index=-1,
+            message=f"No DIVs found with class: {req.div_class}",
+        )
+    
+    if status == "success":
+        return SurveyClickCustomRadioResponse(
+            status="success",
+            div_class=req.div_class,
+            divs_found=divs_found,
+            clicked_index=clicked_index,
+            selected_text=selected_text,
+            message=f"Clicked {req.div_class}[{clicked_index}]: {selected_text or 'N/A'}",
+        )
+    
+    return SurveyClickCustomRadioResponse(
+        status="error",
+        div_class=req.div_class,
+        divs_found=divs_found,
+        clicked_index=clicked_index,
+        message=f"Unexpected error: {result}",
+    )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ENDPOINT 7: Run One Complete Survey (POST /survey/run-one)
 # ═══════════════════════════════════════════════════════════════════════════════
 # Führt EINE komplette Survey von Anfang bis Ende aus.
 # DIES IST EIN DEMO/PROOF-OF-CONCEPT — NICHT für Produktion!
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
-@router.post("/run-one", response_model=SurveyRunOneResponse)
+@router.post(
+    "/run-one",
+    response_model=SurveyRunOneResponse,
+    deprecated=True,
+    summary="DEPRECATED — Use POST /survey/open + /survey/fill + /survey/rate instead",
+)
 async def run_one_survey(req: SurveyRunOneRequest):
     """
     Führt EINE komplette Survey von Anfang bis Ende aus.
@@ -2146,16 +2539,30 @@ async def run_one_survey(req: SurveyRunOneRequest):
                 message="Screen out / disqualified",
             )
         
-        # Auto-select: Wähle erste Radio/Checkbox Option.
+        # Auto-select: Wähle erste Radio/Checkbox/Custom-DIV Option.
         for el in elements.get("elements", []):
             if el.get("role") == "radio":
-                # Klicke erste Radio-Option.
+                # 2026-05-09 BUGFIX: Label-Click für versteckte Inputs, Input-Click für sichtbare.
                 ws = websocket.create_connection(ws_url, timeout=10, header=[f"Origin: {_ws_origin(ws_url)}"])
                 ws.send(json.dumps({
                     "id": 1,
                     "method": "Runtime.evaluate",
                     "params": {
-                        "expression": f"document.querySelector('input[type=\\'radio\\'][name=\\'{el.get('name', '')}\\']').click();",
+                        "expression": """
+(function() {
+    var radios = document.querySelectorAll('input[type="radio"]');
+    if (radios.length === 0) return 'no_radios';
+    var first = radios[0];
+    var style = window.getComputedStyle(first);
+    var isHidden = (style.display === 'none' || style.visibility === 'hidden');
+    if (isHidden) {
+        var label = first.closest('label');
+        if (label) { label.click(); return 'clicked_label:0'; }
+    }
+    first.click();
+    return 'clicked_input:0';
+})()
+""",
                         "returnByValue": True
                     }
                 }))
@@ -2163,13 +2570,53 @@ async def run_one_survey(req: SurveyRunOneRequest):
                 ws.close()
                 break
             elif el.get("role") == "checkbox":
-                # Klicke erste Checkbox.
+                # 2026-05-09 BUGFIX: Label-Click für versteckte Inputs.
                 ws = websocket.create_connection(ws_url, timeout=10, header=[f"Origin: {_ws_origin(ws_url)}"])
                 ws.send(json.dumps({
                     "id": 1,
                     "method": "Runtime.evaluate",
                     "params": {
-                        "expression": "document.querySelector('input[type=\"checkbox\"]').click();",
+                        "expression": """
+(function() {
+    var checks = document.querySelectorAll('input[type="checkbox"]');
+    if (checks.length === 0) return 'no_checkboxes';
+    var first = checks[0];
+    var style = window.getComputedStyle(first);
+    var isHidden = (style.display === 'none' || style.visibility === 'hidden');
+    if (isHidden) {
+        var label = first.closest('label');
+        if (label) { label.click(); return 'clicked_label:0'; }
+    }
+    first.click();
+    return 'clicked_input:0';
+})()
+""",
+                        "returnByValue": True
+                    }
+                }))
+                ws.recv()
+                ws.close()
+                break
+            elif el.get("role") == "custom_radio":
+                # Klicke ersten Custom-DIV-Radio (z.B. TolunaStart cf-radio-answer).
+                ws = websocket.create_connection(ws_url, timeout=10, header=[f"Origin: {_ws_origin(ws_url)}"])
+                ws.send(json.dumps({
+                    "id": 1,
+                    "method": "Runtime.evaluate",
+                    "params": {
+                        "expression": """
+(function() {
+    var divs = document.querySelectorAll('.cf-radio-answer, .custom-radio, .radio-option, [role="radio"]');
+    if (divs.length > 0) {
+        var first = divs[0];
+        first.click();
+        first.classList.add('selected');
+        first.setAttribute('aria-checked', 'true');
+        return 'clicked_custom_radio:0';
+    }
+    return 'not_found';
+})()
+""",
                         "returnByValue": True
                     }
                 }))

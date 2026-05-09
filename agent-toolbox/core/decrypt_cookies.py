@@ -3,11 +3,17 @@
 Chrome Cookie Decryptor for macOS Keychain.
 
 Extracts decrypted cookies from Chrome's SQLite database using
-the macOS Keychain Safe Storage key. This bypasses the need
-to copy profiles (which breaks Chrome's cookie encryption).
+the macOS Keychain Safe Storage key.
+
+LIMITATION: Chrome 147+ uses AES-GCM (v11) encryption.
+This script only supports AES-CBC (v10). v11 cookies FAIL to decrypt.
+WORKAROUND: Use ~/.stealth/heypiggy-backup/heypiggy-cookies.json instead
+(it has the correct working cookies from previous successful extraction).
 
 Usage:
-    python3 decrypt_cookies.py --profile "Profile 73" --user simoneschulze
+    python3 decrypt_cookies.py --profile "Profile 901 (Jeremy)"
+    # Output: ~/Library/Application Support/Google/Chrome/Profile 901 (Jeremy)/decrypted_cookies.json
+    # ⚠️ WARNING: v11 encrypted cookies will be SKIPPED (decryption fails silently)
 """
 import sqlite3
 import os
@@ -18,49 +24,34 @@ from Crypto.Cipher import AES
 from Crypto.Protocol.KDF import PBKDF2
 
 def get_key():
-    """Get Chrome Safe Storage key from macOS Keychain.
-    
-    WARUM base64 decode?
-    Der Keychain-Eintrag speichert den Key als base64-String.
-    Beispiel: b'faeP6mi52KNcFbA4PS82jQ==' (24 bytes base64 = 16 bytes raw).
-    Ohne base64 decode: PBKDF2 produziert falschen Key → Decrypt schlägt fehl.
-    """
-    import base64
+    """Get Chrome Safe Storage key from macOS Keychain."""
     cmd = [
         'security', 'find-generic-password', '-w',
         '-s', 'Chrome Safe Storage',
         '-a', 'Chrome'
     ]
     output = subprocess.check_output(cmd).strip()
-    # Base64 decode: 24 bytes base64 → 16 bytes AES-128 key
-    return base64.b64decode(output)
+    return output
 
 def decrypt_value(encrypted_value, key):
-    """Decrypt a single Chrome cookie value (Chrome v10 AES-128-GCM)."""
+    """Decrypt a single Chrome cookie value."""
+    # Chrome macOS encryption: AES-CBC with PBKDF2
     salt = b'saltysalt'
+    iv = b' ' * 16
     length = 16
     
-    # Derive key from password (PBKDF2 with 1003 iterations)
+    # Derive key from password
     derived_key = PBKDF2(key, salt, dkLen=length, count=1003)
+    cipher = AES.new(derived_key, AES.MODE_CBC, IV=iv)
     
-    # Chrome v10 format: "v10" (3 bytes) + nonce (12 bytes) + ciphertext + tag (16 bytes)
-    if encrypted_value[:3] == b'v10':
-        nonce = encrypted_value[3:15]  # 12 bytes
-        ciphertext = encrypted_value[15:-16]  # everything except tag
-        tag = encrypted_value[-16:]  # last 16 bytes
-        
-        cipher = AES.new(derived_key, AES.MODE_GCM, nonce=nonce)
-        decrypted = cipher.decrypt_and_verify(ciphertext, tag)
-        return decrypted.decode('utf-8')
-    else:
-        # Fallback for older format (v10 is current standard on macOS)
-        iv = b' ' * 16
-        cipher = AES.new(derived_key, AES.MODE_CBC, IV=iv)
-        decrypted = cipher.decrypt(encrypted_value[3:])
-        last_byte = decrypted[-1]
-        if last_byte <= 16:
-            decrypted = decrypted[:-last_byte]
-        return decrypted.decode('utf-8', errors='replace')
+    # Strip 'v10' or 'v11' prefix (3 bytes)
+    decrypted = cipher.decrypt(encrypted_value[3:])
+    
+    # Remove PKCS7 padding
+    last_byte = decrypted[-1]
+    if last_byte <= 16:
+        decrypted = decrypted[:-last_byte]
+    return decrypted.decode('utf-8', errors='replace')
 
 def extract_cookies(profile_name="Default", user="jeremy", domain_filter=None):
     """Extract all cookies from Chrome profile."""
@@ -126,11 +117,16 @@ def extract_cookies(profile_name="Default", user="jeremy", domain_filter=None):
 
 def main():
     parser = argparse.ArgumentParser(description='Decrypt Chrome cookies from macOS')
-    parser.add_argument('--profile', default='Default', help='Chrome profile name')
+    parser.add_argument('--profile', default='Profile 901 (Jeremy)', help='Chrome profile name')
     parser.add_argument('--user', default='jeremy', help='macOS username')
     parser.add_argument('--domain', default=None, help='Filter by domain substring')
-    parser.add_argument('--output', default='decrypted_cookies.json', help='Output JSON file')
+    parser.add_argument('--output', default=None, help='Output JSON file')
     args = parser.parse_args()
+    
+    # Default output: Chrome profile directory
+    if args.output is None:
+        profile_dir = os.path.expanduser(f'~/Library/Application Support/Google/Chrome/{args.profile}')
+        args.output = os.path.join(profile_dir, 'decrypted_cookies.json')
     
     cookies = extract_cookies(args.profile, args.user, args.domain)
     

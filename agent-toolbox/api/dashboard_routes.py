@@ -244,45 +244,97 @@ async def scan_dashboard(req: DashboardScanRequest):
     # WARUM IIFE? (function() { ... })() → Isoliert Variablen, ermöglicht return.
     scan_js = """
 (function() {
-    var results = {balance: null, surveys: []};
-
-    // Balance: try CSS selectors first
+    // Ergebnis-Objekt.
+    var results = {
+        balance: "",      // Balance als String (wird später geparsed)
+        surveys: []       // Liste der gefundenen Surveys
+    };
+    
+    // ── Balance auslesen ──
+    // WARUM CSS-Selektoren? Balance wird typischerweise in Sidebar/Header angezeigt.
+    // Wir verwenden MEHRERE Selektoren (Heuristik) für Robustheit.
     var balanceElements = document.querySelectorAll(
         '.balance, .points, [class*="balance"], [class*="points"], [class*="guthaben"]'
     );
+    
     for (var el of balanceElements) {
         var text = el.textContent.trim();
-        if (text.includes('€') || text.includes('EUR') || /\\d+[.,]?\\d+/.test(text)) {
+        
+        // Prüfe ob Text € enthält ODER ein Zahlenformat ist.
+        // WARUM? Balance wird als "12.35 €" oder "€12.35" angezeigt.
+        if (text.includes('€') || text.includes('EUR') || /\\d+\\.\\d+/.test(text)) {
             results.balance = text;
-            break;
+            break;  // Erster Treffer = wahrscheinlich die Balance
         }
     }
+    
+    // Falls Balance nicht gefunden → suche im gesamten Text.
+    // WARUM Fallback? Wenn CSS-Klassen sich geändert haben (UI-Update).
     if (!results.balance) {
         var bodyText = document.body.innerText;
+        
+        // Regex: "Guthaben: 12.35€" oder "Balance: €12.35" oder "Points: 123".
+        // WARUM Regex? Flexible Format-Erkennung (verschiedene Schreibweisen).
         var balanceMatch = bodyText.match(/(Guthaben|Balance|Points)[:\\s]*([€\\$]?\\s*[\\d,.]+)/i);
+        
         if (balanceMatch) {
+            // Gruppe 2 = der Betrag (z.B. "12.35€" oder "€ 12.35").
             results.balance = balanceMatch[2];
         }
     }
-
-    // Surveys: find cards with clickSurvey onclick
+    
+    // ── Survey-Cards finden ──
+    // WARUM onclick*="clickSurvey"? HeyPiggy verwendet onclick-Handler auf Cards.
+    // Das ist ein stabiler Indikator (über mehrere Monate beobachtet).
     var cards = document.querySelectorAll('[onclick*="clickSurvey"]');
+    
     for (var i = 0; i < cards.length; i++) {
         var card = cards[i];
-        var onclick = card.getAttribute("onclick") || "";
+        
+        // Extrahiere onclick-Attribut.
+        var onclick = card.getAttribute("onclick") || '';
+        
+        // Regex: clickSurvey('12345') oder clickSurvey("12345").
+        // WARUM Regex? Flexible Quote-Erkennung (einfache oder doppelte Anführungszeichen).
         var idMatch = onclick.match(/clickSurvey\\('?(\\d+)'?\\)/);
-        var surveyId = idMatch ? idMatch[1] : "";
-        var parent = card.closest("div, li, tr, article") || card;
-        var cardText = parent.textContent || "";
+        var surveyId = idMatch ? idMatch[1] : '';  // Survey-ID oder leer
+        
+        // ── Reward auslesen ──
+        // Suche im Parent-Element (Container der Card) nach €-Betrag.
+        // WARUM Parent? Der €-Betrag ist oft außerhalb der Card (im Container).
+        var parent = card.closest('div, li, tr, article') || card;
+        var cardText = parent.textContent || '';
+        
+        // Regex: "0.35 €" oder "1.20€" → extrahiere Zahl.
+        // (\\d+[.,]?\\d*) = Zahl mit optionalen Dezimalstellen (Komma oder Punkt).
         var rewardMatch = cardText.match(/(\\d+[.,]?\\d*)\\s*€/);
-        var reward = rewardMatch ? parseFloat(rewardMatch[1].replace(",", ".")) : 0;
+        var reward = rewardMatch ? parseFloat(rewardMatch[1].replace(',', '.')) : 0;
+        
+        // ── Dauer auslesen ──
+        // Regex: "15 min" oder "15min" → extrahiere Minuten.
         var durationMatch = cardText.match(/(\\d+)\\s*min/i);
         var duration = durationMatch ? parseInt(durationMatch[1]) : null;
+        
+        // ── Titel extrahieren ──
+        // Regex: Text vor dem €-Betrag (vermutlich der Titel).
+        // WARUM? Der Titel steht typischerweise vor dem Reward.
+        // Beispiel: "Umfrage zu Lebensmitteln 0.35 €" → Titel = "Umfrage zu Lebensmitteln".
+        var titleMatch = cardText.match(/([^€\\n]+)(?=\\d+[.,]?\\d*\\s*€)/);
+        var title = titleMatch ? titleMatch[1].trim().substring(0, 100) : '';
+        
+        // Nur wenn Survey-ID und Reward gültig sind → hinzufügen.
+        // WARUM? Filtern von unvollständigen/inaktiven Cards.
         if (surveyId && reward > 0) {
-            results.surveys.push({id: surveyId, reward: reward, duration: duration, title: ""});
+            results.surveys.push({
+                id: surveyId,
+                reward: reward,
+                duration: duration,
+                title: title
+            });
         }
     }
-
+    
+    // Rückgabe als JSON-String (für CDP returnByValue).
     return JSON.stringify(results);
 })()
 """

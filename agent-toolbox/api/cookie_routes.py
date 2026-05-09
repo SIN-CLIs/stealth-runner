@@ -88,7 +88,7 @@ from core.browser_manager import get_browser_manager
 # CookieManager: Cookie-Verwaltung (Singleton).
 # WARUM? - Extrahieren, Speichern, Laden, Injizieren, Verifizieren.
 #        - get_cookie_manager() gibt Singleton-Instanz zurück (cookies_dir="./data").
-from core.cookie_manager import get_cookie_manager, CookieManager
+from core.cookie_manager import get_cookie_manager
 
 # Pydantic-Modelle für Request/Response Validation.
 # WARUM? - FastAPI validiert Requests automatisch (422 bei ungültigen Daten).
@@ -102,12 +102,6 @@ from api.schemas import (
     # Request/Response für POST /cookies/inject
     CookieInjectRequest,        # filename, verify_session
     CookieInjectResponse,       # status, injected_count, session_active, execution_time, error
-    
-    # Session Recovery (2026-05-08): Backup + Restore + Safe Extract
-    BackupCreateRequest,        # working_dir, working_filename
-    BackupCreateResponse,       # status, backed_up, count, backup_path, message
-    RecoveryRequest,            # working_dir, working_filename
-    RecoveryResponse,           # status, recovered, count, backup_source, restored_to, message
 )
 
 # Logger-Instanz für diese Datei.
@@ -226,7 +220,7 @@ async def extract_cookies(request: CookieExtractRequest):
     # SCHRITT 2: BrowserManager holen
     # ═══════════════════════════════════════════════════════════════════════
     
-    # Singleton-Instanz des BrowserManagers (Port 9999, Profile 73).
+    # Singleton-Instanz des BrowserManagers (Port 9999, Profile 901 (Jeremy)).
     # WARUM Singleton? Es gibt nur EINEN Chrome-Prozess (keine Race Conditions).
     browser_mgr = get_browser_manager()
     
@@ -657,10 +651,10 @@ async def verify_session():
             "url": page.url,             # Aktuelle URL (für Debugging)
         }
     
-except Exception as e:
-        # ═══════════════════════════════════════════════════════════════════════
+    except Exception as e:
+        # ═══════════════════════════════════════════════════════════════════
         # FEHLERBEHANDLUNG
-        # ═══════════════════════════════════════════════════════════════════════
+        # ═══════════════════════════════════════════════════════════════════
         
         # Logge Fehler.
         logger.error(f"Session-Prüfung fehlgeschlagen: {e}")
@@ -670,159 +664,14 @@ except Exception as e:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
-# ENDPOINT 4: POST /cookies/backup (2026-05-08)
-# ═══════════════════════════════════════════════════════════════════════════════
-# Erstellt Read-Only Backup aus validierten Working-Cookies.
-# WICHTIG: Nur aufrufen NACHDEM Session validiert und Cookies frisch extrahiert wurden!
-# ═══════════════════════════════════════════════════════════════════════════════
-
-
-@router.post("/backup", response_model=BackupCreateResponse)
-async def create_cookie_backup(request: BackupCreateRequest):
-    """
-    Erstellt ein READ-ONLY Backup der aktuellen Working-Cookies.
-    
-    VORAUSSETZUNG:
-    - POST /cookies/extract oder /cookies/extract-safe wurde erfolgreich ausgefuehrt.
-    - Working-Cookies sind FRISCH und die Session ist VALIDE.
-    
-    Das Backup ist read-only (chmod 444/555). Der Agent KANN und DARF NICHT
-    in das Backup schreiben. Er kann es NUR lesen (kopieren via /cookies/recover).
-    
-    WARUM READ-ONLY?
-    - Verhindert versehentliches Ueberschreiben durch einen Agenten.
-    - Backup ist IMMER der letzte bekannte gute Zustand.
-    """
-    try:
-        result = CookieManager.create_backup(
-            working_filename=request.working_filename,
-            working_dir=request.working_dir
-        )
-        return BackupCreateResponse(**result)
-    except Exception as e:
-        logger.error(f"Backup failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# ENDPOINT 5: POST /cookies/recover (2026-05-08)
-# ═══════════════════════════════════════════════════════════════════════════════
-# Stellt Backup-Cookies im Working-Dir wieder her.
-# WICHTIG: Browser muss danach NEU gestartet werden!
-# ═══════════════════════════════════════════════════════════════════════════════
-
-
-@router.post("/recover", response_model=RecoveryResponse)
-async def recover_cookies(request: RecoveryRequest):
-    """
-    Session Recovery: Stellt saubere Backup-Cookies wieder her.
-    
-    ABLAUF:
-    1. Prueft ob Backup existiert (~/.stealth/heypiggy-backup/heypiggy-cookies.json).
-    2. Kopiert Backup -> Working-Dir (ueberschreibt kaputte Datei).
-    3. Setzt Working-Datei auf schreibbar (chmod 644).
-    4. Gibt Status zurueck.
-    
-    DANACH: Browser NEU starten (POST /browser/start oder /services/heypiggy/login).
-    Die alten abgelaufenen Cookies wurden NICHT gespeichert.
-    """
-    try:
-        result = CookieManager.recover_from_backup(
-            working_filename=request.working_filename,
-            working_dir=request.working_dir
-        )
-        return RecoveryResponse(**result)
-    except Exception as e:
-        logger.error(f"Recovery failed: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
-# ENDPOINT 6: POST /cookies/extract-safe (2026-05-08)
-# ═══════════════════════════════════════════════════════════════════════════════
-# Extrahiert Cookies NUR wenn Session AKTIV ist (Safe-Save).
-# Verhindert: Ueberschreiben guter Cookies mit abgelaufenen.
-# ═══════════════════════════════════════════════════════════════════════════════
-
-
-@router.post("/extract-safe")
-async def extract_cookies_safe(request: CookieExtractRequest):
-    """
-    SAFE Cookie Extract: Extrahiert NUR wenn Session validiert ist.
-    
-    NIEMALS speichern wenn Session abgelaufen ist!
-    
-    ABLAUF:
-    1. Holt Page/Context vom BrowserManager.
-    2. Extrahiert Cookies (wie /cookies/extract).
-    3. Prueft Session via verify_session().
-    4. Wenn Session AKTIV -> speichert normal.
-    5. Wenn Session TOT -> NIEMALS speichern, gibt Error zurueck.
-    
-    WARUM das wichtig ist:
-    - Ohne diesen Check: Agent extrahiert abgelaufene Cookies,
-      ueberschreibt die guten Backup-Daten, alles ist zerschossen.
-    - Mit diesem Check: Agent merkt "Session tot", speichert nix,
-      und der Recovery-Button (/cookies/recover) bleibt wirksam.
-    """
-    try:
-        browser_mgr = get_browser_manager()
-        
-        if not browser_mgr.is_running:
-            raise HTTPException(
-                status_code=400,
-                detail="Browser nicht gestartet. Rufe POST /browser/start auf."
-            )
-        
-        page = await browser_mgr.get_page()
-        cookie_mgr = get_cookie_manager()
-        cookies = await cookie_mgr.extract_cookies(
-            page, domain_filter=request.domain_filter
-        )
-        
-        safe_result = await cookie_mgr.safe_save_cookies(
-            page, cookies, request.filename
-        )
-        
-        if not safe_result.get("saved"):
-            raise HTTPException(
-                status_code=409,
-                detail=safe_result.get("message",
-                    "Cookie-Speicherung verweigert: Session abgelaufen. "
-                    "Rufe /cookies/recover auf um Backup wiederherzustellen."
-                )
-            )
-        
-        stats = cookie_mgr.get_cookie_stats(cookies)
-        
-        return {
-            "status": "success",
-            "cookies": cookies,
-            "count": len(cookies),
-            "stats": stats,
-            "saved_to": safe_result.get("filepath"),
-            "message": safe_result.get("message"),
-        }
-    
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error(f"Safe-Extract fehlgeschlagen: {e}")
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# ═══════════════════════════════════════════════════════════════════════════════
 # ENDE VON COOKIE_ROUTES.PY
 # ═══════════════════════════════════════════════════════════════════════════════
 # ZUSAMMENFASSUNG:
 #
-# Diese Datei implementiert 6 Cookie-Management-Endpoints:
+# Diese Datei implementiert 3 Cookie-Management-Endpoints:
 #   1. POST /cookies/extract   → Cookies aus Browser extrahieren + speichern.
 #   2. POST /cookies/inject    → Cookies aus Datei in Browser laden + verifizieren.
 #   3. POST /cookies/verify    → Session-Status prüfen (eingeloggt/ausgeloggt).
-#   4. POST /cookies/backup    → Backup aus validen Working-Cookies erstellen (read-only).
-#   5. POST /cookies/recover   → Backup in Working-Dir wiederherstellen.
-#   6. POST /cookies/extract-safe → Extrahiert NUR wenn Session lebt (verhindert Ueberschreiben).
 #
 # DESIGN-PRINZIPIEN:
 #   1. Modularität: Router ist unabhängig von main.py (kann isoliert getestet werden).

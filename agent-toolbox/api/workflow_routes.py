@@ -42,9 +42,8 @@ import time
 import logging
 from typing import Optional
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter
 
-from core.rate_limiter import rate_limit_dependency
 from api.schemas import (
     WorkflowRunBestRequest,
     WorkflowRunBestResponse,
@@ -220,7 +219,7 @@ def _select_best_survey(
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
-@router.post("/run-best", response_model=WorkflowRunBestResponse, dependencies=[Depends(rate_limit_dependency)])
+@router.post("/run-best", response_model=WorkflowRunBestResponse)
 async def run_best(req: WorkflowRunBestRequest):
     """
     Führt einen kompletten Workflow aus: Session-Check → Cookie-Injektion

@@ -30,9 +30,9 @@
 ║                                                                              ║
 ║  ARCHITEKTUR-ENTSCHEIDUNGEN:                                                 ║
 ║  ────────────────────────────                                                ║
-  ║  • cdp_port = 9999 DEFAULT: Chrome DevTools Protocol Port.                 ║
-  ║    NICHT 9222 (Chrome Default) weil 9222 oft von User-Chrome belegt ist.    ║
-  ║    Stealth-Runner Standard seit 2026-05-08: 9999 (nicht 8888 alt).           ║
+║  • cdp_port = 9999 DEFAULT: Chrome DevTools Protocol Port.                 ║
+║    NICHT 9222 (Chrome Default) weil 9222 oft von User-Chrome belegt ist.    ║
+║    Wir verwenden 9999 als isolierten Bot-Chrome-Port.                         ║
 ║  • profile_name = "default" DEFAULT: Playwright-Profil-Name.                 ║
 ║    Kann auf "heypiggy" oder andere Profile erweitert werden.                  ║
 ║  • Literal[...] statt str: Enforced Enum-Werte bei API-Responses.           ║
@@ -773,6 +773,38 @@ class SurveyClickButtonRequest(BaseModel):
         description="Browser profile name"
     )
     
+    # tab_id: EXAKTE Tab-ID (von POST /survey/open Response).
+    # WARUM optional? Wenn nicht angegeben → Endpoint sucht auf ALLEN Tabs.
+    # WENN angegeben → EXAKT dieser Tab wird verwendet (bulletproof).
+    tab_id: Optional[str] = Field(
+        default=None,
+        description="Exact Chrome tab ID (from /survey/open response). If provided, searches ONLY this tab."
+    )
+    
+    # url_pattern: URL-Fragment zum Finden des richtigen Tabs.
+    # WARUM optional? Alternative zu tab_id. Sucht Tab dessen URL diesen String enthält.
+    # Beispiel: "samplicio" matcht Tab mit rx.samplicio.us/...
+    url_pattern: Optional[str] = Field(
+        default=None,
+        description="URL pattern to find the correct tab (e.g. 'samplicio', 'qualtrics'). Alternative to tab_id."
+    )
+    
+    # tab_id: EXAKTE Tab-ID (von POST /survey/open Response).
+    # WARUM optional? Wenn nicht angegeben → Endpoint sucht auf ALLEN Tabs.
+    # WENN angegeben → EXAKT dieser Tab wird verwendet (bulletproof).
+    tab_id: Optional[str] = Field(
+        default=None,
+        description="Exact Chrome tab ID (from /survey/open response). If provided, searches ONLY this tab."
+    )
+    
+    # url_pattern: URL-Fragment zum Finden des richtigen Tabs.
+    # WARUM optional? Alternative zu tab_id. Sucht Tab dessen URL diesen String enthält.
+    # Beispiel: "samplicio" matcht Tab mit rx.samplicio.us/...
+    url_pattern: Optional[str] = Field(
+        default=None,
+        description="URL pattern to find the correct tab (e.g. 'samplicio', 'qualtrics'). Alternative to tab_id."
+    )
+    
     # timeout_ms: Wartezeit nach dem Click.
     # WARUM 5000? Siehe oben. Manche Seiten laden in 500ms, andere brauchen 3s.
     # 5000ms deckt 95% der Fälle ab. Bei langsamen Providern → erhöhen.
@@ -1044,6 +1076,142 @@ class SurveyFillTextResponse(BaseModel):
     )
 
 
+# ═══════════════════════════════════════════════════════════════════════════════
+# CUSTOM DIV RADIO SCHEMAS (2026-05-09) — TolunaStart cf-radio-answer Support
+# ═══════════════════════════════════════════════════════════════════════════════
+# TolunaStart und ähnliche Provider verwenden KEINE nativen <input type="radio">.
+# Stattdessen: Custom DIVs mit class="cf-radio-answer" o.ä.
+# Diese Schemas + Endpoints ermöglichen die Interaktion mit solchen Custom-DIVs.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class SurveyClickCustomRadioRequest(BaseModel):
+    """
+    Request für POST /survey/click-custom-radio.
+    
+    Klickt einen Custom-DIV-Radio-Button (z.B. TolunaStart cf-radio-answer).
+    
+    ABLAUF:
+    1. Suche DIVs mit passender CSS-Klasse (default: .cf-radio-answer).
+    2. Klicke das DIV am angegebenen Index (0 = erstes).
+    3. Feuere click-Event (wichtig für JavaScript-Frameworks!).
+    4. Optional: Toggle "selected" CSS-Klasse (manche Frameworks brauchen das).
+    
+    WICHTIGE FELDER:
+    • div_class: CSS-Klasse der Custom-Radio-DIVs.
+      Default: "cf-radio-answer" (TolunaStart Standard).
+      Kann auch "custom-radio", "radio-option", etc. sein.
+    • index: Welches DIV geklickt werden soll (0-basiert).
+      0 = erstes DIV, 1 = zweites, etc.
+      -1 = letztes DIV (Fallback wenn Anzahl unbekannt).
+    • option_text: Optional. Wenn gesetzt → suche DIV das diesen Text enthält.
+      Wenn nicht gefunden → Fallback zu index.
+    
+    WARUM index-basiert statt Text-basiert?
+    → Text kann variieren ("18-25 Jahre" vs "18 - 25" vs "18–25").
+    → Index ist stabil solange die Anzahl Optionen gleich bleibt.
+    → Aber: Text-Match als Fallback für robustere Auswahl.
+    
+    WARUM div_class Parameter?
+    → Unterschiedliche Provider verwenden unterschiedliche Klassen-Namen.
+    → "cf-radio-answer" = TolunaStart.
+    → "custom-radio" = Andere Provider.
+    → Flexibilität: Ein Endpoint für ALLE Custom-Radio-Frameworks.
+    """
+    # div_class: CSS-Klasse der Custom-Radio-DIVs.
+    div_class: str = Field(
+        default="cf-radio-answer",
+        description="CSS class of custom radio DIVs. Default: 'cf-radio-answer' (TolunaStart)"
+    )
+    
+    # index: Index des zu klickenden DIVs (0-basiert).
+    # WARUM default=0? Erste Option ist der sicherste Default (neutral/männlich/erste Region).
+    index: int = Field(
+        default=0,
+        ge=-1,
+        description="Index of DIV to click (0=first, -1=last). Used if option_text not found"
+    )
+    
+    # option_text: Optional Text-Match (robuster als Index).
+    # WARUM Optional? Wenn None → verwende index.
+    # Wenn gesetzt → suche DIV das diesen Text enthält (case-insensitive, partial match).
+    option_text: Optional[str] = Field(
+        default=None,
+        description="Optional: Click DIV containing this text (case-insensitive partial match). Falls back to index if not found"
+    )
+    
+    # cdp_port: CDP Port.
+    cdp_port: int = Field(
+        default=9999,
+        description="CDP port for Chrome communication"
+    )
+    
+    # profile_name: Browser-Profil.
+    profile_name: str = Field(
+        default="default",
+        description="Browser profile name"
+    )
+    
+    # wait_after_ms: Wartezeit nach Click.
+    wait_after_ms: int = Field(
+        default=1000,
+        description="Wait time in milliseconds after click for UI to update"
+    )
+
+
+class SurveyClickCustomRadioResponse(BaseModel):
+    """
+    Response für POST /survey/click-custom-radio.
+    
+    Ergebnis des Custom-DIV-Radio-Clicks.
+    
+    MÖGLICHE STATUS-WERTE:
+    • "success"    → DIV gefunden und geklickt.
+    • "not_found"  → Kein DIV mit passender Klasse/Text gefunden.
+    • "error"      → Technischer Fehler.
+    
+    WICHTIGE FELDER:
+    • divs_found: Anzahl gefundener DIVs (für Debugging).
+      0 = keine Custom-Radios auf der Seite (falscher Provider?).
+      >0 = Anzahl Optionen.
+    • clicked_index: Tatsächlich geklickter Index.
+      Kann vom Request abweichen (z.B. wenn -1 → letztes DIV).
+    """
+    # status: Ergebnis.
+    status: Literal["success", "error", "not_found"] = Field(
+        default="success",
+        description="'success', 'not_found' (no matching DIVs), or 'error'"
+    )
+    
+    # div_class: Verwendete CSS-Klasse (Echo für Bestätigung).
+    div_class: str = Field(
+        description="CSS class that was searched for"
+    )
+    
+    # divs_found: Anzahl gefundener DIVs.
+    divs_found: int = Field(
+        default=0,
+        description="Number of matching DIVs found on page"
+    )
+    
+    # clicked_index: Tatsächlich geklickter Index.
+    clicked_index: int = Field(
+        default=-1,
+        description="Index of the DIV that was actually clicked"
+    )
+    
+    # selected_text: Text des geklickten DIVs (für Debugging).
+    selected_text: Optional[str] = Field(
+        default=None,
+        description="Text content of the clicked DIV"
+    )
+    
+    # message: Human-readable Status.
+    message: str = Field(
+        description="e.g. 'Clicked cf-radio-answer[0]: Männlich', 'No DIVs found with class: cf-radio-answer'"
+    )
+
+
 class SurveyRunOneRequest(BaseModel):
     """
     Request für POST /survey/run-one.
@@ -1176,6 +1344,36 @@ class SurveyRunOneResponse(BaseModel):
     message: str = Field(
         description="e.g. 'Survey completed in 45.2s, earned 0.35€', 'Screen out on page 3'"
     )
+
+
+class SurveyRunRequest(BaseModel):
+    """POST /survey/run Request — Batch Survey Execution."""
+    profile_name: str = Field(default="default", description="Playwright profile name")
+    max_surveys: int = Field(default=10, description="Max surveys to run")
+    provider_filter: Optional[str] = Field(default=None, description="Filter by provider name")
+    headless: bool = Field(default=False, description="Run Chrome headless")
+    cdp_port: int = Field(default=9999, description="CDP debugging port")
+
+
+class SurveyResult(BaseModel):
+    """Single survey result within SurveyRunResponse."""
+    survey_id: str = Field(description="Survey ID")
+    status: str = Field(description="completed, screen_out, or error")
+    provider: Optional[str] = Field(default=None, description="Survey provider name")
+    earned: float = Field(default=0.0, description="Earned reward in EUR")
+    elapsed_s: float = Field(default=0.0, description="Execution time in seconds")
+    error: Optional[str] = Field(default=None, description="Error message if status=error")
+
+
+class SurveyRunResponse(BaseModel):
+    """POST /survey/run Response — Batch execution result."""
+    status: Literal["success", "error"] = Field(default="success", description="Overall status")
+    profile: str = Field(description="Profile name used")
+    surveys_run: int = Field(default=0, description="Number of surveys attempted")
+    completed: int = Field(default=0, description="Number of surveys completed")
+    total_earned: float = Field(default=0.0, description="Total earned in EUR")
+    results: List[SurveyResult] = Field(default_factory=list, description="Individual survey results")
+    message: str = Field(description="Summary message")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
