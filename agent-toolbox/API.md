@@ -14,9 +14,10 @@ Die Agent-Toolbox API bietet Endpunkte für Browser-Automation, Survey-Ausführu
 ┌─────────────────────────────────────────────────────────────┐
 │                    Chrome (CDP Port 9999)                     │
 │  ┌─────────────────────────────────────────────────────┐   │
-│  │  Profil 73 (kopiert nach /tmp/sinator-chrome-*)      │   │
+│  │  Profil 901 (Jeremy) Kopie → /tmp/chrome-jeremy-*   │   │
+│  │  + 7 HeyPiggy-Cookies aus ~/.stealth/... injectiert  │   │
 │  │  ┌─────────────────────────────────────────────────┐  │   │
-│  │  │  Playwright via connect_over_cdp()            │  │   │
+│  │  │  CDP WebSocket → Runtime.evaluate, setCookies  │  │   │
 │  │  │  ┌─────────────────────────────────────────┐  │  │   │
 │  │  │  │  HeyPiggy Dashboard / Survey Pages    │  │  │   │
 │  │  │  └─────────────────────────────────────────┘  │  │   │
@@ -39,17 +40,38 @@ Die Agent-Toolbox API bietet Endpunkte für Browser-Automation, Survey-Ausführu
 
 ## Chrome Setup
 
-Chrome wird mit der **SINator-Methode** gestartet:
+Chrome wird für HeyPiggy so gestartet (COPY EXACT!):
 
-1. **Profil kopieren**: `Local State` + `Profile 73` → `/tmp/sinator-chrome-{timestamp}`
-2. **Chrome starten**: `subprocess.Popen` mit `--remote-debugging-port=9999`
-3. **Playwright verbinden**: `connect_over_cdp("http://127.0.0.1:9999")`
+1. **Profil 901 (Jeremy) kopieren**:
+   ```bash
+   cp -R "$HOME/Library/Application Support/Google Chrome/Profile 901 (Jeremy)" /tmp/chrome-jeremy-heypiggy-9999
+   ```
+2. **Chrome starten**: mit `--remote-debugging-port=9999`
+3. **7 HeyPiggy-Cookies injectieren**: aus `~/.stealth/heypiggy-backup/heypiggy-cookies.json`
 
 **Wichtige Flags**:
-- `--remote-debugging-port=9999` — CDP Endpoint
-- `--remote-allow-origins=*` — WebSocket Origin (OHNE Quotes!)
-- `--user-data-dir=/tmp/sinator-chrome-*` — Kopiertes Profil
-- `--profile-directory=Profile 73` — Profil-Name
+- `--remote-debugging-port=9999` — CDP Endpoint (NICHT 8888!)
+- `--remote-allow-origins="*"` — WebSocket Origin (MIT Quotes!)
+- `--force-renderer-accessibility` — für CUA AX-Tree
+- `--user-data-dir="/tmp/chrome-jeremy-heypiggy-9999"` — Profil 901 Kopie
+
+**Cookie-Injection (nach Start)**:
+```python
+import json, asyncio, websockets, urllib.request
+with open('/Users/jeremy/.stealth/heypiggy-backup/heypiggy-cookies.json') as f:
+    data = json.load(f)
+heypiggy_cookies = [{'name':c['name'],'value':c['value'],'domain':c['domain'],'path':c.get('path','/'),'expires':c.get('expires',-1),'secure':c.get('secure',False),'httpOnly':c.get('httpOnly',False)} for c in data['cookies'] if 'heypiggy' in c.get('domain','')]
+pages = json.load(urllib.request.urlopen('http://127.0.0.1:9999/json/list'))
+ws = [p['webSocketDebuggerUrl'] for p in pages if p.get('type')=='page' and 'heypiggy' in p.get('url','')][0]
+async def run():
+    async with websockets.connect(ws) as ws2:
+        await ws2.send(json.dumps({'id':1,'method':'Network.setCookies','params':{'cookies':heypiggy_cookies}}))
+        await ws2.recv()
+        await ws2.send(json.dumps({'id':2,'method':'Page.navigate','params':{'url':'https://www.heypiggy.com/?page=dashboard'}}))
+asyncio.run(run())
+```
+- `--user-data-dir="/tmp/chrome-jeremy-heypiggy-9999"` — Profil 901 (Jeremy) Kopie
+- `--profile-directory="Profile 901 (Jeremy)"` — Profil-Name
 
 ## API Endpunkte
 
@@ -61,7 +83,7 @@ Chrome starten oder wiederverwenden.
 **Request**:
 ```json
 {
-  "profile_name": "Profile 73",
+"profile_name": "Profile 901 (Jeremy)",
   "headless": false,
   "cdp_port": 9999
 }
@@ -71,7 +93,7 @@ Chrome starten oder wiederverwenden.
 ```json
 {
   "status": "success",
-  "profile": "Profile 73",
+  "profile": "Profile 901 (Jeremy)",
   "headless": false,
   "cdp_port": 9999,
   "message": "Browser started (warm)"
@@ -96,7 +118,7 @@ Browser-Status prüfen.
 ```json
 {
   "running": true,
-  "profile": "Profile 73",
+  "profile": "Profile 901 (Jeremy)",
   "last_used": 1741234567.0,
   "idle_seconds": 45.2
 }
@@ -247,83 +269,6 @@ HeyPiggy Login via Google OAuth.
 }
 ```
 
-### Cookie Management Endpoints
-
-#### POST /cookies/extract
-Cookies aus dem Browser extrahieren und speichern.
-
-**Request**:
-```json
-{
-  "domain_filter": "heypiggy",
-  "save_to_file": true,
-  "filename": "heypiggy-cookies.json"
-}
-```
-
-**Response**:
-```json
-{
-  "status": "success",
-  "profile": "default",
-  "cookies": [
-    {
-      "name": "PHPSESSID",
-      "value": "...",
-      "domain": "www.heypiggy.com",
-      "path": "/",
-      "expires": -1,
-      "httpOnly": false,
-      "secure": false,
-      "sameSite": "Lax"
-    }
-  ],
-  "count": 4,
-  "stats": {
-    "total": 4,
-    "domains": {"www.heypiggy.com": 4},
-    "http_only": 0,
-    "secure": 0,
-    "session_cookies": 1
-  },
-  "saved_to": "data/heypiggy-cookies.json",
-  "execution_time": "0.27s"
-}
-```
-
-#### POST /cookies/inject
-Gespeicherte Cookies in den Browser injizieren.
-
-**Request**:
-```json
-{
-  "filename": "heypiggy-cookies.json",
-  "verify_session": true
-}
-```
-
-**Response**:
-```json
-{
-  "status": "success",
-  "injected_count": 4,
-  "session_active": true,
-  "execution_time": "0.15s"
-}
-```
-
-#### POST /cookies/verify
-HeyPiggy Session-Status prüfen.
-
-**Response**:
-```json
-{
-  "status": "success",
-  "session_active": true,
-  "url": "https://www.heypiggy.com/?page=dashboard"
-}
-```
-
 ### Utility Endpoints
 
 #### POST /tools/navigate
@@ -408,7 +353,7 @@ python3 -m uvicorn api.main:app --port 8889 --host 127.0.0.1
 # 2. Chrome starten
 curl -X POST http://127.0.0.1:8889/browser/start \
   -H "Content-Type: application/json" \
-  -d '{"profile_name": "Profile 73", "cdp_port": 9999}'
+  -d '{"profile_name": "Profile 901 (Jeremy)", "cdp_port": 9999}'
 
 # 3. Zu HeyPiggy navigieren
 curl -X POST http://127.0.0.1:8889/tools/navigate \
@@ -436,9 +381,9 @@ curl -X POST http://127.0.0.1:8889/browser/stop
 ```python
 from core.browser_manager import BrowserManager
 
-# Chrome mit Profil 73 auf Port 9999
+# Chrome mit Profil 901 (Jeremy) auf Port 9999
 bm = BrowserManager(
-    profile_name="Profile 73",
+    profile_name="Profile 901 (Jeremy)",
     cdp_port=9999,
     headless=False
 )
@@ -471,106 +416,18 @@ ws_url = next(
 )
 ```
 
-## Status
-
-### Funktioniert ✅
-- Chrome starten mit Profil 73 auf Port 9999
-- Playwright via CDP verbinden (Port 9999)
-- API Server auf Port 8889
-- Navigate, Screenshot, Page Content
-- Health Check mit CDP-Reachability
-- **Dashboard Scan**: 12 Surveys gefunden, 2.07€ total rewards
-- **Balance**: 2.23€ ausgelesen
-- **Cookie Extract/Inject/Verify**: Session-Persistenz funktioniert
-- **Workflow /workflow/run-best**: Session-Check → Scan → Beste Survey → Card-Click → Modal (5.7s)
-
-### Blockiert ❌
-- **Google Login**: Passkey/Shadow DOM nicht automatisierbar via CDP/Playwright
-  - Google Login Seite zeigt "Passkey verwenden" oder "Passwort eingeben"
-  - Buttons sind im geschützten Shadow DOM
-  - Lösung: Manuelles Login im Chrome Fenster, dann API nutzen
-
-### Workaround für Login
-1. Chrome Fenster öffnet sich automatisch (headless: false)
-2. Manuell auf "Anmelden" klicken
-3. Google Account wählen
-4. Passkey/Passwort eingeben
-5. **POST /cookies/extract** — Cookies speichern (Session persistieren!)
-6. Dann API Endpunkte nutzen: `/workflow/run-best`, `/survey/click-card`
-
-## Workflow Beispiel
-
-### Ein Call: Alles automatisch
-
-```bash
-# 1. Session prüfen, besten Survey finden, Card klicken
-curl -s -X POST http://127.0.0.1:8889/workflow/run-best \
-  -H "Content-Type: application/json" \
-  -d '{"strategy": "efficiency", "max_reward_filter": 0.05}'
-```
-
-**Response**:
-```json
-{
-  "status": "success",
-  "session_active": true,
-  "balance_eur": 2.23,
-  "surveys_found": 12,
-  "survey_selected": {
-    "survey_id": "67006251",
-    "reward_eur": 0.23,
-    "duration_min": 2,
-    "provider": "unknown",
-    "title": ""
-  },
-  "card_clicked": true,
-  "modal_buttons": ["Nächste", "Umfrage starten", "Schließen"],
-  "message": "Session active. Found 12 surveys. Selected 0.23€/2min survey. Card clicked: True.",
-  "elapsed_s": 5.70
-}
-```
-
-### Schritt-für-Schritt (Low-Level)
-
-```bash
-# 1. Cookies prüfen
-curl -s -X POST http://127.0.0.1:8889/cookies/verify | jq
-
-# 2. Dashboard scannen
-curl -s -X POST http://127.0.0.1:8889/dashboard/scan \
-  -H "Content-Type: application/json" \
-  -d '{"cdp_port": 9999}' | jq '.available_surveys[] | {id: .survey_id, reward: .reward_eur, duration: .duration_min}'
-
-# 3. Survey Card klicken
-curl -s -X POST http://127.0.0.1:8889/survey/click-card \
-  -H "Content-Type: application/json" \
-  -d '{"survey_id": "67006251", "cdp_port": 9999}' | jq
-
-# 4. "Umfrage starten" klicken
-curl -s -X POST http://127.0.0.1:8889/survey/click-button \
-  -H "Content-Type: application/json" \
-  -d '{"button_label": "umfrage starten", "cdp_port": 9999}' | jq
-```
-
 ## Bekannte Probleme
 
-1. **Google Login (Passkey)**: Shadow DOM Buttons nicht via CDP/JS automatisierbar. Manuelle Eingabe nötig. Workaround: Einmalig einloggen → Cookies extrahieren → Session persistiert.
+1. **Google Login (Passkey)**: Shadow DOM Buttons nicht via CDP/JS automatisierbar. Manuelle Eingabe oder Passwort-basierter Login nötig.
 
 2. **Port-Konflikt**: Chrome CDP und FastAPI dürfen nicht auf demselben Port laufen. Chrome: 9999, API: 8889.
 
 3. **Profil-Kopie**: Chrome verschlüsselt Cookies mit dem Pfad als Key. Kopieren (nicht Symlink!) ist nötig.
 
-4. **Titel-Extraktion**: Survey-Titel ist nicht perfekt (zeigt Reward-Präfixe). Reward und ID sind korrekt.
-
 ## Changelog
 
-- **2026-05-08**: `/workflow/run-best` — Combined Session-Check + Scan + Select + Click (5.7s)
-- **2026-05-08**: `/dashboard/scan` — 12 Surveys, 2.07€ total rewards
-- **2026-05-08**: `/dashboard/balance` — 2.23€ Balance ausgelesen
-- **2026-05-08**: `/cookies/extract`, `/cookies/inject`, `/cookies/verify` — Session-Persistenz
-- **2026-05-08**: API auf Port 8889, Chrome CDP auf 9999
+- **2026-05-08**: API auf Port 8889, Chrome CDP auf 8888 (veraltet)
+- **2026-05-09**: Chrome CDP auf 9999 (Profile 901 Kopie + Cookie-Injection)
 - **2026-05-08**: SINator-Style BrowserManager mit Profil-Kopie
 - **2026-05-08**: `--remote-allow-origins=*` ohne Quotes (zsh glob fix)
 - **2026-05-08**: Survey Actions mit CDP WebSocket + Origin Header
-- **2026-05-08**: BrowserManager auto-connect zu bestehendem Chrome
-- **2026-05-08**: Health Check mit CDP-Reachability Fallback

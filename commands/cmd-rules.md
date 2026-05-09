@@ -173,7 +173,7 @@ NUR: `a-z`, `0-9`, `-` (Bindestrich), `.md`
 cua-driver call list_windows | python3 -c "..." 
 
 # ❌ FALSCH: PID hartcodiert
-echo '{"pid": 71104, ...}'
+# KEINE hardcoded PIDs! Nutze lsof -i :9224 -t oder ps für aktuelle PID
 ```
 
 ### R12: Jeder Command mit `verify: true` wenn möglich

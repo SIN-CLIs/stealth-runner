@@ -15,14 +15,14 @@ Chrome MUSS mit diesen Flags gestartet werden:
 --force-renderer-accessibility      # Für cua-driver AX-Tree
 --remote-allow-origins="*"          # Für CDP WebSocket (MIT Anführungszeichen!)
 --remote-debugging-port=9999        # Für CDP
---user-data-dir="/tmp/heypiggy-new-$(date +%s)"  # Timestamped, nie fixed!
+--user-data-dir="/tmp/chrome-jeremy-heypiggy-9999"  # Profil 901 Kopie
 ```
 
 **Aktuelle Probleme**:
 1. `playstealth launch` setzt **NICHT** `--force-renderer-accessibility` → AX-Tree leer
 2. `--remote-allow-origins=*` (ohne Quotes) → zsh expandiert `*` → `--remote-allow-origins=file1 file2 ...` → Chrome startet nicht korrekt
-3. `/tmp/heypiggy-bot` (fixed profile) → korruptiert nach Neustart
-4. Keine Validierung nach Start: "Chrome läuft" ≠ "Chrome läuft mit korrekten Flags"
+3. Frisches Profil in `/tmp/heypiggy-new-*` → **KEINE Cookies**, Login nötig!
+4. Profile 902 Kopie → **VERSCHLÜSSELTE Cookies**, Login nötig!
 
 ---
 
@@ -38,14 +38,24 @@ Nach Chrome-Start wird nicht verifiziert:
 - `cua-driver call list_windows` → AX-Tree hat Elemente?
 - Chrome-Prozess hat `--force-renderer-accessibility` in Kommandozeile?
 
-### Ursache 3: Fixed Profile Path
+### Ursache 3: Falscher Profile-Weg
 ```python
-# ❌ BAD: Fixed path
-profile = "/tmp/heypiggy-bot"
-
-# ✅ GOOD: Timestamped path
-import time
+# ❌ BAD: Frisches Profil → keine Cookies, Login nötig!
 profile = f"/tmp/heypiggy-new-{int(time.time())}"
+
+# ❌ BAD: Profil 902 Kopie → verschlüsselte Cookies, Login nötig!
+profile = "/tmp/chrome-instance-B"
+
+# ✅ GOOD: Profil 901 (Jeremy) Kopie + Cookie-Injection
+import shutil, os
+profile_dir = "/tmp/chrome-jeremy-heypiggy-9999"
+if os.path.exists(profile_dir):
+    shutil.rmtree(profile_dir)
+shutil.copytree(
+    os.path.expanduser("~/Library/Application Support/Google Chrome/Profile 901 (Jeremy)"),
+    profile_dir
+)
+# → DANN: 7 HeyPiggy-Cookies aus ~/.stealth/heypiggy-backup/ injectieren
 ```
 
 ---
@@ -61,7 +71,7 @@ class ChromeLauncher:
     BANNED in dieser Klasse:
       ❌ playstealth launch — setzt NICHT --force-renderer-accessibility
       ❌ --remote-allow-origins=* (ohne Quotes)
-      ❌ /tmp/heypiggy-bot (fixed profile)
+      ❌ ~/tmp/chrome-instance-B (fixed profile)
       ❌ Hardcoded PIDs
     """
 
@@ -81,9 +91,15 @@ class ChromeLauncher:
             {"status": "ok", "pid": int, "profile": str, "flags_verified": bool}
             {"status": "error", "reason": str, "missing_flags": list}
         """
-        # 1. Timestamped Profile erstellen
-        profile = f"/tmp/heypiggy-new-{int(time.time())}"
-        os.makedirs(profile, exist_ok=True)
+        # 1. Profil 901 (Jeremy) kopieren
+        import shutil
+        profile = "/tmp/chrome-jeremy-heypiggy-9999"
+        if os.path.exists(profile):
+            shutil.rmtree(profile)
+        shutil.copytree(
+            os.path.expanduser("~/Library/Application Support/Google Chrome/Profile 901 (Jeremy)"),
+            profile
+        )
 
         # 2. Chrome BINARY Pfad finden
         chrome_binary = self._find_chrome_binary()
@@ -171,12 +187,11 @@ class ChromeLauncher:
 
 - [ ] Chrome startet NIEMALS ohne `--force-renderer-accessibility`
 - [ ] Chrome startet NIEMALS ohne `--remote-allow-origins="*"` (MIT Quotes)
-- [ ] Profile-Pfad ist IMMER timestamped (`/tmp/heypiggy-new-XXXXXXXXXX`)
+- [ ] Profile ist IMMER Profil 901 (Jeremy) Kopie → `/tmp/chrome-jeremy-heypiggy-9999`
+- [ ] Post-Start: 7 HeyPiggy-Cookies MÜSSEN injectiert werden (Backup: `~/.stealth/heypiggy-backup/heypiggy-cookies.json`)
 - [ ] Post-Start Check: CDP erreichbar nach max 10s
-- [ ] Post-Start Check: AX-Tree hat Elemente nach max 10s
+- [ ] Post-Start Check: "Abmelden" in body.innerText sichtbar?
 - [ ] Wenn Verifikation fehlschlägt: Chrome wird beendet + Error-Reason
-- [ ] Test: `test_chrome_launch_verifies_flags` muss passen
-- [ ] Test: `test_chrome_launch_fails_without_accessibility` muss passen
 
 ---
 

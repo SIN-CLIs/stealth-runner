@@ -470,7 +470,7 @@ class LatentState:
 ```bash
 # IMMER mit BEIDEN Flags:
 /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
-  --remote-debugging-port=9999 \
+  --remote-debugging-port=9224  # HeyPiggy Port \
   --remote-allow-origins="*" \
   --force-renderer-accessibility \
   --no-first-run \
@@ -1480,7 +1480,7 @@ cdp_real_click(ws, center_x, center_y)
 ```bash
 # FALSCH (cua-driver sieht nichts):
 /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
-  --remote-debugging-port=9999 \
+  --remote-debugging-port=9224  # HeyPiggy Port \
   --remote-allow-origins="*" \
   --user-data-dir=/tmp/bot-profile \
   'https://heypiggy.com'
@@ -1490,7 +1490,7 @@ $ cua-driver call get_window_state '{"pid":12345,"window_id":56789}'
 
 # RICHTIG (cua-driver sieht ALLES):
 /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
-  --remote-debugging-port=9999 \
+  --remote-debugging-port=9224  # HeyPiggy Port \
   --remote-allow-origins="*" \
   --force-renderer-accessibility \
   --user-data-dir=/tmp/bot-profile \
@@ -1527,11 +1527,11 @@ def verify_accessibility(pid, wid):
 # playstealth setzt --force-renderer-accessibility NICHT.
 # Muss MANUELL hinzugefügt werden oder Chrome direkt starten:
 /Applications/Google\ Chrome.app/Contents/MacOS/Google\ Chrome \
-  --remote-debugging-port=9999 \
+  --remote-debugging-port=9224  # HeyPiggy Port \
   --remote-allow-origins="*" \
   --force-renderer-accessibility \
   --no-first-run \
-  --user-data-dir=/tmp/heypiggy-bot-$(date +%s) \
+  --user-data-dir=~/tmp/chrome-instance-B (Profil 902 Kopie) \
   'URL'
 ```
 

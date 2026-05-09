@@ -386,12 +386,12 @@ Elements found inside the modal get `inModal: true` flag for downstream filterin
 
 **Root Cause:** `clickSurvey()` navigates to an external Qualtrics URL that opens in a new browser tab. The CDP WebSocket remained connected to the dashboard tab — subsequent `Runtime.evaluate` calls ran against the wrong page.
 
-**Fix:** Poll tab list via `http://127.0.0.1:9999/json` before and after `clickSurvey()`. Detect the new tab and connect to its WebSocket debugger URL:
+**Fix:** Poll tab list via `http://127.0.0.1:9224  # HeyPiggy CDP/json` before and after `clickSurvey()`. Detect the new tab and connect to its WebSocket debugger URL:
 
 ```python
 import urllib.request, json
 
-tabs = json.loads(urllib.request.urlopen('http://127.0.0.1:9999/json'))
+tabs = json.loads(urllib.request.urlopen('http://127.0.0.1:9224  # HeyPiggy CDP/json'))
 new_tab = next(
     (t for t in tabs if 'qualtrics' in t.get('url', '').lower()),
     None

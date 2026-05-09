@@ -2,6 +2,25 @@
 
 ## ❌ KRITISCHE VERBOTE (SOFORTIGE STRAFE BEI VERSTOSS)
 
+### ❌❌❌ NIEMALS `git checkout -- DATEI` (2026-05-09) ❌❌❌
+```bash
+# ❌❌❌ ATOMWAFFE — VERNICHTET ALLE uncommitted changes in einer Datei!
+# Kein Unterschied zwischen gut und schlecht — ALLES wird gelöscht!
+git checkout -- agent-toolbox/api/survey_actions.py  # 966 Zeilen korrekter Code = GELÖSCHT!
+git checkout -- agent-toolbox/api/schemas.py          # 172 Zeilen Schemas = GELÖSCHT!
+git checkout -- agent-toolbox/api/main.py             # survey_tools Router = GELÖSCHT!
+```
+**Warum so gefährlich:** `git checkout --` kennt kein "nur die sed-Änderungen reverten". Es verwirft **ALLE** uncommitted changes — sowohl die schlechten (sed-Katastrophe) ALS AUCH die guten (BULLETPROOF click_button, get_any_tab_ws, UniversalSurveyHandler Patterns, Hidden-Input-Fixes).
+
+**Korrekt:**
+1. `git diff DATEI` — zeigt EXAKT was geändert wurde
+2. `git add -p DATEI` — interaktiv nur gute Hunks stagen
+3. `git stash -p` — interaktiv stash (nicht alles!)
+4. `git checkout HEAD -- DATEI` nur wenn 100% sicher dass ALLE changes weg sollen
+5. ODER: `git diff` kopieren, `git checkout --`, dann die guten changes manuell re-applizieren
+
+**Konsequenz dieses Verbotes:** Agent hat 966 Zeilen funktionierenden Code vernichtet durch einen einzigen `git checkout --` Befehl. Survey-Automation komplett kaputt. Stunden an Rekonstruktion nötig.
+
 ### ❌ NIEMALS `pkill -f "Google Chrome"` oder `pkill -a Chrome` (2026-05-03)
 ```bash
 # ❌ FALSCH - Tötet die PRIVATE Chrome-Sitzung des Nutzers! Absolutes Tabu!
@@ -215,14 +234,14 @@ endpoint: https://integrate.api.nvidia.com/v1/chat/completions
 
 **Belege**: `session-log-2026-05-06.md` (VERIFIED nach Reboot), `commands/chrome/cdp-start.md` Zeile 14.
 
-### ❌ `--user-data-dir=/tmp/heypiggy-bot` (fixed profile) (2026-05-07)
+### ❌ `--user-data-dir=~/tmp/chrome-instance-B` (fixed profile) (2026-05-07)
 
 ```bash
 # ❌ FALSCH — Corrupted profile, stale cookies, login state broken!
---user-data-dir=/tmp/heypiggy-bot
+--user-data-dir=~/tmp/chrome-instance-B
 
 # ❌ AUCH FALSCH (commit 637d2c1, 1685138, 1ff848a — ALLE FALSCH!)
-profile_dir = "/tmp/heypiggy-bot"  # FIXED, not timestamped!
+profile_dir = "~/tmp/chrome-instance-B"  # FIXED, not timestamped!
 ```
 
 **Korrekt**: IMMER timestamped, frisches Profil:
