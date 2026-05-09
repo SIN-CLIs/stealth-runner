@@ -23,7 +23,6 @@ from typing import Dict, Any, Optional
 
 from . import chrome
 from .execute import BatchExecutor
-from .observability.logger import get_logger
 
 try:
     import websocket
@@ -34,7 +33,7 @@ except ImportError:
 class PreQualifierHandler:
     """Answer CPX pre-qualifier questions via API or browser automation."""
 
-    def __init__(self, cdp_port: int = 8888, debug: bool = False):
+    def __init__(self, cdp_port: int = 9999, debug: bool = False):
         self.cdp_port = cdp_port
         self.debug = debug
 
@@ -67,8 +66,7 @@ class PreQualifierHandler:
 
             if not answers_raw or not question_key:
                 if self.debug:
-                    get_logger().warn(f"[PREQ] Step {step}: No answers/key — aborting",
-                                      context="preq_no_answers", step=step)
+                    print(f"[PREQ] Step {step}: No answers/key — aborting")
                 return None
 
             answer_keys = list(answers_raw.keys())
@@ -129,9 +127,8 @@ class PreQualifierHandler:
             selected_text = answers_raw[selected_key].get("text", "")
 
             if self.debug:
-                get_logger().info(
-                    f"[PREQ] Step {step}: Q={question_text[:50]}... → {selected_text[:50]}",
-                    context="preq_answer", step=step
+                print(
+                    f"[PREQ] Step {step}: Q={question_text[:50]}... → {selected_text[:50]}"
                 )
 
             # POST answer
@@ -155,35 +152,30 @@ class PreQualifierHandler:
                 # Check if we got the real survey URL
                 if resp_json.get("status") == "success" and resp_json.get("href"):
                     if self.debug:
-                        get_logger().info(f"[PREQ] Got survey URL: {resp_json['href'][:60]}",
-                                          context="preq_url_found", step=step, survey_url=resp_json['href'][:60])
+                        print(f"[PREQ] Got survey URL: {resp_json['href'][:60]}")
                     return resp_json.get("href")
 
                 # More questions
                 if resp_json.get("type") == "question":
                     current_details = resp_json
                     if self.debug:
-                        get_logger().info("[PREQ] → Next question, retrying...",
-                                          context="preq_next_question", step=step)
+                        print(f"[PREQ] → Next question, retrying...")
                     continue
 
                 # Other response type
                 if self.debug:
-                    get_logger().warn(
-                        f"[PREQ] Step {step}: unexpected response type: {resp_json.get('type')}",
-                        context="preq_unexpected_type", step=step, response_type=resp_json.get('type')
+                    print(
+                        f"[PREQ] Step {step}: unexpected response type: {resp_json.get('type')}"
                     )
                 return None
 
             except Exception as e:
                 if self.debug:
-                    get_logger().warn(f"[PREQ] Step {step} POST failed: {e}",
-                                      context="preq_post_failed", step=step)
+                    print(f"[PREQ] Step {step} POST failed: {e}")
                 return None
 
         if self.debug:
-            get_logger().warn(f"[PREQ] Max retries ({max_retries}) exceeded",
-                              context="preq_max_retries", max_retries=max_retries)
+            print(f"[PREQ] Max retries ({max_retries}) exceeded")
         return None
 
     # ── Browser Mode ────────────────────────────────────────────
@@ -227,8 +219,7 @@ class PreQualifierHandler:
             ws.close()
         except Exception as e:
             if self.debug:
-                get_logger().warn(f"[PREQ-BROWSER] clickSurvey failed: {e}",
-                                  context="preq_browser_click_failed")
+                print(f"[PREQ-BROWSER] clickSurvey failed: {e}")
             return {"aborted": True}
 
         # Wait for new tab
@@ -253,8 +244,7 @@ class PreQualifierHandler:
         tab_id = preq_tab.get("id")
 
         if self.debug:
-            get_logger().info(f"[PREQ-BROWSER] Tab opened: {preq_tab.get('url','')[:60]}",
-                              context="preq_browser_tab_opened")
+            print(f"[PREQ-BROWSER] Tab opened: {preq_tab.get('url','')[:60]}")
 
         # Answer pre-qualifier questions
         max_steps = 8
@@ -303,22 +293,19 @@ class PreQualifierHandler:
             answer_clicked = self._click_first_answer(tab_ws)
             if not answer_clicked:
                 if self.debug:
-                    get_logger().warn(f"[PREQ-BROWSER] Step {step}: No answer elements",
-                                      context="preq_browser_no_elements", step=step)
+                    print(f"[PREQ-BROWSER] Step {step}: No answer elements")
                 time.sleep(2)
                 continue
 
             if self.debug:
-                get_logger().info(f"[PREQ-BROWSER] Step {step}: {answer_clicked}",
-                                  context="preq_browser_answer", step=step)
+                print(f"[PREQ-BROWSER] Step {step}: {answer_clicked}")
 
             # Click submit
             coords = self._find_submit_coords(tab_ws)
             if coords and coords != (0, 0):
                 self._dispatch_mouse_click(tab_ws, coords)
                 if self.debug:
-                    get_logger().info(f"[PREQ-BROWSER] Clicked submit!",
-                                      context="preq_browser_submit", step=step)
+                    print(f"[PREQ-BROWSER] Clicked submit!")
 
         # Max steps reached
         if tab_closer:

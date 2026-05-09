@@ -138,7 +138,7 @@ class SurveyResult:
 
 @dataclass
 class RunnerConfig:
-    cdp_port: int = 8888
+    cdp_port: int = 9999
     max_iterations: int = 50
     max_surveys: int = 10
     wait_after_action: float = 3.0

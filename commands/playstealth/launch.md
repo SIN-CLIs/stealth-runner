@@ -1,60 +1,32 @@
-# PLAYSTEALTH LAUNCH — VERIFIED ✅
+# PLAYSTEALTH LAUNCH — BANNED für HeyPiggy (2026-05-09)
 
 ## Status
-**VERIFIED** — 2026-05-05
+**BANNED** für HeyPiggy — NICHT verwenden!
 
-## Was es tut
-Startet isolierte Chrome-Instanz mit eigenem Profil für HeyPiggy Bot.
+## Warum BANNED?
+- `playstealth launch` setzt NICHT `--force-renderer-accessibility` → AX-Tree leer
+- `playstealth launch` nutzt frisches Profil → keine Cookies, Login nötig
+- Profil 902 Kopie → verschlüsselte Cookies (AES-GCM v11), Login nötig
 
-## Command
+## FALSCH (alte Docs behaupteten):
+- Port 9224 ❌ → HeyPiggy ist Port 9999
+- Profil 902 Kopie ❌ → Profil 901 (Jeremy) Kopie + Cookie-Injection
+- `/tmp/heypiggy-bot-*` ❌ → `/tmp/chrome-jeremy-heypiggy-9999`
+
+## RICHTIGER WEG: Recipe in AGENTS.md ganz oben (REGELN 1-4)
 ```bash
-playstealth launch --url 'https://heypiggy.com/?page=dashboard'
-```
+# 1. Profil 901 (Jeremy) kopieren
+cp -R "$HOME/Library/Application Support/Google Chrome/Profile 901 (Jeremy)" /tmp/chrome-jeremy-heypiggy-9999
 
-## Output (JSON multiline)
-```json
-{"pid": 75167, "url": "https://heypiggy.com/?page=dashboard", "status": "ok", "cdp_port": 58651, "profile": "/tmp/heypiggy-bot-1777982953"}
-```
-
-## Parse Output
-```python
-import subprocess, json
-r = subprocess.run(["playstealth", "launch", "--url", url], capture_output=True, text=True)
-for line in r.stdout.strip().split("\n"):
-    try:
-        d = json.loads(line)
-        if d.get("pid"):
-            pid = d["pid"]
-            profile = d.get("profile", "")
-            break
-    except:
-        pass
-```
-
-## ⚠️ WARNING: Missing Flags
-
-**playstealth launch does NOT set `--force-renderer-accessibility`!**
-Without this flag, cua-driver AX-Tree is EMPTY (0 children).
-
-**playstealth launch does NOT guarantee `--remote-allow-origins="*"`!**
-Without this flag, CDP WebSocket connections get 403 Forbidden.
-
-**If AX-Tree is empty or CDP is blocked**, launch Chrome manually:
-```bash
-open -a "Google Chrome" --args \
-  --user-data-dir="/tmp/heypiggy-bot-XXXXX" \
+# 2. Chrome starten
+nohup "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
   --remote-debugging-port=9999 \
   --remote-allow-origins="*" \
   --force-renderer-accessibility \
   --no-first-run \
-  'URL'
+  --user-data-dir="/tmp/chrome-jeremy-heypiggy-9999" \
+  "https://www.heypiggy.com/?page=dashboard" &>/dev/null &
+
+# 3. 7 HeyPiggy-Cookies injectieren (aus ~/.stealth/heypiggy-backup/heypiggy-cookies.json)
+# → Network.setCookies batch → Page.navigate → eingeloggt!
 ```
-
-## Profile Pattern
-`/tmp/heypiggy-bot-XXXXXXXX` → BOT Chrome (NIEMALS USER Chrome killen!)
-
-## Warten
-Nach launch: `sleep 5` warten bis Seite vollständig geladen.
-
-## Test Log
-- 2026-05-05: PID 75167, profile /tmp/heypiggy-bot-1777982953 ✅

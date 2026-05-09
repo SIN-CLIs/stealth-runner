@@ -20,7 +20,7 @@ bot_main_pids = []
 for line in r.stdout.split('\n'):
     if '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' not in line:
         continue
-    if '/tmp/heypiggy-bot-' in line:
+    if '~/tmp/chrome-instance-B' in line:
         parts = line.split()
         if len(parts) >= 2:
             try:
@@ -37,7 +37,7 @@ time.sleep(2)
 ## Verification
 ```bash
 # Nach Kill: 0 heypiggy-bot main processes
-ps aux | grep "/tmp/heypiggy-bot-" | grep "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" | wc -l
+ps aux | grep "~/tmp/chrome-instance-B" | grep "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" | wc -l
 # → 0 (gut!)
 
 # Registry leeren

@@ -21,7 +21,6 @@ from typing import Optional, Set
 
 from . import chrome
 from .cdp_client import CDPConnection
-from .observability.logger import get_logger
 
 
 try:
@@ -55,7 +54,7 @@ class OpenResult:
 class SurveyOpener:
     """Open surveys via in-page modal or new-tab, with stealth injection."""
 
-    def __init__(self, cdp_port: int = 8888, debug: bool = False):
+    def __init__(self, cdp_port: int = 9999, debug: bool = False):
         self.cdp_port = cdp_port
         self.debug = debug
 
@@ -149,8 +148,7 @@ class SurveyOpener:
             if new_tab_id:
                 chrome.activate_tab(new_tab_id, self.cdp_port)
                 if self.debug:
-                    get_logger().info(f"[TAB] Activated new tab {new_tab_id[:8]}",
-                                      context="tab_activate", tab_id=new_tab_id[:8])
+                    print(f"[TAB] Activated new tab {new_tab_id[:8]}")
             return OpenResult(
                 target=SurveyTarget(
                     survey_id=survey_id,
@@ -187,8 +185,7 @@ class SurveyOpener:
 
         chrome.activate_tab(tab_id, self.cdp_port)
         if self.debug:
-            get_logger().info(f"[TAB] Activated new tab {tab_id[:8]}",
-                              context="tab_activate", tab_id=tab_id[:8])
+            print(f"[TAB] Activated new tab {tab_id[:8]}")
 
         time.sleep(1.5)
         tab_ws, actual_url = self._find_survey_tab_ws(tab_id)
@@ -201,8 +198,7 @@ class SurveyOpener:
             ]
             if any(s in page_text for s in stuck_markers):
                 if self.debug:
-                    get_logger().info("[RUN] Stuck on loading page — closing tab",
-                                      context="loading_stuck", survey_id=survey_id)
+                    print("[RUN] Stuck on loading page — closing tab")
                 self._close_tab(tab_id)
                 return OpenResult(
                     error="Survey stuck on loading page",
@@ -221,8 +217,7 @@ class SurveyOpener:
             ]
             if any(s in page_text for s in error_markers):
                 if self.debug:
-                    get_logger().info("[RUN] Survey expired/error — closing tab",
-                                      context="survey_expired", survey_id=survey_id)
+                    print("[RUN] Survey expired/error — closing tab")
                 self._close_tab(tab_id)
                 return OpenResult(
                     error="Survey URL expired/error page",
@@ -231,8 +226,7 @@ class SurveyOpener:
 
             if "sie werden umgeleitet" in page_text or "redirect" in page_text:
                 if self.debug:
-                    get_logger().info("[RUN] CPX redirect page — clicking link...",
-                                      context="cpx_redirect", survey_id=survey_id)
+                    print("[RUN] CPX redirect page — clicking link...")
                 self._click_redirect_link(tab_ws)
                 time.sleep(2.0)
                 tab_ws, actual_url = self._find_survey_tab_ws(tab_id)
@@ -255,87 +249,36 @@ class SurveyOpener:
         tab_info = chrome.create_blank_tab(self.cdp_port)
         if not tab_info:
             if self.debug:
-                get_logger().info("[STEALTH] Fallback to direct navigation",
-                                  context="stealth_fallback")
+                print("[STEALTH] Fallback to direct navigation")
             return chrome.create_tab(url, self.cdp_port)
         injected = chrome.inject_stealth_to_tab(tab_info["ws_url"])
         if self.debug:
-            get_logger().info(f"[STEALTH] {'OK' if injected else 'FAIL'} {tab_info['id'][:8]}",
-                              context="stealth_inject", success=injected, tab_id=tab_info['id'][:8])
+            print(f"[STEALTH] {'OK' if injected else 'FAIL'} {tab_info['id'][:8]}")
         navigated = chrome.navigate_tab(tab_info["ws_url"], url)
         if not navigated and self.debug:
-            get_logger().warn("[STEALTH] Navigation failed",
-                              context="stealth_nav", survey_id=survey_id)
+            print("[STEALTH] Navigation failed")
         return tab_info["id"]
 
-    def _click_survey_card(self, survey_id: str, dashboard_ws: str) -> Tuple[Optional[str], Optional[str]]:
-        """Execute clickSurvey() in dashboard context via DOM click (reliable).
-
-        Returns:
-            (ws_url, tab_id) tuple.
-            - ws_url: WebSocket URL of the survey tab (or dashboard if in-page)
-            - tab_id: Chrome target ID (for new-tab flow) or None (for in-page)
-
-        Uses element.click() instead of calling clickSurvey(id) directly.
-        element.click() works even when clickSurvey() throws TypeError
-        (heypiggy's JS expects different data structure than we provide).
-        The onclick handler fires regardless of function errors.
-        """
+    def _click_survey_card(self, survey_id: str, dashboard_ws: str) -> Optional[str]:
+        """Execute clickSurvey() in dashboard context."""
         if not websocket:
-            return None, None
+            return None
         try:
-            tabs_before = set()
-            for p in chrome.find_bot_tabs(self.cdp_port):
-                tabs_before.add(p.get("id", ""))
-
             ws = websocket.create_connection(dashboard_ws, timeout=10)
-            click_js = f'''
-(function() {{
-    var cards = document.querySelectorAll("[onclick*=clickSurvey]");
-    for (var c of cards) {{
-        var onclick = c.getAttribute("onclick");
-        var m = onclick.match(/clickSurvey\\('(\\d+)'\\)/);
-        if (m && m[1] === "{survey_id}") {{
-            c.click();
-            return "clicked";
-        }}
-    }}
-    var first = document.querySelector("[onclick*=clickSurvey]");
-    if (first) {{ first.click(); return "clicked_first"; }}
-    return "not_found";
-}})()
-'''
             ws.send(json.dumps({
                 "id": 1,
                 "method": "Runtime.evaluate",
-                "params": {"expression": click_js},
+                "params": {"expression": f'clickSurvey("{survey_id}")'},
             }))
             json.loads(ws.recv())
             ws.close()
-            time.sleep(0.5)
-
-            new_ws = self._find_new_tab_after_click(tabs_before)
-            if new_ws:
-                # Find tab_id for the new tab
-                new_tab_id = None
-                for p in chrome.find_bot_tabs(self.cdp_port):
-                    if p.get("webSocketDebuggerUrl") == new_ws:
-                        new_tab_id = p.get("id")
-                        break
-                if self.debug:
-                    get_logger().info(f"[MODAL] Clicked {survey_id} — new tab: {new_ws[:60]}",
-                                      context="survey_card_click", survey_id=survey_id)
-                return new_ws, new_tab_id  # Survey tab WS + tab_id
-
             if self.debug:
-                get_logger().info(f"[MODAL] Clicked {survey_id} — in-page modal",
-                                  context="survey_card_click", survey_id=survey_id)
-            return dashboard_ws, None  # Dashboard WS, no tab_id
+                print(f"[MODAL] Clicked survey card {survey_id}")
+            return dashboard_ws
         except Exception as e:
             if self.debug:
-                get_logger().warn(f"[MODAL] Failed to click survey card: {e}",
-                                  context="survey_card_failed", survey_id=survey_id)
-            return None, None
+                print(f"[MODAL] Failed to click survey card: {e}")
+            return None
 
     def _click_redirect_link(self, tab_ws: str) -> None:
         """Click 'hier klicken' on CPX redirect page."""
@@ -442,12 +385,12 @@ class SurveyOpener:
 
     def _find_new_tab_after_click(self, known_tab_ids: Set[str]) -> Optional[str]:
         """Detect new tab opened by clickSurvey()."""
-        from tools.tool_find_new_tab import find_new_tab
+        from ..tools.tool_find_new_tab import find_new_tab
         return find_new_tab(self.cdp_port, known_tab_ids)
 
     def _pre_survey_cleanup(self, tab_ws: str) -> int:
         """Close stacked modals before opening survey."""
-        from tools.tool_close_modals import close_modals
+        from ..tools.tool_close_modals import close_modals
         return close_modals(tab_ws)
 
     @staticmethod

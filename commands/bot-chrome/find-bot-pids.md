@@ -14,7 +14,7 @@ r = subprocess.run(['ps', 'aux'], capture_output=True, text=True)
 for line in r.stdout.split('\n'):
     if '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome' not in line:
         continue
-    if '/tmp/heypiggy-bot-' in line:
+    if '~/tmp/chrome-instance-B' in line:
         parts = line.split()
         if len(parts) >= 2:
             try:
@@ -28,21 +28,21 @@ for line in r.stdout.split('\n'):
 
 ## Command (Bash)
 ```bash
-ps aux | grep "/tmp/heypiggy-bot-" | grep "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+ps aux | grep "~/tmp/chrome-instance-B" | grep "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
 ```
 
 ## Output
 ```
-simoneschulze 74483 ... /Applications/Google Chrome.app/Contents/MacOS/Google Chrome --user-data-dir=/tmp/heypiggy-bot-1777982535
-simoneschulze 74351 ... /Applications/Google Chrome.app/Contents/MacOS/Google Chrome --user-data-dir=/tmp/heypiggy-bot-1777982093
+simoneschulze 74483 ... /Applications/Google Chrome.app/Contents/MacOS/Google Chrome --user-data-dir=~/tmp/chrome-instance-B1777982535
+simoneschulze 74351 ... /Applications/Google Chrome.app/Contents/MacOS/Google Chrome --user-data-dir=~/tmp/chrome-instance-B1777982093
 ```
 
 ## Filter-Logik
 | Pattern | Matched | NOT Matched |
 |---------|---------|-------------|
 | `/Contents/MacOS/Google Chrome` | Main-Prozess | Helper/Renderer |
-| `/tmp/heypiggy-bot-` | BOT Chrome | USER Chrome |
+| `~/tmp/chrome-instance-B` | BOT Chrome | USER Chrome |
 
 ## Test Log
-- 2026-05-05: 1 BOT gefunden (PID 74483, profile heypiggy-bot-1777982535) ✅
-- 2026-05-05: 3 BOT gefunden (PID 71104, 72721, 72639) ✅
+- 2026-05-05: 1 BOT gefunden (PID 24378, profile heypiggy-bot-1777982535) ✅
+- 2026-05-09: HeyPiggy aktiv (PID 24378, Port 9224, Profil 902) ✅

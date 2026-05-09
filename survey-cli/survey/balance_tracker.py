@@ -5,7 +5,7 @@ earnings berechnen). BalanceTracker konsolidiert ALLES was mit
 "Wie viel Guthaben?" und "Wie viel verdient?" zu tun hat.
 
 ARCHITEKTUR:
-  tracker = BalanceTracker(cdp_port=9223)
+  tracker = BalanceTracker(cdp_port=9999)
   before = tracker.read_balance()          -> float
   after  = tracker.read_balance()          -> float
   earned = tracker.calculate_earned(before, after) -> float
@@ -17,14 +17,13 @@ BANNED METHODS — NIEMALS VERWENDEN:
   ❌ Hardcoded PIDs
 """
 
-from .observability.logger import get_logger
 from .scanner import read_balance_with_backoff
 
 
 class BalanceTracker:
     """Read dashboard balance with backoff and calculate earnings."""
 
-    def __init__(self, cdp_port: int = 8888, debug: bool = False):
+    def __init__(self, cdp_port: int = 9999, debug: bool = False):
         self.cdp_port = cdp_port
         self.debug = debug
 
@@ -39,12 +38,11 @@ class BalanceTracker:
         try:
             balance = read_balance_with_backoff(self.cdp_port)
             if self.debug:
-                get_logger().info(f"[BALANCE] Read: {balance}€", context="balance_read",
-                                  balance=balance)
+                print(f"[BALANCE] Read: {balance}€")
             return balance
         except Exception as e:
             if self.debug:
-                get_logger().warn(f"[BALANCE] Read failed: {e}", context="balance_read_failed")
+                print(f"[BALANCE] Read failed: {e}")
             return 0.0
 
     @staticmethod

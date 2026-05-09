@@ -21,7 +21,6 @@ import time
 from typing import Optional
 
 from . import chrome
-from .observability.logger import get_logger
 from .snapshot import detect_completion as _detect_completion_text
 from .execute import BatchExecutor
 
@@ -29,7 +28,7 @@ from .execute import BatchExecutor
 class CompletionDetector:
     """Detect whether a survey has completed, screen-out, or is still running."""
 
-    def __init__(self, cdp_port: int = 8888, debug: bool = False):
+    def __init__(self, cdp_port: int = 9999, debug: bool = False):
         self.cdp_port = cdp_port
         self.debug = debug
 
@@ -62,8 +61,7 @@ class CompletionDetector:
                 ws_url = tab.get("webSocketDebuggerUrl")
                 if ws_url and self.detect_ws(ws_url):
                     if self.debug:
-                        get_logger().info(f"[COMPLETION] Detected on tab {url[:60]}",
-                                          context="completion_detected", tab_url=url[:60])
+                        print(f"[COMPLETION] Detected on tab {url[:60]}")
                     return True
         except Exception:
             pass

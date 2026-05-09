@@ -15,7 +15,6 @@ import time
 from typing import Optional
 
 from . import chrome
-from .observability.logger import get_logger
 
 try:
     import websocket
@@ -26,7 +25,7 @@ except ImportError:
 class SurveyRater:
     """Rate completed survey pages for +0.01€ bonus."""
 
-    def __init__(self, cdp_port: int = 8888, debug: bool = False):
+    def __init__(self, cdp_port: int = 9999, debug: bool = False):
         self.cdp_port = cdp_port
         self.debug = debug
 
@@ -65,9 +64,9 @@ class SurveyRater:
                         ws.close()
                         time.sleep(2)
                         if self.debug:
-                            get_logger().info("[RATE] Clicked rating button", context="survey_rating")
+                            print("[RATE] Clicked rating button")
                         return True
         except Exception as e:
             if self.debug:
-                get_logger().warn(f"[RATE] Rating failed: {e}", context="survey_rating_failed")
+                print(f"[RATE] Rating failed: {e}")
         return False
