@@ -322,11 +322,13 @@ def run_survey_loop(state: SurveyState) -> SurveyState:
 
     Fallback für Umgebungen wo LangGraph nicht installiert ist.
     Implementiert dieselbe Logik wie der kompilierte Graph:
-      1. ensure_chrome
-      2. open_survey
-      3. inject_cookies
-      4. NEMO Loop: snapshot → decide → execute → detect_completion
-      5. Routing: continue / delegate / END
+      1. Balance lesen (balance_before)
+      2. ensure_chrome
+      3. open_survey
+      4. inject_cookies
+      5. NEMO Loop: snapshot → decide → execute → detect_completion
+      6. Routing: continue / delegate / END
+      7. Balance lesen (balance_after)
 
     Args:
         state: SurveyState mit survey_id, provider, cdp_port
@@ -337,6 +339,13 @@ def run_survey_loop(state: SurveyState) -> SurveyState:
     Note:
         Identisch zu: create_graph().invoke(state)
     """
+    # Balance vor der Session lesen (SR-41)
+    try:
+        from ..scanner import read_balance
+        state.balance_before = read_balance(port=state.cdp_port)
+    except Exception:
+        state.balance_before = 0.0
+
     # Phase 1: Setup
     state = ensure_chrome(state)
     if state.status == "error":
@@ -352,18 +361,23 @@ def run_survey_loop(state: SurveyState) -> SurveyState:
 
     # Phase 2: NEMO Loop
     while not state.is_terminal:
+        # Snapshot machen (NEMO Schritt 1)
         state = snapshot_node(state)
         if state.status == "error":
             break
 
+        # Iteration inkrementieren (NEMO Schritt 2 — JEDE Iteration, nicht nur bei Actions!)
+        state.increment_iteration()
+
+        # NIM entscheiden (NEMO Schritt 3)
         state = decide_node(state)
+
+        # Fallback: NEMO snapshot ohne Actions → nur detect completion
         if not state.nim_actions:
-            # Keine Actions → nur detect completion
             state = detect_completion(state)
         else:
+            # Batch ausführen (NEMO Schritt 4)
             state = execute_node(state)
-            # Nach execute: iteration incrementieren
-            state.increment_iteration()
             # completion detection
             state = detect_completion(state)
 
@@ -375,5 +389,12 @@ def run_survey_loop(state: SurveyState) -> SurveyState:
             state = human_delegate(state)
             break
         # else: continue to next iteration (loop)
+
+    # Balance nach der Session lesen (SR-41)
+    try:
+        from ..scanner import read_balance
+        state.balance_after = read_balance(port=state.cdp_port)
+    except Exception:
+        state.balance_after = state.balance_before
 
     return state

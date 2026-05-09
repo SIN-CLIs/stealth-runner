@@ -335,94 +335,77 @@ def cmd_scan(args):
 def cmd_run(args):
     """
     ================================================================================
-    KOMMANDO: run — Einzelne Survey ausführen (NEMO oder Auto-Pilot)
+    KOMMANDO: run — Einzelne Survey ausführen (LangGraph Survey-Agent)
     ================================================================================
 
     WAS macht diese Funktion?
       Führt eine EINZELNE Survey aus — entweder per ID oder direkter URL.
-      Nutzt NEMO Engine (wenn NVIDIA_API_KEY gesetzt) oder Auto-Pilot (Fallback).
+      Nutzt den LangGraph Survey-Agent (run_survey_loop) als PRIMARY.
+      Fallback auf SurveyRunner wenn LangGraph nicht verfügbar.
 
     Args:
       args (Namespace):
         - args.port: CDP Port
         - args.id: Survey ID (CPX Research ID)
         - args.url: Direkte Survey URL (überspringt API-Lookup)
-        - args.no_nim: Wenn True, überspringt NIM → nutzt Auto-Pilot
-        - args.no_rate: Wenn True, überspringt Survey-Bewertung (+0.01€)
+        - args.no_nim: Ignoriert (decide_node nutzt immer NIM wenn verfügbar)
+        - args.no_rate: Ignoriert (auto-rating kommt später, SR-44)
         - args.debug: Verbose Output
 
     Returns:
-      SurveyResult: Ergebnis der Survey-Ausführung.
-                    None wenn weder --id noch --url angegeben.
+      SurveyState: Ergebnis der Survey-Ausführung.
+                   None wenn weder --id noch --url angegeben.
 
     Side Effects:
-      - Startet SurveyRunner (ladet Profile, initialisiert NIM).
-      - Öffnet Survey-Tab in Chrome.
-      - Führt Survey aus (Klicks, Text-Eingaben).
-      - Schließt Survey-Tab.
-      - Bewertet Survey (wenn auto_rate=True).
+      - Startet Chrome (wenn nicht läuft) via ChromeLauncher.
+      - Öffnet Survey-Tab in Chrome via SurveyOpener.
+      - Injiziert 7 Heypiggy-Cookies in Survey-Tab.
+      - Führt NEMO Loop aus: snapshot → NIM decide → batch execute → detect completion.
+      - Liest Balance vor/nach der Session.
+      - Delegiert an opencode CLI bei 3× failures.
 
     BANNED in dieser Funktion:
       ❌ Kein hardcoded Survey-ID
+      ❌ Keine SurveyRunner mehr (deprecated, durch run_survey_loop ersetzt)
     ================================================================================
     """
-    # Lazy Import
-    from survey.runner import SurveyRunner, RunnerConfig
-
-    # RunnerConfig erstellen
-    # WARUM RunnerConfig? Zentralisierte Konfiguration — alle Einstellungen
-    # an einem Ort (nicht verstreut im Code).
-    config = RunnerConfig(
-        # CDP Port: Aus args oder Umgebungsvariable
-        cdp_port=args.port,
-
-        # NIM Nutzung: Standard = Ja, --no-nim = Nein
-        # WARUM not args.no_nim? args.no_nim ist Flag — wenn gesetzt, NIM aus.
-        use_nim=not args.no_nim,
-
-        # Auto-Rate: Standard = Ja, --no-rate = Nein
-        # WARUM auto_rate? Bewertung gibt +0.01€ Bonus pro Survey.
-        auto_rate=not args.no_rate,
-
-        # Debug Mode: Aus args oder SURVEY_DEBUG Env-Var
-        # WARUM or os.getenv? Env-Var ermöglicht persistentes Debugging.
-        debug=args.debug or os.getenv("SURVEY_DEBUG", ""),
-
-        # Wait zwischen Actions: Aus Env-Var oder Default 3.0s
-        # WARUM float()? Env-Var ist String → muss konvertiert werden.
-        # WARUM 3.0s? Erfahrungswert: SPA braucht ~1-2s zum Re-render.
-        wait_after_action=float(os.getenv("SURVEY_WAIT", "3.0")),
-    )
-
-    # SurveyRunner initialisieren
-    # WARUM SurveyRunner? Haupt-NEMO-Engine. Kapselt ALLE Survey-Logik.
-    runner = SurveyRunner(config=config)
-
-    # NIM Status anzeigen
-    # WARUM? Menschlicher Operator sieht sofort ob NIM verfügbar ist.
-    nim_available = runner.nim and runner.nim.available
-    nim_status = "✅" if nim_available else "⚠️  (auto-pilot)"
-    print(f"NVIDIA NIM: {nim_status}")
-
-    # Survey ausführen
+    # Survey-ID und Provider ermitteln
     if args.url:
-        # Direkte URL
-        # WARUM "direct" als survey_id? Marker für direkte URL (kein API-Lookup).
-        result = runner.run_survey("direct", survey_url=args.url)
+        survey_id = "direct"
+        survey_url = args.url
+        # Provider aus URL extrahieren (einfache Heuristik)
+        provider = _detect_provider_from_url(args.url)
     elif args.id:
-        # Per Survey ID
-        # WARUM survey_id als String? CPX IDs sind numerisch aber als String
-        # sicherer (führende Nullen, große Zahlen).
-        result = runner.run_survey(args.id)
+        survey_id = args.id
+        survey_url = ""
+        # Provider wird von SurveyOpener/open_survey aus URL ermittelt
+        provider = ""
     else:
-        # Weder --id noch --url
-        # WARUM nicht Exception? Benutzerfreundlich — Hilfe anzeigen statt Stacktrace.
         print("❌ Use --id or --url")
         return None
 
+    # SurveyState erstellen
+    # WARUM SurveyState? Zentrales State-Objekt für den LangGraph Survey-Agent.
+    from survey.graph import SurveyState, run_survey_loop
+
+    state = SurveyState(
+        survey_id=survey_id,
+        provider=provider,
+        survey_url=survey_url,  # Für --url: direkte URL statt CPX Lookup
+        cdp_port=args.port,
+    )
+
+    # Survey ausführen via run_survey_loop
+    # WARUM run_survey_loop statt SurveyRunner?
+    #   - LangGraph-Architektur: 8 Nodes, conditional routing
+    #   - Balance-Tracking: balance_before/balance_after automatisch
+    #   - Cookie-Injection: 7 Heypiggy-Cookies vor Page.navigate
+    #   - Delegation: 3× failures → opencode CLI
+    final_state = run_survey_loop(state)
+
     # Ergebnis ausgeben
-    _print_result(result)
-    return result
+    _print_result_graph(final_state)
+    return final_state
 
 
 def cmd_loop(args):
@@ -1258,6 +1241,77 @@ def _print_result(result):
     if result.error:
         print(f"  Error:      {result.error}")
     print(f"{'='*50}\n")
+
+
+def _print_result_graph(state):
+    """
+    ================================================================================
+    Pretty-Print eines SurveyState-Ergebnisses (LangGraph Survey-Agent).
+    ================================================================================
+    Args:
+      state (SurveyState): Ergebnis von run_survey_loop().
+    Returns:
+      None
+    ================================================================================
+    """
+    if state is None:
+        return
+
+    # Status-Mapping
+    status_icon = {
+        "completed": "✅",
+        "screen_out": "⚠️",
+        "error": "❌",
+        "delegated": "🤖",
+    }.get(state.status, "?")
+
+    # Verdienst berechnen
+    earned = state.balance_earned
+    provider = state.provider or "unknown"
+
+    print(f"\n{'='*50}")
+    print(f"  Survey:     {state.survey_id}")
+    print(f"  Status:     {status_icon} {state.status}")
+    print(f"  Provider:   {provider}")
+    print(f"  Earned:     +{earned:.2f}€")
+    print(f"  Iterations: {state.iteration}")
+    print(f"  Failures:   {state.consecutive_failures}")
+    if state.errors:
+        last = state.errors[-1]
+        print(f"  Last error: {last.get('node', '?')}: {last.get('error', '?')[:60]}")
+    print(f"{'='*50}\n")
+
+
+def _detect_provider_from_url(url):
+    """
+    ================================================================================
+    Provider aus Survey-URL extrahieren (einfache Heuristik).
+    ================================================================================
+    Args:
+      url (str): Survey-URL
+    Returns:
+      str: Provider-Name (purespectrum, qualtrics, tolunastart, etc.) oder ""
+    ================================================================================
+    """
+    if not url:
+        return ""
+    url_lower = url.lower()
+    # Provider-Erkennung via URL-Pattern
+    if "purespectrum" in url_lower:
+        return "purespectrum"
+    if "qualtrics" in url_lower:
+        return "qualtrics"
+    if "ipsosinteractive" in url_lower or "toluna" in url_lower:
+        return "tolunastart"
+    if "samplicio" in url_lower:
+        return "samplicio"
+    if "cint" in url_lower:
+        return "cint"
+    if "nfield" in url_lower:
+        return "nfield"
+    if "surveyrouter" in url_lower or "heypiggy" in url_lower:
+        return "surveyrouter"
+    return ""
 
 
 # ============================================================================

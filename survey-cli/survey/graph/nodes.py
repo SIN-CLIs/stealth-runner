@@ -251,7 +251,7 @@ def open_survey(state: SurveyState) -> SurveyState:
     result = opener.open(
         survey_id=state.survey_id,
         provider=state.provider,
-        survey_url="",  # Leer = von CPX API ermitteln oder dashboard nutzen
+        survey_url=state.survey_url,  # Leer = von CPX API ermitteln; gesetzt = direkte URL
         dashboard_ws=state.dashboard_ws,
     )
 

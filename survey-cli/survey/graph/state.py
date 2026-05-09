@@ -268,6 +268,11 @@ class SurveyState:
     """CDP WebSocket URL des Dashboard-Tabs. Wird von chrome.find_dashboard_ws()
     auto-detected wenn nicht übergeben. Wird für cookie injection genutzt."""
 
+    survey_url: str = ""
+    """Direkte Survey-URL. Optional — wenn gesetzt wird die URL direkt genutzt
+    statt via CPX API lookup. Wird von open_survey Node an SurveyOpener.open()
+    übergeben. Wird typischerweise von cmd_run via --url Argument gesetzt."""
+
     # ── Computed Fields (set during graph execution) ─────────────────────────
 
     tab_ws: Optional[str] = None
