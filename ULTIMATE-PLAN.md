@@ -1,274 +1,209 @@
-# ULTIMATE PLAN - Stealth-Runner SOTA Mai 2026
+# ULTIMATE PLAN — Stealth-Runner SOTA May 2026
 
-> **Status**: Autoritative Plan-Overview v2.0  
-> **Datum**: 2026-05-08  
-> **Rolle**: Planner  
-> **Scope**: `stealth-runner`, fokussiert auf `survey-cli/survey/`, `run_survey.py`, `cli/modules/auto_google_login.py`, Runtime-Safety, Tests, CI und Observability.
+> **Author**: Planner Agent | **Date**: 2026-05-08
+> **Status**: DRAFT | **Version**: 1.0.0
+>
+> This document is THE single source of truth for the Stealth-Runner architecture
+> overhaul. All sub-plans in `plans/` derive from this document. When in doubt,
+> come back here.
 
-Diese Datei ist der zentrale Plan. Die Detailplaene liegen in `plans/`.
+---
 
-## Brutales Urteil
+## THE VERDICT
 
-Das System ist nicht mehr im schlimmsten Zustand von vorher, aber es ist noch nicht production-ready.
+**The codebase has a `two-heads` problem.** Everything that matters exists twice:
 
-Was bereits gut ist:
+| Component | Head A (`survey-cli/`) | Head B (`src/stealth_survey/`) |
+|-----------|----------------------|-------------------------------|
+| NIM Client | `NIMClient` (238 lines) | `NIMSurveyClient` (598 lines) |
+| Snapshot | `CompactSnapshot` + `generate_snapshot()` (454 lines) | `CompactSnapshot` + `CompactSnapshotGenerator` (separate file) |
+| Batch Executor | `BatchExecutor` (950 lines) | `BatchExecutor` (separate file) |
+| Survey Runner | `SurveyRunner` (1432 lines) | `SurveyAgent` (1062+ lines) |
 
-| Bereich | Stand |
-|---|---|
-| Zwei parallele NEMO-Koepfe | `src/stealth_survey/` ist geloescht, `survey-cli/survey/` ist faktisch kanonisch |
-| Legacy-FCTES | `app/` ist geloescht |
-| Tote MAS-Agenten | `survey-cli/survey/agents/` ist geloescht |
-| Chrome-Start | `ChromeLauncher` existiert mit Flag- und AX-Verifikation |
-| cua-Daemon | `DaemonManager` existiert mit State-Machine und Auto-Recovery |
-| NIM | Circuit Breaker, Retry, Error-Typen und Fallback existieren |
-| CPX Credentials | `SecretsClient` existiert als zentrale Stelle, aber noch mit schlechten Defaults |
-| Tests | Core-Testnetz existiert und wurde zuletzt gruen berichtet |
+**Plus**: 3 Chrome launchers, 3 login implementations, 4 copies of CPX credentials.
 
-Was immer noch schrecklich falsch ist:
+**Result**: Guaranteed divergence, 2× maintenance cost, 0× confidence about which version is "correct", impossible to test end-to-end.
 
-| Prio | Problem | Warum es schlimm ist | Plan |
-|---|---|---|---|
-| P0 | Kein nachgewiesener bezahlter E2E-Erfolg als harte Release-Grenze | Unit-Tests ohne Auszahlung sind kein Produktbeweis | `plans/09-live-payout-verification.md` |
-| P0 | Provider-Logik ist nicht sauber lokalisiert | Qualtrics/Toluna/PureSpectrum brechen an verstreuten Selektoren | `plans/05-provider-reliability.md` |
-| P0 | `runner.py` ist ein God-Module | Oeffnen, Tabs, CPX, Balance, NIM, Provider, Completion in einer Implementation | `plans/01-canonical-engine.md` |
-| P0 | `auto_google_login.py` ist ein 1700+ Zeilen Monolith mit doppeltem `execute()` | Keine stabile Interface, schwer testbar, hohes Regression-Risiko | `plans/07-auto-login-hardening.md` |
-| P0 | Secret-Defaults stehen noch im Code | Env-var Defaults sind trotzdem Code-Leaks und fail-open | `plans/02-secure-credentials.md` |
-| P0 | Regeln sind teilweise Dokumentation statt Gate | Ein Agent kann noch falschen Code schreiben, wenn CI nicht blockt | `plans/03-enforce-rules.md` |
-| P1 | `print()` in Produktionscode | Keine maschinenlesbare Telemetrie, keine Auswertung, kein Alerting | `plans/08-observability-and-sessions.md` |
-| P1 | Root-CLI und survey-cli sind zwei Interfaces | Duplicate Entry Points erzeugen Drift | `plans/01-canonical-engine.md` |
-| P1 | Tests patchen Interna statt stabile Interfaces | Viele Tests koennen gruen sein, obwohl der Flow live kaputt ist | `plans/06-test-coverage.md` |
-| P1 | Docs widersprechen sich historisch | CUA-only, NEMO, CDP-Dispatch und skylight-Regeln sind teils alte Schichten | `plans/03-enforce-rules.md` |
+**The fix**: MERGE into ONE canonical module. Everything else follows from this.
 
-## Planner-Entscheidungen
+---
 
-1. `survey-cli/survey/` bleibt jetzt die kanonische Survey-Engine. Kein neuer Package-Rename zu `survey_cli/` in dieser Phase, weil das nur Churn erzeugt.
-2. `src/stealth_survey/` bleibt geloescht. Nichts wird daraus wiederbelebt.
-3. `run_survey.py` wird ein duenner Delegator oder verschwindet. Keine zweite Engine-Implementation.
-4. Provider werden echte Adapter an einer klaren Seam, nicht weitere `if provider == ...` Bloecke in `runner.py` oder `execute.py`.
-5. Secrets muessen fail-closed sein. Keine Default-Credentials, keine Default-Mail, keine Default-Hashes.
-6. Runtime-Safety ist Code, nicht Warntext: Chrome-Launcher, Daemon-Manager, banned-pattern Scanner, CI Gates.
-7. Ein Survey gilt erst als Erfolg, wenn Completion plus Balance-Diff oder providerseitiger Reward-Beweis geloggt ist.
-8. Dokumentation folgt verifiziertem Verhalten. Kein neuer Doku-Ausbau, bevor der betroffene Flow getestet ist.
+## ARCHITECTURE: THE TARGET STATE
 
-## Zielarchitektur
-
-Die Zielarchitektur ist keine Komplettneuschreibung. Sie vertieft vorhandene Module und schafft stabile Interfaces.
-
-```text
+```
 stealth-runner/
-  run_survey.py                         # thin compatibility delegator only
-
-  survey-cli/
-    survey.py                           # CLI entrypoint, delegates to survey package
-    survey/
-      runner.py                         # thin orchestration facade, no provider details
-      cdp_client.py                     # CDPConnection: id routing, retry, reconnect
-      chrome.py                         # ChromeLauncher: only process creator
-      daemon.py                         # DaemonManager + watch loop
-      scanner.py                        # dashboard scan + balance read
-      snapshot.py                       # compact snapshot + completion/progress extraction
-      execute.py                        # BatchExecutor, no provider-specific sprawl
-      nim.py                            # NIMClient, circuit breaker + fallback
-      security/
-        __init__.py                     # fail-closed SecretsClient
-      providers/
-        base.py                         # ProviderAdapter interface
-        qualtrics.py                    # Qualtrics DOM contract
-        toluna.py                       # TolunaStart DOM contract
-        strat7.py                       # Strat7 DOM contract
-        purespectrum.py                 # Angular/CDP trusted event contract
-        generic.py                      # fallback adapter
-      auth/
-        google_oauth.py                 # extracted from auto_google_login.py
-        login_verifier.py               # logged-in detection
-        cua_adapter.py                  # tiny seam over cua-driver CLI
-      observability/
-        logger.py                       # JSONL structured logger
-        metrics.py                      # counters, latency, earnings
-        health.py                       # runtime health snapshot
-
-  scripts/
-    check_banned_patterns.py            # existing, extend and run in CI
-    verify_completeness.py              # existing/strict gate, tune before CI
-    cleanup_sessions.py                 # session cleanup + corruption monitor
-
-  plans/
-    00-brutal-assessment.md
-    01-canonical-engine.md
-    02-secure-credentials.md
-    03-enforce-rules.md
-    04-runtime-lifecycle.md
-    05-provider-reliability.md
-    06-test-coverage.md
-    07-auto-login-hardening.md
-    08-observability-and-sessions.md
-    09-live-payout-verification.md
+│
+├── survey_cli/                          ← THE canonical survey engine (NEW name)
+│   ├── __init__.py
+│   │
+│   ├── engine/                          ← Core NEMO loop (THE one implementation)
+│   │   ├── nim_client.py                ← Single NIMClient (circuit breaker + retry)
+│   │   ├── snapshot.py                  ← Single CompactSnapshot + generator
+│   │   ├── batch_executor.py            ← Single BatchExecutor (provider dispatch)
+│   │   ├── survey_agent.py              ← Single SurveyAgent (run_survey + run_loop)
+│   │   └── page_analyzer.py             ← NEW: question detection, progress, stuck
+│   │
+│   ├── providers/                       ← Provider adapters (one per provider)
+│   │   ├── base.py                      ← Abstract ProviderAdapter
+│   │   ├── qualtrics.py                 ← Qualtrics (.NextButton, .LabelWrapper)
+│   │   ├── toluna.py                    ← TolunaStart (.cf-radio)
+│   │   ├── strat7.py                    ← Strat7 (.bsbutton)
+│   │   ├── purespectrum.py              ← PureSpectrum (Angular v19 CDP)
+│   │   ├── cloudresearch.py             ← CloudResearch ([role=button])
+│   │   └── generic.py                   ← Generic fallback
+│   │
+│   ├── lifecycle/                       ← Chrome + daemon management (ONE path)
+│   │   ├── chrome.py                    ← ChromeLauncher (single launch path)
+│   │   ├── daemon.py                    ← DaemonManager (cua-driver state machine)
+│   │   ├── session.py                   ← SessionManager (Chrome registry)
+│   │   └── cleanup.py                   ← Safe kill, zombie tab cleanup
+│   │
+│   ├── auth/                            ← Login (ONE implementation)
+│   │   ├── google_oauth.py              ← 6-step CUA flow (refactored from 1734 lines)
+│   │   ├── login_verifier.py            ← CDP-based login state detection
+│   │   └── keychain_fallback.py         ← NEW: Password fallback when Keychain disabled
+│   │
+│   ├── security/                        ← Credential management
+│   │   ├── secrets.py                   ← SecretsClient (Infisical/Vault)
+│   │   └── config.py                    ← Typed config (pydantic, env-based)
+│   │
+│   ├── observability/                   ← Logging, metrics, monitoring
+│   │   ├── logger.py                    ← Structured JSONL logger
+│   │   ├── metrics.py                   ← Prometheus-style metrics
+│   │   └── health.py                    ← Health check endpoint
+│   │
+│   ├── tools/                           ← Frozen deterministic tools
+│   │   └── ... (existing tools, no changes)
+│   │
+│   ├── cli.py                           ← Typer CLI (survey.py replacement)
+│   └── watch.py                         ← Daemon watch loop
+│
+├── tests/
+│   ├── unit/                            ← Unit tests (mock CDP, mock NIM)
+│   │   ├── test_nim_client.py
+│   │   ├── test_snapshot.py
+│   │   ├── test_batch_executor.py
+│   │   ├── test_survey_agent.py
+│   │   ├── test_providers/
+│   │   ├── test_lifecycle/
+│   │   └── test_auth/
+│   ├── integration/                     ← Integration tests (real-ish CDP)
+│   │   ├── test_e2e_survey.py
+│   │   ├── test_tab_switching.py
+│   │   └── test_login_flow.py
+│   └── conftest.py                      ← Shared fixtures, mocks
+│
+├── config/
+│   ├── profiles/                        ← Persona profiles (no hardcoded PII)
+│   ├── providers.yaml                   ← Provider config (selectors, markers)
+│   └── settings.yaml                    ← App settings (ports, timeouts, limits)
+│
+├── scripts/
+│   ├── verify_completeness.py           ← Pre-commit: banned patterns, docstrings, tests
+│   ├── cleanup_sessions.py              ← Session file cleanup
+│   └── graphify.py                      ← Code graph visualization
+│
+├── .pre-commit-config.yaml              ← AUTOMATED ENFORCEMENT
+├── pyproject.toml                       ← Project config, ruff, mypy, pytest
+├── AGENTS.md                            ← Agent instructions
+├── sinrules.md                          ← Central rules
+├── ULTIMATE-PLAN.md                     ← YOU ARE HERE
+└── plans/                               ← Detailed sub-plans
+    ├── 01-merge-two-heads.md
+    ├── 02-secure-credentials.md
+    ├── 03-enforce-rules.md
+    ├── 04-chrome-lifecycle.md
+    ├── 05-nemo-unification.md
+    ├── 06-test-coverage.md
+    ├── 07-auto-login-hardening.md
+    └── 08-observability.md
 ```
 
-## SOTA-Prinzipien Mai 2026
+## KEY PRINCIPLES
 
-| Prinzip | Konsequenz fuer dieses Repo |
-|---|---|
-| Deep Modules | Wenige kleine Interfaces, viel Verhalten dahinter. Keine pass-through Helper. |
-| Clear Seams | CDP, NIM, Provider, Chrome, CUA, Secrets und Logging sind eigene Seams mit Adaptern. |
-| Fail Closed | Keine Secret Defaults, keine stille 0.0 Balance, keine stillen Fallbacks ohne Event-Log. |
-| Deterministic Runtime | Chrome, Daemon, Tabs und Sessions sind State-Machines, keine ad-hoc sleeps. |
-| Contract Tests | Provider-Adapter werden gegen DOM-Fixtures getestet, nicht gegen interne Funktionen. |
-| Live Smoke Gates | Ein echter Flow muss beweisen: scan -> open -> answer -> complete -> reward-check. |
-| Structured Observability | JSONL Logs, Metriken, Health-Status, Session-Korruption-Alerts. |
-| Automated Governance | Ruff, mypy/pyright-scope, detect-secrets, banned-patterns, tests in CI. |
-| Minimal Correct Refactor | Erst tote Pfade loeschen, dann bestehende Engine vertiefen. Kein Big-Bang-Rewrite. |
+1. **ONE source of truth per concept.** No duplicate classes. No parallel implementations.
+2. **Credentials NEVER in code.** Infisical/Vault/env-vars only. Secret scanner in pre-commit.
+3. **Rules are AUTOMATED, not documented.** Pre-commit hooks enforce bans, not comment blocks.
+4. **Every public function has ≥3 tests.** Unit tests for logic, integration tests for flows.
+5. **Provider logic ISOLATED.** Each provider has one adapter file. Engine dispatches to adapter.
+6. **Graceful degradation.** NIM fails → auto-pilot. Chrome dies → restart. Daemon crashes → recover.
+7. **Observable by default.** Structured logging, metrics, health checks. No `print()` in production.
+8. **NO banned pattern comments.** The code should be clean enough that warnings aren't needed.
 
-## Phasen
+## PHASE PLAN
 
-### Phase 0 - Baseline einfrieren und Plan korrigieren
+### PHASE 0: EMERGENCY FIXES (today, <2h)
 
-Status: Diese Plan-Dateien herstellen, stale Planannahmen entfernen, `survey-cli/survey/` als kanonische Engine dokumentieren.
+| # | Action | Why |
+|---|--------|-----|
+| P0.1 | Fix `--remote-allow-origins="*"` in `accessibility.py:119` | Actual Chrome startup bug in zsh |
+| P0.2 | Fix `execute()` duplicate in `auto_google_login.py:1255` | Shadow bug — second definition overwrites first |
+| P0.3 | Replace `os.kill(pid, 9)` with SIGTERM→SIGKILL in `daemon.py:216` | Prevents graceful shutdown |
+| P0.4 | Add `.pre-commit-config.yaml` with ruff + secret scanner | Zero automated enforcement today |
 
-Exit-Kriterien:
+### PHASE 1: MERGE TWO HEADS (this week, 2-3 days)
 
-- `ULTIMATE-PLAN.md` und alle `plans/*.md` widersprechen dem aktuellen Stand nicht mehr.
-- `src/stealth_survey/`, `app/`, `survey-cli/survey/agents/`, `opencode_bridge.py` bleiben geloescht.
-- Worktree-Status ist bewusst dokumentiert, nichts Fremdes wird reverted.
+Merge `survey-cli/` and `src/stealth_survey/` into ONE `survey_cli/engine/` module. This eliminates 4 duplicate implementations immediately.
 
-### Phase 1 - P0 Payout-Pfad reparieren
+See: `plans/01-merge-two-heads.md`, `plans/05-nemo-unification.md`
 
-Ziel: Erst Geldfluss beweisen, dann weiter verschönern.
+### PHASE 2: HARDEN (next week, 2-3 days)
 
-P0-Arbeit:
+Secure credentials, enforce rules, consolidate Chrome lifecycle, fix login.
 
-1. Qualtrics Sprache/NextButton reparieren.
-2. Completion Detection ueber alle relevanten Tabs und In-Page-Modals bauen.
-3. Tab-Switching automatisch in `run_survey()` integrieren.
-4. Anti-Stuck State Hash als harte Escape-Logik aktivieren.
-5. Balance-Diff nur mit korrekt erkanntem Dashboard-Tab lesen.
-6. Live-Payout-Protokoll als JSONL erzeugen.
+See: `plans/02-secure-credentials.md`, `plans/03-enforce-rules.md`, `plans/04-chrome-lifecycle.md`, `plans/07-auto-login-hardening.md`
 
-Exit-Kriterien:
+### PHASE 3: PRODUCTION-READY (following week, 2-3 days)
 
-- Mindestens ein Live-Run endet mit `completed` plus Balance-Diff oder begruendetem Screen-Out.
-- Kein `completed` ohne Reward-Pruefung wird als Erfolg gezaehlt.
+Close test coverage gap, add observability, integration tests, session corruption fix.
 
-### Phase 2 - Engine vertiefen
+See: `plans/06-test-coverage.md`, `plans/08-observability.md`
 
-Ziel: `runner.py` bleibt Facade, Verhalten wandert hinter stabile Interfaces.
+---
 
-Module:
+## METRICS (TARGET)
 
-- `SurveyOpener`: Dashboard card, in-page modal, new-tab detection.
-- `SurveyLoop`: snapshot -> decide -> execute -> verify.
-- `CompletionDetector`: text, URL, modal close, provider markers.
-- `BalanceTracker`: before/after with backoff and dashboard tab targeting.
-- `ProviderAdapter`: provider-specific plan/execute/complete contracts.
+| Metric | Current | Target |
+|--------|---------|--------|
+| Python files | 53 | ~35 (de-duplicated) |
+| Test files | 28 | ~45 (full coverage) |
+| Test coverage | ~62% | ≥90% |
+| Duplicate implementations | 6 pairs | 0 |
+| Hardcoded credentials | 4 files | 0 |
+| Chrome launch paths | 3 | 1 |
+| Login implementations | 3 | 1 |
+| Pre-commit hooks | 0 | 5+ |
+| Banned pattern comment lines | ~7,500 | 0 |
+| Session corruption files | 2,965 | 0 |
 
-Exit-Kriterien:
+---
 
-- Provider-Selektoren nicht mehr ueber `runner.py` verstreut.
-- Root `run_survey.py` ist nur noch Delegator.
-- Tools in `survey-cli/tools/` rufen Engine-Interfaces auf, keine zweite Implementation.
+## BANNED FOREVER
 
-### Phase 3 - Security und Runtime-Safety schliessen
+These are NOT going into any comment block. They are enforced by CI:
 
-Ziel: Es ist unmoeglich, versehentlich unsicheren Code einzuchecken oder falschen Chrome zu beruehren.
+- `playstealth launch` — banned binary
+- `webauto-nodriver` — banned MCP
+- `pkill -f "Google Chrome"` — kills user Chrome
+- `killall Google Chrome` — kills ALL Chrome
+- `--remote-allow-origins=*` (no quotes)
+- `/tmp/heypiggy-bot` (fixed profile)
+- Hardcoded PIDs, credentials, emails, API keys
+- `skylight-cli click --element-index`
+- `os.kill(pid, 9)` on Chrome
+- `print()` in production code (use logger)
 
-Arbeit:
+---
 
-- `SecretsClient` fail-closed machen.
-- `ChromeLauncher` als einzigen Prozess-Erzeuger durchsetzen.
-- `SessionManager` auf Registry/Lease beschraenken.
-- `DaemonManager` Health in Watch-Loop erzwingen.
-- CI mit pre-commit, banned-patterns, detect-secrets, tests.
+## SUB-PLAN INDEX
 
-Exit-Kriterien:
-
-- Keine Credentials als Code-Defaults.
-- Ein `rg` nach Chrome-Popen zeigt genau eine aktive Launch-Stelle.
-- CI blockt banned Patterns.
-
-### Phase 4 - Auth und Provider produktionsfaehig machen
-
-Ziel: Login und Provider sind tiefe Module mit kleiner Interface.
-
-Arbeit:
-
-- `auto_google_login.py` extrahieren: OAuth Flow, CUA Adapter, Window Detector, Login Verifier.
-- Provider-Adapter mit DOM-Fixtures und Contract Tests bauen.
-- PureSpectrum/Angular, Qualtrics, Toluna, Strat7 als erste harte Provider abdecken.
-
-Exit-Kriterien:
-
-- `auto_google_login.py` ist entweder Kompatibilitaetswrapper oder geloescht.
-- Jeder P0 Provider hat Adapter-Tests und mindestens einen Live-Trace.
-
-### Phase 5 - Observability und Session-Schutz
-
-Ziel: Fehler werden gemessen, nicht erraten.
-
-Arbeit:
-
-- `print()` in Produktionscode durch JSONL Logger ersetzen.
-- `SurveyMetrics` und Health Snapshot einfuehren.
-- Session-Korruption monitoren und Cleanup-Script einbauen.
-- Earnings, decisions, errors, health als JSONL mit Schema schreiben.
-
-Exit-Kriterien:
-
-- Keine direkten `print()` in `survey-cli/survey/` ausser CLI-Ausgabe.
-- Session-Dateien <100 Bytes werden erkannt und gemeldet.
-- Dashboard fuer attempted/completed/screen_out/error/earned kann aus Logs gebaut werden.
-
-### Phase 6 - Tests, CI und Release-Kriterien
-
-Ziel: Nicht nur gruen, sondern aussagekraeftig gruen.
-
-Testpyramide:
-
-1. Unit: pure Parser, Secrets, Completion, Provider selectors.
-2. Contract: ProviderAdapter gegen DOM-Fixtures.
-3. Integration: mock CDP, multi-tab, modal, stale websocket.
-4. Live smoke: real Chrome, one bounded survey attempt, no user Chrome touch.
-
-Exit-Kriterien:
-
-- Core-Tests gruen.
-- Provider-contract tests fuer Qualtrics/Toluna/Strat7/PureSpectrum.
-- CI fuehrt lint, banned-patterns, secrets, unit und integration aus.
-- Live smoke wird manuell/controlled protokolliert, nicht in normaler CI.
-
-## Metriken
-
-| Metrik | Aktueller bekannter Stand | Ziel |
-|---|---:|---:|
-| Aktive Survey-Engine-Implementationen | 1 faktisch, aber stale References | 1 eindeutig |
-| Root/CLI Entry Points mit eigener Logik | 2 | 1 Delegator + 1 CLI |
-| Hardcoded Secret Defaults | vorhanden in `survey/security` | 0 |
-| Direkte `print()` in `survey-cli/survey` | viele, zuletzt 100+ Matches | 0 in Engine |
-| Provider-Adapter mit Contract Tests | teilweise | Qualtrics, Toluna, Strat7, PureSpectrum, Generic |
-| Live-Payout-Beweis | nicht ausreichend | mindestens 1 sauber geloggter Reward-Check |
-| Session-Korruptionsdateien | 2-Byte-Dateien geloescht, Monitoring fehlt | 0 neue ohne Alert |
-| CI Governance | lokal begonnen | verpflichtend in CI |
-
-## Reihenfolge, nicht verhandelbar
-
-1. Plan und Baseline stabilisieren.
-2. P0 Payout-Pfad live beweisen.
-3. Provider-Seam und Runner-Decomposition.
-4. Secrets/Runtime/CI fail-closed machen.
-5. Auth-Monolith extrahieren.
-6. Observability und Session-Monitoring.
-7. Coverage und Release-Gates finalisieren.
-
-## Detailplaene
-
-| Plan | Datei | Prio |
-|---|---|---|
-| Brutale Bestandsaufnahme | `plans/00-brutal-assessment.md` | P0 |
-| Canonical Engine | `plans/01-canonical-engine.md` | P0 |
-| Secure Credentials | `plans/02-secure-credentials.md` | P0 |
-| Enforce Rules | `plans/03-enforce-rules.md` | P0 |
-| Runtime Lifecycle | `plans/04-runtime-lifecycle.md` | P0 |
-| Provider Reliability | `plans/05-provider-reliability.md` | P0 |
-| Test Coverage | `plans/06-test-coverage.md` | P1 |
-| Auto Login Hardening | `plans/07-auto-login-hardening.md` | P0 |
-| Observability and Sessions | `plans/08-observability-and-sessions.md` | P1 |
-| Live Payout Verification | `plans/09-live-payout-verification.md` | P0 |
+| Plan | File | Phase |
+|------|------|-------|
+| Merge Two Heads | `plans/01-merge-two-heads.md` | 1 |
+| Secure Credentials | `plans/02-secure-credentials.md` | 2 |
+| Enforce Rules | `plans/03-enforce-rules.md` | 2 |
+| Chrome Lifecycle | `plans/04-chrome-lifecycle.md` | 2 |
+| NEMO Unification | `plans/05-nemo-unification.md` | 1 |
+| Test Coverage | `plans/06-test-coverage.md` | 3 |
+| Auto-Login Hardening | `plans/07-auto-login-hardening.md` | 2 |
+| Observability | `plans/08-observability.md` | 3 |

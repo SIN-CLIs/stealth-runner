@@ -1,99 +1,115 @@
-# Plan 07: Auto-Login Hardening
+# Plan 07: AUTO-LOGIN HARDENING
 
-> **Parent**: `ULTIMATE-PLAN.md`  
-> **Phase**: 4  
-> **Priority**: P0
+> **Parent**: ULTIMATE-PLAN.md | **Phase**: 2 | **Priority**: P1
+> **Effort**: 1.5 days | **Risk**: MEDIUM
 
-## Ziel
+---
 
-Google OAuth Login wird ein testbares Auth-Module mit kleiner Interface. `cli/modules/auto_google_login.py` bleibt hoechstens Kompatibilitaetswrapper.
+## PROBLEM
 
-## Aktueller Schaden
+1. **`execute()` defined TWICE** in `auto_google_login.py` (lines 341 and 1255) — shadow bug
+2. **1734-line monolithic file** — impossible to test, understand, or modify
+3. **No Keychain fallback** — if Keychain Auto-Fill disabled, login fails permanently
+4. **Hardcoded email** in 4+ locations within the file
+5. **Multiple `list_windows` calls** without caching between steps
 
-`cli/modules/auto_google_login.py` ist ein 1700+ Zeilen Monolith und enthaelt nach Analyse zwei `execute()` Definitionen. Das ist ein schlechtes Public Interface:
+## PLAN
 
-- Shadowing-Risiko.
-- CUA subprocess, Window-Findung, Regex-Parsing, Email, State-Verifikation und Fallbacks gemischt.
-- Schwer zu testen.
-- Schwer zu refactoren, ohne Login zu brechen.
+### Step 1: Fix the shadow bug immediately
 
-## Ziel-Module
+Delete the duplicate `execute()` at line 1255. Verify the one at line 341 is the correct version.
 
-```text
-survey-cli/survey/auth/
-  __init__.py
-  google_oauth.py       # GoogleOAuthFlow
-  login_verifier.py     # dashboard logged-in detection
-  oauth_window.py       # OAuth window detection
-  cua_adapter.py        # tiny wrapper over cua-driver CLI
-  keychain_fallback.py  # Keychain/Password fallback
+### Step 2: Refactor into auth module
+
+```
+survey_cli/auth/
+├── google_oauth.py         ← 6-step flow, refactored from 1734 lines
+├── login_verifier.py       ← CDP-based "Am I logged in?" check
+├── keychain_fallback.py    ← NEW: Password-based fallback
+└── oauth_detector.py       ← NEW: OAuth window detection + state tracking
 ```
 
-## Ziel-Interface
+### Step 3: Refactor `google_oauth.py`
+
+Extract the monolithic `execute()` into composable steps:
 
 ```python
 class GoogleOAuthFlow:
-    def execute(self, pid: int | None = None, url: str | None = None) -> LoginResult:
-        """Login or verify existing login. Never touches user Chrome."""
-
-class LoginVerifier:
-    def is_logged_in(self, pid: int, wid: int) -> bool:
-        """Detect dashboard login state from CDP/AX text."""
-
-class CuaAdapter:
-    def list_windows(self) -> list[Window]
-    def get_tree(self, pid: int, wid: int) -> str
-    def click(self, pid: int, wid: int, idx: int, verify: bool = True) -> CuaResult
-    def set_value(self, pid: int, wid: int, idx: int, value: str) -> CuaResult
+    """6-step Google OAuth login for HeyPiggy."""
+    
+    def __init__(self, cua_manager: DaemonManager):
+        self.cua = cua_manager
+    
+    def is_already_logged_in(self) -> Optional[tuple]:
+        """Step 0: Check if dashboard already shows login state."""
+        ...
+    
+    def ensure_chrome(self, url) -> str:
+        """Step 1: Start/inspect Chrome."""
+        ...
+    
+    def click_google_login(self, pid, wid) -> bool:
+        """Step 2-3: Find + click Google login symbol."""
+        ...
+    
+    def fill_email(self, pid, wid, email) -> bool:
+        """Step 4: Enter email + click Weiter."""
+        ...
+    
+    def handle_keychain(self, pid, wid) -> bool:
+        """Step 5: Keychain Fortfahren or password fallback."""
+        ...
+    
+    def finalize_oauth(self, pid, wid) -> bool:
+        """Step 6: Final Weiter + verify."""
+        ...
+    
+    def execute(self, pid=None, url=None) -> Dict:
+        """Orchestrate all 6 steps with retry on each."""
+        ...
 ```
 
-## Flow
+### Step 4: Implement Keychain fallback
 
-1. Verify invariants: Chrome bot lease, cua daemon healthy, AX tree non-empty.
-2. Check already logged in.
-3. Find HeyPiggy window.
-4. Click Google login link.
-5. Detect OAuth window.
-6. Fill configured email from `SecretsClient`.
-7. Continue via Keychain or password fallback.
-8. Final consent.
-9. Verify dashboard logged-in state.
-10. Return structured `LoginResult`.
+```python
+# survey_cli/auth/keychain_fallback.py
+class KeychainFallback:
+    """Password-based login when Keychain Auto-Fill is disabled."""
+    
+    def is_keychain_active(self, pid, wid) -> bool:
+        """Detect if Keychain offered auto-fill."""
+        ...
+    
+    def enter_password(self, pid, wid, password: str) -> bool:
+        """Find password field + enter value + click next."""
+        ...
+```
 
-## Arbeitsschritte
+### Step 5: Remove hardcoded email
 
-1. Duplicate `execute()` Situation eindeutig klaeren und Tests schreiben.
-2. `CuaAdapter` extrahieren, subprocess parsing dort kapseln.
-3. `LoginVerifier` extrahieren.
-4. `OAuthWindowDetector` extrahieren.
-5. `GoogleOAuthFlow` bauen.
-6. `auto_google_login.py` auf Wrapper reduzieren.
-7. Email nur ueber `SecretsClient.get_google_email()`.
-8. Keychain-Fallback als expliziter Fehlerpfad oder Implementation.
+Use `SecretsClient` from Plan 02:
 
-## Tests
+```python
+email = SecretsClient.get_google_email()
+```
 
-| Test | Erwartung |
-|---|---|
-| already logged in | kein Google-Klick |
-| fresh OAuth | alle Schritte in Reihenfolge |
-| OAuth window missing | sauberer Fehler, kein Retry-Spam |
-| keychain auto fill | Fortfahren erkannt |
-| password fallback | password field erkannt oder MissingSecretError |
-| wrong window | kein Klick auf Apple-Menueleiste/Browser-Chrome |
-| cua output text | `Performed`/`Set` Parser robust |
+## DELIVERABLES
 
-## Verification
+- [ ] Duplicate `execute()` deleted
+- [ ] `survey_cli/auth/` module with refactored classes
+- [ ] Keychain fallback implemented
+- [ ] Email from SecretsClient
+- [ ] Tests for each auth component
+
+## VERIFICATION
 
 ```bash
-rg "def execute" cli/modules/auto_google_login.py survey-cli/survey/auth --glob '*.py'
-rg "zukunftsorientierte\.energie@gmail\.com" cli/modules/auto_google_login.py survey-cli/survey/auth --glob '*.py'
-pytest survey-cli/tests/test_auto_google_login.py -q
+# No duplicate execute
+grep -c "def execute" survey_cli/auth/google_oauth.py  # = 1
+
+# No hardcoded email in auth module
+! grep -r "zukunftsorientierte" survey_cli/auth/
+
+# Auth tests pass
+pytest tests/unit/test_auth/ -v
 ```
-
-## Exit-Kriterien
-
-- Genau ein Login Public Interface.
-- Kein hardcoded Email Default.
-- Monolith ist Wrapper oder deutlich zerlegt.
-- Login-Flow hat Step-Tests und live verification recipe.

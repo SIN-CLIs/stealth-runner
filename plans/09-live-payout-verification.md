@@ -62,7 +62,7 @@ Fuer `screen_out` muss `reward_verified` ebenfalls gesetzt sein, wenn Compensati
 
 ## Safety
 
-- Nur Bot-Chrome mit `/tmp/heypiggy-new-*`.
+- Nur Bot-Chrome mit `~/tmp/chrome-instance-B (Profil 902 Kopie)`.
 - Kein User-Chrome killen.
 - Kein Live Smoke in normaler CI.
 - Max attempts und max duration setzen.

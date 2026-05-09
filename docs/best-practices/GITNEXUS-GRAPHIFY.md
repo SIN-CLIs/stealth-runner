@@ -249,27 +249,24 @@ fi
 
 ---
 
-## 5. AKTUELLER STATUS (2026-05-08 01:07 UTC) — NACH RE-INDEX
+## 5. AKTUELLER STATUS (2026-05-08)
 
 ### GitNexus
 
 | Metrik | Wert | Status |
 |--------|------|--------|
 | **Repos indexiert** | 21 | ✅ |
-| **stealth-runner nodes** | 13.062 (+1.323 seit Re-Index) | ✅ |
-| **stealth-runner edges** | 16.166 (+1.829) | ✅ |
-| **stealth-runner communities** | 141 (+15) | ✅ |
-| **stealth-runner processes** | 131 (+25) | ✅ |
-| **Index-Frische (stealth-runner)** | **0 commits behind** | ✅ BEHOBEN |
+| **stealth-runner nodes** | 11.739 | ✅ |
+| **stealth-runner edges** | 14.337 | ✅ |
+| **stealth-runner communities** | 126 | ✅ |
+| **stealth-runner processes** | 106 | ✅ |
+| **Index-Frische (stealth-runner)** | **40 commits behind** | 🔴 KRITISCH |
 | **Index-Frische (alle anderen)** | 1 commit behind | 🟡 WARNUNG |
-| **Queries funktionieren** | ✅ SurveyAgent-Klasse, alle 16 Methoden | ✅ BEHOBEN |
-| **Queries-Einschränkung** | Scope extraction fails für extrem kommentierte Dateien (>500 Zeilen Docstring) | 🟡 BEKANNT |
-| **CLI Binary** | Verfügbar via `npx gitnexus@1.6.3` | ✅ |
+| **Queries funktionieren** | **Leer (Index zu alt)** | 🔴 KRITISCH |
+| **CLI Binary** | **Nicht in PATH** | 🟡 WARNUNG |
 | **MCP Server** | Aktiv (OpenCode) | ✅ |
 | **Group Sync** | stealth-suite Gruppe existiert | ✅ |
 | **Auto-Reindex** | **KEIN Post-Commit Hook** | 🔴 FEHLT |
-
-**Scope Extraction Issue**: Dateien wie `auto_google_login.py` (1651 Zeilen, davon ~400 Zeilen Docstring) können nicht von GitNexus geparsed werden. Dies ist ein bekanntes Limit — extrem kommentierte Dateien überschreiten den internen Parser-Buffer. Workaround: Class/Method-level queries funktionieren. File-level queries nicht.
 
 ### Graphify
 

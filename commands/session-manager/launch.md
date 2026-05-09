@@ -43,7 +43,7 @@ result = sm.launch("heypiggy", "https://heypiggy.com/?page=dashboard")
 {
   "heypiggy": {
     "pid": 74483,
-    "profile_dir": "/tmp/heypiggy-bot-1777982535",
+    "profile_dir": "~/tmp/chrome-instance-B (Profil 902 Kopie, Port 9224)",
     "wid": 56728,
     "url": "https://heypiggy.com/?page=dashboard",
     "status": "active",

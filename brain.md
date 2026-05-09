@@ -214,7 +214,7 @@ Google(43) → Konto klicken(Label) → Weiter(Label) → Dashboard
 **WICHTIG:**
 - NUR eigenes Chrome via playstealth launch starten
 - KEIN pkill, killall, oder grep auf User Chrome
-- Fresh Profile: `/tmp/heypiggy-bot-XXXXX`
+- Fresh Profile: `~/tmp/chrome-instance-B (Profil 902 Kopie)`
 - MAC_PASSWORD="admin" für Keychain Dialog
 
 ---
@@ -267,7 +267,7 @@ playstealth launch --url 'https://heypiggy.com'
 **WICHTIG:**
 - NUR eigenes Chrome via playstealth launch
 - KEIN pkill, killall, oder grep auf User Chrome
-- Fresh Profile: `/tmp/heypiggy-bot-XXXXX`
+- Fresh Profile: `~/tmp/chrome-instance-B (Profil 902 Kopie)`
 - MAC_PASSWORD="admin" für Keychain Dialog
 - 7 SCHRITTE: Click → Email → Fortfahren → admin → Entsperren → Weiter → Dashboard
 

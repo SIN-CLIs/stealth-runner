@@ -11,13 +11,13 @@ BOT Chrome PID (Process ID) und WID (Window ID) dynamisch finden.
 ### Methode 1: playstealth launch (NEU)
 ```bash
 playstealth launch --url 'https://heypiggy.com/?page=dashboard'
-# → {"pid": 78708, "profile": "/tmp/heypiggy-bot-1777985655"}
+# → {"pid": 78708, "profile": "~/tmp/chrome-instance-B (Profil 902 Kopie)"}
 ```
 
 ### Methode 2: ps + grep (bestehend)
 ```bash
 ps aux | grep "heypiggy-bot-" | grep -v grep | grep "Google Chrome" | grep -v "Helper\|Renderer\|GPU"
-# → simoneschulze  78708  ... /Applications/Google Chrome.app/Contents/MacOS/Google Chrome --user-data-dir=/tmp/heypiggy-bot-1777985655
+# → simoneschulze  78708  ... /Applications/Google Chrome.app/Contents/MacOS/Google Chrome --user-data-dir=~/tmp/chrome-instance-B (Profil 902 Kopie)
 ```
 
 ### Methode 3: SessionManager (SOTA)
@@ -25,7 +25,7 @@ ps aux | grep "heypiggy-bot-" | grep -v grep | grep "Google Chrome" | grep -v "H
 from cli.modules.session_manager import SessionManager
 sm = SessionManager()
 result = sm.find("heypiggy")
-# → {"status": "ok", "pid": 78708, "profile": "/tmp/heypiggy-bot-1777985655"}
+# → {"status": "ok", "pid": 78708, "profile": "~/tmp/chrome-instance-B (Profil 902 Kopie)"}
 ```
 
 ## WID finden

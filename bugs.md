@@ -1,8 +1,8 @@
 
 
 ## ❌ FATAL: USER Chrome vs BOT Chrome NIEMALS VERWECHSELN — 2026-05-05
-- **Regel:** NUR Chrome mit `--user-data-dir=/tmp/heypiggy-bot-XXXXXXXX` ist BOT
-- **BOT Chrome:** PID=DYNAMIC, `/tmp/heypiggy-bot-1777979455` → CUA-Interaktion ERLAUBT
+- **Regel:** NUR Chrome mit `--user-data-dir=/tmp/chrome-instance-B` ist BOT
+- **BOT Chrome:** PID=DYNAMIC, `~/tmp/chrome-instance-B` → CUA-Interaktion ERLAUBT
 - **USER Chrome:** PID=DYNAMIC → NIEMALS TOUCHEN, NIEMALS KILLEN
 - **Check:** `ps aux | grep "user-data-dir"` um Boot vs User zu unterscheiden
 - **Symptom:** Bei mehreren Chrome-Instanzen: IMMER prüfen ob user-data-dir `heypiggy-bot-` enthält
@@ -49,7 +49,7 @@
 ```bash
 # Chrome starten
 playstealth launch --url 'https://heypiggy.com/?page=dashboard'
-# → BOT PID=70293, profile=/tmp/heypiggy-bot-XXXXXXXX
+# → PID=24378, profile=~/tmp/chrome-instance-B (Port 9224)
 
 # Windows finden
 cua-driver call list_windows
@@ -80,24 +80,24 @@ echo '{"pid": X, "window_id": Y}' | cua-driver call get_window_state > /tmp/tree
 
 ## ✅ CUA-ONLY LOGIN COMPLETE — 2026-05-05 13:50+
 
-### Login Flow (LIVE GETESTET, PID=71104):
+### Login Flow (LIVE GETESTET, PID=24378 (aktuell)):
 ```bash
 # Shell Commands exakt in dieser Reihenfolge:
 
 # STEP 1: Chrome starten
 playstealth launch --url 'https://heypiggy.com/?page=dashboard'
-→ PID=71104, profile=/tmp/heypiggy-bot-1777981361
+→ PID=24378 (aktuell), profile=~/tmp/chrome-instance-B
 
 # STEP 2: Dashboard WID finden
 cua-driver call list_windows | python3 -c "..."
 → WID=DYNAMIC PID=DYNAMIC, Title=HeyPiggy Dashboard
 
 # STEP 3: get_window_state → Google Login-Symbol finden
-echo '{"pid": 71104, "window_id": 56640}' | cua-driver call get_window_state > /tmp/bot_tree.json
+echo '{"pid": 24378, "window_id": DYNAMIC}' | cua-driver call get_window_state > /tmp/bot_tree.json
 → [54] AXLink (Google Login-Symbol) @(731,651,132,41)
 
 # STEP 4: Google Login klicken
-echo '{"pid": 71104, "window_id": 56640, "element_index": 54}' | cua-driver call click
+echo '{"pid": 24378, "window_id": DYNAMIC, "element_index": 54}' | cua-driver call click
 → ✅ Performed AXPress on [54] AXLink
 
 # STEP 5: Wait 5s → list_windows → NEUE WID
@@ -105,16 +105,16 @@ sleep 5 && cua-driver call list_windows
 → WID=DYNAMIC PID=DYNAMIC, Title="Anmelden – Google Konten"
 
 # STEP 6: get_window_state → Email-Feld finden
-echo '{"pid": 71104, "window_id": 56658}' | cua-driver call get_window_state
+echo '{"pid": 24378, "window_id": 56658}' | cua-driver call get_window_state
 → [25] AXTextField (E-Mail oder Telefonnummer) @(735,549,450,54)
 → [35] AXButton "Weiter" @(1095,706,91,40)
 
 # STEP 7: Email eintragen
-echo '{"pid": 71104, "window_id": 56658, "element_index": 25, "value": "zukunftsorientierte.energie@gmail.com"}' | cua-driver call set_value
+echo '{"pid": 24378, "window_id": 56658, "element_index": 25, "value": "zukunftsorientierte.energie@gmail.com"}' | cua-driver call set_value
 → ✅ Set AXValue on [25] AXTextField
 
 # STEP 8: Weiter klicken
-echo '{"pid": 71104, "window_id": 56658, "element_index": 35}' | cua-driver call click
+echo '{"pid": 24378, "window_id": 56658, "element_index": 35}' | cua-driver call click
 → ✅ Performed AXPress on [35] AXButton "Weiter"
 
 # STEP 9: Wait 5s → Keychain Auto-Fill → Konto-Auswahl
@@ -122,11 +122,11 @@ sleep 5 && cua-driver call list_windows
 → WID=DYNAMIC PID=DYNAMIC, Title="Jeremy Schulze" (Keychain!)
 
 # STEP 10: get_window_state → Fortfahren finden
-echo '{"pid": 71104, "window_id": 56658}' | cua-driver call get_window_state
+echo '{"pid": 24378, "window_id": 56658}' | cua-driver call get_window_state
 → [62] AXButton "Fortfahren" @(1090,689,94,30)
 
 # STEP 11: Fortfahren klicken
-echo '{"pid": 71104, "window_id": 56658, "element_index": 62}' | cua-driver call click
+echo '{"pid": 24378, "window_id": 56658, "element_index": 62}' | cua-driver call click
 → ✅ Performed AXPress on [62]
 
 # STEP 12: Wait 5s → list_windows → Final Weiter
@@ -134,11 +134,11 @@ sleep 5 && cua-driver call list_windows
 → WID=DYNAMIC PID=DYNAMIC, Title="Anmelden – Google Konten"
 
 # STEP 13: get_window_state → Final Weiter finden
-echo '{"pid": 71104, "window_id": 56658}' | cua-driver call get_window_state
+echo '{"pid": 24378, "window_id": 56658}' | cua-driver call get_window_state
 → [41] AXButton "Weiter" @(966,786,220,40)
 
 # STEP 14: Final Weiter klicken
-echo '{"pid": 71104, "window_id": 56658, "element_index": 41}' | cua-driver call click
+echo '{"pid": 24378, "window_id": 56658, "element_index": 41}' | cua-driver call click
 → ✅ Performed AXPress on [41]
 
 # STEP 15: Wait 5s → Login Complete!
@@ -159,7 +159,7 @@ sleep 5 && cua-driver call list_windows
 - KEIN Passwort nötig wenn Keychain Credentials gespeichert
 - → "Fortfahren" klicken + final "Weiter" = Login Complete
 
-### Element-Index Map (PID=71104):
+### Element-Index Map (PID=24378 (aktuell)):
 | Step | Element | Index | AXRole |
 |------|---------|-------|--------|
 | 3 | Google Login-Symbol | 54 | AXLink |
@@ -171,9 +171,9 @@ sleep 5 && cua-driver call list_windows
 ### BOT Chrome PIDs (LIVE):
 | PID | Profile | Status |
 |-----|---------|--------|
-| 71104 | heypiggy-bot-1777981361 | AKTUELL ✅ |
-| 70293 | heypiggy-bot-1777981087 | geschlossen |
-| 68317 | heypiggy-bot-1777979455 | geschlossen |
+| 24378 | ~/tmp/chrome-instance-B (Profil 902) | AKTUELL ✅ (Port 9224) |
+| — | — | Alte Instanzen gelöscht |
+| — | — | Alte Instanzen gelöscht |
 
 ### REGELN (NIEMALS BRECHEN):
 1. list_windows → {"windows": [...]} NICHT Array!

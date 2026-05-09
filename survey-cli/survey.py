@@ -1135,7 +1135,7 @@ def cmd_doctor(args):
     cmd_status(args)
 
     # Profil
-    profile_path = Path(__file__).parent / "survey" / "profiles" / "jeremy_schulze.json"
+    profile_path = Path(__file__).parent / "survey" / "profiles" / "sin_agent_heypiggy.json"
     print(f"  Profile:    {'✅' if profile_path.exists() else '⚠️  using fallback'}")
 
     # Logs

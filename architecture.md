@@ -57,10 +57,10 @@ pip install -e .
 ### 2.2 Chrome mit Apple-Events-JS starten (einmalig)
 
 ```bash
-PROFILE=$(mktemp -d /tmp/heypiggy-bot-XXXXXX)
+PROFILE=$(~/tmp/chrome-instance-B (Profil 902 Kopie))
 open -a "Google Chrome" --args \
   --user-data-dir="$PROFILE" \
-  --remote-debugging-port=9999 \
+  --remote-debugging-port=9224 \
   --remote-allow-origins="*" \
   --force-renderer-accessibility \
   --disable-blink-features=AutomationControlled \

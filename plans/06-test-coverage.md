@@ -1,96 +1,82 @@
-# Plan 06: Test Coverage and Verification
+# Plan 06: TEST COVERAGE
 
-> **Parent**: `ULTIMATE-PLAN.md`  
-> **Phase**: 6  
-> **Priority**: P1
+> **Parent**: ULTIMATE-PLAN.md | **Phase**: 3 | **Priority**: P1
+> **Effort**: 2 days | **Risk**: LOW
 
-## Ziel
+---
 
-Tests sollen echte Produktionsrisiken abdecken, nicht nur Mocks gruener machen.
+## PROBLEM
 
-## Problem
+**20 of 53 source files (38%) have zero test coverage:**
 
-Es gibt viele Tests, aber die groessten Risiken liegen an runtime Seams:
+- `src/stealth_survey/nim_client.py` — no test
+- `src/stealth_survey/batch_executor.py` — no test
+- `src/stealth_survey/survey_agent.py` — no test
+- `src/stealth_survey/compact_snapshot.py` — no test
+- ALL 8 `survey-cli/survey/agents/` files — 0 tests
+- ALL 4 `survey-cli/survey/providers/` files — 0 tests
+- Various others
 
-- Browser tabs wechseln.
-- Provider DOM unterscheidet sich live.
-- Completion wird nicht erkannt.
-- Balance liest falsche Zahlen.
-- cua-driver/Chrome/NIM fallen partiell aus.
-- Tests patchen oft interne Funktionen statt stabile Interfaces.
+After Phase 1 merges, some of these disappear. But new `engine/` files and provider files need tests.
 
-## Testpyramide
+## PLAN
 
-| Ebene | Zweck | Beispiele |
-|---|---|---|
-| Unit | Pure logic | parsing, completion keywords, state hash, secret validation |
-| Contract | Adapter Interface | ProviderAdapter gegen DOM fixtures |
-| Integration | Multi-module flow | mock CDP tabs, stale websocket, modal/new-tab |
-| Live smoke | begrenzter Real-Run | one Chrome, one survey attempt, no user Chrome touch |
-
-## Mindest-Contracts
-
-### ProviderAdapter Contract
-
-Jeder Adapter muss testen:
-
-1. `matches()` erkennt richtige URL/DOM.
-2. `plan_actions()` erzeugt semantische Actions.
-3. `execute_action()` nutzt provider-korrekte Methode.
-4. `detect_completion()` unterscheidet completed/screen_out/blocked/error.
-
-### Runtime Contract
-
-1. Chrome startet nur mit Pflichtflags.
-2. Daemon recovered von DEGRADED.
-3. TabManager erkennt new-tab und in-page modal.
-4. CDPConnection routet Responses per ID und reconnectet.
-5. BalanceTracker ignoriert Level/Min/Reward-Card Werte.
-
-### Auth Contract
-
-1. Bereits eingeloggt -> kein OAuth.
-2. Fresh OAuth -> 6-Step Flow.
-3. Keychain present -> Fortfahren.
-4. Keychain missing -> Password-Fallback oder sauberer Fehler.
-5. Wrong window -> nicht klicken.
-
-## Live Smoke Gate
-
-Nicht in normaler CI. Manuell oder nightly auf isolierter Maschine.
-
-Kriterien:
-
-1. Chrome Bot-Profil `/tmp/heypiggy-new-*`.
-2. `--force-renderer-accessibility` und `--remote-allow-origins="*"` verifiziert.
-3. Dashboard eingeloggt.
-4. Ein Survey wird versucht.
-5. Ergebnis ist `completed`, `screen_out`, `blocked`, oder `error`, aber nie stuck ohne Grund.
-6. Balance before/after wird geloggt.
-7. Logs enthalten session_id, survey_id, provider, tabs, earned.
-
-## Arbeitsschritte
-
-1. Coverage-Audit nach aktueller Loeschung neu laufen lassen.
-2. DOM-Fixtures fuer Provider anlegen.
-3. Contract-Test-Basis fuer ProviderAdapter bauen.
-4. Integration-Test fuer new-tab switching bauen.
-5. Integration-Test fuer in-page modal bauen.
-6. CompletionDetector Edge Cases testen.
-7. Auth-Step Tests aus `auto_google_login.py` extrahieren.
-8. CI auf unit + contract + integration ohne Live Smoke setzen.
-
-## Verification
+### Step 1: After merge, audit remaining gaps
 
 ```bash
-pytest survey-cli/tests -q
-pytest --cov=survey --cov-report=term-missing survey-cli/tests
-python scripts/check_banned_patterns.py survey-cli cli run_survey.py
+python scripts/audit_coverage.py
 ```
 
-## Exit-Kriterien
+### Step 2: Unit tests for engine
 
-- Kein P0-Provider ohne Contract Tests.
-- Kein Runtime-Seam ohne Fehlerpfad-Test.
-- Live Smoke Ergebnis wird als Artefakt/JSONL dokumentiert.
-- Coverage-Ziel ist mindestens 90 Prozent fuer neue/beruehrte Module, aber wichtiger ist Seam-Abdeckung.
+```
+tests/unit/
+├── test_nim_client.py         ← Test circuit breaker, retry, decide(), parse_response()
+├── test_snapshot.py           ← Test generate(), element extraction, completion detection
+├── test_batch_executor.py     ← Test execute(), provider dispatch, validation errors
+└── test_survey_agent.py       ← Test run_survey flow, _simple_actions fallback
+```
+
+### Step 3: Unit tests for providers
+
+```
+tests/unit/
+└── test_providers/
+    ├── test_qualtrics.py      ← Test .NextButton, .LabelWrapper, label matching
+    ├── test_toluna.py         ← Test .cf-radio, submit
+    ├── test_strat7.py         ← Test .bsbutton
+    ├── test_purespectrum.py   ← Test CDP click, Angular dispatch
+    └── test_generic.py        ← Test generic fallback
+```
+
+### Step 4: Integration tests
+
+```
+tests/integration/
+├── test_tab_switching.py      ← NEW: Survey opens in new tab → detect + switch
+├── test_login_flow.py         ← Mock CDP for 6-step login verification
+├── test_e2e_survey.py         ← Mock CDP + mock NIM for full survey flow
+└── test_pre_qualifier.py      ← Pre-qualifier detection + answering
+```
+
+### Step 5: Minimum test requirements
+
+Every public function must have:
+- 1 happy-path test
+- 1 error-path test
+- 1 edge-case test
+
+## DELIVERABLES
+
+- [ ] Coverage ≥90% (from ~62%)
+- [ ] All `engine/` files have ≥80% line coverage
+- [ ] All `providers/` files have tests
+- [ ] Integration test for tab switching
+- [ ] Integration test for full survey loop
+
+## VERIFICATION
+
+```bash
+pytest --cov=survey_cli --cov-report=term-missing tests/
+# Target: 90%+ coverage, no gaps >10 lines
+```

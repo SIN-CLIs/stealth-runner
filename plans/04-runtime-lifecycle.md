@@ -37,7 +37,7 @@ Noch schlecht:
 ## Regeln
 
 1. Genau eine aktive `subprocess.Popen(... Chrome ...)` Stelle.
-2. Nur timestamped `/tmp/heypiggy-new-*` Profile.
+2. Nur timestamped `~/tmp/chrome-instance-B (Profil 902 Kopie)` Profile.
 3. Kill nur fuer Main-Prozesse mit passendem Bot-Profil.
 4. Erst SIGTERM, dann nach Timeout SIGKILL-Fallback.
 5. Kein `pkill`, kein `killall`, keine hardcoded PIDs.

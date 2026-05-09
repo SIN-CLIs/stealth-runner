@@ -19,7 +19,7 @@
 ## 🛡️ Chrome-Sicherheit
 
 - BOT Chrome MUSS via `playstealth launch` gestartet werden
-- User-data-dir MUSS in `/tmp/heypiggy-bot-XXXXX` liegen
+- User-data-dir MUSS in `~/tmp/chrome-instance-B (Profil 902 Kopie)` liegen
 - BOT Chrome NIE mit User-Chrome-Profilen mischen
 
 **Letztes Update**: 2026-05-05

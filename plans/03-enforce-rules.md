@@ -1,94 +1,128 @@
-# Plan 03: Enforce Rules
+# Plan 03: ENFORCE RULES
 
-> **Parent**: `ULTIMATE-PLAN.md`  
-> **Phase**: 3  
-> **Priority**: P0
+> **Parent**: ULTIMATE-PLAN.md | **Phase**: 2 | **Priority**: P0
+> **Effort**: 1 day | **Risk**: LOW
 
-## Ziel
+---
 
-Regeln werden automatisch erzwungen. Warntexte in Kommentaren sind nicht die Sicherheitsarchitektur.
+## PROBLEM
 
-## Aktueller Stand
+The codebase has ~7,500 lines of banned-pattern warnings in comments. **Zero automated enforcement.** Every rule is honor-system only.
 
-Vorhanden:
+## WHAT BREAKS
 
-- `.pre-commit-config.yaml`
-- `scripts/check_banned_patterns.py`
-- `scripts/verify_completeness.py`
+- Agent can check in `pkill -f "Google Chrome"` and no CI stops it
+- Hardcoded PID commit → no pre-commit blocks it
+- Missing docstring → unknown until human review
+- The ban list is maintained in comments, not in a script that checks
 
-Noch offen:
+## PLAN
 
-- CI-Gate.
-- Secret-Scan Gate.
-- `verify_completeness.py` auf sinnvolle Regeln tunen.
-- Historische BANNED-Kommentarbloecke spaeter entfernen.
+### Step 1: Create `.pre-commit-config.yaml`
 
-## Was falsch ist
+```yaml
+repos:
+  - repo: https://github.com/astral-sh/ruff-pre-commit
+    rev: v0.12.0
+    hooks:
+      - id: ruff
+      - id: ruff-format
+        args: [--check]
 
-Ein Repo mit tausenden Warnkommentar-Zeilen, aber ohne blockierende CI, ist gefaehrlich. Menschen und Agents ueberlesen Regeln. CI nicht.
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.14.0
+    hooks:
+      - id: mypy
+        args: [--strict, --ignore-missing-imports]
 
-## Gates
+  - repo: https://github.com/Yelp/detect-secrets
+    rev: v1.5.0
+    hooks:
+      - id: detect-secrets
 
-| Gate | Scope | Blockt |
-|---|---|---|
-| Ruff | Python | Syntax, Style, simple bugs |
-| Ruff format check | Python | Format drift |
-| Mypy/Pyright scoped | Core modules | Interface drift |
-| detect-secrets | all files | Secrets |
-| banned patterns | executable code | Chrome kill, hardcoded PID, unquoted origins, banned tools |
-| tests | unit/integration | regressions |
+  - repo: local
+    hooks:
+      - id: verify-completeness
+        name: verify completeness
+        entry: python scripts/verify_completeness.py
+        language: python
+        types: [python]
+        pass_filenames: true
 
-## Banned Patterns
-
-Mindestens blocken:
-
-- `pkill -f "Google Chrome"`
-- `killall Google Chrome`
-- hardcoded PIDs in executable code
-- `--remote-allow-origins=*` ohne Quotes
-- fixed `/tmp/heypiggy-bot` Profil
-- `webauto-nodriver`
-- `skylight-cli click --element-index`
-- echte Credential-Werte
-- `os.kill(pid, 9)` ohne vorherigen SIGTERM-Fallback
-
-## Completeness-Regeln sinnvoll machen
-
-Nicht alles braucht einen langen Docstring. SOTA ist: wichtige Interfaces sind dokumentiert, invariants sind getestet, und Regeln werden automatisiert.
-
-`verify_completeness.py` sollte blocken:
-
-1. Public Interface ohne Docstring.
-2. Neue Datei ohne Test, wenn sie Produktionslogik enthaelt.
-3. Hardcoded Credential/PID/Email.
-4. Neue Chrome-Prozess-Erzeugung ausserhalb `ChromeLauncher`.
-5. Neue Provider-Sonderlogik ausserhalb `providers/`.
-
-Nicht blocken:
-
-- Jeden privaten Helper ohne Docstring.
-- Jede Konstante ohne langen Kommentar.
-- Historische Markdown-Warntexte.
-
-## Arbeitsschritte
-
-1. `.pre-commit-config.yaml` lokal validieren.
-2. `scripts/check_banned_patterns.py` auf aktuelle False Positives tunen.
-3. `scripts/verify_completeness.py` auf Interface-Regeln statt Kommentar-Manie begrenzen.
-4. GitHub Actions Workflow fuer pre-commit und tests erstellen.
-5. BANNED-Kommentarbloecke erst nach aktivem CI schrittweise entfernen.
-6. ADR schreiben: "Rules live in CI, not comments".
-
-## Verification
-
-```bash
-pre-commit run --all-files
-python scripts/check_banned_patterns.py survey-cli cli run_survey.py
-pytest survey-cli/tests -q
+      - id: banned-patterns
+        name: banned patterns
+        entry: python scripts/check_banned_patterns.py
+        language: python
+        types: [python]
+        pass_filenames: true
 ```
 
-## Exit-Kriterien
+### Step 2: Create `scripts/check_banned_patterns.py`
 
-- Ein PR/Commit mit banned pattern wird automatisch geblockt.
-- Ein PR/Commit mit Secret wird automatisch geblockt.
-- Historische Doku-Regeln sind mit CI-Regeln abgeglichen.
+Scans all `.py` files for forbidden strings in executable code (not comments):
+
+```python
+BANNED_PATTERNS = [
+    r'pkill\s+-f\s+["\']*Google Chrome',
+    r'killall\s+Google Chrome',
+    r'os\.kill\([^,]+,\s*9\)',  # SIGKILL on Chrome
+    r'--remote-allow-origins=\*',  # no quotes
+    r'/tmp/heypiggy-bot\b',  # fixed profile
+    r'playstealth\s+launch',
+    r'webauto-nodriver',
+    r'skylight-cli\s+click.*--element-index',
+    r'pid\s*=\s*\d{4,5}(?!\s*\#)',  # hardcoded PID in code
+]
+```
+
+### Step 3: Create `scripts/verify_completeness.py`
+
+Checks every Python file for:
+
+```python
+CHECKS = {
+    "has_banned_header": "File must start with BANNED warning (until migration removes them)",
+    "all_functions_have_docstring": "Every def must have a docstring",
+    "all_constants_have_warum": "Every constant needs WARUM comment",
+    "public_functions_have_tests": "≥3 tests per public function (checks test files)",
+    "no_hardcoded_credentials": "No emails, API keys, hashes",
+}
+```
+
+### Step 4: Remove banned-pattern comment blocks
+
+After pre-commit enforcement is active, remove the ~7,500 lines of redundant banned-pattern comments from all files. The rule is now enforced by CI, not by comment blocks.
+
+### Step 5: Add CI gate
+
+```yaml
+# .github/workflows/ci.yml
+- name: Pre-commit checks
+  run: pre-commit run --all-files
+
+- name: Test suite
+  run: pytest tests/ -v
+```
+
+## DELIVERABLES
+
+- [ ] `.pre-commit-config.yaml` created
+- [ ] `scripts/check_banned_patterns.py` created
+- [ ] `scripts/verify_completeness.py` created
+- [ ] `ruff configuration` in `pyproject.toml`
+- [ ] `mypy configuration` in `pyproject.toml`
+- [ ] Banned-pattern comment blocks removed from files
+- [ ] CI workflow active
+
+## VERIFICATION
+
+```bash
+# Pre-commit passes on all files
+pre-commit run --all-files
+
+# No banned patterns in code
+python scripts/check_banned_patterns.py survey_cli/ cli/ run_survey.py
+
+# Completeness check passes
+python scripts/verify_completeness.py
+```

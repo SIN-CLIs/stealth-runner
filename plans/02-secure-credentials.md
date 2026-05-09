@@ -1,84 +1,125 @@
-# Plan 02: Secure Credentials
+# Plan 02: SECURE CREDENTIALS
 
-> **Parent**: `ULTIMATE-PLAN.md`  
-> **Phase**: 3  
-> **Priority**: P0  
-> **Risk**: Niedrig technisch, hoch falls Secrets falsch rotiert werden.
+> **Parent**: ULTIMATE-PLAN.md | **Phase**: 2 | **Priority**: P0
+> **Effort**: 1 day | **Risk**: LOW
 
-## Ziel
+---
 
-Keine Credentials, PII oder API-Hashes als Code-Default. Secrets muessen fail-closed sein.
+## PROBLEM
 
-## Aktueller Stand
+CPX API credentials (`app_id`, `ext_user_id`, `secure_hash`, email) are hardcoded in **4 files at 6 locations**:
 
-`survey-cli/survey/security/__init__.py` existiert und zentralisiert CPX-Werte. Das ist gut, aber die Implementation ist noch nicht sicher genug, weil Defaults im Code stehen:
+| File | Lines |
+|------|-------|
+| `survey-cli/survey/chrome.py` | 89-94 |
+| `survey-cli/tools/tool_open_survey.py` | 54-57 |
+| `run_survey.py` | 166-171 |
+| `src/stealth_survey/survey_agent.py` | 830-837 |
+
+Email `zukunftsorientierte.energie@gmail.com` is in **4+ locations**.
+
+## WHAT BREAKS
+
+- Credential rotation requires code changes in 4 files
+- Anyone with repo access gets full CPX API access
+- `git clone` = full credential leak
+- Pre-commit secret scanner would fail every commit
+
+## PLAN
+
+### Step 1: Centralize in SecretsClient
 
 ```python
-os.getenv("CPX_APP_ID", "11644")
-os.getenv("CPX_EXT_USER_ID", "2525530")
-os.getenv("CPX_SECURE_HASH", "...")
-os.getenv("CPX_EMAIL", "...")
-```
+# survey_cli/security/secrets.py
+import os
+from typing import Optional
+from pydantic import BaseModel
 
-Auch `cli/modules/auto_google_login.py` hat noch einen `GOOGLE_EMAIL` Default.
+class CPXCredentials(BaseModel):
+    app_id: str
+    ext_user_id: str
+    secure_hash: str
+    email: str
 
-## Problem
-
-Env-var Defaults fuer echte Secrets sind keine Sicherheit. Sie sind nur Hardcoding an einer anderen Stelle.
-
-## Ziel-Interface
-
-```python
 class SecretsClient:
-    def get_cpx_credentials(self) -> CPXCredentials:
-        """Return complete CPX credentials or raise MissingSecretError."""
-
-    def get_google_email(self) -> str:
-        """Return configured Google login email or raise MissingSecretError."""
-
-    def get_nvidia_api_key(self) -> str:
-        """Return NIM key or raise MissingSecretError."""
+    """Single source of truth for all credentials.
+    
+    Resolution order: env var → Infisical → ~/.stealth/config.yaml → error
+    """
+    
+    @staticmethod
+    def get_cpx_credentials() -> CPXCredentials:
+        return CPXCredentials(
+            app_id=os.getenv("CPX_APP_ID") or ...,
+            ext_user_id=os.getenv("CPX_EXT_USER_ID") or ...,
+            secure_hash=os.getenv("CPX_SECURE_HASH") or ...,
+            email=os.getenv("CPX_EMAIL") or ...,
+        )
+    
+    @staticmethod
+    def get_nvidia_api_key() -> Optional[str]:
+        return os.getenv("NVIDIA_API_KEY")
+    
+    @staticmethod
+    def get_google_email() -> str:
+        return os.getenv("GOOGLE_EMAIL", "")
 ```
 
-## Resolution Order
+### Step 2: Replace all 6 hardcoded locations
 
-1. Environment variable.
-2. Optional local secrets file outside repo, e.g. `~/.stealth/secrets.json`.
-3. Optional Infisical/Vault adapter later.
-4. Raise `MissingSecretError`.
+Each location replaces its inline credentials with:
+```python
+from survey_cli.security.secrets import SecretsClient
+creds = SecretsClient.get_cpx_credentials()
+```
 
-Kein Fallback auf echte Werte.
+### Step 3: Add secret scanner to pre-commit
 
-## Arbeitsschritte
+```yaml
+# .pre-commit-config.yaml
+- repo: https://github.com/Yelp/detect-secrets
+  rev: v1.5.0
+  hooks:
+  - id: detect-secrets
+    args: ['--baseline', '.secrets.baseline']
+```
 
-1. `MissingSecretError` einfuehren.
-2. Alle echten Defaults aus `survey/security/__init__.py` entfernen.
-3. `GOOGLE_EMAIL` Default in `auto_google_login.py` entfernen.
-4. `.env.example` mit leeren Werten erstellen.
-5. Tests anpassen: Testwerte werden per env fixture gesetzt.
-6. `detect-secrets` Baseline erzeugen oder bewusst ohne Baseline starten.
-7. Bekannte geleakte Werte aus Git-Historie bewerten und Credentials rotieren.
-
-## Tests
-
-| Test | Erwartung |
-|---|---|
-| no env | `MissingSecretError` |
-| partial env | `MissingSecretError` mit fehlenden Keys |
-| full env | `CPXCredentials` validiert |
-| google email missing | fail-closed |
-| tests use fixtures | keine echten Werte im Testcode ausser Dummywerte |
-
-## Verification
+### Step 4: Create `.env.example`
 
 ```bash
-rg "11644|2525530|ae75b0feca27c0f8eb356d7117d978ec|zukunftsorientierte\.energie@gmail\.com" . --glob '*.py'
-python scripts/check_banned_patterns.py survey-cli cli run_survey.py
+# .env.example (checked in)
+CPX_APP_ID=
+CPX_EXT_USER_ID=
+CPX_SECURE_HASH=
+CPX_EMAIL=
+NVIDIA_API_KEY=nvapi-...
+GOOGLE_EMAIL=
 ```
 
-## Exit-Kriterien
+### Step 5: Git history cleanup
 
-- Keine echten CPX-/Google-Werte in Python-Code.
-- Ohne Secrets startet kein Survey-Flow still mit Defaults.
-- Tests nutzen Dummy-Secrets.
-- CI fuehrt Secret-Scan aus.
+Use `git filter-branch` or BFG to remove credentials from git history. Rotate all credentials after cleanup.
+
+## DELIVERABLES
+
+- [ ] `SecretsClient` implemented
+- [ ] All 6 credential locations migrated
+- [ ] `.env.example` created
+- [ ] Pre-commit secret scanner active
+- [ ] Git history cleaned
+- [ ] Credentials rotated
+
+## VERIFICATION
+
+```bash
+# No hardcoded CPX values remain
+! grep -r "11644" survey_cli/ survey-cli/ cli/ run_survey.py src/
+! grep -r "ae75b0feca27c0f8eb356d7117d978ec" survey_cli/ survey-cli/ cli/ run_survey.py src/
+! grep -r "2525530" survey_cli/ survey-cli/ cli/ run_survey.py src/
+
+# SecretsClient used in all CPX consumers
+grep -r "SecretsClient.get_cpx_credentials" survey_cli/ survey-cli/
+
+# Pre-commit passes
+pre-commit run --all-files
+```

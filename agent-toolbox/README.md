@@ -51,12 +51,13 @@ agent-toolbox/
 | Method | Endpoint | Description |
 |--------|----------|-------------|
 | POST | `/services/heypiggy/login` | Login to HeyPiggy via Google OAuth |
+| POST | `/services/gmx/login` | Login to GMX (placeholder) |
 
 ### Surveys
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/survey/run-one` | Run one survey (demo/proof-of-concept) |
+| POST | `/survey/run` | Run surveys on dashboard |
 
 ### Tools
 
@@ -86,11 +87,11 @@ r = httpx.post("http://localhost:8000/services/heypiggy/login",
 print(r.json())
 # {"status": "success", "service": "heypiggy", ...}
 
-# 3. Run one survey (demo/proof-of-concept)
-r = httpx.post("http://localhost:8000/survey/run-one",
-               json={"profile_name": "default", "cdp_port": 9999, "max_pages": 20})
+# 3. Run surveys
+r = httpx.post("http://localhost:8000/survey/run",
+               json={"profile_name": "default", "max_surveys": 5})
 print(r.json())
-# {"status": "completed", "pages_completed": 5, "elapsed_s": 45.2, ...}
+# {"status": "success", "surveys_run": 5, "completed": 3, "total_earned": 1.50, ...}
 
 # 4. Navigate and screenshot
 r = httpx.post("http://localhost:8000/tools/navigate",
@@ -137,9 +138,9 @@ To add a new service endpoint:
 
 Example:
 ```python
-@app.post("/services/new-provider/login", response_model=LoginResponse)
-async def new_provider_login(req: LoginRequest):
-    # Wrap existing provider login logic
+@app.post("/services/gmx/login", response_model=LoginResponse)
+async def gmx_login(req: LoginRequest):
+    # Wrap existing GMX login logic
     ...
 ```
 

@@ -60,14 +60,10 @@ from typing import List, Tuple, Optional
 ROOT_DIR = Path(__file__).parent.parent
 
 # EXCLUDE_DIRS: Verzeichnisse die NICHT geprueft werden
-#   → WARUM diese? Externe Dependencies, Build-Artifacts, Git-Metadata,
-#     Skill-Dokumentation (enthintentionell BANNED-Patterns als Beispiele).
+#   → WARUM diese? Externe Dependencies, Build-Artifacts, Git-Metadata.
 EXCLUDE_DIRS = {
     ".git", "__pycache__", "node_modules", ".venv", "venv",
     "dist", "build", ".eggs", "*.egg-info",
-    ".agents", ".claude",  # Skill-Docs enthalten BANNED-Patterns als Beispiele
-    "survey-cli",           # Legacy CLI — separate Codebase
-    "A2A-SIN-Worker-heypiggy",  # Legacy Worker — separate Codebase
 }
 
 # BANNED_PATTERNS: Regex-Patterns die NICHT im Code vorkommen duerfen
@@ -239,23 +235,13 @@ def check_hardcoded_pids(file: Path) -> List[str]:
             line_num = content[:match.start()].count("\n") + 1
             line = content.split("\n")[line_num - 1].strip()
 
-            # WARUM diese Ausnahmen? Beispiele/Doku/Kommentare sind OK.
+            # WARUM diese Ausnahmen? Beispiele/Doku sind OK.
             if "WARUM" in line.upper() or "BEISPIEL" in line.upper():
                 continue
-            if "VERIFIZIERUNG" in line.upper() or "LIVE" in line.upper():
-                continue
-            if "Historisch" in line or "PID=" in line:
-                continue
-            if line.startswith("#") or line.startswith('"""') or line.startswith("'''"):
-                continue
-            if ">>>" in line:  # Doctest example
-                continue
-            if "pid=" in line.lower() and ("example" in line.lower() or "test" in line.lower()):
+            if line.startswith("#") or line.startswith('"""'):
                 continue
 
-            # Nur echte Zuweisungen melden (pid = 12345, pid: 12345 in code)
-            if re.search(r'^\s*pid\s*[=:]\s*\d{4,6}', line) and not line.startswith("#"):
-                errors.append(f"{file}:{line_num}: {message}: {line[:80]}")
+            errors.append(f"{file}:{line_num}: {message}: {line[:80]}")
 
     return errors
 
@@ -321,64 +307,18 @@ def check_banned_patterns(file: Path) -> List[str]:
     except UnicodeDecodeError:
         return []
 
-    # Skip this file itself (verify_completeness.py contains BANNED patterns as definitions)
-    # WARUM? Die Pattern-Definitionen sind META-DATEN, nicht echte Nutzung.
-    if file.name == "verify_completeness.py":
-        return []
+    for pattern, message in BANNED_PATTERNS:
+        for match in re.finditer(pattern, content):
+            line_num = content[:match.start()].count("\n") + 1
+            line = content.split("\n")[line_num - 1].strip()
 
-    lines = content.split("\n")
-    in_docstring = False
-    docstring_char = None
-
-    for line_num, line in enumerate(lines, 1):
-        stripped = line.strip()
-
-        # Track docstring state (triple quotes)
-        # WARUM? Docstrings dokumentieren BANNED Patterns — das ist OK.
-        if '"""' in stripped or "'''" in stripped:
-            quote = '"""' if '"""' in stripped else "'''"
-            count = stripped.count(quote)
-            if count == 1:
-                # Opening or closing docstring
-                if not in_docstring:
-                    in_docstring = True
-                    docstring_char = quote
-                elif docstring_char == quote:
-                    in_docstring = False
-                    docstring_char = None
-            elif count >= 2:
-                # Single-line docstring — skip this line
+            # WARUM diese Ausnahme? Dokumentation von BANNED Patterns ist OK.
+            if line.startswith("#") and "BANNED" in line.upper():
                 continue
-            continue
-
-        if in_docstring:
-            continue
-
-        # Skip comment lines that document BANNED patterns
-        # WARUM? "❌ playstealth launch" in Kommentaren ist Dokumentation, nicht Nutzung.
-        if stripped.startswith("#") or stripped.startswith("❌") or stripped.startswith("→"):
-            continue
-
-        # Skip lines that contain BANNED keyword (documentation context)
-        # WARUM? Wenn "BANNED" im selben Block steht, ist es Dokumentation.
-        context_start = max(0, line_num - 10)
-        context_end = min(len(lines), line_num + 3)
-        context = "\n".join(lines[context_start:context_end])
-        if "BANNED" in context.upper() and (stripped.startswith("#") or "❌" in stripped):
-            continue
-
-        # Skip regex pattern definitions (they contain banned patterns as strings)
-        # WARUM? r'playstealth\s+launch' ist ein Regex-Pattern, kein echter Aufruf.
-        if "r'" in stripped or 'r"' in stripped:
-            if any(bp[0] in stripped for bp in BANNED_PATTERNS):
+            if '"""' in line and "BANNED" in content[max(0, match.start()-100):match.start()].upper():
                 continue
 
-        for pattern, message in BANNED_PATTERNS:
-            if re.search(pattern, line):
-                # Additional filter: skip if line is clearly documentation
-                if any(marker in stripped for marker in ["❌", "#", "→", "BANNED", "VERBOTEN", "NUTZE", "NUTZT"]):
-                    continue
-                errors.append(f"{file}:{line_num}: {message}: {stripped[:80]}")
+            errors.append(f"{file}:{line_num}: {message}: {line[:80]}")
 
     return errors
 

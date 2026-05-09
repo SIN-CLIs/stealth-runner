@@ -139,7 +139,7 @@ at the element level.
 
 **Old code (broken):**
 ```python
-solver = GoCaptchaSolver(pid=71104, wid=56640)
+solver = GoCaptchaSolver(# KEINE hardcoded PIDs! Nutze lsof oder ps zur dynamischen Erkennung)
 solver.solve()
 # → dispatchEvent → isTrusted: false → never works
 ```

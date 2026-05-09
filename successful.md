@@ -79,9 +79,9 @@ click [62] Fortfahren → click [41] Weiter
 ### BOT Chrome PIDs (LIVE):
 | PID | Profile | Status |
 |-----|---------|--------|
-| 71104 | heypiggy-bot-1777981361 | AKTUELL |
-| 70293 | heypiggy-bot-1777981087 | geschlossen |
-| 68317 | heypiggy-bot-1777979455 | geschlossen |
+| 24378 | ~/tmp/chrome-instance-B (Profil 902) | AKTUELL (Port 9224) |
+| — | — | Alte Instanzen gelöscht |
+| — | — | Alte Instanzen gelöscht |
 
 ## 2026-05-07 — What Actually Worked 💪
 

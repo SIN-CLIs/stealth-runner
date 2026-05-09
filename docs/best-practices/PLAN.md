@@ -224,7 +224,7 @@ def shutdown(signum, frame):
 
     WARUM nicht einfach exit()?
       - Chrome-Prozess läuft weiter → Resource Leak
-      - CDP WebSocket bleibt offen → Port 9999 blockiert
+      - CDP WebSocket bleibt offen → Port 9224 blockiert
       - ~/.stealth/sessions.json wird nicht aktualisiert
       - Nächster Start scheitert an "Port in use"
 
@@ -469,7 +469,7 @@ Siehe R1 oben.
 # 2026-05-05: Keychain Auto-Fill Discovery
 #   - WARUM: Google OAuth zeigt KEIN Passwort-Feld wenn Keychain aktiv
 #   - WAS: NUR "Fortfahren" klicken statt Passwort eingeben
-#   - VERIFIZIERUNG: Live-Test PID=71104
+#   - VERIFIZIERUNG: Live-Test DYNAMIC_PID (aktuell: 24378)
 ```
 
 ---
@@ -733,7 +733,7 @@ class HealthMetrics:
         oder wir wissen genau was fehlt.
 
         Checks:
-          1. Chrome läuft und CDP erreichbar (Port 9999)
+          1. Chrome läuft und CDP erreichbar (Port 9224)
           2. cua-driver Daemon läuft (pgrep -f "cua-driver serve")
           3. Dashboard-Tab existiert (find_dashboard_ws)
           4. Login-Status (document.title.includes('Umfragen'))
@@ -797,7 +797,7 @@ $ python3 survey-cli/survey.py status
 
   Chrome:
     Running:  ✅
-    PIDs:     71104
+    PIDs:     DYNAMIC (aktuell: 24378)
     Port:     9999
 
   Dashboard:   ✅ Connected

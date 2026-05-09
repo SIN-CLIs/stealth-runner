@@ -44,11 +44,7 @@ for scan_path in SCAN_DIRS:
         for i, line in enumerate(lines, 1):
             stripped = line.strip()
             if stripped.startswith("#") or stripped.startswith('"""') or '"""' in stripped:
-                continue
-            if '\u274c' in stripped or '\u2705' in stripped:
-                continue
-            if any(w in stripped for w in ['setzt NICHT', 'NIE', 'tötet', 'Korruption', '->', '\u2192']):
-                continue  # skip German warning doc-lines
+                continue  # skip comments and docstrings
 
             for pattern, reason in BANNED_PATTERNS:
                 if re.search(pattern, line):
