@@ -242,50 +242,54 @@ def solve_text_captcha(ws_url, debug=False):
         return {"success": False, "error": str(e)[:200]}
 
 
-# ── Drag Puzzle Solver (__ngContext__) ─────────────────
+# ── Drag Puzzle Solver (AngularDragDropSolver) ──────────
 
 def solve_drag_puzzle(ws_url):
-    """Recursive __ngContext__ search → dropListRef.drop()."""
-    js = """(() => {
-    function findInstance(root, propertyName) {
-        if (!root || typeof root !== 'object') return null;
-        if (root.hasOwnProperty(propertyName)) return root;
-        for (let key of Object.keys(root)) {
-            try { const res = findInstance(root[key], propertyName); if (res) return res; } catch (e) {}
-        }
-        return null;
-    }
-    const dropListEl = document.querySelector('.cdk-drop-list');
-    if (!dropListEl) return 'NO_DROPLIST';
-    const dragEls = document.querySelectorAll('.cdk-drag');
-    if (!dragEls.length) return 'NO_DRAGELS';
-    const ctx = dropListEl.__ngContext__;
-    if (!ctx) return 'NO_CTX';
-    const dropListDir = findInstance(ctx, '_dropListRef');
-    if (!dropListDir) return 'NO_DROPLISTDIR';
-    const dropListRef = dropListDir._dropListRef;
-    if (!dropListRef) return 'NO_DROPLISTREF';
-    const firstDragEl = dragEls[0];
-    const dragCtx = firstDragEl.__ngContext__;
-    const dragDir = findInstance(dragCtx, '_dragRef');
-    if (!dragDir) return 'NO_DRAGDIR';
-    const dragRef = dragDir._dragRef;
-    if (!dragRef) return 'NO_DRAGREF';
-    try {
-        dropListRef.enter(dragRef, dragRef.element.nativeElement, 0);
-        dropListRef.drop(dragRef, 0);
-        return 'DROP_SUCCESS:' + (dragRef.element.nativeElement.textContent || '').trim();
-    } catch (e) { return 'DROP_ERROR: ' + e.message; }
-})()"""
+    """Angular CDK drag-drop puzzle solver — delegates to drag_drop_angular.py.
+
+    BROKEN: __ngContext__ traversal approach was removed (Production Build
+    stores component index as number, not Object — findInstance() finds nothing).
+
+    REPLACEMENT: solve_drag_puzzle_new() from drag_drop_angular.py tries in order:
+    1. Playwright locator.dragTo() — different internal routing than drag_and_drop()
+    2. CDP browser-level pointer event simulation (pointerdown/move/up)
+    3. Graceful "blocked" return (surveys stop here — escalation needed)
+
+    Return shape kept for backward compat with solve_purespectrum_preflight().
+    """
     try:
-        ws = websocket.create_connection(ws_url, timeout=15)
-        ws.send(json.dumps({"id":0,"method":"Runtime.evaluate",
-            "params":{"expression": js, "returnByValue": True}}))
-        r = json.loads(ws.recv()); ws.close()
-        result = r.get("result",{}).get("result",{}).get("value","???")
-        return {"success": "DROP_SUCCESS" in str(result), "result": result}
+        from stealth_captcha.solver.drag_drop_angular import solve_drag_puzzle_new, DragDropResult
+        result = solve_drag_puzzle_new(ws_url)
+
+        if result.status == "solved":
+            return {
+                "success": True,
+                "result": f"DRAG_SUCCESS:{result.number}|{result.details.get('method','')}",
+            }
+        elif result.status == "blocked":
+            return {
+                "success": False,
+                "result": None,
+                "error": f"Puzzle BLOCKED — {result.error or 'unknown'}. Details: {result.details}",
+            }
+        else:  # failed
+            return {
+                "success": False,
+                "result": None,
+                "error": result.error or "Unknown drag-drop failure",
+            }
+    except ImportError as e:
+        return {
+            "success": False,
+            "result": None,
+            "error": f"ImportError: {str(e)[:200]}",
+        }
     except Exception as e:
-        return {"success": False, "result": None, "error": str(e)[:200]}
+        return {
+            "success": False,
+            "result": None,
+            "error": str(e)[:200],
+        }
 
 
 # ── Page Text Reader ───────────────────────────────────

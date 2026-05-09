@@ -79,16 +79,29 @@ PROVIDER_COMMANDS = {
             t.dispatchEvent(new Event("input",{bubbles:true}));
             t.dispatchEvent(new Event("change",{bubbles:true}));}
         })("{value}")''',
-        "click_select": '''(function(val){
+        "click_select": '''(function(lang){
             var s=document.querySelector("select.Q_lang,select[id*=lang],select");
-            if(s){for(var i=0;i<s.options.length;i++){
-                if(s.options[i].text.trim()===val||s.options[i].value===val){
-                    s.selectedIndex=i;
-                    s.dispatchEvent(new Event("change",{bubbles:true}));
-                    s.dispatchEvent(new Event("input",{bubbles:true}));
-                    break;
+            if(!s) return JSON.stringify({found:false, reason:"no_select"});
+            var langL=(lang||"").toLowerCase();
+            var idx=-1;
+            for(var i=0;i<s.options.length;i++){
+                if(s.options[i].text.trim().toLowerCase().includes(langL)||
+                   s.options[i].value.toLowerCase().includes(langL)){
+                    idx=i;break;
                 }
-            }}
+            }
+            if(idx<0) return JSON.stringify({found:false, reason:"no_match", lang:lang});
+            s.selectedIndex=idx;
+            // Step 1: DOM events (handles Angular/React event listeners)
+            s.dispatchEvent(new Event("change",{bubbles:true,cancelable:true}));
+            s.dispatchEvent(new Event("input",{bubbles:true,cancelable:true}));
+            // Step 2: Native setter (handles v-model / ngModel two-way binding)
+            var nativeSetter=Object.getOwnPropertyDescriptor(
+                window.HTMLSelectElement.prototype,"value").set;
+            if(nativeSetter) nativeSetter.call(s,s.options[idx].value);
+            s.dispatchEvent(new Event("change",{bubbles:true}));
+            return JSON.stringify({found:true,method:"selectedIndex",idx:idx,
+                                   text:s.options[idx].text.trim()});
         })("{value}")''',
         "click_qualtrics_label": '''(function(){
             var labels=document.querySelectorAll('.LabelWrapper,.ChoiceRow label,.choice');
@@ -212,7 +225,106 @@ GENERIC_COMMANDS = {
         if(el){el.value=v;el.dispatchEvent(new Event("input",{bubbles:true}));
         el.dispatchEvent(new Event("change",{bubbles:true}));}
     })("{value}")''',
+    "click_select": '''(function(lang){
+        var s=document.querySelector("select");
+        if(!s) return JSON.stringify({found:false});
+        var langL=(lang||"").toLowerCase();
+        for(var i=0;i<s.options.length;i++){
+            if(s.options[i].text.trim().toLowerCase().includes(langL)||
+               s.options[i].value.toLowerCase().includes(langL)){
+                s.selectedIndex=i;
+                s.dispatchEvent(new Event("change",{bubbles:true}));
+                s.dispatchEvent(new Event("input",{bubbles:true}));
+                return JSON.stringify({found:true,idx:i,text:s.options[i].text.trim()});
+            }
+        }
+        return JSON.stringify({found:false});
+    })("{value}")''',
 }
+
+
+# ══════════════════════════════════════════════════════════════════
+# LANGUAGE SELECTION PAGE DETECTION (2026-05-09)
+# ══════════════════════════════════════════════════════════════════
+
+def detect_language_page(ws_url: str, default_lang: str = "Deutsch") -> Optional[List[Dict]]:
+    """Detect Qualtrics language selection page and return select action.
+
+    PROBLEM: Language pages have <select class="Q_lang"> but NO .NextButton.
+    Calling click_next on these pages fails silently. This function
+    detects the language selector and returns the correct select action.
+
+    QUALTRICS LANGUAGE PAGE INDICATORS:
+    - <select class="Q_lang"> — primary selector
+    - <select id*=lang> — alternative Qualtrics pattern
+    - Page text contains "Sprache", "language", "Sprache auswählen"
+    - NO .NextButton present (that's how we know it's language page)
+
+    Args:
+        ws_url: CDP WebSocket URL
+        default_lang: Language to select (default: "Deutsch")
+
+    Returns:
+        [{"action": "select", "value": "Deutsch", "lang_page": True}]
+        or None if not a language page
+    """
+    try:
+        ws = websocket.create_connection(ws_url, timeout=8)
+        js = """
+        (function() {
+            var selects = document.querySelectorAll('select');
+            var qLang = null;
+            for (var i = 0; i < selects.length; i++) {
+                var c = (selects[i].className || '').toLowerCase();
+                var id = (selects[i].id || '').toLowerCase();
+                if (c.indexOf('q_lang') >= 0 || c.indexOf('language') >= 0 ||
+                    id.indexOf('lang') >= 0) {
+                    qLang = selects[i];
+                    break;
+                }
+            }
+            if (!qLang) return JSON.stringify({is_lang_page: false});
+            var opts = [];
+            for (var i = 0; i < qLang.options.length; i++) {
+                opts.push({
+                    idx: i,
+                    text: qLang.options[i].text.trim(),
+                    value: qLang.options[i].value
+                });
+            }
+            var hasNext = !!document.querySelector('.NextButton,#NextButton,.btn-next');
+            return JSON.stringify({
+                is_lang_page: true,
+                select_id: qLang.id || qLang.className,
+                options: opts,
+                has_next: hasNext
+            });
+        })()
+        """
+        ws.send(json.dumps({
+            "id": 0, "method": "Runtime.evaluate",
+            "params": {"expression": js, "returnByValue": True}
+        }))
+        r = json.loads(ws.recv())
+        ws.close()
+        raw = r.get("result", {}).get("result", {}).get("value", "")
+        if not raw:
+            return None
+        data = json.loads(raw) if isinstance(raw, str) else raw
+        if not data.get("is_lang_page"):
+            return None
+        opts = data.get("options", [])
+        # Pick default_lang option (case-insensitive)
+        lang_lower = default_lang.lower()
+        selected = 0
+        for i, opt in enumerate(opts):
+            if opt["text"].lower().includes(lang_lower) or opt["value"].lower().includes(lang_lower):
+                selected = i
+                break
+        return [{"action": "select", "value": opts[selected]["text"] if selected < len(opts) else default_lang,
+                 "lang_page": True, "options_count": len(opts)}]
+    except Exception:
+        return None
 
 
 # ── Batch Executor ─────────────────────────────────────
@@ -660,7 +772,24 @@ class BatchExecutor:
         """
         cmd = self.commands
 
-        if action_type in ("click", "select", "check"):
+        if action_type == "select":
+            # select with value: use click_select (language page OR question-page dropdown)
+            # Priority: value > ref (setting a value is more specific than clicking by index)
+            if value:
+                tpl = cmd.get("click_select", GENERIC_COMMANDS.get("click_select", ""))
+                if tpl:
+                    safe_value = value.replace('"', '\\"')
+                    return tpl.replace("{value}", safe_value)
+                return None
+            # select without value but with @e ref: click_element (dropdown by index)
+            if ref and ref.startswith("@e"):
+                idx = int(ref[2:])
+                tpl = cmd.get("click_element", GENERIC_COMMANDS["click_element"])
+                return tpl.replace("{idx}", str(idx))
+            # select with no ref + no value: nothing to select
+            return None
+
+        if action_type in ("click", "check"):
             if ref and ref.startswith("@e"):
                 # Qualtrics: use text-based label matching for radio/checkbox
                 if self.provider == "qualtrics" and meta:

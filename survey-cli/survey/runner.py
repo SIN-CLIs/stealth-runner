@@ -102,7 +102,7 @@ from dataclasses import dataclass, field
 from . import chrome
 from .snapshot import generate_snapshot, detect_completion, detect_progress, CompactSnapshot
 from .nim import NIMClient, get_nim
-from .execute import BatchExecutor
+from .execute import BatchExecutor, detect_language_page
 from .opener import SurveyOpener, SurveyTarget, OpenResult
 from .completion_detector import CompletionDetector
 from .balance_tracker import BalanceTracker
@@ -112,7 +112,8 @@ from .pre_qualifier import PreQualifierHandler
 from .cash_out_trigger import CashOutTrigger
 from .survey_rater import SurveyRater
 from .autodoc import log_earnings, log_error, log_session, log_decision
-from .observability import get_logger, SurveyMetrics
+from .observability import get_logger
+from .observability.metrics import SurveyMetrics
 from .scanner import scan_dashboard, read_balance_with_backoff
 # Frozen tools — atomar, __frozen__=True, NICHT aendern
 from tools import (click as tool_click, fill as tool_fill,
@@ -509,6 +510,38 @@ class SurveyRunner:
                     log_earnings(survey_id, provider, 0, "completed", 0,
                                 {"source": "completion_detected_at_iteration", "iter": iteration})
                     break
+
+                # 5ia. QUALTRICS LANGUAGE PAGE DETECTION (2026-05-09)
+                # Language pages have <select class="Q_lang"> but NO .NextButton.
+                # NIM would send "submit" → click_next fails → survey stuck.
+                # Detection: scan for Q_lang select → bypass NIM → use select action.
+                lang_actions = None
+                if provider == "qualtrics":
+                    try:
+                        lang_actions = detect_language_page(tab_ws, default_lang="Deutsch")
+                        if lang_actions:
+                            get_logger().info(
+                                f"Language page detected: {len(lang_actions)} actions",
+                                survey_id=survey_id, context="nemo_loop", iteration=iteration + 1
+                            )
+                            actions = lang_actions
+                            # Skip NIM for language page (no NIM call)
+                            use_nim_override = False
+                            executor = BatchExecutor(tab_ws, provider, config=self.config)
+                            batch_result = executor.execute(actions, snapshot.refs)
+                            time.sleep(self.config.wait_page_load)
+                            actions_executed += 1
+                            # Continue to next iteration (page should advance after language selection)
+                            continue
+                    except Exception as e:
+                        get_logger().warn(
+                            f"Language detection failed: {e}",
+                            survey_id=survey_id, context="nemo_loop", iteration=iteration + 1
+                        )
+                        # Fall through to normal NIM decision
+                    use_nim_override = True
+                else:
+                    use_nim_override = True
 
                 # 5i. NIM decision (with retry on empty actions)
                 if self.nim and self.config.use_nim:
