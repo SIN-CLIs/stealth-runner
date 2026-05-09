@@ -72,10 +72,7 @@ class CuaAdapter:
         p["pid"] = pid
         p["window_id"] = wid
         r = self.run(["cua-driver", "call", method], json.dumps(p))
-        d = r.json()
-        d["stdout"] = r.stdout
-        d["stderr"] = r.stderr
-        return d
+        return r.json()
 
     def get_tree(self, pid: int, wid: int) -> List[str]:
         """Get AX-Tree as list of lines."""

@@ -63,7 +63,7 @@ class RuntimeHealth:
             print(f"Issues: {health.issues}")
     """
 
-    def __init__(self, cdp_port: int = 8888):
+    def __init__(self, cdp_port: int = 9999):
         self.cdp_port = cdp_port
         self.issues: List[str] = []
 

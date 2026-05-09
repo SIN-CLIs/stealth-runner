@@ -112,13 +112,7 @@ class StructuredLogger:
 
     def configure(self, verbose: Optional[bool] = None,
                   survey_id: str = "", provider: str = ""):
-        """Reconfigure logger for current survey context.
-
-        Args:
-            verbose: If True/False, update verbose setting. If None, keep current.
-            survey_id: Current survey ID (resets iteration count)
-            provider: Current provider name
-        """
+        """Reconfigure logger for current survey context."""
         if verbose is not None:
             self.verbose = verbose
         self.survey_id = survey_id

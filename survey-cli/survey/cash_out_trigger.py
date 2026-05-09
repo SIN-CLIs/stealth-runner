@@ -16,7 +16,6 @@ import subprocess
 from typing import Optional
 
 from .autodoc import log_session
-from .observability.logger import get_logger
 
 
 class CashOutTrigger:
@@ -55,8 +54,7 @@ class CashOutTrigger:
                 None,
             )
             if not hp_window:
-                get_logger().warn("[CASH] HeyPiggy window not found",
-                                  context="cash_out_window_not_found")
+                print("[CASH] HeyPiggy window not found")
                 return False
 
             pid = hp_window["pid"]
@@ -84,8 +82,7 @@ class CashOutTrigger:
                         break
 
             if idx is None:
-                get_logger().warn("[CASH] Auszahlung element not found in AX tree",
-                                  context="cash_out_element_not_found")
+                print("[CASH] Auszahlung element not found in AX tree")
                 return False
 
             # 4. Click
@@ -98,14 +95,12 @@ class CashOutTrigger:
                 text=True,
                 timeout=15,
             )
-            get_logger().info(f"[CASH] Clicked Auszahlung sidebar: {result.stdout[:100]}",
-                  context="cash_out_success")
+            print(f"[CASH] Clicked Auszahlung sidebar: {result.stdout[:100]}")
             log_session(
                 "cash_out", "triggered", {"balance_target": balance_target}
             )
             return True
 
         except Exception as e:
-            get_logger().warn(f"[CASH] Cash-out trigger failed: {e}",
-                              context="cash_out_failed")
+            print(f"[CASH] Cash-out trigger failed: {e}")
             return False

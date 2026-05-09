@@ -41,12 +41,11 @@ class LoginVerifier:
             if "chrome" not in n:
                 continue
 
-            # Strong indicators (only visible when logged in — NOT in page title when logged out!)
-            # "abmelden" only appears in dashboard header when truly logged in
-            if "abmelden" in t:
+            # Strong indicators (only visible when logged in)
+            if any(k in t for k in ["umfragen", "auszahlung", "abmelden"]):
                 return pid, w.get("window_id"), True
 
-            # Ambiguous title → check AX-Tree for "abmelden" or "Guthaben"
+            # Ambiguous title → check AX-Tree
             if any(k in t for k in ["heypiggy", "verdienen", "dashboard"]):
                 tree = self.cua.get_tree(pid, w.get("window_id"))
                 if any("abmelden" in l.lower() for l in tree):

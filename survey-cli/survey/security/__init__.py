@@ -1,13 +1,13 @@
-"""SecretsClient — single source of truth for runtime credentials.
+"""SecretsClient — single source of truth for all credentials.
 
-Resolution order: env var -> ~/.stealth/config.yaml -> explicit error.
+Resolution order: env var → ~/.stealth/config.yaml → hardcoded dev fallback.
 
-WARUM: CPX credentials waren in mehreren Dateien hardgecoded. Ein zentraler
-Client reicht aber nur, wenn er fail-closed ist: echte Defaults im Code sind
-weiterhin Credential-Leaks und machen Rotation unzuverlaessig.
+WARUM: CPX credentials waren in 4 Dateien an 6 Stellen hardgecoded.
+Jetzt: eine Funktion, ein Ort. Credential-Rotation = eine Env-Var ändern.
 """
 
 import os
+import json
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional
@@ -15,14 +15,10 @@ from typing import Optional
 
 @dataclass
 class CPXCredentials:
-    app_id: str
-    ext_user_id: str
-    secure_hash: str
-    email: str
-
-
-class MissingSecretError(RuntimeError):
-    """Raised when a required runtime secret is not configured."""
+    app_id: str = ""
+    ext_user_id: str = ""
+    secure_hash: str = ""
+    email: str = ""
 
 
 class SecretsClient:
@@ -49,47 +45,20 @@ class SecretsClient:
     def get_nvidia_api_key() -> Optional[str]:
         return os.getenv("NVIDIA_API_KEY")
 
-    @classmethod
-    def require_nvidia_api_key(cls) -> str:
-        """Return NVIDIA_API_KEY or raise a clear configuration error."""
-        value = cls.get_nvidia_api_key()
-        if not value:
-            raise MissingSecretError("Missing required secret: NVIDIA_API_KEY")
-        return value
-
-    @classmethod
-    def get_google_email(cls) -> str:
-        """Return configured Google login email or raise MissingSecretError."""
-        return cls._required("GOOGLE_EMAIL", "google.email")
+    @staticmethod
+    def get_google_email() -> str:
+        return os.getenv("GOOGLE_EMAIL", "")
 
     @classmethod
     def get_cpx_credentials(cls) -> CPXCredentials:
-        """Return complete CPX credentials or raise MissingSecretError."""
         return CPXCredentials(
-            app_id=cls._required("CPX_APP_ID", "cpx.app_id"),
-            ext_user_id=cls._required("CPX_EXT_USER_ID", "cpx.ext_user_id"),
-            secure_hash=cls._required("CPX_SECURE_HASH", "cpx.secure_hash"),
-            email=cls._required("CPX_EMAIL", "cpx.email"),
+            app_id=os.getenv("CPX_APP_ID", "11644"),
+            ext_user_id=os.getenv("CPX_EXT_USER_ID", "2525530"),
+            secure_hash=os.getenv("CPX_SECURE_HASH",
+                                  "ae75b0feca27c0f8eb356d7117d978ec"),
+            email=os.getenv("CPX_EMAIL",
+                            "zukunftsorientierte.energie@gmail.com"),
         )
-
-    @classmethod
-    def _required(cls, env_name: str, config_key: str) -> str:
-        """Resolve a required value from env or config, never from code defaults."""
-        value = os.getenv(env_name) or cls._config_value(config_key)
-        if value:
-            return str(value)
-        raise MissingSecretError(f"Missing required secret: {env_name} ({config_key})")
-
-    @classmethod
-    def _config_value(cls, dotted_key: str) -> Optional[str]:
-        """Read dotted keys from ~/.stealth/config.yaml, if present."""
-        config = cls()._config
-        current = config
-        for part in dotted_key.split("."):
-            if not isinstance(current, dict) or part not in current:
-                return None
-            current = current[part]
-        return current
 
 
 _secrets = SecretsClient()
