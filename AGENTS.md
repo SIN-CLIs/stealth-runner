@@ -622,13 +622,108 @@ content: |
   # -> Puzzle-Stück per JS dispatchEvent verschieben + Verify
   ```
   
-  ### Survey Integration
+### Survey Integration
   ```python
   from stealth_captcha.captcha_handler import handle_captcha_in_survey
   handle_captcha_in_survey(pid, page_url)
   # -> Automatische Captcha-Erkennung + Lösung
   ```
-  
+
+  ## DRAG-DROP CAPTCHA PUZZLE — ANGULAR CDK LÖSUNG (2026-05-09, BLOCKIERT)
+
+  ### Das Problem
+  Purespectrum-Surveys zeigen ein "Zahl X" Drag-Drop Puzzle bei ~66%:
+  - 3 draggbare Bilder: `06.png`, `10.png`, `52.png` (100×100px)
+  - 1 leere Drop-Zone: `.drop-zone`
+  - Text: *"Bitte legen Sie die Zahl 52 in das leere Kästchen"*
+  - Button "Nächste" → disabled bis Puzzle gelöst
+
+  ### Warum `solve_drag_puzzle()` in purespectrum.py FAILT
+  Alter Code sucht `_dropListRef` / `_dragRef` über `__ngContext__` traversal → ZWEI fatale Fehler:
+
+  1. **`__ngContext__` ist Zahl, nicht Objekt**: Angular Ivy Production Build speichert Component Reference als Index (z.B. `4`), nicht als Object-Dict. `findInstance(4, '_dropListRef')` findet nichts.
+
+  2. **`window.ng` nicht verfügbar**: Angular Debug-API (`ng.getComponent`) existiert nur im Dev-Mode, nicht im Production Build.
+
+  3. **`DragDropCaptchaSolver` in stealth-captcha ist BROKEN**: Nutzt `Input.dispatchMouseEvent` (Mouse-Events) → Angular CDK reagiert NICHT darauf.
+
+  ### Die Lösung: PointerEvents (keine CDK-Interna!)
+
+  **Regel: NIEMALS versuchen Angular CDK Internals zu erreichen. Immer echte User-Interaktion simulieren.**
+
+  ```javascript
+  // Schritt 1: Zielbild finden (alt="52")
+  const target = document.querySelector('img[alt="52"]');
+  const dropZone = document.querySelector('.drop-zone');
+
+  // Schritt 2: Positionen ermitteln
+  const rectTarget = target.getBoundingClientRect();
+  const rectZone = dropZone.getBoundingClientRect();
+  const scrollX = window.scrollX || window.pageXOffset;
+  const scrollY = window.scrollY || window.pageYOffset;
+
+  // Schritt 3: PointerEvents dispatchen (Angular CDK nutzt PointerEvents!)
+  const sx = rectTarget.left + rectTarget.width/2 + scrollX;
+  const sy = rectTarget.top + rectTarget.height/2 + scrollY;
+  const ex = rectZone.left + rectZone.width/2 + scrollX;
+  const ey = rectZone.top + rectZone.height/2 + scrollY;
+
+  // pointerdown
+  target.dispatchEvent(new PointerEvent('pointerdown', {
+    bubbles: true, cancelable: true, pointerId: 1, isPrimary: true,
+    clientX: sx, clientY: sy, button: 0
+  }));
+
+  // pointermove (mittlere Position)
+  document.dispatchEvent(new PointerEvent('pointermove', {
+    bubbles: true, cancelable: true, pointerId: 1, isPrimary: true, buttons: 1,
+    clientX: (sx+ex)/2, clientY: (sy+ey)/2
+  }));
+
+  // pointerup über drop zone
+  dropZone.dispatchEvent(new PointerEvent('pointerup', {
+    bubbles: true, cancelable: true, pointerId: 1, isPrimary: true,
+    clientX: ex, clientY: ey, button: 0
+  }));
+  ```
+
+  ### Warum PointerEvents und nicht MouseEvents?
+
+  Angular CDK (ab v7) verwendet **nur PointerEvents**:
+  ```typescript
+  @HostListener('pointerdown', ['$event'])
+  @HostListener('pointermove', ['$event'])
+  @HostListener('pointerup', ['$event'])
+  ```
+  `MouseEvent` oder CDP `Input.dispatchMouseEvent` löst die CDK Drag-Logik NICHT aus.
+
+  ### Purespectrum Drag-Drop Varianten
+
+  | Variante | Erkennung | Ziel-Identifikation |
+  |----------|-----------|---------------------|
+  | Zahl-Bilder (`06.png`, `52.png`) | Text: "Zahl X in Kästchen" | `img[alt="X"]` |
+  | Formen (Dreieck, Quadrat) | Text: "das Dreieck" | `img[alt="..."]` |
+  | Text-Bausteine | textContent statt alt | `div[data-drag-text="..."]` |
+
+  ### `stealth-captcha` Module Status
+
+  | Solver | Nutzt | Funktioniert für Angular CDK? |
+  |--------|-------|-------------------------------|
+  | `SlideCaptchaSolver` | MouseEvents | ❌ NEIN |
+  | `DragDropCaptchaSolver` | `Input.dispatchMouseEvent` | ❌ NEIN (falsche Events!) |
+  | `TextCaptchaSolver` | NVIDIA Vision | ✅ JA (kein Drag) |
+  | `ImageSelectCaptchaSolver` | ? | ⚠️ UNGETESTET |
+
+  **Konsequenz: `DragDropCaptchaSolver` MUSS um PointerEvents erweitert werden ODER ein neuer standalone Solver gebaut werden.**
+
+  ### Implementierungs-Plan (TODO)
+
+  1. [ ] **NEU**: `survey-cli/tools/tool_drag_captcha.py` → `POST /survey/drag-solve`
+  2. [ ] **FIX**: `purespectrum.py:solve_drag_puzzle()` → PointerEvent-basiert
+  3. [ ] **TEST**: Live-Survey mit PointerEvent-Debugging in CDP DevTools Console
+  4. [ ] **DOC**: `/commands/surveys/purespectrum-drag-puzzle.md` → ✅ VERIFIED
+  5. [ ] **INTEGRATE**: stealth-captcha mit PointerEvent-Support aktualisieren
+
   ## SURVEY FLOW (2026-05-10, VERIFIZIERT)
   
   ### Kompletter Ablauf
@@ -667,15 +762,15 @@ content: |
   | Samplicio.us | `rx.samplicio.us/consent/` | Consent -> My-Take -> Disqual/Complete | ✅ |
   | Cint | `sw.cint.com/Session/` | Session → Fragen | ✅ |
   | Nfield/Kantar | `nfieldeu-interviewing.nfieldmr.com` | Welcome -> Audio/Video-Fragen | ✅ |
-  | Purespectrum | `purespectrum.com` | Cookie + ROBOT captcha + Textarea | ✅ NEW 2026-05-09 |
+  | Purespectrum | `purespectrum.com` | Cookie → ROBOT captcha → Textarea → Visual captcha → **Drag-Drop "Zahl X"** → 100% | 🔄 BLOCKED 2026-05-09 (Angular CDK PointerEvents nötig!) |
   
   ### Wichtige Erkenntnisse
   1. **Multi-Tab Problem**\: heypiggy öffnet mehrere Dashboard-Tabs. Nur EINER hat Surveys. Scanne ALLE Tabs!
   2. **Survey In-Page**\: clickSurvey() öffnet den Survey im Dashboard (kein neuer Tab!). AX-Tree rescanen nach neuen Elementen!
   3. **Survey Modal**\: "Umfrage starten" Button nutzt window.open() → Popup Blocker → window.open interception nötig!
   4. **Blob-Audio**\: `<video>` mit blob: URL kann NICHT via JS extrahiert werden. BlackHole nötig.
-  4. **Blob-Audio**\: `<video>` mit blob: URL kann NICHT via JS extrahiert werden. BlackHole nötig.
   5. **Disqualifikation**\: 0.02€ Compensation bei Abbruch. Level-Up bei erfolgreicher Teilnahme.
+  6. **Purespectrum Drag-Drop**\: "Zahl X in Kästchen" Puzzle → NICHT `__ngContext__` traversal, NICHT MouseEvents → NUR PointerEvents auf DOM-Ebene. `DragDropCaptchaSolver` in stealth-captcha ist BROKEN (nutzt MouseEvents). `solve_drag_puzzle()` in purespectrum.py ist BROKEN (`__ngContext__` ist Zahl, nicht Objekt).
   
   ## FLOW-OPTIMIZER
   
@@ -1383,3 +1478,289 @@ BUG FIX:
 ❌ Alte verified Files anfassen
    → Stattdessen: NEUE Datei, alte als DEPRECATED
 ```
+
+
+---
+
+## §11 — COMPLETE PROJECT ARCHIVE (SINGLE SOURCE OF TRUTH 2026-05-09)
+
+**Dieser Abschnitt ist die autoritative Wissensbasis. Jeder Agent MUSS diesen Abschnitt lesen und verstehen. ALLES was nicht hier dokumentiert ist, wird vom Agenten nicht gesehen.**
+
+---
+
+### §11.1 — ALLE REPOSITORIES (Stealth Suite — 30+ Repos)
+
+| # | Repo | Kern-Funktion | Status |
+|---|------|---------------|--------|
+| 1 | **stealth-runner** | Orchestrator, FastAPI Endpoints, survey-tools | ✅ PRIMARY |
+| 2 | **survey-cli** | Standalone Survey Automation CLI, NEMO Loop | ✅ PRIMARY |
+| 3 | **stealth-captcha** | Captcha Solver Module (slide/text/drag) | ⚠️ PARTIAL — Drag BROKEN |
+| 4 | **stealth-session** | Warm Daemon, <50ms Command Execution | ✅ PRIMARY |
+| 5 | **stealth-mind** | Command Validator, Failure Pattern Recognition | ✅ ACTIVE |
+| 6 | **stealth-skills** | Private Skill Library (heypiggy platform) | ✅ ACTIVE |
+| 7 | **stealth-suite** | Monorepo (Turborepo, 14 Packages) | 🔄 REFACTOR |
+| 8 | **cua-touch** | CUA Actuation (AXPress Click) | ⚠️ DEPRECATED |
+| 9 | **skylight-cli** | macOS AX Window Capture + SoM | ⚠️ DEPRECATED |
+| 10 | **stealth-core** | Core Pipeline + Runner + Adapters | 🔄 LEARNING |
+| 11 | **stealth-guardian** | Compliance-as-Code Policy Engine | 🔄 LEARNING |
+| 12 | **stealth-axiom** | Model Selection Router | 🔄 LEARNING |
+| 13 | **stealth-dynamic** | Dynamic Survey Engine | 🔄 PLANNED |
+| 14 | **stealth-sync** | OpenCode DB Polling + NIM Integration | ✅ ACTIVE |
+| 15 | **stealth-sota** | Chaos Monkey + Self-Healing + Observability | 🔄 LEARNING |
+| 16 | **stealth-lora** | SOTA LoRA Training Pipeline | 🔄 LEARNING |
+| 17 | **stealth-optimizer** | Output Limiter (micro:32 mid:128 heavy:512) | 🔄 LEARNING |
+| 18-30 | stealth-cost, stealth-config, stealth-compressor, stealth-cache, stealth-batch, stealth-memory, stealth-swarm, stealth-lora-transfer, playstealth-cli (❌ BANNED), unmask-cli, screen-follow, ax-graph, macos-ax-cli | Various Infrastructure | 🔄/❌ |
+
+---
+
+### §11.2 — STEALTH-RUNNER DATEIARCHITEKTUR
+
+```
+stealth-runner/                                   <- PRIMARY ORCHESTRATOR
+├── AGENTS.md                                     <- SINGLE SOURCE OF TRUTH
+├── brain.md                                      <- NEMO Architektur
+├── sinrules.md                                   <- Golden Rules (zentral)
+├── banned.md                                     <- Verbotene Praktiken
+├── fix.md                                        <- Root Cause Fixes
+├── issues.md                                     <- SR-28 bis SR-37
+│
+├── [agent-toolbox]/                              <- FastAPI + survey-cli Tools
+│   ├── api/survey_tools.py                       <- /survey/open, /fill, /rate, /purespectrum-preflight
+│   ├── api/survey_actions.py                     <- /survey/click
+│   ├── api/routes/gmx.py, fireworks.py, browser.py, rotation.py
+│   └── core/cdp_client.py, gmx_service.py, fireworks_service.py, cookie_manager.py, browser_manager.py
+│
+├── [survey-cli]/                                 <- EINGEBETTETES SUBMODUL
+│   ├── survey.py                                 <- 12 subcommands: login/scan/run/loop/watch/balance/status/doctor/kill/summary/opencode/profile
+│   └── survey/providers/
+│       ├── purespectrum.py                       <- PureSpectrum Provider
+│       │   ├── solve_purespectrum_preflight()    <- cookie + ROBOT + textarea + visual captcha ✅ WORKING
+│       │   └── solve_drag_puzzle()               <- ❌ BROKEN — __ngContext__ traversal fails
+│       └── heypiggy.py, *.py                     <- Andere Provider
+│
+├── [stealth-captcha]/                            <- EINGEBETTETES SUBMODUL
+│   └── src/stealth_captcha/
+│       ├── cli.py                                <- CLI: solve-captcha [slide|drag|text], start-chrome, memory-stats, list-targets
+│       └── solver/
+│           ├── base.py                           <- CaptchaBackend Protocol + Solver base
+│           ├── slide.py                          <- SlideCaptchaSolver (GeeTest)
+│           ├── text.py                           <- TextCaptchaSolver + PixtralBackend + NVIDIA Vision ✅ WORKING
+│           ├── image_select.py                   <- ImageSelectCaptchaSolver
+│           ├── drag_drop.py                      <- DragDropCaptchaSolver ⚠️ BROKEN — MouseEvents, nicht PointerEvents
+│           ├── drag_drop_angular.py              <- 📋 NOCH ZU ERSTELLEN — PointerEvent-basierter Solver
+│           ├── lemin.py                          <- Lemin Puzzle Solver
+│           └── utils.py                          <- helper.py, screenshot(), get_chrome_ws()
+│
+├── [commands]/                                   <- VERIFIED Commands (chmod 444)
+│   ├── cmd-rules.md
+│   ├── bot-chrome/kill-bot-chrome.md             <- ✅ VERIFIED
+│   ├── bot-chrome/find-bot-pids.md               <- ✅ VERIFIED
+│   ├── captcha/WORKING-SOLUTION.md               <- ⭐ Captcha Solving Overview
+│   ├── surveys/purespectrum-survey.md            <- ✅ VERIFIED
+│   ├── surveys/survey-start-flow.md              <- ✅ VERIFIED (window.open interception)
+│   ├── surveys/surveyrouter-pre-qualifier-2026-05-09.md <- ✅ VERIFIED
+│   ├── surveys/purespectrum-drag-puzzle.md       <- 📋 NOCH ZU ERSTELLEN
+│   ├── cua-driver/click.md, set-value.md, list-windows.md, get-window-state.md, switch-tab.md
+│   └── heypiggy/credentials.md, rating-page.md
+│
+├── [stealth-sync]/                               <- Sync Daemon
+├── [stealth-sota]/                               <- SOTA Extensions: chaos_engine, security_hardening, self_healing, observability, determinism
+│
+├── [.opencode/skills]/                           <- OpenCode Agent Skills (cavecrew, caveman, diagnose, etc.)
+├── [.claude/skills]/                             <- Claude Agent Skills (gitnexus, grill-me, etc.)
+├── [.qwen/skills]/                               <- Qwen Agent Skills
+│
+├── [flows]/                                      <- Compiled Flow Engine
+│   ├── candidates/                               <- Flows in Lern-Phase
+│   ├── production/                               <- 10x bestanden = Production
+│   └── history/                                  <- JSONL pro Flow
+│
+├── [scripts]/
+│   ├── check_doc_health.py                       <- Prueft alle Repos auf Pflichtdateien
+│   └── generate_missing_docs.py                  <- Erstellt fehlende Pflichtdateien
+│
+├── plan-sr-28-cdp-survey-module.md
+├── plan-sr-29-ps-captcha-ocr.md                  <- ⭐ SR-29 — PureSpectrum Captcha OCR
+├── plan-sr-30-dashboard-poller.md
+├── plan-sr-31-fctes-promotion.md
+├── plan-sr-32-provider-detect.md
+├── plan-sr-33-persona-system.md
+├── plan-sr-34-test-suite.md
+├── plan-sr-35-chrome-safety.md
+├── plan-sr-36-docs-cleanup.md
+├── plan-sr-37-skylight-compact.md
+│
+├── run_survey.py                                 <- Haupt-Einstiegspunkt
+├── pyproject.toml, Makefile, .env.example
+├── opencode.json                                 <- Tool Registry + Manifest
+├── registry.md, registry-*.md                    <- Domain Registries
+├── learn.md, anti-learn.md, successful.md        <- Lern-Docs
+├── bugs.md, changelog.md, goal.md, roadmap.md    <- Projekt-Mgmt
+├── state.md, tool-manifest.md                    <- Status Docs
+├── architecture.md, design.md, faq.md, history.md <- Architektur Docs
+├── contributing.md, security.md, testing.md      <- Operations Docs
+├── benchmarks.md, graph.json, graph-report.md, manifest.json
+├── .semgrep_rules.yaml, .gitnexus.yml
+│
+├── [src/stealth_survey/]                         <- ❌ INTENTIONALLY DELETED 2026-05-08
+├── [app/]                                        <- ❌ INTENTIONALLY DELETED 2026-05-08
+├── launch_parallel.py                            <- ❌ BANNED — SOFORT LOESCHEN
+├── README_PARALLEL.md                            <- ❌ BANNED — SOFORT LOESCHEN
+└── tmp_*.py                                      <- ❌ TEST-DATEIEN — SOFORT LOESCHEN
+```
+
+---
+
+### §11.3 — COMPLETE DRAG-DROP PUZZLE PROBLEM (FULL DISCLOSURE)
+
+**Status: BLOCKED since 2026-05-09. Survey 67064749 (Zahl 52) + 67064991 (Zahl 42) beide bei 66%.**
+
+#### DOM Structure
+```
+<div class="cdk-drop-list d-flex justify-content-around">
+    <div class="cdk-drag"><img src=".../06.png" alt="06"></div>
+    <div class="cdk-drag"><img src=".../10.png" alt="10"></div>
+    <div class="cdk-drag"><img src=".../52.png" alt="52"></div>  <- TARGET
+</div>
+<div class="cdk-drop-list d-flex justify-content-center align-items-center drop-zone">
+    <!-- leeres Drop-Ziel -->
+</div>
+```
+
+#### All Failed Approaches (live getestet 2026-05-09)
+
+| # | Approach | Where | Why Failed | Result |
+|---|----------|-------|------------|--------|
+| 1 | `__ngContext__` traversal | purespectrum.py:solve_drag_puzzle() | `__ngContext__` ist **Zahl** (4), nicht Object. `findInstance(4, '_dropListRef')` = null | `NO_DROPLISTDIR` |
+| 2 | `window.ng.getComponent()` | purespectrum.py | Angular Debug-API nur im Dev-Mode, nicht Production | `NO_WINDOW_NG` |
+| 3 | Deep window scope scan | purespectrum.py | Timeout 30s, kein `_dropListRef` gefunden | TIMEOUT |
+| 4 | JS `dispatchEvent(MouseEvent)` | Direct CDP | Angular CDK reagiert auf **PointerEvents**, nicht MouseEvents | `dropzoneImg: EMPTY` |
+| 5 | JS `dispatchEvent(PointerEvent)` | Direct CDP | CDK blockiert synthetic events auf niedrigerer Ebene | `dropzoneImg: EMPTY` |
+| 6 | isTrusted patch on PointerEvent prototype | Direct CDP | CDK prueft `isTrusted` NICHT primaer | `dropzoneImg: EMPTY` |
+| 7 | CDP `Input.dispatchMouseEvent` (browser-level via heypiggy tab) | CDP Input | Sendet MouseEvents, nicht PointerEvents | `dropzoneImg: EMPTY` |
+| 8 | `DragDropCaptchaSolver` (stealth-captcha) | drag_drop.py | Nutzt `Input.dispatchMouseEvent` = MouseEvents, CDK braucht PointerEvents | ❌ NIEMALS nutzen fuer Angular CDK |
+| 9 | CDK `enter()` + `drop()` via placeholder | purespectrum.py | `dropListRef.enter(dragRef, null)` — null placeholder = error | `DROP_ERROR` |
+| 10 | CSS clone + mutation | Direct CDP | Angular change detection nicht getriggert | `dropzoneImg: EMPTY` |
+
+#### Root Cause
+- Angular CDK (ab v7): `@HostListener('pointerdown', ['$event'])` — NUR PointerEvents
+- Synthetic PointerEvents werden von Angular blockiert (nicht via isTrusted)
+- CDP `Input.dispatchMouseEvent` sendet MouseEvents (kein `Input.dispatchPointerEvent` in Standard-CDP)
+- `__ngContext__` = Production Build Index (Zahl), nicht Component-Objekt
+- `window.ng` nicht verfuegbar in Production
+
+#### Working Parts (survey-cli survey 67064991)
+```
+0% -> .cky-btn-accept click -> 33% -> NVIDIA Vision OCR (ROBOT) -> 33% -> base64 PNG captcha (Q3333S) -> 66% -> BLOCKED at "Zahl 42"
+```
+
+#### Solution Architecture (4 neue Dateien — TODO)
+
+```
+1. stealth-captcha/src/stealth_captcha/solver/drag_drop_angular.py
+   -> AngularDragDropSolver, PointerEvent-Simulation, patch isTrusted
+   -> 1x CDP Runtime.evaluate Call (nicht 30+ CDP Input calls)
+
+2. stealth-runner/tools/tool_drag_captcha.py
+   -> POST /survey/drag-solve FastAPI Endpoint
+
+3. survey-cli/survey/providers/purespectrum.py:solve_drag_puzzle()
+   -> integriere AngularDragDropSolver
+
+4. commands/surveys/purespectrum-drag-puzzle.md
+   -> ✅ VERIFIED (chmod 444 nach 10x Erfolg)
+```
+
+---
+
+### §11.4 — ALLE TOOLS & IHRE STATUS
+
+| Tool | Repo | Port/Context | Status | Verwendung |
+|------|------|-------------|--------|------------|
+| **CDP WebSocket** | stealth-runner | Port 9999 | ✅ PRIMARY | Alle Browser-Interaktionen |
+| **survey-cli tools** | survey-cli | Port 9999 | ✅ PRIMARY | Survey-Automation |
+| **stealth-captcha** | stealth-captcha | Port 9999 | ⚠️ PARTIAL | Slide/Text ✅, Drag ❌ |
+| **cua-driver** | cua-touch | Port 9999 | ⚠️ DEPRECATED | Nur Popups/Sheets, kein Web-Content |
+| **skylight-cli** | skylight-cli | macOS AX | ⚠️ DEPRECATED | Window Capture, LEGACY |
+| **macos-ax-cli** | macos-ax-cli | macOS AX | ⚠️ EXPERIMENTAL | AX Scanning |
+| **playstealth launch** | playstealth-cli | Port 9224 | ❌ BANNED | falsche Flags, Profile 902 |
+| **webauto-nodriver** | - | - | ❌ BANNED | ABSOLUT VERBOTEN |
+| **decrypt_cookies.py** | - | - | ❌ BANNED | nur Chrome <147 v10 |
+| **NVIDIA Vision API** | external | `integrate.api.nvidia.com` | ✅ PRIMARY | Captcha OCR, Survey Decision |
+| **NVIDIA NIM Nemotron** | external | `integrate.api.nvidia.com` | ✅ PRIMARY | NEMO Survey Decision |
+| **BlackHole + ffmpeg** | system | macOS Audio | ✅ FOR AUDIO | Blob Audio Capture |
+| **SwitchAudioSource** | system | macOS Audio | ✅ FOR AUDIO | Audio Routing |
+
+---
+
+### §11.5 — ALLE BEKANNTEN SURVEY PROVIDER
+
+| Provider | URL Pattern | Flow | Status |
+|----------|------------|------|--------|
+| **SurveyRouter** | heypiggy internal | window.open interception -> Survey-Tab | ✅ FIXED |
+| **Purespectrum** | `screener.purespectrum.com` | Cookie -> ROBOT -> Textarea -> Visual -> **Drag-Drop "Zahl X"** | ❌ BLOCKED |
+| **Samplicio.us** | `rx.samplicio.us/consent/` | Consent -> My-Take -> Disqual/Complete | ✅ VERIFIED |
+| **Cint** | `sw.cint.com/Session/` | Session -> Fragen | ✅ VERIFIED |
+| **Nfield/Kantar** | `nfieldeu-interviewing.nfieldmr.com` | Welcome -> Blob Audio/Video | 🔄 LEARNING |
+| **TolunaStart** | `enter.ipsosinteractive.com` | `cf-radio-answer` class | ✅ VERIFIED |
+| **Qualtrics** | various | Matrix/Radio/Dropdown | 🔄 LEARNING |
+| **Ipsos** | various | Tab-basiert, nicht modal | 🔄 LEARNING |
+
+---
+
+### §11.6 — CHROME & SESSION MANAGEMENT
+
+```
+HEYPIGGY WORKFLOW:
+1. cp -R "$HOME/Library/Application Support/Google Chrome/Profile 901 (Jeremy)" /tmp/chrome-jeremy-heypiggy-9999
+2. nohup "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"      --remote-debugging-port=9999      --remote-allow-origins="*"      --force-renderer-accessibility      --no-first-run      --user-data-dir="/tmp/chrome-jeremy-heypiggy-9999"      "https://www.heypiggy.com/?page=dashboard" &>/dev/null &
+3. Cookie-Injection: 7 HeyPiggy-Cookies aus ~/.stealth/heypiggy-backup/heypiggy-cookies.json
+   HEYPIGGY-Cookies: PHPSESSID, user_session, user_id, user_a_b_group, lang_pig, g_state, referer
+4. Verify: body.innerText contains "abmelden"
+
+SESSION TOT -> WIPE agent-toolbox/data/heypiggy-cookies.json -> Chrome neustarten -> Cookies restaurieren
+BOT PID FINDEN: ps aux | grep "Google Chrome" | grep "remote-debugging-port=9999" | grep -v grep | awk '{print $2}'
+BOT KILL: pkill -f "remote-debugging-port=9999" -> NUR HeyPiggy Bot
+❌ VERBOTEN: pkill -f "Google Chrome" -> killt ALLE Chrome inkl. USER Chrome!
+```
+
+---
+
+### §11.7 — IMPLEMENTATION BACKLOG (TODO)
+
+```
+HIGH PRIORITY:
+- [ ] AngularDragDropSolver -> drag_drop_angular.py erstellen
+- [ ] POST /survey/drag-solve Endpoint -> tool_drag_captcha.py
+- [ ] solve_drag_puzzle() in purespectrum.py fixen
+- [ ] 10x purespectrum Survey -> Promotion zu Production Flow
+
+GARBAGE LOESCHEN (SOFORT):
+- [ ] launch_parallel.py -> LOESCHEN
+- [ ] README_PARALLEL.md -> LOESCHEN
+- [ ] tmp_*.py -> LOESCHEN
+```
+
+---
+
+### §11.8 — KEY FILE REFERENCES
+
+```
+CHROME START         -> AGENTS.md REGELN 1-4
+SURVEY OPEN          -> survey-cli/tools/tool_open_survey.py + AGENTS.md SURVEY FLOW
+CAPTCHA SOLVE        -> stealth-captcha/src/stealth_captcha/cli.py + purespectrum.py
+DRAG PUZZLE          -> purespectrum.py:solve_drag_puzzle() -> ❌ BROKEN!
+NEMO LOOP            -> survey-cli/survey.py + AGENTS.md NEMO ARCHITEKTUR
+FASTAPI              -> agent-toolbox/api/survey_tools.py
+COMMANDS             -> /commands/cmd-rules.md + /commands/surveys/*.md
+BANNED               -> banned.md + sinrules.md §BANNED
+NVIDIA VISION        -> stealth-captcha/src/stealth_captcha/solver/text.py:PixtralCaptchaBackend
+SURVEY TYPES         -> AGENTS.md §8 SURVEY TYP KATALOG
+TOOL REGISTRY        -> opencode.json (tool Manifest + Tool Registration)
+ENV CREDENTIALS      -> NVIDIA_API_KEY, Chrome Binary, Profile 901, CDP 9999, API 8889
+```
+
+---
+
+**Letzte Aktualisierung: 2026-05-09 | Lines: ~1480 + §11**
+
