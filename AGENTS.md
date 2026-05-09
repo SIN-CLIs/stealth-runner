@@ -1749,13 +1749,49 @@ BOT KILL: pkill -f "remote-debugging-port=9999" -> NUR HeyPiggy Bot
 ### §11.7 — IMPLEMENTATION BACKLOG (TODO)
 
 ```
-HIGH PRIORITY:
-- [ ] AngularDragDropSolver -> drag_drop_angular.py erstellen
+MASTER PLAN: plans/01-survey-agent-langgraph-fastapi.md
+→ Zwei-Layer-System: FastAPI PRIMARY (Intelligence) + CLI SECONDARY (Robustness)
+→ LangGraph = Engine, SurveyRunner = deprecated
+
+PHASE 1 — MVP (Woche 1):
+- [ ] cmd_run in survey.py → run_survey_loop() statt SurveyRunner
+- [ ] cmd_watch in survey.py → Graph invoken (Background-Task)
+- [ ] Balance-Tracking in graph.py einbauen
+- [ ] POST /survey/run-graph FastAPI Endpoint
+- [ ] Cookie-Injection verify (7 Heypiggy-Cookies, KRITISCH!)
+
+PHASE 2 — Intelligence (Woche 2):
+- [ ] decide_node → NIM Nemotron integrieren (Placeholder → echter API Call)
+- [ ] Auto-Rating integrieren (survey_rater.py)
+- [ ] Auto-Doc JSONL logging in nodes
+- [ ] stealth-memory integration (learn.md/anti-learn.md)
+
+PHASE 3 — Production FastAPI (Woche 3):
+- [ ] Watch-Loop als FastAPI Background-Task (24/7)
+- [ ] GET /survey/status (real-time SurveyState)
+- [ ] GET /survey/history (learn.md/anti-learn.md)
+- [ ] n8n trigger bei completion
+- [ ] Systemd Timer als CLI-Backup
+
+PHASE 4 — Promotion (Woche 4+):
+- [ ] run_survey_loop() → create_graph().invoke() (echtes LangGraph)
+- [ ] Graph compiled promotion (nach 10× Erfolg)
+- [ ] runner.py als deprecated markieren (chmod 444)
+- [ ] survey.py refactoren als thin wrapper
+
+KRITISCHER BLOCKER (parallel):
+- [ ] AngularDragDropSolver -> drag_drop_angular.py (PureSpectrum 66% stuck)
 - [ ] POST /survey/drag-solve Endpoint -> tool_drag_captcha.py
-- [ ] solve_drag_puzzle() in purespectrum.py fixen
-- [ ] 10x purespectrum Survey -> Promotion zu Production Flow
+- [ ] solve_drag_puzzle() in purespectrum.py fixen (PointerEvent-Lösung)
+- [ ] 10x purespectrum Survey → Promotion zu Production Flow
 
 GARBAGE LOESCHEN (SOFORT):
+- [x] plan.md (root) -> GELOESCHT (veraltet)
+- [x] survey-cli/plan.md -> GELOESCHT (veraltet)
+- [x] plans/01-canonical-engine.md -> GELOESCHT (SurveyRunner statt LangGraph)
+- [x] plan-sr-30-dashboard-poller.md -> GELOESCHT (DashboardPoller statt Graph)
+- [x] plan-sr-31-fctes-promotion.md -> GELOESCHT (app.core.* Referenzen)
+- [x] plan-sr-28-cdp-survey-module.md -> GELOESCHT (src/stealth_survey/ gelöscht)
 - [ ] launch_parallel.py -> LOESCHEN
 - [ ] README_PARALLEL.md -> LOESCHEN
 - [ ] tmp_*.py -> LOESCHEN
@@ -1768,6 +1804,7 @@ GARBAGE LOESCHEN (SOFORT):
 ```
 CHROME START         -> AGENTS.md REGELN 1-4
 SURVEY OPEN          -> survey-cli/tools/tool_open_survey.py + AGENTS.md SURVEY FLOW
+LANGGRAPH AGENT      -> survey-cli/survey/graph/ (state.py, nodes.py, graph.py, opencode_tool.py, __init__.py)
 CAPTCHA SOLVE        -> stealth-captcha/src/stealth_captcha/cli.py + purespectrum.py
 DRAG PUZZLE          -> purespectrum.py:solve_drag_puzzle() -> ❌ BROKEN!
 NEMO LOOP            -> survey-cli/survey.py + AGENTS.md NEMO ARCHITEKTUR
@@ -1782,5 +1819,269 @@ ENV CREDENTIALS      -> NVIDIA_API_KEY, Chrome Binary, Profile 901, CDP 9999, AP
 
 ---
 
-**Letzte Aktualisierung: 2026-05-09 | Lines: ~1480 + §11**
+### §12 — LANGGRAPH SURVEY AGENT (2026-05-10, NEW)
+
+**Architektur: survey-cli/survey/graph/ — LangGraph StateGraph für Survey-Orchestration**
+
+```
+survey-cli/survey/graph/
+├── __init__.py          ← PUBLIC API (SurveyState, create_graph, etc.)
+├── state.py             ← SurveyState: zentrales GraphState
+├── nodes.py             ← 8 Graph Nodes (jede ≤30 Zeilen)
+├── graph.py             ← StateGraph Builder + route() Routing-Funktion
+└── opencode_tool.py     ← CLI Delegation bei 3× Failures
+
+5 FILES: state.py (170L) → nodes.py (280L) → graph.py (160L) → opencode_tool.py (150L) → __init__.py (120L) = ~880L total
+```
+
+#### §12.1 — File-Übersicht
+
+| File | Zeilen | Zweck |
+|------|--------|-------|
+| `state.py` | 170 | SurveyState dataclass — alle Session-Daten |
+| `nodes.py` | 280 | 8 Graph Nodes — jede ≤30 Zeilen |
+| `graph.py` | 160 | StateGraph Builder + route() Routing |
+| `opencode_tool.py` | 150 | opencode CLI Delegation |
+| `__init__.py` | 120 | Public API + SurveyGraphError |
+
+#### §12.2 — SurveyState (state.py)
+
+**Zentrales State-Objekt — ALLE Session-Daten in EINER dataclass.**
+
+```python
+@dataclass
+class SurveyState:
+    # Input (set at creation)
+    survey_id: str = ""           # HeyPiggy Survey-ID
+    provider: str = ""            # Provider Name (purespectrum, etc.)
+    cdp_port: int = 9999          # HeyPiggy Chrome Port
+    dashboard_ws: Optional[str] = None  # Dashboard Tab WebSocket
+
+    # Computed (set during execution)
+    tab_ws: Optional[str] = None  # Survey Tab WebSocket
+    cookies_injected: bool = False  # KRITISCH: heypiggy-Cookies injiziert?
+    iteration: int = 0            # NEMO-Loop Zähler (0-indexed)
+    max_iterations: int = 15      # Safety-Net gegen Endlos-Loop
+    consecutive_failures: int = 0 # 3× → delegate
+    balance_before: float = 0.0   # Guthaben VOR Session
+    balance_after: float = 0.0    # Guthaben NACH Session
+    status: str = "initialized"   # Workflow-Status
+    errors: List[Dict] = []       # Fehler-Historie
+    snapshot_refs: Dict = {}      # @eN Element-Referenzen
+    nim_actions: List[Dict] = []  # NIM-Entscheidungen
+    batch_result: Optional[Dict] = None  # Batch Execution Result
+    completion_detected: bool = False  # Survey fertig?
+    screen_out: bool = False      # Disqualifiziert?
+    delegation_reason: str = ""   # Warum delegiert?
+```
+
+**Status-Flow:**
+```
+initialized → chrome_ready → tab_open → cookies_injected → running
+                                                              ↓
+                          completed ← ← ← ← ← ← ← ← ← ← ← ← ┘
+                          screen_out ← ← ← ← ← ← ← ← ← ← ← ┘
+                          error ← ← ← ← ← ← ← ← ← ← ← ← ← ┘
+                          delegated ← ← ← ← ← ← ← ← ← ← ← ┘
+```
+
+**Key Properties:**
+- `is_running`: True wenn nicht in terminal state
+- `should_delegate`: True wenn consecutive_failures >= 3
+- `balance_earned`: balance_after - balance_before
+
+#### §12.3 — 8 Graph Nodes (nodes.py)
+
+**Jede Node ≤30 Zeilen, wrapped existierende Funktion, NUR delegate + state update.**
+
+| Node | Wrapped | Zweck |
+|------|---------|-------|
+| `ensure_chrome` | ChromeLauncher.launch_and_verify() | Chrome starten/verifizieren |
+| `open_survey` | SurveyOpener.open() | Survey-Tab öffnen |
+| `inject_cookies` | CDP Network.setCookies | 7 Heypiggy-Cookies injizieren |
+| `snapshot_node` | CDP Runtime.evaluate (inline JS) | Compact DOM-Snapshot |
+| `decide_node` | NIM SurveyClient.decide() | NIM Nemotron Decision |
+| `execute_node` | BatchExecutor.execute() | Batch-Ausführung via CDP |
+| `detect_completion` | CompletionDetector.detect_ws() | Completion/Screen-Out detectieren |
+| `human_delegate` | opencode_tool.delegate_task() | An opencode CLI eskalieren |
+
+**Cookie-Injection (inject_cookies Node) — ROOT CAUSE FIX (2026-05-09):**
+```
+Problem: Survey-Tabs via Target.createTarget haben KEINE Session-Cookies
+         → CPX redirectiert zurück zum Dashboard → €0 verdient
+Fix:     7 Heypiggy-Cookies nach Tab-Erstellung injizieren:
+         ~/.stealth/heypiggy-backup/heypiggy-cookies.json
+         → Network.setCookies (Batch in einem Call)
+         → cookies_injected=True
+7 Heypiggy-Cookies:
+  - PHPSESSID      → www.heypiggy.com (KRITISCH!)
+  - user_session   → www.heypiggy.com (KRITISCH!)
+  - user_id        → www.heypiggy.com
+  - user_a_b_group → www.heypiggy.com
+  - lang_pig       → www.heypiggy.com
+  - g_state        → www.heypiggy.com
+  - referer        → www.heypiggy.com
+```
+
+#### §12.4 — StateGraph Builder (graph.py)
+
+**Graph-Struktur mit Conditional Edges:**
+
+```
+START
+  │
+  ▼
+ensure_chrome ──→ [error] ──────────────────────────── END
+  │
+  ▼
+open_survey ────→ [screen_out] ────────────────────── END
+  │              └──→ [error] ─────────────────────── END
+  ▼
+inject_cookies ──→ [error] ─────────────────────────── END
+  │
+  ▼
+snapshot ───────────────────────────────────────────┐
+  │                                                │
+  ▼                                                │
+decide ─────────────────────────────────────────────┤
+  │                                                │
+  ▼                                                │
+execute ────────────────────────────────────────────┤
+  │                                                │
+  ▼                                                │
+detect_completion ──→ [completed/screen_out] ─────── END
+  │
+  ▼
+ROUTE (conditional):
+  ├─ should_delegate (3× failures) ──→ human_delegate ──→ END
+  ├─ iteration >= max_iterations ────→ END
+  └─ else ────────────────────────────→ snapshot (continue)
+```
+
+**Routing-Priority (route() Funktion):**
+```
+1. is_terminal (completed/error/delegated/screen_out) → END
+2. should_delegate (consecutive_failures >= 3) → human_delegate
+3. iteration >= max_iterations → END
+4. else → "snapshot" (continue NEMO Loop)
+```
+
+**WARUM diese Reihenfolge?**
+- Terminal zuerst → kein Loop nötig wenn fertig
+- Delegate vor Iteration → echte Probleme zuerst eskalieren
+- Iteration-Limit als Safety-Net → verhindert Endlos-Loop
+
+#### §12.5 — opencode CLI Delegation (opencode_tool.py)
+
+**Trigger: consecutive_failures >= 3**
+
+```bash
+opencode run --format json --dir /Users/jeremy/dev/stealth-runner \
+  --prompt "Fix survey 67064749 (provider=purespectrum):
+   Root cause: Angular CDK Drag-Drop Puzzle bei 66% Fortschritt.
+   Tab: ws://127.0.0.1:9999/devtools/page/...
+   Iteration: 4 (4× execute versucht, 0× Erfolg)
+   Action: Implementiere PointerEvent-Lösung aus AGENTS.md §11.3
+   Goal: Complete survey and verify balance increased."
+```
+
+**Timeout: 300 Sekunden (5 Minuten)**
+Override via `OPENCODE_TIMEOUT` env var.
+
+**Delegation-Prompt enthält:**
+1. Survey-ID + Provider
+2. Root Cause + reason
+3. Tab-WS URL
+4. Iteration + was versucht wurde
+5. Anweisung was zu tun ist
+6. AGENTS.md Referenzen
+
+#### §12.6 — Öffentliche API
+
+```python
+from survey_cli.survey.graph import (
+    SurveyState,        # State-Objekt
+    create_graph,       # Kompilierter Graph (invoke-able)
+    run_survey_loop,    # Standalone Loop (ohne LangGraph)
+    delegate_task,      # opencode CLI Delegation
+    SurveyGraphError,   # Exception Klasse
+)
+
+# Pattern 1: LangGraph Pipeline (Production)
+graph = create_graph()
+state = SurveyState(survey_id="67064749", provider="purespectrum")
+final = graph.invoke(state)
+print(f"Status: {final.status}, Earned: €{final.balance_earned}")
+
+# Pattern 2: Standalone Loop (Fallback, keine LangGraph nötig)
+state = SurveyState(survey_id="67064749", provider="purespectrum")
+final = run_survey_loop(state)
+print(f"Status: {final.status}")
+
+# Pattern 3: Einzelne Nodes (für Testing)
+from survey_cli.survey.graph.nodes import ensure_chrome
+state = ensure_chrome(SurveyState(cdp_port=9999))
+print(f"Chrome: {state.dashboard_ws}")
+```
+
+**LangGraph Requirement:**
+- `create_graph()` und `build_graph()` brauchen LangGraph
+- `run_survey_loop()` funktioniert als Fallback OHNE LangGraph
+- `pip install langgraph` für Production
+
+#### §12.7 — Integration in FastAPI
+
+```python
+from survey_cli.survey.graph import create_graph, SurveyState
+
+@router.post("/survey/run")
+async def run_survey(req: SurveyRequest):
+    graph = create_graph()
+    state = SurveyState(survey_id=req.survey_id, provider=req.provider)
+    result = await asyncio.to_thread(graph.invoke, state)
+    return {
+        "status": result.status,
+        "earned": result.balance_earned,
+        "errors": result.errors,
+        "delegation": result.delegation_reason,
+    }
+```
+
+#### §12.8 — TESTING
+
+```bash
+# Node-Einzeltests
+cd /Users/jeremy/dev/stealth-runner/survey-cli
+python3 -c "
+from survey.graph import SurveyState, run_survey_loop
+state = SurveyState(survey_id='67064749', provider='purespectrum', cdp_port=9999)
+final = run_survey_loop(state)
+print(f'Status: {final.status}, Errors: {len(final.errors)}')
+"
+
+# Standalone node test
+python3 -c "
+from survey.graph.nodes import ensure_chrome, snapshot_node
+state = ensure_chrome(SurveyState(cdp_port=9999))
+print(f'Dashboard WS: {state.dashboard_ws}')
+"
+```
+
+#### §12.9 — FCTC-ES PROMOTION (TODO: nach 10× Erfolg)
+
+```
+survey-cli/survey/graph/compiled/
+├── survey_graph_v1746800000.py  ← nach 10× Erfolg automatisch generiert
+├── registry.json                ← Tool Registration Source of Truth
+└── __init__.py                  ← frozen=True, chmod 444
+```
+
+**Promotion-Criteria:**
+1. 10× erfolgreich (balance_after > balance_before)
+2. 0× delegated (consecutive_failures < 3 in allen Runs)
+3. Keine errors in state.errors
+
+---
+
+**Letzte Aktualisierung: 2026-05-10 | Lines: ~2060 + §12 | Plan: plans/01-survey-agent-langgraph-fastapi.md**
 
