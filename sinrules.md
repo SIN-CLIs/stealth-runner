@@ -1,6 +1,6 @@
 # sinrules.md — SIN-CLIs Stealth-Quad: Alle Regeln & Architektur
 
-> **Letztes Update**: 2026-05-06 | **Gültig für**: Alle SIN-CLIs Repos
+> **Letztes Update**: 2026-05-09 | **Gültig für**: Alle SIN-CLIs Repos
 >
 > **NEMO AKTIV**: Compact Snapshot + NVIDIA NIM + Batch Execute ist PRIMARY Architektur.
 > - `skylight-cli` = RE-ACTIVATED für `snapshot-compact` + `batch` (nicht click!)
@@ -21,7 +21,7 @@
 | [learn.md](learn.md) | Fusionierte Learnings | ← sinrules.md definiert Muster |
 | [fix.md](fix.md) | Root Cause Fix (Index-Problem) | ← sinrules.md §BANNED |
 | [issues.md](issues.md) | Kritisches Index-Problem | ← sinrules.md §ARCHITEKTUR |
-| [AGENTS.md](AGENTS.md) | NEMO Tool-Befehle | ← sinrules.md §TOOLS |
+| [AGENTS.md](AGENTS.md) | NEMO Tool-Befehle + DAEMON WAY | ← sinrules.md §TOOLS, §DAEMON WAY |
 | [plan.md](plan.md) | NEMO Implementierungsplan | ← sinrules.md §PLAN |
 | [anti-learn.md](anti-learn.md) | Anti-Patterns | ← sinrules.md §BANNED |
 | [successful.md](successful.md) | Erfolgreiche Flows | ← sinrules.md §FLOWS |
@@ -363,7 +363,33 @@ Vergleich:
 | **skylight-cli** snapshot-compact | ✅ ERLAUBT | PRIMARY — Compact Snapshot |
 | **skylight-cli** batch | ✅ ERLAUBT | Batch-Ausführung |
 | **CDP WebSocket** Runtime.evaluate | ✅ ERLAUBT | Fallback wenn skylight nicht verfügbar |
-| **src/stealth_survey/** | ✅ ERLAUBT | NEMO Survey Engine |
+| **src/stealth_survey/** | ❌ DELETED | INTENTIONALLY DELETED 2026-05-08 — NEMO läuft via survey-cli + CDP |
 | **cua-driver** | ⚠️ DEPRECATED | Nur Fallback, NEMO ist PRIMARY |
 | skylight-cli click (index) | ❌ BANNED | Nutze batch stattdessen |
-| webauto-nodriver | ❌ BANNED | Absolut |
+| webauto-nodriver | ❌ BANNED | Absolut
+
+---
+
+## §10 — DAEMON WAY: Lernendes System (2026-05-09)
+
+**DETAIL: Siehe [AGENTS.md §DAEMON WAY](AGENTS.md#-daemon-way--state-of-the-art-architektur-prinzip-2026-05-09)**
+
+```
+DAEMON LOOP:
+SCAN → PROBIEREN → ERFOLG→VERIFIED / FEHLER→DELETE → WIEDERHOLEN
+```
+
+**Kernprinzipien:**
+
+| Prinzip | Regel | Beispiel |
+|---------|-------|---------|
+| **Single Source of Truth** | ALLES in AGENTS.md | Chrome Recipe, Survey Flows, BANNED Patterns |
+| **Learn by Doing** | Versuchen→Scheitern→Löschen→Nächstes | Survey-Typen clustern, provider-spezifische Flows |
+| **Delete Wrong Immediately** | Fehlerhafter Code → SOFORT löschen | `src/stealth_survey/`, `app/`, `launch_parallel.py` |
+| **Once Verified = Read-Only** | ✅ VERIFIED niemals wieder anfassen | `/commands/*.md` chmod 444, `survey-cli/tools/tool_*.py` frozen |
+| **Feed Forever** | Jede Erkenntnis → AGENTS.md | learn.md, anti-learn.md, Survey-Typ-Katalog |
+
+**Warum?**
+- KI hat ADHS: ohne klare Regeln improvisiert sie → Schuldenberg-Müll
+- Token-Kosten sind 100× billiger als Bug-Suche: voller Kontext = funktioniert direkt
+- Verified = 10× getestet: Jede Änderung riskiert Regression |
