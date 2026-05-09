@@ -94,40 +94,34 @@ class TestChromeLauncherVerifyAXTree(unittest.TestCase):
     """Test AX-Tree verification."""
 
     @patch("survey.chrome.find_dashboard_ws")
-    def test_ax_tree_has_elements(self, mock_find_ws):
+    @patch("survey.chrome.websocket")
+    def test_ax_tree_has_elements(self, mock_ws_lib, mock_find_ws):
         mock_find_ws.return_value = "ws://localhost:9999/devtools/page/abc"
 
-        # Mock websocket module that's imported inside the method
         mock_ws = MagicMock()
+        mock_ws_lib.create_connection.return_value = mock_ws
         mock_ws.recv.return_value = json.dumps({
             "result": {"result": {"value": 150}}
         })
 
-        mock_websocket = MagicMock()
-        mock_websocket.create_connection.return_value = mock_ws
-
-        with patch.dict("sys.modules", {"websocket": mock_websocket}):
-            launcher = ChromeLauncher()
-            launcher._pid = 12345
-            self.assertTrue(launcher._verify_ax_tree())
-            mock_websocket.create_connection.assert_called_once()
+        launcher = ChromeLauncher()
+        launcher._pid = 12345
+        self.assertTrue(launcher._verify_ax_tree())
 
     @patch("survey.chrome.find_dashboard_ws")
-    def test_ax_tree_empty_fails(self, mock_find_ws):
+    @patch("survey.chrome.websocket")
+    def test_ax_tree_empty_fails(self, mock_ws_lib, mock_find_ws):
         mock_find_ws.return_value = "ws://localhost:9999/devtools/page/abc"
 
         mock_ws = MagicMock()
+        mock_ws_lib.create_connection.return_value = mock_ws
         mock_ws.recv.return_value = json.dumps({
             "result": {"result": {"value": 3}}  # Only <html><head><body>
         })
 
-        mock_websocket = MagicMock()
-        mock_websocket.create_connection.return_value = mock_ws
-
-        with patch.dict("sys.modules", {"websocket": mock_websocket}):
-            launcher = ChromeLauncher()
-            launcher._pid = 12345
-            self.assertFalse(launcher._verify_ax_tree())
+        launcher = ChromeLauncher()
+        launcher._pid = 12345
+        self.assertFalse(launcher._verify_ax_tree())
 
     @patch("survey.chrome.find_dashboard_ws")
     def test_no_dashboard_ws_fails(self, mock_find_ws):

@@ -12,8 +12,6 @@ import sys
 import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-# Also add project root so cli.modules is importable
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
 
 class TestAutoGoogleLoginWrapper(unittest.TestCase):

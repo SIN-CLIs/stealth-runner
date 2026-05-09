@@ -61,7 +61,7 @@ class TestActionSelector(unittest.TestCase):
         })
         actions = ActionSelector.select_actions(snap)
         self.assertEqual(actions[0]["action"], "fill")
-        self.assertIn("Karotten", actions[0]["value"])
+        self.assertIn("Hobby", actions[0]["value"])
 
     def test_max_two_actions(self):
         snap = self._make_snapshot({

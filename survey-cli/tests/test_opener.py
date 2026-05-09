@@ -69,7 +69,7 @@ class TestSurveyOpenerOpenInPageModal(unittest.TestCase):
         self.assertEqual(result.target.mode, "in_page")
 
     @patch("survey.opener.chrome.find_bot_tabs",
-           return_value=[{"id": "t1", "webSocketDebuggerUrl": "ws://new_tab"}])
+           return_value=[{"id": "t1", "webSocketDebuggerUrl": "ws://dash"}])
     @patch("survey.opener.SurveyOpener._click_survey_card",
            return_value="ws://dash")
     @patch("survey.opener.SurveyOpener._find_new_tab_after_click",

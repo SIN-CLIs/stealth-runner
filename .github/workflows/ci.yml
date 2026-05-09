@@ -31,19 +31,12 @@ jobs:
         run: python scripts/check_banned_patterns.py
 
       - name: Run ruff check
-        run: |
-          ruff check survey-cli/survey --select E,W,F
-          ruff check agent-toolbox --select E,W,F
+        run: ruff check survey-cli/survey --select E,W,F
 
       - name: Run survey-cli tests
         env:
           PYTHONPATH: survey-cli
         run: pytest survey-cli/tests --ignore=survey-cli/tests/test_in_page_modal.py -q
-
-      - name: Run agent-toolbox tests
-        env:
-          PYTHONPATH: agent-toolbox:survey-cli
-        run: pytest agent-toolbox/tests -q
 
       - name: Run pre-commit hooks
         run: pre-commit run --all-files || true

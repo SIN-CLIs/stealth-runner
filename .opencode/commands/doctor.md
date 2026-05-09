@@ -8,7 +8,7 @@ Führe vollständigen System-Check aus:
 1. Chrome-Status: `python3 survey-cli/survey.py doctor`
 2. Login prüfen: `/balance`
 3. cua-driver AX-Tree: `cua-driver call list_windows` (Prüfe ob AX-Tree lebendig ist)
-4. CDP-Status: `curl -s http://127.0.0.1:9999/json | python3 -c "import sys,json; tabs=json.load(sys.stdin); print(f'{len(tabs)} Tabs offen')"`
+4. CDP-Status: `curl -s http://127.0.0.1:9224/json | python3 -c "import sys,json; tabs=json.load(sys.stdin); print(f'{len(tabs)} Tabs offen')"`
 
 Probleme und Fixes:
 - Chrome tot → Manuell starten mit `--force-renderer-accessibility --remote-allow-origins="*"`

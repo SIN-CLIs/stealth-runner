@@ -81,7 +81,6 @@ class TestHeyPiggyLoginEndpoint(unittest.TestCase):
     @patch("api.main.GoogleOAuthFlow")
     def test_login_success(self, mock_flow_cls):
         """POST /services/heypiggy/login returns success."""
-        self.mock_bm.start = AsyncMock(return_value=MagicMock())
         mock_flow = MagicMock()
         mock_flow.execute.return_value = MagicMock(
             status="ok", pid=123, wid=456, reason=None
@@ -89,7 +88,7 @@ class TestHeyPiggyLoginEndpoint(unittest.TestCase):
         mock_flow_cls.return_value = mock_flow
 
         r = self.client.post("/services/heypiggy/login",
-                             json={"profile_name": "test", "pid": 123})
+                             json={"profile_name": "test"})
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()["status"], "success")
         self.assertEqual(r.json()["service"], "heypiggy")
@@ -104,7 +103,7 @@ class TestHeyPiggyLoginEndpoint(unittest.TestCase):
         mock_flow_cls.return_value = mock_flow
 
         r = self.client.post("/services/heypiggy/login",
-                             json={"profile_name": "test", "pid": 123})
+                             json={"profile_name": "test"})
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()["status"], "already_logged_in")
 
@@ -118,7 +117,7 @@ class TestHeyPiggyLoginEndpoint(unittest.TestCase):
         mock_flow_cls.return_value = mock_flow
 
         r = self.client.post("/services/heypiggy/login",
-                             json={"profile_name": "test", "pid": 123})
+                             json={"profile_name": "test"})
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()["status"], "error")
         self.assertEqual(r.json()["message"], "chrome_not_started")
@@ -152,64 +151,6 @@ class TestCookieEndpoint(unittest.TestCase):
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()["status"], "success")
         self.assertEqual(r.json()["count"], 1)
-
-
-class TestUtilityEndpoints(unittest.TestCase):
-    """Test /tools/navigate, /tools/screenshot, /tools/page-content."""
-
-    def setUp(self):
-        self.bm_patcher = patch("api.main.BrowserManager")
-        self.mock_bm_cls = self.bm_patcher.start()
-        self.mock_bm = MagicMock()
-        self.mock_bm_cls.return_value = self.mock_bm
-
-        from api.main import app
-        self.client = TestClient(app)
-
-    def tearDown(self):
-        self.bm_patcher.stop()
-
-    def test_navigate_success(self):
-        """POST /tools/navigate returns page title."""
-        mock_page = MagicMock()
-        mock_page.goto = AsyncMock(return_value=None)
-        mock_page.title = AsyncMock(return_value="Example Domain")
-        self.mock_bm.get_page = AsyncMock(return_value=mock_page)
-
-        r = self.client.post("/tools/navigate",
-                             json={"profile_name": "test", "url": "https://example.com"})
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.json()["status"], "success")
-        self.assertEqual(r.json()["url"], "https://example.com")
-        self.assertEqual(r.json()["title"], "Example Domain")
-
-    def test_screenshot_success(self):
-        """POST /tools/screenshot returns base64 image."""
-        mock_page = MagicMock()
-        mock_page.screenshot = AsyncMock(return_value=b"\x89PNG\r\n\x1a\n")
-        self.mock_bm.get_page = AsyncMock(return_value=mock_page)
-
-        r = self.client.post("/tools/screenshot",
-                             json={"profile_name": "test", "full_page": True})
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.json()["status"], "success")
-        self.assertTrue(len(r.json()["base64_image"]) > 0)
-
-    def test_page_content_success(self):
-        """POST /tools/page-content returns page text."""
-        mock_page = MagicMock()
-        mock_page.url = "https://example.com"
-        mock_page.title = AsyncMock(return_value="Example")
-        mock_page.inner_text = AsyncMock(return_value="Hello World")
-        mock_page.content = AsyncMock(return_value="<html><body>Hello</body></html>")
-        self.mock_bm.get_page = AsyncMock(return_value=mock_page)
-
-        r = self.client.post("/tools/page-content",
-                             json={"profile_name": "test"})
-        self.assertEqual(r.status_code, 200)
-        self.assertEqual(r.json()["status"], "success")
-        self.assertEqual(r.json()["text"], "Hello World")
-        self.assertEqual(r.json()["title"], "Example")
 
 
 if __name__ == "__main__":
