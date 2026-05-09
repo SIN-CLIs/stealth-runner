@@ -121,8 +121,15 @@ BANNED METHODS (NIEMALS in diesem Flow verwenden):
 
 VERWENDUNG:
   from survey.auth import GoogleOAuthFlow, LoginVerifier, CuaAdapter
+
+  # WICHTIG: PIDs sind dynamisch! Niemals hardcoded verwenden!
+  # Chrome PID dynamisch ermitteln:
+  #   import urllib.request, json
+  #   tabs = json.loads(urllib.request.urlopen('http://127.0.0.1:9999/json').read())
+  #   chrome_pid = next((t['processId'] for t in tabs if 'heypiggy' in t.get('url','')), None)
+
   flow = GoogleOAuthFlow(CuaAdapter(), LoginVerifier())
-  result = flow.execute(pid=35970)
+  result = flow.execute(pid=chrome_pid)  # <- dynamische PID, NICHT 35970!
   # result.status: "ok" | "already_logged_in" | "error"
   # result.pid: Chrome PID
   # result.wid: Window ID
@@ -242,10 +249,11 @@ class LoginResult:
     
     Example:
         # Erfolg
-        result = LoginResult(status="ok", pid=35970, wid=3293, reason=None)
+        result = LoginResult(status="ok", pid=DYNAMIC_PID, wid=3293, reason=None)
+        # Dynamische PID: curl http://127.0.0.1:9999/json | jq '.[].processId'
         
         # Bereits eingeloggt
-        result = LoginResult(status="already_logged_in", pid=35970, wid=3293)
+        result = LoginResult(status="already_logged_in", pid=DYNAMIC_PID, wid=3293)
         
         # Fehler
         result = LoginResult(status="error", reason="email_field_not_found")
@@ -293,9 +301,10 @@ class GoogleOAuthFlow:
     
     LEBENSZYKLUS:
       1. Erstellen: flow = GoogleOAuthFlow(CuaAdapter(), LoginVerifier())
-      2. Ausführen: result = flow.execute(pid=35970)
-      3. Prüfen: if result.status == "ok": ...
-      4. Optional: Wiederverwenden (neuer execute() Aufruf).
+      2. PID ermitteln: chrome_pid = dynamisch via CDP JSON (NIEMALS hardcodieren!)
+      3. Ausführen: result = flow.execute(pid=chrome_pid)
+      4. Prüfen: if result.status == "ok": ...
+      5. Optional: Wiederverwenden (neuer execute() Aufruf).
     
     FEHLERBEHANDLUNG (FAIL-FAST):
       → Jeder Step prüft VORAUSSETZUNGEN bevor er ausführt.
@@ -432,7 +441,11 @@ class GoogleOAuthFlow:
             LoginResult mit status, pid, wid, reason.
         
         Example:
-            result = flow.execute(pid=35970)
+            # Dynamische PID ermitteln (NIEMALS hardcodieren!):
+            #   import urllib.request, json
+            #   tabs = json.loads(urllib.request.urlopen('http://127.0.0.1:9999/json').read())
+            #   chrome_pid = next((t['processId'] for t in tabs if 'heypiggy' in t.get('url','')), None)
+            result = flow.execute(pid=chrome_pid)
             if result.status == "ok":
                 print(f"Login OK: pid={result.pid}, wid={result.wid}")
             elif result.status == "already_logged_in":

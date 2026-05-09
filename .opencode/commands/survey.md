@@ -5,7 +5,9 @@ model: vercel/deepseek-v4-pro
 ---
 Starte den NEMO Survey Loop für Heypiggy:
 
-1. Prüfe Chrome läuft auf Port 9224 (HeyPiggy) (CDP): `curl -s http://127.0.0.1:9224/json | head -5`
+1. Prüfe Chrome läuft auf Port 9999 (HeyPiggy) (CDP): `curl -s http://127.0.0.1:9999/json | head -5`
+   # HINWEIS: Port 9224 ist DEPRECATED — HeyPiggy nutzt Port 9999!
+   # Dynamische PID ermitteln: curl http://127.0.0.1:9999/json | jq '.[].processId'
 2. Prüfe Login-Status: `python3 survey-cli/survey.py status`
 3. Wenn nicht eingeloggt: `/login`
 4. Dashboard scannen: `python3 survey-cli/survey.py scan`

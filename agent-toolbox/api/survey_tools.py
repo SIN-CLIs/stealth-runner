@@ -15,6 +15,7 @@ import json
 import os
 import sys
 from typing import Dict, List, Optional, Any
+import json, asyncio, websockets, urllib.request
 
 from fastapi import APIRouter
 from pydantic import BaseModel
@@ -37,6 +38,9 @@ if _survey_cli_path not in sys.path:
 from tools.tool_open_survey import open_survey, close_survey_tab
 from tools.tool_fill_survey import SurveyFiller
 from tools.tool_rate_survey import rate_survey
+
+# Provider-specific tools (survey-cli/survey/providers/)
+from survey.providers.purespectrum import solve_purespectrum_preflight
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -119,6 +123,25 @@ class RateSurveyResponse(BaseModel):
     reason: Optional[str] = None
 
 
+class PurespectrumPreflightRequest(BaseModel):
+    """POST /survey/purespectrum-preflight Request."""
+    tab_id: str
+    ws_url: Optional[str] = None
+    cdp_port: int = 9999
+    debug: bool = False
+
+
+class PurespectrumPreflightResponse(BaseModel):
+    """POST /survey/purespectrum-preflight Response."""
+    status: str  # "ok" | "error"
+    success: bool
+    steps: List[str] = []
+    provider: Optional[str] = "purespectrum"
+    captcha_text: Optional[str] = None
+    tokens_used: Optional[int] = None
+    error: Optional[str] = None
+
+
 # ═══════════════════════════════════════════════════════════════════════════════
 # ROUTER
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -128,15 +151,15 @@ router = APIRouter(prefix="/survey", tags=["survey-tools"])
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # ENDPOINT: POST /survey/open
-# ═══════════════════════════════════════════════════════════════════════════════
 # Wrapper für tools.tool_open_survey.open_survey()
 # 
 # Flow:
 #   1. CPX API → Survey URL holen
 #   2. Dashboard Tab → clickSurvey() JS call
-#   3. Modal-Button klicken (CUA oder CDP)
-#   4. Neuer Tab? → Survey-Tab Info zurückgeben
-#   5. Kein Tab? → Fallback: Neuen Tab erstellen
+#   3. Modal-Button klicken via window.open interception + Target.createTarget
+#      (CUA FAILS: Chrome Popup Blocker! CDP b.click() FAILS! Target.createTarget WIN!)
+#   4. Survey-Tab Info zurückgeben
+#   5. Kein Tab? → Fallback: _create_tab() via Target.createTarget
 
 @router.post("/open", response_model=OpenSurveyResponse)
 async def api_open_survey(req: OpenSurveyRequest):
@@ -297,6 +320,77 @@ async def api_rate_survey(req: RateSurveyRequest):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# HELPER: Resolve ws_url from tab_id
+# ═══════════════════════════════════════════════════════════════════════════════
+
+def _resolve_ws_from_tab(tab_id: str, port: int = 9999) -> Optional[str]:
+    """Get WebSocket URL for a specific tab_id."""
+    try:
+        pages = json.loads(urllib.request.urlopen(
+            f"http://127.0.0.1:{port}/json", timeout=3).read())
+        for p in pages:
+            if p.get("id") == tab_id:
+                return p.get("webSocketDebuggerUrl")
+    except Exception:
+        pass
+    return None
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ENDPOINT: POST /survey/purespectrum-preflight
+# ═══════════════════════════════════════════════════════════════════════════════
+# Wrapper für survey.providers.purespectrum.solve_purespectrum_preflight()
+#
+# Flow (survey-cli/survey/providers/purespectrum.py):
+#   1. Cookie Consent (.cky-btn-accept click)
+#   2. ROBOT textarea fill (min 5 words)
+#   3. Text captcha → NVIDIA Vision OCR (base64 screenshot → llama-vision)
+#   4. Drag puzzle (number box: "Bitte legen Sie die Zahl 52...")
+#   5. Returns step-by-step results
+
+@router.post("/purespectrum-preflight", response_model=PurespectrumPreflightResponse)
+async def api_purespectrum_preflight(req: PurespectrumPreflightRequest):
+    """
+    Führt PureSpectrum preflight aus: cookie → ROBOT → captcha OCR → puzzle.
+    
+    Kapselt: survey.providers.purespectrum.solve_purespectrum_preflight()
+    
+    Args:
+        tab_id: Tab-ID des Survey-Tabs (wird in ws_url aufgelöst)
+        ws_url: Optional - direkt die CDP WebSocket URL
+        cdp_port: CDP Port (default: 9999)
+        debug: Debug-Output aktivieren (default: False)
+    
+    Returns:
+        PurespectrumPreflightResponse:
+          - status: "ok" oder "error"
+          - success: True wenn alle Schritte erfolgreich
+          - steps: ["cookie", "robot", "captcha:True", "puzzle:False"]
+          - captcha_text: OCR erkannter Text (falls captcha vorhanden)
+          - tokens_used: NVIDIA Vision Token-Verbrauch
+    """
+    ws_url = req.ws_url or _resolve_ws_from_tab(req.tab_id, req.cdp_port)
+    if not ws_url:
+        return PurespectrumPreflightResponse(
+            status="error",
+            success=False,
+            error=f"Could not resolve WebSocket URL for tab {req.tab_id}",
+        )
+    
+    result = solve_purespectrum_preflight(ws_url, debug=req.debug)
+    
+    return PurespectrumPreflightResponse(
+        status="ok" if result.get("success") else "error",
+        success=result.get("success", False),
+        steps=result.get("steps", []),
+        provider="purespectrum",
+        captcha_text=result.get("captcha_text"),
+        tokens_used=result.get("tokens_used"),
+        error=result.get("error"),
+    )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # EXPORTS
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -306,4 +400,6 @@ __all__ = [
     "CloseSurveyRequest", "CloseSurveyResponse",
     "FillSurveyRequest", "FillSurveyResponse",
     "RateSurveyRequest", "RateSurveyResponse",
+    "PurespectrumPreflightRequest", "PurespectrumPreflightResponse",
+    "solve_purespectrum_preflight",
 ]

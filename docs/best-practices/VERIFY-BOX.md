@@ -75,7 +75,10 @@ def click_and_verify(pid: int, wid: int, element_idx: int,
 
     Example:
       >>> # Radio-Button klicken und verifizieren
-      >>> ok = click_and_verify(71104, 56640, 42,
+      >>> # WICHTIG: PIDs sind dynamisch! Niemals hardcoded (71104)!
+      >>> # Dynamisch ermitteln: curl http://127.0.0.1:9999/json | jq '.[].processId'
+      >>> chrome_pid = DYNAMIC_PID  # aus CDP JSON gescannt
+      >>> ok = click_and_verify(chrome_pid, 56640, 42,
       ...     expected_state={"role": "AXRadioButton", "selected": True})
       >>> if not ok:
       ...     # Fallback: CDP JS click
@@ -275,10 +278,12 @@ def verify_page_transition(pid: int, old_wid: int, old_url: str,
 
 ```bash
 # OHNE Verify (BANNED!)
-cua-driver call click '{"pid": 71104, "window_id": 56640, "element_index": 42}'
+# PIDs sind dynamisch — NIEMALS 71104 hardcodieren!
+cua-driver call click '{"pid": DYNAMIC_PID, "window_id": 56640, "element_index": 42}'
 
 # MIT Verify (PFLICHT!)
-cua-driver call click '{"pid": 71104, "window_id": 56640, "element_index": 42, "verify": true}'
+# PID dynamisch ermitteln: curl http://127.0.0.1:9999/json | jq '.[].processId'
+cua-driver call click '{"pid": DYNAMIC_PID, "window_id": 56640, "element_index": 42, "verify": true}'
 ```
 
 ### stealth-exec mit Verify

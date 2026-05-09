@@ -56,14 +56,21 @@ class KillGuard:
 
 ```python
 # ~/.stealth/chrome_lease.json
+# WICHTIG: PIDs sind dynamisch — NIEMALS 71104 hardcodieren!
+# Port 9224 ist veraltet — HeyPiggy nutzt Port 9999!
+# Profile 902 ist obsolet — HeyPiggy nutzt Profile 901!
 {
     "profiles": {
-        "~/tmp/chrome-instance-B (Profil 902 Kopie, Port 9224)": {
-            "pid": 71104,
-            "leased_by": "session-2026-05-06-001",
+        # HeyPiggy: Profil 901 Kopie in /tmp, Port 9999
+        # Dynamische PID via: curl http://127.0.0.1:9999/json | jq '.[].processId'
+        "DYNAMIC_PROFILE_901": {
+            "pid": "DYNAMIC",  # NIEMALS hardcodieren!
+            "leased_by": "session-2026-05-09",
             "leased_at": 1746400000,
             "expires_at": 1746400300,
-            "token": "abc123def456"
+            "token": "abc123def456",
+            "port": 9999,
+            "profile": "Profile 901 (Jeremy)"
         }
     }
 }

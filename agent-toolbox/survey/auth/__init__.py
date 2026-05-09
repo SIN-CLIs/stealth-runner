@@ -48,8 +48,15 @@ BANNED PATTERNS (NIEMALS in diesem Paket verwenden):
 
 VERWENDUNG:
   from survey.auth import GoogleOAuthFlow, LoginVerifier, CuaAdapter, LoginResult
+
+  # WICHTIG: PIDs sind dynamisch! Niemals hardcoded verwenden!
+  # Chrome PID dynamisch ermitteln via CDP:
+  #   import urllib.request, json
+  #   tabs = json.loads(urllib.request.urlopen('http://127.0.0.1:9999/json').read())
+  #   chrome_pid = next((t['processId'] for t in tabs if 'heypiggy' in t.get('url','')), None)
+
   flow = GoogleOAuthFlow(CuaAdapter(), LoginVerifier())
-  result = flow.execute(pid=35970)
+  result = flow.execute(pid=chrome_pid)  # <- dynamische PID, NICHT 35970!
   # result.status == "ok" | "already_logged_in" | "error"
   # result.reason gibt bei error die konkrete Fehlerursache.
 

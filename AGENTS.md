@@ -214,7 +214,7 @@ content: |
   - Monolithische Endpoints sind **UNDEBUGGABLE** — wenn sie fehlschlagen, weißt du nicht welcher Teil
   - Sie können **NICHT wiederverwendet** werden — du kannst nicht nur den "Rating-Teil" aufrufen
   - Sie **kopieren Code** statt existierende `survey-cli/tools/` zu nutzen
-  - `survey-cli/tools/` sind bereits **getestet** (211 Unit Tests), **profil-aware**, **provider-aware**
+  - `survey-cli/tools/` sind bereits **getestet** (~38 test files in survey-cli/tests/), **profil-aware**, **provider-aware**
   - Monolithen werden **NIE fertig** — man fügt immer mehr if/else hinzu bis sie explodieren
   
   **RICHTIG (Beispiel):**
@@ -259,7 +259,7 @@ content: |
   1. Wenn ein `survey-cli/tools/tool_*.py` existiert → **SOFORT** FastAPI-Wrapper bauen
   2. Wenn ein Command in `/commands/` als ✅ VERIFIED markiert ist → **SOFORT** in `survey-cli/tools/tool_*.py` umwandeln → dann FastAPI-Wrapper
   3. NIE mehr als 50 Zeilen in einem Endpoint — alles was komplexer ist gehört in ein Tool
-  4. Tools müssen **standalone testbar** sein (`python3 -m pytest tools/test_tool_*.py`)
+  4. Tools müssen **standalone testbar** sein (`cd survey-cli && python3 -m pytest tests/test_*.py`)
   
   ---
   
@@ -292,44 +292,44 @@ content: |
   - Niemals existierende User-Chrome-Instanzen touchen
   - Bei Konflikt: Frisches Profil in `/tmp/` starten + Cookie-Injection
   
-  ### /commands Verzeichnis (2026-05-05) - COMMAND DOCUMENTATION
+  ### /commands Verzeichnis (2026-05-10) - COMMAND DOCUMENTATION
   
-  **Governance**\: `/commands/cmd-rules.md` - alle Regeln zu /commands.
+  **Governance**: `/commands/cmd-rules.md` - alle Regeln zu /commands.
   
-  **Provider-Struktur** (2026-05-05): Sobald >1 Command zu Provider -> Subdirectory.
+  **Provider-Struktur**: Sobald >1 Command zu Provider -> Subdirectory.
   
   ```
-  /commands/
-  +── cmd-rules.md                       -< ALLE Regeln zu /commands
-  |
-  +── cua-driver/          (8 commands)
+  /commands/                    (46 .md files, 10 subdirs)
+  +── cmd-rules.md
+  +── bot-chrome/               (2 verified + 1 banned)
+  |   +── kill-bot-chrome.md ✅, find-bot-pids.md ✅
+  |   +── (DEPRECATED: Port 9224 + Profil 902 → GEFIXT 2026-05-10)
+  +── captcha/                  (10 files: slide/text/drag puzzle solvers)
+  |   +── solve-slide.md, solve-text.md, solve-drag.md
+  |   +── WORKING-SOLUTION.md, README.md
+  +── cdp/                      (CDP commands)
+  +── chrome/                   (Chrome start/config)
+  +── cua-driver/               (9 commands)
   |   +── click.md, click-survey-card.md, set-value.md
   |   +── list-windows.md, get-window-state.md
   |   +── find-element-index.md, find-pid-wid.md, navigate-url.md
-  |
-  +── heypiggy/            (1 command)
-  |   +── credentials.md
-  |
-  +── infisical/           (2 commands)
-  |   +── login.md, secrets.md
-  |
-  +── bot-chrome/          (5 commands: 2 verified + 3 banned)
-  |   +── kill-bot-chrome.md, find-bot-pids.md
-  |   +── banned-pkill-heypiggy-bot.md, banned-killall-chrome.md
-  |   +── banned-hardcoded-pids.md
-  |
-  +── playstealth/         (1 command — BANNED für HeyPiggy!)
-  |   +── launch.md (BANNED: nutzt Profil 902, Port 9224, keine Cookie-Injection)
-  |
-  +── session-manager/     (1 command)
-  |   +── launch.md
-  |
-  +── [root]               (9 commands: 1 verified + 8 banned)
-      +── macos-recovery-mode.md
-      +── banned-pyautogui.md, banned-pynput.md
-      +── banned-coordinates-click.md, banned-applescript-chrome.md
-+── banned-webauto-nodriver.md
-       +── banned-cdp-commands.md, banned-recovery-mode.md (DEPRECATED)
+  |   +── switch-tab.md (NEU 2026-05-10)
+  +── heypiggy/                 (2 commands)
+  |   +── credentials.md, rating-page.md
+  +── infisical/                (2 commands)
+  +── playstealth/              (1 command — BANNED: kein accessibility flag)
+  +── session-manager/          (1 command)
+  +── surveys/                  (6 survey provider docs)
+  |   +── purespectrum-survey.md ✅ (2026-05-09)
+  |   +── surveyrouter-pre-qualifier-2026-05-09.md ✅
+  |   +── qualtrics-huk-survey.md, civey-fill.md
+  |   +── survey-answer-patterns.md, survey-start-flow.md ✅
+  +── [root]                   (provider survey docs)
+      +── brand-ambassador-survey.md, insights-today-survey.md
+      +── my-take-survey.md, nfield-survey.md, strat7-survey.md
+      +── purespectrum-survey.md, proquoai-survey.md
+      +── cpx-rating-page.md
+  +── banned-cdp-commands.md, macos-recovery-mode.md
   ```
   
   ### Chrome Kill Regeln (UNVERBRÜCHLICH)
@@ -534,17 +534,20 @@ content: |
   - `pkill -f "Google Chrome"` (tötet private Sessions!)
   - Apple-Menüleiste klicken (depth < 5)
   
-  ## ERLAUBT (NUR CUA)
+  ## ERLAUBT (CDP PRIMARY für Web-Content, CUA NUR für Popups/Sheets)
+  
+  ⚠️ **WARNUNG (2026-05-10): Chrome 9999 hat LEERE AX-Tree für Web-Content!**
+  CUA funktioniert NUR für native macOS Popups/Sheets, NICHT für Browser-Web-Content.
+  Für Survey-Interaktion: CDP JS ist PRIMARY, nicht CUA!
   
   | Kontext | Tool | Befehl |
   |---------|------|--------|
-  | Button klicken | cua-driver | `call click {pid, wid, index}` |
-  | Text eingeben | cua-driver | `call set_value {pid, wid, index, value}` |
-  | Navigieren | cua-driver | `call click -> call set_value -> call press_key` |
+  | Browser-Web-Content | **CDP WebSocket** | `Runtime.evaluate(...)` |
+  | Survey-Modal | **CDP window.open interception** | `_click_modal_button_cdp()` |
+  | Popup/Sheet | cua-driver | `call click {pid, wid, index}` |
+  | Text eingeben (Popup) | cua-driver | `call set_value {pid, wid, index, value}` |
   | Fenster finden | cua-driver | `call list_windows` |
-  | AX-Tree lesen | cua-driver | `call get_window_state {pid, wid}` |
-  | Tastendruck | cua-driver | `call press_key {pid, key}` |
-  | Chrome starten | Profil 901 Kopie | Recipe in REGELN 1-4 (ganz oben) |
+  | Chrome starten | Profil 901 Kopie | Recipe in REGELN 1-4 |
   
   ## AUDIO CAPTURE MODULE (2026-05-04, NEU)
   
@@ -982,13 +985,19 @@ content: |
   
   ### Ablauf (6 Steps, LIVE GETESTET 2026-05-05)
   
-  | Step | Element | Index | AXRole | Aktion |
-  |------|---------|-------|--------|--------|
-  | 1 | Google Login-Symbol | 54 | AXLink | click |
-  | 2 | Email-Feld | 25 | AXTextField | set_value |
-  | 2b | Weiter | 35 | AXButton | click |
-  | 3 | Fortfahren | 62 | AXButton | click (Keychain Auto-Fill!) |
-  | 4 | Weiter (Final) | 41 | AXButton | click |
+  **WICHTIG: NIEMALS hardcoded Indices nutzen! UI ändert sich!**
+  **CUA hat auf Chrome 9999 leere AX-Tree für Web-Content → CDP JS bevorzugt!**
+  
+  | Step | Element | Suche (dynamisch) | Aktion |
+  |------|---------|--------------------|--------|
+  | 1 | Google Login-Symbol | `AXLink` mit text containing "Google" oder "Anmelden" | click |
+  | 2 | Email-Feld | `AXTextField` mit placeholder "E-Mail" oder "Email" | set_value |
+  | 2b | Weiter | `AXButton` mit text containing "Weiter" | click |
+  | 3 | Fortfahren | `AXButton` mit text "Fortfahren" (Keychain Auto-Fill!) | click |
+  | 4 | Weiter (Final) | `AXButton` mit text "Weiter" | click |
+  
+  **Methode:** `cua-driver call find_element_index` mit regex `\bWeiter\b` → dynamischer Index
+  **Fallback:** CDP JS `document.querySelector('button')` → Koordinaten → `cua-driver call click at`
   
   ### Rückgabe
   - `{"status": "ok", "pid": X, "wid": Y}` wenn "abmelden"/"umfragen" im Dashboard sichtbar

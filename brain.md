@@ -73,7 +73,7 @@ skylight-cli element-index ist NICHT stabil.
 ┌────────────────────────────────────────────────────────────────────┐
 │                    CUA-ONLY TRINITY                                │
 │                                                                     │
-│  playstealth launch → cdp_port (NUR Chrome Start!)                 │
+│  Chrome Recipe → Port 9999 + Profile 901 Kopie (NUR Chrome Start!)   │
 │       │                                                             │
 │       ▼                                                             │
 │  ┌──────────────────────────────────────────────────────────────┐  │
@@ -117,7 +117,7 @@ skylight-cli element-index ist NICHT stabil.
 | **cua-driver** | ALLE Interaktionen (PRIMARY) | — |
 | **CDP Runtime.evaluate** | DOM lesen, Button-Antworten | Navigation, Klicks |
 | **macos-ax-cli** | Systemweites SCANNEN (NUR Finden!) | Klicken |
-| **playstealth** | Chrome Launch | Interaktion |
+| **Chrome Recipe** | Chrome Launch (Profile 901, Port 9999) | Interaktion |
 
 ### Warum das funktioniert
 
@@ -192,30 +192,50 @@ Google(43) → Konto klicken(Label) → Weiter(Label) → Dashboard
 
 ---
 
-## 🔥 HEYPIGGY GOOGLE LOGIN — KORREKTER FLOW (2026-05-04)
+## 🔥 HEYPIGGY GOOGLE LOGIN — KORREKTER FLOW (2026-05-09)
 
-**Eigene Chrome-Instanz via playstealth launch! KEIN User Chrome touchieren!**
+**Eigene Chrome-Instanz via Chrome Recipe (Profile 901 Kopie + Cookie-Injection)! KEIN User Chrome touchieren!**
+
+**CHROME RECIPE (REGELN 1-4 aus AGENTS.md):**
+```bash
+# 1. Profil 901 kopieren (Profile 901 (Jeremy) = HeyPiggy Profil)
+cp -R "$HOME/Library/Application Support/Google Chrome/Profile 901 (Jeremy)" /tmp/chrome-jeremy-heypiggy-9999
+
+# 2. Chrome auf Port 9999 starten mit korrekten Flags
+nohup "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --remote-debugging-port=9999 \
+  --remote-allow-origins="*" \
+  --force-renderer-accessibility \
+  --no-first-run \
+  --user-data-dir="/tmp/chrome-jeremy-heypiggy-9999" \
+  "https://www.heypiggy.com/?page=dashboard" &>/dev/null &
+
+# 3. 7 HeyPiggy-Cookies injizieren (aus ~/.stealth/heypiggy-backup/heypiggy-cookies.json)
+# 4. PID dynamisch ermitteln: curl http://127.0.0.1:9999/json | jq '.[].processId'
+```
 
 ```
-1. playstealth launch --url 'https://heypiggy.com'  → PID + WID
+1. Chrome Recipe ausführen → dynamische PID via CDP JSON ermitteln
 2. list_windows → HeyPiggy WID finden
 3. get_window_state → AX-Tree scannen
 4. Click Google Login-Symbol link [index]
-5. Wait 3s → Google OAuth Popup WID finden
+5. Wait 5s → Google OAuth Popup WID finden
 6. get_window_state → AX-Tree scannen
 7. Enter email in AXTextField [index]
 8. Click "fortfahren" Button [index]
-9. Wait 2s → macOS Keychain Dialog erscheint
-10. Enter "admin" in Keychain Password Field
-11. Click "entsperren" Button
-12. Wait 3s → Dashboard prüfen
+9. Wait 5s → macOS Keychain Dialog erscheint
+10. Click "Fortfahren" (Keychain Auto-Fill)
+11. Click finaler "Weiter" Button
+12. Wait 5s → Dashboard prüfen ("abmelden" sichtbar?)
 ```
 
 **WICHTIG:**
-- NUR eigenes Chrome via playstealth launch starten
-- KEIN pkill, killall, oder grep auf User Chrome
-- Fresh Profile: `~/tmp/chrome-instance-B (Profil 902 Kopie)`
-- MAC_PASSWORD="admin" für Keychain Dialog
+- NUR eigenes Chrome via Chrome Recipe starten (Profile 901 Kopie + Cookie-Injection)!
+- KEIN pkill, killall, oder grep auf User Chrome!
+- **Port 9999** (NICHT 9224 — Port 9224 ist DEPRECATED!)
+- **Profile 901 (Jeremy)** (NICHT Profile 902 — Profile 902 ist obsolet!)
+- **Cookie-Injection** aus `~/.stealth/heypiggy-backup/heypiggy-cookies.json`
+- Dynamische PID: `curl http://127.0.0.1:9999/json | jq '.[].processId'`
 
 ---
 
@@ -240,36 +260,44 @@ cua-driver Daemon MUSS laufen (`cua-driver serve &`) vor allen element-index Kli
 
 ---
 
-## 🔥 HEYPIGGY LOGIN — KORREKTER FLOW (2026-05-04)
+## 🔥 HEYPIGGY LOGIN — KORREKTER FLOW (2026-05-09)
 
-**Eigene Chrome-Instanz via playstealth launch! KEIN User Chrome touchieren!**
+**Eigene Chrome-Instanz via Chrome Recipe (Profile 901 + Cookie-Injection)! KEIN User Chrome touchieren!**
 
-### Aufruf
-```
-playstealth launch --url 'https://heypiggy.com'
-# → PID + CDP_PORT + Profil
+### Chrome Recipe (REGELN 1-4 aus AGENTS.md)
+```bash
+# Profil 901 (Jeremy) = HeyPiggy Profil (NICHT Profile 902!)
+cp -R "$HOME/Library/Application Support/Google Chrome/Profile 901 (Jeremy)" /tmp/chrome-jeremy-heypiggy-9999
+nohup "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+  --remote-debugging-port=9999 \
+  --remote-allow-origins="*" \
+  --force-renderer-accessibility \
+  --no-first-run \
+  --user-data-dir="/tmp/chrome-jeremy-heypiggy-9999" \
+  "https://www.heypiggy.com/?page=dashboard" &>/dev/null &
+# 7 HeyPiggy-Cookies injizieren
+# Dynamische PID: curl http://127.0.0.1:9999/json | jq '.[].processId'
 ```
 
 ### Korrekter Flow
 ```
 2. get_window_state → AX-Tree scannen
 3. Click Google Login-Symbol link [Index]
-4. Wait 3s → Google OAuth Popup WID finden
+4. Wait 5s → Google OAuth Popup WID finden
 5. get_window_state → AX-Tree scannen
 6. Enter email in AXTextField [Index]
 7. Click "fortfahren" Button [Index]
-8. Wait 2s → macOS Keychain Dialog erscheint
-9. Enter "admin" in Keychain Password Field
-10. Click "entsperren" Button
-11. Wait 3s → Dashboard prüfen (kein "Anmelden oder Registrieren")
+8. Wait 5s → macOS Keychain Dialog erscheint
+9. Click "Fortfahren" (Keychain Auto-Fill — kein Passwort nötig!)
+10. Click finaler "Weiter"
+11. Wait 5s → Dashboard prüfen (kein "Anmelden oder Registrieren")
 ```
 
 **WICHTIG:**
-- NUR eigenes Chrome via playstealth launch
-- KEIN pkill, killall, oder grep auf User Chrome
-- Fresh Profile: `~/tmp/chrome-instance-B (Profil 902 Kopie)`
-- MAC_PASSWORD="admin" für Keychain Dialog
-- 7 SCHRITTE: Click → Email → Fortfahren → admin → Entsperren → Weiter → Dashboard
+- NUR eigenes Chrome via Chrome Recipe starten (Profile 901 Kopie + Cookie-Injection)!
+- **Port 9999** (NICHT 9224 — DEPRECATED!)
+- **Profile 901 (Jeremy)** (NICHT Profile 902 — OBSOLETE!)
+- 7 SCHRITTE: Click → Email → Fortfahren → Keychain Auto-Fill → Weiter → Dashboard
 
 ---
 
@@ -1596,7 +1624,7 @@ Login-Box funktioniert.
 1. `list_windows` returns `{"windows": [...]}` nicht `[...]`
 2. Windows haben `bounds` nicht `frame`
 3. Kein `depth`-Feld in cua-driver Output
-4. `playstealth launch` gibt mehrere JSON-Zeilen zurück
+4. `playstealth launch` ist DEPRECATED — Chrome Recipe nutzen (Profile 901 + Port 9999)
 5. Google-Login-Button ist AXLink (nicht AXButton)
 6. `click()` erwartet `" Performed "` aber cua-driver returned `"✅ Performed AXPress"`
 7. Google-Login öffnet POPUP mit NEUER WID — alter Code blieb auf Heypiggy-WID
