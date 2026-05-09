@@ -58,7 +58,7 @@ class KillGuard:
 # ~/.stealth/chrome_lease.json
 {
     "profiles": {
-        "/tmp/heypiggy-bot-1777981361": {
+        "~/tmp/chrome-instance-B (Profil 902 Kopie, Port 9224)": {
             "pid": 71104,
             "leased_by": "session-2026-05-06-001",
             "leased_at": 1746400000,
@@ -122,11 +122,11 @@ class SessionManager:
     
     @classmethod
     def _find_bot_pids(cls):
-        """Find ONLY bot Chrome PIDs (with /tmp/heypiggy-bot- profile)."""
+        """Find ONLY bot Chrome PIDs (with ~/tmp/chrome-instance-B profile)."""
         r = subprocess.run(['ps', 'aux'], capture_output=True, text=True)
         pids = []
         for line in r.stdout.split('\n'):
-            if '--user-data-dir=/tmp/heypiggy-bot-' in line:
+            if '--user-data-dir=~/tmp/chrome-instance-B' in line:
                 parts = line.split()
                 if len(parts) >= 2:
                     pid = int(parts[1])
