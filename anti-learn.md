@@ -206,3 +206,45 @@ grep "heypiggy_login_box" .
 - ✅ Dann `el.dispatchEvent(new Event('input', {bubbles:true}))`
 - ✅ Dann `el.dispatchEvent(new Event('change', {bubbles:true}))`
 **Grund**: React/Qualtrics patchen den native value setter. Ohne native setter wird der Wert nicht persistiert.
+
+## ❌ b.click() / Input.dispatchMouseEvent auf "Umfrage starten" Button (2026-05-09)
+**NIEMALS** programmatische Click-Methoden auf dem "Umfrage starten" Button verwenden.
+- ❌ `button.click()` → Chrome Popup Blocker blockiert window.open()
+- ❌ `b.dispatchEvent(new MouseEvent('click'))` → gleicher Effekt
+- ❌ `CDP Runtime.evaluate('b.click()')` → gleicher Effekt  
+- ❌ `CDP Input.dispatchMouseEvent(x, y)` → gleicher Effekt (Mauskoordinaten tun nichts)
+- ❌ CUA click auf den Button → gleicher Effekt
+**Grund**: openSurvey() nutzt window.open(url). Chrome blockiert window.open() von jeglichem programmatischen JS. Das ist ein Security-Feature, kein Bug.
+
+**RICHTIG — window.open interception + Target.createTarget:**
+```javascript
+// 1. window.open abfangen → URL capture
+var surveyURL = null;
+var origOpen = window.open.bind(window);
+window.open = function(url) { surveyURL = url; return null; };
+openSurvey();  // window.open(url) wird abgefangen
+window.open = origOpen;
+
+// 2. Target.createTarget öffnet URL → KEIN Popup Blocker!
+Target.createTarget({url: surveyURL})
+```
+**Grund**: Target.createTarget ist Browser-Intern, kein user-initiated window.open, daher kein Blocker.
+
+**Tool**: `survey-cli/tools/tool_open_survey.py` → `_click_modal_button_cdp()` + `_handle_modal_with_cdp()`
+
+## ❌ Frische /tmp/ Profile ohne Cookie-Injection (2026-05-09)
+**NIEMALS** Chrome mit frischem /tmp/ Profil starten für HeyPiggy.
+- ❌ `--user-data-dir=/tmp/heypiggy-new-$(date +%s)` → leere Cookies, Login nötig
+- ❌ Profil 902 (verschlüsselte Cookies!) → decrypt_cookies.py funktioniert NICHT (Chrome 147+ v11)
+- ✅ Profil 901 (Jeremy) kopieren → Cookie-Backup injizieren → funktioniert
+- ✅ 7 HeyPiggy-Cookies aus `~/.stealth/heypiggy-backup/heypiggy-cookies.json` per CDP Network.setCookies injizieren
+**Grund**: HeyPiggy Cookies sind AES-128-GCM v11 verschlüsselt. Playwright kann sie entschlüsseln (Keychain). decrypt_cookies.py nur v10.
+
+## ❌ Hardcoded PIDs / Port 9224 (2026-05-10)
+**NIEMALS** PIDs oder Ports hardcodieren.
+- ❌ `pid=71104` → PIDs ändern sich bei jedem Chrome-Start!
+- ❌ Port 9224 → HeyPiggy ist Port 9999 (Port 9224 = SINator Chrome!)
+- ❌ Profil 902 → HeyPiggy ist Profil 901 (Jeremy)
+- ✅ Dynamisch scannen: `curl http://127.0.0.1:9999/json` → alle PIDs/WIDs/WS URLs
+- ✅ Port 9999 für HeyPiggy, Port 9222 für SINator
+**Grund**: Chrome-Prozesse sind dynamisch. Hardcodierte Werte brechen nach dem nächsten Restart.

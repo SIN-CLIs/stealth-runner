@@ -626,31 +626,51 @@ content: |
   # -> Automatische Captcha-Erkennung + Lösung
   ```
   
-  ## SURVEY FLOW (2026-05-04, VERIFIZIERT)
+  ## SURVEY FLOW (2026-05-10, VERIFIZIERT)
   
   ### Kompletter Ablauf
   ```
   1. SCAN: CDP JS -> finde Tab MIT .survey-item (document.querySelectorAll)
-  2. START: CDP JS -> document.getElementById('survey-ID').click()
-  3. MODAL: CUA -> "Umfrage starten" Button klicken (index variiert, ~246-270)
-  4. CONSENT: CUA -> "Zustimmen und fortfahren" klicken
-  5. START: CUA -> "Starten" klicken (Survey öffnet in Tab)
-  6. AUDIO-FRAGE: Audio Module -> BlackHole + ffmpeg + NVIDIA Omni
-  7. ANTWORT: CUA/CDP JS -> Option auswählen + "Weiter" klicken
-  8. KOMPLETT: Survey schließt -> zurück zu heypiggy Dashboard
+  2. START: CDP JS -> clickSurvey('ID') → Dashboard öffnet Modal
+  3. MODAL: CDP JS -> window.open interception + Target.createTarget → Survey-Tab öffnet sich
+     ⚠️ CUA b.click() + CDP Input.dispatchMouseEvent = FAIL (Chrome Popup Blocker!)
+     ✅ window.open interception (siehe §KRITISCH: "Umfrage starten" Problem)
+  4. CONSENT: CDP JS -> Cookie "Alle akzeptieren" button.click()
+  5. CAPTCHA: Fälle "ROBOT", Math, Dropdown → per CDP JS + NVIDIA Vision
+  6. START: Survey öffnet sich in Tab → Provider identifizieren
+  7. AUDIO-FRAGE: Audio Module -> BlackHole + ffmpeg + NVIDIA Omni
+  8. ANTWORT: CDP JS -> Radio/Checkbox/Text per Provider-Methode + "Nächste"
+  9. KOMPLETT: Survey schließt -> zurück zu heypiggy Dashboard → Balance erhöht
   ```
+
+  ### KRITISCH: "Umfrage starten" Button — window.open interception (2026-05-09 DISCOVERED!)
   
+  **PROBLEM (alle Methoden FAIL):**
+  - `b.click()` → window.open() von Chrome Popup Blocker blockiert
+  - `b.dispatchEvent(new MouseEvent('click'))` → gleicher Effekt
+  - `CDP Input.dispatchMouseEvent(x, y)` → gleicher Effekt
+  
+  **LÖSUNG (GETESTET 2026-05-09):**
+  1. window.open temporär überschreiben → URL capture
+  2. openSurvey() aufrufen → window.open(url) wird abgefangen
+  3. window.open wiederherstellen
+  4. Target.createTarget(captured_url) → NEUER TAB öffnet sich (KEIN Popup Blocker!)
+  
+  **Code:** `survey-cli/tools/tool_open_survey.py` → `_handle_modal_with_cdp()` + `_click_modal_button_cdp()`
+
   ### Survey Provider
-  | Provider | URL Pattern | Flow |
-  |----------|------------|------|
-  | Samplicio.us | `rx.samplicio.us/consent/` | Consent -> My-Take -> Disqual/Complete |
-  | Cint | `s.cint.com/Survey/Fingerprint/` | Fingerprint -> Nfield/Kantar -> Fragen |
-  | Nfield/Kantar | `nfieldeu-interviewing.nfieldmr.com` | Welcome -> Audio/Video-Fragen |
+  | Provider | URL Pattern | Flow | Status |
+  |----------|------------|------|--------|
+  | Samplicio.us | `rx.samplicio.us/consent/` | Consent -> My-Take -> Disqual/Complete | ✅ |
+  | Cint | `sw.cint.com/Session/` | Session → Fragen | ✅ |
+  | Nfield/Kantar | `nfieldeu-interviewing.nfieldmr.com` | Welcome -> Audio/Video-Fragen | ✅ |
+  | Purespectrum | `purespectrum.com` | Cookie + ROBOT captcha + Textarea | ✅ NEW 2026-05-09 |
   
   ### Wichtige Erkenntnisse
   1. **Multi-Tab Problem**\: heypiggy öffnet mehrere Dashboard-Tabs. Nur EINER hat Surveys. Scanne ALLE Tabs!
   2. **Survey In-Page**\: clickSurvey() öffnet den Survey im Dashboard (kein neuer Tab!). AX-Tree rescanen nach neuen Elementen!
-  3. **Survey Modal**\: "Umfrage starten" erscheint als Overlay NACH clickSurvey(). Index variiert (~246-270).
+  3. **Survey Modal**\: "Umfrage starten" Button nutzt window.open() → Popup Blocker → window.open interception nötig!
+  4. **Blob-Audio**\: `<video>` mit blob: URL kann NICHT via JS extrahiert werden. BlackHole nötig.
   4. **Blob-Audio**\: `<video>` mit blob: URL kann NICHT via JS extrahiert werden. BlackHole nötig.
   5. **Disqualifikation**\: 0.02€ Compensation bei Abbruch. Level-Up bei erfolgreicher Teilnahme.
   

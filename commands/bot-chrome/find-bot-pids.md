@@ -41,8 +41,8 @@ simoneschulze 74351 ... /Applications/Google Chrome.app/Contents/MacOS/Google Ch
 | Pattern | Matched | NOT Matched |
 |---------|---------|-------------|
 | `/Contents/MacOS/Google Chrome` | Main-Prozess | Helper/Renderer |
-| `~/tmp/chrome-instance-B` | BOT Chrome | USER Chrome |
+| `chrome-jeremy-heypiggy-9999` | HeyPiggy BOT | USER Chrome |
 
 ## Test Log
 - 2026-05-05: 1 BOT gefunden (PID 24378, profile heypiggy-bot-1777982535) ✅
-- 2026-05-09: HeyPiggy aktiv (PID 24378, Port 9224, Profil 902) ✅
+- 2026-05-09: HeyPiggy aktiv (PID dynamisch, Port 9999, Profil 901 Kopie → /tmp/chrome-jeremy-heypiggy-9999) ✅

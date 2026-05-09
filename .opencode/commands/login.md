@@ -5,7 +5,7 @@ model: vercel/deepseek-v4-pro
 ---
 Führe Google OAuth Login für Heypiggy aus:
 
-1. Chrome-Check: Ist ein Bot-Chrome auf Port 9224 (HeyPiggy)? `curl -s http://127.0.0.1:9224/json/version`
+1. Chrome-Check: Ist ein Bot-Chrome auf Port 9999 (HeyPiggy)? `curl -s http://127.0.0.1:9999/json/version`
 2. Wenn nicht: `!kill-bots` dann Chrome neu starten:
    `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --remote-debugging-port=9999 --remote-allow-origins="*" --force-renderer-accessibility --no-first-run --user-data-dir="# DEPRECATED: ~/tmp/chrome-instance-B verliert Cookies. Nutze ~/tmp/chrome-instance-B$(date +%s)" "https://www.heypiggy.com/?page=dashboard"`
 3. 8s warten, dann Login:
