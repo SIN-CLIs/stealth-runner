@@ -503,33 +503,31 @@ def snapshot_node(state: SurveyState) -> SurveyState:
 
 # ── NODE 5: decide_node ───────────────────────────────────────────────────────
 # Funktion: NIM Nemotron Decision (oder heuristic fallback)
-# Wrapped:  survey_cli.survey.nim.NIMSurveyClient.decide() oder placeholder
+# Wrapped:  survey.nim.get_nim().decide() oder heuristic placeholder
 # Returns:  state mit nim_actions (List von Actions)
 # Lines:    ~22
 #
-# Placeholder: Solange NIM nicht integriert, nutze heuristic mapping.
-#   - Radio: erste Option auswählen
-#   - Textarea: "test" oder leer
-#   - Button: klick "Weiter"/"Nächster"
+# SR-57 (2026-05-10): NIM Nemotron 3 Omni Integration.
+#   - Echter API Call zu integrate.api.nvidia.com/v1/chat/completions
+#   - Chain-of-Thought Prompting für Reasoning-Modell
+#   - Fallback zu heuristic wenn NIM nicht verfügbar (kein API Key, Rate Limit, etc.)
 
 
 def decide_node(state: SurveyState) -> SurveyState:
     """Entscheide welche Actions für die aktuelle Seite ausgeführt werden.
 
-    SOTA Pattern: NVIDIA NIM Nemotron 3 Omni Decision.
+    SOTA Pattern: NVIDIA NIM Nemotron 3 Omni Decision (SR-57).
     Input: Compact Snapshot (snapshot_refs) + Survey Profile
     Output: List von Actions [{ref, action, value}, ...]
 
-    Placeholder-Implementation (bis NIM integriert):
-      - Wenn snapshot_refs Radio-Buttons hat → erste auswählen
-      - Wenn Textarea vorhanden → "test" eintragen
-      - Immer "Nächster"/"Weiter" Button klicken
-
-    Warum Placeholder? NIM-Integration ist separate Issue.
-    Placeholder ermöglicht bereits Graph-Testing ohne NIM-API.
+    Implementation:
+      1. Lade Survey Profile (Jeremy Schulze, 32, Berlin, männlich)
+      2. Baue Compact Snapshot aus state.snapshot_refs
+      3. Rufe NIMClient.decide() auf (echter API Call)
+      4. Wenn NIM nicht verfügbar → heuristic fallback (erste Radio-Option, Textarea "Berlin", Submit)
 
     Args:
-        state: SurveyState mit snapshot_refs
+        state: SurveyState mit snapshot_refs, provider
 
     Returns:
         Updated state mit nim_actions = [
@@ -538,35 +536,96 @@ def decide_node(state: SurveyState) -> SurveyState:
         ]
 
     Side-Effects:
-        - NIM API Call (später) oder heuristic placeholder
+        - NIM API Call (wenn NVIDIA_API_KEY gesetzt)
+        - Kein API Call wenn NIM nicht verfügbar (circuit breaker open, no key, etc.)
     """
     refs = state.snapshot_refs
     actions = []
 
-    # Heuristic Decision (Placeholder für NIM Nemotron):
-    # Finde erstes Radio/Checkbox und select es
-    for ref, info in refs.items():
-        role = info.get("role", "")
-        if role in ("radio-selected", "radio-selected"):
-            actions.append({"ref": ref, "action": "select"})
-            break
-        elif role.startswith("radio"):
-            actions.append({"ref": ref, "action": "select"})
-            break
+    # ═══════════════════════════════════════════════════════════════════════
+    # SCHRITT 1: NIM Nemotron Decision (PRIMARY)
+    # ═══════════════════════════════════════════════════════════════════════
+    # WARUM NIM?
+    # → Intelligente Entscheidungen basierend auf Profil (Alter, Geschlecht, Wohnort)
+    # → Chain-of-Thought Reasoning für komplexe Fragen (Matrix, Ranking, etc.)
+    # → Besser als heuristic → niedrigere Disqualifikations-Rate
+    #
+    # WARUM try/except?
+    # → NIM könnte nicht verfügbar sein (kein API Key, Rate Limit, Netzwerk-Fehler)
+    # → Wir wollen NIEMALS den Survey-Loop crashen wegen NIM
+    # → Fallback zu heuristic ist immer verfügbar
+    try:
+        from survey.nim import get_nim
+        from survey.profile_loader import ProfileLoader
 
-    # Finde Textarea und fülle mit Test-Wert
-    has_textarea = any(v.get("role") == "textarea" for v in refs.values())
-    if has_textarea:
-        # Persona-basiert aus profile_loader — hier placeholder
-        actions.append({"ref": None, "action": "fill", "value": "Berlin"})
+        # Lade Profil (Jeremy Schulze, 32, Berlin, männlich)
+        profile = ProfileLoader.load_profile()
 
-    # Finde Submit-Button (Nächster/Weiter/Skip)
-    button_texts = ["Nächster", "Weiter", "Next", "Skip", "Weiter"]
-    for ref, info in refs.items():
-        text = info.get("text", "")
-        if info.get("role") == "button" and any(bt in text for bt in button_texts):
-            actions.append({"ref": ref, "action": "submit"})
-            break
+        # Baue Snapshot für NIM
+        snapshot = {
+            "refs": refs,
+            "semantic": {
+                "questions": [],  # TODO: Fragen-Extraktion aus snapshot_refs
+                "progress": f"{state.iteration}/{state.max_iterations}",
+            },
+            "provider": state.provider or "unknown",
+        }
+
+        # NIM Client entscheiden lassen
+        nim = get_nim()
+        result = nim.decide(snapshot=snapshot, profile=profile)
+
+        # Extrahiere Actions aus NIM Response
+        if result and "actions" in result:
+            actions = result["actions"]
+            # Logge NIM Entscheidung (für Debugging)
+            print(f"[NIM] {result.get('model', 'unknown')}: {len(actions)} actions, "
+                  f"{result.get('tokens', {}).get('total', 0)} tokens, "
+                  f"{result.get('elapsed_ms', 0)}ms")
+
+    except Exception as e:
+        # NIM Fehler → logge aber crashe nicht
+        print(f"[NIM] Fallback zu heuristic: {type(e).__name__}: {e}")
+
+    # ═══════════════════════════════════════════════════════════════════════
+    # SCHRITT 2: Heuristic Fallback (wenn NIM keine Actions liefert)
+    # ═══════════════════════════════════════════════════════════════════════
+    # WARUM Fallback?
+    # → Wenn NIM nicht verfügbar (kein API Key) → Survey trotzdem ausfüllen
+    # → Wenn NIM Actions leer zurückgibt → heuristic als Safety-Net
+    # → Survey-Loop darf NIEMALS stoppen wegen AI-Fehlern
+
+    if not actions:
+        # Heuristic Decision (Fallback):
+        # Finde erstes Radio/Checkbox und select es
+        for ref, info in refs.items():
+            role = info.get("role", "")
+            if role in ("radio-selected", "radio-selected"):
+                actions.append({"ref": ref, "action": "select"})
+                break
+            elif role.startswith("radio"):
+                actions.append({"ref": ref, "action": "select"})
+                break
+
+        # Finde Textarea und fülle mit Test-Wert
+        has_textarea = any(v.get("role") == "textarea" for v in refs.values())
+        if has_textarea:
+            # Persona-basiert: Wohnort aus Profil
+            try:
+                from survey.profile_loader import ProfileLoader
+                profile = ProfileLoader.load_profile()
+                city = profile.get("city", "Berlin")
+                actions.append({"ref": None, "action": "fill", "value": city})
+            except Exception:
+                actions.append({"ref": None, "action": "fill", "value": "Berlin"})
+
+        # Finde Submit-Button (Nächster/Weiter/Skip)
+        button_texts = ["Nächster", "Weiter", "Next", "Skip", "Weiter"]
+        for ref, info in refs.items():
+            text = info.get("text", "")
+            if info.get("role") == "button" and any(bt in text for bt in button_texts):
+                actions.append({"ref": ref, "action": "submit"})
+                break
 
     state.nim_actions = actions
     return state
