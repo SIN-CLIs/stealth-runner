@@ -237,9 +237,16 @@ def _find_new_tab(old_tab_ids: set, port: int = CDP_PORT) -> Optional[Dict]:
 # TESTED: survey 67064749 → purespectrum tab opened successfully
 # ═══════════════════════════════════════════════════════════════════════════
 
-def _click_modal_button_cdp(ws_url: str, port: int = CDP_PORT) -> Optional[Dict]:
+def _click_modal_button_cdp(ws_url: str, port: int = CDP_PORT, cpx_url: Optional[str] = None) -> Optional[Dict]:
     """Click 'Umfrage starten' in modal via window.open interception + Target.createTarget.
-    
+
+    Args:
+        ws_url: Dashboard tab WebSocket URL
+        port: CDP port
+        cpx_url: Optional CPX API URL (has correct subid for tracking).
+                 If provided, used INSTEAD of intercepted URL when intercepted
+                 URL lacks proper subid (subid_1=& or subid_2=website).
+
     Returns: {"status": "ok", "tab_id": str, "ws_url": str, "url": str} oder None
     """
     import websocket
@@ -305,8 +312,26 @@ def _click_modal_button_cdp(ws_url: str, port: int = CDP_PORT) -> Optional[Dict]
         
         if not survey_url or survey_url == "window.open_not_called":
             return None
-        
-        # Step 3: Target.createTarget → open survey in new tab (NO popup blocker!)
+
+        # Decide which URL to use:
+        # CPX API URL has correct subid for HeyPiggy tracking.
+        # Intercepted URL has subid from window.open call.
+        # Prefer CPX URL if it has real subid (subid_1=& = broken, use intercepted).
+        final_nav_url = survey_url  # default to intercepted
+        if cpx_url and cpx_url.startswith("https://"):
+            if "subid_1=&" in cpx_url or "subid_2=website" in cpx_url:
+                final_nav_url = survey_url  # CPX URL broken — use intercepted
+            else:
+                final_nav_url = cpx_url  # CPX URL has real subid — use it
+        # This ensures HeyPiggy can track completion with correct subid.
+
+        # Step 3: Create blank tab (NOT Target.createTarget with URL!)
+        # COOKIE TIMING FIX (2026-05-11):
+        # Previous code: Target.createTarget(survey_url) — tab navigated IMMEDIATELY
+        # before cookies were injected → redirect chain ran without heypiggy session
+        # → HeyPiggy couldn't credit completion → balance €0.
+        # FIX: Create blank tab → inject cookies → THEN Page.navigate to survey_url.
+        # This matches the opener.py approach which correctly injects before navigation.
         pages = _get_cdp_pages(port)
         if not pages:
             return None
@@ -315,10 +340,11 @@ def _click_modal_button_cdp(ws_url: str, port: int = CDP_PORT) -> Optional[Dict]
         if not browser_ws:
             return None
         
+        # 3a: Create blank tab
         ws2 = websocket.create_connection(browser_ws, timeout=10)
         ws2.send(json.dumps({
             "id": 1, "method": "Target.createTarget",
-            "params": {"url": survey_url}
+            "params": {"url": "about:blank"}
         }))
         r = json.loads(ws2.recv())
         ws2.close()
@@ -327,17 +353,61 @@ def _click_modal_button_cdp(ws_url: str, port: int = CDP_PORT) -> Optional[Dict]
         if not target_id:
             return None
         
-        # Step 4: Wait for tab to appear and get its info
-        time.sleep(3)
+        # 3b: Get the new tab's WebSocket URL
+        time.sleep(0.5)  # Small wait for tab to register
         pages2 = _get_cdp_pages(port)
         new_tab = next((p for p in pages2 if p.get("id") == target_id), None)
+        if not new_tab:
+            return None
         
-        if new_tab:
+        tab_ws = new_tab.get("webSocketDebuggerUrl")
+        if not tab_ws:
+            return None
+        
+        # 3c: Inject HeyPiggy session cookies BEFORE navigation
+        cookie_file = os.path.expanduser("~/.stealth/heypiggy-backup/heypiggy-cookies.json")
+        if os.path.exists(cookie_file):
+            try:
+                with open(cookie_file) as f:
+                    data = json.load(f)
+                heypiggy_cookies = [
+                    {k: c[k] for k in ["name", "value", "domain", "path", "expires", "secure", "httpOnly"] if k in c}
+                    for c in data.get("cookies", [])
+                    if "heypiggy" in c.get("domain", "").lower()
+                ]
+                if len(heypiggy_cookies) >= 7:
+                    ws3 = websocket.create_connection(tab_ws, timeout=10)
+                    ws3.send(json.dumps({"id": 1, "method": "Network.enable"}))
+                    json.loads(ws3.recv())
+                    ws3.send(json.dumps({
+                        "id": 2, "method": "Network.setCookies",
+                        "params": {"cookies": heypiggy_cookies}
+                    }))
+                    json.loads(ws3.recv())
+                    ws3.close()
+            except Exception as e:
+                pass  # Cookie injection failure — continue anyway
+        
+        # 3d: NOW navigate to survey URL (cookies injected first!)
+        ws4 = websocket.create_connection(tab_ws, timeout=10)
+        ws4.send(json.dumps({
+            "id": 1, "method": "Page.navigate",
+            "params": {"url": final_nav_url}
+        }))
+        json.loads(ws4.recv())
+        ws4.close()
+        
+        # Step 4: Wait for tab to load and return info
+        time.sleep(3)
+        pages3 = _get_cdp_pages(port)
+        loaded_tab = next((p for p in pages3 if p.get("id") == target_id), None)
+        
+        if loaded_tab:
             return {
                 "status": "ok",
                 "tab_id": target_id,
-                "ws_url": new_tab.get("webSocketDebuggerUrl"),
-                "url": survey_url,
+                "ws_url": loaded_tab.get("webSocketDebuggerUrl"),
+                "url": final_nav_url,
             }
         
         return None
@@ -346,13 +416,18 @@ def _click_modal_button_cdp(ws_url: str, port: int = CDP_PORT) -> Optional[Dict]
         return None
 
 
-def _handle_modal_with_cdp(ws_url: str, port: int = CDP_PORT) -> Optional[Dict]:
+def _handle_modal_with_cdp(ws_url: str, port: int = CDP_PORT, cpx_url: Optional[str] = None) -> Optional[Dict]:
     """Handle modal via CDP JS (pre-qualifier or "Umfrage starten").
-    
+
+    Args:
+        ws_url: Dashboard tab WebSocket URL
+        port: CDP port
+        cpx_url: Optional CPX API URL (has correct subid for HeyPiggy tracking)
+
     Handles two modal types:
     1. Pre-qualifier: has "Nächste" / submitQuestion() button
     2. Direct: has "Umfrage starten" / openSurvey() button
-    
+
     Returns tab info dict or None.
     """
     import websocket
@@ -400,7 +475,7 @@ def _handle_modal_with_cdp(ws_url: str, port: int = CDP_PORT) -> Optional[Dict]:
         
         if has_starten:
             # "Umfrage starten" → use window.open interception method
-            return _click_modal_button_cdp(ws_url, port)
+            return _click_modal_button_cdp(ws_url, port, cpx_url)
         
         elif has_submit:
             # Pre-qualifier → click submit then check for "Umfrage starten"
@@ -593,42 +668,17 @@ def open_survey(
     #    ✅ WINNING: window.open interception + Target.createTarget
     old_tab_ids = {p.get("id", "") for p in _get_cdp_pages(port)}
 
-    tab_info = _handle_modal_with_cdp(dashboard_ws, port)
+    tab_info = _handle_modal_with_cdp(dashboard_ws, port, survey_url)
     if tab_info and tab_info.get("status") == "ok":
         # Survey opened successfully in new tab!
+        # Navigation already done with cookies by _click_modal_button_cdp.
+        # Do NOT navigate again — that would restart the CPX redirect chain.
         tab_id = tab_info["tab_id"]
         tab_ws = tab_info["ws_url"]
-        intercepted_url = tab_info["url"]
-        
-        # If CPX API gave us a URL, prefer it (has correct subid for tracking)
-        # If not, use intercepted URL from window.open
-        final_url = survey_url if survey_url else intercepted_url
-        
-        # SUBID FIX: If intercepted URL has better subid, use it instead
-        if survey_url and intercepted_url:
-            if "subid_1=&" in intercepted_url or "subid_2=website" in intercepted_url:
-                pass  # Keep CPX API URL (has real subid)
-            else:
-                final_url = intercepted_url  # Intercepted has real subid
-        elif not survey_url:
-            final_url = intercepted_url
-        
-        # Navigate tab to the correct URL
-        if final_url:
-            try:
-                import websocket
-                ws = websocket.create_connection(tab_ws, timeout=10)
-                ws.send(json.dumps({
-                    "id": 1, "method": "Page.navigate",
-                    "params": {"url": final_url}
-                }))
-                json.loads(ws.recv())
-                ws.close()
-            except Exception:
-                pass
-        
+        final_url = tab_info["url"]  # already decided by _click_modal_button_cdp
+
         time.sleep(wait_load)
-        
+
         # Get actual URL after redirect
         provider = _detect_provider(final_url)
         try:
@@ -643,7 +693,7 @@ def open_survey(
             provider = _detect_provider(actual_url)
         except Exception:
             actual_url = final_url
-        
+
         return {
             "status": "ok",
             "tab_id": tab_id,
