@@ -13,7 +13,7 @@ from ._common import (
     require_survey_ready, update_command_registry,
 )
 
-router = APIRouter(prefix="/survey", tags=["dashboard"])
+router = APIRouter(tags=["dashboard"])
 
 import json, asyncio, websockets, urllib.request
 
