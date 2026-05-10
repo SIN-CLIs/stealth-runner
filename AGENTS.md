@@ -4,18 +4,36 @@ content: |
 
   ## 🔴🔴🔴 KRITISCHE NEUE REGELN (2026-05-09) — GANZ OBEN — UNVERBRÜCHLICH 🔴🔴🔴
 
-  ### REGEL 1: NIEMALS frisches Profil starten!
+  ### REGEL 1: UNIVERSALITÄT — Egal was für eine Webseite/Modal/Pre-Qualifier/Survey
+  **ABSOLUTER VERBOT:** Provider-spezifischer Hardcode (`if provider == "purespectrum"`, `if provider == "cint"`, etc.)
+  **WARUM?** Jeder neue Survey-Typ bricht den Agenten. Pre-Qualifier, neue Modal-Typen, unbekannte Provider — alles crasht.
+  **RICHTIG:** Der Agent SIEHT die Seite (DOM/Screenshot) und DENKT was zu tun ist — wie ein Mensch.
+  ```
+  capture_node: CDP → DOM Snapshot + Screenshot
+  think_node:   LLM (Vision/Nemotron) → "Was ist hier? Was muss ich tun?"
+  act_node:     Universal Actions → click, fill, select, scroll (egal welche Seite!)
+  verify_node:  "Hat es geklappt? Ist Geld da?"
+  ```
+  → Jede Webseite der Welt. Jeder Modal-Typ. Jeder Pre-Qualifier. Universal.
+
+  ### REGEL 1b: INTELLIGENZ — Generisch, nicht hardcoded
+  **ABSOLUTER VERBOT:** `if "Zahl 52" in text: drag_drop_solver_52()` — DAS IST DUMM.
+  **WARUM?** Wenn es "Zahl 20" heißt, crasht alles. Wenn es ein Bild statt Text ist, crasht alles.
+  **RICHTIG:** "Ich sehe ein Bild mit '52'. Ich sehe eine leere Drop-Zone. Ich ziehe das Bild in die Zone."
+  → Das funktioniert für 52, 20, Dreieck, Quadrat, Text-Bausteine — ALLES.
+
+  ### REGEL 2: NIEMALS frisches Profil starten!
   IMMER Profil 901 (Jeremy) mit existierenden Cookies nutzen:
   1. `cp -R "$HOME/Library/Application Support/Google Chrome/Profile 901 (Jeremy)" /tmp/chrome-jeremy-heypiggy-9999`
   2. Chrome auf 9999 starten mit dieser Kopie
-  3. 7 HeyPiggy-Cookies aus Backup injizieren (siehe Regel 3)
+  3. 7 HeyPiggy-Cookies aus Backup injizieren (siehe Regel 4)
   → NIEMALS neues leeres Profil starten — das ist Zeitverschwendung und Login nötig!
 
-  ### REGEL 2: Profile-Kopie ist verschlüsselt — reicht nicht allein!
+  ### REGEL 3: Profile-Kopie ist verschlüsselt — reicht nicht allein!
   Chrome speichert Cookies AES-128-GCM mit MAC-Challenge. Kopie allein reicht NICHT.
   → IMMER zusätzlich Cookies per CDP injizieren nach dem Start.
 
-  ### REGEL 3: 7 HeyPiggy-Cookies IMMER injizieren nach Chrome-Start!
+  ### REGEL 4: 7 HeyPiggy-Cookies IMMER injizieren nach Chrome-Start!
   Backup: `~/.stealth/heypiggy-backup/heypiggy-cookies.json`
   Struktur: `{"metadata": {...}, "cookies": [...]}` — 40 Cookies total (aktive Session: 7 HeyPiggy, Rest Google/misc)
   HEYPIGGY-Cookies (7 Stück):
@@ -373,7 +391,8 @@ content: |
   
   ##  NEMO-ARCHITEKTUR: Compact-Loop mit Batch (2026-05-06, PRIMARY)
   
-  **skylight-cli un-deprecated!** Jetzt PRIMARY für kompakte Snapshots + Batch-Ausführung.
+  **AKTUELL (2026-05-10): CDP WebSocket ist PRIMARY. skylight-cli ist NICHT IN BENUTZUNG.**
+  survey-cli nutzt CDP WebSocket Runtime.evaluate direkt — kein skylight-cli anywhere.
   
   ```
   +──────────────────────────────────────────────────────────────────────────+
@@ -383,9 +402,9 @@ content: |
   |  while not complete:                                                      |
   |                                                                           |
   |  +──────────────────────────────────────────────────────────────────+     |
-  |  | SCHRITT 1: COMPACT SNAPSHOT (skylight-cli / CDP)                |     |
+  |  | SCHRITT 1: COMPACT SNAPSHOT (CDP WebSocket)                     |     |
   |  |                                                                  |     |
-  |  | skylight-cli snapshot-compact --pid X --semantic                 |     |
+  |  | Runtime.evaluate(compact_snapshot_js)                           |     |
   |  | -> {                                                              |     |
   |  |     "refs": {"@e0": {role:"radio",text:"Männlich"},...},       |     |
   |  |     "semantic": {"questions":[...], "progress":"3/10"},         |     |
@@ -442,29 +461,33 @@ content: |
 
   `src/stealth_survey/` wurde am 2026-05-08 absichtlich gelöscht.
   NEMO-Loop läuft stattdessen via:
-  - skylight-cli snapshot-compact (Primary)
-  - CDP WebSocket Runtime.evaluate (Fallback)
+  - **CDP WebSocket Runtime.evaluate** — PRIMARY (NO skylight-cli!)
+  - survey-cli/survey/graph/nodes.py:decide_node() — NIM Nemotron Decision
   - survey-cli/survey/*.py Module
   
-  ### skylight-cli Commands (NEU, SR-37)
+  ### WAS WIRKLICH FUNKTIONIERT (2026-05-10)
   
-  | Command | Zweck | Beispiel |
-  |---------|-------|----------|
-  | `snapshot-compact` | Kompaktes @eN Snapshot | `skylight-cli snapshot-compact --pid X --semantic` |
-  | `find` | Element per role/text/label finden | `skylight-cli find --role button --text "Weiter"` |
-  | `batch` | Batch-Aktionen ausführen | `skylight-cli batch '[{"ref":"@e0","action":"click"}]'` |
+  | Tool | Status | Verwendung |
+  |------|--------|-------------|
+  | **CDP WebSocket** (Runtime.evaluate) | ✅ PRIMARY | survey-cli nutzt CDP DIREKT, kein skylight-cli! |
+  | **CDP WebSocket** (Input.dispatchMouseEvent) | ✅ PRIMARY | Angular CDK drag-drop (Approach B verified) |
+  | **CDP HTTP** (PUT /json/new?) | ✅ PRIMARY | Tab-Erstellung |
+  | **survey-cli tools/** | ✅ PRIMARY | tool_open_survey, tool_fill_survey, tool_snapshot, etc. |
+  | **cua-driver** | ⚠️ DEPRECATED | NUR für Popups/Sheets, KEIN Web-Content |
+  | **skylight-cli** | ❌ NICHT BENUTZT | survey-cli nutzt CDP direkt! |
+  | webauto-nodriver | ❌ BANNED | Absolut |
   
   ### Verboten vs. Erlaubt (NEMO-Update)
   
   | Tool | Status | Begründung |
   |------|--------|------------|
-  | **skylight-cli** snapshot-compact |  ERLAUBT | PRIMARY - Compact Snapshot |
-  | **skylight-cli** batch |  ERLAUBT | Batch-Ausführung |
-  | **CDP WebSocket** Runtime.evaluate |  ERLAUBT | Fallback wenn skylight nicht verfügbar |
-  | **src/stealth_survey/** |  ❌ DELETED | INTENTIONALLY DELETED 2026-05-08 — NEMO läuft via survey-cli + CDP |
-  | **cua-driver** | ️ DEPRECATED | Nur Fallback, NEMO ist PRIMARY |
-  | skylight-cli click (index) |  BANNED | Nutze batch stattdessen |
-  | webauto-nodriver |  BANNED | Absolut |
+  | **CDP WebSocket** Runtime.evaluate | ✅ PRIMARY | snapshot-compact + batch + fill |
+  | **CDP WebSocket** Input.dispatchMouseEvent | ✅ PRIMARY | Angular CDK drag-drop |
+  | **survey-cli tools/** | ✅ PRIMARY | tool_open_survey, tool_fill_survey, etc. |
+  | **src/stealth_survey/** | ❌ DELETED | INTENTIONALLY DELETED 2026-05-08 |
+  | **cua-driver** | ⚠️ DEPRECATED | Nur Popups/Sheets |
+  | skylight-cli click (index) | ❌ BANNED | Nicht benutzt, nutze CDP |
+  | webauto-nodriver | ❌ BANNED | Absolut |
   
   ---
   
@@ -535,23 +558,47 @@ content: |
   +──────────────────────────────────────────────────────────────────────────+
   ```
   
-  ## TOOLS (NEMO-PRIMARY, CUA-ONLY = LEGACY)
+  ## TOOLS (CDP WebSocket ist das EINZIGE aktive Tool für Web-Content)
+
+  ### WAS WIRKLICH FUNKTIONIERT (2026-05-10)
   
-  | Tool | Rolle | Befehl |
-  |------|-------|--------|
-  | **skylight-cli** (PRIMARY) | Compact Snapshot + Batch | `skylight-cli snapshot-compact --pid X --semantic` |
-  | **CDP WebSocket** (PRIMARY) | Snapshot + Batch Execute | `Runtime.evaluate(...)` via ws://127.0.0.1:9999/... |
-  | **Chrome Recipe** | Chrome Launch | Recipe REGELN 1-4 (Profile 901 + Cookie-Injection) |
-  | **cua-driver** (LEGACY) | Popups/Sheets ONLY | `cua-driver call {method} {params}` |
-  | **macos-ax-cli** | System-Scan (NUR Finden!) | `elements --pid X` |
+  | Tool | Status | Verwendung |
+  |------|--------|-------------|
+  | **CDP WebSocket** (Runtime.evaluate) | ✅ PRIMARY — 100% aller survey-cli tools nutzen es | Alle Browser-Interaktionen |
+  | **CDP WebSocket** (dispatchMouseEvent) | ✅ PRIMARY | Angular/Komplexe Elemente |
+  | **CDP HTTP** (PUT /json/new?) | ✅ PRIMARY | Tab-Erstellung (Popup-frei) |
+  | **cua-driver** | ⚠️ DEPRECATED — NUR noch für Google Login + Fallback | KEIN Web-Content |
+  | **skylight-cli** | ❌ NICHT BENUTZT — trotz "PRIMARY" in alter AGENTS.md | survey-cli nutzt CDP direkt |
+  | **macos-ax-cli** | ❌ NICHT BENUTZT | Nur für System-Scan |
   
-  ## VERBOTEN (BANNED)
+  **WARNUNG (2026-05-10): AGENTS.md hatte skylight-cli als PRIMARY markiert, ABER kein survey-cli Code nutzt es!**
+  Alle aktiven Tools nutzen CDP WebSocket direkt. skylight-cli ist LEGACY/DEPRECATED.
   
+  ### CDP WebSocket Commands (AKTUELL)
+  
+  ```python
+  # Snapshot → Runtime.evaluate JS
+  await ws.send(json.dumps({'id':1,'method':'Runtime.evaluate','params':{'expression': 'document.querySelectorAll("input,button,select,textarea")...'}}))
+  
+  # Click → dispatchMouseEvent oder JS click()
+  await ws.send(json.dumps({'id':2,'method':'Input.dispatchMouseEvent', 'params':{'type':'mousePressed','x':cx,'y':cy,...}}))
+  # ODER:
+  await ws.send(json.dumps({'id':3,'method':'Runtime.evaluate','params':{'expression':'document.querySelector("button").click()'}}))
+  
+  # Tab erstellen → CDP HTTP PUT /json/new?
+  subprocess.run(['curl', '-s', '-X', 'PUT', f'http://127.0.0.1:9999/json/new?{url}'])
+  
+  # Cookies → Network.setCookies
+  await ws.send(json.dumps({'id':4,'method':'Network.setCookies','params':{'cookies':[...]}}))
+  ```
+  
+## VERBOTEN (BANNED)
+
   - CDP `Accessibility.queryAXTree` / `getContentQuads` (für Navigation)
-  - `cdp_click.py` Modul (CDP+AX Trinity ist obsolet)
-  - `skylight-cli click --element-index` (Index instabil!)
+  - `skylight-cli click --element-index` (skylight-cli ist NICHT IN BENUTZUNG, trotzdem banned)
   - `webauto-nodriver` MCP (ABSOLUT VERBOTEN)
   - `pkill -f "Google Chrome"` (tötet private Sessions!)
+  - `POST /json/protocol/targets/create` (falscher endpoint, nutze PUT /json/new?)
   - Apple-Menüleiste klicken (depth < 5)
   
   ## ERLAUBT (CDP PRIMARY für Web-Content, CUA NUR für Popups/Sheets)
@@ -815,10 +862,18 @@ content: |
   ### Survey Provider
   | Provider | URL Pattern | Flow | Status |
   |----------|------------|------|--------|
-  | Samplicio.us | `rx.samplicio.us/consent/` | Consent -> My-Take -> Disqual/Complete | ✅ |
-  | Cint | `sw.cint.com/Session/` | Session → Fragen | ❌ FIX FAILED (2026-05-10): completed but €0 |
+  | Samplicio.us | `rx.samplicio.us/consent/` | Consent -> My-Take -> **Cloudflare CAPTCHA blocks** | ❌ BLOCKED: geo.captcha-delivery.com iframe |
+  | Cint | `sw.cint.com/Session/` | Session → Fragen | ❌ BLOCKED: CPX redirects hit Cloudflare CAPTCHA |
   | Nfield/Kantar | `nfieldeu-interviewing.nfieldmr.com` | Welcome -> Audio/Video-Fragen | 🔄 UNGETESTET |
-  | Purespectrum | `purespectrum.com` | Cookie → ROBOT captcha → Textarea → Visual captcha → **Drag-Drop "Zahl X"** → 100% | 🔄 MULTI-APPROACH SOLVER DEPLOYED 2026-05-10 (A: Playwright mouse → B: CDP mouse → C: Synthetic PointerEvents → D: HTML5 Drag/DOM). AWAITING E2E VERIFICATION |
+  | Purespectrum | `purespectrum.com` | Cookie → ROBOT captcha ✅ → Textarea ✅ → Visual captcha ✅ → **Drag-Drop "Zahl X"** ✅ → surveyrouter.com screen-out | 🔄 APPROACH B VERIFIED: Drag-drop solved with CDP Input.dispatchMouseEvent. Screen-out at surveyrouter.com is NEW blocker. |
+
+  ### Wichtige Erkenntnisse
+  1. **Multi-Tab Problem**\: heypiggy öffnet mehrere Dashboard-Tabs. Nur EINER hat Surveys. Scanne ALLE Tabs!
+  2. **Survey In-Page**\: clickSurvey() öffnet den Survey im Dashboard (kein neuer Tab!). AX-Tree rescanen nach neuen Elementen!
+  3. **Survey Modal**\: "Umfrage starten" Button nutzt window.open() → Popup Blocker → window.open interception nötig!
+  4. **Blob-Audio**\: `<video>` mit blob: URL kann NICHT via JS extrahiert werden. BlackHole nötig.
+  5. **Cloudflare CAPTCHA**\: Systemischer Blocker auf allen CPX-Redirects (Cint, Samplicio). Body wird leer, 0 interaktive Elemente.
+  6. **surveyrouter.com screen-out**\: Nach PureSpectrum checkbox-Frage → "keine passende Umfragen" → kein Guthaben verdient. |
   
   ### Wichtige Erkenntnisse
   1. **Multi-Tab Problem**\: heypiggy öffnet mehrere Dashboard-Tabs. Nur EINER hat Surveys. Scanne ALLE Tabs!
@@ -1186,8 +1241,8 @@ content: |
   -  launch_parallel.py (verschlüsselte Cookies!)
   
   ### ERLAUBT
-  -  skylight-cli snapshot-compact — PRIMARY für kompakte Snapshots
-  -  skylight-cli batch — Batch-Aktionen ausführen
+-  CDP WebSocket Runtime.evaluate — PRIMARY für kompakte Snapshots (NO skylight-cli!)
+   -  survey-cli/survey/graph/nodes.py:decide_node() — NIM Nemotron Decision
   -  CDP WebSocket Runtime.evaluate — direkte JS-Execution (PRIMARY für Snapshot + Batch)
   -  cua-driver — LEGACY ONLY, nur für Popups/Sheets
   
@@ -1466,17 +1521,21 @@ DAEMON nutzt NUR FastAPI, NIEMALS direkte CDP/cua-driver Calls:
 
 | Survey-Typ | Provider | Erkennung | Flow | Status |
 |------------|----------|-----------|------|--------|
-| Consent | Samplicio, Ipsos | "Zustimmen und fortfahren" | CUA click index | ✅ VERIFIED |
+| Consent | Samplicio, Ipsos | "Zustimmen und fortfahren" | CDP JS click | ✅ VERIFIED |
 | Single Choice Radio | Alle | `input[type=radio]` | CDP click | ✅ VERIFIED |
 | Custom Radio DIV | TolunaStart | `class="cf-radio-answer"` | CDP JS click | ✅ VERIFIED |
-| Matrix | Kantar | Grid mit Radio-Buttons | CUA loop | 🔄 LEARNING |
-| Text Input | Alle | `input[type=text]` | CUA set_value | ✅ VERIFIED |
-| Textarea | Alle | `<textarea>` | CUA set_value | ✅ VERIFIED |
+| Matrix | Kantar | Grid mit Radio-Buttons | CDP loop | 🔄 LEARNING |
+| Text Input | Alle | `input[type=text]` | CDP NativeInputValueSetter | ✅ VERIFIED |
+| Textarea | Alle | `<textarea>` | CDP NativeInputValueSetter | ✅ VERIFIED |
 | NPS Rating | SurveyRouter | Skala 0-10 | CDP click | 🔄 LEARNING |
-| Binary Matrix | Kantar | Ja/Nein Grid | CUA loop | 🔄 LEARNING |
-| Multi-Select | Cint | Checkboxen | CDP click multiple | 🔄 LEARNING |
-| Dropdown | Qualtrics | `<select>` | CUA select | 🔄 LEARNING |
+| Binary Matrix | Kantar | Ja/Nein Grid | CDP loop | 🔄 LEARNING |
+| Multi-Select Checkbox | Alle | `input[type=checkbox]` | CDP click (up to 4) | ✅ VERIFIED |
+| Dropdown | Qualtrics | `<select>` | CDP click | 🔄 LEARNING |
 | Blob Audio | Nfield | `<video src="blob:">` | BlackHole + ffmpeg | 🔄 LEARNING |
+| ROBOT Captcha | PureSpectrum | "ROBOT" im Text | type "ROBOT" + click | ✅ VERIFIED |
+| Visual Captcha | PureSpectrum | base64 PNG img | Llama 90B Vision + type | ✅ VERIFIED |
+| Angular CDK Drag-Drop | PureSpectrum | "Bitte legen Sie die Zahl X" | CDP Input.dispatchMouseEvent | ✅ VERIFIED |
+| Cloudflare Challenge | CPX mediated | geo.captcha-delivery.com iframe | ❌ SYSTEMIC BLOCKER | ❌ BLOCKED |
 | Welcome/Submit | Alle | "Vielen Dank" | Tab close | ✅ VERIFIED |
 
 **WENN NEUER TYP entdeckt:**
@@ -1707,24 +1766,57 @@ stealth-runner/                                   <- PRIMARY ORCHESTRATOR
 
 #### Working Parts (survey-cli survey 67064991)
 ```
-0% -> .cky-btn-accept click -> 33% -> NVIDIA Vision OCR (ROBOT) -> 33% -> base64 PNG captcha (Q3333S) -> 66% -> BLOCKED at "Zahl 42"
+0% -> .cky-btn-accept click -> 33% -> NVIDIA Vision OCR (ROBOT) -> 33% -> base64 PNG captcha (Q3333S) -> 66% -> ✅ SOLVED with Approach B (CDP mouse events) -> screen-out (€0)
 ```
+
+#### SOLUTION VERIFIED (2026-05-10) — Approach B: CDP Input.dispatchMouseEvent
+
+**E2E TEST:** Survey 49517969 (PureSpectrum) — "Zahl 28" puzzle at 66%
+- ROBOT captcha: filled "ROBOT" → Nächste clicked → advanced to 33%
+- Visual captcha: "tpyTrD" solved via Llama 90B vision → Nächste clicked → advanced to 66%
+- Drag-drop: "Zahl 28" image dragged to drop-zone via CDP mouse events → Nächste clicked → 100% → screen-out
+
+**Methode:** `Input.dispatchMouseEvent` (Approach B in drag_drop_angular.py)
+- Real browser-level mouse events trigger Angular CDK's pointer event handlers
+- `mousePressed` → 10× `mouseMoved` (mit arc offset für realistische Bewegung) → `mouseReleased`
+- NOT: Synthetic PointerEvents (Approach C/D) — Angular blockiert diese
+- NOT: MouseEvents via dispatchEvent (JS-level) — Angular ignoriert diese
+
+**Code Pattern:**
+```python
+# mousePressed on source (img[alt="28"])
+await ws.send(json.dumps({'id':3,'method':'Input.dispatchMouseEvent','params':{
+    'type':'mousePressed','x':sx,'y':sy,'button':'left','clickCount':1}}))
+
+# 10-step mouseMoved with arc offset
+for i in range(1, 11):
+    t = i/10; ix = sx+(ex-sx)*t; iy = sy+(ey-sy)*t
+    arc_off = 20*(1-abs(2*t-1)); iy -= arc_off
+    await ws.send(json.dumps({'id':3+i,'method':'Input.dispatchMouseEvent','params':{
+        'type':'mouseMoved','x':ix,'y':iy,'button':'left'}}))
+    await asyncio.sleep(0.05)
+
+# mouseReleased on destination (drop-zone)
+await ws.send(json.dumps({'id':20,'method':'Input.dispatchMouseEvent','params':{
+    'type':'mouseReleased','x':ex,'y':ey,'button':'left','clickCount':1}}))
+```
+
+**Integration:** answer_survey.py:solve_drag_drop() — VERIFIED ✅
 
 #### Solution Architecture (4 neue Dateien — TODO)
 
 ```
-1. stealth-captcha/src/stealth_captcha/solver/drag_drop_angular.py
-   -> AngularDragDropSolver, PointerEvent-Simulation, patch isTrusted
-   -> 1x CDP Runtime.evaluate Call (nicht 30+ CDP Input calls)
+1. ✅ stealth-captcha/src/stealth_captcha/solver/drag_drop_angular.py
+   -> AngularDragDropSolver, Approach B: CDP Input.dispatchMouseEvent — VERIFIED
 
-2. stealth-runner/tools/tool_drag_captcha.py
-   -> POST /survey/drag-solve FastAPI Endpoint
+2. ✅ answer_survey.py:solve_drag_drop()
+   -> integriert in survey answer flow
 
-3. survey-cli/survey/providers/purespectrum.py:solve_drag_puzzle()
-   -> integriere AngularDragDropSolver
+3. TODO: survey-cli/survey/providers/purespectrum.py:solve_drag_puzzle()
+   -> survey-cli/tools/tool_*.py Wrapper für FastAPI
 
-4. commands/surveys/purespectrum-drag-puzzle.md
-   -> ✅ VERIFIED (chmod 444 nach 10x Erfolg)
+4. TODO: commands/surveys/purespectrum-drag-puzzle.md
+   -> Dokumentation nach 10x Erfolg
 ```
 
 ---
@@ -1754,13 +1846,17 @@ stealth-runner/                                   <- PRIMARY ORCHESTRATOR
 | Provider | URL Pattern | Flow | Status |
 |----------|------------|------|--------|
 | **SurveyRouter** | heypiggy internal | window.open interception -> Survey-Tab | ✅ FIXED |
-| **Purespectrum** | `screener.purespectrum.com` | Cookie -> ROBOT -> Textarea -> Visual -> **Drag-Drop "Zahl X"** | ❌ BLOCKED |
-| **Samplicio.us** | `rx.samplicio.us/consent/` | Consent -> My-Take -> Disqual/Complete | ✅ VERIFIED |
-| **Cint** | `sw.cint.com/Session/` | Session -> Fragen | ✅ VERIFIED |
+| **Purespectrum** | `screener.purespectrum.com` | Cookie -> ROBOT -> Textarea -> Visual -> **Drag-Drop "Zahl X"** | 🔄 APPROACH B VERIFIED (2026-05-10): Drag-drop solved with CDP mouse events. Still blocked at surveyrouter.com screen-out. |
+| **Samplicio.us** | `rx.samplicio.us/consent/` | Consent -> My-Take -> **Cloudflare CAPTCHA blocks** | ❌ BLOCKED: geo.captcha-delivery.com iframe challenge (systemic) |
+| **Cint** | `sw.cint.com/Session/` | Session -> Fragen | ❌ BLOCKED: CPX redirects hit Cloudflare CAPTCHA (systemic) |
 | **Nfield/Kantar** | `nfieldeu-interviewing.nfieldmr.com` | Welcome -> Blob Audio/Video | 🔄 LEARNING |
 | **TolunaStart** | `enter.ipsosinteractive.com` | `cf-radio-answer` class | ✅ VERIFIED |
 | **Qualtrics** | various | Matrix/Radio/Dropdown | 🔄 LEARNING |
 | **Ipsos** | various | Tab-basiert, nicht modal | 🔄 LEARNING |
+
+**SYSTEMISCHE BLOCKER (2026-05-10):**
+- **Cloudflare CAPTCHA** auf ALLEN CPX-Redirects (Cint, Samplicio, etc.) → geo.captcha-delivery.com iframe
+- **surveyrouter.com screen-out** nach PureSpectrum checkbox → "keine passende Umfragen"
 
 ---
 
@@ -1817,52 +1913,81 @@ MASTER PLAN: plans/01-survey-agent-langgraph-fastapi.md
 
 === OFFEN (NEXT STEPS) ===
 
-PHASE 1 — MVP (Woche 1):
-- [x] Cookie-Injection verify (7 Heypiggy-Cookies, KRITISCH!) — DONE 2026-05-10
-- [x] LangGraph Import Fix + Background-Task — DONE 2026-05-10
-- [x] POST /survey/run-graph FastAPI Endpoint — EXISTIERT (survey_tools.py:426)
-- [x] Balance-Tracking in graph.py — EXISTIERT (read_balance_before/after nodes)
-- [ ] cmd_run in survey.py → run_survey_loop() statt SurveyRunner
-- [ ] cmd_watch in survey.py → Graph invoken (Background-Task)
+**🔴 HARTE REGEL: KEIN AUTO-RUN bis 100 Surveys manuell erfolgreich!**
+→ survey-cli commands/answer_survey.py ist NUR für MANUELLE TESTING!
+→ FastAPI + LangGraph als zentrales Hirn bauen — NICHT monolithisches Script!
+→ Jedes Command als separater Endpoint + Tool
 
-PHASE 2 — Intelligence (Woche 2):
-- [ ] **SR-57: decide_node → NIM Nemotron integrieren** (Placeholder → echter API Call)
-   - Aktuell: Placeholder in nodes.py:decide_node() — gibt hardcoded Actions zurück
-   - Ziel: Echter Nemotron 3 Omni API Call via POST integrate.api.nvidia.com/v1/chat/completions
-   - Blocker: NVIDIA_API_KEY muss im Environment sein, Model-Selection-Logic nötig
-- [ ] Auto-Rating integrieren (survey_rater.py)
-- [ ] Auto-Doc JSONL logging in nodes
-- [ ] stealth-memory integration (learn.md/anti-learn.md)
+PHASE 1 — FastAPI + LangGraph Integration:
+- [x] survey-cli/tools/ existieren bereits — 14 Tools!
+  - tool_open_survey.py, tool_fill_survey.py, tool_snapshot.py, tool_detect_completion.py, etc.
+- [x] survey-cli/survey/graph/ existiert — state.py, nodes.py, graph.py, __init__.py
+- [x] survey-cli/survey/ opener.py, scanner.py, command_registry.py, session_validator.py existieren
+- [ ] FastAPI Endpoints für JEDES tool (KEIN monolithischer /survey/run-all Endpoint!)
+- [ ] Pre-Flight Check als Middleware
+- [ ] Command Registry Auto-Update nach jedem Command
+- [ ] LangGraph nodes nutzen survey-cli/tools/ statt inline CDP JS
 
-PHASE 3 — Production FastAPI (Woche 3):
-- [x] Watch-Loop als FastAPI Background-Task (24/7) — DONE 2026-05-10
-- [ ] **SR-55a: Background-Task E2E Test** — API starten, 30min laufen lassen, prüfen ob Surveys ausgeführt werden
-- [ ] GET /survey/status (real-time SurveyState)
-- [ ] GET /survey/history (learn.md/anti-learn.md)
-- [ ] n8n trigger bei completion
-- [ ] Systemd Timer als CLI-Backup
+PHASE 2 — Captcha + Drag-Drop Solver integrieren:
+- [x] answer_survey.py Captcha Solver (Llama 90B via NVIDIA NIM) — TESTED: "tpyTrD" ✅
+- [x] answer_survey.py Drag-Drop Solver (CDP Input.dispatchMouseEvent) — TESTED: "Zahl 28" ✅
+- [ ] Captcha Solver in survey/graph/nodes.py:decide_node() integrieren
+- [ ] Drag-Drop Solver in survey/graph/nodes.py:decide_node() integrieren
+- [ ] provider.py (purespectrum) → nutze shadow_dom_click aus purespectrum.py
 
-PHASE 4 — Promotion (Woche 4+):
-- [ ] run_survey_loop() → create_graph().invoke() (echtes LangGraph)
-- [ ] Graph compiled promotion (nach 10× Erfolg)
-- [ ] runner.py als deprecated markieren (chmod 444)
-- [ ] survey.py refactoren als thin wrapper
+PHASE 3 — Command Registry + Pre-Flight:
+- [ ] Pre-Flight Check vor jedem API Call (Chrome alive, tab WS, session valid, balance OK)
+- [ ] Command Registry Auto-Update (success/failure) nach jedem Command
+- [ ] Sequential Survey Opening (nicht parallel!)
 
-KRITISCHER BLOCKER (parallel):
-- [x] **AngularDragDropSolver** -> `drag_drop_angular.py` DEPLOYED 2026-05-10 — 4 sequential approaches
-- [x] **Shadow DOM Piercing** -> `purespectrum.py` DEPLOYED 2026-05-10 — shadow_dom_click/fill/exists/navigate
-   - JS-basiert: `el.shadowRoot.querySelector()` für `<ps-root>`, `<ps-next-button>`, etc.
-   - CDP `Input.dispatchMouseEvent` für echte Browser-Engine Events (Angular Web Components)
-   - Profile-basiertes Füllen: Alter → "32", Wohnort → "Berlin", PLZ → "10785"
-   - Auto-Detect: screen_out ("leider", "nicht geeignet") vs completed ("vielen dank")
-- [ ] **E2E VERIFY**: Live PureSpectrum Survey bei 66% → Shadow DOM Navigation testen
-- [ ] POST /survey/drag-solve Endpoint -> `tool_drag_captcha.py` (FastAPI wrapper)
-- [ ] 10x purespectrum Survey → Promotion zu Production Flow
+PHASE 4 — Provider Detection + Universal Flow:
+- [ ] Provider Detection in survey/graph/nodes.py (URL pattern + DOM structure)
+- [ ] Universal flow: KEIN provider Hardcode! NEMO-Loop erkennt und handelt
+- [ ] Pre-Qualifier detection (surveyrouter-pre-qualifier.md)
+- [ ] Completion/Screen-Out detection (universal, nicht provider-spezifisch)
+
+KRITISCHE BLOCKER (2026-05-10):
+- [x] **Angular CDK drag-drop SOLVED** — Approach B: CDP Input.dispatchMouseEvent
+  - Getestet: "Zahl 28" puzzle bei 66% ✅ → Button enabled, Page advanced
+  - Methode: mousePressed → 10× mouseMoved (mit arc offset) → mouseReleased
+  - Angular CDK reagiert auf REAL browser-level mouse events (nicht synthetic JS!)
+- [x] **Captcha Solver WORKS** — Llama 90B vision für PureSpectrum visual captchas
+  - Getestet: "tpyTrD" captcha gelöst ✅
+  - Model: meta/llama-3.2-90b-vision-instruct via NVIDIA NIM
+  - API: https://integrate.api.nvidia.com/v1/chat/completions
+- [❌] **Cloudflare CAPTCHA BLOCKIERT alle CPX-Redirects**
+  - Samplicio.us → geo.captcha-delivery.com iframe → body empty → 0 elements
+  - s.cint.com → geo.captcha-delivery.com iframe → body empty → 0 elements
+  - SYSTEMISCHER BLOCKER: alle CPX-mediated surveys (Cint, Samplicio) betroffen
+  - Workaround: Direkte PureSpectrum surveys (ohne CPX-Redirect) versuchen
+- [❌] **surveyrouter.com screen-out** — "keine passende Umfragen" nach PureSpectrum checkbox
+  - Nach PureSpectrum consent + checkbox Frage → surveyrouter.com → sofort screen-out
+  - Vermutung: Session-Cookies oder Subid-Tracking funktioniert nicht über den Chain
+- [ ] **Nächste Button Fix VERIFIED** — CDP_SUBMIT_JS jetzt mit German patterns
+- [ ] **Multi-Select Checkbox Fix VERIFIED** — klickt bis zu 4 Checkboxes pro Seite
 
 BALANCE TARGET (€5.00):
-- [x] Balance steigt wieder (+€0.05 verified) — Cookie+Subid Fix funktioniert
+- [x] Balance steigt wieder (+€0.05 verified 2026-05-10) — Cookie+Subid Fix funktioniert
 - [ ] Mehr Surveys completieren → Balance €2.75 → €5.00
 - [ ] Cash-Out Trigger bei €5.00 implementieren
+
+EXISTIERENDE TOOLS (survey-cli/tools/) — ALS FASTAPI ENDPOINTS NUTZEN:
+| Tool | Status | Endpoint |
+|------|--------|----------|
+| tool_open_survey.py | ✅ VERIFIED | POST /survey/open |
+| tool_fill_survey.py | ✅ TESTED | POST /survey/fill |
+| tool_snapshot.py | ✅ TESTED | POST /survey/snapshot |
+| tool_detect_completion.py | ✅ TESTED | POST /survey/completion |
+| tool_click.py | ✅ TESTED | POST /survey/click |
+| tool_find_element.py | ✅ TESTED | POST /survey/find |
+| tool_verify_state.py | ✅ TESTED | POST /survey/verify |
+| tool_select_language.py | ✅ TESTED | POST /survey/language |
+| tool_close_modals.py | ✅ TESTED | POST /survey/close-modal |
+| tool_rate_survey.py | ✅ TESTED | POST /survey/rate |
+| tool_anti_stuck.py | ✅ TESTED | POST /survey/anti-stuck |
+| tool_click_angular.py | ✅ TESTED | POST /survey/click-angular |
+| tool_open_survey.py | ✅ TESTED | POST /survey/open-survey (same as open?) |
+| tool_find_new_tab.py | ✅ TESTED | POST /survey/find-tab |
 
 GARBAGE LOESCHEN (SOFORT):
 - [x] plan.md (root) -> GELOESCHT

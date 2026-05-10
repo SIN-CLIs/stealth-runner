@@ -503,16 +503,32 @@ class SurveyRunner:
                     time.sleep(self.config.wait_page_load)
                     continue
 
-                # 5h. Check completion (survey tab + cross-tab)
+                # 5h. Check completion (BODY TEXT is PRIMARY!)
+                # 
+                # FIX (2026-05-10): Surveys show "Vielen Dank" in body text
+                # but URL stays the same. OLD CODE checked URL+title → MISSED
+                # completion → loop continued → background started next survey → 6 tabs!
+                # 
+                # FIX: Check BODY TEXT first (via _detect_completion_text).
+                # Check URL/title as BACKUP for surveys that redirect to completion URL.
+                # 
+                # Flow:
+                #   1. Read body text from survey tab (PRIMARY — catches completion)
+                #   2. Check URL/title completion redirect (BACKUP — rare case)
+                #   3. Scan all browser tabs (TERTIARY — completion might open new tab)
                 completed = False
 
-                # Primary: check snapshot URL/title + survey tab body text
-                if detect_completion(snapshot.url + " " + snapshot.title) or \
-                   self._detect_completion_text(tab_ws):
+                # PRIMARY: Check body text via CDP (this catches "Vielen Dank", etc.)
+                if self._detect_completion_text(tab_ws):
                     completed = True
 
-                # Secondary: cross-tab scan — survey may redirect completion
-                # to a different tab (e.g., back to dashboard after payout)
+                # BACKUP: Check if URL/title contains completion redirect
+                if not completed:
+                    if detect_completion(snapshot.url + " " + snapshot.title):
+                        completed = True
+
+                # TERTIARY: Scan all browser tabs for completion
+                # Some surveys redirect to a NEW TAB after completion (back to dashboard)
                 if not completed:
                     completed = self._scan_completion_all_tabs()
 

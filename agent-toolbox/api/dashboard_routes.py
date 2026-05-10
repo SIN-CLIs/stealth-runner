@@ -247,21 +247,21 @@ async def _scan_dashboard_impl(cdp_port: int, min_reward: float = 0.0) -> dict:
 """
     
     # ═══════════════════════════════════════════════════════════════════════
-    # SCHRITT 3: JavaScript ausführen
+    # SCHRITT 3: JavaScript ausführen — DIREKT via websocket (kein ws_eval)
     # ═══════════════════════════════════════════════════════════════════════
     
     try:
-        result = ws_eval(ws_url, scan_js, timeout=10)
-        result_text = result.get("value", "{}") if result else "{}"
+        import websocket as _ws_module
+        ws = _ws_module.create_connection(ws_url, timeout=15)
+        ws.send(json.dumps({"id": 1, "method": "Runtime.evaluate", "params": {"expression": scan_js}}))
+        resp = json.loads(ws.recv())
+        ws.close()
+        result_text = resp.get("result", {}).get("result", {}).get("value", "{}")
         data = json.loads(result_text)
-    
     except Exception as e:
         logger.error(f"Dashboard scan failed: {e}")
         return {
-            "status": "error",
-            "balance_eur": 0.0,
-            "surveys": [],
-            "total_rewards": 0.0,
+            "status": "error", "balance_eur": 0.0, "surveys": [], "total_rewards": 0.0,
             "message": f"Scan failed: {str(e)}",
         }
     
@@ -276,6 +276,25 @@ async def _scan_dashboard_impl(cdp_port: int, min_reward: float = 0.0) -> dict:
         balance_match = re.search(r'(\d+[.,]?\d*)', balance_str.replace(',', '.'))
         if balance_match:
             balance_eur = float(balance_match.group(1))
+    else:
+        # FIX: Balance im body text — "2.75 €" Format (€ NACH Zahl)
+        try:
+            ws2 = _ws_module.create_connection(ws_url, timeout=15)
+            ws2.send(json.dumps({"id": 2, "method": "Runtime.evaluate", "params": {"expression": "document.body.innerText"}}))
+            resp2 = json.loads(ws2.recv())
+            ws2.close()
+            body_text = resp2.get("result", {}).get("result", {}).get("value", "")
+            # Balance: "2.75" with € after, in header area (before "Umfragen")
+            # Survey rewards are all < 1.0, balance is always >= 1.0
+            # Strategy: find first € amount >= 1.0 (the balance)
+            all_eur = re.findall(r'(\d+[.,]?\d*)\s*€', body_text[:800])
+            for amt in all_eur:
+                val = float(amt.replace(',', '.'))
+                if val >= 1.0:
+                    balance_eur = val
+                    break
+        except Exception:
+            pass
     
     # ═══════════════════════════════════════════════════════════════════════
     # SCHRITT 5: Surveys filtern und konvertieren

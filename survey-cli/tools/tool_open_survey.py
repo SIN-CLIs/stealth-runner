@@ -555,15 +555,9 @@ def open_survey(
       2. Call openSurvey() → URL captured from window.open call
       3. Target.createTarget(captured_url) → NEW TAB opens (no popup blocker!)
     """
-    # 1. Get survey URL from CPX API
+    # 1. Try CPX API first (fast path for direct surveys)
     survey_url = _get_survey_url(survey_id, port)
-    if not survey_url:
-        return {
-            "status": "error",
-            "reason": "No survey URL from CPX API (pre-qualifier or unavailable)",
-            "stage": "cpx_api",
-        }
-
+    
     # 2. Get dashboard CDP info
     dashboard_ws = _get_dashboard_ws(port)
     if not dashboard_ws:
@@ -573,7 +567,7 @@ def open_survey(
             "stage": "dashboard_ws",
         }
 
-    # 3. Click survey card on dashboard (in-page)
+    # 3. Click survey card on dashboard (ALWAYS — triggers modal/pre-qualifier)
     try:
         import websocket
         ws = websocket.create_connection(dashboard_ws, timeout=10)
@@ -604,39 +598,39 @@ def open_survey(
         # Survey opened successfully in new tab!
         tab_id = tab_info["tab_id"]
         tab_ws = tab_info["ws_url"]
-        # CRITICAL FIX (2026-05-10): Don't overwrite CPX API URL with intercepted URL
-        # The intercepted URL from window.open may lack subid parameters
-        # which are required for HeyPiggy completion tracking.
-        # Keep the CPX API URL (from line 509) which has correct subid.
         intercepted_url = tab_info["url"]
         
-        # SUBID FIX: If intercepted URL lacks subid, use CPX API URL instead
-        # The CPX API URL (from _get_survey_url) includes heypiggy's tracking subid
-        # The intercepted URL often has subid_1=&subid_2=website (empty defaults)
-        if "subid_1=&" in intercepted_url or "subid_2=website" in intercepted_url:
-            # Intercepted URL has empty/default subid — keep CPX API URL
-            pass  # survey_url already holds the correct CPX API URL
-        else:
-            # Intercepted URL has real subid — prefer it (has dashboard context)
-            survey_url = intercepted_url
+        # If CPX API gave us a URL, prefer it (has correct subid for tracking)
+        # If not, use intercepted URL from window.open
+        final_url = survey_url if survey_url else intercepted_url
         
-        # Navigate tab to the correct URL (CPX API URL with subid)
-        try:
-            import websocket
-            ws = websocket.create_connection(tab_ws, timeout=10)
-            ws.send(json.dumps({
-                "id": 1, "method": "Page.navigate",
-                "params": {"url": survey_url}
-            }))
-            json.loads(ws.recv())
-            ws.close()
-        except Exception:
-            pass
+        # SUBID FIX: If intercepted URL has better subid, use it instead
+        if survey_url and intercepted_url:
+            if "subid_1=&" in intercepted_url or "subid_2=website" in intercepted_url:
+                pass  # Keep CPX API URL (has real subid)
+            else:
+                final_url = intercepted_url  # Intercepted has real subid
+        elif not survey_url:
+            final_url = intercepted_url
+        
+        # Navigate tab to the correct URL
+        if final_url:
+            try:
+                import websocket
+                ws = websocket.create_connection(tab_ws, timeout=10)
+                ws.send(json.dumps({
+                    "id": 1, "method": "Page.navigate",
+                    "params": {"url": final_url}
+                }))
+                json.loads(ws.recv())
+                ws.close()
+            except Exception:
+                pass
         
         time.sleep(wait_load)
         
         # Get actual URL after redirect
-        provider = _detect_provider(survey_url)
+        provider = _detect_provider(final_url)
         try:
             ws = websocket.create_connection(tab_ws, timeout=10)
             ws.send(json.dumps({
@@ -645,10 +639,10 @@ def open_survey(
             }))
             r = json.loads(ws.recv())
             ws.close()
-            actual_url = r.get("result", {}).get("result", {}).get("value", survey_url)
+            actual_url = r.get("result", {}).get("result", {}).get("value", final_url)
             provider = _detect_provider(actual_url)
         except Exception:
-            actual_url = survey_url
+            actual_url = final_url
         
         return {
             "status": "ok",
@@ -660,21 +654,18 @@ def open_survey(
             "flow": "modal_window_open_intercept",
         }
 
-    # 5. Fallback: check if survey auto-opened a new tab
+    # 5. Fallback: check if survey auto-opened a new tab (Qualtrics redirect)
     time.sleep(wait_modal)
     new_tab = _find_new_tab(old_tab_ids, port)
 
     if new_tab:
-        # New tab flow (Qualtrics redirect)
         tab_id = new_tab.get("id")
         tab_ws = new_tab.get("webSocketDebuggerUrl")
         tab_url = new_tab.get("url", "")
         provider = _detect_provider(tab_url)
 
-        # Wait for survey to load
         time.sleep(wait_load)
 
-        # Get actual URL after redirect
         try:
             ws = websocket.create_connection(tab_ws, timeout=10)
             ws.send(json.dumps({
@@ -698,13 +689,11 @@ def open_survey(
             "flow": "new_tab",
         }
 
-    # 6. In-page survey (no new tab)
-    # Try to detect provider from dashboard page
+    # 6. In-page survey (no new tab — survey loaded in dashboard iframe or redirect)
     time.sleep(wait_load)
     pages = _get_cdp_pages(port)
     for p in pages:
         if "dashboard" in p.get("url", "").lower():
-            # Check if survey loaded in dashboard (iframe or redirect)
             try:
                 ws = websocket.create_connection(
                     p.get("webSocketDebuggerUrl"), timeout=10)
@@ -729,33 +718,28 @@ def open_survey(
             except Exception:
                 pass
 
-    # Fallback: create new tab manually
-    tab_id = _create_tab(survey_url, port)
-    if not tab_id:
-        return {
-            "status": "error",
-            "reason": "Survey did not open in-page and new tab creation failed",
-            "stage": "fallback_tab",
-        }
-
-    time.sleep(wait_load)
-    pages = _get_cdp_pages(port)
-    for p in pages:
-        if p.get("id") == tab_id:
-            return {
-                "status": "ok",
-                "tab_id": tab_id,
-                "ws_url": p.get("webSocketDebuggerUrl"),
-                "provider": _detect_provider(p.get("url", "")),
-                "url": p.get("url", ""),
-                "modal_clicked": False,
-                "flow": "fallback_new_tab",
-            }
+    # 7. If CPX API gave us a URL but modal didn't open, create tab manually
+    if survey_url:
+        tab_id = _create_tab(survey_url, port)
+        if tab_id:
+            time.sleep(wait_load)
+            pages = _get_cdp_pages(port)
+            for p in pages:
+                if p.get("id") == tab_id:
+                    return {
+                        "status": "ok",
+                        "tab_id": tab_id,
+                        "ws_url": p.get("webSocketDebuggerUrl"),
+                        "provider": _detect_provider(p.get("url", "")),
+                        "url": p.get("url", ""),
+                        "modal_clicked": False,
+                        "flow": "cpx_fallback_new_tab",
+                    }
 
     return {
         "status": "error",
-        "reason": "Survey tab created but not found in page list",
-        "stage": "tab_missing",
+        "reason": "Survey did not open via modal, new tab, or in-page. Pre-qualifier may require manual answering.",
+        "stage": "all_methods_failed",
     }
 
 

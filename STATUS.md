@@ -67,7 +67,7 @@ pkill -f "chrome-jeremy-heypiggy-9999"
 
 | Key | Value | Datum |
 |-----|-------|-------|
-| **Letzte bekannte Balance** | €2.60 | 2026-05-09 |
+| **Letzte bekannte Balance** | €2.75 | 2026-05-10 |
 
 ### Session-Regel
 - Balance NUR nach echter Survey-Completion prüfen (vorher/nachher)
@@ -147,21 +147,24 @@ pkill -f "chrome-jeremy-heypiggy-9999"
 
 ---
 
-## VERIFIZIERTE FLOWS
+## VERIFIED COMMAND PIPELINE (2026-05-10)
 
-| Flow | Status | Letzter Test |
-|------|--------|--------------|
-| **Google Login (CUA)** | ✅ VERIFIED | 2026-05-05 |
-| **Cookie-Injection** | ✅ VERIFIED | 2026-05-09 |
-| **window.open interception** | ✅ VERIFIED | 2026-05-09 |
-| **Survey öffnet sich in Tab** | ✅ VERIFIED | 2026-05-09 |
-| **Survey-Tab findet (nach open)** | ✅ VERIFIED | 2026-05-09 |
-| **Consent click (.cky-btn-accept)** | ✅ VERIFIED | 2026-05-09 |
-| **CDP Input.dispatchMouseEvent** | ✅ VERIFIED | 2026-05-09 |
-| **React native value setter** | ✅ VERIFIED | 2026-05-09 |
-| **Tab re-discovery via /json** | ✅ VERIFIED | 2026-05-09 |
-| **Balance lesen (range filter)** | ✅ VERIFIED | 2026-05-09 |
-| **Survey-Rating (+€0.01 Bonus)** | ✅ VERIFIED | 2026-05-06 |
+| # | Command | Status | File | Notes |
+|---|---------|--------|------|-------|
+| 1 | `start_heypiggy.py` | ✅ VERIFIED | `survey-cli/commands/` | Chrome + Dashboard + Login |
+| 2 | `preflight_check.py` | ✅ VERIFIED | `survey-cli/commands/` | Chrome, tab, login, balance, surveys |
+| 3 | `find_survey.py` | ✅ VERIFIED | `survey-cli/commands/` | 12 surveys, clickSurvey() → modal |
+| 4 | `open_survey.py` | ✅ VERIFIED | `survey-cli/commands/` | Modal → last_link + subids → PUT /json/new → cookies → navigate |
+
+### open_survey.py Key Findings (2026-05-10)
+- **Window.open interception FAILS**: openSurvey() calls window.open BEFORE override
+- **CORRECT approach**: Read `window.last_link` + `window.subid_cpx` directly
+- **Tab creation**: `PUT /json/new?<url>` (NOT POST /json/protocol/targets/create!)
+- **NO Runtime.enable on new tab**: floods buffer, eval responses lost
+- **Providers tested**: Samplicio.us (consent page ✓), PureSpectrum (screen-out ✓)
+
+### Command Registry
+See: `survey-cli/data/command_registry.json` (updated 2026-05-10)
 
 ---
 
@@ -226,8 +229,11 @@ pkill -f "chrome-jeremy-heypiggy-9999"
 
 | Datum | Balance vorher | Aktion | Balance nachher | Ergebnis |
 |-------|---------------|--------|-----------------|----------|
+| 2026-05-10 | €2.75 | Verified command pipeline: start_heypiggy → preflight_check → find_survey → open_survey. Test mit Survey 67038730 (€0.40) → PureSpectrum screen-out (redirect back to heypiggy dashboard). 2nd test: Survey 67070743 (€0.14) → Samplicio.us consent page. | €2.75 | ✅ Pipeline VERIFIED: Modal → last_link + subids → PUT /json/new → 7 cookies injected → navigate → Samplicio (consent) + PureSpectrum (screen-out). Session retained throughout redirect chain. |
 | 2026-05-10 | €2.75 | LANGGRAPH E2E TEST — create_graph().invoke() auf echtem Survey 67083935 (CloudResearch via NRG→Decipher→CloudResearch). Graph lief 22 NIM Entscheidungen! Tabs: nrgmr.com → decipherinc.com → cloudresearch.com. Abgebrochen nach 6min Timeout (22 Iterationen × ~15s NIM = 330s). | €2.75 | ⚠️ Graph FUNZT! Survey geöffnet + 22 NIM Decisions — aber Timeout nach 6min, Balance unverändert |
-| 2026-05-10 | — | NIM Nematron 3 Omni TEST — Entscheidung: "Männlich" select + "Nächster" click (Jeremy Profil: 32, männlich, Berlin) | — | ✅ NIM funktioniert! 630 tokens, 25.6s elapsed — echte AI-Entscheidung |
+| 2026-05-10 | €2.75 | Dashboard Scanner FIX: Balance regex matched FIRST € (0.00€ → 0.14€ → wrong). Fixed with `re.findall()` + filter for `>= 1.0` (balance always >= 1.0, rewards < 1.0). API now returns 12 surveys, €2.75 balance ✅ | €2.75 | ✅ Scanner FIXED |
+| 2026-05-10 | €2.75 | Survey run-one (ID 67111973) via FastAPI — 20 pages processed, no completion | €2.75 | 🔄 Pipeline works, needs better answer selection logic |
+| 2026-05-10 | €2.75 | answer_survey.py fixes: Nächste pattern ✅, multi-select checkboxes ✅, captcha solver (Llama 90B vision) ✅, drag-drop solver (CDP mouse events) ✅. PureSpectrum surveys: checkbox → surveyrouter.com screen-out. CPX redirects (Cint, Samplicio): Cloudflare CAPTCHA blocks. | €2.75 | 🔄 answer_survey.py fixes verified. PureSpectrum passes checkbox but screen-out at surveyrouter. CPX redirects blocked by Cloudflare. |
 | 2026-05-10 | — | Shadow DOM Piercing für PureSpectrum implementiert — 4 neue Funktionen (shadow_dom_click/fill/exists/navigate) + Integration in preflight | — | ✅ IMPLEMENTED, wartet auf E2E Verifikation |
 | 2026-05-10 | — | INFRASTRUCTURE: Fixed LANGGRAPH_AVAILABLE import, installed missing deps (fastapi, uvicorn, openai, playwright, websocket-client), built 24/7 background loop, created start-api.sh | — | ✅ LangGraph + FastAPI Background-Task ready for 24/7 automation |
 | 2026-05-10 | €2.75 | PureSpectrum Survey 67105461 (PulseOpinion) — blocked at gaming question | €2.75 | ❌ Web Components (PS-*) block CDP interaction |
@@ -240,6 +246,8 @@ pkill -f "chrome-jeremy-heypiggy-9999"
 | 2026-05-05 | ~€1.50 | Civey, Proquoai, My-Take | ~€1.54 | +€0.04 verdient |
 
 **KRITISCHE ERKENNTNIS:** ✅ BALANCE STEIGT WIEDER! Cookie+Subid Fix verifiziert (2026-05-10, Survey 66695822, +€0.05). Letzter vorheriger Payout: 2026-05-06 (+€0.38 Qualtrics HUK). Die Fixes funktionieren!
+
+**NEUE ERKENNTNIS (2026-05-10):** Command-Pipeline verifiziert — open_survey.py funktioniert. window.last_link statt window.open interception. PUT /json/new statt Target.createTarget. Keine Runtime.enable auf Survey-Tab. Providers: Samplicio.us (consent ✓), PureSpectrum (screen-out ✓)
 
 ---
 

@@ -1671,6 +1671,15 @@ async def _survey_loop():
             # → Der Event-Loop bleibt responsiv (API kann weiter Requests empfangen).
             
             from survey.graph import create_graph, SurveyState
+            from survey.command_registry import acquire_survey_lock, release_survey_lock
+
+            # SURVEY LOCK — prevent parallel survey execution
+            # ROOT CAUSE FIX (2026-05-10): Completion detection failed → loop continued
+            # → background loop started next survey before old tab closed → 6 tabs stacked!
+            if not acquire_survey_lock(survey_id):
+                print(f"[BG-LOOP] Survey lock active — skipping survey {survey_id} (another survey running)")
+                await asyncio.sleep(60)  # Wait 1 min before retry
+                continue
             
             graph = create_graph()
             state = SurveyState(
@@ -1681,6 +1690,9 @@ async def _survey_loop():
             )
             
             final = await asyncio.to_thread(graph.invoke, state)
+            
+            # RELEASE LOCK — survey finished
+            release_survey_lock()
             
             # ═══════════════════════════════════════════════════════════════
             # SCHRITT 5: Ergebnis loggen
@@ -1711,6 +1723,12 @@ async def _survey_loop():
             # → Ohne das → ein Fehler stoppt den Earning-Forever!
             
             print(f"[BG-LOOP] ERROR: {type(e).__name__}: {e}")
+            # RELEASE LOCK even on error — survey tab is dead, unlock for next
+            try:
+                from survey.command_registry import release_survey_lock
+                release_survey_lock()
+            except Exception:
+                pass
             # Warte trotzdem 5 Minuten (nicht sofort retry — könnte Rate-Limit sein).
         
         # Warte 5 Minuten bis zur nächsten Iteration.

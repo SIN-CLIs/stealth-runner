@@ -1,0 +1,104 @@
+{
+  "version": "1.0.0",
+  "last_updated": "2026-05-10T10:17:12.284276Z",
+  "commands": [
+    {
+      "id": "start_heypiggy",
+      "description": "Chrome mit Profil 901 Kopie starten + HeyPiggy Dashboard oeffnen + Login verifizieren",
+      "path": "survey-cli/commands/start_heypiggy.py",
+      "success_count": 2,
+      "failure_count": 0,
+      "last_success": "2026-05-10T19:45:00Z",
+      "status": "verified",
+      "notes": "Login funktioniert mit Profile 901 Kopie, keine Cookie-Injection noetig (Profile hat entschluesselte Cookies)"
+    },
+    {
+      "id": "preflight_check",
+      "description": "Pre-Flight Validierung: Chrome alive, tab WS, login (abmelden), balance, surveys",
+      "path": "survey-cli/commands/preflight_check.py",
+      "success_count": 3,
+      "failure_count": 0,
+      "last_success": "2026-05-10T19:45:00Z",
+      "status": "verified",
+      "notes": "Body text parsing via document.body.innerText. Balance extracted via regex pattern"
+    },
+    {
+      "id": "find_survey",
+      "description": "Scanne Dashboard nach Surveys, finde hoechsten Wert, clickSurvey() ausfuehren -> Modal",
+      "path": "survey-cli/commands/find_survey.py",
+      "success_count": 2,
+      "failure_count": 0,
+      "last_success": "2026-05-10T19:45:00Z",
+      "status": "verified",
+      "notes": "12 surveys found. clickSurvey() funktioniert -> Modal mit 'Umfrage starten' Button. Provider detection aus URL"
+    },
+    {
+      "id": "open_survey",
+      "description": "Modal -> Survey URL (last_link + subids) -> Neuer Tab (PUT /json/new) -> 7 Cookies injizieren -> Survey start",
+      "path": "survey-cli/commands/open_survey.py",
+      "success_count": 3,
+      "failure_count": 0,
+      "last_success": "2026-05-10T19:45:00Z",
+      "status": "verified",
+      "notes": "window.last_link statt window.open interception. PUT /json/new?<url> fuer Tab-Erstellung (NICHT Target.createTarget!). KEINE Runtime.enable/Network.enable/Page.enable auf neuem Tab (buffer flood!). Provider: purespectrum, samplicio.us, cint detected from URL",
+      "tested_providers": [
+        "purespectrum",
+        "samplicio.us"
+      ]
+    },
+    {
+      "id": "answer_survey",
+      "description": "Universal Survey Answer Tool (CDP only, no skylight-cli, manual testing)",
+      "path": "survey-cli/commands/answer_survey.py",
+      "success_count": 0,
+      "failure_count": 63,
+      "last_success": null,
+      "last_run": "2026-05-10T10:17:12.284276Z",
+      "status": "testing",
+      "notes": "Manual testing: 2 pages, status=stuck",
+      "last_result": {
+        "pages_processed": 2,
+        "final_url": "https://ups.surveyrouter.com/TrafficUI/MSCUI/Page.aspx?pgtid=14",
+        "status": "stuck"
+      }
+    }
+  ],
+  "providers": {
+    "heypiggy": {
+      "status": "verified",
+      "surveys_available": 12,
+      "balance": "?",
+      "last_checked": "2026-05-10T19:45:00Z",
+      "notes": "Balance muss nach Survey-Completion geprueft werden"
+    }
+  },
+  "chrome": {
+    "port": 9999,
+    "profile_src": "~/Library/Application Support/Google Chrome/Profile 901 (Jeremy)",
+    "profile_pattern": "/tmp/heypiggy-new-*",
+    "last_pid": null
+  },
+  "known_issues": [
+    {
+      "issue": "Runtime.enable auf Dashboard Tab floodt WebSocket buffer",
+      "fix": "Drain alle messages (50 loops, timeout=0.5s) NACH Runtime.enable, VOR naechstem eval",
+      "affected_commands": [
+        "open_survey"
+      ]
+    },
+    {
+      "issue": "PUT /json/new?<url> navigiert SOFORT nach Tab-Erstellung",
+      "fix": "Cookies vor Page.navigate injizieren, aber erste Request geht OHNE Cookies raus (subids in URL!)",
+      "affected_commands": [
+        "open_survey"
+      ]
+    },
+    {
+      "issue": "Body text leer auf Survey-Tab (eval JS)",
+      "fix": "KEINE Runtime.enable/Network.enable/Page.enable auf Survey-Tab. 10s sleep nach Page.navigate",
+      "affected_commands": [
+        "open_survey"
+      ]
+    }
+  ]
+}
