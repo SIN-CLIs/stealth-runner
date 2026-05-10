@@ -1632,7 +1632,7 @@ BUG FIX:
 |---|------|---------------|--------|
 | 1 | **stealth-runner** | Orchestrator, FastAPI Endpoints, survey-tools | ✅ PRIMARY |
 | 2 | **survey-cli** | Standalone Survey Automation CLI, NEMO Loop | ✅ PRIMARY |
-| 3 | **stealth-captcha** | Captcha Solver Module (slide/text/drag) | ⚠️ PARTIAL — Drag BROKEN |
+| 3 | **stealth-captcha** | Captcha Solver Module (slide/text/drag) | ✅ PRIMARY — Drag APPROACH B verified (Survey 49517969) |
 | 4 | **stealth-session** | Warm Daemon, <50ms Command Execution | ✅ PRIMARY |
 | 5 | **stealth-mind** | Command Validator, Failure Pattern Recognition | ✅ ACTIVE |
 | 6 | **stealth-skills** | Private Skill Library (heypiggy platform) | ✅ ACTIVE |
@@ -1663,8 +1663,17 @@ stealth-runner/                                   <- PRIMARY ORCHESTRATOR
 ├── issues.md                                     <- SR-28 bis SR-37
 │
 ├── [agent-toolbox]/                              <- FastAPI + survey-cli Tools
-│   ├── api/survey_tools.py                       <- /survey/open, /fill, /rate, /purespectrum-preflight
-│   ├── api/survey_actions.py                     <- /survey/click
+│   ├── api/endpoints/                            <- MODULAR FASTAPI ROUTERS (KEIN MONOLITH!)
+│   │   ├── __init__.py                           <- Re-exports all routers + schemas
+│   │   ├── _schemas.py     (268L)                <- Alle Pydantic Request/Response Models
+│   │   ├── _utils.py      (221L)                <- preflight_check + require_survey_ready + update_registry
+│   │   ├── _common.py     (66L)                 <- Re-exports _schemas + _utils (backward compat)
+│   │   ├── survey_core.py     (215L)            <- /open, /close, /rate, /purespectrum-preflight, /run-graph
+│   │   ├── survey_answer.py  (267L)             <- /snapshot (ELEMENT_EXTRACTOR_JS), /completion, /answer
+│   │   ├── survey_actions.py (245L)             <- /click, /find, /verify, /click-angular, /fill-input, /find-tab, /close-modals
+│   │   ├── survey_captchas.py(138L)             <- /captcha/solve, /solve-drag (APPROACH B verified)
+│   │   └── survey_scan.py     (108L)            <- /survey/scan
+│   ├── api/survey_tools.py                       <- Router Kombination (85L) + /fill endpoint + include_router()
 │   ├── api/routes/gmx.py, fireworks.py, browser.py, rotation.py
 │   └── core/cdp_client.py, gmx_service.py, fireworks_service.py, cookie_manager.py, browser_manager.py
 │
@@ -1673,7 +1682,7 @@ stealth-runner/                                   <- PRIMARY ORCHESTRATOR
 │   └── survey/providers/
 │       ├── purespectrum.py                       <- PureSpectrum Provider
 │       │   ├── solve_purespectrum_preflight()    <- cookie + ROBOT + textarea + visual captcha ✅ WORKING
-│       │   └── solve_drag_puzzle()               <- ❌ BROKEN — __ngContext__ traversal fails
+│       │   └── solve_drag_puzzle()               <- ⚠️ DEPRECATED — tool_solve_drag_puzzle.py APPROACH B nutzen
 │       └── heypiggy.py, *.py                     <- Andere Provider
 │
 ├── [stealth-captcha]/                            <- EINGEBETTETES SUBMODUL
@@ -1684,8 +1693,8 @@ stealth-runner/                                   <- PRIMARY ORCHESTRATOR
 │           ├── slide.py                          <- SlideCaptchaSolver (GeeTest)
 │           ├── text.py                           <- TextCaptchaSolver + PixtralBackend + NVIDIA Vision ✅ WORKING
 │           ├── image_select.py                   <- ImageSelectCaptchaSolver
-│           ├── drag_drop.py                      <- DragDropCaptchaSolver ⚠️ BROKEN — MouseEvents, nicht PointerEvents
-│           ├── drag_drop_angular.py              <- 📋 NOCH ZU ERSTELLEN — PointerEvent-basierter Solver
+│           ├── drag_drop.py                      <- DragDropCaptchaSolver ⚠️ DEPRECATED — nutze drag_drop_angular.py
+│           ├── drag_drop_angular.py              <- ✅ APPROACH B: CDP Input.dispatchMouseEvent chain — VERIFIED (E2E Survey 49517969)
 │           ├── lemin.py                          <- Lemin Puzzle Solver
 │           └── utils.py                          <- helper.py, screenshot(), get_chrome_ws()
 │
@@ -1697,7 +1706,7 @@ stealth-runner/                                   <- PRIMARY ORCHESTRATOR
 │   ├── surveys/purespectrum-survey.md            <- ✅ VERIFIED
 │   ├── surveys/survey-start-flow.md              <- ✅ VERIFIED (window.open interception)
 │   ├── surveys/surveyrouter-pre-qualifier-2026-05-09.md <- ✅ VERIFIED
-│   ├── surveys/purespectrum-drag-puzzle.md       <- 📋 NOCH ZU ERSTELLEN
+│   ├── surveys/purespectrum-drag-puzzle.md       <- ✅ VERIFIED (APPROACH B E2E 2026-05-10)
 │   ├── cua-driver/click.md, set-value.md, list-windows.md, get-window-state.md, switch-tab.md
 │   └── heypiggy/credentials.md, rating-page.md
 │
