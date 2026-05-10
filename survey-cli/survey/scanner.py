@@ -325,7 +325,8 @@ def read_balance(port=9223):
     var matches = t.match(/(\d+[.,]\d+)\s*€/g);
     if (matches) {
         for (var i = 0; i < matches.length; i++) {
-            var val = parseFloat(matches[i].replace(/[^\d,]/g, "").replace(",", "."));
+            var cleaned = matches[i].replace(/[^\d.,]/g, "").replace(",", ".");
+            var val = parseFloat(cleaned);
             if (val > 0.5 && val < 1000) {
                 values.push(val);
             }
@@ -335,7 +336,8 @@ def read_balance(port=9223):
     var matches2 = t.match(/(\d+[.,]\d+)\s*€/g);
     if (matches2) {
         for (var j = 0; j < matches2.length; j++) {
-            var val2 = parseFloat(matches2[j].replace(/[^\d,]/g, "").replace(",", "."));
+            var cleaned2 = matches2[j].replace(/[^\d.,]/g, "").replace(",", ".");
+            var val2 = parseFloat(cleaned2);
             if (val2 > 0.5 && val2 < 1000) {
                 values.push(val2);
             }
