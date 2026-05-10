@@ -81,13 +81,45 @@ PROVIDER_PATTERNS = {
 
 
 def detect_provider(url):
-    """Detect survey provider from URL."""
+    """Detect survey provider from URL.
+    
+    Priority: External providers first, then internal routing.
+    surveyrouter.com = HeyPiggy internal routing layer (NOT a real provider).
+    """
     url_lower = url.lower()
     for provider, patterns in PROVIDER_PATTERNS.items():
         for pat in patterns:
             if pat in url_lower:
                 return provider
+    if "surveyrouter.com" in url_lower or "navigator.gmx" in url_lower:
+        return "internal"  # HeyPiggy/SINator internal routing
     return "unknown"
+
+
+PROVIDER_TRUST_SCORES = {
+    "qualtrics": 0.9,
+    "tolunastart": 0.8,
+    "cint": 0.7,       # blocked by Cloudflare — use with caution
+    "nfield": 0.7,
+    "tivian": 0.7,
+    "ipsos": 0.6,
+    "brand_ambassador": 0.6,
+    "insights_today": 0.6,
+    "strat7": 0.6,
+    "cloudresearch": 0.5,
+    "edgesurvey": 0.5,
+    "reach3insights": 0.5,
+    "samplicio": 0.4,  # blocked by Cloudflare — use with caution
+    "purespectrum": 0.3,  # works but screen-out rate high
+    "internal": 0.2,   # surveyrouter.com — real provider unknown until survey opens
+    "pre_qualifier": 0.1,
+    "unknown": 0.1,
+}
+
+
+def get_trust_score(provider: str) -> float:
+    """Return trust score for a provider (0.0-1.0)."""
+    return PROVIDER_TRUST_SCORES.get(provider, 0.1)
 
 
 # ── Survey ID Extraction ───────────────────────────────
@@ -159,6 +191,7 @@ def filter_surveys(survey_ids, skip_providers=None, max_ids=15, port=9223):
                 "href": resp.get("href", ""),
                 "provider": detect_provider(resp.get("href", "")),
             }
+            entry["trust_score"] = get_trust_score(entry["provider"])
 
             # Check pre-qualifier
             if entry["type"] == "question":
@@ -181,9 +214,9 @@ def filter_surveys(survey_ids, skip_providers=None, max_ids=15, port=9223):
 
 def print_survey_table(results):
     """Pretty-print filtered survey results."""
-    print(f"\n{'─'*70}")
-    print(f"  {'ID':12s} {'Type':15s} {'Provider':18s} {'URL'}")
-    print(f"{'─'*70}")
+    print(f"\n{'─'*80}")
+    print(f"  {'ID':12s} {'Type':10s} {'Provider':16s} {'Trust':6s} {'URL'}")
+    print(f"{'─'*80}")
 
     okay_count = 0
     for r in results:
@@ -193,12 +226,13 @@ def print_survey_table(results):
         prov = r.get("provider", "?")
         href = r.get("href", "")[:55]
         error = r.get("error", "")
+        trust = f"{r.get('trust_score', 0.1):.1f}"
         suffix = f" | {error}" if error else ""
-        print(f"  {icon} {pid:12s} {ptype:15s} {prov:18s} {href}{suffix}")
+        print(f"  {icon} {pid:12s} {ptype:10s} {prov:16s} {trust:6s} {href}{suffix}")
         if r.get("type") == "okay":
             okay_count += 1
 
-    print(f"{'─'*70}")
+    print(f"{'─'*80}")
     print(f"  Total: {len(results)} | OK: {okay_count} | Filtered: {len(results) - okay_count}")
     print()
 
