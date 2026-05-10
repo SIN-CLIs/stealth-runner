@@ -524,6 +524,18 @@ Resultat: Survey completed ("Vielen Dank") aber Balance erhöht sich NICHT → 0
 **Inject 7 HeyPiggy cookies BEFORE survey navigation**
 - `_create_tab()` in opener.py: inject cookies via `Network.setCookies` before `Page.navigate`
 - `_open_in_page_modal()` in opener.py: inject cookies into new tab after window.open
+- Tests: 17/18 passed
+
+### Fix 4: Balance Reading Dot/Comma Bug (COMPLETED ✅)
+**Problem**: `replace(/[^\d,]/g, "")` removed dots because `.` is not a comma
+- "2.75 €" → "275" → parseFloat(275) = €275.0 (WRONG)
+**Fix**: `replace(/[^\d.,]/g, "")` keeps both dots and commas
+- "2.75 €" → "2.75" → parseFloat(2.75) = €2.75 (CORRECT)
+**File**: `survey-cli/survey/scanner.py` lines 328, 338
+**Date**: 2026-05-10
+**Inject 7 HeyPiggy cookies BEFORE survey navigation**
+- `_create_tab()` in opener.py: inject cookies via `Network.setCookies` before `Page.navigate`
+- `_open_in_page_modal()` in opener.py: inject cookies into new tab after window.open
 - Tests: 6/8 passed (2 pre-existing failures unrelated)
 
 ### Fix 2: Subid Parameter (COMPLETED ✅)

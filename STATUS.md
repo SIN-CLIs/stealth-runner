@@ -177,6 +177,7 @@ pkill -f "chrome-jeremy-heypiggy-9999"
 | **CloudResearch** | various | ⚠️ PARTIELL | 2026-05-06 |
 | **PureSpectrum** | `screener.purespectrum.com` | 🔄 FIXED — pointer events on body, needs live test | 2026-05-10 |
 | **Cint/Tivian** | `sw.cint.com/` | ✅ FUNKTIONIERT | 2026-05-10 (+€0.05 Kompensation) |
+| **PureSpectrum** | `screener.purespectrum.com` | ⚠️ BLOCKED | 2026-05-10 (Web Components block CDP) |
 | **Insights-Today** | various | ❌ SCREEN-OUT | 2026-05-06 |
 | **Brand Ambassador** | `brand-ambassador.com` | ⚠️ SCREEN-OUT | 2026-05-06 |
 
@@ -215,6 +216,7 @@ pkill -f "chrome-jeremy-heypiggy-9999"
 
 | Datum | Balance vorher | Aktion | Balance nachher | Ergebnis |
 |-------|---------------|--------|-----------------|----------|
+| 2026-05-10 | €2.75 | PureSpectrum Survey 67105461 (PulseOpinion) — blocked at gaming question | €2.75 | ❌ Web Components (PS-*) block CDP interaction |
 | 2026-05-10 | €2.70 | Survey 66695822 (Cint→Tivian) — cookie+subid fix VERIFIED | €2.75 | ✅ +€0.05 Kompensation (Early Termination) — FIXES WORK! |
 | 2026-05-10 | €2.70 | Survey 67078106 (Cint) completed, cookie timing fix attempted | €2.70 | ❌ €0 earned — subid missing in intercepted URL |
 | 2026-05-10 | €2.70 | Survey 67078107 (CPX→PureSpectrum→Potloc→CloudResearch) — subid empty, Chrome crashed at Q3 | €2.70 | ❌ €0 earned — multiple issues |
