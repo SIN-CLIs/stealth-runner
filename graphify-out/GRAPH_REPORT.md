@@ -1,12 +1,12 @@
 # Graph Report - stealth-runner  (2026-05-10)
 
 ## Corpus Check
-- 170 files · ~2,728,319 words
+- 170 files · ~2,730,080 words
 - Verdict: corpus is large enough that graph structure adds value.
 
 ## Summary
-- 3713 nodes · 8949 edges · 93 communities detected
-- Extraction: 48% EXTRACTED · 52% INFERRED · 0% AMBIGUOUS · INFERRED: 4666 edges (avg confidence: 0.57)
+- 3724 nodes · 8981 edges · 94 communities detected
+- Extraction: 48% EXTRACTED · 52% INFERRED · 0% AMBIGUOUS · INFERRED: 4678 edges (avg confidence: 0.57)
 - Token cost: 0 input · 0 output
 
 ## Community Hubs (Navigation)
@@ -58,7 +58,7 @@
 - [[_COMMUNITY_Community 45|Community 45]]
 - [[_COMMUNITY_Community 46|Community 46]]
 - [[_COMMUNITY_Community 47|Community 47]]
-- [[_COMMUNITY_Community 49|Community 49]]
+- [[_COMMUNITY_Community 48|Community 48]]
 - [[_COMMUNITY_Community 50|Community 50]]
 - [[_COMMUNITY_Community 51|Community 51]]
 - [[_COMMUNITY_Community 52|Community 52]]
@@ -68,7 +68,7 @@
 - [[_COMMUNITY_Community 56|Community 56]]
 - [[_COMMUNITY_Community 57|Community 57]]
 - [[_COMMUNITY_Community 58|Community 58]]
-- [[_COMMUNITY_Community 61|Community 61]]
+- [[_COMMUNITY_Community 59|Community 59]]
 - [[_COMMUNITY_Community 62|Community 62]]
 - [[_COMMUNITY_Community 63|Community 63]]
 - [[_COMMUNITY_Community 64|Community 64]]
@@ -103,6 +103,7 @@
 - [[_COMMUNITY_Community 93|Community 93]]
 - [[_COMMUNITY_Community 94|Community 94]]
 - [[_COMMUNITY_Community 95|Community 95]]
+- [[_COMMUNITY_Community 96|Community 96]]
 
 ## God Nodes (most connected - your core abstractions)
 1. `SurveyRunner` - 321 edges
@@ -131,8 +132,8 @@
 ## Communities
 
 ### Community 0 - "Community 0"
-Cohesion: 0.02
-Nodes (251): Entscheide welche Node als nächstes ausgeführt wird.      Dies ist das zentrale, Entscheide welche Node als nächstes ausgeführt wird.      Dies ist das zentrale, Baue den Survey-StateGraph.      Graph-Struktur:       START → ensure_chrome → o, Baue den Survey-StateGraph.      Graph-Struktur:       START → ensure_chrome → r, Factory: Erstelle und kompiliere den Survey-Graph.      Convenience-Wrapper für:, Factory: Erstelle und kompiliere den Survey-Graph.      Convenience-Wrapper für:, Standalone Survey-Loop ohne LangGraph.      Fallback für Umgebungen wo LangGraph, Standalone Survey-Loop ohne LangGraph.      Fallback für Umgebungen wo LangGraph (+243 more)
+Cohesion: 0.01
+Nodes (271): build_graph(), create_graph(), ================================================================================, Entscheide welche Node als nächstes ausgeführt wird.      Dies ist das zentrale, Entscheide welche Node als nächstes ausgeführt wird.      Dies ist das zentrale, Entscheide welche Node als nächstes ausgeführt wird.      Dies ist das zentrale, Baue den Survey-StateGraph.      Graph-Struktur:       START → ensure_chrome → o, Baue den Survey-StateGraph.      Graph-Struktur:       START → ensure_chrome → r (+263 more)
 
 ### Community 1 - "Community 1"
 Cohesion: 0.02
@@ -140,11 +141,11 @@ Nodes (246): Exception, ActionSelector, Select actions from a CompactSnapshot us
 
 ### Community 2 - "Community 2"
 Cohesion: 0.02
-Nodes (194): ABC, BaseSettings, BaseSolver, _find_chrome(), Chrome launcher with hardened flags for stealth automation.  WARUM: Standard-Chr, Manages a Chrome process with stealth flags and isolated profile.      Usage:, Launch Chrome with stealth flags.          Blocks until the CDP endpoint becomes, Open a URL in the default tab (creates one if none exist).          Requires tha (+186 more)
+Nodes (130): jitter(), patch(), rng(), main(), Main daemon module for stealth-sync.  This module implements the core daemon tha, Start the daemon and begin polling.                  This method sets up signal, Stop the daemon gracefully.                  Shuts down the scheduler and perfor, Handle shutdown signals (SIGINT, SIGTERM).                  Args:             si (+122 more)
 
 ### Community 3 - "Community 3"
 Cohesion: 0.02
-Nodes (137): decrypt_value(), extract_cookies(), get_key(), main(), Get Chrome Safe Storage key from macOS Keychain., Decrypt a single Chrome cookie value., Extract all cookies from Chrome profile., jitter() (+129 more)
+Nodes (170): ABC, BaseSettings, BaseSolver, _find_chrome(), Chrome launcher with hardened flags for stealth automation.  WARUM: Standard-Chr, Manages a Chrome process with stealth flags and isolated profile.      Usage:, Launch Chrome with stealth flags.          Blocks until the CDP endpoint becomes, Open a URL in the default tab (creates one if none exist).          Requires tha (+162 more)
 
 ### Community 4 - "Community 4"
 Cohesion: 0.04
@@ -163,12 +164,12 @@ Cohesion: 0.03
 Nodes (101): api_close_survey(), api_fill_survey(), api_open_survey(), api_purespectrum_preflight(), api_rate_survey(), api_run_survey_graph(), CloseSurveyRequest, CloseSurveyResponse (+93 more)
 
 ### Community 8 - "Community 8"
-Cohesion: 0.04
-Nodes (79): CuaAdapter, CuaResult, CuaAdapter — Tiny seam over cua-driver CLI.  WARUM: auto_google_login.py war 170, Type text into AXTextField via cua-driver set_value., Find bot Chrome window by keywords.          Returns:             (pid, wid) tup, Ergebnis eines cua-driver Aufrufs.          WARUM eigene Klasse statt dict?, Initialisiere CuaResult.                  WARUM Defaults ("", "", 0)?, Parse stdout als JSON, gib {} zurück bei Fehler.                  ABLAUF: (+71 more)
+Cohesion: 0.03
+Nodes (96): ProviderAdapter, CompletionState, ProviderAdapter, ProviderAdapter interface for provider-specific survey behavior.  The engine sho, Provider completion classification., Base adapter with URL matching, commands, and completion detection., Return True if this adapter owns the URL or page text., Return CDP command templates for this provider. (+88 more)
 
 ### Community 9 - "Community 9"
-Cohesion: 0.03
-Nodes (85): ProviderAdapter, CompletionState, ProviderAdapter, ProviderAdapter interface for provider-specific survey behavior.  The engine sho, Provider completion classification., Base adapter with URL matching, commands, and completion detection., Return True if this adapter owns the URL or page text., Return CDP command templates for this provider. (+77 more)
+Cohesion: 0.04
+Nodes (79): CuaAdapter, CuaResult, CuaAdapter — Tiny seam over cua-driver CLI.  WARUM: auto_google_login.py war 170, Type text into AXTextField via cua-driver set_value., Find bot Chrome window by keywords.          Returns:             (pid, wid) tup, Ergebnis eines cua-driver Aufrufs.          WARUM eigene Klasse statt dict?, Initialisiere CuaResult.                  WARUM Defaults ("", "", 0)?, Parse stdout als JSON, gib {} zurück bei Fehler.                  ABLAUF: (+71 more)
 
 ### Community 10 - "Community 10"
 Cohesion: 0.03
@@ -187,32 +188,32 @@ Cohesion: 0.02
 Nodes (96): generate_repo(), main(), make_agents(), make_anti_learn(), make_api(), make_architecture(), make_banned(), make_benchmarks() (+88 more)
 
 ### Community 14 - "Community 14"
-Cohesion: 0.04
-Nodes (49): _config_value(), CPXCredentials, get_cpx_credentials(), get_google_email(), get_nvidia_api_key(), get_secrets(), MissingSecretError, SecretsClient — single source of truth for all credentials.  Resolution order: e (+41 more)
+Cohesion: 0.03
+Nodes (50): Test CDP helper functions with mocked HTTP., Test close_survey_tab function., Placeholder: close_survey_tab exists and accepts tab_id., Test _detect_provider — provider detection from URL., Test _get_details_url and _get_survey_url., TestCdpHelpers, TestCloseSurveyTab, TestCpxApi (+42 more)
 
 ### Community 15 - "Community 15"
-Cohesion: 0.04
-Nodes (42): mail' in 'E-Mail oder Telefonnummer' matches via boundary (mail is word-bounded, Test find_element — main element finder., Weiter' finds [246] but not [247] 'Weitere Informationen'., Weitere' should match 'Weitere Informationen'., Test find_all — returning multiple matches., Test convenience finders: find_button, find_radio, etc., Test diagnose() helper for debugging failed searches., Test _parse_markdown — extracting element dictionaries. (+34 more)
+Cohesion: 0.03
+Nodes (8): detect_completion(), Test SOTA detection functions: detect_error_page, detect_progress, detect_comple, Test detect_progress() — SOTA progress state detection., Test detect_completion() — provider-specific completion detection., Test BatchExecutor.detect_error_page() — comprehensive error detection., TestDetectCompletion, TestDetectErrorPage, TestDetectProgress
 
 ### Community 16 - "Community 16"
 Cohesion: 0.04
-Nodes (41): Klicke auf ein Element via cua-driver AXPress.                  ABLAUF:, Click element via cua-driver AXPress., MockWebSocket, click returns error when element not in DOM., click handles WebSocket connection failure gracefully., Three CDP mouse events dispatched: move, press, release., Mock CDP WebSocket that returns shaped responses., Test CDP mouse event click via mocked WebSocket. (+33 more)
+Nodes (42): mail' in 'E-Mail oder Telefonnummer' matches via boundary (mail is word-bounded, Test find_element — main element finder., Weiter' finds [246] but not [247] 'Weitere Informationen'., Weitere' should match 'Weitere Informationen'., Test find_all — returning multiple matches., Test convenience finders: find_button, find_radio, etc., Test diagnose() helper for debugging failed searches., Test _parse_markdown — extracting element dictionaries. (+34 more)
 
 ### Community 17 - "Community 17"
 Cohesion: 0.04
-Nodes (34): build_graph(), create_graph(), ================================================================================, Entscheide welche Node als nächstes ausgeführt wird.      Dies ist das zentrale, Baue den Survey-StateGraph.      Graph-Struktur:       START → ensure_chrome → r, Factory: Erstelle und kompiliere den Survey-Graph.      Convenience-Wrapper für:, Standalone Survey-Loop ohne LangGraph.      Fallback für Umgebungen wo LangGraph, route() (+26 more)
+Nodes (41): Klicke auf ein Element via cua-driver AXPress.                  ABLAUF:, Click element via cua-driver AXPress., MockWebSocket, click returns error when element not in DOM., click handles WebSocket connection failure gracefully., Three CDP mouse events dispatched: move, press, release., Mock CDP WebSocket that returns shaped responses., Test CDP mouse event click via mocked WebSocket. (+33 more)
 
 ### Community 18 - "Community 18"
 Cohesion: 0.05
 Nodes (26): detect_provider(), Detect survey provider from URL., _detect_progress(), _detect_questions(), generate_snapshot(), Generate compact snapshot from CDP WebSocket URL.      Args:         ws_url: CDP, Extract question texts., Detect survey progress. (+18 more)
 
 ### Community 19 - "Community 19"
-Cohesion: 0.04
-Nodes (5): Test SOTA detection functions: detect_error_page, detect_progress, detect_comple, Test detect_progress() — SOTA progress state detection., Test BatchExecutor.detect_error_page() — comprehensive error detection., TestDetectErrorPage, TestDetectProgress
+Cohesion: 0.08
+Nodes (46): _bezier(), _ease_out_quint(), Human-like Bezier mouse trajectory generator.  WARUM: Moderne Captchas analysier, A single point in the mouse trajectory.      Attributes:         t_ms: Milliseco, Ease-out quintic: fast start, smooth stop.      This matches human motor control, Cubic Bezier interpolation at parameter t ∈ [0, 1]., Generates human-like drag trajectories.      Usage:         gen = TrajectoryGene, Generate a human-like drag trajectory from start to end.          Args: (+38 more)
 
 ### Community 20 - "Community 20"
-Cohesion: 0.09
-Nodes (36): Generates human-like drag trajectories.      Usage:         gen = TrajectoryGene, TrajectoryGenerator, Bezier trajectory generator — tunes the human-likeness of drags., TrajectorySettings, default_settings(), gen(), Tests for the Bezier trajectory generator.  WARUM: Die Trajektorie ist das Herzs, ================================================================================ (+28 more)
+Cohesion: 0.05
+Nodes (29): detect_language_page(), Detect Qualtrics language selection page and return select action.      PROBLEM:, Runner imports detect_language_page from execute.py., Runner NEMO loop calls detect_language_page for qualtrics provider.          Thi, execute.py exports detect_language_page., detect_language_page returns [{"action": "select", "value": ..., "lang_page": Tr, detect_language_page returns None on any exception (fail gracefully)., detect_language_page returns None when CDP response value is empty. (+21 more)
 
 ### Community 21 - "Community 21"
 Cohesion: 0.05
@@ -235,28 +236,28 @@ Cohesion: 0.1
 Nodes (19): CaptchaSolver, Convert DOM (viewport) coordinates to window coordinates, Execute drag via cua-driver CGEvent, Solve slide captcha (gc-drag-block on gc-drag-slide-bar), Generic: drag element from drag_selector to drop_selector, ================================================================================, ================================================================================, _make_run_side_effect() (+11 more)
 
 ### Community 26 - "Community 26"
-Cohesion: 0.08
-Nodes (18): Integration test: tool_select_language calls CDP with correct JS.      tool_sele, tool_select_language sends JS with selectedIndex + dispatchEvent., tool_select_language returns the CDP result dict., Default language is Deutsch., TestToolSelectLanguageIntegration, Empty CDP response returns error., WebSocket is closed after successful call., Default language is Deutsch. (+10 more)
-
-### Community 27 - "Community 27"
 Cohesion: 0.11
 Nodes (15): Check if page text contains completion markers., _make_response(), URL containing 'complete' returns 'completed'., WebSocket failure conservative: returns 'running'., English 'thank you for completing' returns 'completed'., quota full' returns 'screen_out'., Unknown page with no markers returns 'running'., Always returns a str. (+7 more)
 
-### Community 28 - "Community 28"
-Cohesion: 0.09
-Nodes (18): _verify_rating_done returns False when tab still on rating page., rate_survey always returns a dict., Test rate_survey() — rating completed surveys., Returns 'not_found' when no rating page detected., Rating tab without WebSocket URL returns error., CDP HTTP failure returns empty list., _click_rating_button returns True when WebSocket call succeeds., _click_rating_button returns False on error. (+10 more)
-
-### Community 29 - "Community 29"
+### Community 27 - "Community 27"
 Cohesion: 0.08
 Nodes (11): Tests for Agent-Toolbox API endpoints.  WARUM: Die API muss isoliert testbar sei, Test /tools/extract-cookies endpoint., POST /tools/extract-cookies returns cookies., Test /browser/* endpoints with mocked BrowserManager., POST /browser/start returns success., POST /browser/stop returns success., GET /browser/health when browser not running., Test /services/heypiggy/login endpoint. (+3 more)
 
-### Community 30 - "Community 30"
+### Community 28 - "Community 28"
+Cohesion: 0.12
+Nodes (14): ExperienceMemory, Episodic experience memory: caches successful trajectories per (host, captcha-ty, ================================================================================, Initialize the database and create tables if needed., Store a trajectory in the experience database.          Args:             record, Find successful trajectories with similar gap distance.          Args:, Get memory statistics., Close the database connection. (+6 more)
+
+### Community 29 - "Community 29"
 Cohesion: 0.09
 Nodes (10): _daily_file(), _ensure_logs(), SurveyMetrics — in-memory counters + periodic JSONL persistence.  WARUM: Phase 5, Return current metrics snapshot., Write current snapshot to JSONL., Reset all counters (for testing)., Reset metrics singleton (for testing)., Thread-safe in-memory metrics singleton with JSONL persistence. (+2 more)
 
-### Community 31 - "Community 31"
+### Community 30 - "Community 30"
 Cohesion: 0.1
 Nodes (12): CookieManager, ╔══════════════════════════════════════════════════════════════════════════════╗, Verwaltet Browser-Cookies für Session-Persistenz.          Extrahiert, speichert, Initialisiert den Cookie-Manager.                  ABLAUF:         1. Speichere, Extrahiert alle Cookies der aktuellen Page.                  ABLAUF:         1., Speichert Cookies in eine JSON-Datei.                  ABLAUF:         1. Erstel, Lädt Cookies aus einer JSON-Datei.                  ABLAUF:         1. Erstelle, Injiziert Cookies in einen Browser-Context.                  ABLAUF:         1. (+4 more)
+
+### Community 31 - "Community 31"
+Cohesion: 0.16
+Nodes (17): _config_value(), CPXCredentials, get_cpx_credentials(), get_google_email(), get_nvidia_api_key(), get_secrets(), MissingSecretError, SecretsClient — single source of truth for all credentials.  Resolution order: e (+9 more)
 
 ### Community 32 - "Community 32"
 Cohesion: 0.14
@@ -299,206 +300,210 @@ Cohesion: 0.32
 Nodes (7): _cleanup_old_entries(), _get_client_id(), rate_limit_dependency(), ╔══════════════════════════════════════════════════════════════════════════════╗, FastAPI Dependency für Rate Limiting.     Prüft ALLE Tier-Limits. Wenn EINES gre, Erzeugt eine Client-ID aus IP und User-Agent., Entfernt Einträge die älter als 24h sind.
 
 ### Community 42 - "Community 42"
+Cohesion: 0.36
+Nodes (7): decrypt_value(), extract_cookies(), get_key(), main(), Get Chrome Safe Storage key from macOS Keychain., Decrypt a single Chrome cookie value., Extract all cookies from Chrome profile.
+
+### Community 43 - "Community 43"
 Cohesion: 0.38
 Nodes (6): check_repo(), find_repo(), main(), SOTA Audit: check ALL required files + UPPERCASE violations., ================================================================================, Find repo dir by name in /Users/jeremy/dev.
 
-### Community 43 - "Community 43"
+### Community 44 - "Community 44"
 Cohesion: 0.29
 Nodes (3): Tests for fail-closed secret resolution., SecretsClient must never return real code defaults., TestSecretsClient
 
-### Community 44 - "Community 44"
+### Community 45 - "Community 45"
 Cohesion: 0.4
 Nodes (2): jitter(), rng()
 
-### Community 45 - "Community 45"
+### Community 46 - "Community 46"
 Cohesion: 0.53
 Nodes (5): _fill_textarea(), _find_submit(), ActionSelector — generate survey actions from CompactSnapshot when NIM unavailab, select_actions(), _select_radio()
 
-### Community 46 - "Community 46"
+### Community 47 - "Community 47"
 Cohesion: 0.5
 Nodes (3): load(), Embedded JS payloads for reference — legacy dispatchEvent approach.  WARUM: Hist, Load a JS payload by filename.      Args:         name: Filename (e.g., "gocaptc
 
-### Community 47 - "Community 47"
+### Community 48 - "Community 48"
 Cohesion: 0.67
 Nodes (1): Survey CLI Test Suite.  WARUM: Jede Änderung am Survey-Loop (NEMO, CDP, Provider
 
-### Community 49 - "Community 49"
+### Community 50 - "Community 50"
 Cohesion: 1.0
 Nodes (1): Prüft ob Chrome aktiv ist.                  PRÜFUNG IN REIHENFOLGE:         1. W
 
-### Community 50 - "Community 50"
+### Community 51 - "Community 51"
 Cohesion: 1.0
 Nodes (1): POST /services/heypiggy/login returns success.
 
-### Community 51 - "Community 51"
+### Community 52 - "Community 52"
 Cohesion: 1.0
 Nodes (1): POST /services/heypiggy/login when already logged in.
 
-### Community 52 - "Community 52"
+### Community 53 - "Community 53"
 Cohesion: 1.0
 Nodes (1): POST /services/heypiggy/login with error.
 
-### Community 53 - "Community 53"
+### Community 54 - "Community 54"
 Cohesion: 1.0
 Nodes (1): Hole NVIDIA_API_KEY aus Umgebungsvariable.                  WARUM @staticmethod
 
-### Community 54 - "Community 54"
+### Community 55 - "Community 55"
 Cohesion: 1.0
 Nodes (1): Hole NVIDIA_API_KEY oder wirf MissingSecretError.                  WARUM @classm
 
-### Community 55 - "Community 55"
+### Community 56 - "Community 56"
 Cohesion: 1.0
 Nodes (1): Hole konfigurierte Google Login E-Mail.                  ABLAUF:           1. Ru
 
-### Community 56 - "Community 56"
+### Community 57 - "Community 57"
 Cohesion: 1.0
 Nodes (1): Hole komplette CPX Credentials als CPXCredentials Objekt.                  ABLAU
 
-### Community 57 - "Community 57"
+### Community 58 - "Community 58"
 Cohesion: 1.0
 Nodes (1): Löse ein required Secret auf (Resolution Order: env → config → error).
 
-### Community 58 - "Community 58"
+### Community 59 - "Community 59"
 Cohesion: 1.0
 Nodes (1): Löse dotted key in ~/.stealth/config.yaml auf.                  ABLAUF:
 
-### Community 61 - "Community 61"
+### Community 62 - "Community 62"
 Cohesion: 1.0
 Nodes (1): Zählt wie oft aktueller Hash wiederholt wurde.                  RETURNS:
 
-### Community 62 - "Community 62"
+### Community 63 - "Community 63"
 Cohesion: 1.0
 Nodes (1): execute() creates GoogleOAuthFlow and returns result.
 
-### Community 63 - "Community 63"
+### Community 64 - "Community 64"
 Cohesion: 1.0
 Nodes (1): execute() returns error dict on failure.
 
-### Community 64 - "Community 64"
+### Community 65 - "Community 65"
 Cohesion: 1.0
 Nodes (1): execute() returns ok for already_logged_in status.
 
-### Community 65 - "Community 65"
+### Community 66 - "Community 66"
 Cohesion: 1.0
 Nodes (1): Generate action list from snapshot (fallback when NIM unavailable).          Arg
 
-### Community 66 - "Community 66"
+### Community 67 - "Community 67"
 Cohesion: 1.0
 Nodes (1): Return select action for best radio/checkbox match.
 
-### Community 67 - "Community 67"
+### Community 68 - "Community 68"
 Cohesion: 1.0
 Nodes (1): Return submit action for first enabled submit button.
 
-### Community 68 - "Community 68"
+### Community 69 - "Community 69"
 Cohesion: 1.0
 Nodes (1): Return fill action for first textarea with plausible answer.
 
-### Community 69 - "Community 69"
+### Community 70 - "Community 70"
 Cohesion: 1.0
 Nodes (1): Load profile from JSON or return default with calculated age.          Args:
 
-### Community 70 - "Community 70"
+### Community 71 - "Community 71"
 Cohesion: 1.0
 Nodes (1): Calculate earnings from before/after balance.          Returns max(0, after - be
 
-### Community 71 - "Community 71"
-Cohesion: 1.0
-Nodes (1): True wenn Graph noch aktiv ist (nicht completed/error/delegated).
-
 ### Community 72 - "Community 72"
 Cohesion: 1.0
-Nodes (1): True wenn Graph in einem Endzustand ist.
+Nodes (1): True wenn Graph noch aktiv ist (nicht completed/error/delegated).
 
 ### Community 73 - "Community 73"
 Cohesion: 1.0
-Nodes (1): True wenn 3+ consecutive failures erreicht wurden.
+Nodes (1): True wenn Graph in einem Endzustand ist.
 
 ### Community 74 - "Community 74"
 Cohesion: 1.0
-Nodes (1): Berechneter Verdienst: balance_after minus balance_before.
+Nodes (1): True wenn 3+ consecutive failures erreicht wurden.
 
 ### Community 75 - "Community 75"
 Cohesion: 1.0
-Nodes (1): Read balance with exponential backoff — avoids false 0.00€ reads.      Dashboard
+Nodes (1): Berechneter Verdienst: balance_after minus balance_before.
 
 ### Community 76 - "Community 76"
 Cohesion: 1.0
-Nodes (1): Angular CDK drag-drop puzzle solver (sync wrapper).      Tries in order:     1.
+Nodes (1): Read balance with exponential backoff — avoids false 0.00€ reads.      Dashboard
 
 ### Community 77 - "Community 77"
 Cohesion: 1.0
-Nodes (1): Get live details_url from dashboard page.
+Nodes (1): Angular CDK drag-drop puzzle solver (sync wrapper).      Tries in order:     1.
 
 ### Community 78 - "Community 78"
 Cohesion: 1.0
-Nodes (1): Fetch actual survey URL from CPX API.
+Nodes (1): Get live details_url from dashboard page.
 
 ### Community 79 - "Community 79"
 Cohesion: 1.0
-Nodes (1): Create new browser tab via CDP Target.createTarget.
+Nodes (1): Fetch actual survey URL from CPX API.
 
 ### Community 80 - "Community 80"
 Cohesion: 1.0
-Nodes (1): Find a tab that wasn't in old_tab_ids.
+Nodes (1): Create new browser tab via CDP Target.createTarget.
 
 ### Community 81 - "Community 81"
 Cohesion: 1.0
-Nodes (1): Click 'Umfrage starten' in modal via window.open interception + Target.createTar
+Nodes (1): Find a tab that wasn't in old_tab_ids.
 
 ### Community 82 - "Community 82"
 Cohesion: 1.0
-Nodes (1): Handle modal via CDP JS (pre-qualifier or "Umfrage starten").          Handles t
+Nodes (1): Click 'Umfrage starten' in modal via window.open interception + Target.createTar
 
 ### Community 83 - "Community 83"
 Cohesion: 1.0
-Nodes (1): Handle pre-qualifier modal: click submit, then handle resulting modal.
+Nodes (1): Handle modal via CDP JS (pre-qualifier or "Umfrage starten").          Handles t
 
 ### Community 84 - "Community 84"
 Cohesion: 1.0
-Nodes (1): Open a survey — handle CPX redirect + modals + new-tab detection.      Args:
+Nodes (1): Handle pre-qualifier modal: click submit, then handle resulting modal.
 
 ### Community 85 - "Community 85"
 Cohesion: 1.0
-Nodes (1): Close a survey tab and return to dashboard.
+Nodes (1): Open a survey — handle CPX redirect + modals + new-tab detection.      Args:
 
 ### Community 86 - "Community 86"
 Cohesion: 1.0
-Nodes (1): Read balance with exponential backoff — avoids false 0.00€ reads.      Dashboard
+Nodes (1): Close a survey tab and return to dashboard.
 
 ### Community 87 - "Community 87"
 Cohesion: 1.0
-Nodes (1): True wenn Graph noch aktiv ist (nicht completed/error/delegated).
+Nodes (1): Read balance with exponential backoff — avoids false 0.00€ reads.      Dashboard
 
 ### Community 88 - "Community 88"
 Cohesion: 1.0
-Nodes (1): True wenn Graph in einem Endzustand ist.
+Nodes (1): True wenn Graph noch aktiv ist (nicht completed/error/delegated).
 
 ### Community 89 - "Community 89"
 Cohesion: 1.0
-Nodes (1): True wenn 3+ consecutive failures erreicht wurden.
+Nodes (1): True wenn Graph in einem Endzustand ist.
 
 ### Community 90 - "Community 90"
 Cohesion: 1.0
-Nodes (1): Berechneter Verdienst: balance_after minus balance_before.
+Nodes (1): True wenn 3+ consecutive failures erreicht wurden.
 
 ### Community 91 - "Community 91"
 Cohesion: 1.0
-Nodes (1): Füge einen Fehler zur errors-Liste hinzu.          Args:             node: Name
+Nodes (1): Berechneter Verdienst: balance_after minus balance_before.
 
 ### Community 92 - "Community 92"
 Cohesion: 1.0
-Nodes (1): Reset consecutive_failures auf 0 nach erfolgreichem execute.
+Nodes (1): Füge einen Fehler zur errors-Liste hinzu.          Args:             node: Name
 
 ### Community 93 - "Community 93"
 Cohesion: 1.0
-Nodes (1): Inkrementiere consecutive_failures nach failed execute.
+Nodes (1): Reset consecutive_failures auf 0 nach erfolgreichem execute.
 
 ### Community 94 - "Community 94"
 Cohesion: 1.0
-Nodes (1): Inkrementiere iteration nach NEMO-Loop-Durchlauf.
+Nodes (1): Inkrementiere consecutive_failures nach failed execute.
 
 ### Community 95 - "Community 95"
+Cohesion: 1.0
+Nodes (1): Inkrementiere iteration nach NEMO-Loop-Durchlauf.
+
+### Community 96 - "Community 96"
 Cohesion: 1.0
 Nodes (1): Kompakte String-Repräsentation für Debugging.
 
@@ -507,110 +512,110 @@ Nodes (1): Kompakte String-Repräsentation für Debugging.
   These have ≤1 connection - possible missing edges or undocumented components.
 - **Thin community `Community 38`** (10 nodes): `test_action_selector.py`, `TestActionSelector`, `._make_snapshot()`, `.test_empty_snapshot()`, `.test_fills_textarea()`, `.test_finds_submit_button()`, `.test_max_two_actions()`, `.test_selects_first_radio_when_no_preferred()`, `.test_selects_preferred_persona_answer()`, `.test_skips_disabled_elements()`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 44`** (6 nodes): `get()`, `jitter()`, `patch()`, `rng()`, `safe()`, `stealth_main.js`
+- **Thin community `Community 45`** (6 nodes): `get()`, `jitter()`, `patch()`, `rng()`, `safe()`, `stealth_main.js`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 47`** (3 nodes): `__init__.py`, `__init__.py`, `Survey CLI Test Suite.  WARUM: Jede Änderung am Survey-Loop (NEMO, CDP, Provider`
+- **Thin community `Community 48`** (3 nodes): `__init__.py`, `__init__.py`, `Survey CLI Test Suite.  WARUM: Jede Änderung am Survey-Loop (NEMO, CDP, Provider`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 49`** (1 nodes): `Prüft ob Chrome aktiv ist.                  PRÜFUNG IN REIHENFOLGE:         1. W`
+- **Thin community `Community 50`** (1 nodes): `Prüft ob Chrome aktiv ist.                  PRÜFUNG IN REIHENFOLGE:         1. W`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 50`** (1 nodes): `POST /services/heypiggy/login returns success.`
+- **Thin community `Community 51`** (1 nodes): `POST /services/heypiggy/login returns success.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 51`** (1 nodes): `POST /services/heypiggy/login when already logged in.`
+- **Thin community `Community 52`** (1 nodes): `POST /services/heypiggy/login when already logged in.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 52`** (1 nodes): `POST /services/heypiggy/login with error.`
+- **Thin community `Community 53`** (1 nodes): `POST /services/heypiggy/login with error.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 53`** (1 nodes): `Hole NVIDIA_API_KEY aus Umgebungsvariable.                  WARUM @staticmethod`
+- **Thin community `Community 54`** (1 nodes): `Hole NVIDIA_API_KEY aus Umgebungsvariable.                  WARUM @staticmethod`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 54`** (1 nodes): `Hole NVIDIA_API_KEY oder wirf MissingSecretError.                  WARUM @classm`
+- **Thin community `Community 55`** (1 nodes): `Hole NVIDIA_API_KEY oder wirf MissingSecretError.                  WARUM @classm`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 55`** (1 nodes): `Hole konfigurierte Google Login E-Mail.                  ABLAUF:           1. Ru`
+- **Thin community `Community 56`** (1 nodes): `Hole konfigurierte Google Login E-Mail.                  ABLAUF:           1. Ru`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 56`** (1 nodes): `Hole komplette CPX Credentials als CPXCredentials Objekt.                  ABLAU`
+- **Thin community `Community 57`** (1 nodes): `Hole komplette CPX Credentials als CPXCredentials Objekt.                  ABLAU`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 57`** (1 nodes): `Löse ein required Secret auf (Resolution Order: env → config → error).`
+- **Thin community `Community 58`** (1 nodes): `Löse ein required Secret auf (Resolution Order: env → config → error).`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 58`** (1 nodes): `Löse dotted key in ~/.stealth/config.yaml auf.                  ABLAUF:`
+- **Thin community `Community 59`** (1 nodes): `Löse dotted key in ~/.stealth/config.yaml auf.                  ABLAUF:`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 61`** (1 nodes): `Zählt wie oft aktueller Hash wiederholt wurde.                  RETURNS:`
+- **Thin community `Community 62`** (1 nodes): `Zählt wie oft aktueller Hash wiederholt wurde.                  RETURNS:`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 62`** (1 nodes): `execute() creates GoogleOAuthFlow and returns result.`
+- **Thin community `Community 63`** (1 nodes): `execute() creates GoogleOAuthFlow and returns result.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 63`** (1 nodes): `execute() returns error dict on failure.`
+- **Thin community `Community 64`** (1 nodes): `execute() returns error dict on failure.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 64`** (1 nodes): `execute() returns ok for already_logged_in status.`
+- **Thin community `Community 65`** (1 nodes): `execute() returns ok for already_logged_in status.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 65`** (1 nodes): `Generate action list from snapshot (fallback when NIM unavailable).          Arg`
+- **Thin community `Community 66`** (1 nodes): `Generate action list from snapshot (fallback when NIM unavailable).          Arg`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 66`** (1 nodes): `Return select action for best radio/checkbox match.`
+- **Thin community `Community 67`** (1 nodes): `Return select action for best radio/checkbox match.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 67`** (1 nodes): `Return submit action for first enabled submit button.`
+- **Thin community `Community 68`** (1 nodes): `Return submit action for first enabled submit button.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 68`** (1 nodes): `Return fill action for first textarea with plausible answer.`
+- **Thin community `Community 69`** (1 nodes): `Return fill action for first textarea with plausible answer.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 69`** (1 nodes): `Load profile from JSON or return default with calculated age.          Args:`
+- **Thin community `Community 70`** (1 nodes): `Load profile from JSON or return default with calculated age.          Args:`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 70`** (1 nodes): `Calculate earnings from before/after balance.          Returns max(0, after - be`
+- **Thin community `Community 71`** (1 nodes): `Calculate earnings from before/after balance.          Returns max(0, after - be`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 71`** (1 nodes): `True wenn Graph noch aktiv ist (nicht completed/error/delegated).`
+- **Thin community `Community 72`** (1 nodes): `True wenn Graph noch aktiv ist (nicht completed/error/delegated).`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 72`** (1 nodes): `True wenn Graph in einem Endzustand ist.`
+- **Thin community `Community 73`** (1 nodes): `True wenn Graph in einem Endzustand ist.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 73`** (1 nodes): `True wenn 3+ consecutive failures erreicht wurden.`
+- **Thin community `Community 74`** (1 nodes): `True wenn 3+ consecutive failures erreicht wurden.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 74`** (1 nodes): `Berechneter Verdienst: balance_after minus balance_before.`
+- **Thin community `Community 75`** (1 nodes): `Berechneter Verdienst: balance_after minus balance_before.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 75`** (1 nodes): `Read balance with exponential backoff — avoids false 0.00€ reads.      Dashboard`
+- **Thin community `Community 76`** (1 nodes): `Read balance with exponential backoff — avoids false 0.00€ reads.      Dashboard`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 76`** (1 nodes): `Angular CDK drag-drop puzzle solver (sync wrapper).      Tries in order:     1.`
+- **Thin community `Community 77`** (1 nodes): `Angular CDK drag-drop puzzle solver (sync wrapper).      Tries in order:     1.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 77`** (1 nodes): `Get live details_url from dashboard page.`
+- **Thin community `Community 78`** (1 nodes): `Get live details_url from dashboard page.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 78`** (1 nodes): `Fetch actual survey URL from CPX API.`
+- **Thin community `Community 79`** (1 nodes): `Fetch actual survey URL from CPX API.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 79`** (1 nodes): `Create new browser tab via CDP Target.createTarget.`
+- **Thin community `Community 80`** (1 nodes): `Create new browser tab via CDP Target.createTarget.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 80`** (1 nodes): `Find a tab that wasn't in old_tab_ids.`
+- **Thin community `Community 81`** (1 nodes): `Find a tab that wasn't in old_tab_ids.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 81`** (1 nodes): `Click 'Umfrage starten' in modal via window.open interception + Target.createTar`
+- **Thin community `Community 82`** (1 nodes): `Click 'Umfrage starten' in modal via window.open interception + Target.createTar`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 82`** (1 nodes): `Handle modal via CDP JS (pre-qualifier or "Umfrage starten").          Handles t`
+- **Thin community `Community 83`** (1 nodes): `Handle modal via CDP JS (pre-qualifier or "Umfrage starten").          Handles t`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 83`** (1 nodes): `Handle pre-qualifier modal: click submit, then handle resulting modal.`
+- **Thin community `Community 84`** (1 nodes): `Handle pre-qualifier modal: click submit, then handle resulting modal.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 84`** (1 nodes): `Open a survey — handle CPX redirect + modals + new-tab detection.      Args:`
+- **Thin community `Community 85`** (1 nodes): `Open a survey — handle CPX redirect + modals + new-tab detection.      Args:`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 85`** (1 nodes): `Close a survey tab and return to dashboard.`
+- **Thin community `Community 86`** (1 nodes): `Close a survey tab and return to dashboard.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 86`** (1 nodes): `Read balance with exponential backoff — avoids false 0.00€ reads.      Dashboard`
+- **Thin community `Community 87`** (1 nodes): `Read balance with exponential backoff — avoids false 0.00€ reads.      Dashboard`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 87`** (1 nodes): `True wenn Graph noch aktiv ist (nicht completed/error/delegated).`
+- **Thin community `Community 88`** (1 nodes): `True wenn Graph noch aktiv ist (nicht completed/error/delegated).`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 88`** (1 nodes): `True wenn Graph in einem Endzustand ist.`
+- **Thin community `Community 89`** (1 nodes): `True wenn Graph in einem Endzustand ist.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 89`** (1 nodes): `True wenn 3+ consecutive failures erreicht wurden.`
+- **Thin community `Community 90`** (1 nodes): `True wenn 3+ consecutive failures erreicht wurden.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 90`** (1 nodes): `Berechneter Verdienst: balance_after minus balance_before.`
+- **Thin community `Community 91`** (1 nodes): `Berechneter Verdienst: balance_after minus balance_before.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 91`** (1 nodes): `Füge einen Fehler zur errors-Liste hinzu.          Args:             node: Name`
+- **Thin community `Community 92`** (1 nodes): `Füge einen Fehler zur errors-Liste hinzu.          Args:             node: Name`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 92`** (1 nodes): `Reset consecutive_failures auf 0 nach erfolgreichem execute.`
+- **Thin community `Community 93`** (1 nodes): `Reset consecutive_failures auf 0 nach erfolgreichem execute.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 93`** (1 nodes): `Inkrementiere consecutive_failures nach failed execute.`
+- **Thin community `Community 94`** (1 nodes): `Inkrementiere consecutive_failures nach failed execute.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 94`** (1 nodes): `Inkrementiere iteration nach NEMO-Loop-Durchlauf.`
+- **Thin community `Community 95`** (1 nodes): `Inkrementiere iteration nach NEMO-Loop-Durchlauf.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
-- **Thin community `Community 95`** (1 nodes): `Kompakte String-Repräsentation für Debugging.`
+- **Thin community `Community 96`** (1 nodes): `Kompakte String-Repräsentation für Debugging.`
   Too small to be a meaningful cluster - may be noise or needs more connections extracted.
 
 ## Suggested Questions
 _Questions this graph is uniquely positioned to answer:_
 
-- **Why does `patch()` connect `Community 3` to `Community 0`, `Community 1`, `Community 5`, `Community 6`, `Community 9`, `Community 10`, `Community 12`, `Community 14`, `Community 16`, `Community 18`, `Community 23`, `Community 25`, `Community 26`, `Community 27`, `Community 28`, `Community 29`?**
-  _High betweenness centrality (0.187) - this node is a cross-community bridge._
-- **Why does `SurveyOpener` connect `Community 0` to `Community 1`, `Community 3`, `Community 6`, `Community 17`?**
-  _High betweenness centrality (0.154) - this node is a cross-community bridge._
-- **Why does `SurveyRunner` connect `Community 1` to `Community 0`, `Community 35`, `Community 4`, `Community 11`, `Community 14`, `Community 26`?**
-  _High betweenness centrality (0.140) - this node is a cross-community bridge._
+- **Why does `patch()` connect `Community 2` to `Community 1`, `Community 5`, `Community 6`, `Community 8`, `Community 10`, `Community 12`, `Community 14`, `Community 17`, `Community 18`, `Community 20`, `Community 23`, `Community 25`, `Community 26`, `Community 27`?**
+  _High betweenness centrality (0.200) - this node is a cross-community bridge._
+- **Why does `SurveyOpener` connect `Community 0` to `Community 1`, `Community 2`, `Community 6`, `Community 15`?**
+  _High betweenness centrality (0.149) - this node is a cross-community bridge._
+- **Why does `SurveyRunner` connect `Community 1` to `Community 0`, `Community 35`, `Community 4`, `Community 11`, `Community 14`, `Community 20`?**
+  _High betweenness centrality (0.147) - this node is a cross-community bridge._
 - **Are the 300 inferred relationships involving `SurveyRunner` (e.g. with `╔══════════════════════════════════════════════════════════════════════════════╗` and `Lazy-Load BrowserManager — erstellt eine neue Instanz bei jedem Aufruf.`) actually correct?**
   _`SurveyRunner` has 300 INFERRED edges - model-reasoned connections that need verification._
 - **Are the 273 inferred relationships involving `RunnerConfig` (e.g. with `╔══════════════════════════════════════════════════════════════════════════════╗` and `Lazy-Load BrowserManager — erstellt eine neue Instanz bei jedem Aufruf.`) actually correct?**

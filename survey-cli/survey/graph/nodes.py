@@ -215,65 +215,71 @@ def ensure_chrome(state: SurveyState) -> SurveyState:
 
 
 def open_survey(state: SurveyState) -> SurveyState:
-    """Öffne Survey-Tab via SurveyOpener (in-page modal oder new tab).
+    """Öffne Survey-Tab via tool_open_survey (new tab + cookie injection).
 
-    Nutzt SurveyOpener.open() mit dashboard_ws für window.open interception.
+    Nutzt tool_open_survey.open_survey() — getestet und funktionierend (SR-54).
+    Erstellt einen neuen Tab, extrahiert CPX URL via window.open interception,
+    und navigiert dorthin.
+
     Wichtig: Der Survey-Tab hat NOCH KEINE heypiggy-Cookies nach diesem
     Schritt — inject_cookies() muss danach aufgerufen werden!
-
-    SurveyOpener.open() handhabt:
-      - SurveyRouter in-page modal flow
-      - SurveyRouter new tab flow (window.open interception)
-      - CPX/Stuck-Page detection
-      - Screen-out detection (expired/closed surveys)
 
     Args:
         state: SurveyState mit survey_id, provider, dashboard_ws
 
     Returns:
-        Updated state mit tab_ws, provider, mode, actual_url
+        Updated state mit tab_ws, provider, url gesetzt
         Updated state mit status='tab_open'
         Updated state mit status='screen_out' (wenn Survey expired)
         Updated state mit status='error' (wenn Tab nicht geöffnet)
 
     Side-Effects:
-        - CDP WebSocket: Tab wird erstellt/geöffnet
+        - CDP WebSocket: Neuer Tab wird erstellt
         - CDP WebSocket: window.open interception
+        - Dashboard: clickSurvey() wird aufgerufen
     """
-    from ..opener import SurveyOpener
+    try:
+        from tools.tool_open_survey import open_survey as _open_survey_tool
+    except ImportError:
+        # Fallback wenn relative Import fehlschlägt
+        import importlib.util
+        spec = importlib.util.spec_from_file_location(
+            "tool_open_survey",
+            "/Users/jeremy/dev/stealth-runner/survey-cli/tools/tool_open_survey.py"
+        )
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        _open_survey_tool = mod.open_survey
 
-    if not state.dashboard_ws:
-        state.add_error("open_survey", "dashboard_ws not set — ensure_chrome must run first")
-        state.status = "error"
-        return state
-
-    opener = SurveyOpener(cdp_port=state.cdp_port, debug=False)
-    result = opener.open(
+    result = _open_survey_tool(
         survey_id=state.survey_id,
-        provider=state.provider,
-        survey_url=state.survey_url,  # Leer = von CPX API ermitteln; gesetzt = direkte URL
-        dashboard_ws=state.dashboard_ws,
+        pid=0, wid=0,
+        port=state.cdp_port,
+        wait_modal=3.0,
+        wait_load=5.0,
     )
 
-    # Fehler behandeln
-    if result.error:
-        state.add_error("open_survey", result.error)
-        if result.status == "screen_out":
+    if result.get("status") != "ok":
+        error_msg = result.get("reason", "Unknown error opening survey")
+        state.add_error("open_survey", error_msg)
+        if "screen_out" in error_msg.lower() or "expired" in error_msg.lower():
             state.screen_out = True
             state.status = "screen_out"
         else:
             state.status = "error"
         return state
 
-    # Erfolg: Tab-WS, Provider und Mode setzen
-    if result.target:
-        state.tab_ws = result.target.ws_url
-        state.target_mode = result.target.mode   # COOKIE TIMING FIX (2026-05-10)
-        if result.target.actual_provider:
-            state.provider = result.target.actual_provider
+    # Erfolg: Tab-WS, Provider und URL setzen
+    ws_url = result.get("ws_url")
+    if ws_url:
+        state.tab_ws = ws_url
+        state.survey_url = result.get("url", "")
+        if result.get("provider"):
+            state.provider = result.get("provider")
         state.status = "tab_open"
+        state.target_mode = "new_tab"
     else:
-        state.add_error("open_survey", "SurveyOpener returned no target")
+        state.add_error("open_survey", "open_survey returned no ws_url")
         state.status = "error"
     return state
 

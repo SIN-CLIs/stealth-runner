@@ -577,12 +577,18 @@ class SurveyOpener:
 
     def _find_new_tab_after_click(self, known_tab_ids: Set[str]) -> Optional[str]:
         """Detect new tab opened by clickSurvey()."""
-        from ..tools.tool_find_new_tab import find_new_tab
+        try:
+            from ..tools.tool_find_new_tab import find_new_tab
+        except ImportError:
+            from tools.tool_find_new_tab import find_new_tab
         return find_new_tab(self.cdp_port, known_tab_ids)
 
     def _pre_survey_cleanup(self, tab_ws: str) -> int:
         """Close stacked modals before opening survey."""
-        from ..tools.tool_close_modals import close_modals
+        try:
+            from ..tools.tool_close_modals import close_modals
+        except ImportError:
+            from tools.tool_close_modals import close_modals
         return close_modals(tab_ws)
 
     @staticmethod
