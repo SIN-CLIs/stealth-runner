@@ -1934,12 +1934,17 @@ MASTER PLAN: plans/01-survey-agent-langgraph-fastapi.md
 
 === OFFEN (NEXT STEPS) ===
 
-**🔴 HARTE REGEL: KEIN AUTO-RUN bis 100 Surveys manuell erfolgreich!**
-→ survey-cli commands/answer_survey.py ist NUR für MANUELLE TESTING!
-→ FastAPI + LangGraph als zentrales Hirn bauen — NICHT monolithisches Script!
+**🔴🔴🔴 HARTE REGEL: KEIN AUTO-RUN bis 100 Surveys MANUELL erfolgreich! 🔴🔴🔴**
+→ `answer_survey.py` ist NUR für MANUELLE TESTING — niemals Auto-Run daraus!
+→ FastAPI + LangGraph als zentrales Hirn — NICHT monolithisches Script!
 → Jedes Command als separater Endpoint + Tool
+→ **PERSISTENT COMMAND REGISTRY**: JSON-Datei trackt ALLE Commands (existiert in `survey-cli/data/command_registry.json`)
+→ **PRE-FLIGHT CHECK**: Vor jedem Command — `preflight_check()` + `require_survey_ready()` (BEIDE existieren!)
+→ **AUTO-UPDATE**: Nach jedem Erfolg/Fehler — `update_command_registry()` (BEIDE existieren!)
+→ **SEQUENTIELL**: Surveys NICHT parallel öffnen — einer nach dem anderen
+→ **UNIVERSAL AGENT**: FastAPI + LangGraph soll ALLE Survey-Typen erkennen und bearbeiten — Pre-Qualifier, Provider X/Y/Z, egal was kommt — universal, nicht hardcoded!
 
-PHASE 1 — FastAPI + LangGraph Integration:
+PHASE 1 — FastAPI + LangGraph Integration (KOMPLETT):
 - [x] survey-cli/tools/ existieren bereits — 17 Tools!
 - [x] survey-cli/survey/graph/ existiert — state.py, nodes.py, graph.py, __init__.py
 - [x] survey-cli/survey/ opener.py, scanner.py, command_registry.py, session_validator.py existieren
@@ -1951,12 +1956,25 @@ PHASE 1 — FastAPI + LangGraph Integration:
 - [x] update_command_registry() wiring in alle 9 endpoints → **SR-50** ✅ (open/close/fill/rate/purespectrum-preflight/run-graph/snapshot/completion)
 - [x] LangGraph E2E test: 22 NIM decisions on live survey 66695822 ✅
 
-PHASE 2 — Captcha + Drag-Drop Solver integrieren:
+PHASE 2 — Captcha + Drag-Drop Solver + EXTRACTOR_JS integrieren:
 - [x] answer_survey.py Captcha Solver (Llama 90B via NVIDIA NIM) — TESTED: "tpyTrD" ✅
 - [x] answer_survey.py Drag-Drop Solver (CDP Input.dispatchMouseEvent) — TESTED: "Zahl 28" ✅
 - [x] purespectrum.py shadow_dom_click() existiert → nutzen!
+- [x] EXTRACTOR_JS 100% Element Capture (survey-cli/survey/snapshot.py, 2026-05-11)
+  - Shadow DOM traversal (pierce shadow roots, depth≤5)
+  - Angular CDK drag-drop detection (.cdk-drag, .drop-zone, img[alt])
+  - HeyPiggy modal buttons (.modal-button-positive/negative)
+  - Visual captchas (canvas, img with captcha classes)
+  - Images (src, alt, isCaptcha flag) for captcha analysis
+  - Iframe content extraction (HeyPiggy embeds surveys in iframes)
+  - Cookie consent banner detection
+  - CompactSnapshot erweitert: images[], dragPuzzle, captchas[], hasShadowDOM
 - [ ] Captcha Solver in survey/graph/nodes.py:decide_node() integrieren
 - [ ] Drag-Drop Solver in survey/graph/nodes.py:decide_node() integrieren
+- [ ] Drag puzzle solver (tool) aus stealth-captcha/drag_drop_angular.py als FastAPI Endpoint exponieren
+  - 4 Approaches (A→B→C→D), stoppt bei erstem Erfolg
+  - Approach B (CDP Input.dispatchMouseEvent) ist PRIMARY — funktioniert für Angular CDK
+  - Endpoint: POST /survey/solve-drag-puzzle mit target-number + drop-zone coords
 
 PHASE 3 — Command Registry + Pre-Flight:
 - [x] preflight_check() in survey_tools.py — 14-step validation
@@ -1975,13 +1993,38 @@ PHASE 4 — Provider Detection + Universal Flow:
 - [ ] Pre-Qualifier detection (surveyrouter-pre-qualifier.md)
 - [ ] Completion/Screen-Out detection (universal, nicht provider-spezifisch)
 
+PHASE 5 — /commands/ Lösungen in FastAPI/Endpunkte integrieren:
+**REGEL: /commands/ sind KEINE separaten Scripts — sie werden FASTAPI ENDPOINTS!**
+
+Every working /commands/ solution → survey-cli/tools/tool_*.py → FastAPI Endpoint:
+
+| /commands/ | Tool | FastAPI Endpoint | Status |
+|-----------|------|------------------|--------|
+| bot-chrome/kill-bot-chrome.md | chrome.py:kill_bot() | POST /chrome/kill | ✅ existiert |
+| bot-chrome/find-bot-pids.md | chrome.py:find_bot_pids() | POST /chrome/pids | ✅ existiert |
+| cua-driver/click.md | tool_click.py | POST /survey/click | ✅ existiert |
+| cua-driver/set-value.md | tool_fill_input.py | POST /survey/fill-input | ✅ existiert |
+| surveys/survey-start-flow.md | tool_open_survey.py | POST /survey/open | ✅ existiert |
+| surveys/purespectrum-survey.md | purespectrum.py + preflight | POST /survey/purespectrum-preflight | ✅ existiert |
+| captcha/solve-slide.md | stealth-captcha slide.py | POST /captcha/slide | ❌ MISSING |
+| captcha/solve-text.md | stealth-captcha text.py | POST /captcha/text | ❌ MISSING |
+| captcha/solve-drag.md | drag_drop_angular.py | POST /survey/solve-drag-puzzle | ❌ MISSING |
+| heypiggy/rating-page.md | tool_rate_survey.py | POST /survey/rate | ✅ existiert |
+
+**TODO — FastAPI Endpoints die noch fehlen (2026-05-11):**
+1. POST /captcha/slide — Slide Captcha Solver (stealth-captcha/solver/slide.py)
+2. POST /captcha/text — Text Captcha Solver (stealth-captcha/solver/text.py)
+3. POST /survey/solve-drag-puzzle — Angular CDK Drag-Drop Solver
+4. POST /survey/dashboard-scan — Dashboard scanner endpoint (nutzt scanner.py)
+5. POST /survey/universal-answer — Universal survey answer (NEMO loop per page)
+
 GITHub ISSUES (#44-47) — ALLE GESCLOSSEN ✅:
 - [SR-50](https://github.com/SIN-CLIs/stealth-runner/issues/50): update_command_registry() wiring — ✅ CLOSED
 - [SR-51](https://github.com/SIN-CLIs/stealth-runner/issues/51): require_survey_ready wiring — ✅ CLOSED
 - [SR-52](https://github.com/SIN-CLIs/stealth-runner/issues/52): 7 fehlende FastAPI Endpoints — ✅ CLOSED
 - [SR-53](https://github.com/SIN-CLIs/stealth-runner/issues/53): Provider Detection — ✅ CLOSED
 
-KRITISCHE BLOCKER (2026-05-10):
+KRITISCHE BLOCKER (2026-05-11):
 - [x] **Angular CDK drag-drop SOLVED** — Approach B: CDP Input.dispatchMouseEvent
   - Getestet: "Zahl 28" puzzle bei 66% ✅ → Button enabled, Page advanced
   - Methode: mousePressed → 10× mouseMoved (mit arc offset) → mouseReleased
@@ -1992,29 +2035,47 @@ KRITISCHE BLOCKER (2026-05-10):
   - API: https://integrate.api.nvidia.com/v1/chat/completions
 - [x] **Nächste Button Fix VERIFIED** — CDP_SUBMIT_JS mit German patterns ✅
 - [x] **Multi-Select Checkbox Fix VERIFIED** — klickt bis zu 4 Checkboxes pro Seite ✅
-- [❌] **Cloudflare CAPTCHA BLOCKIERT alle CPX-Redirects**
+- [x] **Balance Extraction FIXED** (dashboard_routes.py, 2026-05-11)
+  - Problem: HeyPiggy body text hat `0.00\n€\n2.75\n€` (newlines zwischen Zahl und €)
+  - Regex `\d+[.,]\d+\s*€` FAILT weil \s nicht newlines matcht
+  - Fix: Finde alle `\d+[.,]\d{2}` Nummern, prüfe ob € in den nächsten 50 Zeichen vorkommt → max ≥1.0
+  - Getestet: `0.00\n€\n2.75\n€` → `2,75 €` korrekt extrahiert ✅
+- [x] **Cookie Timing FIXED** (tool_open_survey.py, 2026-05-11)
+  - Problem: `Target.createTarget(survey_url)` navigierte neuen Tab SOFORT
+  - Cookies wurden NACH Navigation injiziert → Redirect-Chain ohne Session-Cookies
+  - HeyPiggy Completion-Tracking konnte Survey nicht zuordnen → €0 verdient
+  - Fix: about:blank → Cookies → Page.navigate (CORRECT ORDER)
+  - Matched opener.py `_create_tab()` pattern (hatte es bereits richtig)
+- [❌] **Cloudflare CAPTCHA BLOCKIERT alle CPX-Redirects** — SYSTEMISCH
   - Samplicio.us → geo.captcha-delivery.com iframe → body empty → 0 elements
   - s.cint.com → geo.captcha-delivery.com iframe → body empty → 0 elements
-  - SYSTEMISCHER BLOCKER: alle CPX-mediated surveys (Cint, Samplicio) betroffen
+  - Status: 🔴 UNRESOLVED — alle CPX-mediated surveys betroffen
   - Workaround: Direkte PureSpectrum surveys (ohne CPX-Redirect) versuchen
-- [❌] **surveyrouter.com screen-out** — "keine passende Umfragen" nach PureSpectrum checkbox
-  - Nach PureSpectrum consent + checkbox Frage → surveyrouter.com → sofort screen-out
+- [🔄] **surveyrouter.com screen-out** — "keine passende Umfragen" nach PureSpectrum
+  - Cookie Timing Fix (tool_open_survey.py) sollte helfen — noch NICHT live getestet
   - Vermutung: Session-Cookies oder Subid-Tracking funktioniert nicht über den Chain
-  - Status: 🔴 UNRESOLVED — weiter investigation nötig
-  - Survey completes (100%) but balance stays at €0.00 — completion tracking broken?
+  - Fix: Blank Tab + 7 Cookies + Page.navigate (tool_open_survey.py, committed 2026-05-11)
+  - Status: 🔄 UNTESTED — braucht live E2E test
+- [❌] **Shadow DOM Element-Erfassung** — FIXED 2026-05-11
+  - Problem: EXTRACTOR_JS erfasste NUR Normal-DOM, Shadow DOM (PureSpectrum) war blind
+  - Fix: Shadow DOM traversal in EXTRACTOR_JS — walk shadowRoot recursively (depth≤5)
+  - Auch: Angular CDK drag-drop detection, HeyPiggy modal buttons, Captcha images, Iframes
 
 BALANCE TARGET (€5.00):
-- [x] Balance steigt wieder (+€0.05 verified 2026-05-10) — Cookie+Subid Fix funktioniert
+- [x] Balance Extraction FIXED (newlines between amount and €) → 2,75 € now read correctly
+- [x] Cookie Timing FIXED in tool_open_survey.py → session cookies before navigation
+- [ ] Live E2E test needed to verify balance increases after cookie fix
 - [ ] Mehr Surveys completieren → Balance €2.75 → €5.00
-- [ ] Cash-Out Trigger bei €5.00 implementieren
 
-**Balance: €2.75** (2026-05-10, unverändert seit letztem Erfolg)
-- Survey 66695822 (Cint→Tivian) → +€0.05 ✅ (Cookie+Subid Fix verifiziert)
+**Balance: €2.75** (2026-05-11, unverändert — kein Live-Test seit Fixes)
+- Survey 66695822 (Cint→Tivian) → +€0.05 ✅ (Cookie+Subid Fix verifiziert, 2026-05-10)
 - Survey 67078106 (Cint) → completed ✅ but €0 (CPX redirect → Cloudflare?)
-- Survey 66910983 (PureSpectrum) → 66% stuck (drag-drop)
+- Survey 66910983 (PureSpectrum) → 66% stuck (drag-drop, 2026-05-09)
 - Survey 49517969 (PureSpectrum) → screen-out €0
 - Survey 67064749 (PureSpectrum) → screen-out €0
 - Survey 67064991 (PureSpectrum) → screen-out €0
+- **Fixes committed (2026-05-11):** balance extraction (newlines), cookie timing (blank→cookies→navigate)
+- **Nächster Test:** Open survey → complete → verify balance increases
 
 EXISTIERENDE TOOLS (survey-cli/tools/) — ALS FASTAPI ENDPOINTS (17 total — ALLE ✅):
 
