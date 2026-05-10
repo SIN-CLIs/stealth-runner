@@ -47,6 +47,12 @@ from survey.providers.purespectrum import solve_purespectrum_preflight
 # LangGraph NEMO pipeline (survey-cli/survey/graph/)
 from survey.graph import create_graph, SurveyState
 
+# NEW standalone tools (survey-cli/tools/)
+from tools.tool_solve_captcha import solve as solve_captcha
+from tools.tool_solve_drag_puzzle import solve as solve_drag_puzzle
+from tools.tool_scan_dashboard import scan as scan_dashboard, get_next_survey
+from tools.tool_universal_answer import answer as universal_answer
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # PYDANTIC SCHEMAS — Für jede Request/Response
@@ -1557,6 +1563,152 @@ async def api_close_modals(req: CloseModalsRequest):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# NEW TOOL ENDPOINTS — standalone tools, NOT thin wrappers
+# ═══════════════════════════════════════════════════════════════════════════════
+# Tool 1: POST /captcha/solve — Auto-detect + solve (text/slide/drag)
+# Tool 2: POST /survey/scan — Dashboard scanner with provider detection
+# Tool 3: POST /survey/answer — Universal DOM-based answerer
+# Tool 4: POST /survey/solve-drag — Dedicated Angular CDK drag-drop solver
+
+class CaptchaSolveRequest(BaseModel):
+    ws_url: str
+    captcha_type: str = "auto"  # "auto" | "slide" | "text" | "drag"
+
+
+class CaptchaSolveResponse(BaseModel):
+    status: str
+    type: str
+    text: Optional[str] = None
+    reason: Optional[str] = None
+
+
+@router.post("/captcha/solve", response_model=CaptchaSolveResponse, dependencies=[Depends(require_survey_ready)])
+async def api_solve_captcha(req: CaptchaSolveRequest):
+    """
+    Auto-detect + solve any captcha type (text/OCR, slide, drag-drop).
+
+    Intelligence built into tool_solve_captcha.py:
+      - Type detection via DOM analysis
+      - Text: NVIDIA Vision OCR → type → submit
+      - Slide: CDP Bezier trajectory → mouse events
+      - Drag: delegates to tool_solve_drag_puzzle.py
+
+    Kapselt: tools.tool_solve_captcha.solve(ws_url, captcha_type)
+    """
+    result = solve_captcha(req.ws_url, req.captcha_type)
+    update_command_registry("captcha_solve", result["status"] == "ok", result)
+    return CaptchaSolveResponse(**result)
+
+
+class ScanDashboardRequest(BaseModel):
+    cdp_port: int = 9999
+    min_trust: float = 0.5
+
+
+class ScanDashboardResponse(BaseModel):
+    status: str
+    count: int = 0
+    viable_count: int = 0
+    provider_counts: dict = {}
+    next_survey_id: Optional[str] = None
+
+
+@router.post("/survey/scan", response_model=ScanDashboardResponse)
+async def api_scan_dashboard(req: ScanDashboardRequest):
+    """
+    Scan HeyPiggy dashboard for available surveys.
+
+    Returns: viable surveys with provider detection + trust scores.
+    Pre-flight: checks Chrome is running on port.
+
+    Kapselt: tools.tool_scan_dashboard.scan(port) + get_next_survey()
+    """
+    result = scan_dashboard(req.cdp_port)
+    if result["status"] != "ok":
+        update_command_registry("scan_dashboard", False, result)
+        return ScanDashboardResponse(status="error")
+
+    update_command_registry("scan_dashboard", True, {
+        "count": result["count"],
+        "viable": result["viable_count"],
+        "providers": list(result.get("provider_counts", {}).keys()),
+    })
+
+    # Get next best survey
+    next_survey = get_next_survey(req.cdp_port, req.min_trust)
+    return ScanDashboardResponse(
+        status="ok",
+        count=result["count"],
+        viable_count=result["viable_count"],
+        provider_counts=result.get("provider_counts", {}),
+        next_survey_id=next_survey.get("id") if next_survey else None,
+    )
+
+
+class UniversalAnswerRequest(BaseModel):
+    ws_url: str
+    profile_name: str = "sin_agent_heypiggy"
+
+
+class UniversalAnswerResponse(BaseModel):
+    status: str
+    type: str
+    answered: bool = False
+    question: Optional[str] = None
+
+
+@router.post("/survey/answer", response_model=UniversalAnswerResponse, dependencies=[Depends(require_survey_ready)])
+async def api_universal_answer(req: UniversalAnswerRequest):
+    """
+    Universal DOM-based survey answerer — handles ANY question type.
+
+    Provider-agnostic: detects question type from DOM structure.
+    Supported: Radio / Checkbox / Text / Textarea / Select / NPS / Matrix.
+    Maps answers to persona profile (age, gender, income, education).
+
+    Kapselt: tools.tool_universal_answer.answer(ws_url, profile)
+    """
+    # Load profile if specified
+    profile = None
+    if req.profile_name:
+        try:
+            from survey.profile_loader import ProfileLoader
+            profile = ProfileLoader.load_profile()
+        except Exception:
+            pass
+
+    result = universal_answer(req.ws_url, profile)
+    update_command_registry("universal_answer", result["status"] == "ok", result)
+    return UniversalAnswerResponse(**result)
+
+
+class SolveDragPuzzleRequest(BaseModel):
+    ws_url: str
+
+
+class SolveDragPuzzleResponse(BaseModel):
+    status: str
+    number: Optional[str] = None
+    button_clicked: bool = False
+
+
+@router.post("/survey/solve-drag", response_model=SolveDragPuzzleResponse, dependencies=[Depends(require_survey_ready)])
+async def api_solve_drag_puzzle(req: SolveDragPuzzleRequest):
+    """
+    Solve Angular CDK drag-drop puzzle (PureSpectrum "Zahl X").
+
+    APPROACH B (PRIMARY): CDP Input.dispatchMouseEvent chain.
+    NOT synthetic PointerEvents — Angular CDK ignores synthetic events!
+    VERIFIED: Survey 49517969 (Zahl 28) → 100% ✅
+
+    Kapselt: tools.tool_solve_drag_puzzle.solve(ws_url)
+    """
+    result = solve_drag_puzzle(req.ws_url)
+    update_command_registry("solve_drag_puzzle", result["status"] == "ok", result)
+    return SolveDragPuzzleResponse(**result)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # EXPORTS
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -1577,4 +1729,8 @@ __all__ = [
     "FillInputRequest", "FillInputResponse",
     "FindTabRequest", "FindTabResponse",
     "CloseModalsRequest", "CloseModalsResponse",
+    "CaptchaSolveRequest", "CaptchaSolveResponse",
+    "ScanDashboardRequest", "ScanDashboardResponse",
+    "UniversalAnswerRequest", "UniversalAnswerResponse",
+    "SolveDragPuzzleRequest", "SolveDragPuzzleResponse",
 ]
