@@ -277,7 +277,20 @@ class SurveyState:
 
     tab_ws: Optional[str] = None
     """CDP WebSocket URL des Survey-Tabs. Wird von SurveyOpener.open() gesetzt.
-    Format: ws://127.0.0.1:9999/devtools/page/<target_id>"""
+    Format: ws://127.0.0.1:9999/devtools/page/<target_id>
+
+    COOKIE TIMING FIX (2026-05-10):
+    Bei 'in_dashboard' mode ist tab_ws == dashboard_ws (dieselbe Tab!).
+    Das ist korrekt — die Tab hat bereits Session-Cookies."""
+
+    target_mode: str = "new_tab"
+    """Modus des Survey-Tabs — gesteuert von SurveyOpener.SurveyTarget.mode.
+    Werte: 'new_tab' (Target.createTarget, braucht cookie injection)
+           'in_page' (Survey öffnet sich im Dashboard, kein cookie injection)
+           'redirect' (neuer Tab nach window.open interception)
+           'in_dashboard' (Dashboard-Tab navigiert zu Survey-URL — keine
+               cookie injection nötig da Tab bereits cookies hat!)
+    Wird von open_survey node gesetzt und von inject_cookies node gelesen."""
 
     cookies_injected: bool = False
     """Flag ob heypiggy Session-Cookies in den Survey-Tab injiziert wurden.

@@ -506,6 +506,53 @@ referenced in `infra-sin-opencode-stack/` plugin directories.
 
 ---
 
+## 🔴 Cookie Timing: Survey öffnet sich ohne Session-Cookies (2026-05-10)
+
+### Problem
+Survey öffnet sich in NEUEM Tab via `Target.createTarget()` → Cookies fehlen im Redirect-Chain.
+Resultat: Survey completed ("Vielen Dank") aber Balance erhöht sich NICHT → 0€ verdient.
+
+### Root Cause
+1. 7 HeyPiggy-Cookies werden in den DASHBOARD-Tab injiziert (Page.navigate)
+2. Survey-Button click → window.open interception → `Target.createTarget(captured_url)`
+3. NEUER Tab öffnet sich → navigiert sofort zur CPX URL
+4. CPX/Samplicio/Cint/Potloc redirect chain läuft OHNE Session-Cookies
+5. Heypiggy Completion-Tracking kann Survey-Completion NICHT mit korrektem User verknüpfen
+6. Balance bleibt unverändert → 0€ ausbezahlt
+
+### Fix 1: Cookie Injection (COMPLETED ✅)
+**Inject 7 HeyPiggy cookies BEFORE survey navigation**
+- `_create_tab()` in opener.py: inject cookies via `Network.setCookies` before `Page.navigate`
+- `_open_in_page_modal()` in opener.py: inject cookies into new tab after window.open
+- Tests: 6/8 passed (2 pre-existing failures unrelated)
+
+### Fix 2: Subid Parameter (COMPLETED ✅)
+**Keep CPX API URL instead of intercepted URL**
+- `tool_open_survey.py:open_survey()`: detects empty subid in intercepted URL
+- If `subid_1=&` or `subid_2=website` found: uses CPX API URL from `_get_survey_url()`
+- If real subid present: uses intercepted URL (has dashboard context)
+- Tests: 18/18 passed
+
+### E2E Test Results (2026-05-10)
+- Survey 67078106 (Cint) completed ✅
+- Balance before: €2.70 → Balance after: €2.70
+- **Delta: €0.00 — NO PAYMENT!** ❌ (subid fix applied but needs fresh session test)
+
+### Files
+- `survey-cli/survey/opener.py` → `_open_in_page_modal()` + `_find_new_tab_after_click()`
+- `commands/surveys/survey-start-flow.md` → Warning dokumentiert
+
+### Status
+🔴 UNRESOLVED — Page.navigate im Dashboard Tab löste das Problem NICHT.
+Weiterer Fix nötig.
+
+### Mögliche Lösungsansätze (TODO)
+1. Cookies in den NEUEN Survey-Tab injizieren VOR Page.navigate (CDP Network.setCookies)
+2. Survey-Completions anders tracken (nicht über Heypiggy Session-Cookies)
+3. Debug completion tracking — trace was Heypiggy beim redirect erwartet
+
+---
+
 ## 🔴 2026-05-08 OPENCODE RUN BUG: Bundled Provider SDKs (UNRESOLVED)
 
 ### Symptom

@@ -317,18 +317,34 @@ def read_balance(port=9223):
         var m = t.match(/(\\d+[.,]\\d+)/);
         if (m) return m[1].replace(",", ".");
     }
-    // Fallback: find number next to € that is NOT a survey reward (reward lines have "Min" nearby)
+    // Fallback: collect ALL € values and return the MAXIMUM
+    // (Dashboard shows survey rewards AND balance; balance is the largest € value)
     var t = document.body.innerText;
-    var lines = t.split("\\n");
-    for (var i = 0; i < lines.length; i++) {
-        var line = lines[i].trim();
-        var m = line.match(/^(\\d+[.,]\\d+)\\s*€?$/);
-        // Skip lines that are survey rewards (have "Min" in adjacent lines or are small)
-        if (m && !/Min|Level|Umfragen/.test(lines[Math.max(0,i-1)] || "")) {
-            var val = parseFloat(m[1].replace(",", "."));
-            // Balance is typically > 1.0 and not a round number like survey rewards
-            if (val > 1.0 && val < 1000) return val.toString();
+    var values = [];
+    // Match all € values in the page
+    var matches = t.match(/(\d+[.,]\d+)\s*€/g);
+    if (matches) {
+        for (var i = 0; i < matches.length; i++) {
+            var val = parseFloat(matches[i].replace(/[^\d,]/g, "").replace(",", "."));
+            if (val > 0.5 && val < 1000) {
+                values.push(val);
+            }
         }
+    }
+    // Also match standalone numbers that look like balance (e.g., "2,75 €")
+    var matches2 = t.match(/(\d+[.,]\d+)\s*€/g);
+    if (matches2) {
+        for (var j = 0; j < matches2.length; j++) {
+            var val2 = parseFloat(matches2[j].replace(/[^\d,]/g, "").replace(",", "."));
+            if (val2 > 0.5 && val2 < 1000) {
+                values.push(val2);
+            }
+        }
+    }
+    if (values.length > 0) {
+        // Return the MAXIMUM value (this is the balance, not a survey reward)
+        var maxVal = Math.max.apply(Math, values);
+        return maxVal.toString();
     }
     return "0";
 })()

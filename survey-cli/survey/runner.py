@@ -115,6 +115,7 @@ from .autodoc import log_earnings, log_error, log_session, log_decision
 from .observability import get_logger
 from .observability.metrics import SurveyMetrics
 from .scanner import scan_dashboard, read_balance_with_backoff
+from .session_validator import validate_session, is_session_valid, get_session_status
 # Frozen tools — atomar, __frozen__=True, NICHT aendern
 from tools import (click as tool_click, fill as tool_fill,
                    snapshot as tool_snapshot, detect_completion as tool_detect,
@@ -196,7 +197,17 @@ class SurveyRunner:
         result = SurveyResult(survey_id=survey_id)
         start_time = time.monotonic()
 
-        # 0. Connect to dashboard + CLEAN ZOMBIE TABS
+        # 0. SESSION VALIDATION: Validate session before any survey operation
+        # SESSION EXPIRY FIX (2026-05-10): Chrome restart can invalidate cookies.
+        # Without validation, surveys run with invalid session → €0 earned.
+        session_ok = validate_session(self.config.cdp_port, auto_recover=True)
+        if not session_ok:
+            result.error = "Session invalid (recovery failed)"
+            result.status = "error"
+            log_error("run_survey", "Session invalid and recovery failed", survey_id)
+            return result
+
+        # 1. Connect to dashboard + CLEAN ZOMBIE TABS
         dashboard_ws = chrome.find_dashboard_ws(self.config.cdp_port)
         if not dashboard_ws:
             result.error = "No dashboard WebSocket found"
@@ -507,8 +518,6 @@ class SurveyRunner:
 
                 if completed:
                     result.status = "completed"
-                    log_earnings(survey_id, provider, 0, "completed", 0,
-                                {"source": "completion_detected_at_iteration", "iter": iteration})
                     break
 
                 # 5ia. QUALTRICS LANGUAGE PAGE DETECTION (2026-05-09)
@@ -654,8 +663,24 @@ class SurveyRunner:
             self.survey_rater.rate()
 
         # 8. Calculate earnings (balance read before tab creation, after survey close)
-        time.sleep(2)
+        # BUG-FIX (2026-05-10): Dashboard tab may be in stale/background state after
+        # survey completes in a new tab. Reading balance_from a stale tab returns the
+        # OLD balance — earned is computed as balance_after - balance_before = 0.
+        # Fix: activate dashboard tab + wait 5s before reading balance_after.
         try:
+            dash_ws = chrome.find_dashboard_ws(self.config.cdp_port)
+            if dash_ws:
+                tabs = chrome.find_bot_tabs(self.config.cdp_port)
+                dash_tab = next((t for t in tabs if "dashboard" in t.get("url", "").lower()), None)
+                if dash_tab and dash_tab.get("id"):
+                    ws_activate = websocket.create_connection(dash_ws, timeout=5)
+                    ws_activate.send(json.dumps({
+                        "id": 1, "method": "Target.activateTarget",
+                        "params": {"targetId": dash_tab["id"]}
+                    }))
+                    ws_activate.recv()
+                    ws_activate.close()
+            time.sleep(5)  # Wait for DOM to update after tab activation
             balance_after = read_balance_with_backoff(self.config.cdp_port)
             result.earned = self.balance_tracker.calculate_earned(
                 balance_before, balance_after
@@ -687,6 +712,12 @@ class SurveyRunner:
             self.config.max_surveys = max_surveys
 
         results = []
+
+        # SESSION VALIDATION: Validate session before starting loop
+        session_ok = validate_session(self.config.cdp_port, auto_recover=True)
+        if not session_ok:
+            print("[LOOP] Session invalid — recovery failed, aborting loop")
+            return results
 
         # Scan dashboard
         viable = scan_dashboard(
@@ -898,10 +929,28 @@ class SurveyRunner:
         return self.opener._find_new_tab_after_click(known_tab_ids)
 
     def _pre_survey_cleanup(self, tab_ws: str) -> int:
-        """Close all stacked modals.
+        """Close all stacked modals + validate session.
 
-        Delegates to SurveyOpener so tab lifecycle logic lives in one place.
+        SESSION VALIDATION (2026-05-10):
+        Before every survey operation, validate that the session is still valid.
+        Chrome restart can invalidate cookies → surveys fail → €0 earned.
+        This check ensures we catch invalid sessions BEFORE trying to run surveys.
+
+        Args:
+            tab_ws: WebSocket URL of dashboard tab
+
+        Returns:
+            Number of modals closed (0 if session invalid)
         """
+        # SESSION VALIDATION: Check if session is still valid
+        if not is_session_valid(self.config.cdp_port):
+            get_logger().warn("Session invalid before survey — attempting recovery...")
+            recovered = validate_session(self.config.cdp_port, auto_recover=True)
+            if not recovered:
+                get_logger().error("Session recovery failed — skipping survey",
+                                   context="_pre_survey_cleanup")
+                return 0
+
         return self.opener._pre_survey_cleanup(tab_ws)
 
     def _handle_purespectrum_preflight(self, tab_ws, survey_id):

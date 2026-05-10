@@ -725,7 +725,7 @@ content: |
   | Formen (Dreieck, Quadrat) | Text: "das Dreieck" | `img[alt="..."]` |
   | Text-Bausteine | textContent statt alt | `div[data-drag-text="..."]` |
 
-  ### `stealth-captcha` Module Status
+  ### `stealth-captcha` Module Status (2026-05-10, UPDATED)
 
   | Solver | Nutzt | Funktioniert für Angular CDK? |
   |--------|-------|-------------------------------|
@@ -733,16 +733,32 @@ content: |
   | `DragDropCaptchaSolver` | `Input.dispatchMouseEvent` | ❌ NEIN (falsche Events!) |
   | `TextCaptchaSolver` | NVIDIA Vision | ✅ JA (kein Drag) |
   | `ImageSelectCaptchaSolver` | ? | ⚠️ UNGETESTET |
+  | **`AngularDragDropSolver`** | **Multi-Approach** (Playwright mouse → CDP dispatchMouseEvent → Synthetic PointerEvents → HTML5 Drag/DOM) | **🔄 TESTING — 4 Approaches** |
 
-  **Konsequenz: `DragDropCaptchaSolver` MUSS um PointerEvents erweitert werden ODER ein neuer standalone Solver gebaut werden.**
+  **NEW SOLVER: `AngularDragDropSolver` (drag_drop_angular.py)**
+  - 4 sequential approaches (A→B→C→D), stops at first success
+  - Approach A: Playwright `page.mouse.move/down/up()` — REAL browser-level pointer events
+  - Approach B: CDP `Input.dispatchMouseEvent` — native browser engine events
+  - Approach C: Synthetic `PointerEvent` with 10 intermediate steps + delays + realistic properties
+  - Approach D: HTML5 `DragEvent` + direct DOM manipulation + button enable
+  - **CRITICAL FIX**: Selectors corrected (`.cdk-drop-list` class, NOT `id="dropZoneList"`)
+  - **CRITICAL FIX**: 10 intermediate drag points with arc offset (realistic movement)
+  - Debug logging enabled (`DEBUG = True`) for E2E troubleshooting
 
-  ### Implementierungs-Plan (TODO)
+  ### E2E Test Results (2026-05-10)
+  - **Survey 66910983** (PureSpectrum): 0% → 33% → 66% ✅ (consent, ROBOT, visual captcha solved)
+  - **Blocked at 66%**: "Zahl 20" drag-drop puzzle
+  - **Previous failure**: Synthetic JS `dispatchEvent` blocked by Angular CDK
+  - **New solver deployed**: Multi-approach with Playwright raw mouse API as primary
+  - **Status**: 🔄 AWAITING LIVE E2E VERIFICATION
 
-  1. [ ] **NEU**: `survey-cli/tools/tool_drag_captcha.py` → `POST /survey/drag-solve`
-  2. [ ] **FIX**: `purespectrum.py:solve_drag_puzzle()` → PointerEvent-basiert
-  3. [ ] **TEST**: Live-Survey mit PointerEvent-Debugging in CDP DevTools Console
-  4. [ ] **DOC**: `/commands/surveys/purespectrum-drag-puzzle.md` → ✅ VERIFIED
-  5. [ ] **INTEGRATE**: stealth-captcha mit PointerEvent-Support aktualisieren
+  ### Implementierungs-Plan (TODO — 2026-05-10 UPDATE)
+
+  1. [ ] **E2E TEST**: Run `python3 test_drag_drop_angular.py --live --auto-discover` against live survey
+  2. [ ] **FIX**: If Approach A (Playwright) fails → investigate CDP tab discovery / selector issues
+  3. [ ] **FIX**: If Approach B (CDP) fails → verify `Input.dispatchMouseEvent` generates PointerEvents
+  4. [ ] **DOC**: `/commands/surveys/purespectrum-drag-puzzle.md` → ✅ VERIFIED after E2E success
+  5. [ ] **INTEGRATE**: Wire `solve_drag_puzzle_new(ws_url)` into `purespectrum.py` preflight flow
 
   ## SURVEY FLOW (2026-05-10, VERIFIZIERT)
   
@@ -753,6 +769,7 @@ content: |
   3. MODAL: CDP JS -> window.open interception + Target.createTarget → Survey-Tab öffnet sich
      ⚠️ CUA b.click() + CDP Input.dispatchMouseEvent = FAIL (Chrome Popup Blocker!)
      ✅ window.open interception (siehe §KRITISCH: "Umfrage starten" Problem)
+     ⚠️ COOKIE TIMING: Target.createTarget öffnet neuen Tab OHNE Session-Cookies!
   4. CONSENT: CDP JS -> Cookie "Alle akzeptieren" button.click()
   5. CAPTCHA: Fälle "ROBOT", Math, Dropdown → per CDP JS + NVIDIA Vision
   6. START: Survey öffnet sich in Tab → Provider identifizieren
@@ -760,6 +777,25 @@ content: |
   8. ANTWORT: CDP JS -> Radio/Checkbox/Text per Provider-Methode + "Nächste"
   9. KOMPLETT: Survey schließt -> zurück zu heypiggy Dashboard → Balance erhöht
   ```
+
+  ### 🚨 KRITISCH: Cookie Timing — Survey öffnet sich OHNE Session-Cookies (2026-05-10)
+
+  **E2E Test Result (2026-05-10):**
+  - Survey 67078106 (Cint) completed ✅ — "Vielen Dank" displayed
+  - Balance before: €2.70 → Balance after: €2.70
+  - **Delta: €0.00 — NO PAYMENT!** ❌
+
+  **Root Cause:** `Target.createTarget()` creates new tab → navigates to CPX URL immediately → 7 HeyPiggy cookies are NOT injected into this new tab. The entire redirect chain `CPX → Samplicio → Cint → Potloc` runs WITHOUT session cookies. Heypiggy completion tracking cannot associate the survey completion with the correct user session → balance stays at €0.
+
+  **Affected Code:** `survey-cli/survey/opener.py` → `_open_in_page_modal()` calls `_find_new_tab_after_click()` which uses `Target.createTarget()`. Cookies are injected into the DASHBOARD tab first, but the new survey tab has NO cookies.
+
+  **Fix Attempted:** Page.navigate in dashboard tab (should have cookies) — FAILED
+  **Fix Status:** 🔴 UNRESOLVED — further investigation needed
+
+  **Options to try:**
+  1. **Inject cookies into survey tab BEFORE navigation** (CDP Network.setCookies on survey tab WS)
+  2. **Keep survey in same dashboard tab** (Page.navigate instead of new tab)
+  3. **Debug completion tracking** — trace what Heypiggy expects during redirect chain
 
   ### KRITISCH: "Umfrage starten" Button — window.open interception (2026-05-09 DISCOVERED!)
   
@@ -780,9 +816,9 @@ content: |
   | Provider | URL Pattern | Flow | Status |
   |----------|------------|------|--------|
   | Samplicio.us | `rx.samplicio.us/consent/` | Consent -> My-Take -> Disqual/Complete | ✅ |
-  | Cint | `sw.cint.com/Session/` | Session → Fragen | ✅ |
-  | Nfield/Kantar | `nfieldeu-interviewing.nfieldmr.com` | Welcome -> Audio/Video-Fragen | ✅ |
-  | Purespectrum | `purespectrum.com` | Cookie → ROBOT captcha → Textarea → Visual captcha → **Drag-Drop "Zahl X"** → 100% | 🔄 BLOCKED 2026-05-09 (Angular CDK PointerEvents nötig!) |
+  | Cint | `sw.cint.com/Session/` | Session → Fragen | ❌ FIX FAILED (2026-05-10): completed but €0 |
+  | Nfield/Kantar | `nfieldeu-interviewing.nfieldmr.com` | Welcome -> Audio/Video-Fragen | 🔄 UNGETESTET |
+  | Purespectrum | `purespectrum.com` | Cookie → ROBOT captcha → Textarea → Visual captcha → **Drag-Drop "Zahl X"** → 100% | 🔄 MULTI-APPROACH SOLVER DEPLOYED 2026-05-10 (A: Playwright mouse → B: CDP mouse → C: Synthetic PointerEvents → D: HTML5 Drag/DOM). AWAITING E2E VERIFICATION |
   
   ### Wichtige Erkenntnisse
   1. **Multi-Tab Problem**\: heypiggy öffnet mehrere Dashboard-Tabs. Nur EINER hat Surveys. Scanne ALLE Tabs!
@@ -1780,9 +1816,10 @@ PHASE 4 — Promotion (Woche 4+):
 - [ ] survey.py refactoren als thin wrapper
 
 KRITISCHER BLOCKER (parallel):
-- [ ] AngularDragDropSolver -> drag_drop_angular.py (PureSpectrum 66% stuck)
-- [ ] POST /survey/drag-solve Endpoint -> tool_drag_captcha.py
-- [ ] solve_drag_puzzle() in purespectrum.py fixen (PointerEvent-Lösung)
+- [x] **AngularDragDropSolver** -> `drag_drop_angular.py` DEPLOYED 2026-05-10 — 4 sequential approaches (A→B→C→D)
+- [ ] **E2E VERIFY**: `python3 test_drag_drop_angular.py --live --auto-discover` → mark ✅ VERIFIED
+- [ ] POST /survey/drag-solve Endpoint -> `tool_drag_captcha.py` (FastAPI wrapper)
+- [ ] Integrate `solve_drag_puzzle_new(ws_url)` into `purespectrum.py` preflight flow
 - [ ] 10x purespectrum Survey → Promotion zu Production Flow
 
 GARBAGE LOESCHEN (SOFORT):
@@ -1806,7 +1843,7 @@ CHROME START         -> AGENTS.md REGELN 1-4
 SURVEY OPEN          -> survey-cli/tools/tool_open_survey.py + AGENTS.md SURVEY FLOW
 LANGGRAPH AGENT      -> survey-cli/survey/graph/ (state.py, nodes.py, graph.py, opencode_tool.py, __init__.py)
 CAPTCHA SOLVE        -> stealth-captcha/src/stealth_captcha/cli.py + purespectrum.py
-DRAG PUZZLE          -> purespectrum.py:solve_drag_puzzle() -> ❌ BROKEN!
+DRAG PUZZLE          -> stealth-captcha/solver/drag_drop_angular.py -> 🔄 Multi-approach (A→B→C→D), awaiting E2E
 NEMO LOOP            -> survey-cli/survey.py + AGENTS.md NEMO ARCHITEKTUR
 FASTAPI              -> agent-toolbox/api/survey_tools.py
 COMMANDS             -> /commands/cmd-rules.md + /commands/surveys/*.md

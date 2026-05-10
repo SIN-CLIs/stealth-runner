@@ -600,6 +600,112 @@ def navigate_tab(tab_ws_url: str, url: str) -> bool:
         return False
 
 
+# ── HeyPiggy Cookie Injection (CRITICAL for survey completion tracking) ──
+
+HEYPIGGY_BACKUP_COOKIES = os.path.expanduser("~/.stealth/heypiggy-backup/heypiggy-cookies.json")
+HEYPIGGY_COOKIE_NAMES = {
+    "PHPSESSID", "user_session", "user_id",
+    "user_a_b_group", "lang_pig", "g_state", "referer",
+}
+
+
+def inject_heypiggy_cookies_to_tab(tab_ws_url: str, debug: bool = False) -> bool:
+    """Inject 7 HeyPiggy session cookies into a tab BEFORE navigation.
+
+    COOKIE TIMING FIX (2026-05-10):
+    Target.createTarget() creates a new tab WITHOUT heypiggy session cookies.
+    The redirect chain CPX → Samplicio → Cint → Potloc runs WITHOUT cookies.
+    HeyPiggy completion tracking CANNOT associate survey completion with user
+    session → balance stays at €0.
+
+    FIX: Inject the 7 critical HeyPiggy cookies BEFORE Page.navigate.
+    Order: create about:blank → inject cookies → navigate to survey URL.
+
+    The 7 cookies (ALL from www.heypiggy.com):
+      - PHPSESSID      — Session identifier (CRITICAL for login)
+      - user_session   — Session token (CRITICAL for login)
+      - user_id        — User ID number
+      - user_a_b_group — A/B testing group
+      - lang_pig       — Language preference
+      - g_state        — Google auth state (encrypted)
+      - referer        — Referrer tracking
+
+    Args:
+        tab_ws_url: WebSocket debugger URL for the tab (MUST be about:blank)
+        debug: Enable debug logging
+
+    Returns:
+        True if all 7 cookies were set successfully
+    """
+    if not os.path.exists(HEYPIGGY_BACKUP_COOKIES):
+        if debug:
+            print("[HEYPIGGY-COOKIES] Backup not found, skipping injection")
+        return False
+
+    try:
+        with open(HEYPIGGY_BACKUP_COOKIES) as f:
+            data = json.load(f)
+    except Exception as e:
+        if debug:
+            print(f"[HEYPIGGY-COOKIES] Failed to read backup: {e}")
+        return False
+
+    cookies = data.get("cookies", [])
+    heypiggy_cookies = [
+        c for c in cookies
+        if c.get("name") in HEYPIGGY_COOKIE_NAMES
+    ]
+
+    if len(heypiggy_cookies) < 7:
+        if debug:
+            print(f"[HEYPIGGY-COOKIES] Only {len(heypiggy_cookies)}/7 cookies found, skipping")
+        return False
+
+    # Format for Network.setCookies (normalize fields)
+    cookie_params = []
+    for c in heypiggy_cookies:
+        cookie_params.append({
+            "name": c.get("name", ""),
+            "value": c.get("value", ""),
+            "domain": c.get("domain", "www.heypiggy.com"),
+            "path": c.get("path", "/"),
+            "expires": c.get("expires", -1),
+            "secure": c.get("secure", False),
+            "httpOnly": c.get("httpOnly", False),
+        })
+
+    try:
+        import websocket
+        ws = websocket.create_connection(tab_ws_url, timeout=10)
+
+        # Step 1: Enable Network domain (needed for setCookies)
+        ws.send(json.dumps({"id": 1, "method": "Network.enable"}))
+        json.loads(ws.recv())  # consume response
+
+        # Step 2: Set ALL 7 cookies in ONE call (batch)
+        ws.send(json.dumps({
+            "id": 2,
+            "method": "Network.setCookies",
+            "params": {"cookies": cookie_params}
+        }))
+        r = json.loads(ws.recv())
+        ws.close()
+
+        if r.get("result", {}).get("success") is True:
+            if debug:
+                print(f"[HEYPIGGY-COOKIES] OK {len(cookie_params)}/7 cookies injected")
+            return True
+        else:
+            if debug:
+                print(f"[HEYPIGGY-COOKIES] setCookies returned: {r}")
+            return False
+
+    except Exception as e:
+        if debug:
+            print(f"[HEYPIGGY-COOKIES] Injection failed: {e}")
+        return False
+
+
 def safe_kill_bot():
     """Safely kill ONLY bot Chrome processes."""
     pids = find_bot_pids()

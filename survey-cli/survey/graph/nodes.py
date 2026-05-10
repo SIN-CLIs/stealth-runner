@@ -265,9 +265,10 @@ def open_survey(state: SurveyState) -> SurveyState:
             state.status = "error"
         return state
 
-    # Erfolg: Tab-WS und Provider setzen
+    # Erfolg: Tab-WS, Provider und Mode setzen
     if result.target:
         state.tab_ws = result.target.ws_url
+        state.target_mode = result.target.mode   # COOKIE TIMING FIX (2026-05-10)
         if result.target.actual_provider:
             state.provider = result.target.actual_provider
         state.status = "tab_open"
@@ -331,6 +332,14 @@ def inject_cookies(state: SurveyState) -> SurveyState:
     if not state.tab_ws:
         state.add_error("inject_cookies", "tab_ws not set — open_survey must run first")
         state.status = "error"
+        return state
+
+    # COOKIE TIMING FIX (2026-05-10): in_dashboard mode — tab IS the dashboard
+    # tab which already HAS heypiggy session cookies (injected at Chrome startup).
+    # No injection needed; skip this node entirely.
+    if getattr(state, "target_mode", "new_tab") == "in_dashboard":
+        state.cookies_injected = True
+        state.status = "cookies_injected"
         return state
 
     # Schritt 1: Cookie-Datei laden
@@ -673,10 +682,15 @@ def detect_completion(state: SurveyState) -> SurveyState:
     page_text = BatchExecutor.read_page_text(state.tab_ws, max_len=500)
 
     # Signal 1: Completion-Marker
+    # Signal 1: Completion-Marker
     completed = detector.detect(page_text)
     if completed:
         state.completion_detected = True
         state.status = "completed"
+        # COOKIE TIMING FIX (2026-05-10): in_dashboard mode — navigate back
+        if getattr(state, "target_mode", "new_tab") == "in_dashboard" and state.dashboard_ws:
+            from ..opener import SurveyOpener
+            SurveyOpener(cdp_port=state.cdp_port).navigate_back_to_dashboard(state.tab_ws or state.dashboard_ws or "")
         return state
 
     # Signal 2: Screen-Out-Marker
@@ -685,6 +699,10 @@ def detect_completion(state: SurveyState) -> SurveyState:
     if is_error and any(s in reason.lower() for s in ["qualify", "eligible", "screen", "limit", "full"]):
         state.screen_out = True
         state.status = "screen_out"
+        # COOKIE TIMING FIX (2026-05-10): in_dashboard mode — navigate back
+        if getattr(state, "target_mode", "new_tab") == "in_dashboard" and state.dashboard_ws:
+            from ..opener import SurveyOpener
+            SurveyOpener(cdp_port=state.cdp_port).navigate_back_to_dashboard(state.tab_ws or state.dashboard_ws or "")
         return state
 
     return state

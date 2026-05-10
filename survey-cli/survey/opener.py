@@ -21,6 +21,7 @@ from typing import Optional, Set
 
 from . import chrome
 from .cdp_client import CDPConnection
+from .session_validator import is_session_valid, validate_session
 
 
 try:
@@ -71,17 +72,39 @@ class SurveyOpener:
 
         Preserves specific error messages so the runner can log earnings
         and return the correct status to callers/tests.
+
+        COOKIE TIMING FIX (2026-05-10):
+        Previously this method used _open_new_tab() which created a new tab via
+        Target.createTarget. That new tab had NO heypiggy session cookies (they
+        were only injected into the dashboard tab at Chrome startup).
+
+        The redirect chain CPX → Samplicio → Cint → Potloc ran WITHOUT session
+        cookies → Heypiggy completion tracking couldn't associate survey completion
+        with the user session → balance stayed at €0.
+
+        FIX: When dashboard_ws is available, use _open_in_dashboard_tab() to
+        navigate the EXISTING dashboard tab (which HAS cookies) to the survey URL.
+        After survey completes, caller navigates back to dashboard URL.
         """
         is_in_page = provider == "in_page_modal"
 
         if is_in_page and dashboard_ws:
             return self._open_in_page_modal(survey_id, provider, dashboard_ws)
 
+        if dashboard_ws:
+            return self._open_in_dashboard_tab(survey_id, provider, survey_url, dashboard_ws)
+
         return self._open_new_tab(survey_id, provider, survey_url)
 
     def close(self, target: SurveyTarget) -> None:
-        """Close the survey tab (no-op for in-page modal)."""
-        if target.mode == "in_page" or not target.tab_id:
+        """Close the survey tab (no-op for in-page/in_dashboard modal).
+
+        For in_dashboard mode: the tab is the dashboard tab — do NOT close it.
+        The caller (runner) should navigate it back to the dashboard URL after
+        the survey completes. Closing the dashboard tab would leave the browser
+        with no active tab.
+        """
+        if target.mode in ("in_page", "in_dashboard") or not target.tab_id:
             return
         self._close_tab(target.tab_id)
 
@@ -121,6 +144,18 @@ class SurveyOpener:
         provider: str,
         dashboard_ws: str,
     ) -> OpenResult:
+        # SESSION VALIDATION (2026-05-10): Validate before clicking survey card
+        # If session is invalid, clicking the card won't work properly
+        if not is_session_valid(self.cdp_port):
+            if self.debug:
+                print("[SESSION] Session invalid in _open_in_page_modal — attempting recovery...")
+            recovered = validate_session(self.cdp_port, auto_recover=True)
+            if not recovered:
+                return OpenResult(
+                    error="Session invalid (recovery failed) — cannot open survey",
+                    status="error",
+                )
+
         self._pre_survey_cleanup(dashboard_ws)
 
         tabs_before: Set[str] = set()
@@ -149,6 +184,17 @@ class SurveyOpener:
                 chrome.activate_tab(new_tab_id, self.cdp_port)
                 if self.debug:
                     print(f"[TAB] Activated new tab {new_tab_id[:8]}")
+
+            # COOKIE INJECTION FIX (2026-05-10):
+            # When a new tab opens via window.open, it MAY not have cookies
+            # (depends on Chrome's cookie jar sharing). Safer to explicitly inject.
+            if new_ws:
+                cookies_ok = chrome.inject_heypiggy_cookies_to_tab(
+                    new_ws, debug=self.debug
+                )
+                if self.debug:
+                    print(f"[COOKIES] Injected into new tab: {'OK' if cookies_ok else 'FAIL'}")
+
             return OpenResult(
                 target=SurveyTarget(
                     survey_id=survey_id,
@@ -242,10 +288,148 @@ class SurveyOpener:
             ),
         )
 
+    # ── Navigate dashboard tab (COOKIE TIMING FIX 2026-05-10) ───
+
+    def _open_in_dashboard_tab(
+        self,
+        survey_id: str,
+        provider: str,
+        survey_url: str,
+        dashboard_ws: str,
+    ) -> OpenResult:
+        """Navigate the dashboard tab to the survey URL.
+
+        COOKIE TIMING FIX (2026-05-10):
+        The dashboard tab HAS heypiggy session cookies (injected at Chrome startup).
+        Creating a new tab via Target.createTarget creates a tab WITHOUT those cookies.
+        The CPX redirect chain (CPX → Samplicio → Cint → Potloc) runs without session
+        cookies → Heypiggy completion tracking can't associate completion → balance = €0.
+
+        This method navigates the EXISTING dashboard tab (with cookies) to the survey URL.
+        The survey runs in the dashboard tab context, preserving session cookies through
+        the entire redirect chain.
+
+        After survey completes (completion/disqualification/error), the caller MUST
+        navigate the tab back to the dashboard URL.
+
+        Args:
+            survey_id: HeyPiggy survey ID
+            provider: Provider name (purespectrum, samplicio, cint, etc.)
+            survey_url: Full survey URL from CPX API
+            dashboard_ws: WebSocket URL of the dashboard tab (HAS cookies!)
+
+        Returns:
+            OpenResult with SurveyTarget where:
+            - ws_url = dashboard_ws (the same tab!)
+            - tab_id = None (dashboard tab, no separate tab_id)
+            - mode = "in_dashboard" (caller must navigate back to dashboard after)
+            - actual_url = "" (unknown until after navigation)
+        """
+        # SESSION VALIDATION (2026-05-10): Validate before navigating to survey
+        # If session is invalid, navigating won't register completion → €0
+        if not is_session_valid(self.cdp_port):
+            if self.debug:
+                print("[SESSION] Session invalid in _open_in_dashboard_tab — attempting recovery...")
+            recovered = validate_session(self.cdp_port, auto_recover=True)
+            if not recovered:
+                return OpenResult(
+                    error="Session invalid (recovery failed) — cannot open survey",
+                    status="error",
+                )
+
+        self._pre_survey_cleanup(dashboard_ws)
+
+        if not websocket:
+            return OpenResult(error="websocket not available", status="error")
+
+        try:
+            ws = websocket.create_connection(dashboard_ws, timeout=15)
+            ws.send(json.dumps({
+                "id": 1,
+                "method": "Page.navigate",
+                "params": {"url": survey_url},
+            }))
+            r = json.loads(ws.recv())
+            ws.close()
+
+            frame_id = r.get("result", {}).get("frameId")
+            if self.debug:
+                print(f"[DASHBOARD NAV] frameId={frame_id}, survey_id={survey_id}")
+
+            time.sleep(2.5)  # Wait for initial redirects (CPX → Survey provider)
+
+            return OpenResult(
+                target=SurveyTarget(
+                    survey_id=survey_id,
+                    provider=provider,
+                    ws_url=dashboard_ws,       # SAME tab, but now at survey URL
+                    tab_id=None,               # No separate tab — same dashboard tab
+                    mode="in_dashboard",       # NEW mode: navigate back after!
+                    actual_url=survey_url,
+                ),
+                status="survey_opened",
+            )
+        except Exception as e:
+            if self.debug:
+                print(f"[DASHBOARD NAV] Failed: {e}")
+            return OpenResult(error=f"Failed to navigate dashboard tab: {e}", status="error")
+
+    # ── Post-completion: Navigate dashboard tab back ─────────────
+
+    def navigate_back_to_dashboard(self, dashboard_ws: str) -> bool:
+        """Navigate a tab back to the heypiggy dashboard.
+
+        COOKIE TIMING FIX (2026-05-10):
+        When the survey ran in the dashboard tab (mode='in_dashboard'), the tab
+        is still at the survey URL after completion. HeyPiggy needs the user
+        back on the dashboard to register the completion and update balance.
+
+        This method navigates the tab back to the dashboard URL so HeyPiggy
+        can properly track the survey completion and credit the balance.
+
+        Args:
+            dashboard_ws: WebSocket URL of the tab to navigate (should be
+                          the same as the survey tab's WS when mode='in_dashboard')
+
+        Returns:
+            True if navigation was initiated successfully
+        """
+        if not websocket:
+            return False
+        try:
+            ws = websocket.create_connection(dashboard_ws, timeout=15)
+            ws.send(json.dumps({
+                "id": 1,
+                "method": "Page.navigate",
+                "params": {"url": "https://www.heypiggy.com/?page=dashboard"},
+            }))
+            r = json.loads(ws.recv())
+            ws.close()
+            frame_id = r.get("result", {}).get("frameId")
+            if self.debug:
+                print(f"[DASHBOARD BACK] frameId={frame_id}")
+            time.sleep(1.5)  # Wait for dashboard to load
+            return frame_id is not None
+        except Exception as e:
+            if self.debug:
+                print(f"[DASHBOARD BACK] Failed: {e}")
+            return False
+
     # ── Internal helpers ────────────────────────────────────────
 
     def _create_tab(self, url: str) -> Optional[str]:
-        """Create blank tab, inject stealth, navigate."""
+        """Create blank tab, inject stealth, inject cookies, navigate.
+
+        COOKIE TIMING FIX (2026-05-10):
+        Previously this method created a blank tab, injected stealth, then navigated.
+        The new tab had NO heypiggy session cookies — the redirect chain ran without
+        session cookies → Heypiggy completion tracking couldn't associate the survey
+        completion with the user session → balance stayed at €0.
+
+        FIX: Inject the 7 critical HeyPiggy cookies BEFORE Page.navigate.
+        Order: create blank tab → inject stealth → inject cookies → navigate.
+        The cookies are injected via Network.setCookies (synchronous — in jar instantly).
+        """
         tab_info = chrome.create_blank_tab(self.cdp_port)
         if not tab_info:
             if self.debug:
@@ -254,6 +438,14 @@ class SurveyOpener:
         injected = chrome.inject_stealth_to_tab(tab_info["ws_url"])
         if self.debug:
             print(f"[STEALTH] {'OK' if injected else 'FAIL'} {tab_info['id'][:8]}")
+
+        # COOKIE INJECTION — MUST happen before navigation!
+        cookies_ok = chrome.inject_heypiggy_cookies_to_tab(
+            tab_info["ws_url"], debug=self.debug
+        )
+        if self.debug:
+            print(f"[COOKIES] {'OK' if cookies_ok else 'FAIL'} {tab_info['id'][:8]}")
+
         navigated = chrome.navigate_tab(tab_info["ws_url"], url)
         if not navigated and self.debug:
             print("[STEALTH] Navigation failed")

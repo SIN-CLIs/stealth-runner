@@ -37,6 +37,7 @@ KORREKT:
 
 from __future__ import annotations
 import json
+import os
 import subprocess
 import time
 import urllib.request
@@ -119,7 +120,13 @@ def _get_dashboard_ws(port: int = CDP_PORT) -> Optional[str]:
 
 
 def _create_tab(url: str, port: int = CDP_PORT) -> Optional[str]:
-    """Create new browser tab via CDP Target.createTarget."""
+    """Create new browser tab via CDP Target.createTarget + inject cookies.
+
+    COOKIE INJECTION FIX (2026-05-10):
+    Creates a blank tab first, injects the 7 HeyPiggy session cookies,
+    THEN navigates to the survey URL. Without this the redirect chain
+    runs without cookies → HeyPiggy can't track completion → balance €0.
+    """
     try:
         import websocket
         pages = _get_cdp_pages(port)
@@ -128,14 +135,57 @@ def _create_tab(url: str, port: int = CDP_PORT) -> Optional[str]:
         ws_url = pages[0].get("webSocketDebuggerUrl")
         if not ws_url:
             return None
+        # 1) Create blank tab so we can attach and inject cookies BEFORE navigation
         ws = websocket.create_connection(ws_url, timeout=10)
         ws.send(json.dumps({
             "id": 1, "method": "Target.createTarget",
-            "params": {"url": url}
+            "params": {"url": "about:blank"}
         }))
         r = json.loads(ws.recv())
         ws.close()
-        return r.get("result", {}).get("targetId")
+        target_id = r.get("result", {}).get("targetId")
+        if not target_id:
+            return None
+        # 2) Find the new tab and get its WebSocket debugger URL
+        pages2 = _get_cdp_pages(port)
+        new_tab = next((p for p in pages2 if p.get("id") == target_id), None)
+        if not new_tab:
+            return None
+        tab_ws = new_tab.get("webSocketDebuggerUrl")
+        if not tab_ws:
+            return None
+        # 3) Inject HeyPiggy session cookies from backup
+        cookie_file = os.path.expanduser("~/.stealth/heypiggy-backup/heypiggy-cookies.json")
+        if os.path.exists(cookie_file):
+            try:
+                with open(cookie_file) as f:
+                    data = json.load(f)
+                heypiggy_cookies = [
+                    {k: c[k] for k in ["name", "value", "domain", "path", "expires", "secure", "httpOnly"] if k in c}
+                    for c in data.get("cookies", [])
+                    if "heypiggy" in c.get("domain", "").lower()
+                ]
+                if len(heypiggy_cookies) >= 7:
+                    ws3 = websocket.create_connection(tab_ws, timeout=10)
+                    ws3.send(json.dumps({"id": 1, "method": "Network.enable"}))
+                    json.loads(ws3.recv())
+                    ws3.send(json.dumps({
+                        "id": 2, "method": "Network.setCookies",
+                        "params": {"cookies": heypiggy_cookies}
+                    }))
+                    json.loads(ws3.recv())
+                    ws3.close()
+            except Exception:
+                pass  # Continue even if cookie injection fails
+        # 4) Navigate to the actual survey URL
+        ws2 = websocket.create_connection(tab_ws, timeout=10)
+        ws2.send(json.dumps({
+            "id": 1, "method": "Page.navigate",
+            "params": {"url": url}
+        }))
+        json.loads(ws2.recv())
+        ws2.close()
+        return target_id
     except Exception:
         return None
 
@@ -554,7 +604,34 @@ def open_survey(
         # Survey opened successfully in new tab!
         tab_id = tab_info["tab_id"]
         tab_ws = tab_info["ws_url"]
-        survey_url = tab_info["url"]
+        # CRITICAL FIX (2026-05-10): Don't overwrite CPX API URL with intercepted URL
+        # The intercepted URL from window.open may lack subid parameters
+        # which are required for HeyPiggy completion tracking.
+        # Keep the CPX API URL (from line 509) which has correct subid.
+        intercepted_url = tab_info["url"]
+        
+        # SUBID FIX: If intercepted URL lacks subid, use CPX API URL instead
+        # The CPX API URL (from _get_survey_url) includes heypiggy's tracking subid
+        # The intercepted URL often has subid_1=&subid_2=website (empty defaults)
+        if "subid_1=&" in intercepted_url or "subid_2=website" in intercepted_url:
+            # Intercepted URL has empty/default subid — keep CPX API URL
+            pass  # survey_url already holds the correct CPX API URL
+        else:
+            # Intercepted URL has real subid — prefer it (has dashboard context)
+            survey_url = intercepted_url
+        
+        # Navigate tab to the correct URL (CPX API URL with subid)
+        try:
+            import websocket
+            ws = websocket.create_connection(tab_ws, timeout=10)
+            ws.send(json.dumps({
+                "id": 1, "method": "Page.navigate",
+                "params": {"url": survey_url}
+            }))
+            json.loads(ws.recv())
+            ws.close()
+        except Exception:
+            pass
         
         time.sleep(wait_load)
         

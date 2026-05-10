@@ -2,6 +2,8 @@
 
 | 2026-05-05 | NIE Maus-Tools oder CDP-Interaktion für Drag-Puzzles | [incidents/2026-05-05-1430.md](incidents/2026-05-05-1430.md) |
 | 2026-05-06 | CDP dispatchMouseEvent ist captcha-Fallback wenn cua-driver versagt | [incidents/2026-05-06-gocaptcha-slide-cdp.md](incidents/2026-05-06-gocaptcha-slide-cdp.md) |
+| 2026-05-10 | NIEMALS pointermove/pointerup auf img dispatch für Angular CDK | Fix: dispatch auf document.body statt img |
+| 2026-05-10 | NIEMALS Survey in NEUEM Tab via Target.createTarget öffnen | Neuer Tab hat keine Session-Cookies → balance = €0 trotz Completion |
 
 ## ❌ Doc-System-Ausbau ohne Flow-Re-Test (2026-05-05, SESSION-FATAL)
 **NIEMALS** Dokumentations-Infrastruktur priorisieren während ein kritischer Flow-Test aussteht.
@@ -248,3 +250,131 @@ Target.createTarget({url: surveyURL})
 - ✅ Dynamisch scannen: `curl http://127.0.0.1:9999/json` → alle PIDs/WIDs/WS URLs
 - ✅ Port 9999 für HeyPiggy, Port 9222 für SINator
 **Grund**: Chrome-Prozesse sind dynamisch. Hardcodierte Werte brechen nach dem nächsten Restart.
+
+## ❌ pointermove/pointerup auf img dispatch für Angular CDK (2026-05-10)
+
+**NIEMALS** `pointermove` oder `pointerup` Events auf dem img-Source-Element dispatchen.
+
+- ❌ `img.dispatchEvent(new PointerEvent('pointermove', {...}))` → Angular CDK ignoriert!
+- ❌ `img.dispatchEvent(new PointerEvent('pointerup', {...}))` → Angular CDK ignoriert!
+- ✅ `document.dispatchEvent(new PointerEvent('pointermove', {...}))` → Angular CDK fängt ab!
+- ✅ `document.dispatchEvent(new PointerEvent('pointerup', {...}))` → Angular CDK fängt ab!
+
+**Grund:** Angular CDK v7+ lauscht mit `@HostListener('document:pointermove')` auf document-level events.
+Dispatch auf img erreichen das CDK nicht — der Drag failt stillschweigend.
+
+**Richtige Reihenfolge:**
+1. `pointerdown` → auf img (startet drag) ✅
+2. `pointermove` → auf document.body (CDK fängt ab) ✅
+3. `pointerup` → auf document.body oder drop-zone (CDP fängt ab) ✅
+
+## ❌ Survey in NEUEM Tab via Target.createTarget öffnen (2026-05-10)
+
+**NIEMALS** `Target.createTarget()` nutzen um eine Survey in einem neuen Tab zu öffnen.
+
+- ❌ `Target.createTarget({url: survey_url})` → NEUER TAB, keine Session-Cookies
+- ❌ Survey öffnet sich in neuer Tab → CPX/Samplicio/Cint Chain läuft OHNE Heypiggy-Cookies
+- ❌ Completion-Event wird nicht getrackt → balance = €0 trotz Survey-Completion ("Vielen Dank")
+- ✅ Survey im GLEICHEN Dashboard-Tab öffnen (hat bereits 7 Heypiggy-Cookies)
+- ✅ `Page.navigate()` im Dashboard-Tab → CPX URL mit vorhandenen Cookies
+
+**Root Cause** (getestet 2026-05-10, Survey 67078106):
+- Dashboard Tab hat 7 Heypiggy-Cookies ✅
+- `_find_new_tab_after_click()` erstellt NEUEN Tab via `Target.createTarget()` ❌
+- Neuer Tab öffnet CPX URL SOFORT — noch KEINE Cookies injiziert ❌
+- `inject_stealth_to_tab()` wird NACHER aufgerufen — zu spät!
+- Redirect-Chain `CPX → Samplicio → Cint → Potloc` läuft ohne Session-Cookies
+- Heypiggy Completion-Tracking kann Session nicht identifizieren → €0 verdient
+
+**Richtige Lösung:**
+```python
+# FALSCH: Neue Tab erstellen (hat keine Cookies)
+new_ws = self._find_new_tab_after_click(tabs_before)  # → NEUER TAB
+
+# RICHTIG: Im Dashboard-Tab navigieren (hat Cookies)
+# Dashboard WS hat bereits 7 Heypiggy-Cookies
+# → Einfach Page.navigate(survey_url) im dashboard_ws ausführen
+```
+
+**Affected**: `survey-cli/survey/opener.py` → `_open_in_page_modal()` line 141-160
+
+## ❌ Intercepted URL ohne subid injection verwenden (2026-05-10)
+
+**NIEMALS** die intercepted URL verwenden ohne Heypiggy's subid zu injizieren.
+
+- ❌ Intercepted URL hat `subid_1=&subid_2=website` (leer/default)
+- ❌ Original `openSurvey()` setzt `subid_2=<subid_cpx>` — das geht bei interception verloren!
+- ❌ Survey läuft komplett durch, "Vielen Dank" wird angezeigt, aber Balance = €0
+- ❌ Heypiggy Completion-Tracking kann Completion nicht mit User-Account verknüpfen
+- ✅ subid aus original window.open extrahieren und in intercepted URL injizieren
+- ✅ URL VOR `Target.createTarget()` mit korrektem subid präparieren
+
+**Root Cause** (E2E Test 2026-05-10, /tmp/e2e_test_results.md):
+```
+Intercepted URL: https://cpx.com/survey?subid_1=&subid_2=website&...
+                   ^^^^^^^^ leer! Heypiggy tracking broken!
+
+Original URL wanted: subid_1=<user_id>&subid_2=<cpx_tracking_id>&...
+```
+
+**Richtige Lösung:**
+```python
+# FALSCH: Captured URL direkt verwenden
+survey_url = captured_url  # subid_1= empty → €0 verdient
+
+# RICHTIG: subid aus Dashboard extrahieren und injectieren
+# Heypiggy setzt subid_2=<subid_cpx> in original window.open
+# Wir müssen es in der captured URL bewahren
+parsed = urlparse(captured_url)
+params = parse_qs(parsed.query)
+# subid_1 und subid_2 aus params extrahieren
+# → in neue URL einbauen bevor Target.createTarget
+```
+
+**Affected**: `survey-cli/tools/tool_open_survey.py` → `_handle_modal_with_cdp()`
+
+## ❌ Chrome während laufender Session neustarten (2026-05-10)
+
+**NIEMALS** Chrome neustarten wenn eine Session aktiv ist oder war.
+
+- ❌ Chrome Crash → Session-Cookies im Backup werden ungültig
+- ❌ Nach Restart: Dashboard zeigt "logged out" → muss neu einloggen
+- ❌ Cookie-Injection mit abgelaufenen Cookies → Chrome ignoriert sie
+- ❌ Subid-Tracking wird unterbrochen → laufende Survey wird nicht credited
+- ✅ Session-Validierung VOR jeder Operation (body.innerText enthält "abmelden"?)
+- ✅ Nach Chrome-Restart: Fresh Cookie-Extraktion aus laufendem Chrome
+- ✅ Session Recovery Protocol: validate → restore → verify
+
+**Root Cause** (E2E Test 2026-05-10):
+- Survey 67078107 gestartet → Chrome Crash bei Q3
+- Chrome Neustart nötig → Session abgelaufen
+- Backup-Cookies ungültig → Dashboard logged out
+- Re-Login nötig → subid Tracking verloren → Balance = €0
+
+**Richtige Lösung:**
+```python
+# Validate session BEFORE every survey operation
+def ensure_session_active(cdp_port):
+    ws = get_dashboard_ws(cdp_port)
+    body = ws.evaluate("document.body.innerText")
+    if "abmelden" not in body.lower():
+        # Session tot → Recovery Protocol
+        recover_session(cdp_port)
+    return True  # Session aktiv
+```
+
+## ❌ CPX k= Parameter ignorieren (2026-05-10)
+
+**NIEMALS** den CPX k= Parameter ignorieren — er hat nur 30min-2h Gültigkeit.
+
+- ❌ Survey URL mit altem/expired k= Parameter öffnen
+- ❌ CPX Redirect schlägt fehl →Survey nie erreicht
+- ❌ k= Parameter bleibt im URL für den gesamten Redirect-Chain
+- ✅ CPX URLs zeitnah verwenden (innerhalb der Gültigkeit)
+- ✅ Alternative: fresh CPX URL via API holen wenn alte abgelaufen
+
+**Root Cause:**
+CPX URLs sind zeitgebunden. Der k= Token läuft nach 30min-2h ab.
+Auch wenn alle anderen Fixes (subid, Cookies) funktionieren, führt ein
+abgelaufener k= Parameter dazu, dass der CPX Redirect die Survey nie erreicht.
+

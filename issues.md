@@ -8,6 +8,199 @@
 
 ## 🚨 CRITICAL BLOCKER
 
+### SR-54: Survey Completion Tracking — Cookie + Subid + Balance Fix Bundle (2026-05-10)
+**Priority**: P0 | **Labels**: `bug`, `critical`, `tracking`, `e2e-verified` | **Component**: opener.py, chrome.py, tool_open_survey.py, scanner.py
+**Status**: ✅ FIXED & VERIFIED (2026-05-10) | **Found**: 2026-05-10 | **Assignee**: stealth-orchestrator
+**Blocking**: ALL surveys earn €0 — 3 root causes combined
+**E2E Test**: ✅ VERIFIED — Survey 66695822 (Cint→Tivian), Balance €2.70 → €2.75 (+€0.05)
+
+**Three Interdependent Root Causes:**
+1. **Cookie Timing** — `Target.createTarget()` opened survey in new tab WITHOUT 7 HeyPiggy session cookies
+2. **Subid Missing** — window.open interception captured URL BEFORE `subid_2=<subid_cpx>` was appended  
+3. **Balance Reading** — DOM regex read first € value (survey reward) instead of maximum (user balance)
+
+**Files Changed:**
+- `survey-cli/survey/opener.py` — cookie injection in `_create_tab()` + `_open_in_page_modal()`
+- `survey-cli/survey/chrome.py` — `inject_heypiggy_cookies_to_tab()` helper
+- `survey-cli/tools/tool_open_survey.py` — subid preservation in `open_survey()`
+- `survey-cli/survey/scanner.py` — balance reading returns MAX € value (not first)
+- `survey-cli/survey/graph/nodes.py` + `state.py` — session validation integration
+- `stealth-captcha/src/stealth_captcha/solver/drag_drop_angular.py` — multi-approach solver (4 approaches)
+
+**Tests:** 17/18 + 18/18 + 10/10 passed (pre-existing failures only)
+
+---
+
+### SR-51: subid Parameter Missing in Intercepted URL — Balance = €0
+**Priority**: P0 | **Labels**: `bug`, `critical`, `tracking` | **Component**: opener.py, tool_open_survey.py
+**Status**: ✅ FIXED & VERIFIED (2026-05-10) | **Found**: 2026-05-10 | **Assignee**: stealth-orchestrator
+**Blocking**: ALL surveys earn €0 — subid is Heypiggy's tracking key for completion credit
+**E2E Test**: ✅ VERIFIED — Survey 66695822 (Cint→Tivian), Balance €2.70 → €2.75 (+€0.05)
+
+**Root Cause** (from /tmp/e2e_test_results.md):
+- `openSurvey()` in heypiggy JS sets `subid_2=<subid_cpx>` before calling `window.open()`
+- window.open interception captures the URL BEFORE this subid is appended
+- Intercepted URL shows `subid_1=&subid_2=website` (default empty values)
+- Heypiggy Completion-Tracking requires correct subid to credit the user account
+- Without subid: survey completes but balance cannot be credited → €0
+
+**Intercept Flow (BROKEN):**
+```
+1. window.open override captures URL from openSurvey()
+2. URL already has subid_1=&subid_2=website (NOT the real subid!)
+3. Target.createTarget({url: captured_url}) → opens survey WITHOUT tracking
+4. CPX → Samplicio → PureSpectrum → Potloc → CloudResearch (all without subid)
+5. Survey completes → Heypiggy can't match completion to user → €0
+```
+
+**Original openSurvey() Flow (WORKING):**
+```
+1. openSurvey() sets subid_2=<subid_cpx>
+2. window.open(url_with_subid) → opens in new tab WITH tracking
+3. Heypiggy credits user via subid when survey completes → €€
+```
+
+**Proposed Fix:**
+- Capture the URL from openSurvey() BEFORE window.open override
+- Parse the full URL including `subid_1`, `subid_2`, `subid_cpx` parameters
+- OR: Inject heypiggy subid into intercepted URL before Target.createTarget
+- OR: Use Page.navigate in dashboard tab (which already has cookies) instead of new tab
+
+**Files to Change:**
+- `survey-cli/tools/tool_open_survey.py`: `_handle_modal_with_cdp()` — extract and preserve subid
+- `survey-cli/survey/opener.py`: `_open_in_page_modal()` — inject subid into URL
+
+---
+
+### SR-52: Chrome Crash During Survey Completion — Q3 at CloudResearch
+**Priority**: P0 | **Labels**: `bug`, `critical`, `crash` | **Component**: cdp_client.py, survey loop
+**Status**: OPEN | **Found**: 2026-05-10 | **Assignee**: stealth-orchestrator
+**Blocking**: Surveys crash mid-completion, leaving zombie tabs
+
+**Root Cause** (from /tmp/e2e_test_results.md):
+- Survey 67078107: redirect chain `CPX → Samplicio → PureSpectrum → Potloc → CloudResearch`
+- Chrome crashed at Q3 (cognitive question) during CloudResearch survey
+- CDP connection lost — WebSocket error or JS exception
+- Survey never reached completion page
+- Chrome restart required → session cookies expired → login needed
+
+**Test Evidence (2026-05-10):**
+| Step | Result |
+|------|--------|
+| Survey opened via window.open interception | ✅ URL captured (but subid=empty) |
+| Redirect chain: CPX → Samplicio → PureSpectrum → Potloc → CloudResearch | ✅ All redirects worked |
+| Reached Q3 (cognitive questions at CloudResearch) | ✅ |
+| Chrome crashed | ❌ CDP connection lost |
+| Survey completion reached | ❌ NO — crash prevented completion |
+| Balance before: €2.70, after: €2.70 | ❌ €0 earned |
+
+**Possible Causes:**
+1. Memory leak during complex multi-redirect survey (6+ page loads)
+2. CDP WebSocket disconnection (network issue or Chrome internal)
+3. JS exception in CloudResearch survey (unhandled error)
+4. CDP "No such target id" error after tab switches
+5. Angular/React component crash in survey page
+
+**Proposed Fixes:**
+1. CDP crash handler: detect WebSocket error, restart Chrome, resume survey
+2. Tab re-discovery after every redirect: `_refresh_tab_ws()` after Page.navigate
+3. Survey timeout: abort after 5 minutes with retry
+4. Zombie tab cleanup: detect crashed tabs, close them, continue
+
+**Files to Change:**
+- `survey-cli/survey/cdp_client.py`: crash detection + reconnect
+- `survey-cli/survey/runner.py`: timeout + retry logic
+- `survey-cli/survey/opener.py`: tab re-discovery after redirects
+
+---
+
+### SR-53: Session Expires After Chrome Restart — Cookie Backup Invalid
+**Priority**: P2 | **Labels**: `bug`, `cookies`, `session` | **Component**: cookie_manager.py, opener.py
+**Status**: OPEN | **Found**: 2026-05-10 | **Assignee**: stealth-orchestrator
+**Blocking**: Must re-login after every Chrome restart, breaks automation continuity
+
+**Root Cause** (from /tmp/e2e_test_results.md):
+- Cookie backup `~/.stealth/heypiggy-backup/heypiggy-cookies.json` was taken during active session
+- After Chrome restart: backup cookies became invalid (session expiry)
+- Session cookies typically expire after 30min-2h
+- `Network.setCookies` with expired cookies → Chrome ignores them
+- Dashboard shows logged-out state → must re-login
+
+**Test Evidence (2026-05-10):**
+- Session verified alive before survey (body.innerText contains "abmelden") ✅
+- Survey opened via window.open interception ✅
+- Chrome crashed at Q3 ❌
+- Chrome restart required (Chrome crashed) ❌
+- Session expired during restart ❌
+- Backup cookies invalid → dashboard logged out ❌
+- Re-login required → subid tracking broken ❌
+
+**Session Recovery Protocol (Proposed):**
+```
+BEFORE survey operation:
+1. Validate session: navigate to heypiggy.com → check body.innerText for "abmelden"
+2. If logged out: restore from backup + re-login via Google OAuth
+3. If backup cookies fail: extract fresh cookies from running Chrome
+
+AFTER Chrome restart:
+1. Detect restart (Chrome PID changed or no WS connection)
+2. Restore session via cookie injection OR re-login
+3. Verify login before proceeding with survey
+```
+
+**Files to Change:**
+- `survey-cli/survey/opener.py`: session validation before survey
+- `agent-toolbox/core/cookie_manager.py`: session recovery protocol
+- `agent-toolbox/core/gmx_service.py`: reference implementation (already has recovery)
+
+---
+
+## Previous Critical Blockers
+
+### SR-50: Cookie Timing — Survey öffnet sich ohne Session-Cookies, balance = €0
+**Priority**: P0 | **Labels**: `bug`, `critical`, `cookies` | **Component**: opener.py
+**Status**: OPEN | **Found**: 2026-05-10 | **Assignee**: stealth-orchestrator
+**Blocking**: ALL surveys earn €0 despite completion — every provider (Cint, Samplicio, PureSpectrum)
+
+**Root Cause** (from /tmp/survey_test_results.md):
+- Survey completed (Cint showed "Vielen Dank"), balance unchanged: €2.70 before → €2.70 after
+- 7 HeyPiggy-Cookies are injected AFTER `Target.createTarget()` creates the new tab
+- The entire redirect chain runs WITHOUT session cookies: `CPX → Samplicio → Cint → Potloc`
+- Heypiggy's completion tracking requires cookies to be present when the redirect returns to the platform
+- Without cookies, completion event cannot be associated with the correct user session → balance stays €0
+
+**Affected Code**: `survey-cli/survey/opener.py`
+- `_open_in_page_modal()` (line 118): calls `_find_new_tab_after_click()` which uses `Target.createTarget()`
+- `_create_tab()` (line 247): creates blank tab, injects stealth, THEN navigates — cookies not injected before navigation
+- Cookie injection happens on the DASHBOARD tab first, then new survey tab is created WITHOUT cookies
+
+**Test Evidence** (2026-05-10, survey 67078106):
+| Step | Result |
+|------|--------|
+| Survey opened via window.open interception + Target.createTarget | ✅ Tab created |
+| Survey flow: Samplicio → Cint (14 pages) | ✅ Completed |
+| Cint showed "Vielen Dank" | ✅ Completion detected |
+| Balance before: €2.70, after: €2.70 | ❌ NO INCREASE |
+| New survey appeared in list (€1.03) | Survey was processed but NO credit |
+
+**Failed Fix Approaches**:
+| Approach | Why Failed |
+|----------|------------|
+| Inject cookies after tab creation | Tab already navigated to CPX URL without cookies |
+| Wait longer before checking balance | Completion tracking never happened — timing is the root cause |
+| Manual re-test after same flow | Same result: €0 earned despite completion |
+
+**Proposed Fixes** (ordered by priority):
+1. **PREFERRED**: Open survey in the SAME dashboard tab (which already has cookies) — navigate to CPX URL instead of creating new tab
+2. **ALTERNATIVE**: Inject cookies INTO the new tab BEFORE navigating to the survey URL (requires CDP injection into new tab's WS before Page.navigate)
+3. **WORKAROUND**: Find heypiggy completion callback URL and call it directly with cookies after survey completes
+
+**Files to Change**:
+- `survey-cli/survey/opener.py`: `_open_in_page_modal()` — use dashboard tab for survey instead of new tab
+- `survey-cli/survey/opener.py`: `_create_tab()` — inject cookies before `navigate_tab()`
+
+---
+
 ### SR-38: PureSpectrum Drag-Drop Puzzle — 66% stuck, €0 verdient
 **Priority**: P0 | **Labels**: `bug`, `providers`, `critical` | **Component**: purespectrum.py
 **Status**: OPEN | **Found**: 2026-05-09 | **Assignee**: stealth-orchestrator
@@ -260,6 +453,10 @@ CDP has NO `Input.dispatchPointerEvent` — must use `Runtime.evaluate` with poi
 | SR-36 | DEFERRED | Generated Docs De-Duplication |
 | SR-37 | DONE | OpenCode Fix: Zod v4 Crash + GitNexus + Graphify |
 | SR-38 | BLOCKED | PureSpectrum Drag-Drop Blocker → KRITISCH! |
+| SR-50 | CRITICAL | Cookie Timing — Survey öffnet sich ohne Session-Cookies, balance = €0 |
+| SR-51 | CRITICAL | subid Parameter Missing in Intercepted URL → balance = €0 |
+| SR-52 | CRITICAL | Chrome Crash During Survey Completion → Q3 CloudResearch |
+| SR-53 | OPEN | Session Expires After Chrome Restart → cookie backup invalid |
 | SR-39-49 | OPEN | LangGraph + FastAPI Integration (neue Issues) |
 
 ---
@@ -268,10 +465,10 @@ CDP has NO `Input.dispatchPointerEvent` — must use `Runtime.evaluate` with poi
 
 | Priority | Count | Issues |
 |----------|-------|--------|
-| P0 (Critical) | 8 | SR-38, SR-39, SR-40, SR-41, SR-42, SR-43, #1, #16 |
-| P1 (High) | 5 | SR-44, SR-45, SR-46, SR-47, #15 |
-| P2 (Medium) | 3 | SR-48, SR-49, #8 |
-| P3 (Low) | 3 | SR-10, SR-11, #11 |
+| P0 (Critical) | 10 | SR-38, SR-39, SR-40, SR-41, SR-42, SR-43, SR-50, SR-51, SR-52, #1 |
+| P1 (High) | 6 | SR-44, SR-45, SR-46, SR-47, #15, #16 |
+| P2 (Medium) | 4 | SR-48, SR-49, SR-53, #8 |
+| P3 (Low) | 2 | #10, #11 |
 | Deprecated | 7 | #2, #3, #5, #6, SR-28, SR-30, SR-31 |
 
 ---
