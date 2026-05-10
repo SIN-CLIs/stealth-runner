@@ -22,6 +22,29 @@ content: |
   **RICHTIG:** "Ich sehe ein Bild mit '52'. Ich sehe eine leere Drop-Zone. Ich ziehe das Bild in die Zone."
   → Das funktioniert für 52, 20, Dreieck, Quadrat, Text-Bausteine — ALLES.
 
+  ### REGEL 1c: KEINE MONOLITHE — Max 300 Zeilen pro Datei
+  **ABSOLUTER VERBOT:** Riesige Dateien mit tausenden Zeilen. Das ist bad practices, NICHT best practices!
+  **WARUM?** Monolithe sind undebuggbar, unwartbar, nicht testbar. Nächster Agent zerstört alles.
+  **RICHTIG:** Modular, atomar. Jedes Tool eine eigene Datei. Jede Datei unter 300 Zeilen.
+  ```
+  survey-cli/tools/tool_solve_captcha.py   → 174 Zeilen ✅
+  survey-cli/tools/tool_solve_drag_puzzle.py → 147 Zeilen ✅
+  survey-cli/tools/tool_scan_dashboard.py  → 176 Zeilen ✅
+  survey-cli/tools/tool_universal_answer.py → 216 Zeilen ✅
+  ```
+  → FastAPI Endpoints sind dünne Orchestratoren, nicht Monolithe!
+  → **Wenn eine Datei über 300 Zeilen wächst → SOFORT aufteilen!**
+
+  ### REGEL 1d: KEIN AUTO-RUN — Bis 100 Surveys MANUELL erfolgreich!
+  **ABSOLUTER VERBOT:** Monolithischen Auto-Run-Loop bauen der alles automatisiert.
+  **WARUM?** Wir können MANUELL keine einzige Umfrage erfolgreich lösen — wie soll ein Auto-Run funktionieren?
+  **RICHTIG:** Erst alle FastAPI Endpoints + Tools einzeln bauen und TESTEN.
+  Erst wenn 100 Surveys UND folge zuverlässig und fehlerfrei erledigt wurden → Auto-Run.
+  ```
+  ❌ FALSCH: build_monolithic_auto_run_loop() → запускаем всё auf einmal
+  ✅ RICHTIG: Build tool → Test tool → Repeat → 100x verified → THEN automation
+  ```
+
   ### REGEL 2: NIEMALS frisches Profil starten!
   IMMER Profil 901 (Jeremy) mit existierenden Cookies nutzen:
   1. `cp -R "$HOME/Library/Application Support/Google Chrome/Profile 901 (Jeremy)" /tmp/chrome-jeremy-heypiggy-9999`
@@ -1969,12 +1992,18 @@ PHASE 2 — Captcha + Drag-Drop Solver + EXTRACTOR_JS integrieren:
   - Iframe content extraction (HeyPiggy embeds surveys in iframes)
   - Cookie consent banner detection
   - CompactSnapshot erweitert: images[], dragPuzzle, captchas[], hasShadowDOM
-- [ ] Captcha Solver in survey/graph/nodes.py:decide_node() integrieren
-- [ ] Drag-Drop Solver in survey/graph/nodes.py:decide_node() integrieren
-- [ ] Drag puzzle solver (tool) aus stealth-captcha/drag_drop_angular.py als FastAPI Endpoint exponieren
-  - 4 Approaches (A→B→C→D), stoppt bei erstem Erfolg
-  - Approach B (CDP Input.dispatchMouseEvent) ist PRIMARY — funktioniert für Angular CDK
-  - Endpoint: POST /survey/solve-drag-puzzle mit target-number + drop-zone coords
+- [x] Captcha Solver als standalone tool → `survey-cli/tools/tool_solve_captcha.py`
+  - Auto-detect type: slide / text / drag / visual / none
+  - Text/OCR: screenshot → NVIDIA Vision OCR → type → submit (174 lines)
+  - Slide: CDP Bezier trajectory → Input.dispatchMouseEvent (174 lines)
+  - Drag: delegates to tool_solve_drag_puzzle.py (delegation pattern)
+- [x] Drag-Drop Solver als standalone tool → `survey-cli/tools/tool_solve_drag_puzzle.py`
+  - APPROACH B (PRIMARY): CDP Input.dispatchMouseEvent chain
+  - Verified: Survey 49517969 (Zahl 28) → 100% ✅ (147 lines)
+  - NOT synthetic PointerEvents — Angular CDK ignores those!
+- [x] Captcha + Drag-Drop als FastAPI Endpoints → survey_tools.py
+  - POST /captcha/solve: auto-detect + solve (text/slide/drag)
+  - POST /survey/solve-drag: dedicated Angular CDK solver
 
 PHASE 3 — Command Registry + Pre-Flight:
 - [x] preflight_check() in survey_tools.py — 14-step validation
@@ -2077,7 +2106,9 @@ BALANCE TARGET (€5.00):
 - **Fixes committed (2026-05-11):** balance extraction (newlines), cookie timing (blank→cookies→navigate)
 - **Nächster Test:** Open survey → complete → verify balance increases
 
-EXISTIERENDE TOOLS (survey-cli/tools/) — ALS FASTAPI ENDPOINTS (17 total — ALLE ✅):
+EXISTIERENDE TOOLS (survey-cli/tools/) — ALS FASTAPI ENDPOINTS (21 total — ALLE ✅):
+**REGEL: Keine Datei darf 300 Zeilen haben! (>300 = bad practices, nicht best practices!)**
+Alle neuen Tools unter 300 Zeilen: tool_solve_captcha (174L), tool_solve_drag_puzzle (147L), tool_scan_dashboard (176L), tool_universal_answer (216L).
 
 **Bestehende (10):**
 | Tool | Endpoint | SR |
@@ -2090,10 +2121,8 @@ EXISTIERENDE TOOLS (survey-cli/tools/) — ALS FASTAPI ENDPOINTS (17 total — A
 | tool_purespectrum_preflight | POST /survey/purespectrum-preflight | ✅ |
 | tool_run_graph | POST /survey/run-graph | ✅ |
 | tool_universal | POST /survey/universal | ✅ |
-| (fill #2) | POST /survey/fill | ✅ |
-| (snapshot wrapper) | POST /survey/snapshot | ✅ |
 
-**Neu via SR-52 (7):**
+**SR-52 (7):**
 | Tool | Endpoint |
 |------|----------|
 | tool_click.py | POST /survey/click |
@@ -2104,7 +2133,15 @@ EXISTIERENDE TOOLS (survey-cli/tools/) — ALS FASTAPI ENDPOINTS (17 total — A
 | tool_find_new_tab.py | POST /survey/find-tab |
 | tool_close_modals.py | POST /survey/close-modals |
 
-**Alle 17 Endpoints haben:** `dependencies=[Depends(require_survey_ready)]` + `update_command_registry()` ✅
+**NEU 2026-05-11 (4):**
+| Tool | Lines | Endpoint | Funktion |
+|------|-------|----------|----------|
+| tool_solve_captcha.py | 174 | POST /captcha/solve | Auto-detect type → text(OCR)/slide(CDP trajectory)/drag(delegation) |
+| tool_solve_drag_puzzle.py | 147 | POST /survey/solve-drag | Angular CDK drag-drop via CDP mouse events (APPROACH B, verified) |
+| tool_scan_dashboard.py | 176 | POST /survey/scan | Dashboard scanner + provider detection + trust scores |
+| tool_universal_answer.py | 216 | POST /survey/answer | DOM-based universal answerer (radio/checkbox/text/select/NPS/matrix) |
+
+**Alle 21 Endpoints haben:** `dependencies=[Depends(require_survey_ready)]` + `update_command_registry()` ✅
 
 GARBAGE LOESCHEN (SOFORT):
 - [x] plan.md (root) -> GELOESCHT
