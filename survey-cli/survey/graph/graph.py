@@ -18,6 +18,9 @@ ARCHITEKTUR:
   │  ensure_chrome ──→ [chrome error] ──────────────────────────── END     │
   │    │                                                                    │
   │    ▼                                                                    │
+  │  read_balance_before ─────────────────────────────────────────────       │
+  │    │                                                                    │
+  │    ▼                                                                    │
   │  open_survey ────→ [screen_out] ───────────────────────────── END     │
   │    │              └──→ [open error] ─────────────────────────── END    │
   │    ▼                                                                    │
@@ -33,7 +36,7 @@ ARCHITEKTUR:
   │  execute ───────────────────────────────────────────────┐││            │
   │    │                                                     │││            │
   │    │                                                     │││            │
-  │    └──→ detect_completion ──→ [completed/screen_out] ─→ END            │
+  │    └──→ detect_completion ──→ read_balance_after ──→ [conditional]   │
   │                               │                                           │
   │                               │                                           │
   │                          [continue]                                     │
@@ -113,10 +116,30 @@ from .nodes import (
     decide_node,
     execute_node,
     detect_completion,
+    read_balance_before,
+    read_balance_after,
     human_delegate,
 )
 
 # LangGraph Import — graceful degradation wenn nicht installiert
+# CRITICAL FIX: langgraph ist in .venv installiert, aber System-Python 3.14
+# sieht es nicht. Wir versuchen den .venv Path hinzuzufügen.
+import sys
+import os
+
+# Versuche .venv Path zur Sicherheit hinzuzufügen
+_VENV_SITE_PACKAGES = os.path.join(
+    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))),
+    ".venv", "lib", "python3.12", "site-packages"
+)
+if os.path.isdir(_VENV_SITE_PACKAGES) and _VENV_SITE_PACKAGES not in sys.path:
+    sys.path.insert(0, _VENV_SITE_PACKAGES)
+
+# Auch alternativen Python-Pfad versuchen
+_VENV_SITE_PACKAGES_ALT = "/Users/jeremy/dev/stealth-runner/.venv/lib/python3.12/site-packages"
+if os.path.isdir(_VENV_SITE_PACKAGES_ALT) and _VENV_SITE_PACKAGES_ALT not in sys.path:
+    sys.path.insert(0, _VENV_SITE_PACKAGES_ALT)
+
 try:
     from langgraph.graph import StateGraph, START, END
 
@@ -209,8 +232,8 @@ def build_graph() -> StateGraph:
     """Baue den Survey-StateGraph.
 
     Graph-Struktur:
-      START → ensure_chrome → open_survey → inject_cookies
-            → snapshot → decide → execute → detect_completion
+      START → ensure_chrome → read_balance_before → open_survey → inject_cookies
+            → snapshot → decide → execute → detect_completion → read_balance_after
             → [conditional routing via route()]
               ├── snapshot (continue)
               ├── human_delegate (3× failures)
@@ -240,12 +263,14 @@ def build_graph() -> StateGraph:
     # Jede Node wrapped eine existierende Funktion.
     # Keine neue Logik — nur delegate + state update.
     graph.add_node("ensure_chrome", ensure_chrome)
+    graph.add_node("read_balance_before", read_balance_before)
     graph.add_node("open_survey", open_survey)
     graph.add_node("inject_cookies", inject_cookies)
     graph.add_node("snapshot", snapshot_node)
     graph.add_node("decide", decide_node)
     graph.add_node("execute", execute_node)
     graph.add_node("detect_completion", detect_completion)
+    graph.add_node("read_balance_after", read_balance_after)
     graph.add_node("human_delegate", human_delegate)
 
     # Schritt 3: Start-Edge (START → ensure_chrome)
@@ -254,7 +279,8 @@ def build_graph() -> StateGraph:
     # Schritt 4: Setup-Edges (linear, kein Routing)
     # Diese Edges laufen IMMER in der gleichen Reihenfolge.
     # Kein Conditional — jede Node muss erfolgreich sein.
-    graph.add_edge("ensure_chrome", "open_survey")
+    graph.add_edge("ensure_chrome", "read_balance_before")
+    graph.add_edge("read_balance_before", "open_survey")
     graph.add_edge("open_survey", "inject_cookies")
     graph.add_edge("inject_cookies", "snapshot")
 
@@ -264,10 +290,13 @@ def build_graph() -> StateGraph:
     graph.add_edge("decide", "execute")
     graph.add_edge("execute", "detect_completion")
 
-    # Schritt 6: Conditional Edge nach detect_completion
+    # Schritt 5b: Balance nach Survey lesen (nach detect_completion, vor Routing)
+    graph.add_edge("detect_completion", "read_balance_after")
+
+    # Schritt 6: Conditional Edge nach read_balance_after
     # route() entscheidet ob: snapshot (continue) | human_delegate | END
     graph.add_conditional_edges(
-        "detect_completion",
+        "read_balance_after",
         route,
         {
             "snapshot": "snapshot",        # Continue: NEMO Loop
@@ -339,17 +368,12 @@ def run_survey_loop(state: SurveyState) -> SurveyState:
     Note:
         Identisch zu: create_graph().invoke(state)
     """
-    # Balance vor der Session lesen (SR-41)
-    try:
-        from ..scanner import read_balance
-        state.balance_before = read_balance(port=state.cdp_port)
-    except Exception:
-        state.balance_before = 0.0
-
     # Phase 1: Setup
     state = ensure_chrome(state)
     if state.status == "error":
         return state
+
+    state = read_balance_before(state)
 
     state = open_survey(state)
     if state.status in ("screen_out", "error"):
@@ -375,11 +399,13 @@ def run_survey_loop(state: SurveyState) -> SurveyState:
         # Fallback: NEMO snapshot ohne Actions → nur detect completion
         if not state.nim_actions:
             state = detect_completion(state)
+            state = read_balance_after(state)
         else:
             # Batch ausführen (NEMO Schritt 4)
             state = execute_node(state)
             # completion detection
             state = detect_completion(state)
+            state = read_balance_after(state)
 
         # Routing
         next_node = route(state)
@@ -389,12 +415,5 @@ def run_survey_loop(state: SurveyState) -> SurveyState:
             state = human_delegate(state)
             break
         # else: continue to next iteration (loop)
-
-    # Balance nach der Session lesen (SR-41)
-    try:
-        from ..scanner import read_balance
-        state.balance_after = read_balance(port=state.cdp_port)
-    except Exception:
-        state.balance_after = state.balance_before
 
     return state

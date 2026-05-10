@@ -130,6 +130,190 @@ router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 # ═══════════════════════════════════════════════════════════════════════════════
 
 
+async def _scan_dashboard_impl(cdp_port: int, min_reward: float = 0.0) -> dict:
+    """
+    Implementation des Dashboard-Scans (wiederverwendbar für Endpoints + Background-Task).
+    
+    WARUM separate Funktion?
+    → Background-Task (main.py) muss das Dashboard scannen OHNE HTTP-Request.
+    → DRY-Prinzip: Gleiche Logik für Endpoint und Background-Task.
+    → Kein Pydantic-Request nötig (einfache Parameter: cdp_port, min_reward).
+    
+    Args:
+        cdp_port: CDP Port für Chrome-Verbindung.
+        min_reward: Mindest-Reward (€) — Surveys mit niedrigerem Reward werden ignoriert.
+    
+    Returns:
+        Dict mit:
+          - status: "success" oder "error"
+          - balance_eur: Aktueller Kontostand
+          - surveys: Liste von Survey-Dicts (id, reward, duration, title, provider)
+          - total_rewards: Summe aller Rewards
+          - message: Human-readable Status
+    """
+    # ═══════════════════════════════════════════════════════════════════════
+    # SCHRITT 1: Dashboard WebSocket finden
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    ws_url = get_dashboard_ws(cdp_port)
+    
+    if not ws_url:
+        return {
+            "status": "error",
+            "balance_eur": 0.0,
+            "surveys": [],
+            "total_rewards": 0.0,
+            "message": f"No dashboard found. Is Chrome running on port {cdp_port}?",
+        }
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # SCHRITT 2: Scan-JavaScript definieren
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    scan_js = """
+(function() {
+    var results = {
+        balance: "",
+        surveys: []
+    };
+    
+    // ── Balance auslesen ──
+    var balanceElements = document.querySelectorAll(
+        '.balance, .points, [class*="balance"], [class*="points"], [class*="guthaben"]'
+    );
+    
+    for (var el of balanceElements) {
+        var text = el.textContent.trim();
+        if (text.includes('€') || text.includes('EUR') || /\\d+\\.\\d+/.test(text)) {
+            results.balance = text;
+            break;
+        }
+    }
+    
+    if (!results.balance) {
+        var bodyText = document.body.innerText;
+        var balanceMatch = bodyText.match(/(Guthaben|Balance|Points)[:\\s]*([€\\$]?\\s*[\\d,.]+)/i);
+        if (balanceMatch) {
+            results.balance = balanceMatch[2];
+        }
+    }
+    
+    // ── Survey-Cards finden ──
+    var cards = document.querySelectorAll('[onclick*="clickSurvey"]');
+    
+    for (var i = 0; i < cards.length; i++) {
+        var card = cards[i];
+        var onclick = card.getAttribute("onclick") || '';
+        var idMatch = onclick.match(/clickSurvey\\('?(\\d+)'?\\)/);
+        var surveyId = idMatch ? idMatch[1] : '';
+        
+        var parent = card.closest('div, li, tr, article') || card;
+        var cardText = parent.textContent || '';
+        
+        var rewardMatch = cardText.match(/(\\d+[.,]?\\d*)\\s*€/);
+        var reward = rewardMatch ? parseFloat(rewardMatch[1].replace(',', '.')) : 0;
+        
+        var durationMatch = cardText.match(/(\\d+)\\s*min/i);
+        var duration = durationMatch ? parseInt(durationMatch[1]) : null;
+        
+        var titleMatch = cardText.match(/([^€\\n]+)(?=\\d+[.,]?\\d*\\s*€)/);
+        var title = titleMatch ? titleMatch[1].trim().substring(0, 100) : '';
+        
+        // Provider detection from card text or URL patterns
+        var provider = '';
+        if (cardText.toLowerCase().includes('qualtrics')) provider = 'qualtrics';
+        else if (cardText.toLowerCase().includes('toluna')) provider = 'tolunastart';
+        else if (cardText.toLowerCase().includes('cint')) provider = 'cint';
+        else if (cardText.toLowerCase().includes('tivian')) provider = 'tivian';
+        else if (cardText.toLowerCase().includes('nfield')) provider = 'nfield';
+        else if (cardText.toLowerCase().includes('samplicio')) provider = 'samplicio';
+        else if (cardText.toLowerCase().includes('purespectrum') || cardText.toLowerCase().includes('pure')) provider = 'purespectrum';
+        else if (cardText.toLowerCase().includes('ipsos')) provider = 'ipsos';
+        else provider = 'unknown';
+        
+        if (surveyId && reward > 0) {
+            results.surveys.push({
+                id: surveyId,
+                reward: reward,
+                duration: duration,
+                title: title,
+                provider: provider
+            });
+        }
+    }
+    
+    return JSON.stringify(results);
+})()
+"""
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # SCHRITT 3: JavaScript ausführen
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    try:
+        result = ws_eval(ws_url, scan_js, timeout=10)
+        result_text = result.get("value", "{}") if result else "{}"
+        data = json.loads(result_text)
+    
+    except Exception as e:
+        logger.error(f"Dashboard scan failed: {e}")
+        return {
+            "status": "error",
+            "balance_eur": 0.0,
+            "surveys": [],
+            "total_rewards": 0.0,
+            "message": f"Scan failed: {str(e)}",
+        }
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # SCHRITT 4: Balance parsen
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    balance_str = data.get("balance", "")
+    balance_eur = 0.0
+    
+    if balance_str:
+        balance_match = re.search(r'(\d+[.,]?\d*)', balance_str.replace(',', '.'))
+        if balance_match:
+            balance_eur = float(balance_match.group(1))
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # SCHRITT 5: Surveys filtern und konvertieren
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    surveys = []
+    total_rewards = 0.0
+    
+    for s in data.get("surveys", []):
+        reward = s.get("reward", 0)
+        
+        # Filter: Mindest-Reward
+        if reward < min_reward:
+            continue
+        
+        surveys.append({
+            "id": str(s.get("id", "")),
+            "reward": reward,
+            "duration": s.get("duration"),
+            "title": s.get("title", ""),
+            "provider": s.get("provider", "unknown"),
+        })
+        
+        total_rewards += reward
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # SCHRITT 6: Response zurückgeben
+    # ═══════════════════════════════════════════════════════════════════════
+    
+    return {
+        "status": "success",
+        "balance_eur": balance_eur,
+        "surveys": surveys,
+        "total_rewards": total_rewards,
+        "message": f"Found {len(surveys)} surveys, total rewards: {total_rewards:.2f}€",
+    }
+
+
 @router.post("/scan", response_model=DashboardScanResponse)
 async def scan_dashboard(req: DashboardScanRequest):
     """
@@ -235,6 +419,44 @@ async def scan_dashboard(req: DashboardScanRequest):
             total_rewards=0.0,
             message="No dashboard found. Is Chrome running on port {0}?".format(req.cdp_port),
         )
+    
+    # ═══════════════════════════════════════════════════════════════════════
+    # SCHRITT 2-6: Scan via _scan_dashboard_impl (DRY-Prinzip)
+    # ═══════════════════════════════════════════════════════════════════════
+    # WARUM _scan_dashboard_impl?
+    # → Gleiche Logik wird vom Background-Loop in main.py verwendet.
+    # → Keine Duplikation: Endpoint und Background teilen Implementation.
+    
+    result = await _scan_dashboard_impl(req.cdp_port)
+    
+    if result["status"] == "error":
+        return DashboardScanResponse(
+            status="error",
+            balance_eur=0.0,
+            available_surveys=[],
+            total_rewards=0.0,
+            message=result["message"],
+        )
+    
+    # Konvertiere Dict-Surveys in Pydantic-Modelle
+    surveys = [
+        DashboardSurvey(
+            survey_id=s["id"],
+            reward_eur=s["reward"],
+            duration_min=s.get("duration"),
+            title=s["title"],
+            provider=s.get("provider", "unknown"),
+        )
+        for s in result["surveys"]
+    ]
+    
+    return DashboardScanResponse(
+        status="success",
+        balance_eur=result["balance_eur"],
+        available_surveys=surveys,
+        total_rewards=result["total_rewards"],
+        message=result["message"],
+    )
     
     # ═══════════════════════════════════════════════════════════════════════
     # SCHRITT 2: Scan-JavaScript definieren

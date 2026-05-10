@@ -1494,6 +1494,289 @@ async def generic_exception_handler(request, exc):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# SEKTION 6: BACKGROUND SURVEY LOOP (24/7 Automated Earning)
+# ═══════════════════════════════════════════════════════════════════════════════
+# Dieser Abschnitt startet einen Background-Task beim API-Start der
+# automatisch alle 5 Minuten Surveys scannt und ausführt.
+# ═══════════════════════════════════════════════════════════════════════════════
+
+import asyncio
+
+# Global state für den Background-Task
+_background_task: Optional[asyncio.Task] = None
+_background_running: bool = False
+
+
+async def _survey_loop():
+    """
+    24/7 Background Survey Loop — verdient Geld automatisch.
+    
+    ABLAUF (alle 5 Minuten):
+      1. Prüfe ob Chrome läuft (health check).
+      2. Scan Dashboard nach verfügbaren Surveys.
+      3. Wähle beste Survey (höchster Reward, vertrauenswürdiger Provider).
+      4. Führe Survey via LangGraph aus (POST /survey/run-graph Logik).
+      5. Logge Ergebnis (earned, status, errors).
+      6. Warte 5 Minuten → wiederhole.
+    
+    WARUM alle 5 Minuten?
+      → HeyPiggy Dashboard aktualisiert Surveys ca. alle 5-15 Minuten.
+      → Zu oft = Rate-Limiting / Account-Sperre.
+      → Zu selten = verpasste Surveys (andere User schnappen sie sich).
+    
+    WARUM Background-Task?
+      → FastAPI ist ein Web-Server — er muss Requests empfangen können.
+      → Ein Background-Task läuft parallel (kein Blocking).
+      → asyncio.create_task() = Fire-and-Forget, non-blocking.
+    
+    WARUM try/except im Loop?
+      → Wenn eine Survey fehlschlägt → nicht den ganzen Loop crashen.
+      → Logge Fehler → warte → versuche nächste Survey.
+      → Ohne try/except → ein Fehler stoppt den 24/7 Loop.
+    
+    WARUM sleep(300) am Ende?
+      → 300 Sekunden = 5 Minuten.
+      → asyncio.sleep() ist non-blocking (anderen Tasks/Requests laufen weiter).
+      → time.sleep() wäre BLOCKING → API würde einfrieren!
+    
+    WARUM _background_running Flag?
+      → Beim Shutdown setzen wir _background_running = False.
+      → Der Loop beendet sich selbst (graceful shutdown).
+      → Wichtig: asyncio.Task.cancel() ist FORCEFUL → kann Daten verlieren.
+    
+    Returns:
+        None (läuft unendlich bis _background_running = False)
+    """
+    global _background_running
+    _background_running = True
+    
+    # Initial-Wartezeit: 30s nach API-Start damit alles initialisiert ist.
+    await asyncio.sleep(30)
+    
+    while _background_running:
+        try:
+            # ═══════════════════════════════════════════════════════════════
+            # SCHRITT 1: Chrome Health Check
+            # ═══════════════════════════════════════════════════════════════
+            # WARUM health check?
+            # → Chrome crasht manchmal (Memory-Leak, Redirect-Chains, etc.).
+            # → Wenn Chrome tot → Survey kann nicht ausgeführt werden.
+            # → Wir starten Chrome neu wenn nötig (bm.start()).
+            
+            bm = _get_bm()
+            health = await bm.health()
+            
+            if not health.get("running"):
+                # Chrome läuft nicht → starte neu.
+                # WARUM nicht einfach überspringen?
+                # → Ohne Chrome → keine Surveys → kein Geld.
+                # → Neustart ist besser als warten.
+                print("[BG-LOOP] Chrome not running, starting...")
+                await bm.start(
+                    profile_name="default",
+                    headless=os.getenv("BROWSER_HEADLESS", "true").lower() == "true",
+                    cdp_port=9999,
+                )
+                await asyncio.sleep(5)  # Warte auf Chrome-Startup.
+            
+            # ═══════════════════════════════════════════════════════════════
+            # SCHRITT 2: Dashboard scannen
+            # ═══════════════════════════════════════════════════════════════
+            # WARUM Dashboard scannen?
+            # → Wir müssen wissen welche Surveys verfügbar sind.
+            # → Dashboard-Router hat POST /dashboard/scan Endpoint.
+            # → Wir rufen die Scan-Logik direkt auf (kein HTTP-Call nötig).
+            
+            # Lazy-Load Dashboard-Scanner
+            from api.dashboard_routes import _scan_dashboard_impl
+            
+            scan_result = await _scan_dashboard_impl(
+                cdp_port=9999,
+                min_reward=0.05,  # Mindestens 5 Cent (sonst lohnt es sich nicht).
+            )
+            
+            surveys = scan_result.get("surveys", [])
+            
+            if not surveys:
+                print("[BG-LOOP] No surveys available, waiting...")
+                await asyncio.sleep(300)
+                continue
+            
+            # ═══════════════════════════════════════════════════════════════
+            # SCHRITT 3: Beste Survey auswählen
+            # ═══════════════════════════════════════════════════════════════
+            # WARUM Score-basierte Auswahl?
+            # → Nicht jede Survey ist gleich gut.
+            # → Manche Provider disqualifizieren oft (Samplicio).
+            # → Manche haben hohe Rewards aber lange Dauer.
+            # → Score = reward * provider_trust (Erfahrungswerte).
+            
+            # Provider-Trust-Scores (basierend auf Erfahrungswerten).
+            # Höher = besser (weniger Disqualifikation, höhere Erfolgsrate).
+            provider_trust = {
+                "qualtrics": 0.9,
+                "tolunastart": 0.8,
+                "cint": 0.7,
+                "tivian": 0.7,
+                "nfield": 0.6,
+                "samplicio": 0.4,
+                "purespectrum": 0.3,
+                "ipsos": 0.5,
+            }
+            
+            best_survey = None
+            best_score = -1
+            
+            for survey in surveys:
+                reward = survey.get("reward", 0)
+                provider = survey.get("provider", "").lower()
+                
+                # Score = Reward * Trust
+                # WARUM Multiplikation?
+                # → Hoher Reward aber untrusted Provider = niedriger Score.
+                # → Niedriger Reward aber trusted Provider = höherer Score.
+                # → Beispiel: 0.50€ * 0.4 (Samplicio) = 0.20
+                #            0.30€ * 0.9 (Qualtrics) = 0.27 → Qualtrics gewinnt!
+                trust = provider_trust.get(provider, 0.5)
+                score = reward * trust
+                
+                if score > best_score:
+                    best_score = score
+                    best_survey = survey
+            
+            if not best_survey:
+                print("[BG-LOOP] No suitable survey found, waiting...")
+                await asyncio.sleep(300)
+                continue
+            
+            survey_id = best_survey.get("id", "")
+            provider = best_survey.get("provider", "")
+            reward = best_survey.get("reward", 0)
+            
+            print(f"[BG-LOOP] Selected survey {survey_id} ({provider}, +{reward:.2f}€)")
+            
+            # ═══════════════════════════════════════════════════════════════
+            # SCHRITT 4: LangGraph Survey ausführen
+            # ═══════════════════════════════════════════════════════════════
+            # WARUM LangGraph statt manuellem Loop?
+            # → LangGraph ist deterministisch (StateGraph).
+            # → Jede Node ist atomar und getestet.
+            # → Routing-Logik (route()) entscheidet autonom was als nächstes passiert.
+            # → Bei 3× Fehlern → Delegation an Human (nicht Endlos-Loop).
+            
+            # WARUM graph.invoke() in Thread-Pool?
+            # → LangGraph ist synchron (kein async/await).
+            # → FastAPI ist async — blockierender Code würde einfrieren.
+            # → asyncio.to_thread() führt synchronen Code in separatem Thread aus.
+            # → Der Event-Loop bleibt responsiv (API kann weiter Requests empfangen).
+            
+            from survey.graph import create_graph, SurveyState
+            
+            graph = create_graph()
+            state = SurveyState(
+                survey_id=survey_id,
+                provider=provider,
+                cdp_port=9999,
+                max_iterations=15,
+            )
+            
+            final = await asyncio.to_thread(graph.invoke, state)
+            
+            # ═══════════════════════════════════════════════════════════════
+            # SCHRITT 5: Ergebnis loggen
+            # ═══════════════════════════════════════════════════════════════
+            earned = final.balance_earned
+            status = final.status
+            errors = len(final.errors)
+            
+            if earned > 0:
+                print(f"[BG-LOOP] SUCCESS: +{earned:.2f}€ (survey={survey_id}, provider={provider})")
+            elif final.screen_out:
+                print(f"[BG-LOOP] SCREEN-OUT: 0.00€ (survey={survey_id}, provider={provider})")
+            elif errors > 0:
+                print(f"[BG-LOOP] ERRORS: {errors} errors (survey={survey_id}, provider={provider})")
+            else:
+                print(f"[BG-LOOP] COMPLETED: No earnings (survey={survey_id}, status={status})")
+            
+            # TODO: Balance in Datei/DB loggen für Trend-Analyse.
+            # TODO: Cash-out Trigger bei >= 5.00€.
+            
+        except Exception as e:
+            # ═══════════════════════════════════════════════════════════════
+            # FEHLERBEHANDLUNG: Logge Fehler aber crashe NICHT den Loop.
+            # ═══════════════════════════════════════════════════════════════
+            # WARUM try/except um den GESAMTEN Loop?
+            # → Ein Fehler (z.B. Chrome crash, Network-Error) darf den 24/7 Loop nicht stoppen.
+            # → Logge Fehler → warte 5 Min → versuche erneut.
+            # → Ohne das → ein Fehler stoppt den Earning-Forever!
+            
+            print(f"[BG-LOOP] ERROR: {type(e).__name__}: {e}")
+            # Warte trotzdem 5 Minuten (nicht sofort retry — könnte Rate-Limit sein).
+        
+        # Warte 5 Minuten bis zur nächsten Iteration.
+        await asyncio.sleep(300)
+
+
+@app.on_event("startup")
+async def startup_event():
+    """
+    Startet den Background Survey Loop beim API-Start.
+    
+    WARUM startup event?
+    → FastAPI ruft dies automatisch auf wenn der Server startet.
+    → Der Loop läuft parallel zur API (kein Blocking).
+    → Kein manueller Start nötig (set-and-forget).
+    
+    WARUM asyncio.create_task()?
+    → Erstellt einen neuen Task im Event-Loop.
+    → Der Task läuft im Hintergrund (parallel zu Endpoints).
+    → Kein await nötig (Fire-and-Forget).
+    """
+    global _background_task
+    print("[STARTUP] Starting background survey loop...")
+    _background_task = asyncio.create_task(_survey_loop())
+    print("[STARTUP] Background survey loop started!")
+
+
+@app.on_event("shutdown")
+async def shutdown_event():
+    """
+    Beendet den Background Survey Loop graceful.
+    
+    WARUM graceful shutdown?
+    → Wenn die API stoppt (z.B. SIGTERM) → laufende Surveys abbrechen = Geld verlieren.
+    → Wir setzen _background_running = False → Loop beendet sich selbst.
+    → Danach warten wir max. 60s auf den Task.
+    → Wenn der Task noch läuft → cancel() als letzter Ausweg.
+    
+    WARUM 60s Timeout?
+    → Eine Survey dauert typisch 30-120s.
+    → 60s = genug Zeit für den aktuellen Schritt zu beenden.
+    → Aber nicht zu lange (Server-Shutdown sollte schnell sein).
+    """
+    global _background_running, _background_task
+    print("[SHUTDOWN] Stopping background survey loop...")
+    
+    # Signalisiere dem Loop dass er stoppen soll.
+    _background_running = False
+    
+    # Warte auf den Task (max. 60s).
+    if _background_task:
+        try:
+            await asyncio.wait_for(_background_task, timeout=60)
+        except asyncio.TimeoutError:
+            # Loop hat sich nicht rechtzeitig beendet → Force-Cancel.
+            print("[SHUTDOWN] Background loop did not stop gracefully, cancelling...")
+            _background_task.cancel()
+            try:
+                await _background_task
+            except asyncio.CancelledError:
+                pass
+    
+    print("[SHUTDOWN] Background survey loop stopped.")
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # ENDE DER MAIN.PY
 # ═══════════════════════════════════════════════════════════════════════════════
 # ZUSAMMENFASSUNG:

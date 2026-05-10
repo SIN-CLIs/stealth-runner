@@ -1782,19 +1782,33 @@ BOT KILL: pkill -f "remote-debugging-port=9999" -> NUR HeyPiggy Bot
 
 ---
 
-### §11.7 — IMPLEMENTATION BACKLOG (TODO)
+### §11.7 — IMPLEMENTATION BACKLOG (TODO — 2026-05-10 UPDATE)
 
 ```
 MASTER PLAN: plans/01-survey-agent-langgraph-fastapi.md
 → Zwei-Layer-System: FastAPI PRIMARY (Intelligence) + CLI SECONDARY (Robustness)
 → LangGraph = Engine, SurveyRunner = deprecated
 
+=== KOMPLETTIERT (2026-05-10) ===
+✅ **SR-54: Cookie + Subid + Balance Fix Bundle**
+   - Cookie injection in _create_tab() + _open_in_page_modal() — 7 HeyPiggy cookies BEFORE navigation
+   - Subid preservation in open_survey() — CPX API URL mit real subid statt intercepted URL
+   - Balance reading fix — MAX € value statt first match
+   - E2E Verified: Survey 66695822 (Cint→Tivian), Balance €2.70 → €2.75 (+€0.05)
+   - Tests: 17/18 + 18/18 + 10/10 passed
+
+✅ **AngularDragDropSolver multi-approach** — 4 sequential approaches (A→B→C→D)
+✅ **Session validation** — validate_session() + is_session_valid() in session_validator.py
+✅ **Garbage cleanup** — launch_parallel.py, README_PARALLEL.md, tmp_revert_runner.py gelöscht
+
+=== OFFEN (NEXT STEPS) ===
+
 PHASE 1 — MVP (Woche 1):
+- [x] Cookie-Injection verify (7 Heypiggy-Cookies, KRITISCH!) — DONE 2026-05-10
 - [ ] cmd_run in survey.py → run_survey_loop() statt SurveyRunner
 - [ ] cmd_watch in survey.py → Graph invoken (Background-Task)
 - [ ] Balance-Tracking in graph.py einbauen
 - [ ] POST /survey/run-graph FastAPI Endpoint
-- [ ] Cookie-Injection verify (7 Heypiggy-Cookies, KRITISCH!)
 
 PHASE 2 — Intelligence (Woche 2):
 - [ ] decide_node → NIM Nemotron integrieren (Placeholder → echter API Call)
@@ -1816,22 +1830,28 @@ PHASE 4 — Promotion (Woche 4+):
 - [ ] survey.py refactoren als thin wrapper
 
 KRITISCHER BLOCKER (parallel):
-- [x] **AngularDragDropSolver** -> `drag_drop_angular.py` DEPLOYED 2026-05-10 — 4 sequential approaches (A→B→C→D)
+- [x] **AngularDragDropSolver** -> `drag_drop_angular.py` DEPLOYED 2026-05-10 — 4 sequential approaches
 - [ ] **E2E VERIFY**: `python3 test_drag_drop_angular.py --live --auto-discover` → mark ✅ VERIFIED
+   (Needs live purespectrum survey at 66% drag-drop puzzle)
 - [ ] POST /survey/drag-solve Endpoint -> `tool_drag_captcha.py` (FastAPI wrapper)
 - [ ] Integrate `solve_drag_puzzle_new(ws_url)` into `purespectrum.py` preflight flow
 - [ ] 10x purespectrum Survey → Promotion zu Production Flow
 
+BALANCE TARGET (€5.00):
+- [x] Balance steigt wieder (+€0.05 verified) — Cookie+Subid Fix funktioniert
+- [ ] Mehr Surveys completieren → Balance €2.75 → €5.00
+- [ ] Cash-Out Trigger bei €5.00 implementieren
+
 GARBAGE LOESCHEN (SOFORT):
-- [x] plan.md (root) -> GELOESCHT (veraltet)
-- [x] survey-cli/plan.md -> GELOESCHT (veraltet)
-- [x] plans/01-canonical-engine.md -> GELOESCHT (SurveyRunner statt LangGraph)
-- [x] plan-sr-30-dashboard-poller.md -> GELOESCHT (DashboardPoller statt Graph)
-- [x] plan-sr-31-fctes-promotion.md -> GELOESCHT (app.core.* Referenzen)
-- [x] plan-sr-28-cdp-survey-module.md -> GELOESCHT (src/stealth_survey/ gelöscht)
-- [ ] launch_parallel.py -> LOESCHEN
-- [ ] README_PARALLEL.md -> LOESCHEN
-- [ ] tmp_*.py -> LOESCHEN
+- [x] plan.md (root) -> GELOESCHT
+- [x] survey-cli/plan.md -> GELOESCHT
+- [x] plans/01-canonical-engine.md -> GELOESCHT
+- [x] plan-sr-30-dashboard-poller.md -> GELOESCHT
+- [x] plan-sr-31-fctes-promotion.md -> GELOESCHT
+- [x] plan-sr-28-cdp-survey-module.md -> GELOESCHT
+- [x] launch_parallel.py -> GELOESCHT
+- [x] README_PARALLEL.md -> GELOESCHT
+- [x] tmp_revert_runner.py -> GELOESCHT
 ```
 
 ---

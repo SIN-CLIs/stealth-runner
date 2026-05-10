@@ -121,6 +121,29 @@ deploy: install check
 	@echo "${YELLOW}[INFO]${NC} This is a placeholder. Actual deployment would be configured separately."
 	@echo "${GREEN}[SUCCESS]${NC} Deployment complete!"
 
+# Start FastAPI server (production)
+run:
+	@echo "${BLUE}[RUN]${NC} Starting FastAPI server..."
+	$(PYTHON_BIN) -m uvicorn api.main:app --host 0.0.0.0 --port 8889 --workers 1 --log-level info
+	@echo "${GREEN}[SUCCESS]${NC} Server started!"
+
+# Start FastAPI with auto-reload (development)
+dev:
+	@echo "${BLUE}[DEV]${NC} Starting FastAPI server with auto-reload..."
+	$(PYTHON_BIN) -m uvicorn api.main:app --host 0.0.0.0 --port 8889 --reload --log-level debug
+	@echo "${GREEN}[SUCCESS]${NC} Server started in dev mode!"
+
+# Start background API (using start-api.sh)
+start-bg:
+	@echo "${BLUE}[START]${NC} Starting background API..."
+	@bash agent-toolbox/start-api.sh --bg
+	@echo "${GREEN}[SUCCESS]${NC} API started in background!"
+
+# Stop background API
+stop-bg:
+	@echo "${BLUE}[STOP]${NC} Stopping background API..."
+	@if [ -f api.pid ]; then kill $$(cat api.pid) && rm api.pid; echo "${GREEN}[SUCCESS]${NC} API stopped!"; else echo "${YELLOW}[WARN]${NC} No PID file found"; fi
+
 # Show project info
 info:
 	@echo "${BLUE}Project Information:${NC}"

@@ -341,7 +341,7 @@ def cmd_run(args):
     WAS macht diese Funktion?
       Führt eine EINZELNE Survey aus — entweder per ID oder direkter URL.
       Nutzt den LangGraph Survey-Agent (run_survey_loop) als PRIMARY.
-      Fallback auf SurveyRunner wenn LangGraph nicht verfügbar.
+      SurveyRunner ist deprecated und wird nicht mehr verwendet.
 
     Args:
       args (Namespace):

@@ -17,7 +17,7 @@ import sys
 from typing import Dict, List, Optional, Any
 import json, asyncio, websockets, urllib.request
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -41,6 +41,9 @@ from tools.tool_rate_survey import rate_survey
 
 # Provider-specific tools (survey-cli/survey/providers/)
 from survey.providers.purespectrum import solve_purespectrum_preflight
+
+# LangGraph NEMO pipeline (survey-cli/survey/graph/)
+from survey.graph import create_graph, SurveyState
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -140,6 +143,26 @@ class PurespectrumPreflightResponse(BaseModel):
     captcha_text: Optional[str] = None
     tokens_used: Optional[int] = None
     error: Optional[str] = None
+
+
+class RunGraphRequest(BaseModel):
+    """POST /survey/run-graph Request."""
+    survey_id: str
+    provider: str = ""
+    cdp_port: int = 9999
+    max_iterations: int = 15
+
+
+class RunGraphResponse(BaseModel):
+    """POST /survey/run-graph Response."""
+    status: str
+    earned: float = 0.0
+    survey_id: str = ""
+    provider: str = ""
+    iterations: int = 0
+    errors: int = 0
+    screen_out: bool = False
+    completion_detected: bool = False
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -391,6 +414,66 @@ async def api_purespectrum_preflight(req: PurespectrumPreflightRequest):
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# ENDPOINT: POST /survey/run-graph
+# ═══════════════════════════════════════════════════════════════════════════════
+# Wrapper für survey.graph.create_graph() + SurveyState.
+#
+# Flow:
+#   1. ensure_chrome → open_survey → inject_cookies → snapshot → decide → execute → detect_completion
+#   2. Full NEMO loop via LangGraph StateGraph.
+#   3. Returns final SurveyState with status and earnings.
+
+@router.post("/run-graph", response_model=RunGraphResponse)
+async def api_run_survey_graph(req: RunGraphRequest):
+    """
+    Führt eine Survey durch die LangGraph-Pipeline aus.
+
+    Kapselt: survey.graph.create_graph() + SurveyState
+
+    Args:
+        survey_id: HeyPiggy Survey-ID (z.B. "67064749")
+        provider: Provider-Name (z.B. "purespectrum", "cint", "toluna")
+        cdp_port: CDP Port (default: 9999)
+        max_iterations: Maximale NEMO-Loop-Iterationen (default: 15)
+
+    Returns:
+        RunGraphResponse:
+          - status: "completed" | "screen_out" | "error" | "delegated" | ...
+          - earned: balance_after - balance_before (€)
+          - survey_id: Survey-ID
+          - provider: Provider-Name
+          - iterations: Anzahl ausgeführter Iterationen
+          - errors: Anzahl gesammelter Fehler
+          - screen_out: True wenn disqualifiziert
+          - completion_detected: True wenn Survey komplett
+    """
+    try:
+        graph = create_graph()
+        state = SurveyState(
+            survey_id=req.survey_id,
+            provider=req.provider,
+            cdp_port=req.cdp_port,
+            max_iterations=req.max_iterations,
+        )
+
+        # LangGraph ist synchron → in Thread-Pool ausführen
+        final = await asyncio.to_thread(graph.invoke, state)
+
+        return RunGraphResponse(
+            status=final.status,
+            earned=final.balance_earned,
+            survey_id=final.survey_id,
+            provider=final.provider,
+            iterations=final.iteration,
+            errors=len(final.errors),
+            screen_out=final.screen_out,
+            completion_detected=final.completion_detected,
+        )
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # EXPORTS
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -401,5 +484,6 @@ __all__ = [
     "FillSurveyRequest", "FillSurveyResponse",
     "RateSurveyRequest", "RateSurveyResponse",
     "PurespectrumPreflightRequest", "PurespectrumPreflightResponse",
+    "RunGraphRequest", "RunGraphResponse",
     "solve_purespectrum_preflight",
 ]

@@ -708,7 +708,75 @@ def detect_completion(state: SurveyState) -> SurveyState:
     return state
 
 
-# ── NODE 8: human_delegate ────────────────────────────────────────────────────
+# ── NODE 8: read_balance_before ───────────────────────────────────────────────
+# Funktion: Balance VOR Survey lesen
+# Wrapped:  read_balance_with_backoff()
+# Returns:  state mit balance_before gesetzt
+# Lines:    ~12
+
+
+def read_balance_before(state: SurveyState) -> SurveyState:
+    """Lese heypiggy-Balance VOR der Survey-Session.
+
+    Nutzt read_balance_with_backoff() für robustes Retry.
+    Setzt state.balance_before und setzt status='balance_read'.
+
+    Args:
+        state: SurveyState mit cdp_port
+
+    Returns:
+        Updated state mit balance_before (float) oder 0.0 bei Fehler
+
+    Side-Effects:
+        - CDP WebSocket: Dashboard-Tab Text lesen
+        - Retry-Loop bis Balance erkannt oder max_retries erreicht
+    """
+    from ..scanner import read_balance_with_backoff
+
+    try:
+        balance = read_balance_with_backoff(port=state.cdp_port, max_retries=3, base_delay=1.0)
+        state.balance_before = balance
+    except Exception as e:
+        state.add_error("read_balance_before", str(e)[:200])
+        state.balance_before = 0.0
+    return state
+
+
+# ── NODE 9: read_balance_after ────────────────────────────────────────────────
+# Funktion: Balance NACH Survey lesen
+# Wrapped:  read_balance_with_backoff()
+# Returns:  state mit balance_after + balance_earned gesetzt
+# Lines:    ~12
+
+
+def read_balance_after(state: SurveyState) -> SurveyState:
+    """Lese heypiggy-Balance NACH der Survey-Session.
+
+    Nutzt read_balance_with_backoff() für robustes Retry.
+    Setzt state.balance_after und berechnet balance_earned.
+
+    Args:
+        state: SurveyState mit cdp_port
+
+    Returns:
+        Updated state mit balance_after (float) oder balance_before bei Fehler
+
+    Side-Effects:
+        - CDP WebSocket: Dashboard-Tab Text lesen
+        - Retry-Loop bis Balance erkannt oder max_retries erreicht
+    """
+    from ..scanner import read_balance_with_backoff
+
+    try:
+        balance = read_balance_with_backoff(port=state.cdp_port, max_retries=3, base_delay=1.0)
+        state.balance_after = balance
+    except Exception as e:
+        state.add_error("read_balance_after", str(e)[:200])
+        state.balance_after = state.balance_before
+    return state
+
+
+# ── NODE 10: human_delegate ───────────────────────────────────────────────────
 # Funktion: An opencode CLI delegieren
 # Wrapped:  opencode_tool.delegate_task()
 # Returns:  state mit status='delegated', delegation_reason

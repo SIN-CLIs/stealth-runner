@@ -30,6 +30,14 @@ dependencies = [
   "pyyaml>=6.0",
   "json5>=0.9",
   "watchfiles>=0.21",
+  # FastAPI + Uvicorn (Web-Server)
+  "fastapi>=0.115",
+  "uvicorn>=0.34",
+  # Survey Automation (LangGraph + CDP)
+  "langgraph>=0.2",
+  "websocket-client>=1.9",
+  # Browser Automation (optional, for heavy operations)
+  # "playwright>=1.49",  # Install manually: uv pip install playwright && playwright install chromium
 ]
 
 [project.optional-dependencies]

@@ -202,13 +202,23 @@ pkill -f "chrome-jeremy-heypiggy-9999"
 
 ## NÄCHSTE SCHRITTE (nach jeder Session updaten)
 
-1. **Chrome starten** → Recipe oben
-2. **Balance prüfen** → aktuellen Wert eintragen
-3. **Survey scannen** → `document.querySelectorAll('.survey-item')`
-4. **Survey öffnen** → window.open interception
-5. **Manuell durchklicken** → CDP JS
-6. **Balance vorher/nachher** → prüfen ob Balance gestiegen
-7. **STATUS.md updaten** → NUR verifizierte Werte eintragen, nichts erfinden
+### INFRASTRUCTURE (2026-05-10 — DONE)
+1. ✅ **Fix LANGGRAPH_AVAILABLE** → .venv path injection in graph.py
+2. ✅ **Install missing deps** → fastapi, uvicorn, openai, playwright, websocket-client
+3. ✅ **Build FastAPI Background-Task** → 24/7 loop every 5min in main.py
+4. ✅ **Create start-api.sh** → venv Python startup script
+5. ✅ **Update Makefile** → run, dev, start-bg, stop-bg targets
+
+### OFFENE BLOCKER (2026-05-10)
+6. **PureSpectrum Web Components** → PS-*, custom elements block CDP interaction (needs research)
+7. **NIM Nemotron integration** → decide_node is still placeholder (no real AI decisioning)
+8. **Auto-cash-out at €5.00** → Trigger when balance >= 5.0
+9. **E2E verify drag-drop** → Run full PureSpectrum survey through 100%
+10. **Balance prüfen** → aktuellen Wert eintragen
+11. **Survey scannen** → `document.querySelectorAll('.survey-item')`
+12. **Survey öffnen** → window.open interception
+13. **Balance vorher/nachher** → prüfen ob Balance gestiegen
+14. **STATUS.md updaten** → NUR verifizierte Werte eintragen, nichts erfinden
 
 ---
 
@@ -216,6 +226,7 @@ pkill -f "chrome-jeremy-heypiggy-9999"
 
 | Datum | Balance vorher | Aktion | Balance nachher | Ergebnis |
 |-------|---------------|--------|-----------------|----------|
+| 2026-05-10 | — | INFRASTRUCTURE: Fixed LANGGRAPH_AVAILABLE import, installed missing deps (fastapi, uvicorn, openai, playwright, websocket-client), built 24/7 background loop, created start-api.sh | — | ✅ LangGraph + FastAPI Background-Task ready for 24/7 automation |
 | 2026-05-10 | €2.75 | PureSpectrum Survey 67105461 (PulseOpinion) — blocked at gaming question | €2.75 | ❌ Web Components (PS-*) block CDP interaction |
 | 2026-05-10 | €2.70 | Survey 66695822 (Cint→Tivian) — cookie+subid fix VERIFIED | €2.75 | ✅ +€0.05 Kompensation (Early Termination) — FIXES WORK! |
 | 2026-05-10 | €2.70 | Survey 67078106 (Cint) completed, cookie timing fix attempted | €2.70 | ❌ €0 earned — subid missing in intercepted URL |
