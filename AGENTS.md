@@ -1801,23 +1801,42 @@ MASTER PLAN: plans/01-survey-agent-langgraph-fastapi.md
 ✅ **Session validation** — validate_session() + is_session_valid() in session_validator.py
 ✅ **Garbage cleanup** — launch_parallel.py, README_PARALLEL.md, tmp_revert_runner.py gelöscht
 
+=== KOMPLETTIERT (2026-05-10 CONTINUED) ===
+✅ **SR-55: LangGraph Import Fix + FastAPI Background-Task + Dependencies**
+   - LangGraph Import Fix: .venv path injection in graph.py (Zeilen 112-130)
+   - Fehlende Dependencies installiert: fastapi, uvicorn, openai, playwright, websocket-client
+   - FastAPI Background-Task: `_survey_loop()` in main.py — 24/7 Loop alle 5 Minuten
+   - Provider-Trust Scoring: Qualtrics 0.9, Toluna 0.8, Cint 0.7, Samplicio 0.4, PureSpectrum 0.3
+   - Graceful Shutdown: `_background_running` Flag + 60s Timeout + cancel()
+   - Startup Script: `agent-toolbox/start-api.sh` — venv Python Launcher (NICHT System-Python!)
+   - Makefile Targets: `run` (Prod), `dev` (Reload), `start-bg` (Background), `stop-bg`
+   - pyproject.toml: fastapi>=0.115, uvicorn>=0.34, langgraph>=0.2, websocket-client>=1.9
+   - Refactor: `_scan_dashboard_impl()` in dashboard_routes.py — wiederverwendbar für Endpoint + Background
+   - Fix: HTTPException Import in survey_tools.py (Zeile 473)
+   - Provider Detection: 8 Provider aus Card-Text (qualtrics, toluna, cint, tivian, nfield, samplicio, purespectrum, ipsos)
+
 === OFFEN (NEXT STEPS) ===
 
 PHASE 1 — MVP (Woche 1):
 - [x] Cookie-Injection verify (7 Heypiggy-Cookies, KRITISCH!) — DONE 2026-05-10
+- [x] LangGraph Import Fix + Background-Task — DONE 2026-05-10
+- [x] POST /survey/run-graph FastAPI Endpoint — EXISTIERT (survey_tools.py:426)
+- [x] Balance-Tracking in graph.py — EXISTIERT (read_balance_before/after nodes)
 - [ ] cmd_run in survey.py → run_survey_loop() statt SurveyRunner
 - [ ] cmd_watch in survey.py → Graph invoken (Background-Task)
-- [ ] Balance-Tracking in graph.py einbauen
-- [ ] POST /survey/run-graph FastAPI Endpoint
 
 PHASE 2 — Intelligence (Woche 2):
-- [ ] decide_node → NIM Nemotron integrieren (Placeholder → echter API Call)
+- [ ] **SR-57: decide_node → NIM Nemotron integrieren** (Placeholder → echter API Call)
+   - Aktuell: Placeholder in nodes.py:decide_node() — gibt hardcoded Actions zurück
+   - Ziel: Echter Nemotron 3 Omni API Call via POST integrate.api.nvidia.com/v1/chat/completions
+   - Blocker: NVIDIA_API_KEY muss im Environment sein, Model-Selection-Logic nötig
 - [ ] Auto-Rating integrieren (survey_rater.py)
 - [ ] Auto-Doc JSONL logging in nodes
 - [ ] stealth-memory integration (learn.md/anti-learn.md)
 
 PHASE 3 — Production FastAPI (Woche 3):
-- [ ] Watch-Loop als FastAPI Background-Task (24/7)
+- [x] Watch-Loop als FastAPI Background-Task (24/7) — DONE 2026-05-10
+- [ ] **SR-55a: Background-Task E2E Test** — API starten, 30min laufen lassen, prüfen ob Surveys ausgeführt werden
 - [ ] GET /survey/status (real-time SurveyState)
 - [ ] GET /survey/history (learn.md/anti-learn.md)
 - [ ] n8n trigger bei completion
