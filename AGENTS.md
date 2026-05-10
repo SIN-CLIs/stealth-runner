@@ -1911,6 +1911,21 @@ MASTER PLAN: plans/01-survey-agent-langgraph-fastapi.md
    - Fix: HTTPException Import in survey_tools.py (Zeile 473)
    - Provider Detection: 8 Provider aus Card-Text (qualtrics, toluna, cint, tivian, nfield, samplicio, purespectrum, ipsos)
 
+=== KOMPLETTIERT (2026-05-11) ===
+✅ **FastAPI Endpoints in survey_tools.py — 10 endpoints**
+   - POST /survey/open, /close, /fill, /rate, /purespectrum-preflight, /run-graph, /universal
+   - POST /survey/snapshot (EXTRACTOR_JS), /completion (keyword detection)
+   - POST /survey/fill (2x — SurveyFiller wrapper)
+✅ **preflight_check() + require_survey_ready()** — 14-step validation, FastAPI Depends() wrapper
+✅ **update_command_registry()** — defined, NOT yet wired (→ SR-50)
+✅ **Command Registry** — survey-cli/survey/command_registry.py + command_registry.json
+✅ **survey_cli/tools/ 17 tools** — open, fill, snapshot, detect_completion, rate, click, find, verify, etc.
+✅ **LangGraph nodes.py refactored** — ensure_chrome, inject_cookies, snapshot_node, decide_node, execute_node, detect_completion
+✅ **Cookie injection in opener.py** — _create_tab() + _open_in_page_modal() inject 7 HeyPiggy cookies
+✅ **shadow_dom_click()** — purespectrum.py Shadow DOM piercing
+✅ **GitHub Issues #44-47** — SR-50/51/52/53 erstellt
+✅ **AGENTS.md updated** — OFFEN + Tools-Tabelle + KRITISCHE BLOCKER + Balance
+
 === OFFEN (NEXT STEPS) ===
 
 **🔴 HARTE REGEL: KEIN AUTO-RUN bis 100 Surveys manuell erfolgreich!**
@@ -1919,32 +1934,45 @@ MASTER PLAN: plans/01-survey-agent-langgraph-fastapi.md
 → Jedes Command als separater Endpoint + Tool
 
 PHASE 1 — FastAPI + LangGraph Integration:
-- [x] survey-cli/tools/ existieren bereits — 14 Tools!
-  - tool_open_survey.py, tool_fill_survey.py, tool_snapshot.py, tool_detect_completion.py, etc.
+- [x] survey-cli/tools/ existieren bereits — 17 Tools!
 - [x] survey-cli/survey/graph/ existiert — state.py, nodes.py, graph.py, __init__.py
 - [x] survey-cli/survey/ opener.py, scanner.py, command_registry.py, session_validator.py existieren
-- [ ] FastAPI Endpoints für JEDES tool (KEIN monolithischer /survey/run-all Endpoint!)
-- [ ] Pre-Flight Check als Middleware
-- [ ] Command Registry Auto-Update nach jedem Command
-- [ ] LangGraph nodes nutzen survey-cli/tools/ statt inline CDP JS
+- [x] FastAPI Endpoints in survey_tools.py — 10 endpoints existieren (#228/267/303/364/415/467/573/889/995/1080)
+- [ ] FastAPI Endpoints für 7 fehlende tools (tool_click, find_element, verify_state, click_angular, fill_input, find_new_tab, close_modals) → **SR-52**
+- [x] preflight_check() + require_survey_ready() existieren in survey_tools.py
+- [ ] require_survey_ready dependency in 8 fehlenden endpoints → **SR-51**
+- [x] update_command_registry() existiert in survey_tools.py
+- [ ] update_command_registry() wiring in alle 10 endpoints → **SR-50**
+- [x] LangGraph E2E test: 22 NIM decisions on live survey 66695822 ✅
 
 PHASE 2 — Captcha + Drag-Drop Solver integrieren:
 - [x] answer_survey.py Captcha Solver (Llama 90B via NVIDIA NIM) — TESTED: "tpyTrD" ✅
 - [x] answer_survey.py Drag-Drop Solver (CDP Input.dispatchMouseEvent) — TESTED: "Zahl 28" ✅
+- [x] purespectrum.py shadow_dom_click() existiert → nutzen!
 - [ ] Captcha Solver in survey/graph/nodes.py:decide_node() integrieren
 - [ ] Drag-Drop Solver in survey/graph/nodes.py:decide_node() integrieren
-- [ ] provider.py (purespectrum) → nutze shadow_dom_click aus purespectrum.py
 
 PHASE 3 — Command Registry + Pre-Flight:
-- [ ] Pre-Flight Check vor jedem API Call (Chrome alive, tab WS, session valid, balance OK)
-- [ ] Command Registry Auto-Update (success/failure) nach jedem Command
+- [x] preflight_check() in survey_tools.py — 14-step validation
+- [x] require_survey_ready() FastAPI Depends() wrapper
+- [x] Command Registry: survey-cli/survey/command_registry.py + command_registry.json
+- [x] update_command_registry() in survey_tools.py definiert
+- [ ] update_command_registry() wiring in alle endpoints → **SR-50**
+- [ ] Pre-Flight dependency in alle endpoints → **SR-51**
 - [ ] Sequential Survey Opening (nicht parallel!)
 
 PHASE 4 — Provider Detection + Universal Flow:
-- [ ] Provider Detection in survey/graph/nodes.py (URL pattern + DOM structure)
+- [x] Provider Detection Patterns in dashboard_routes.py — 8 Provider (qualtrics/toluna/cint/tivian/nfield/samplicio/purespectrum/ipsos)
+- [ ] Provider Detection in /survey/scan integrieren → **SR-53**
 - [ ] Universal flow: KEIN provider Hardcode! NEMO-Loop erkennt und handelt
 - [ ] Pre-Qualifier detection (surveyrouter-pre-qualifier.md)
 - [ ] Completion/Screen-Out detection (universal, nicht provider-spezifisch)
+
+GITHub ISSUES (#44-47):
+- [SR-50](https://github.com/SIN-CLIs/stealth-runner/issues/50): update_command_registry() wiring in alle 10 endpoints
+- [SR-51](https://github.com/SIN-CLIs/stealth-runner/issues/51): require_survey_ready wiring in 8 fehlende endpoints
+- [SR-52](https://github.com/SIN-CLIs/stealth-runner/issues/52): 7 fehlende FastAPI Endpoints für tools (click/find/verify/click-angular/fill-input/find-tab/close-modals)
+- [SR-53](https://github.com/SIN-CLIs/stealth-runner/issues/53): Provider Detection in /survey/scan (provider="unknown" → echter Provider + Trust Score)
 
 KRITISCHE BLOCKER (2026-05-10):
 - [x] **Angular CDK drag-drop SOLVED** — Approach B: CDP Input.dispatchMouseEvent
@@ -1955,6 +1983,8 @@ KRITISCHE BLOCKER (2026-05-10):
   - Getestet: "tpyTrD" captcha gelöst ✅
   - Model: meta/llama-3.2-90b-vision-instruct via NVIDIA NIM
   - API: https://integrate.api.nvidia.com/v1/chat/completions
+- [x] **Nächste Button Fix VERIFIED** — CDP_SUBMIT_JS mit German patterns ✅
+- [x] **Multi-Select Checkbox Fix VERIFIED** — klickt bis zu 4 Checkboxes pro Seite ✅
 - [❌] **Cloudflare CAPTCHA BLOCKIERT alle CPX-Redirects**
   - Samplicio.us → geo.captcha-delivery.com iframe → body empty → 0 elements
   - s.cint.com → geo.captcha-delivery.com iframe → body empty → 0 elements
@@ -1963,31 +1993,44 @@ KRITISCHE BLOCKER (2026-05-10):
 - [❌] **surveyrouter.com screen-out** — "keine passende Umfragen" nach PureSpectrum checkbox
   - Nach PureSpectrum consent + checkbox Frage → surveyrouter.com → sofort screen-out
   - Vermutung: Session-Cookies oder Subid-Tracking funktioniert nicht über den Chain
-- [ ] **Nächste Button Fix VERIFIED** — CDP_SUBMIT_JS jetzt mit German patterns
-- [ ] **Multi-Select Checkbox Fix VERIFIED** — klickt bis zu 4 Checkboxes pro Seite
+  - Status: 🔴 UNRESOLVED — weiter investigation nötig
+  - Survey completes (100%) but balance stays at €0.00 — completion tracking broken?
 
 BALANCE TARGET (€5.00):
 - [x] Balance steigt wieder (+€0.05 verified 2026-05-10) — Cookie+Subid Fix funktioniert
 - [ ] Mehr Surveys completieren → Balance €2.75 → €5.00
 - [ ] Cash-Out Trigger bei €5.00 implementieren
 
+**Balance: €2.75** (2026-05-10, unverändert seit letztem Erfolg)
+- Survey 66695822 (Cint→Tivian) → +€0.05 ✅ (Cookie+Subid Fix verifiziert)
+- Survey 67078106 (Cint) → completed ✅ but €0 (CPX redirect → Cloudflare?)
+- Survey 66910983 (PureSpectrum) → 66% stuck (drag-drop)
+- Survey 49517969 (PureSpectrum) → screen-out €0
+- Survey 67064749 (PureSpectrum) → screen-out €0
+- Survey 67064991 (PureSpectrum) → screen-out €0
+
 EXISTIERENDE TOOLS (survey-cli/tools/) — ALS FASTAPI ENDPOINTS NUTZEN:
-| Tool | Status | Endpoint |
-|------|--------|----------|
-| tool_open_survey.py | ✅ VERIFIED | POST /survey/open |
-| tool_fill_survey.py | ✅ TESTED | POST /survey/fill |
-| tool_snapshot.py | ✅ TESTED | POST /survey/snapshot |
-| tool_detect_completion.py | ✅ TESTED | POST /survey/completion |
-| tool_click.py | ✅ TESTED | POST /survey/click |
-| tool_find_element.py | ✅ TESTED | POST /survey/find |
-| tool_verify_state.py | ✅ TESTED | POST /survey/verify |
-| tool_select_language.py | ✅ TESTED | POST /survey/language |
-| tool_close_modals.py | ✅ TESTED | POST /survey/close-modal |
-| tool_rate_survey.py | ✅ TESTED | POST /survey/rate |
-| tool_anti_stuck.py | ✅ TESTED | POST /survey/anti-stuck |
-| tool_click_angular.py | ✅ TESTED | POST /survey/click-angular |
-| tool_open_survey.py | ✅ TESTED | POST /survey/open-survey (same as open?) |
-| tool_find_new_tab.py | ✅ TESTED | POST /survey/find-tab |
+| Tool | FastAPI Endpoint | Status |
+|------|-----------------|--------|
+| tool_open_survey.py | POST /survey/open | ✅ IN survey_tools.py |
+| tool_fill_survey.py | POST /survey/fill (2x!) | ✅ IN survey_tools.py |
+| tool_snapshot.py | POST /survey/snapshot | ✅ IN survey_tools.py |
+| tool_detect_completion.py | POST /survey/completion | ✅ IN survey_tools.py |
+| tool_rate_survey.py | POST /survey/rate | ✅ IN survey_tools.py |
+| tool_purespectrum_preflight | POST /survey/purespectrum-preflight | ✅ IN survey_tools.py |
+| tool_run_graph | POST /survey/run-graph | ✅ IN survey_tools.py |
+| tool_universal | POST /survey/universal | ✅ IN survey_tools.py |
+| tool_click.py | POST /survey/click | ❌ MISSING → SR-52 |
+| tool_find_element.py | POST /survey/find | ❌ MISSING → SR-52 |
+| tool_verify_state.py | POST /survey/verify | ❌ MISSING → SR-52 |
+| tool_select_language.py | POST /survey/language | ❌ MISSING → SR-52 |
+| tool_close_modals.py | POST /survey/close-modals | ❌ MISSING → SR-52 |
+| tool_anti_stuck.py | POST /survey/anti-stuck | ❌ MISSING → SR-52 |
+| tool_click_angular.py | POST /survey/click-angular | ❌ MISSING → SR-52 |
+| tool_fill_input.py | POST /survey/fill-input | ❌ MISSING → SR-52 |
+| tool_find_new_tab.py | POST /survey/find-tab | ❌ MISSING → SR-52 |
+
+**Total: 8 ✅ IN survey_tools.py, 8 ❌ MISSING → SR-52 + SR-50 + SR-51**
 
 GARBAGE LOESCHEN (SOFORT):
 - [x] plan.md (root) -> GELOESCHT

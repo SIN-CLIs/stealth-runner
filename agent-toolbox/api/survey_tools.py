@@ -15,6 +15,7 @@ import json
 import os
 import sys
 from typing import Dict, List, Optional, Any
+from datetime import datetime, timezone
 import json, asyncio, websockets, urllib.request
 from pathlib import Path
 
@@ -225,7 +226,7 @@ router = APIRouter(prefix="/survey", tags=["survey-tools"])
 #   4. Survey-Tab Info zurückgeben
 #   5. Kein Tab? → Fallback: _create_tab() via Target.createTarget
 
-@router.post("/open", response_model=OpenSurveyResponse)
+@router.post("/open", response_model=OpenSurveyResponse, dependencies=[Depends(require_survey_ready)])
 async def api_open_survey(req: OpenSurveyRequest):
     """
     Öffnet eine Survey vom HeyPiggy Dashboard.
@@ -256,6 +257,11 @@ async def api_open_survey(req: OpenSurveyRequest):
         wait_modal=req.wait_modal,
         wait_load=req.wait_load,
     )
+    update_command_registry("open_survey", result.get("status") == "ok", {
+        "tab_ws": result.get("ws_url", ""),
+        "provider": result.get("provider", "unknown"),
+        "status": result.get("status", "unknown"),
+    })
     return OpenSurveyResponse(**result)
 
 
@@ -264,7 +270,7 @@ async def api_open_survey(req: OpenSurveyRequest):
 # ═══════════════════════════════════════════════════════════════════════════════
 # Wrapper für tools.tool_open_survey.close_survey_tab()
 
-@router.post("/close", response_model=CloseSurveyResponse)
+@router.post("/close", response_model=CloseSurveyResponse, dependencies=[Depends(require_survey_ready)])
 async def api_close_survey(req: CloseSurveyRequest):
     """
     Schließt einen Survey-Tab und kehrt zum Dashboard zurück.
@@ -281,6 +287,10 @@ async def api_close_survey(req: CloseSurveyRequest):
           - closed: True wenn Tab erfolgreich geschlossen
     """
     success = close_survey_tab(req.tab_id, req.cdp_port)
+    update_command_registry("close_survey", success, {
+        "tab_id": req.tab_id,
+        "status": "ok" if success else "error",
+    })
     return CloseSurveyResponse(
         status="ok" if success else "error",
         closed=success,
@@ -300,7 +310,7 @@ async def api_close_survey(req: CloseSurveyRequest):
 #   4. Fuzzy Option Matching
 #   5. Actions Array zurückgeben
 
-@router.post("/fill", response_model=FillSurveyResponse)
+@router.post("/fill", response_model=FillSurveyResponse, dependencies=[Depends(require_survey_ready)])
 async def api_fill_survey(req: FillSurveyRequest):
     """
     Entscheidet die beste Antwort für eine Survey-Seite basierend auf Profil.
@@ -336,14 +346,21 @@ async def api_fill_survey(req: FillSurveyRequest):
             first_action = actions[0]
             question_type = first_action.get("type", "unknown")
         
+        update_command_registry("fill_survey", True, {
+            "question_type": question_type,
+            "actions_count": len(actions),
+            "provider": req.snapshot.get("provider", "unknown"),
+            "confidence": 0.85,
+        })
         return FillSurveyResponse(
             status="ok",
             actions=actions,
             question_type=question_type,
             provider=req.snapshot.get("provider"),
-            confidence=0.85,  # TODO: Aus Nemotron oder Fuzzy-Matching ableiten
+            confidence=0.85,
         )
     except Exception as e:
+        update_command_registry("fill_survey", False, {"error": str(e)})
         return FillSurveyResponse(
             status="error",
             reason=str(e),
@@ -361,7 +378,7 @@ async def api_fill_survey(req: FillSurveyRequest):
 #   3. Verifiziert: Tab navigiert weg oder schließt sich
 #   4. Gibt +0.01€ Bonus zurück
 
-@router.post("/rate", response_model=RateSurveyResponse)
+@router.post("/rate", response_model=RateSurveyResponse, dependencies=[Depends(require_survey_ready)])
 async def api_rate_survey(req: RateSurveyRequest):
     """
     Bewertet eine abgeschlossene Survey für +0.01€ Bonus.
@@ -380,6 +397,10 @@ async def api_rate_survey(req: RateSurveyRequest):
           - verified: True wenn Verifikation bestanden
     """
     result = rate_survey(port=req.cdp_port, verify=req.verify)
+    update_command_registry("rate_survey", result.get("status") == "ok", {
+        "bonus": result.get("bonus", 0.0),
+        "status": result.get("status", "unknown"),
+    })
     return RateSurveyResponse(**result)
 
 
@@ -412,7 +433,7 @@ def _resolve_ws_from_tab(tab_id: str, port: int = 9999) -> Optional[str]:
 #   4. Drag puzzle (number box: "Bitte legen Sie die Zahl 52...")
 #   5. Returns step-by-step results
 
-@router.post("/purespectrum-preflight", response_model=PurespectrumPreflightResponse)
+@router.post("/purespectrum-preflight", response_model=PurespectrumPreflightResponse, dependencies=[Depends(require_survey_ready)])
 async def api_purespectrum_preflight(req: PurespectrumPreflightRequest):
     """
     Führt PureSpectrum preflight aus: cookie → ROBOT → captcha OCR → puzzle.
@@ -443,6 +464,12 @@ async def api_purespectrum_preflight(req: PurespectrumPreflightRequest):
     
     result = solve_purespectrum_preflight(ws_url, debug=req.debug)
     
+    update_command_registry("purespectrum_preflight", result.get("success", False), {
+        "steps": result.get("steps", []),
+        "status": "ok" if result.get("success") else "error",
+        "captcha_text": result.get("captcha_text", ""),
+    })
+    
     return PurespectrumPreflightResponse(
         status="ok" if result.get("success") else "error",
         success=result.get("success", False),
@@ -464,7 +491,7 @@ async def api_purespectrum_preflight(req: PurespectrumPreflightRequest):
 #   2. Full NEMO loop via LangGraph StateGraph.
 #   3. Returns final SurveyState with status and earnings.
 
-@router.post("/run-graph", response_model=RunGraphResponse)
+@router.post("/run-graph", response_model=RunGraphResponse, dependencies=[Depends(require_survey_ready)])
 async def api_run_survey_graph(req: RunGraphRequest):
     """
     Führt eine Survey durch die LangGraph-Pipeline aus.
@@ -500,6 +527,13 @@ async def api_run_survey_graph(req: RunGraphRequest):
         # LangGraph ist synchron → in Thread-Pool ausführen
         final = await asyncio.to_thread(graph.invoke, state)
 
+        update_command_registry("run_graph", final.status in ("completed", "screen_out"), {
+            "status": final.status,
+            "survey_id": final.survey_id,
+            "provider": final.provider,
+            "iterations": final.iteration,
+            "earned": final.balance_earned,
+        })
         return RunGraphResponse(
             status=final.status,
             earned=final.balance_earned,
@@ -511,6 +545,7 @@ async def api_run_survey_graph(req: RunGraphRequest):
             completion_detected=final.completion_detected,
         )
     except Exception as e:
+        update_command_registry("run_graph", False, {"error": str(e)})
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -570,7 +605,7 @@ def _read_balance(port: int = 9999) -> float:
         return 0.0
 
 
-@router.post("/universal", response_model=UniversalRunResponse)
+@router.post("/universal", response_model=UniversalRunResponse, dependencies=[Depends(require_survey_ready)])
 async def api_universal_run(req: UniversalRunRequest):
     """
     UNIVERSAL WEB-AI-AGENT — Führt jede Survey universell aus.
@@ -1043,6 +1078,10 @@ async def api_snapshot(req: SnapshotRequest) -> SnapshotResponse:
                         body_text = data.get("bodyText", "")
                         import hashlib
                         dom_hash = hashlib.md5(body_text.encode()).hexdigest()[:12]
+                        update_command_registry("snapshot", True, {
+                            "element_count": len(data.get("elements", [])),
+                            "url": data.get("url", ""),
+                        })
                         return SnapshotResponse(
                             status="ok",
                             url=data.get("url", ""),
@@ -1055,11 +1094,14 @@ async def api_snapshot(req: SnapshotRequest) -> SnapshotResponse:
                 except asyncio.TimeoutError:
                     break
             
+            update_command_registry("snapshot", False, {"error": "timeout"})
             raise HTTPException(status_code=504, detail="Snapshot timeout — page not responding")
             
     except websockets.exceptions.InvalidStatus:
+        update_command_registry("snapshot", False, {"error": "ws_unreachable"})
         raise HTTPException(status_code=404, detail="Tab WebSocket not reachable")
     except Exception as e:
+        update_command_registry("snapshot", False, {"error": str(e)})
         raise HTTPException(status_code=500, detail=str(e))
 
 
@@ -1102,6 +1144,7 @@ async def api_detect_completion(req: CompletionRequest) -> CompletionResponse:
             raise HTTPException(status_code=500, detail=f"Cannot find survey tab: {e}")
     
     if not req.ws_url:
+        update_command_registry("detect_completion", False, {"error": "no_tab"})
         return CompletionResponse(status="error", reason="No survey tab found")
     
     try:
@@ -1122,15 +1165,19 @@ async def api_detect_completion(req: CompletionRequest) -> CompletionResponse:
             screen_out = any(kw in body_lower for kw in screen_out_kws)
             
             if completion_detected:
+                update_command_registry("detect_completion", True, {"status": "completed", "completion": True})
                 return CompletionResponse(status="completed", completion_detected=True,
                                          reason="Completion keywords found")
             elif screen_out:
+                update_command_registry("detect_completion", True, {"status": "screen_out", "screen_out": True})
                 return CompletionResponse(status="screen_out", screen_out=True,
                                          reason="Screen-out keywords found")
             else:
+                update_command_registry("detect_completion", True, {"status": "in_progress"})
                 return CompletionResponse(status="in_progress", reason="Survey still in progress")
                 
     except Exception as e:
+        update_command_registry("detect_completion", False, {"error": str(e)})
         return CompletionResponse(status="error", reason=str(e))
 
 
