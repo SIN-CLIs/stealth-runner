@@ -61,18 +61,21 @@ def _solve_text(ws_url: str) -> dict:
     if not nvidia_key: return {"status": "error", "reason": "no_nvidia_key"}
 
     try:
-        resp = json.loads(urllib.request.urlopen(
-            urllib.request.Request("https://integrate.api.nvidia.com/v1/chat/completions",
-                data=json.dumps({
-                    "model": "meta/llama-3.2-11b-vision-instruct",
-                    "messages": [{"role": "user", "content": f"What text is shown? Reply ONLY with the text.\n![img](data:image/png;base64,{b64})"}],
-                    "max_tokens": 20, "temperature": 0.1
-                }).encode()),
-                headers={"Authorization": f"Bearer {nvidia_key}", "Content-Type": "application/json"},
-                method="POST"), timeout=15).read())
+        req = urllib.request.Request(
+            "https://integrate.api.nvidia.com/v1/chat/completions",
+            data=json.dumps({
+                "model": "meta/llama-3.2-11b-vision-instruct",
+                "messages": [{"role": "user", "content": f"What text is shown? Reply ONLY with the text.\n![img](data:image/png;base64,{b64})"}],
+                "max_tokens": 20, "temperature": 0.1
+            }).encode(),
+            headers={"Authorization": f"Bearer {nvidia_key}", "Content-Type": "application/json"},
+            method="POST"
+        )
+        resp = json.loads(urllib.request.urlopen(req, timeout=15).read())
         text = resp["choices"][0]["message"]["content"].strip()
         if not text: return {"status": "error", "reason": "empty_ocr"}
     except Exception as e:
+        return {"status": "error", "reason": f"vision_error: {e}"}
         return {"status": "error", "reason": f"vision_error: {e}"}
 
     # Type + submit
