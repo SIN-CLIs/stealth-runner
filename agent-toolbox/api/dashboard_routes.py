@@ -177,17 +177,93 @@ async def _scan_dashboard_impl(cdp_port: int, min_reward: float = 0.0) -> dict:
         surveys: []
     };
     
-    // ── Balance auslesen ──
-    var balanceElements = document.querySelectorAll(
-        '.balance, .points, [class*="balance"], [class*="points"], [class*="guthaben"]'
-    );
+// ── Balance auslesen — SPECIFIC approach for HeyPiggy ──
+    // HeyPiggy dashboard: balance DOM has numbers + € on SEPARATE lines.
+    // Body text: "+" / "0.00" / "€" / "2.75" / "€" — € is on its own line below number.
+    // Strategy: Find all numbers followed eventually by "€", take max >= 1.0.
+    var bodyText = document.body.innerText;
     
-    for (var el of balanceElements) {
-        var text = el.textContent.trim();
-        if (text.includes('€') || text.includes('EUR') || /\\d+\\.\\d+/.test(text)) {
-            results.balance = text;
-            break;
+    // Strategy 1: Find ALL € amounts anywhere in body (handles newlines)
+    // Pattern: number followed somewhere by € symbol (even across lines)
+    var allMatches = [];
+    var numPattern = /(\d+[.,]\d{2})/g;
+    var match;
+    while ((match = numPattern.exec(bodyText)) !== null) {
+        var pos = match.index;
+        var numStr = match[1];
+        var afterNum = bodyText.substring(pos + numStr.length, pos + numStr.length + 50);
+        if (afterNum.includes('€')) {
+            allMatches.push(parseFloat(numStr.replace(',', '.')));
         }
+    }
+    if (allMatches.length > 0) {
+        var maxEuro = Math.max.apply(null, allMatches);
+        if (maxEuro >= 1.0 && maxEuro <= 1000) {
+            results.balance = maxEuro.toString().replace('.', ',') + ' €';
+        }
+    }
+    
+    // Strategy 2: Look for "0.00 € / 2.75 €" pattern (balance + currency)
+    // Handles multi-line: "0.00" then "€" then "2.75" then "€"
+    if (!results.balance) {
+        var multiMatch = bodyText.match(/(\d+[.,]\d+)\s*€\s*[\n\r]*\s*(\d+[.,]\d+)\s*€\s*[\n\r]*[××]/);
+        if (multiMatch) {
+            var candidates = [parseFloat(multiMatch[1].replace(',', '.')), parseFloat(multiMatch[2].replace(',', '.'))];
+            for (var ci = 0; ci < candidates.length; ci++) {
+                if (candidates[ci] >= 1.0 && candidates[ci] <= 1000) {
+                    results.balance = candidates[ci].toString().replace('.', ',') + ' €';
+                    break;
+                }
+            }
+        }
+    }
+    
+    // Strategy 3: Fallback — look for "+" followed by number followed by "€" (any whitespace/newlines)
+    if (!results.balance) {
+        var topMatch = bodyText.substring(0, 500).match(/\+\s*(\d+[.,]\d+)\s*€/);
+        if (topMatch) {
+            var val = parseFloat(topMatch[1].replace(',', '.'));
+            if (val >= 0.5) {
+                results.balance = val.toString().replace('.', ',') + ' €';
+            }
+        }
+    }
+    
+    // Strategy 4: Fallback — look for "Guthaben" or "Balance" labels
+    if (!results.balance) {
+        var balanceMatch = bodyText.match(/(Guthaben|Balance|Points)[:\\s]*([€\\$]?\\s*[\\d,.]+)/i);
+        if (balanceMatch) {
+            results.balance = balanceMatch[2];
+        }
+    }
+        }
+    }
+    
+    // Strategy 2: Find ALL € amounts, take the MAXIMUM (balance is usually largest)
+    if (!results.balance) {
+        var allEuros = bodyText.match(/(\d+[.,]\d+)\s*€/g) || [];
+        var maxEuro = 0;
+        for (var e of allEuros) {
+            var val = parseFloat(e.replace(/[^\d.,]/g, '').replace(',', '.'));
+            if (val >= 1.0 && val <= 1000) {
+                maxEuro = Math.max(maxEuro, val);
+            }
+        }
+        if (maxEuro > 0) {
+            results.balance = maxEuro.toString().replace('.', ',') + ' €';
+        }
+    }
+    
+    // Strategy 3: Fallback — look for "+" followed by number followed by "€" at page top
+    if (!results.balance) {
+        var topMatch = bodyText.substring(0, 500).match(/\+[\s\n]*(\d+[.,]\d+)[\s\n]*€/);
+        if (topMatch) {
+            var val = parseFloat(topMatch[1].replace(',', '.'));
+            if (val >= 0.5) {
+                results.balance = val.toString().replace('.', ',') + ' €';
+            }
+        }
+    }
     }
     
     if (!results.balance) {
@@ -198,38 +274,71 @@ async def _scan_dashboard_impl(cdp_port: int, min_reward: float = 0.0) -> dict:
         }
     }
     
-    // ── Survey-Cards finden ──
-    var cards = document.querySelectorAll('[onclick*="clickSurvey"]');
+// ── Survey-Cards finden ──
+    // FIX: Use .card-body scope to avoid balance (2.75€) bleeding into card text.
+    // Also try multiple selectors for flexibility.
+    var cardSelectors = [
+        '[onclick*="clickSurvey"] .card-body',
+        '[onclick*="clickSurvey"] [class*="card-body"]',
+        '[onclick*="clickSurvey"] [class*="body"]',
+        '[onclick*="clickSurvey"] > div',
+        '[onclick*="clickSurvey"]',
+    ];
+    
+    var cards = [];
+    for (var sel of cardSelectors) {
+        cards = document.querySelectorAll(sel);
+        if (cards.length > 0) break;
+    }
     
     for (var i = 0; i < cards.length; i++) {
         var card = cards[i];
         var onclick = card.getAttribute("onclick") || '';
-        var idMatch = onclick.match(/clickSurvey\\('?(\\d+)'?\\)/);
+        if (!onclick) {
+            // card might be the parent of the onclick element
+            var onclickEl = card.querySelector('[onclick*="clickSurvey"]');
+            if (onclickEl) onclick = onclickEl.getAttribute("onclick") || '';
+        }
+        var idMatch = onclick.match(/clickSurvey\('?(\d+)'?\)/);
         var surveyId = idMatch ? idMatch[1] : '';
         
-        var parent = card.closest('div, li, tr, article') || card;
-        var cardText = parent.textContent || '';
+        // Get ONLY the card body text (excludes parent navigation/balance)
+        var cardText = card.textContent || '';
         
-        var rewardMatch = cardText.match(/(\\d+[.,]?\\d*)\\s*€/);
+        // Reward: find the FIRST € amount in the card (survey reward, NOT balance)
+        // Balance (2.75€) is usually at top of page, not inside individual survey cards.
+        // But in HeyPiggy the balance might be inside the card too — take first match.
+        var rewardMatch = cardText.match(/(\d+[.,]?\d*)\s*€/);
         var reward = rewardMatch ? parseFloat(rewardMatch[1].replace(',', '.')) : 0;
         
-        var durationMatch = cardText.match(/(\\d+)\\s*min/i);
+        // Duration: look for "X Min" pattern (survey duration, not completion count)
+        var durationMatch = cardText.match(/(\d+)\s*Min/);
         var duration = durationMatch ? parseInt(durationMatch[1]) : null;
         
-        var titleMatch = cardText.match(/([^€\\n]+)(?=\\d+[.,]?\\d*\\s*€)/);
-        var title = titleMatch ? titleMatch[1].trim().substring(0, 100) : '';
+        // Title: first non-empty line before the € amount
+        var lines = cardText.split('\n').map(function(l) { return l.trim(); }).filter(Boolean);
+        var title = '';
+        for (var li = 0; li < lines.length; li++) {
+            if (lines[li].includes('€')) break;
+            if (lines[li].length > 3 && !/^\d+$/.test(lines[li])) {
+                title = lines[li].substring(0, 80);
+                break;
+            }
+        }
         
-        // Provider detection from card text or URL patterns
-        var provider = '';
-        if (cardText.toLowerCase().includes('qualtrics')) provider = 'qualtrics';
-        else if (cardText.toLowerCase().includes('toluna')) provider = 'tolunastart';
-        else if (cardText.toLowerCase().includes('cint')) provider = 'cint';
-        else if (cardText.toLowerCase().includes('tivian')) provider = 'tivian';
-        else if (cardText.toLowerCase().includes('nfield')) provider = 'nfield';
-        else if (cardText.toLowerCase().includes('samplicio')) provider = 'samplicio';
-        else if (cardText.toLowerCase().includes('purespectrum') || cardText.toLowerCase().includes('pure')) provider = 'purespectrum';
-        else if (cardText.toLowerCase().includes('ipsos')) provider = 'ipsos';
-        else provider = 'unknown';
+        // Provider detection from card text (provider name appears in survey card)
+        var cardTextLower = cardText.toLowerCase();
+        var provider = 'unknown';
+        if (cardTextLower.includes('qualtrics')) provider = 'qualtrics';
+        else if (cardTextLower.includes('toluna')) provider = 'tolunastart';
+        else if (cardTextLower.includes('cint')) provider = 'cint';
+        else if (cardTextLower.includes('tivian')) provider = 'tivian';
+        else if (cardTextLower.includes('nfield') || cardTextLower.includes('kantar')) provider = 'nfield';
+        else if (cardTextLower.includes('samplicio')) provider = 'samplicio';
+        else if (cardTextLower.includes('purespectrum') || cardTextLower.includes('pure spectrum')) provider = 'purespectrum';
+        else if (cardTextLower.includes('ipsos')) provider = 'ipsos';
+        else if (cardTextLower.includes('prolific')) provider = 'prolific';
+        else if (cardTextLower.includes('surveytime') || cardTextLower.includes('surveytime')) provider = 'surveytime';
         
         if (surveyId && reward > 0) {
             results.surveys.push({
