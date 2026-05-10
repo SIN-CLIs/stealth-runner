@@ -1850,10 +1850,13 @@ PHASE 4 — Promotion (Woche 4+):
 
 KRITISCHER BLOCKER (parallel):
 - [x] **AngularDragDropSolver** -> `drag_drop_angular.py` DEPLOYED 2026-05-10 — 4 sequential approaches
-- [ ] **E2E VERIFY**: `python3 test_drag_drop_angular.py --live --auto-discover` → mark ✅ VERIFIED
-   (Needs live purespectrum survey at 66% drag-drop puzzle)
+- [x] **Shadow DOM Piercing** -> `purespectrum.py` DEPLOYED 2026-05-10 — shadow_dom_click/fill/exists/navigate
+   - JS-basiert: `el.shadowRoot.querySelector()` für `<ps-root>`, `<ps-next-button>`, etc.
+   - CDP `Input.dispatchMouseEvent` für echte Browser-Engine Events (Angular Web Components)
+   - Profile-basiertes Füllen: Alter → "32", Wohnort → "Berlin", PLZ → "10785"
+   - Auto-Detect: screen_out ("leider", "nicht geeignet") vs completed ("vielen dank")
+- [ ] **E2E VERIFY**: Live PureSpectrum Survey bei 66% → Shadow DOM Navigation testen
 - [ ] POST /survey/drag-solve Endpoint -> `tool_drag_captcha.py` (FastAPI wrapper)
-- [ ] Integrate `solve_drag_puzzle_new(ws_url)` into `purespectrum.py` preflight flow
 - [ ] 10x purespectrum Survey → Promotion zu Production Flow
 
 BALANCE TARGET (€5.00):

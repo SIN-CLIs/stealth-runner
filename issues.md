@@ -516,9 +516,9 @@ CDP has NO `Input.dispatchPointerEvent` — must use `Runtime.evaluate` with poi
 
 ---
 
-### SR-56: PureSpectrum Web Components blocken CDP Interaction (2026-05-10)
-**Priority**: P0 (CRITICAL) | **Labels**: `blocker`, `purespectrum`, `shadow-dom`, `web-components` | **Component**: purespectrum.py, drag_drop_angular.py
-**Status**: OPEN / BLOCKED | **Found**: 2026-05-10 | **Assignee**: stealth-orchestrator
+### SR-56: PureSpectrum Web Components blocken CDP Interaction — Shadow DOM Piercing IMPLEMENTED (2026-05-10)
+**Priority**: P0 (CRITICAL) | **Labels**: `blocker`, `purespectrum`, `shadow-dom`, `web-components`, `implemented`, `needs-e2e` | **Component**: purespectrum.py
+**Status**: IMPLEMENTED / NEEDS E2E VERIFICATION | **Found**: 2026-05-10 | **Assignee**: stealth-orchestrator
 **Blocking**: PureSpectrum Surveys können nicht über 66% hinaus fortschreiten
 
 **Observed Behavior:**
@@ -528,76 +528,119 @@ CDP has NO `Input.dispatchPointerEvent` — must use `Runtime.evaluate` with poi
 - Buttons bleiben `disabled=true` nach Click
 - Checkboxes werden nicht selektiert
 
-**Root Cause Hypothesis:**
-- PureSpectrum verwendet Shadow DOM innerhalb der Custom Elements
-- CDP `Runtime.evaluate()` hat keinen Zugriff auf Shadow DOM ohne `pierce` Parameter
-- Angular CDK Event-System blockiert synthetic events auf Web Components
+**Root Cause:**
+- PureSpectrum verwendet Angular Elements mit Shadow DOM
+- `document.querySelector()` kann NICHT in Shadow DOM eindringen
+- JS `click()` Events werden von Angular CDK Event-System blockiert
 - Event-Bubbling funktioniert nicht durch Shadow DOM Barriere
 
-**CDP Methods to Research:**
-- `DOM.getDocument(pierce=True)` — durchdringt Shadow DOM
-- `DOM.querySelector(nodeId, selector, pierce=True)` — Selektoren in Shadow DOM
-- `Runtime.evaluate()` + Shadow DOM piercing via JS (`element.shadowRoot.querySelector()`)
-- `Input.dispatchMouseEvent()` — native Browser-Engine Events (synthetisch vs. trusted)
+**IMPLEMENTATION (2026-05-10):**
 
-**Potential Solutions:**
-1. **Shadow DOM Piercing**: `document.querySelector('ps-next-button').shadowRoot.querySelector('button').click()`
-2. **CDP DOM Piercing**: `DOM.querySelector(nodeId, 'button', pierce=True)` → `DOM.getContentQuads()` → `Input.dispatchMouseEvent()`
-3. **Playwright Shadow DOM**: `page.locator('ps-next-button >> button').click()` (Playwright kann Shadow DOM nativ)
-4. **Custom Element Polyfill**: JS-Script das Custom Elements entfernt und durch Standard-HTML ersetzt
+**4 neue Funktionen in `purespectrum.py`:**
 
-**Files Affected:**
-- `survey-cli/survey/providers/purespectrum.py` — `solve_purespectrum_preflight()` + `solve_drag_puzzle()`
-- `stealth-captcha/src/stealth_captcha/solver/drag_drop_angular.py` — Drag-Drop Solver
-- `agent-toolbox/api/survey_tools.py` — `POST /survey/purespectrum-preflight`
+1. **`shadow_dom_query_selector(ws_url, selector, tag_hint)`**
+   - Findet Custom Elements (`<ps-*>`) im DOM
+   - Greift auf `element.shadowRoot` zu
+   - Query innerhalb Shadow DOM mit `shadowRoot.querySelector()`
+   - Returns: `{found, tag, targetTag, text, x, y, width, height, disabled, hasShadowDOM}`
 
-**E2E Test:**
+2. **`shadow_dom_click(ws_url, selector, tag_hint, debug)`**
+   - Nutzt `shadow_dom_query_selector()` um Element-Position zu finden
+   - Ruft `cdp_click(ws_url, x, y)` auf (CDP `Input.dispatchMouseEvent`)
+   - Real browser-engine events (trusted) statt synthetic JS events
+   - Prüft `disabled` vor dem Click
+
+3. **`shadow_dom_fill(ws_url, selector, value, tag_hint, debug)`**
+   - Findet `<input>` oder `<textarea>` innerhalb Shadow DOM
+   - Nutzt native value setter (Angular form binding)
+   - Dispatched `input`, `change`, `blur` Events für Angular change detection
+   - Profile-basiert: Wohnort → "Berlin", Alter → "32", PLZ → "10785"
+
+4. **`navigate_purespectrum_shadow_dom(ws_url, max_steps, debug)`**
+   - Loop über max 15 Seiten
+   - Erkennt Shadow DOM via `shadow_dom_exists()`
+   - Pro Seite:
+     a. Radio-Buttons: Shadow-DOM-pierce + CDP click
+     b. Text-Inputs: Shadow-DOM-pierce + native fill
+     c. Next-Button: Shadow-DOM-pierce + CDP click (ps-next-button, ps-button, etc.)
+   - Completion detection: "vielen dank", "zurück zur website", "gutgeschrieben"
+   - Screen-out detection: "leider", "nicht geeignet", "disqualif", "screenout"
+
+**Integration in `solve_purespectrum_preflight()`:**
+```python
+# 5. Shadow DOM Navigation (NEW — post-puzzle Web Components)
+if shadow_dom_exists(ws_url):
+    nav_result = navigate_purespectrum_shadow_dom(ws_url, max_steps=15, debug=debug)
+    steps.append(f"shadow_nav:{nav_result.get('status')}:{nav_result.get('pages')}")
+```
+
+**E2E Test Plan:**
 - Survey mit PureSpectrum Provider finden (via Dashboard-Scan)
-- Öffnen und bei 66% prüfen ob Buttons klickbar sind
-- Wenn nicht: Shadow DOM Methoden testen
+- Öffnen und bis 66% fortfahren (cookie → ROBOT → captcha → puzzle)
+- Bei Web Components (ps-*) prüfen ob `navigate_purespectrum_shadow_dom()` fortschreitet
+- Erwartet: Survey schließt mit "vielen dank" oder "gutgeschrieben"
+- Wenn nicht: Debug-Logs (`debug=True`) analysieren
+
+**Files Changed:**
+- `survey-cli/survey/providers/purespectrum.py` — 4 neue Funktionen + Integration in preflight
+
+**Status:**
+- ✅ Shadow DOM piercing implementiert
+- ✅ CDP Mouse Events (trusted) statt synthetic JS events
+- ✅ Angular change detection Events (input/change/blur)
+- ✅ Completion/Screen-out detection
+- ✅ Profile-basiertes Füllen
+- 🔄 **Wartet auf E2E Verifikation** (live PureSpectrum Survey)
 
 ---
 
-### SR-57: NIM Nemotron Integration in decide_node (2026-05-10)
-**Priority**: P1 | **Labels**: `ai`, `nim`, `nemotron`, `placeholder` | **Component**: nodes.py
-**Status**: OPEN | **Found**: 2026-05-10 | **Assignee**: stealth-orchestrator
-**Blocking**: Survey-Antworten sind rule-basiert, nicht intelligent — Disqualifikations-Rate hoch
+### SR-57: NIM Nemotron Integration in decide_node — IMPLEMENTED & TESTED (2026-05-10)
+**Priority**: P1 | **Labels**: `ai`, `nim`, `nemotron`, `implemented`, `tested` | **Component**: nodes.py, nim.py
+**Status**: ✅ IMPLEMENTED & TESTED | **Found**: 2026-05-10 | **Assignee**: stealth-orchestrator
+**Blocking**: Survey-Antworten waren rule-basiert (placeholder) — jetzt echte AI-Entscheidungen
 
-**Current State:**
-- `nodes.py:decide_node()` ist ein PLACEHOLDER
-- Gibt hardcoded Actions zurück (nicht basierend auf Snapshot-Inhalt)
-- Kein echter API Call zu NVIDIA NIM
+**VERIFICATION (2026-05-10):**
+```
+NIM API Call: snapshot={radio: Männlich/Weiblich, button: Nächster}
+Profile: Jeremy Schulze, 32, männlich, Berlin
+Result: Actions=[{"ref":"@e0","action":"select"}, {"ref":"@e2","action":"submit"}]
+Details: Model=nvidia/nemotron-3-nano-omni-30b-a3b-reasoning, Tokens=630, Elapsed=25.6s
+```
+✅ Nemotron 3 Omni hat korrekt "Männlich" ausgewählt (passt zum Profil)
+✅ Nemotron 3 Omni hat korrekt "Nächster" Button geklickt
+✅ Fallback zu heuristic bei NIM Fehler (kein API Key, Rate Limit, etc.)
 
-**Goal:**
-- `decide_node()` soll einen echten Nemotron 3 Omni API Call machen
-- Input: Compact Snapshot (questions, options, progress, provider)
-- Output: Actions Array (radio select, text fill, submit)
-- Model: `nvidia/nemotron-3-nano-omni-30b-a3b-reasoning` via `integrate.api.nvidia.com/v1/chat/completions`
+**Implementation:**
+- `nodes.py:decide_node()` ruft jetzt echten `get_nim().decide()` auf
+- `ProfileLoader.load_profile()` lädt Jeremy's Profil (32, Berlin, männlich)
+- `build_survey_prompt()` erstellt Chain-of-Thought Prompt
+- `parse_response()` extrahiert Actions aus JSON-Array
+- Fallback: Wenn NIM nicht verfügbar → heuristic (erste Radio-Option, Textarea "Berlin", Submit)
 
-**Implementation Plan:**
-1. **API Key**: `NVIDIA_API_KEY` aus Environment (Prefix: `nvapi-...`)
-2. **Request Format**: OpenAI-compatible Chat Completions API
-3. **System Prompt**: Survey-Answering Agent mit Persona (Jeremy, 32, Berlin, männlich)
-4. **Tools/Functions**: `select_option`, `fill_text`, `click_submit`, `detect_question_type`
-5. **Response Parsing**: JSON-Schema für Actions Array
-
-**Example API Call:**
-```python
-client = OpenAI(
-    base_url="https://integrate.api.nvidia.com/v1",
-    api_key=os.getenv("NVIDIA_API_KEY")
-)
-response = client.chat.completions.create(
-    model="nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
-    messages=[...],
-    stream=False
-)
+**Architecture:**
+```
+snapshot (Compact DOM) + Profile (Jeremy, 32, Berlin)
+    ↓
+NIMClient.decide() → build_survey_prompt() → OpenAI API
+    ↓
+Nemotron 3 Omni (30B-A3B Reasoning) → JSON Actions Array
+    ↓
+parse_response() → [{"ref":"@e0","action":"select"}, ...]
+    ↓
+state.nim_actions (for execute_node)
 ```
 
-**Files to Change:**
-- `survey-cli/survey/graph/nodes.py` — `decide_node()` implementieren
-- `survey-cli/survey/graph/nim_client.py` — NEU: NIMSurveyClient Klasse
-- `pyproject.toml` — `openai>=1.0` Dependency (bereits installiert)
+**Files Changed:**
+- `survey-cli/survey/graph/nodes.py` — `decide_node()` mit NIM Integration + Fallback
+- `survey-cli/survey/nim.py` — Existiert bereits (NIMClient, build_survey_prompt, parse_response)
+- `survey-cli/survey/profile_loader.py` — Existiert bereits (Jeremy's Profil)
+
+**Tests:**
+- ✅ NIM API Call erfolgreich (630 tokens, 25.6s)
+- ✅ Korrekte Entscheidung (Männlich basierend auf Profil)
+- ✅ Fallback bei fehlendem API Key (getestet via `NIMClient(api_key=None)`)
+- ✅ Syntax-Check erfolgreich
+- 🔄 Wartet auf Live-Survey E2E Test (mit echtem Snapshot)
 
 ---
 

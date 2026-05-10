@@ -226,6 +226,8 @@ pkill -f "chrome-jeremy-heypiggy-9999"
 
 | Datum | Balance vorher | Aktion | Balance nachher | Ergebnis |
 |-------|---------------|--------|-----------------|----------|
+| 2026-05-10 | — | NIM Nemotron 3 Omni TEST — Entscheidung: "Männlich" select + "Nächster" click (Jeremy Profil: 32, männlich, Berlin) | — | ✅ NIM funktioniert! 630 tokens, 25.6s elapsed — echte AI-Entscheidung |
+| 2026-05-10 | — | Shadow DOM Piercing für PureSpectrum implementiert — 4 neue Funktionen (shadow_dom_click/fill/exists/navigate) + Integration in preflight | — | ✅ IMPLEMENTED, wartet auf E2E Verifikation |
 | 2026-05-10 | — | INFRASTRUCTURE: Fixed LANGGRAPH_AVAILABLE import, installed missing deps (fastapi, uvicorn, openai, playwright, websocket-client), built 24/7 background loop, created start-api.sh | — | ✅ LangGraph + FastAPI Background-Task ready for 24/7 automation |
 | 2026-05-10 | €2.75 | PureSpectrum Survey 67105461 (PulseOpinion) — blocked at gaming question | €2.75 | ❌ Web Components (PS-*) block CDP interaction |
 | 2026-05-10 | €2.70 | Survey 66695822 (Cint→Tivian) — cookie+subid fix VERIFIED | €2.75 | ✅ +€0.05 Kompensation (Early Termination) — FIXES WORK! |
