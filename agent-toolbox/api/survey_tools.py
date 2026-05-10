@@ -1182,6 +1182,381 @@ async def api_detect_completion(req: CompletionRequest) -> CompletionResponse:
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
+# TOOL WRAPPERS — survey-cli/tools/ → FastAPI Endpoints (SR-52)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+from tools.tool_click import click as cua_click
+from tools.tool_find_element import find_element
+from tools.tool_verify_state import verify_element_state
+from tools.tool_click_angular import click_angular
+from tools.tool_fill_input import fill as cdp_fill
+from tools.tool_find_new_tab import find_new_tab
+from tools.tool_close_modals import close_modals
+
+
+def _resolve_pid_wid(ws_url: str, port: int = 9999):
+    """Get (pid, wid) from CDP WS URL by matching tab in /json list."""
+    try:
+        pages = json.loads(urllib.request.urlopen(f"http://127.0.0.1:{port}/json", timeout=5).read())
+        for p in pages:
+            if p.get("webSocketDebuggerUrl") == ws_url:
+                return int(p.get("processId", 0)), int(p.get("id", "0").split("-")[0])
+    except Exception:
+        pass
+    return None, None
+
+
+# ─── TOOL 1: POST /survey/click ───────────────────────────────────────────────
+
+class ClickRequest(BaseModel):
+    ws_url: Optional[str] = None
+    tab_id: Optional[str] = None
+    cdp_port: int = 9999
+    label: str
+    role: str = "AXButton"
+
+
+class ClickResponse(BaseModel):
+    status: str
+    element_index: Optional[int] = None
+    verified: bool = False
+
+
+@router.post("/click", response_model=ClickResponse, dependencies=[Depends(require_survey_ready)])
+async def api_click(req: ClickRequest):
+    """Generic CUA click via tool_click.py.
+
+    Args:
+        label: Button/link text (word-boundary match)
+        role: AX role (default: AXButton)
+        ws_url/tab_id: Tab identification
+
+    Kapselt: tools.tool_click.click(pid, wid, label, role)
+    """
+    ws_url = req.ws_url
+    if not ws_url and req.tab_id:
+        pages = json.loads(urllib.request.urlopen(f"http://127.0.0.1:{req.cdp_port}/json", timeout=5).read())
+        for p in pages:
+            if p.get("id", "").startswith(req.tab_id) or p.get("id") == req.tab_id:
+                ws_url = p.get("webSocketDebuggerUrl")
+                break
+
+    pid, wid = _resolve_pid_wid(ws_url, req.cdp_port)
+    if not pid or not wid:
+        update_command_registry("click", False, {"error": "no_pid_wid"})
+        return ClickResponse(status="error", reason="Could not resolve pid/wid from tab")
+
+    result = cua_click(pid, wid, req.label, req.role)
+    update_command_registry("click", result.get("status") == "ok", {
+        "label": req.label,
+        "role": req.role,
+        "element_index": result.get("element_index"),
+        "verified": result.get("verified", False),
+    })
+    return ClickResponse(**result)
+
+
+# ─── TOOL 2: POST /survey/find ────────────────────────────────────────────────
+
+class FindRequest(BaseModel):
+    ws_url: Optional[str] = None
+    tab_id: Optional[str] = None
+    cdp_port: int = 9999
+    role: str
+    label: Optional[str] = None
+    text_sub: Optional[str] = None
+    use_boundary: bool = True
+
+
+class FindResponse(BaseModel):
+    status: str
+    element_index: Optional[int] = None
+    role: Optional[str] = None
+    text: Optional[str] = None
+
+
+@router.post("/find", response_model=FindResponse, dependencies=[Depends(require_survey_ready)])
+async def api_find(req: FindRequest):
+    """Find element in AX-Tree via tool_find_element.py.
+
+    Args:
+        role: AX role (e.g. AXButton, AXLink, AXRadioButton)
+        label: Exact text to match (word-boundary)
+        text_sub: Substring match alternative
+
+    Kapselt: tools.tool_find_element.find_element(markdown, role, label)
+    """
+    ws_url = req.ws_url
+    if not ws_url and req.tab_id:
+        pages = json.loads(urllib.request.urlopen(f"http://127.0.0.1:{req.cdp_port}/json", timeout=5).read())
+        for p in pages:
+            if p.get("id", "").startswith(req.tab_id) or p.get("id") == req.tab_id:
+                ws_url = p.get("webSocketDebuggerUrl")
+                break
+
+    pid, wid = _resolve_pid_wid(ws_url, req.cdp_port)
+    if not pid or not wid:
+        update_command_registry("find_element", False, {"error": "no_pid_wid"})
+        return FindResponse(status="error", reason="Could not resolve pid/wid")
+
+    import subprocess, json as _json
+    result = subprocess.run(
+        ["cua-driver", "call", "get_window_state"],
+        input=_json.dumps({"pid": pid, "window_id": wid}),
+        capture_output=True, text=True, timeout=30
+    )
+    markdown = ""
+    if result.returncode == 0:
+        markdown = _json.loads(result.stdout).get("tree_markdown", "")
+
+    el = find_element(markdown, req.role, req.label, req.text_sub, req.use_boundary)
+    if el:
+        update_command_registry("find_element", True, {
+            "role": req.role,
+            "label": req.label,
+            "element_index": el.get("element_index"),
+        })
+        return FindResponse(
+            status="ok",
+            element_index=el.get("element_index"),
+            role=el.get("role"),
+            text=el.get("text"),
+        )
+    update_command_registry("find_element", False, {"role": req.role, "label": req.label})
+    return FindResponse(status="not_found", reason=f"No {req.role} with label '{req.label}'")
+
+
+# ─── TOOL 3: POST /survey/verify ──────────────────────────────────────────────
+
+class VerifyRequest(BaseModel):
+    ws_url: Optional[str] = None
+    tab_id: Optional[str] = None
+    cdp_port: int = 9999
+    element_index: int
+    expected_role: str
+
+
+class VerifyResponse(BaseModel):
+    status: str
+    found: bool = False
+    role: Optional[str] = None
+    text: Optional[str] = None
+
+
+@router.post("/verify", response_model=VerifyResponse, dependencies=[Depends(require_survey_ready)])
+async def api_verify(req: VerifyRequest):
+    """Verify element state after action via tool_verify_state.py.
+
+    Args:
+        element_index: AX-Tree element index
+        expected_role: e.g. AXRadioButton, AXCheckBox
+
+    Kapselt: tools.tool_verify_state.verify_element_state(pid, wid, element_index, expected_role)
+    """
+    ws_url = req.ws_url
+    if not ws_url and req.tab_id:
+        pages = json.loads(urllib.request.urlopen(f"http://127.0.0.1:{req.cdp_port}/json", timeout=5).read())
+        for p in pages:
+            if p.get("id", "").startswith(req.tab_id) or p.get("id") == req.tab_id:
+                ws_url = p.get("webSocketDebuggerUrl")
+                break
+
+    pid, wid = _resolve_pid_wid(ws_url, req.cdp_port)
+    if not pid or not wid:
+        update_command_registry("verify_state", False, {"error": "no_pid_wid"})
+        return VerifyResponse(status="error", reason="Could not resolve pid/wid")
+
+    result = verify_element_state(pid, wid, req.element_index, req.expected_role)
+    update_command_registry("verify_state", result.get("found", False), {
+        "element_index": req.element_index,
+        "expected_role": req.expected_role,
+        "found": result.get("found", False),
+    })
+    return VerifyResponse(**result)
+
+
+# ─── TOOL 4: POST /survey/click-angular ───────────────────────────────────────
+
+class ClickAngularRequest(BaseModel):
+    ws_url: Optional[str] = None
+    tab_id: Optional[str] = None
+    cdp_port: int = 9999
+    selector: Optional[str] = None
+    text: Optional[str] = None
+    idx: Optional[int] = None
+    timeout: int = 10
+
+
+class ClickAngularResponse(BaseModel):
+    status: str
+    success: bool = False
+    coords: Optional[List[float]] = None
+
+
+@router.post("/click-angular", response_model=ClickAngularResponse, dependencies=[Depends(require_survey_ready)])
+async def api_click_angular(req: ClickAngularRequest):
+    """CDP mouse click for Angular/React frameworks via tool_click_angular.py.
+
+    Args:
+        selector: CSS selector (e.g. ".next-button")
+        text: Button text (fallback if selector not given)
+        idx: Element index (fallback if selector/text not given)
+
+    Kapselt: tools.tool_click_angular.click_angular(ws_url, selector, text, idx, timeout)
+    """
+    ws_url = req.ws_url
+    if not ws_url and req.tab_id:
+        pages = json.loads(urllib.request.urlopen(f"http://127.0.0.1:{req.cdp_port}/json", timeout=5).read())
+        for p in pages:
+            if p.get("id", "").startswith(req.tab_id) or p.get("id") == req.tab_id:
+                ws_url = p.get("webSocketDebuggerUrl")
+                break
+
+    if not ws_url:
+        update_command_registry("click_angular", False, {"error": "no_ws_url"})
+        return ClickAngularResponse(status="error", reason="No ws_url provided")
+
+    result = click_angular(ws_url, req.selector, req.text, req.idx, req.timeout)
+    update_command_registry("click_angular", result.get("success", False), {
+        "selector": req.selector,
+        "text": req.text,
+        "idx": req.idx,
+    })
+    return ClickAngularResponse(
+        status="ok" if result.get("success") else "error",
+        success=result.get("success", False),
+        coords=result.get("coords"),
+    )
+
+
+# ─── TOOL 5: POST /survey/fill-input ─────────────────────────────────────────
+
+class FillInputRequest(BaseModel):
+    ws_url: Optional[str] = None
+    tab_id: Optional[str] = None
+    cdp_port: int = 9999
+    value: str
+    idx: Optional[int] = None
+    selector: Optional[str] = None
+    timeout: int = 10
+
+
+class FillInputResponse(BaseModel):
+    status: str
+    success: bool = False
+    value: str = ""
+
+
+@router.post("/fill-input", response_model=FillInputResponse, dependencies=[Depends(require_survey_ready)])
+async def api_fill_input(req: FillInputRequest):
+    """Fill input/select field with validation retry via tool_fill_input.py.
+
+    Args:
+        value: Text to fill into the field
+        idx: Element index (input[type=text], textarea, select)
+        selector: CSS selector alternative
+
+    Kapselt: tools.tool_fill_input.fill(ws_url, value, idx, selector, timeout)
+    """
+    ws_url = req.ws_url
+    if not ws_url and req.tab_id:
+        pages = json.loads(urllib.request.urlopen(f"http://127.0.0.1:{req.cdp_port}/json", timeout=5).read())
+        for p in pages:
+            if p.get("id", "").startswith(req.tab_id) or p.get("id") == req.tab_id:
+                ws_url = p.get("webSocketDebuggerUrl")
+                break
+
+    if not ws_url:
+        update_command_registry("fill_input", False, {"error": "no_ws_url"})
+        return FillInputResponse(status="error", reason="No ws_url provided")
+
+    result = cdp_fill(ws_url, req.value, req.idx, req.selector, req.timeout)
+    update_command_registry("fill_input", result.get("success", False), {
+        "value": req.value,
+        "idx": req.idx,
+        "selector": req.selector,
+    })
+    return FillInputResponse(
+        status="ok" if result.get("success") else "error",
+        success=result.get("success", False),
+        value=result.get("value", req.value),
+    )
+
+
+# ─── TOOL 6: POST /survey/find-tab ────────────────────────────────────────────
+
+class FindTabRequest(BaseModel):
+    cdp_port: int = 9999
+    known_ids: List[str] = []
+
+
+class FindTabResponse(BaseModel):
+    status: str
+    new_tab_id: Optional[str] = None
+    new_ws_url: Optional[str] = None
+
+
+@router.post("/find-tab", response_model=FindTabResponse, dependencies=[Depends(require_survey_ready)])
+async def api_find_tab(req: FindTabRequest):
+    """Detect new tab after window.open via tool_find_new_tab.py.
+
+    Args:
+        known_ids: Tab IDs known BEFORE the event (for diff detection)
+
+    Kapselt: tools.tool_find_new_tab.find_new_tab(known_ids, port)
+    """
+    result = find_new_tab(req.known_ids, port=req.cdp_port)
+    if result:
+        update_command_registry("find_new_tab", True, {"new_tab_id": result.get("id")})
+        return FindTabResponse(
+            status="found",
+            new_tab_id=result.get("id"),
+            new_ws_url=result.get("webSocketDebuggerUrl"),
+        )
+    update_command_registry("find_new_tab", False, {"known_ids": req.known_ids})
+    return FindTabResponse(status="not_found", reason="No new tab found")
+
+
+# ─── TOOL 7: POST /survey/close-modals ────────────────────────────────────────
+
+class CloseModalsRequest(BaseModel):
+    ws_url: Optional[str] = None
+    tab_id: Optional[str] = None
+    cdp_port: int = 9999
+    timeout: int = 10
+
+
+class CloseModalsResponse(BaseModel):
+    status: str
+    closed_count: int = 0
+
+
+@router.post("/close-modals", response_model=CloseModalsResponse, dependencies=[Depends(require_survey_ready)])
+async def api_close_modals(req: CloseModalsRequest):
+    """Close all visible modals/overlays via tool_close_modals.py.
+
+    Closes: cookie banners, login modals, ad popups, close buttons, backdrops.
+
+    Kapselt: tools.tool_close_modals.close_modals(ws_url, timeout)
+    """
+    ws_url = req.ws_url
+    if not ws_url and req.tab_id:
+        pages = json.loads(urllib.request.urlopen(f"http://127.0.0.1:{req.cdp_port}/json", timeout=5).read())
+        for p in pages:
+            if p.get("id", "").startswith(req.tab_id) or p.get("id") == req.tab_id:
+                ws_url = p.get("webSocketDebuggerUrl")
+                break
+
+    if not ws_url:
+        update_command_registry("close_modals", False, {"error": "no_ws_url"})
+        return CloseModalsResponse(status="error", reason="No ws_url provided")
+
+    count = close_modals(ws_url, req.timeout)
+    update_command_registry("close_modals", count > 0, {"closed_count": count})
+    return CloseModalsResponse(status="ok", closed_count=count)
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
 # EXPORTS
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -1195,4 +1570,11 @@ __all__ = [
     "RunGraphRequest", "RunGraphResponse",
     "UniversalRunRequest", "UniversalRunResponse",
     "solve_purespectrum_preflight",
+    "ClickRequest", "ClickResponse",
+    "FindRequest", "FindResponse",
+    "VerifyRequest", "VerifyResponse",
+    "ClickAngularRequest", "ClickAngularResponse",
+    "FillInputRequest", "FillInputResponse",
+    "FindTabRequest", "FindTabResponse",
+    "CloseModalsRequest", "CloseModalsResponse",
 ]
