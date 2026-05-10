@@ -689,14 +689,22 @@ class SurveyRunner:
                 tabs = chrome.find_bot_tabs(self.config.cdp_port)
                 dash_tab = next((t for t in tabs if "dashboard" in t.get("url", "").lower()), None)
                 if dash_tab and dash_tab.get("id"):
-                    ws_activate = websocket.create_connection(dash_ws, timeout=5)
-                    ws_activate.send(json.dumps({
-                        "id": 1, "method": "Target.activateTarget",
-                        "params": {"targetId": dash_tab["id"]}
+                    # REFRESH dashboard tab via Page.reload (NOT just Target.activateTarget!)
+                    # ROOT CAUSE: Target.activateTarget only switches focus — DOM stays STALE.
+                    # After survey completes in new tab, balance DOM hasn't updated.
+                    # Page.reload forces fresh page load → balance DOM updates.
+                    ws_reload = websocket.create_connection(dash_ws, timeout=5)
+                    ws_reload.send(json.dumps({
+                        "id": 1, "method": "Page.reload"
                     }))
-                    ws_activate.recv()
-                    ws_activate.close()
-            time.sleep(5)  # Wait for DOM to update after tab activation
+                    try:
+                        ws_reload.recv()
+                    except Exception:
+                        pass
+                    ws_reload.close()
+                    if self.debug:
+                        print(f"[BALANCE] Dashboard tab reloaded — waiting for DOM update")
+            time.sleep(4)  # Wait for reload + DOM update
             balance_after = read_balance_with_backoff(self.config.cdp_port)
             result.earned = self.balance_tracker.calculate_earned(
                 balance_before, balance_after
