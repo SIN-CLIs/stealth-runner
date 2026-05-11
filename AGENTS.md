@@ -2,6 +2,151 @@
 content: |
   # AGENTS.md - Stealth-Runner NEXT-GEN (2026-05-06)
 
+  ## 🆕 ISSUE #81/#82/#83: PRODUCTION-READY CORE INTEGRATION (2026-05-11)
+
+  ### Was ist neu?
+
+  Das `core/` Package bietet eine vollständige Production-Ready-Infrastruktur:
+    - **config.py**: Singleton-Pattern für zentrale Konfiguration (Chrome, Budget, Captcha)
+    - **error_handler.py**: Circuit-Breaker + Audit-Log-Integration
+    - **analytics.py**: Counter + Histogram-Aggregation (Prometheus-ready)
+    - **security.py**: Vault (Secrets-Encryption), AuditLog (Activity-Trail)
+    - **state_manager.py**: Async-State-Persistence (JSON-JSONL, resumable Checkpoints)
+    - **survey_budget.py**: 2-Minuten-Hard-Limit pro Survey (BudgetExceededError)
+    - **screenshot.py**: Failure-Artifact-Collection (mit Redaction)
+    - **langgraph_integration.py**: Wrapper + Decorator für LangGraph-Nodes
+
+  ### Survey-Budget: 2 Minuten Hard-Limit
+
+  Umfragen müssen unter 2 Minuten (120 Sekunden) laufen — zuverlässig und fehlerfrei.
+  Der `SurveyBudget` erzwingt ein Hard-Limit:
+
+    ```python
+    budget = SurveyBudget(run_id="67064749", max_seconds=120)
+    budget.guard("node_name")   # wirft BudgetExceededError wenn >120s
+    with budget.span("decide"): # Zeitmessung automatisch
+        decide_result = ...
+    snap = budget.snapshot()    # {elapsed, steps: [{name, duration}]}
+    ```
+
+  Bei Überschreitung stoppt der Graph sofort (`status="error"`).
+
+  ### Error Handling & Circuit Breaker
+
+  `error_handler.py` implementiert einen Circuit-Breaker pro Node:
+    - Nach 5 Failures in <60s → Circuit öffnet (skip weitere Versuche)
+    - `_record_failure(step_name, ErrorContext)` speichert Stack-Trace
+    - `_record_success(step_name)` setzt Counter zurück
+    - AuditLog Integration für komplett-nachverfolgbare Activity-Trail
+
+  ### Analytics & Monitoring
+
+  `analytics.py` bietet:
+    - `increment("survey.completed", amount=1)` — Counter
+    - `record("node.decide.duration_seconds", 0.5, **labels)` — Histogram
+    - `flush()` → `state/analytics_*.json` (Prometheus-ready Format)
+
+  FastAPI Routes für Observability:
+    - `GET /core/health` — System-Status
+    - `GET /core/analytics` — aktuelle Metrics
+    - `GET /core/errors` — Circuit-Status
+    - `GET /core/runs/{run_id}` — Checkpoint-History
+
+  ### 2Captcha Generic Fallback (Issue #82)
+
+  Neue `stealth-captcha/solver/twocaptcha.py`:
+    - Sitekey-Extraction (data-sitekey, iframe src ?k=...)
+    - Token-Injection in DOM-Felder
+    - Cost-Tracking (analytics: `captcha.twocaptcha.cost_cents`)
+
+  **Einsatz**:
+    ```python
+    from core.langgraph_integration import sync_node_with_core
+    # Nodes wrappen mit Decorator
+    graph.add_node("captcha", sync_node_with_core("captcha", captcha_node))
+    ```
+
+  **Env-var Pflicht** für 2Captcha-Fallback:
+    ```bash
+    TWOCAPTCHA_API_KEY=<key>  # ohne → adapter skips mit reason="api_key_missing"
+    ```
+
+  ### State-Persistence & Resumable Pipelines (Issue #83)
+
+  `state_manager.py` (async API für LangGraph-Integration):
+
+    ```
+    $CHECKPOINT_DIR/runs/<run_id>/
+      steps.jsonl       ← append-only Step-Timeline
+      checkpoint.json   ← resumable Graph-State + Metadata
+    ```
+
+  **Verwendung**:
+    ```python
+    from core import get_state_manager, bootstrap_core
+    
+    await bootstrap_core()  # mkdir FS-Layout
+    sm = get_state_manager()
+    
+    # Step-Tracking
+    step_id = await sm.start_step("run-x", "decide")
+    await sm.complete_step(step_id, output={...})
+    
+    # Checkpoint speichern (resumable)
+    await sm.save_checkpoint("run-x",
+                              checkpoint=budget,
+                              metadata={"status": "paused"})
+    
+    # LangGraph-Checkpointer
+    from core.langgraph_integration import CoreCheckpointer
+    graph = StateGraph(...).compile(checkpointer=CoreCheckpointer(sm))
+    ```
+
+  ### LangGraph-Integration: Wrapper + Checkpointer
+
+  Alle Nodes MÜSSEN mit `sync_node_with_core()` ge-wrappen sein:
+
+    ```python
+    from core.langgraph_integration import (
+        sync_node_with_core, run_survey_with_core, attach_core_ctx
+    )
+    
+    # Graph-Nodes wrappen
+    graph.add_node("snapshot", sync_node_with_core("snapshot", snapshot_node))
+    graph.add_node("captcha",   sync_node_with_core("captcha", captcha_node))
+    graph.add_node("decide",    sync_node_with_core("decide", decide_node))
+    
+    # Survey ausführen (Main)
+    state = SurveyState(survey_id="67064749")
+    final = run_survey_with_core(state, run_fn=run_survey_loop, max_seconds=120)
+    ```
+
+  **Wrapper macht automatisch**:
+    1. Budget-Guard (BudgetExceededError wenn >120s)
+    2. Step-Tracking (start_step → complete/fail_step)
+    3. Error-Handling (ErrorContext + Circuit-Breaker)
+    4. Analytics (Counter + Duration-Histogram)
+    5. Screenshot bei Failure (wenn config.enable_screenshots_on_error)
+
+  ### Production-Ready Checkliste (100% Zuverlässigkeit)
+
+  Vor dem Start mit 100 echten Surveys:
+
+  - [ ] Chrome-Binary installiert: `CHROME_EXECUTABLE=/usr/bin/chromium`
+  - [ ] `--force-renderer-accessibility` Flag aktiv (pflicht für cdp_universal)
+  - [ ] `TWOCAPTCHA_API_KEY` gesetzt
+  - [ ] FS-Paths writable: `STATE_DIR`, `SCREENSHOT_DIR`, `CHECKPOINT_DIR`
+  - [ ] Core-Bootstrap läuft: `await bootstrap_core()` vor Survey-Start
+  - [ ] Alle Nodes ge-wrappen: `sync_node_with_core("node_name", func)`
+  - [ ] Survey startet mit `run_survey_with_core(..., max_seconds=120)`
+  - [ ] Tests: `pytest tests/test_core_*.py -q` (27/27 grün)
+  - [ ] FastAPI `/core/health`, `/core/analytics` erreichbar
+  - [ ] Screenshot-on-Failure getestet
+
+  Nur dann: 100 Surveys im Auto-Loop starten.
+
+  ---
+
   ## 🟢 KANONISCHE ARCHITEKTUR (2026-05-11) — UNIVERSAL CDP SCANNER + ACTUATOR
 
   > Diese Sektion ist die EINZIGE gültige Beschreibung der Element-Such-,
@@ -1315,7 +1460,7 @@ content: |
   ### Hard Enforcement Regeln
   
   ```
-  ╔═════════════════════════════════════════════════════════�����═══════╗
+  ╔═════════════════════════════════════════════════════���═══�����═══════╗
   ║  REGEL 1: Agent ist NUR ein Trigger                              ║
   ║  ─────────────────────────────────────────────────────────────── ║
   ║   RICHTIG:  python run_survey.py                               ║

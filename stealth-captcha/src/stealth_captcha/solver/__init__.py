@@ -26,6 +26,12 @@ from stealth_captcha.solver.base import BaseSolver, SolveOutcome, SolveResult
 from stealth_captcha.solver.drag_drop import DragDropCaptchaSolver
 from stealth_captcha.solver.slide import SlideCaptchaSolver
 from stealth_captcha.solver.text import TextCaptchaSolver
+from stealth_captcha.solver.twocaptcha import (
+    TwoCaptchaFallbackSolver,
+    TwoCaptchaParams,
+    TwoCaptchaError,
+    inject_token_via_cdp,
+)
 
 __all__ = [
     "BaseSolver",
@@ -34,4 +40,9 @@ __all__ = [
     "SlideCaptchaSolver",
     "TextCaptchaSolver",
     "DragDropCaptchaSolver",
+    # Generic paid fallback (hcaptcha, recaptcha, turnstile, geetest, lemin)
+    "TwoCaptchaFallbackSolver",
+    "TwoCaptchaParams",
+    "TwoCaptchaError",
+    "inject_token_via_cdp",
 ]

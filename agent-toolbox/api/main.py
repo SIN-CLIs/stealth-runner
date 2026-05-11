@@ -177,11 +177,11 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "survey-cli"))
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # SCHEMA IMPORTS: Alle Pydantic-Modelle
-# ═══════════════════════════════════════════════════════════════════════════════
+# ═══════════��═══════════════════════════════════════════════════════════════════
 # WARUM alle auf einmal importieren?
 # → Zentrale Import-Stelle: Alle Schemas kommen aus api/schemas.py.
 # → Wenn ein Schema fehlt → ImportError SOFORT beim Start (nicht erst bei Request).
-# → Das ist OK weil schemas.py keine schweren Dependencies hat (nur pydantic).
+# ��� Das ist OK weil schemas.py keine schweren Dependencies hat (nur pydantic).
 from api.schemas import (
     # ── Browser Schemas ──
     # Request/Response für POST /browser/start
@@ -502,7 +502,7 @@ app = FastAPI(
     redoc_url="/redoc",
 )
 
-# ═══════════════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════════════���════
 # ROUTER REGISTRIERUNG: Sub-Router in Haupt-App einbinden
 # ═══════════════════════════════════════════════════════════════════════════════
 # WARUM app.include_router()?
@@ -555,6 +555,26 @@ app.include_router(captcha_router)
 # Endpoints: POST /survey/dashboard-scan, POST /survey/universal-answer.
 # SR-76, SR-77: Dashboard-Scanning und Universal Page-by-Page Answering
 app.include_router(survey_universal_router)
+
+# ── ISSUE #83: OBSERVABILITY ROUTER ───────────────────────────────────────────
+# Endpoints: GET /core/health, /core/config, /core/analytics, /core/errors,
+#            /core/runs, /core/runs/{run_id}
+#            POST /core/analytics/flush, /core/reset, /core/bootstrap
+#
+# Diese exposen core/* (config, analytics, error_handler, state_manager) als
+# REST-API. Verwendung in Grafana/Prometheus-Scrape oder fuer Debug-Tooling.
+# WICHTIG: in Production hinter Auth-Middleware mounten — die Endpoints
+# liefern interne State-Daten die ein Angreifer fuer Recon nutzen koennte.
+try:
+    from .observability import router as observability_router
+    app.include_router(observability_router, prefix="/core",
+                       tags=["observability"])
+except ImportError as _obs_err:
+    import logging as _logging
+    _logging.getLogger("api.main").warning(
+        "observability_router not mounted (core/ not on PYTHONPATH?): %s",
+        _obs_err,
+    )
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -1115,7 +1135,7 @@ async def survey_run(req: SurveyRunRequest):
         
         # ═══════════════════════════════════════════════════════════════════════
         # SCHRITT 4: Ergebnisse konvertieren
-        # ═══════════════════════════════════════════════════════════════════════
+        # ═════════════════════════════════════════════��═════════════════════════
         
         # Konvertiere interne Ergebnisse in Pydantic-Modelle (SurveyResult).
         # Das ist notwendig weil FastAPI Pydantic-Modelle für Response-Validation
