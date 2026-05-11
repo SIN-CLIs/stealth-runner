@@ -124,10 +124,12 @@ from __future__ import annotations
 import json
 import os
 import time
+from typing import Any  # noqa: F401 — used in annotations under `from __future__ import annotations`
+
 import websocket
 
-from .state import SurveyState
 from .opencode_tool import delegate_task
+from .state import SurveyState
 
 # ── PATH CONSTANTS ─────────────────────────────────────────────────────────────
 
@@ -386,7 +388,7 @@ def decide_node(state: SurveyState) -> SurveyState:
     if last.get("success") is False and last.get("reason") == "no_dom_change":
         avoid_id = last.get("stable_id", "")
 
-    decision: Dict[str, Any] = {}
+    decision: dict[str, Any] = {}
 
     # 1) LLM-Decide (optional)
     if get_nim and elements:

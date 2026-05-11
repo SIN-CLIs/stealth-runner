@@ -57,7 +57,6 @@ import time
 import urllib.request
 import websocket
 from . import chrome
-from . import chrome
 
 # ── Provider Detection ─────────────────────────────────
 
@@ -82,7 +81,7 @@ PROVIDER_PATTERNS = {
 
 def detect_provider(url):
     """Detect survey provider from URL.
-    
+
     Priority: External providers first, then internal routing.
     surveyrouter.com = HeyPiggy internal routing layer (NOT a real provider).
     """
@@ -356,10 +355,10 @@ def read_balance(port=9223):
     var t = document.body.innerText;
     var values = [];
     // Match all € values in the page
-    var matches = t.match(/(\d+[.,]\d+)\s*€/g);
+    var matches = t.match(/(\\d+[.,]\\d+)\\s*€/g);
     if (matches) {
         for (var i = 0; i < matches.length; i++) {
-            var cleaned = matches[i].replace(/[^\d.,]/g, "").replace(",", ".");
+            var cleaned = matches[i].replace(/[^\\d.,]/g, "").replace(",", ".");
             var val = parseFloat(cleaned);
             if (val > 0.5 && val < 1000) {
                 values.push(val);
@@ -367,10 +366,10 @@ def read_balance(port=9223):
         }
     }
     // Also match standalone numbers that look like balance (e.g., "2,75 €")
-    var matches2 = t.match(/(\d+[.,]\d+)\s*€/g);
+    var matches2 = t.match(/(\\d+[.,]\\d+)\\s*€/g);
     if (matches2) {
         for (var j = 0; j < matches2.length; j++) {
-            var cleaned2 = matches2[j].replace(/[^\d.,]/g, "").replace(",", ".");
+            var cleaned2 = matches2[j].replace(/[^\\d.,]/g, "").replace(",", ".");
             var val2 = parseFloat(cleaned2);
             if (val2 > 0.5 && val2 < 1000) {
                 values.push(val2);
@@ -391,7 +390,7 @@ def read_balance(port=9223):
         ws.close()
         val = r.get("result", {}).get("result", {}).get("value", "0")
         return float(val)
-    except Exception as e:
+    except Exception:
         return 0.0
 
 

@@ -58,7 +58,6 @@ import time
 import re
 import logging
 from openai import OpenAI, APIConnectionError, APITimeoutError, RateLimitError, AuthenticationError
-from typing import Dict, List, Any, Optional
 
 logger = logging.getLogger("nim_client")
 

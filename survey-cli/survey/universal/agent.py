@@ -13,13 +13,10 @@ Architektur:
 Universell: Funktioniert auf JEDER Webseite. Kein Hardcoding.
 """
 
-import asyncio
-import base64
 import json
 import os
-import sys
 import time
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 import websocket
 

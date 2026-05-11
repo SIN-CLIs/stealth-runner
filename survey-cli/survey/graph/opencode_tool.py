@@ -110,7 +110,15 @@ import json
 import os
 import subprocess
 import time
-from typing import Dict, Any, Optional
+from typing import TYPE_CHECKING, Any, Dict, Optional
+
+if TYPE_CHECKING:
+    # Forward-ref-only: avoids runtime circular import
+    # (state -> nodes -> opencode_tool -> state).
+    # SurveyState is referenced as quoted annotation in
+    # delegate_if_needed(); `from __future__ import annotations`
+    # keeps it lazy at runtime. SR-61.
+    from .state import SurveyState  # noqa: F401
 
 # ── CONSTANTS ─────────────────────────────────────────────────────────────────
 
@@ -207,7 +215,7 @@ def delegate_task(
     ]
 
     # Logging für Debugging
-    log_entry = {
+    {
         "ts": time.time(),
         "survey_id": survey_id,
         "provider": provider,
@@ -245,7 +253,7 @@ def delegate_task(
             "timeout": False,
         }
 
-    except subprocess.TimeoutExpired as e:
+    except subprocess.TimeoutExpired:
         return {
             "status": "error",
             "exit_code": -1,

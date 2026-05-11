@@ -66,7 +66,7 @@ COMMANDS = {
 }
 
 
-from .base import ProviderAdapter
+from .base import ProviderAdapter  # noqa: E402 — provider files do sys.path setup above
 
 
 class QualtricsAdapter(ProviderAdapter):

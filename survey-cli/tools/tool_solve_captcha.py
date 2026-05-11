@@ -35,9 +35,11 @@ Migration-Path fuer dieses Modul:
 LIES BEVOR DU DIESES MODUL AENDERST: AGENTS.md Sektion
 "KANONISCHE ARCHITEKTUR (2026-05-11)".
 ================================================================================
-"""
 
-"""TOOL: solve_captcha — Auto-Detect + Solve (Text/Slide/Drag)
+================================================================================
+TOOL DOCSTRING (legacy, pre-deprecation):
+================================================================================
+TOOL: solve_captcha — Auto-Detect + Solve (Text/Slide/Drag)
 
 Universal captcha solver: detects type → picks correct approach → executes.
 UNDER 300 LINES. NO wrapper pattern. Full workflow with registry.
@@ -46,7 +48,6 @@ STATUS: __frozen__=True | Version: 2026-05-11
 
 BANNED: ❌ playstealth | ❌ webauto-nodriver | ❌ hardcoded PIDs | ❌ pkill Chrome
 """
-
 from __future__ import annotations
 import json, os, random, urllib.request, websocket
 from typing import Literal

@@ -48,7 +48,7 @@ class LoginVerifier:
             # Ambiguous title → check AX-Tree
             if any(k in t for k in ["heypiggy", "verdienen", "dashboard"]):
                 tree = self.cua.get_tree(pid, w.get("window_id"))
-                if any("abmelden" in l.lower() for l in tree):
+                if any("abmelden" in line_text.lower() for line_text in tree):
                     return pid, w.get("window_id"), True
 
         return None, None, False

@@ -19,7 +19,6 @@ BANNED METHODS — NIEMALS VERWENDEN:
 
 import json
 import os
-import signal
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 

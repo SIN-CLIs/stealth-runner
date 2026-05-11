@@ -13,7 +13,6 @@ BANNED METHODS — NIEMALS VERWENDEN:
 import json
 import re
 import subprocess
-from typing import Optional
 
 from .autodoc import log_session
 
