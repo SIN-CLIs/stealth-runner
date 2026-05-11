@@ -392,6 +392,39 @@ def captcha_node(state: SurveyState) -> SurveyState:
     from ..cdp_universal import scan as _scan
     from ..captcha_router import CaptchaRouter
 
+    # ══════════════════════════════════════════════════════════════════════════
+    # FAST-PATH: Wenn snapshot_node bereits drag_drop_detected == True gesetzt
+    # hat, rufen wir den Angular-Drag-Drop-Solver DIREKT auf — ohne erneute
+    # Detection via CaptchaRouter. Das spart Zeit und vermeidet Race Conditions.
+    # ══════════════════════════════════════════════════════════════════════════
+    if has_drag_drop:
+        print(f"[captcha] FAST-PATH: drag_drop_detected=True, target={getattr(state, 'drag_drop_target', '?')}")
+        try:
+            from ..captcha_adapters import angular_drag_drop_solve
+            from ..captcha_router import CaptchaDetection, CaptchaResult
+            
+            with CDPConnection(state.tab_ws, timeout=30) as cdp:
+                detection = CaptchaDetection(
+                    captcha_type="angular_drag_drop",
+                    dom_hint=f"target={getattr(state, 'drag_drop_target', '?')}"
+                )
+                result = angular_drag_drop_solve(cdp, detection)
+                
+            state.captcha_solved_this_iteration = bool(result.solved)
+            if result.solved:
+                print(f"[captcha] FAST-PATH SOLVED: angular_drag_drop elapsed={result.elapsed_ms:.0f}ms")
+                state.no_dom_change_count = 0
+                state.drag_drop_detected = False  # Reset for next iteration
+            else:
+                print(f"[captcha] FAST-PATH FAILED: angular_drag_drop reason={result.reason}")
+                state.add_error("captcha_node", f"angular_drag_drop: {result.reason}")
+            return state
+        except Exception as e:
+            print(f"[captcha] FAST-PATH EXCEPTION: {e}")
+            state.add_error("captcha_node", f"drag_drop_fast_path: {str(e)[:200]}")
+            # Fall through to normal detection below
+    
+    # Standard-Path: CaptchaRouter.detect_and_solve()
     try:
         with CDPConnection(state.tab_ws, timeout=20) as cdp:
             scan_res = _scan(cdp)

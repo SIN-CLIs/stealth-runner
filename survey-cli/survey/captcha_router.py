@@ -140,15 +140,43 @@ class CaptchaResult:
 
 
 def _check_angular_drag_puzzle(cdp: CDPConnection) -> CaptchaDetection | None:
-    """PureSpectrum/Strat7: ``.cdk-drop-list`` mit Text "Bitte legen Sie ..."."""
+    """PureSpectrum/Strat7: Angular CDK drag-drop mit .cdk-drag Elementen.
+    
+    Detection-Kriterien (2026-05-11 verbessert):
+    1. .cdk-drag Elemente MUESSEN existieren (nicht nur .cdk-drop-list)
+    2. ODER [draggable=true] als Fallback
+    3. UND Text-Cue: "zahl X" oder "number X" oder "drag" im Body
+    4. Extrahiere target-Nummer aus dem Text
+    
+    WICHTIG: Diese Detection wird VOR dem normalen Scan aufgerufen!
+    Wenn sie True returned, wird der Angular-Drag-Drop-Solver aktiviert.
+    """
     expr = (
         "(function(){"
-        "var drop=document.querySelector('.cdk-drop-list,.drop-zone');"
-        "if(!drop) return JSON.stringify({found:false});"
+        # Check for Angular CDK drag elements
+        "var cdkDrags=document.querySelectorAll('.cdk-drag');"
+        "var draggables=document.querySelectorAll('[draggable=true]');"
+        "var hasElements=(cdkDrags.length>0||draggables.length>0);"
+        "if(!hasElements) return JSON.stringify({found:false,reason:'no_drag_elements'});"
+        # Check for drop zone
+        "var dropZones=document.querySelectorAll('.cdk-drop-list,.drop-zone');"
+        "if(dropZones.length===0) return JSON.stringify({found:false,reason:'no_drop_zones'});"
+        # Check for text cue
         "var text=(document.body.innerText||'').toLowerCase();"
-        r"var match=text.match(/zahl\s*(\d+)|number\s*(\d+)/);"
-        "if(!match) return JSON.stringify({found:false});"
-        "return JSON.stringify({found:true,target:match[1]||match[2]});"
+        "var hasDragCue=/bitte.*legen|drag.*number|drag.*and.*drop|ziehen.*sie/i.test(text);"
+        # Extract target number
+        r"var match=text.match(/zahl\s*(\d+)|number\s*(\d+)/i);"
+        "var target=match?(match[1]||match[2]):null;"
+        # Found if we have elements AND (text cue OR target number)
+        "var found=hasElements&&(hasDragCue||target);"
+        "return JSON.stringify({"
+        "found:found,"
+        "target:target,"
+        "cdkDragCount:cdkDrags.length,"
+        "draggableCount:draggables.length,"
+        "dropZoneCount:dropZones.length,"
+        "hasDragCue:hasDragCue"
+        "});"
         "})()"
     )
     resp = cdp.call_result("Runtime.evaluate", {"expression": expr})
