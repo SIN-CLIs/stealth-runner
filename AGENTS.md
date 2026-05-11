@@ -3341,3 +3341,42 @@ der Agent den Token nicht annehmen sondern auf §15.5 + Issue
 
 Letzte Aktualisierung: 2026-05-11 08:00 UTC (SR-66/67/68: Brain Hygiene + Drag-Drop-Solver, 2026-05-11)
 
+
+### §15.6 — Org-weite Secret Scanning + Push Protection (SR-69)
+
+**Pflicht-Konfiguration für SIN-CLIs Org:**
+
+| Setting | Location | Status |
+|---|---|---|
+| Secret scanning | Org Settings → Code security | PFLICHT ON |
+| Push protection | Org Settings → Code security | PFLICHT ON |
+| Dependabot alerts | Org Settings → Code security | EMPFOHLEN ON |
+| Dependabot security updates | Org Settings → Code security | EMPFOHLEN ON |
+
+**Warum Push Protection?**
+Push Protection verhindert den Push BEVOR ein Secret auf GitHub landet.
+Secret Scanning allein detektiert nur NACH dem Tatbestand. Bei einem
+echten Leak-Fall ist der Token bereits in der Git-History und muss
+rotiert werden — Push Protection verhindert diesen Zustand.
+
+**Test-Verifikation (einmalig bei Aktivierung):**
+1. Erstelle einen Test-Branch
+2. Versuche einen Test-Token (z.B. `ghp_test123...`) zu committen
+3. Push MUSS blockiert werden mit "Push blocked by push protection"
+4. Branch löschen, Test-Token nicht verwenden
+
+**Agenten-Pflicht:**
+Wenn ein Agent Code generiert, der Secrets enthält (API-Keys, Tokens,
+Passwörter), MUSS der Agent:
+1. Das Secret durch eine Environment-Variable ersetzen (`process.env.X`)
+2. Den User auf §15.6 hinweisen (kein Secret im Code)
+3. Einen `.env.example` erstellen (mit Platzhaltern, nicht echten Secrets)
+
+**Operator-Pflicht (SR-69 Akzeptanzkriterien):**
+- [ ] Org Settings → Code security aktivieren (Secret scanning + Push protection)
+- [ ] Test-Push mit Dummy-Token verifizieren
+- [ ] Issue #68 schließen nach Verifikation
+
+---
+
+Letzte Aktualisierung: 2026-05-11 09:00 UTC (SR-69/71/74-77: SEC + FastAPI Endpoints)
