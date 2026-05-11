@@ -438,6 +438,22 @@ class SurveyState:
     Wird vor nächster Iteration auf False resetet.
     Dient als Hint für decide_node (Page-Refresh erwartet)."""
 
+    # ══════════════════════════════════════════════════════════════════════════
+    # DRAG-DROP DETECTION (2026-05-11)
+    # ══════════════════════════════════════════════════════════════════════════
+    
+    drag_drop_detected: bool = False
+    """Flag ob ein Drag-Drop Puzzle auf der aktuellen Seite erkannt wurde.
+    Wird von snapshot_node gesetzt wenn:
+      - Angular CDK .cdk-drag/.cdk-drop-list Elemente existieren UND
+      - Text-Cue wie 'Bitte legen Sie die Zahl X' gefunden wurde
+    Triggert sofortige captcha_node Aktivierung (ohne 2x no_dom_change wait)."""
+
+    drag_drop_target: Optional[str] = None
+    """Die Ziel-Zahl für das Drag-Drop Puzzle (z.B. '52', '20').
+    Wird aus dem Page-Text extrahiert via Regex.
+    Wird an den Angular-Drag-Drop-Solver übergeben."""
+
 
     # ── Property Helpers ─────────────────────────────────────────────────────
 

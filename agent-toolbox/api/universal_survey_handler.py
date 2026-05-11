@@ -882,3 +882,133 @@ __all__ = [
     "generate_back_to_dashboard_js",
     "router",
 ]
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# DRAG-DROP QUESTION TYPES (NEW 2026-05-11)
+# ═══════════════════════════════════════════════════════════════════════════════
+# Issue: Agent versagt bei Angular CDK Drag-Drop Puzzles weil die Taxonomie fehlt.
+# Lösung: Erweitere QuestionType und detect_question_type() um Drag-Drop.
+
+
+# Extended QuestionType (add to existing class if needed)
+class QuestionTypeExtended(QuestionType):
+    """Extended QuestionType with Drag-Drop support."""
+    DRAG_DROP_NUMBER = "drag_drop_number"  # PureSpectrum "Zahl X"
+    DRAG_DROP_IMAGE = "drag_drop_image"    # Bild-basiertes Drag-Drop
+    SLIDER = "slider"                       # Slider-Eingabe (1-100)
+    RANKING_DRAG = "ranking_drag"          # Ranking via Drag (nicht Select)
+
+
+def detect_drag_drop_puzzle(page_info: Dict[str, Any]) -> str | None:
+    """
+    Erkennt Drag-Drop Puzzles BEVOR der normale Fragentyp-Detection läuft.
+    
+    Patterns:
+      1. Angular CDK: .cdk-drop-list, .cdk-drag mit img[alt=NUMBER]
+      2. Generic HTML5: [draggable=true], .droppable
+      3. Text-Cue: "Bitte legen Sie", "Drag the", "Ziehen Sie"
+    
+    Returns:
+      QuestionType string oder None wenn kein Drag-Drop
+    """
+    body = page_info.get("body", "").lower()
+    counts = page_info.get("element_counts", {})
+    
+    # Text-Cues für Drag-Drop
+    drag_cues = [
+        "bitte legen sie",
+        "legen sie die zahl",
+        "drag the number",
+        "drag and drop",
+        "ziehen sie",
+        "ordnen sie durch ziehen",
+    ]
+    
+    has_drag_cue = any(cue in body for cue in drag_cues)
+    
+    # Angular CDK Signatur (via element_counts erweitern)
+    cdk_drag_count = counts.get("cdk_drags", 0)
+    cdk_drop_count = counts.get("cdk_drops", 0)
+    
+    # Generisches draggable
+    draggable_count = counts.get("draggables", 0)
+    
+    # Pattern 1: Angular CDK mit "Zahl X" Text
+    if (cdk_drag_count > 0 or cdk_drop_count > 0) and has_drag_cue:
+        return QuestionTypeExtended.DRAG_DROP_NUMBER
+    
+    # Pattern 2: Generisches draggable mit Drag-Cue
+    if draggable_count > 0 and has_drag_cue:
+        return QuestionTypeExtended.DRAG_DROP_IMAGE
+    
+    # Pattern 3: Nur Text-Cue (könnte Drag sein)
+    if has_drag_cue:
+        return QuestionTypeExtended.DRAG_DROP_NUMBER
+    
+    return None
+
+
+def generate_drag_drop_detection_js() -> str:
+    """JS-Code um Drag-Drop Elemente zu zählen (für element_counts)."""
+    return """
+    (function(){
+        var cdkDrags = document.querySelectorAll('.cdk-drag');
+        var cdkDrops = document.querySelectorAll('.cdk-drop-list, .drop-zone');
+        var draggables = document.querySelectorAll('[draggable=true]');
+        var droppables = document.querySelectorAll('.droppable, [ondrop], [data-droppable]');
+        
+        return JSON.stringify({
+            cdk_drags: cdkDrags.length,
+            cdk_drops: cdkDrops.length,
+            draggables: draggables.length,
+            droppables: droppables.length
+        });
+    })()
+    """
+
+
+def generate_drag_drop_number_js(target_number: str = None) -> str:
+    """
+    JS-Code der Drag-Drop Puzzle löst.
+    
+    ACHTUNG: Synthetic Events werden von Angular CDK blockiert!
+    Dieser Code ist nur für DOM-basierte (nicht Angular) Puzzles.
+    Für Angular CDK: Nutze /captcha/angular-drag-drop Endpoint.
+    
+    Args:
+        target_number: Die Ziel-Zahl (z.B. "52")
+    """
+    return f"""
+    (function(){{
+        // 1. Extrahiere Ziel-Zahl aus Text
+        var targetNum = "{target_number or ''}";
+        if (!targetNum) {{
+            var bodyText = document.body.innerText;
+            var match = bodyText.match(/Zahl\\s*(\\d+)|number\\s*(\\d+)/i);
+            if (match) targetNum = match[1] || match[2];
+        }}
+        if (!targetNum) return 'DRAG_DROP_NO_TARGET_NUMBER';
+        
+        // 2. Finde Source (img mit alt=targetNum in .cdk-drag)
+        var sourceImg = document.querySelector('img[alt="' + targetNum + '"]');
+        if (!sourceImg) return 'DRAG_DROP_SOURCE_NOT_FOUND:' + targetNum;
+        
+        var sourceEl = sourceImg.closest('.cdk-drag') || sourceImg.parentElement;
+        
+        // 3. Finde Drop-Zone
+        var dropZones = document.querySelectorAll('.cdk-drop-list');
+        var dropZone = dropZones.length > 1 ? dropZones[1] : document.querySelector('.drop-zone');
+        if (!dropZone) return 'DRAG_DROP_ZONE_NOT_FOUND';
+        
+        // 4. HINWEIS: Synthetic Events FUNKTIONIEREN NICHT bei Angular CDK!
+        //    Dies ist nur ein Placeholder — Agent muss /captcha/angular-drag-drop aufrufen.
+        return JSON.stringify({{
+            status: 'needs_playwright',
+            targetNumber: targetNum,
+            sourceFound: !!sourceEl,
+            dropZoneFound: !!dropZone,
+            message: 'Angular CDK requires real pointer events via Playwright. Use /captcha/angular-drag-drop endpoint.'
+        }});
+    }})()
+    """

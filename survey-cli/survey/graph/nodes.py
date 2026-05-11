@@ -290,8 +290,58 @@ def snapshot_node(state: SurveyState) -> SurveyState:
         for i, el in enumerate(elements)
     }
     state.status = "running"
+    # ══════════════════════════════════════════════════════════════════════════
+    # DRAG-DROP DETECTION (2026-05-11) — Angular CDK + Generic HTML5
+    # ══════════════════════════════════════════════════════════════════════════
+    # Problem: Angular CDK drag-drop wird NICHT von cdp_universal erkannt weil
+    # .cdk-drag keine native ARIA-Role hat. Der Agent versucht normale Klicks,
+    # scheitert 2x, und DANN erst wird captcha_node aktiviert — zu spät!
+    #
+    # Lösung: Hier explizit nach Drag-Drop DOM-Signaturen suchen und in
+    # state.drag_drop_detected speichern. captcha_node prüft dieses Flag.
+    # ══════════════════════════════════════════════════════════════════════════
+    try:
+        drag_check_js = '''
+        (function(){
+            var cdkDrags = document.querySelectorAll('.cdk-drag');
+            var cdkDrops = document.querySelectorAll('.cdk-drop-list, .drop-zone');
+            var draggables = document.querySelectorAll('[draggable=true]');
+            var bodyText = (document.body.innerText || '').toLowerCase();
+            
+            // Text-Cues für "Zahl X" Puzzle
+            var hasZahlCue = /bitte legen sie die zahl|legen sie.*zahl|drag.*number/i.test(bodyText);
+            
+            // Extrahiere Ziel-Nummer wenn vorhanden
+            var numMatch = bodyText.match(/zahl\s*(\d+)|number\s*(\d+)/i);
+            var targetNumber = numMatch ? (numMatch[1] || numMatch[2]) : null;
+            
+            return JSON.stringify({
+                cdk_drag_count: cdkDrags.length,
+                cdk_drop_count: cdkDrops.length,
+                draggable_count: draggables.length,
+                has_zahl_cue: hasZahlCue,
+                target_number: targetNumber,
+                is_drag_drop_puzzle: (cdkDrags.length > 0 || draggables.length > 0) && hasZahlCue
+            });
+        })()
+        '''
+        drag_resp = cdp.call_result("Runtime.evaluate", {"expression": drag_check_js})
+        drag_raw = drag_resp.get("result", {}).get("value", "{}")
+        import json as _json
+        drag_info = _json.loads(drag_raw)
+        
+        state.drag_drop_detected = drag_info.get("is_drag_drop_puzzle", False)
+        state.drag_drop_target = drag_info.get("target_number")
+        
+        if state.drag_drop_detected:
+            print(f"[scan] DRAG-DROP PUZZLE DETECTED: target={state.drag_drop_target}, "
+                  f"cdk_drags={drag_info.get('cdk_drag_count')}")
+    except Exception as e:
+        state.drag_drop_detected = False
+        state.drag_drop_target = None
+
     print(f"[scan] {len(elements)} elements, {result.frame_count} frames, "
-          f"{len(result.captcha_frames)} captcha-iframes")
+          f"{len(result.captcha_frames)} captcha-iframes, drag_drop={state.drag_drop_detected}")
     return state
 
 
@@ -312,9 +362,27 @@ def captcha_node(state: SurveyState) -> SurveyState:
     Pflicht-Kontext: survey-cli/survey/captcha_router.py.
     NIEMALS Captcha-Sniffing in andere Nodes einbauen.
     """
-    if not state.captcha_frames and state.no_dom_change_count < 2:
+    # ══════════════════════════════════════════════════════════════════════════
+    # TRIGGER-BEDINGUNG (2026-05-11 FIX):
+    # ALT: Nur wenn captcha_frames existiert ODER no_dom_change_count >= 2
+    #      → Agent klickt 2x vergeblich bevor Captcha-Check startet = ZU SPÄT!
+    # NEU: AUCH wenn drag_drop_detected == True (von snapshot_node erkannt)
+    #      → Sofortige Captcha-Prüfung wenn Drag-Drop-Puzzle erkannt wurde
+    # ══════════════════════════════════════════════════════════════════════════
+    has_captcha_hint = bool(state.captcha_frames)
+    has_drag_drop = getattr(state, "drag_drop_detected", False)
+    stuck_threshold_reached = state.no_dom_change_count >= 2
+    
+    if not has_captcha_hint and not has_drag_drop and not stuck_threshold_reached:
         state.captcha_solved_this_iteration = False
         return state
+    
+    # Log warum wir hier sind
+    reason = []
+    if has_captcha_hint: reason.append("captcha_frames")
+    if has_drag_drop: reason.append(f"drag_drop(target={getattr(state, 'drag_drop_target', '?')})")
+    if stuck_threshold_reached: reason.append(f"no_dom_change={state.no_dom_change_count}")
+    print(f"[captcha] triggered: {', '.join(reason)}")
 
     if not state.tab_ws:
         state.add_error("captcha_node", "tab_ws not set")
