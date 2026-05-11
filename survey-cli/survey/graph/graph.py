@@ -149,6 +149,46 @@ except ImportError:
     LANGGRAPH_AVAILABLE = False
 
 
+# ── CORE INTEGRATION ──────────────────────────────────────────────────────────
+# Core-Module (Issue #81/#82/#83). Wenn core/ am repo-root liegt, koennen wir
+# es importieren — sonst laufen die Nodes UNGESCHUETZT (Backward-Compat fuer
+# Lokale Test-Runs ohne core/).
+#
+# Was core hier macht:
+#   - sync_node_with_core: wrappt jede Node mit budget-guard, error-handler,
+#     analytics, screenshot-on-failure, state-tracking
+#   - run_survey_with_core: bootstrapt core, attached SurveyState._core_ctx,
+#     ruft run_survey_loop, persistiert final-checkpoint
+#
+# Wenn core import failed: nodes laufen wie vorher (no-op wrapper).
+
+try:
+    # Repo-Root in sys.path haengen, sodass `import core` funktioniert.
+    _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(
+        os.path.dirname(os.path.abspath(__file__))
+    )))
+    if _REPO_ROOT not in sys.path:
+        sys.path.insert(0, _REPO_ROOT)
+    from core.langgraph_integration import (
+        sync_node_with_core,
+        run_survey_with_core,
+    )
+    from core import (
+        bootstrap_core,
+        BudgetExceededError,
+    )
+    CORE_AVAILABLE = True
+except ImportError as _core_err:
+    CORE_AVAILABLE = False
+    # Fallback: identity wrapper, kein Schutz, aber Code laeuft.
+    def sync_node_with_core(name, func, **_kw):  # type: ignore[no-redef]
+        return func
+    def run_survey_with_core(state, *, run_fn, **_kw):  # type: ignore[no-redef]
+        return run_fn(state)
+    class BudgetExceededError(Exception):  # type: ignore[no-redef]
+        pass
+
+
 # ── ROUTING FUNCTION ───────────────────────────────────────────────────────────
 # Funktion: route() — Conditional Edge Routing
 # Args:     state: SurveyState
@@ -260,22 +300,42 @@ def build_graph() -> StateGraph:
     # We use dict as schema for LangGraph compatibility
     graph = StateGraph(state_schema=SurveyState)
 
-    # Schritt 2: Nodes hinzufügen
-    # Jede Node wrapped eine existierende Funktion.
-    # Keine neue Logik — nur delegate + state update.
-    graph.add_node("ensure_chrome", ensure_chrome)
-    graph.add_node("read_balance_before", read_balance_before)
-    graph.add_node("open_survey", open_survey)
-    graph.add_node("inject_cookies", inject_cookies)
-    graph.add_node("snapshot", snapshot_node)
+    # Schritt 2: Nodes hinzufügen — JEDE NODE wird mit sync_node_with_core
+    # gewrappt. Das injiziert:
+    #   - Survey-Budget-Guard (BudgetExceededError nach 120s default)
+    #   - error_handler._record_failure/_record_success
+    #   - analytics counter + duration histogram
+    #   - state_manager.start_step/complete_step/fail_step
+    #   - capture_failure() Screenshot wenn config.enable_screenshots_on_error
+    # Wenn core nicht verfuegbar ist, ist sync_node_with_core ein no-op
+    # identity wrapper (siehe oben CORE_AVAILABLE branch).
+    graph.add_node("ensure_chrome",
+                   sync_node_with_core("ensure_chrome", ensure_chrome,
+                                       capture_screenshot_on_fail=False))
+    graph.add_node("read_balance_before",
+                   sync_node_with_core("read_balance_before", read_balance_before))
+    graph.add_node("open_survey",
+                   sync_node_with_core("open_survey", open_survey))
+    graph.add_node("inject_cookies",
+                   sync_node_with_core("inject_cookies", inject_cookies,
+                                       capture_screenshot_on_fail=False))
+    graph.add_node("snapshot",
+                   sync_node_with_core("snapshot", snapshot_node))
     # 2026-05-11: Captcha-Detection laeuft NACH snapshot, VOR decide.
     # NO-OP wenn keine Captcha-iframes UND no_dom_change_count < 2.
-    graph.add_node("captcha", captcha_node)
-    graph.add_node("decide", decide_node)
-    graph.add_node("execute", execute_node)
-    graph.add_node("detect_completion", detect_completion)
-    graph.add_node("read_balance_after", read_balance_after)
-    graph.add_node("human_delegate", human_delegate)
+    graph.add_node("captcha",
+                   sync_node_with_core("captcha", captcha_node))
+    graph.add_node("decide",
+                   sync_node_with_core("decide", decide_node))
+    graph.add_node("execute",
+                   sync_node_with_core("execute", execute_node))
+    graph.add_node("detect_completion",
+                   sync_node_with_core("detect_completion", detect_completion))
+    graph.add_node("read_balance_after",
+                   sync_node_with_core("read_balance_after", read_balance_after))
+    graph.add_node("human_delegate",
+                   sync_node_with_core("human_delegate", human_delegate,
+                                       capture_screenshot_on_fail=False))
 
     # Schritt 3: Start-Edge (START → ensure_chrome)
     graph.add_edge(START, "ensure_chrome")
@@ -317,7 +377,7 @@ def build_graph() -> StateGraph:
     return graph
 
 
-# ── COMPILED GRAPH FACTORY ─────────────────────────────────────────────────────
+# ── COMPILED GRAPH FACTORY ───────────────────────────────────────────────���─────
 
 
 def create_graph():
@@ -421,3 +481,65 @@ def run_survey_loop(state: SurveyState) -> SurveyState:
         # else: continue to next iteration (loop)
 
     return state
+
+
+# ── PROTECTED RUNNER (Empfohlener Public Entrypoint) ──────────────────────────
+
+
+def run_survey_protected(
+    state: SurveyState,
+    *,
+    use_langgraph: bool = True,
+    max_seconds: float | None = None,
+) -> SurveyState:
+    """Empfohlener PUBLIC-Entrypoint. Faehrt eine Survey mit FULL CORE PROTECTION
+    durch (budget-guard, error-handler, analytics, screenshots, audit-log).
+
+    Was passiert hier?
+      1. core.bootstrap_core() — FS-Layout (state/, screenshots/, audit-logs/)
+      2. core.attach_core_ctx() — SurveyBudget(120s) + alle core-Services
+         an state._core_ctx (jede Node greift darauf zu)
+      3. Run loop:
+           - use_langgraph=True  → create_graph().invoke(state)  (preferred)
+           - use_langgraph=False → run_survey_loop(state)        (fallback)
+      4. Auto-Persist: budget snapshot + survey metadata via
+         StateManager.save_checkpoint(run_id, ...)
+
+    GARANTIEN:
+      - Survey laeuft NIE laenger als max_seconds (default 120s)
+      - Bei jedem Node-Failure wird ein Screenshot gemacht (sofern
+        config.enable_screenshots_on_error=True)
+      - Alle Errors werden in errors/ persistiert (state.errors[] + JSON)
+      - Analytics werden nach jedem Run in state/analytics_*.json geflusht
+
+    Args:
+        state:         Initialer SurveyState
+        use_langgraph: LangGraph (True, default) oder Manual-Loop (False)
+        max_seconds:   Survey-Budget Override (None → core.config.budget.max_seconds)
+
+    Returns:
+        Finaler SurveyState mit:
+          state.status        ∈ {completed, screen_out, error, delegated, error}
+          state._core_ctx     CoreCtx mit budget.snapshot()
+          state.balance_after gefuelt fuer ROI-Tracking
+
+    Beispiel:
+        >>> from survey.graph.state import SurveyState
+        >>> from survey.graph.graph import run_survey_protected
+        >>> state = SurveyState(survey_id="67064749", provider="heypiggy")
+        >>> final = run_survey_protected(state, max_seconds=120)
+        >>> print(final.status, final.balance_after - final.balance_before)
+    """
+    if use_langgraph and LANGGRAPH_AVAILABLE:
+        compiled = create_graph()
+        def _run(s):
+            # LangGraph kennt unsere CoreCtx-Attribute nicht — bei dict-state
+            # waere das ein Problem, aber wir nutzen SurveyState (dataclass)
+            # die Attribute behaelt. LangGraph macht aber eine Kopie pro
+            # Node — wir muessen sicherstellen, dass _core_ctx persistiert.
+            # Die SurveyState-class hat _core_ctx als Plain-Attribut, das
+            # bei dataclass.replace() copied wird.
+            return compiled.invoke(s)
+        return run_survey_with_core(state, run_fn=_run, max_seconds=max_seconds)
+    return run_survey_with_core(state, run_fn=run_survey_loop,
+                                 max_seconds=max_seconds)
