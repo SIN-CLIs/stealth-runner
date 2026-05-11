@@ -3187,6 +3187,48 @@ Pflicht-Workflow fuer kuenftige Bumps:
 4. Diese Tabelle ergaenzen, Commit mit `docs(agents): §13.8.4 ...`.
 5. Issue schliessen mit `umgesetzt in PR #N` (§13.8.3).
 
+### §13.8.5 — FastAPI Endpoints (Kanonische Übersicht, SR-67 2026-05-11)
+
+**Konsolidiert aus §11.7 (LEGACY) — diese Sektion ist die EINZIGE gültige Referenz für alle FastAPI Endpoints. §11.7 wird als historisches Checkpoint beibehalten, darf aber nicht mehr als Roadmap gelesen werden.**
+
+#### EXISTING & MIGRATED (17 Endpoints — STABLE)
+
+| Endpoint | Tool | Issue | Status | Notes |
+|---|---|---|---|---|
+| POST /survey/open | tool_open_survey.py | - | ✅ | Cookie + Subid injection fix (2026-05-11) |
+| POST /survey/fill | tool_fill_survey.py | - | ✅ | 2x wrapper |
+| POST /survey/snapshot | tool_snapshot.py | - | ✅ | EXTRACTOR_JS universal (Shadow DOM, iframes, Angular CDK) |
+| POST /survey/completion | tool_detect_completion.py | - | ✅ | Keyword + balance diff detection |
+| POST /survey/rate | tool_rate_survey.py | - | ✅ | HeyPiggy rating page handler |
+| POST /survey/purespectrum-preflight | tool_purespectrum_preflight.py | - | ✅ | PureSpectrum pre-flight validation |
+| POST /survey/run-graph | tool_run_graph.py | - | ✅ | LangGraph invoke wrapper |
+| POST /survey/universal | tool_universal.py | - | ✅ | Generic survey handler (NEMO loop) |
+| POST /survey/click | tool_click.py | SR-52 (#52) | ✅ | CDP click dispatcher (SR-52 closed) |
+| POST /survey/find | tool_find_element.py | SR-52 (#52) | ✅ | Element finder (SR-52 closed) |
+| POST /survey/verify | tool_verify_state.py | SR-52 (#52) | ✅ | State verifier (SR-52 closed) |
+| POST /survey/click-angular | tool_click_angular.py | SR-52 (#52) | ✅ | Angular CDK click handler (SR-52 closed) |
+| POST /survey/fill-input | tool_fill_input.py | SR-52 (#52) | ✅ | Input field filler (SR-52 closed) |
+| POST /survey/find-tab | tool_find_new_tab.py | SR-52 (#52) | ✅ | Tab finder (SR-52 closed) |
+| POST /survey/close-modals | - | SR-52 (#52) | ✅ | Modal closer (SR-52 closed) |
+| POST /chrome/kill | chrome.py:kill_bot() | - | ✅ | Chrome process killer |
+| POST /chrome/pids | chrome.py:find_bot_pids() | - | ✅ | Chrome PID lister |
+
+#### OPEN — ISSUES MAPPED (5 Endpoints — HIGH PRIORITY P2)
+
+| Endpoint | Purpose | Issue | PR | Status |
+|---|---|---|---|---|
+| POST /captcha/slide | Slide Captcha Solver | #74 SR-74 | - | OPEN — Maps stealth-captcha/solver/slide.py |
+| POST /captcha/text | Text Captcha Solver (OCR) | #75 SR-75 | - | OPEN — Maps stealth-captcha/solver/text.py |
+| POST /survey/solve-drag-puzzle | Angular CDK Drag-Drop | #67 SR-68 | - | OPEN — P1 Provider bug (PureSpectrum) |
+| POST /survey/dashboard-scan | Dashboard Scanner | #76 SR-76 | - | OPEN — Maps scanner.py (provider detection) |
+| POST /survey/universal-answer | Universal Answer Loop | #77 SR-77 | - | OPEN — Generic survey answer engine |
+
+**Konsolidierungsregel (SR-66 #65 + SR-67 #66 SOLUTION):**
+- Jeder neue Endpoint MUSS eine GitHub Issue haben (Issue ZUERST, dann Code).
+- Issue und §13.8.5 müssen synchron bleiben. Wenn die Tabelle veraltet ist → sofort aktualisieren.
+- Keine Endpoints in §11.7 oder anderen .md-Dateien dokumentieren — nur hier im Agenten-Brain.
+- Issue-Closing per §13.8.3: PRs MÜSSEN ein Closing-Kommentar mit Files-Changed und Test-Befehl haben.
+
 ---
 
 ## §15 — CREDENTIALS & SECRETS (Brain-Regel, kanonisch, SR-70 2026-05-11)
@@ -3296,5 +3338,5 @@ der Agent den Token nicht annehmen sondern auf §15.5 + Issue
 
 ---
 
-**Letzte Aktualisierung: 2026-05-11 nachts post-SEC (SR-50..SR-61 implementiert; PR #54 gemerged `8aac7d0`; PR #70 in `main` gemerged `4f4c2ff` mit 9 Auto-Closes #48-#53/#63/#64/#69; SR-64 DONE per `git rm --cached stealth-sync` + §11.9; SR-65 DONE per actions/checkout@v5 + setup-python@v6 + §13.8.4 Audit-Trail; SR-70 DONE per neuer §15; **SEC-1 (#71)** Audit-Trail rekonstruiert (Free-Org -> keine native Audit-Log-API), KEINE Anomalie, Rotation erfolgt durch User; **SR-71 (#72)** Fine-Grained PAT als Folge-Issue + §15.2/§15.5-Verschaerfung "Classic PAT = Pflicht-Refusal fuer Agenten"; offen: P1-Brain #65/#66, P1-Provider #67, SEC #72/#68/#12, P2 FCTC-ES #55/#56/#57/#58, LangGraph-Bucket #33-#43, Tooling-Infra #73 (Pre-Commit `check_submodules.py` aus §11.9), Tooling-GitNexus #18/#19/#20/#29/#30/#31, Debt #61/#62 — alle Bucket-Items haben jetzt Issues, Backlog-Vollstaendigkeit erreicht) | Lines: ~2230 + §11.9 Submodule-Vertrag + §12 (incl §12.10 FCTC-ES Phase 1) + §13 (incl §13.8 / §13.8.1 + §13.8.1b Bucket-Uebersicht + Sprint-Reihenfolge / §13.8.2-4 / SR-60 Trade-Off / SR-61-63 Invariante) + §15 Credentials & Secrets (5 Unterabschnitte) | Plan: plans/01-survey-agent-langgraph-fastapi.md**
+**Letzte Aktualisierung: 2026-05-11 nachts + SR-66/SR-67 consolidation (SR-50..SR-61 implementiert; PR #54 gemerged `8aac7d0`; PR #70 in `main` gemerged `4f4c2ff` mit 9 Auto-Closes #48-#53/#63/#64/#69; SR-64 DONE per `git rm --cached stealth-sync` + §11.9; SR-65 DONE per actions/checkout@v5 + setup-python@v6 + §13.8.4 Audit-Trail; SR-70 DONE per neuer §15; **SEC-1 (#71)** Audit-Trail rekonstruiert (Free-Org -> keine native Audit-Log-API), KEINE Anomalie, Rotation erfolgt durch User; **SR-71 (#72)** Fine-Grained PAT als Folge-Issue + §15.2/§15.5-Verschaerfung "Classic PAT = Pflicht-Refusal fuer Agenten"; offen: P1-Brain #65/#66, P1-Provider #67, SEC #72/#68/#12, P2 FCTC-ES #55/#56/#57/#58, LangGraph-Bucket #33-#43, Tooling-Infra #73 (Pre-Commit `check_submodules.py` aus §11.9), Tooling-GitNexus #18/#19/#20/#29/#30/#31, Debt #61/#62 — alle Bucket-Items haben jetzt Issues, Backlog-Vollstaendigkeit erreicht) | Lines: ~2230 + §11.9 Submodule-Vertrag + §12 (incl §12.10 FCTC-ES Phase 1) + §13 (incl §13.8 / §13.8.1 + §13.8.1b Bucket-Uebersicht + Sprint-Reihenfolge / §13.8.2-4 / SR-60 Trade-Off / SR-61-63 Invariante) + §15 Credentials & Secrets (5 Unterabschnitte) | Plan: plans/01-survey-agent-langgraph-fastapi.md**
 
