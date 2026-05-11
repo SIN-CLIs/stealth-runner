@@ -3083,7 +3083,7 @@ LangGraph-Bucket starten.**
 | [#29](https://github.com/SIN-CLIs/stealth-runner/issues/29) | GitNexus universal code intelligence | OPEN |
 | [#30](https://github.com/SIN-CLIs/stealth-runner/issues/30) | GitNexus periodisches Reindex per Cron/CI (haengt an #64) | OPEN |
 | [#31](https://github.com/SIN-CLIs/stealth-runner/issues/31) | GitNexus Impact Gate vor Commits (haengt an #30) | OPEN |
-| [#73](https://github.com/SIN-CLIs/stealth-runner/issues/73) | SR-73: Pre-Commit-Hook `scripts/check_submodules.py` (aus §11.9 Submodule-Vertrag) | OPEN |
+| [#73](https://github.com/SIN-CLIs/stealth-runner/issues/73) | SR-73: Pre-Commit-Hook `scripts/check_submodules.py` (aus §11.9 Submodule-Vertrag) | DONE (Commit 2ae5f36, 2026-05-11) |
 
 #### Sprint-Reihenfolge (Stand 2026-05-11 nachts — DONE-Eintraege rausgestrichen, OPEN-Reihenfolge bleibt)
 
@@ -3101,6 +3101,7 @@ Offene Reihenfolge (Stand jetzt):
 4. ~~P1 Brain: #65 (SR-66) Backlog-Konsolidierung~~ -> DONE 2026-05-11
 5. ~~P1 Brain: #66 (SR-67) §11.7 FastAPI-Endpoints zu Issues verlinken~~ -> DONE 2026-05-11
 6. ~~P1 Provider: #67 (SR-68) Drag-Drop-Puzzle-Solver fuer PureSpectrum~~ -> DONE 2026-05-11
+7. ~~Tooling: #73 (SR-73) Pre-Commit-Hook check_submodules.py~~ -> DONE 2026-05-11
 7. P2 FCTC-ES Phase 2-Bucket (Reihenfolge: #55 -> #58 -> #56 -> #57)
 8. Erst danach LangGraph-Bucket (#33-#43)
 9. Tooling Infra: **#73 (SR-73)** Pre-Commit-Hook `check_submodules.py` (vor naechstem CI-Bump, damit Submodule-Vertrag aus §11.9 maschinell enforced wird)
