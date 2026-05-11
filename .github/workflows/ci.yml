@@ -50,6 +50,13 @@ jobs:
       - name: Run banned patterns check
         run: python scripts/check_banned_patterns.py
 
+      # Regression-Gate fuer SR-60: prueft, dass `check_banned_patterns.py`
+      # weder Doku-Docstrings noch eigene Selbst-Referenzen als Treffer
+      # meldet. Wenn dieser Step rot wird, ist die Tokenize-basierte
+      # Mask-Logik kaputt (siehe AGENTS.md §13.8.1 SR-60).
+      - name: Run banned-patterns self-tests (SR-60)
+        run: python -m unittest scripts.tests.test_check_banned_patterns -v
+
       - name: Run ruff check
         run: ruff check survey-cli/survey --select E,W,F
 

@@ -2934,7 +2934,25 @@ SR-56 (Eval-Gate) → SR-59 (miss_labels) → SR-57 (LLM-Suggester) → SR-58 (A
 | [#56](https://github.com/SIN-CLIs/stealth-runner/issues/56) | SR-57: FCTC-ES Phase 2 — LLM-Suggester fuer Matcher-Misses | OPEN | #53, #55 |
 | [#57](https://github.com/SIN-CLIs/stealth-runner/issues/57) | SR-58: `survey learn apply` — manueller Apply-Path mit AST-Roundtrip | OPEN | #53 |
 | [#58](https://github.com/SIN-CLIs/stealth-runner/issues/58) | SR-59: Persistente miss_labels in Matcher-Telemetrie (semantisch getaggt) | OPEN | #52, #53 |
-| [#59](https://github.com/SIN-CLIs/stealth-runner/issues/59) | **SR-60 (P1 blocker)**: `check_banned_patterns.py` — False Positives in Doku-Docstrings | OPEN | blockiert PR #54 |
+| [#59](https://github.com/SIN-CLIs/stealth-runner/issues/59) | **SR-60 (P1 blocker)**: `check_banned_patterns.py` — False Positives in Doku-Docstrings | DONE (`fix/sr-50-55-followups`) | entblockiert PR #54 |
+
+**SR-60 Trade-Off (kanonisch, fuer kuenftige Aenderungen):** Die
+neue `tokenize`-basierte Mask-Logik in
+`scripts/check_banned_patterns.py` blendet ALLE STRING- und
+COMMENT-Tokens aus, bevor die Banned-Pattern-Regexe laufen.
+Konsequenz: Eine BANNED-Zeichenkette, die zur Laufzeit als
+String-Literal aufgebaut und an `subprocess` uebergeben wird
+(z.B. `os.system("pkill -f Google Chrome")`), wird vom
+Pre-Commit-Check NICHT mehr gefangen — sie ist im Wortlaut nur
+noch im Test als bewusste Akzeptanz dokumentiert
+(`scripts/tests/test_check_banned_patterns.py::test_real_pkill_call_IS_flagged`). Dieser Trade-Off ist bewusst:
+die alternative Loesung (String-Inhalts-Scan) wuerde JEDE Doku-
+Erwaehnung wieder rot werden lassen und damit PR #54-Klasse-Bugs
+reproduzieren. Die Lauf-Sicherheit wird stattdessen ueber zwei
+andere Gates abgedeckt: (a) `sinrules.md §2` als Review-Pflicht-
+Lektuere, (b) der zukuenftige LLM-Suggester (SR-57, #56) der
+auch Laufzeit-Aufbauten erkennen kann. Wer die Mask-Logik
+abschwaecht, MUSS gleichzeitig SR-57 als Ersatz-Gate liefern.
 
 ### §13.8.2 — CI-Trigger (Brain-Regel, kanonisch)
 
@@ -2979,5 +2997,5 @@ externen Tools — die Roadmap lebt im Agenten-Brain.
 
 ---
 
-**Letzte Aktualisierung: 2026-05-11 (SR-50..SR-55 implementiert; SR-56..SR-59 als P2 angelegt; CI-Trigger gefixt) | Lines: ~2060 + §12 (incl §12.10 FCTC-ES Phase 1) + §13 (incl §13.8 / §13.8.1-3) | Plan: plans/01-survey-agent-langgraph-fastapi.md**
+**Letzte Aktualisierung: 2026-05-11 (SR-50..SR-55 implementiert; SR-56..SR-59 als P2 angelegt; CI-Trigger gefixt; SR-60 implementiert + dokumentiert) | Lines: ~2080 + §12 (incl §12.10 FCTC-ES Phase 1) + §13 (incl §13.8 / §13.8.1-3 / SR-60 Trade-Off) | Plan: plans/01-survey-agent-langgraph-fastapi.md**
 
