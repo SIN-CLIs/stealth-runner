@@ -2208,7 +2208,16 @@ BOT KILL: pkill -f "remote-debugging-port=9999" -> NUR HeyPiggy Bot
 
 ---
 
-### §11.7 — IMPLEMENTATION BACKLOG (TODO — 2026-05-10 UPDATE)
+### §11.7 — IMPLEMENTATION BACKLOG (SNAPSHOT 2026-05-10 — VERALTET)
+
+**⚠️ HISTORISCHER SNAPSHOT — Die kanonische Roadmap ist jetzt in §13.8.1 (Stand 2026-05-11 abends).**
+
+Diese Sektion dokumentiert die Planung vor der SR-Followup-Sitzung. Alle Backlog-Einträge wurden in folgende Issues überführt (verlinkt in §13.8.1):
+- FastAPI Endpoints → #33–#43 (LangGraph-Bucket)
+- FCTC-ES Phase 2 → #55–#58 (FCTC-ES-Bucket)
+- Infra + Security → #65–#68, #71–#73
+
+Für die aktuelle Roadmap siehe §13.8.1 "Bucket-Übersicht (kanonisch, Stand 2026-05-11 abends)".
 
 ```
 MASTER PLAN: plans/01-survey-agent-langgraph-fastapi.md
@@ -2347,12 +2356,20 @@ Every working /commands/ solution → survey-cli/tools/tool_*.py → FastAPI End
 | captcha/solve-drag.md | drag_drop_angular.py | POST /survey/solve-drag-puzzle | ❌ MISSING |
 | heypiggy/rating-page.md | tool_rate_survey.py | POST /survey/rate | ✅ existiert |
 
-**TODO — FastAPI Endpoints die noch fehlen (2026-05-11):**
-1. POST /captcha/slide — Slide Captcha Solver (stealth-captcha/solver/slide.py)
-2. POST /captcha/text — Text Captcha Solver (stealth-captcha/solver/text.py)
-3. POST /survey/solve-drag-puzzle — Angular CDK Drag-Drop Solver
-4. POST /survey/dashboard-scan — Dashboard scanner endpoint (nutzt scanner.py)
-5. POST /survey/universal-answer — Universal survey answer (NEMO loop per page)
+**VERALTET — FastAPI Endpoints (siehe §13.8.1 LangGraph-Bucket #33–#43 + SR-68 #67):**
+1. POST /captcha/slide → [#36 SR-42](https://github.com/SIN-CLIs/stealth-runner/issues/36)
+2. POST /captcha/text → [#36 SR-42](https://github.com/SIN-CLIs/stealth-runner/issues/36)
+3. POST /survey/solve-drag-puzzle → [#36 SR-42](https://github.com/SIN-CLIs/stealth-runner/issues/36) + [#67 SR-68](https://github.com/SIN-CLIs/stealth-runner/issues/67)
+4. POST /survey/dashboard-scan → [#36 SR-42](https://github.com/SIN-CLIs/stealth-runner/issues/36)
+5. POST /survey/universal-answer → [#36 SR-42](https://github.com/SIN-CLIs/stealth-runner/issues/36)
+
+
+**SR-67 MAPPING: §11.7 Tools → GitHub Issues (LangGraph-Bucket #33–#43, FastAPI-Bucket #36–#41):**
+- PHASE 1 (FastAPI + LangGraph Integration) → #33–#43 (SR-39 bis SR-49, siehe §13.8.1)
+- PHASE 2 (Captcha + Drag-Drop) → #67 (SR-68, Drag-Drop-Puzzle)
+- PHASE 3 (Command Registry) → #35 (SR-41), #36 (SR-42)
+- PHASE 4 (Provider Detection) → #36 (SR-42) + #41 (SR-47)
+- PHASE 5 (Commands als FastAPI Endpoints) → #36–#41 (SR-42 bis SR-47)
 
 GITHub ISSUES (#44-47) — ALLE GESCLOSSEN ✅:
 - [SR-50](https://github.com/SIN-CLIs/stealth-runner/issues/50): update_command_registry() wiring — ✅ CLOSED
