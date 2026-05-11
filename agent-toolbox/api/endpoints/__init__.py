@@ -10,6 +10,7 @@
 # ║                        /find-tab, /close-modals                               ║
 # ║    survey_captchas.py → /captcha/solve, /solve-drag                          ║
 # ║    survey_scan.py   → /survey/scan                                           ║
+# ║    universal.py     → /v2/scan, /v2/click, /v2/fill, /v2/captcha/*   <NEW> ║
 # ╚═══════════════════════════════════════════════════════════════════════════════╝
 
 from ._common import (
@@ -43,6 +44,8 @@ from .survey_answer import router as survey_answer_router
 from .survey_actions import router as survey_actions_router
 from .survey_captchas import router as survey_captchas_router
 from .survey_scan import router as survey_scan_router
+# v2 kanonische Tools (cdp_universal + cdp_actuator + captcha_router)
+from .universal import router as universal_router
 
 __all__ = [
     "require_survey_ready", "preflight_check", "update_command_registry",
@@ -73,4 +76,5 @@ __all__ = [
     "survey_actions_router",
     "survey_captchas_router",
     "survey_scan_router",
+    "universal_router",
 ]

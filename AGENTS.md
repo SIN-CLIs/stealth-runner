@@ -2,6 +2,182 @@
 content: |
   # AGENTS.md - Stealth-Runner NEXT-GEN (2026-05-06)
 
+  ## 🟢 KANONISCHE ARCHITEKTUR (2026-05-11) — UNIVERSAL CDP SCANNER + ACTUATOR
+
+  > Diese Sektion ist die EINZIGE gültige Beschreibung der Element-Such-,
+  > Klick-, Fill- und Captcha-Pipeline. Alle vorherigen Beschreibungen
+  > (CDP+AX Trinity, CUA-ONLY Trinity, NEMO Compact Snapshot, skylight-cli
+  > snapshot-compact, ELEMENT_EXTRACTOR_JS) sind LEGACY und dürfen nicht
+  > mehr in neuen Code-Pfaden referenziert werden.
+
+  ### Worum es geht
+  Ein Agent darf KEIN Element der Webseite übersehen — egal ob in iframes,
+  Shadow-DOM, Custom-Elements, Web-Components, Angular-CDK-Overlays oder
+  Cross-Origin-Frames. Und er darf KEINEN Klick als Erfolg melden, der im
+  DOM nichts geändert hat. Beides war strukturell unmöglich mit der alten
+  Scan-/Klick-Infrastruktur und ist Ursache aller wiederkehrenden Fehler
+  (Issue #24 Anti-stuck-Loop, Issue #25 zero results, Issue #26 stuck on
+  language page, Issue #27 completion not detected).
+
+  ### Die 4 kanonischen Module
+  ```
+  survey-cli/survey/cdp_universal.py   → Universal Scanner (AX-Tree + DOM pierce + Frames)
+  survey-cli/survey/cdp_actuator.py    → Echter Maus-Klick + Pflicht-Verify
+  survey-cli/survey/captcha_router.py  → Captcha-Detection + Solver-Routing
+  agent-toolbox/api/endpoints/universal.py → FastAPI v2-Endpoints (kanonischer Pfad)
+  ```
+  Jedes Modul hat eine FETTE Inline-Doku am Anfang. Wer diese Docstrings
+  nicht gelesen hat, darf den Code nicht anfassen.
+
+  ### Pipeline-Diagramm (pro Tab pro Tick)
+  ```
+  CDPConnection(ws_url)
+        │
+        ▼
+  cdp_universal.scan(cdp) ──► ScanResult{elements[], captcha_frames[]}
+        │                              │
+        │                              └──► captcha_router.detect(scan)
+        │                                          │
+        │                                          ▼
+        │                                  CaptchaDetection|None
+        │                                          │
+        │                                          ▼
+        │                                  captcha_router.solve(det) ──► CaptchaResult
+        ▼
+  LangGraph think_node  (entscheidet welches stable_id geklickt wird)
+        │
+        ▼
+  Actuator(cdp).click(stable_id)
+        │
+        ▼
+  ActionResult{success, before_hash, after_hash, new_url}
+        │
+        ▼  (wenn success=False → think_node mit Hint "no_dom_change" erneut aufrufen)
+  ```
+
+  ### Was sich GEÄNDERT hat (Diff zur alten Welt)
+  | Vorher (LEGACY)                                 | Jetzt (KANONISCH)                                   |
+  |-------------------------------------------------|-----------------------------------------------------|
+  | snapshot.py::ELEMENT_EXTRACTOR_JS (handgerollt) | cdp_universal.scan() via Accessibility.getFullAXTree |
+  | walkShadows(depth>5) → Shadow-DOM ab Level 6 verloren | DOM.getFlattenedDocument(pierce=True) → ALLE Levels |
+  | iframes nur GEZÄHLT, nie betreten               | Page.getFrameTree + AX-Tree pierced cross-frame     |
+  | Modal-Detection per Viewport-Center             | Modale sind einfach AX-Knoten — kein Sonderfall     |
+  | @e0 / @e1 Refs (Y-Sortierung instabil)          | stable_id = sha1(frame_id + backend_node_id) STABIL  |
+  | el.click() / .checked = true → von React ignoriert | Input.dispatchMouseEvent → echter Maus-Klick         |
+  | Klick ohne Verify → "Performed" = Halluzination | Pflicht-Verify via DOM-Hash-Diff vor/nach Aktion    |
+  | Captcha-Sniffing im allgemeinen Scanner          | Eigener captcha_router mit iframe-URL-Detection     |
+  | 5 parallele Klick-Layer (cua-driver, skylight,  | EIN Pfad: Actuator → CDP Input.dispatchMouseEvent   |
+  |  macos-ax, BatchExecutor, raw JS)               |                                                     |
+
+  ### FastAPI Tool-Registry — kanonische Endpoints (v2)
+  Diese Endpoints sind die EINZIGEN, die LangGraph-Tools ab sofort aufrufen
+  dürfen. Alte /survey/click, /survey/click-angular, /survey/fill-input,
+  /survey/snapshot bleiben backward-compat, aber neue Tools MÜSSEN gegen
+  /v2/* programmieren.
+  ```
+  POST /v2/scan
+    → ScanResult{url, title, frame_count, element_count,
+                 elements:[{stable_id, role, name, value, tag, state, bbox,
+                            attrs, frame_url}],
+                 captcha_frames:[{frame_id, url}]}
+
+  POST /v2/click           body: {stable_id, cdp_port=9999, url_contains=""}
+    → ClickResult{success, reason, before_hash, after_hash, new_url, elapsed_ms}
+    reason ∈ {ok, navigated, no_dom_change, element_not_visible,
+              unknown_stable_id, scroll_failed, dispatch_failed}
+
+  POST /v2/fill            body: {stable_id, value, clear=True, ...}
+    → FillResult{success, reason, elapsed_ms, typed}
+
+  POST /v2/press_key       body: {key, modifiers=0, ...}
+  POST /v2/captcha/detect  body: {cdp_port, url_contains}
+    → {found, captcha_type, frame_id, frame_url, dom_hint}
+  POST /v2/captcha/solve   body: {cdp_port, url_contains}
+    → {solved, captcha_type, token, reason, elapsed_ms}
+  ```
+
+  ### LangGraph-Knoten-Verhalten (Pflicht)
+  1. `scan_node`        ruft `/v2/scan`  → speichert `elements`, `captcha_frames` im State.
+  2. `captcha_node`     wenn `captcha_frames` nicht leer ODER vorheriger Klick `no_dom_change`
+                        → ruft `/v2/captcha/solve`. Bei `solved=False, reason='no_solver_for_type'`
+                        → Eskalation (2captcha-Fallback oder Manual-Mode).
+  3. `think_node`       LLM bekommt `elements[]` flat. Entscheidet ein einzelnes `stable_id`
+                        plus Aktionstyp. NIEMALS Index, NIEMALS CSS-Selektor.
+  4. `act_node`         ruft `/v2/click` oder `/v2/fill`.
+                        Wenn `success=False` mit `reason='no_dom_change'`
+                        → `scan_node` neu, `think_node` mit Hint "letzter Klick hat
+                           DOM nicht verändert, anderes Element wählen".
+                        Wenn `success=False` mit `reason='unknown_stable_id'`
+                        → `scan_node` neu (stable_id war veraltet), dann erneut.
+                        NIEMALS bei `success=False` so tun, als wäre es success.
+  5. `verify_node`      Nach Surveyabschluss: balance-Diff > 0 ODER Completion-Marker
+                        in body.innerText. Sonst gilt die Survey als NICHT abgeschlossen,
+                        unabhängig davon was der Page-Text behauptet.
+
+  ### Was VERBOTEN ist (additiv zu REGEL 1)
+  - KEIN `Runtime.evaluate` mit `el.click()` in neuen Tools.
+  - KEIN `document.querySelectorAll(...)[idx].click()`.
+  - KEIN `el.value = "..."` Setter.
+  - KEIN provider-spezifischer Klick-Pfad in neuen Tools.
+  - KEINE Action ohne Pflicht-Verify (no_dom_change MUSS als Fehler behandelt werden).
+  - KEINE Y-Sort-Reihenfolge oder Index-basierte Element-Refs in neuen Tools.
+  - KEIN Captcha-Sniffing im allgemeinen Scanner (gehört in `captcha_router`).
+
+  ### Chrome-Flag-Pflicht
+  Der Chrome-Startbefehl MUSS `--force-renderer-accessibility` enthalten.
+  Ohne dieses Flag liefert `Accessibility.getFullAXTree` nur den Top-Frame
+  und der Scanner verfehlt iframe-Content. Das Flag steht bereits im
+  Recipe in REGEL 4 weiter unten — nicht entfernen!
+
+  ### Wie Captcha-Solver erweitert werden (additiv)
+  1. `stealth-captcha/solver/<typ>.py` anlegen mit Signatur
+     `def solve(cdp, detection) -> CaptchaResult`.
+  2. In `survey-cli/survey/captcha_router.py::_solver_for()` einen
+     lazy-import-Branch hinzufügen.
+  3. Bei iframe-Detection: Eintrag in `IFRAME_URL_TO_TYPE`.
+     Bei DOM-Detection: neue `_check_<typ>` Funktion + Aufruf in
+     `CaptchaRouter.detect()`.
+  KEINE Änderungen am `cdp_universal.py` für neue Captchas.
+
+  ### Wo der Klick wirklich entsteht (für Debugging)
+  Wenn ein Klick "nicht ankommt", war es bisher meistens
+  `el.click()` via Runtime.evaluate, das React/Angular ignorieren.
+  Mit dem neuen Pfad geht jeder Klick als echtes OS-Maus-Event durch:
+  ```
+  Actuator.click(stable_id)
+   ├─ DOM.scrollIntoViewIfNeeded(backendNodeId)
+   ├─ DOM.getBoxModel(backendNodeId)          → frische Koordinaten
+   ├─ _capture_dom_hash()                     → before_hash
+   ├─ Input.dispatchMouseEvent(mouseMoved)
+   ├─ Input.dispatchMouseEvent(mousePressed,  clickCount=1, button=left)
+   ├─ time.sleep(0.05)                        → humanlike hold
+   ├─ Input.dispatchMouseEvent(mouseReleased, clickCount=1, button=left)
+   ├─ time.sleep(0.30)                        → SPA-Reaktion (zone.js etc.)
+   ├─ _capture_dom_hash()                     → after_hash
+   └─ if before_hash == after_hash and not navigated → success=False
+  ```
+
+  ### Migrationsregel
+  - Neue Tools ab 2026-05-11 → AUSSCHLIESSLICH `/v2/*` benutzen.
+  - Bestehende Tools (`tool_click.py`, `tool_click_angular.py`,
+    `tool_fill_input.py`, `tool_snapshot.py`, `tool_solve_captcha.py`)
+    behalten ihre Endpoints für Backward-Compat, werden aber
+    schrittweise durch dünne Wrapper auf `/v2/*` ersetzt.
+  - Wenn du als Agent zwischen v1 und v2 wählen kannst → IMMER v2.
+  - Wenn ein v1-Endpoint dasselbe besser kann als v2 → das ist ein Bug
+    in v2, melde ihn als Issue. Keine Workarounds in Tool-Code.
+
+  ### Inline-Dokumentations-Pflicht
+  Alle vier kanonischen Module enthalten eine umfassende Inline-Doku als
+  Modul-Docstring am Anfang der Datei (siehe `cdp_universal.py`,
+  `cdp_actuator.py`, `captcha_router.py`, `universal.py`). Diese Docstrings
+  sind die Wahrheit. AGENTS.md fasst sie nur zusammen. Bei Widerspruch
+  zwischen Docstring und AGENTS.md → Docstring gewinnt, AGENTS.md ist falsch
+  und muss korrigiert werden.
+
+  ---
+
+
   ## 🔴🔴🔴 KRITISCHE NEUE REGELN (2026-05-09) — GANZ OBEN — UNVERBRÜCHLICH 🔴🔴🔴
 
   ### REGEL 1: UNIVERSALITÄT — Egal was für eine Webseite/Modal/Pre-Qualifier/Survey

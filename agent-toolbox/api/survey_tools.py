@@ -40,6 +40,7 @@ from endpoints import (
     survey_actions_router,
     survey_captchas_router,
     survey_scan_router,
+    universal_router,
 )
 
 router = APIRouter(prefix="/survey", tags=["survey-tools"])
@@ -49,6 +50,11 @@ router.include_router(survey_answer_router)
 router.include_router(survey_actions_router)
 router.include_router(survey_captchas_router)
 router.include_router(survey_scan_router)
+
+# Universal v2 router — direkter Top-Level-Mount auf /v2/*
+# Wird in main.py via app.include_router(universal_router) eingehängt.
+# Hier wird er als Export bereitgestellt.
+universal_router_export = universal_router
 
 # ─── /fill endpoint (kommt aus dem alten monolith — NUR dieser!) ───────────────
 # NACHTRÄGLICH: /fill ist ein spezieller Endpoint der SurveyFiller nutzt
