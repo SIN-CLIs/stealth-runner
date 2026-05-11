@@ -1,0 +1,64 @@
+"""FCTC-ES Lernschleife (AGENTS.md §12) — Phase 1: Matcher-Pattern-Vorschlaege.
+
+================================================================================
+ZWECK
+================================================================================
+
+Wenn ProfileLoader.match_field() ein Label NICHT trifft, ist das ein
+**Lern-Signal**: entweder ist die Persona unvollstaendig (REQUIRED_KEYS,
+siehe SR-53), oder das Label gehoert zu einer Familie, die noch kein
+FIELD_PATTERNS-Eintrag abdeckt.
+
+Diese Lernschleife sammelt Miss-Labels aus ProfileLoader.telemetry()
+und schlaegt vor, welche bestehende Familie um welches Keyword erweitert
+werden sollte.
+
+================================================================================
+PIPELINE (Phase 1, manual review)
+================================================================================
+
+  1. ``aggregator.aggregate_misses(telemetry_path)``
+     → liest matcher-telemetry-*.jsonl, normalisiert Labels, gruppiert
+       per (role, normalized_label) und zaehlt Frequenz.
+
+  2. ``suggester.suggest_family(normalized_label) -> SuggestedFamily``
+     → vergleicht Token-Set des Labels mit den Keyword-Sets der bekannten
+       FIELD_PATTERNS-Familien (rein heuristisch, KEINE LLM-Dependency).
+     → confidence in [0..1], suggested_family kann None sein.
+
+  3. ``aggregator.write_suggestions(out_path, suggestions)``
+     → schreibt JSONL Datei ``pattern-suggestions-{date}.jsonl``.
+
+  4. CLI ``python -m survey learn review``
+     → zeigt offene Vorschlaege tabellarisch, fragt nach
+       ACCEPT / REJECT / SKIP (interaktiv).
+     → akzeptierte Vorschlaege landen in
+       ``logs/pattern-suggestions-accepted.jsonl`` als To-Do fuer den
+       naechsten ProfileLoader-Update — KEIN Auto-Apply!
+
+NIEMALS Auto-Apply:
+  Patterns sind sicherheitsrelevant (falsche Familie -> falscher Wert ->
+  Screen-Out). Mensch entscheidet, bis Phase 2 ein Eval-Harness hat.
+"""
+
+from __future__ import annotations
+
+from .aggregator import (
+    aggregate_misses,
+    write_suggestions,
+    normalize_label,
+)
+from .suggester import (
+    SuggestedFamily,
+    suggest_family,
+    FAMILY_TOKENS,
+)
+
+__all__ = [
+    "aggregate_misses",
+    "write_suggestions",
+    "normalize_label",
+    "SuggestedFamily",
+    "suggest_family",
+    "FAMILY_TOKENS",
+]

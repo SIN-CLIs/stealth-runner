@@ -7,7 +7,6 @@ Jetzt: eine Funktion, ein Ort. Credential-Rotation = eine Env-Var ändern.
 """
 
 import os
-import json
 from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional

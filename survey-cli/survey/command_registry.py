@@ -7,7 +7,6 @@ Prevents known crash patterns (e.g., submit immediately after radio select).
 
 import json
 import os
-import time
 from pathlib import Path
 from typing import Dict, List, Optional, Any
 from datetime import datetime, timezone
@@ -94,7 +93,7 @@ class CommandRegistry:
     def validate_command(self, command_id: str) -> bool:
         """
         Pre-flight check: validate command before execution.
-        
+
         Returns True if safe to execute.
         Raises CommandBannedError if command is banned.
         Raises CommandNotVerifiedError if command is unknown (warning only).
@@ -104,18 +103,18 @@ class CommandRegistry:
             raise CommandBannedError(
                 f"Command '{command_id}' is BANNED: {reason}"
             )
-        
+
         if not self.is_verified(command_id):
             raise CommandNotVerifiedError(
                 f"Command '{command_id}' not verified. Proceed with caution."
             )
-        
+
         return True
 
     def record_success(self, command_id: str, notes: str = ""):
         """Record successful command execution."""
         now = datetime.now(timezone.utc).isoformat()
-        
+
         for cmd in self._data.get("verified_commands", []):
             if cmd["id"] == command_id:
                 cmd["success_count"] += 1
@@ -124,7 +123,7 @@ class CommandRegistry:
                     cmd["notes"] = notes
                 self._save()
                 return
-        
+
         # Add new verified command
         self._data["verified_commands"].append({
             "id": command_id,
@@ -141,7 +140,7 @@ class CommandRegistry:
     def record_failure(self, command_id: str, error: str, notes: str = ""):
         """Record failed command execution."""
         now = datetime.now(timezone.utc).isoformat()
-        
+
         # Check if already banned
         for b in self._data.get("banned_commands", []):
             if b["id"] == command_id:
@@ -153,7 +152,7 @@ class CommandRegistry:
                     b["notes"] = notes
                 self._save()
                 return
-        
+
         # Add to banned list
         self._data["banned_commands"].append({
             "id": command_id,
@@ -179,14 +178,14 @@ class CommandRegistry:
     ):
         """
         Record survey execution result — auto-update registry after survey.
-        
+
         Called by FastAPI after each survey attempt.
-        
+
         Flow:
           - completed + earned > 0 → record_success, promote if threshold reached
           - screen_out → record_failure (provider might be unreliable)
           - error → record_failure
-          
+
         Args:
             command_id: e.g. "survey_cint_67078106"
             provider: Provider name (cint, purespectrum, etc.)
@@ -196,15 +195,15 @@ class CommandRegistry:
             earned: Balance earned from survey (€)
         """
         now = datetime.now(timezone.utc).isoformat()
-        
+
         # Update survey-level tracking
         key = f"survey_{provider}_{survey_id}"
-        
+
         if status == "completed" and earned > 0:
             self.record_success(key, notes=f"earned=€{earned:.2f}, steps={steps}")
         elif status in ("screen_out", "error"):
             self.record_failure(key, error=f"{status} (earned=€{earned:.2f})", notes=f"steps={steps}")
-        
+
         # Also update provider-level
         prov_key = f"provider_{provider}"
         if provider:
@@ -213,7 +212,7 @@ class CommandRegistry:
             elif status in ("screen_out", "error"):
                 # Screen-out: provider might be unreliable → increment failure count
                 self.record_failure(prov_key, error=f"screen_out on survey {survey_id}")
-        
+
         self._data["last_execution"] = {
             "command_id": command_id,
             "provider": provider,
@@ -224,7 +223,7 @@ class CommandRegistry:
             "timestamp": now,
         }
         self._save()
-    
+
     def promote_to_verified(self, command_id: str, success_threshold: int = 3):
         """
         Promote command to verified after N successes.
@@ -258,7 +257,7 @@ class CommandRegistry:
 def can_execute(command_id: str, registry_path: Optional[Path] = None) -> bool:
     """
     Quick pre-flight check: can this command be executed safely?
-    
+
     Usage:
         if can_execute("select_radio"):
             execute_command()
@@ -270,14 +269,14 @@ def can_execute(command_id: str, registry_path: Optional[Path] = None) -> bool:
 # ═══════════════════════════════════════════════════════════════════════════════
 # SURVEY LOCK — Prevents parallel survey execution (critical!)
 # ═══════════════════════════════════════════════════════════════════════════════
-# 
+#
 # ROOT CAUSE (2026-05-10): Multiple survey tabs open simultaneously.
 # Bug: Completion detection failed → loop continued → background loop started
 #      next survey → previous tab still open → 6 tabs stacked!
-# 
+#
 # FIX: Survey lock file. Before running a survey, acquire lock. After survey
 #      completes/errors, release lock. Kein neuer Survey wenn Lock aktiv.
-# 
+#
 # File: survey-cli/data/.survey_lock.json
 # Structure: {"survey_id": "67078106", "started": "2026-05-10T...", "pid": 12345}
 
@@ -287,7 +286,7 @@ SURVEY_LOCK_PATH = Path(__file__).parent.parent / "data" / ".survey_lock.json"
 def acquire_survey_lock(survey_id: str = "") -> bool:
     """
     Acquire survey lock. Returns True if lock acquired, False if already locked.
-    
+
     Prevents parallel survey execution.
     """
     if SURVEY_LOCK_PATH.exists():
@@ -302,7 +301,7 @@ def acquire_survey_lock(survey_id: str = "") -> bool:
             # Lock is stale — remove it and proceed
         except Exception:
             pass
-    
+
     # Acquire lock
     SURVEY_LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(SURVEY_LOCK_PATH, "w") as f:
@@ -345,7 +344,7 @@ def execute_with_validation(
 ) -> Any:
     """
     Execute a command with pre-flight validation and post-flight recording.
-    
+
     Usage:
         result = execute_with_validation(
             "select_radio",
@@ -353,10 +352,10 @@ def execute_with_validation(
         )
     """
     reg = CommandRegistry(registry_path)
-    
+
     # Pre-flight
     reg.validate_command(command_id)
-    
+
     # Execute
     try:
         result = executor_func()

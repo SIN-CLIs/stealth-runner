@@ -26,7 +26,6 @@ BANNED METHODS — NIEMALS VERWENDEN:
 """
 
 import json
-import os
 import time
 import traceback
 from datetime import datetime
@@ -222,14 +221,14 @@ def generate_summary(days: int = 7) -> Dict[str, Any]:
 def print_summary(summary: Dict[str, Any]):
     """Print a formatted summary."""
     print(f"\n{'='*50}")
-    print(f"  SURVEY SUMMARY")
+    print("  SURVEY SUMMARY")
     print(f"{'='*50}")
     print(f"  Total earned:   {summary['total_earned']:.2f}€")
     print(f"  Completed:      {summary['surveys_completed']}")
     print(f"  Failed/Blocked: {summary['surveys_failed']}")
     print(f"  Total errors:   {summary['errors_count']}")
     if summary["by_provider"]:
-        print(f"\n  By Provider:")
+        print("\n  By Provider:")
         for prov, count in sorted(summary["by_provider"].items(), key=lambda x: -x[1]):
             print(f"    {prov:20s}: {count}")
     print(f"{'='*50}\n")

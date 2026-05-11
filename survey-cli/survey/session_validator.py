@@ -43,7 +43,7 @@ from __future__ import annotations
 import json
 import os
 import time
-from typing import Optional, Dict, Any
+from typing import Dict, Any
 
 try:
     import websocket
@@ -91,7 +91,7 @@ def validate_session(
     if not auto_recover:
         return False
 
-    print(f"[SESSION] Not logged in — attempting recovery...")
+    print("[SESSION] Not logged in — attempting recovery...")
 
     # Try 1: Re-inject cookies from backup
     if os.path.exists(cookie_backup):

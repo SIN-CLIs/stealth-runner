@@ -124,10 +124,12 @@ from __future__ import annotations
 import json
 import os
 import time
+from typing import Any  # noqa: F401 — used in annotations under `from __future__ import annotations`
+
 import websocket
 
-from .state import SurveyState
 from .opencode_tool import delegate_task
+from .state import SurveyState
 
 # ── PATH CONSTANTS ─────────────────────────────────────────────────────────────
 
@@ -239,22 +241,115 @@ def inject_cookies(state: SurveyState) -> SurveyState:
 # Lines:    ~28
 
 def snapshot_node(state: SurveyState) -> SurveyState:
+    """Kanonischer Scan via cdp_universal.scan() — ersetzt handgerolltes JS.
+
+    Setzt state.universal_elements (flach, mit stable_id) und
+    state.captcha_frames. snapshot_refs bleibt aus Backward-Compat-Gruenden
+    minimal befuellt (fuer alte Tools), wird aber NICHT mehr fuer decide/execute
+    genutzt. Pflicht-Kontext: AGENTS.md "KANONISCHE ARCHITEKTUR (2026-05-11)".
+    """
     if not state.tab_ws:
-        state.add_error("snapshot_node", "tab_ws not set"); state.status = "error"; return state
+        state.add_error("snapshot_node", "tab_ws not set")
+        state.status = "error"
+        return state
+
+    from ..cdp_universal import scan as _scan_universal
+    from ..cdp_client import CDPConnection
+
     try:
-        ws = websocket.create_connection(state.tab_ws, timeout=15)
-        ws.send(json.dumps({"id": 0, "method": "Runtime.evaluate", "params": {"expression": """
-(function(){var r={},s=new Set(),c=0,n=function(role,text,idx,tag){if(!text||s.has(text))return;s.add(text);r['@e'+c++]={role:role,text:text.substring(0,100),idx:idx,tag:tag}};
-document.querySelectorAll('input[type=radio],input[type=checkbox],[role=radio],[role=checkbox]').forEach(function(e,i){var t=e.id&&document.querySelector('label[for='+e.id+']')?(document.querySelector('label[for='+e.id+']').textContent||'').trim():'';if(!t)t=(e.getAttribute('aria-label')||'').trim();if(!t){var p=e.parentElement;if(p)t=(p.textContent||'').trim().substring(0,100);}if(!t)t=(e.textContent||e.name||e.value||'').trim();n((e.type||e.getAttribute('role')||'radio')+'-selected',t,i,e.tagName);});
-document.querySelectorAll('textarea,input[type=text],input[type=number]').forEach(function(e){n('textarea',(e.placeholder||e.getAttribute('aria-label')||'').trim().substring(0,50),0,e.tagName);});
-document.querySelectorAll('button,input[type=submit],[role=button]').forEach(function(e,i){var t=(e.textContent||e.value||e.getAttribute('aria-label')||'').trim();if(t&&!s.has(t)){s.add(t);r['@e'+c++]={role:'button',text:t.substring(0,50),idx:i,tag:e.tagName};}});
-return JSON.stringify(r);})()"""}}))
-        resp = json.loads(ws.recv()); ws.close()
-        state.snapshot_refs = json.loads(resp.get("result",{}).get("result",{}).get("value","{}")) if isinstance(resp.get("result",{}).get("result",{}).get("value"), str) else {}
-        state.status = "running"
+        with CDPConnection(state.tab_ws, timeout=20) as cdp:
+            result = _scan_universal(cdp)
     except Exception as e:
-        state.add_error("snapshot_node", str(e)[:200]); state.status = "error"
+        state.add_error("snapshot_node", f"cdp_universal.scan failed: {e}"[:300])
+        state.status = "error"
+        return state
+
+    elements = []
+    for el in result.elements:
+        elements.append({
+            "stable_id": el.stable_id,
+            "frame_id": el.frame_id,
+            "role": el.role,
+            "name": el.name,
+            "value": el.value,
+            "tag": el.tag,
+            "text": el.text,
+            "state": el.state,
+            "bbox": el.bbox,
+            "attrs": el.attrs,
+            "frame_url": el.frame_url,
+        })
+    state.universal_elements = elements
+    state.captcha_frames = result.captcha_frames
+
+    # Backward-Compat-Spiegel: minimaler @eN-Index fuer alte Tools.
+    # NEUER Code MUSS universal_elements + stable_id verwenden.
+    state.snapshot_refs = {
+        f"@e{i}": {"role": el["role"], "text": el["name"],
+                   "stable_id": el["stable_id"]}
+        for i, el in enumerate(elements)
+    }
+    state.status = "running"
+    print(f"[scan] {len(elements)} elements, {result.frame_count} frames, "
+          f"{len(result.captcha_frames)} captcha-iframes")
     return state
+
+
+# ── NODE 4b: captcha_node (NEU 2026-05-11) ────────────────────────────────────
+# Funktion: Captcha-Detection + Solver-Routing via captcha_router
+# Wrapped:  CaptchaRouter.detect_and_solve()
+# Returns:  state mit captcha_solved_this_iteration = True/False
+#
+# WANN AUFGERUFEN: Direkt nach snapshot_node, VOR decide_node.
+# - Wenn captcha_frames leer UND no_dom_change_count < 2 → NO-OP.
+# - Sonst → versucht Detection + Solve via CaptchaRouter.
+# Solver leben in stealth-captcha/. Fehlende Solver -> reason='no_solver_for_type'.
+
+
+def captcha_node(state: SurveyState) -> SurveyState:
+    """Erkennt + loest Captchas auf dem aktuellen Tab.
+
+    Pflicht-Kontext: survey-cli/survey/captcha_router.py.
+    NIEMALS Captcha-Sniffing in andere Nodes einbauen.
+    """
+    if not state.captcha_frames and state.no_dom_change_count < 2:
+        state.captcha_solved_this_iteration = False
+        return state
+
+    if not state.tab_ws:
+        state.add_error("captcha_node", "tab_ws not set")
+        return state
+
+    from ..cdp_client import CDPConnection
+    from ..cdp_universal import scan as _scan
+    from ..captcha_router import CaptchaRouter
+
+    try:
+        with CDPConnection(state.tab_ws, timeout=20) as cdp:
+            scan_res = _scan(cdp)
+            router_obj = CaptchaRouter(cdp)
+            result = router_obj.detect_and_solve(scan_res)
+    except Exception as e:
+        state.add_error("captcha_node", str(e)[:300])
+        state.captcha_solved_this_iteration = False
+        return state
+
+    if result is None:
+        state.captcha_solved_this_iteration = False
+        return state
+
+    state.captcha_solved_this_iteration = bool(result.solved)
+    if result.solved:
+        print(f"[captcha] solved type={result.captcha_type} "
+              f"elapsed={result.elapsed_ms:.0f}ms")
+        state.no_dom_change_count = 0
+    else:
+        print(f"[captcha] NOT solved type={result.captcha_type} "
+              f"reason={result.reason}")
+        state.add_error("captcha_node",
+                        f"{result.captcha_type}: {result.reason}")
+    return state
+
 
 
 # ── NODE 5: decide_node ───────────────────────────────────────────────────────
@@ -264,21 +359,207 @@ return JSON.stringify(r);})()"""}}))
 # Lines:    ~27
 
 def decide_node(state: SurveyState) -> SurveyState:
-    from survey.nim import get_nim; from survey.profile_loader import ProfileLoader
+    """Waehlt EINE Aktion basierend auf state.universal_elements.
+
+    Strategie (Reihenfolge):
+      0) Wenn letzter Klick no_dom_change → schliesse vorheriges stable_id
+         aus. Schutz gegen Issue #24 (anti-stuck loop).
+      1) NIM/LLM-Decide (falls verfuegbar): LLM bekommt flache Liste mit
+         stable_id + role + name + state, liefert genau eine Decision.
+      2) Heuristik-Fallback:
+         a) Erstes ungeklicktes Radio → click
+         b) Erste leere textbox → fill
+         c) Button mit Name in {Weiter,Next,Submit,Continue,Senden,…} → click
+         d) Sonst: action="wait"
+    Setzt state.decision = {action, stable_id?, value?, key?, reason}.
+    nim_actions wird Backward-Compat parallel gefuellt.
+    """
+    from ..profile_loader import ProfileLoader
+    try:
+        from ..nim import get_nim
+    except Exception:
+        get_nim = None
+
     profile = ProfileLoader.load_profile()
-    snapshot = {"refs": state.snapshot_refs, "semantic": {"questions": [], "progress": f"{state.iteration}/{state.max_iterations}"}, "provider": state.provider or "unknown"}
-    result = get_nim().decide(snapshot=snapshot, profile=profile)
-    actions = result.get("actions", []) if result else []
-    if actions:
-        print(f"[NIM] {result.get('model','?')}: {len(actions)} actions, {result.get('tokens',{}).get('total',0)} tokens, {result.get('elapsed_ms',0)}ms")
-    if not actions:
-        for ref, info in state.snapshot_refs.items():
-            if info.get("role","").startswith("radio"): actions.append({"ref": ref, "action": "select"}); break
-        if any(v.get("role")=="textarea" for v in state.snapshot_refs.values()): actions.append({"ref": None, "action": "fill", "value": profile.get("city","Berlin")})
-        for ref, info in state.snapshot_refs.items():
-            if info.get("role")=="button" and any(b in info.get("text","") for b in ["Nächster","Weiter","Next","Skip"]): actions.append({"ref": ref, "action": "submit"}); break
-    if not actions or not any(a.get("action") in ("submit","click") for a in actions): actions.append({"action": "submit"})
-    state.nim_actions = actions; return state
+    elements = state.universal_elements or []
+
+    last = state.last_action_result or {}
+    avoid_id = ""
+    if last.get("success") is False and last.get("reason") == "no_dom_change":
+        avoid_id = last.get("stable_id", "")
+
+    decision: dict[str, Any] = {}
+
+    # 1) LLM-Decide (optional)
+    if get_nim and elements:
+        try:
+            llm_in = {
+                "elements": [
+                    {"stable_id": e["stable_id"], "role": e["role"],
+                     "name": e["name"], "value": e["value"],
+                     "checked": e.get("state", {}).get("checked", False)}
+                    for e in elements
+                    if not e.get("state", {}).get("disabled")
+                ],
+                "avoid_stable_id": avoid_id,
+                "no_dom_change_count": state.no_dom_change_count,
+                "iteration": state.iteration,
+                "provider": state.provider or "unknown",
+            }
+            llm_out = get_nim().decide(snapshot=llm_in, profile=profile) or {}
+            actions = llm_out.get("actions") or []
+            if actions:
+                a0 = actions[0]
+                sid = a0.get("stable_id") or ""
+                act = a0.get("action") or ""
+                if sid and act and sid != avoid_id:
+                    decision = {"action": act, "stable_id": sid,
+                                "value": a0.get("value", ""),
+                                "reason": "llm"}
+                state.nim_actions = actions
+        except Exception as e:
+            state.add_error("decide_node", f"nim failed: {e}"[:200])
+
+    # 2) Heuristik
+    if not decision:
+        # 2a Radio/Checkbox
+        for e in elements:
+            if e["stable_id"] == avoid_id:
+                continue
+            if e.get("state", {}).get("disabled"):
+                continue
+            if e["role"] in ("radio", "checkbox", "switch"):
+                if not e.get("state", {}).get("checked"):
+                    decision = {"action": "click", "stable_id": e["stable_id"],
+                                "reason": f"heuristic_radio:{e['name'][:30]}"}
+                    break
+
+        # 2a-bis OPTIONS-BASED COMBOBOX (Dropdown) — KLICK ZUR EXPANSION
+        # ----------------------------------------------------------------
+        # WARUM DIESE REIHENFOLGE (siehe Issue #50 / SR-52):
+        # combobox-Elemente sind zwei sehr verschiedene Sachen:
+        #   (a) OPTIONS-BASED  — natives <select> ODER ARIA-combobox mit
+        #                        einer angekoppelten listbox/option-Liste.
+        #                        MUSS erst geklickt werden, damit sich die
+        #                        Option-Liste oeffnet; danach pickt der
+        #                        naechste Tick (LLM oder Heuristik 2a) eine
+        #                        konkrete <option>.
+        #   (b) EDITABLE TEXT  — autocomplete-Eingabefeld (z. B. City-Lookup).
+        #                        Verhaelt sich wie eine textbox →
+        #                        ProfileLoader.match_field() liefert den
+        #                        korrekten Wert, Heuristik 2b ist richtig.
+        #
+        # Wuerde Heuristik 2b alle Comboboxen anfassen, wuerden Dropdowns
+        # (a) faelschlich mit Profil-Text gefuellt — Browser ignoriert das,
+        # FSM rotiert in no_dom_change → Screen-Out.
+        # Deshalb: dedizierte Combobox-Behandlung VOR 2b.
+        #
+        # Detection (rein semantisch, keine CSS-Klassen):
+        #   - tag == "select"                        → immer options-based
+        #   - role == "combobox" und im Snapshot     → wahrscheinlich (a)
+        #     existieren option/listbox-Elemente
+        # Erweiterung dieser Liste: NUR ARIA-Roles, NIEMALS provider-CSS.
+        if not decision:
+            has_options_in_snapshot = any(
+                el.get("role") in ("option", "listbox") for el in elements
+            )
+            for e in elements:
+                if e["stable_id"] == avoid_id:
+                    continue
+                if e.get("state", {}).get("disabled"):
+                    continue
+                if e["role"] != "combobox":
+                    continue
+                is_native_select = e.get("tag", "").lower() == "select"
+                is_options_based = is_native_select or has_options_in_snapshot
+                if not is_options_based:
+                    # Editable-text-combobox → 2b uebernimmt
+                    continue
+                if e.get("state", {}).get("expanded"):
+                    # Liste schon offen — LLM/2a soll konkrete option waehlen
+                    continue
+                decision = {"action": "click",
+                            "stable_id": e["stable_id"],
+                            "reason": f"combobox_expand:{(e.get('name') or '')[:30]}"}
+                break
+
+        # 2b leere textbox/searchbox/spinbutton/combobox(editable) — PROFIL-MAPPING
+        # ----------------------------------------------------------------
+        # Bisher (vor 2026-05-11): IMMER profile["city"] gefuellt, egal
+        # welches Feld. Das hat "Berlin" in E-Mail- und PLZ-Felder geschrieben
+        # und sofort Screen-Outs ausgeloest.
+        #
+        # Jetzt: ProfileLoader.match_field() prueft den Element-Namen
+        # (Label/Placeholder) gegen Keyword-Familien (DE/EN) und liefert
+        # den korrekten Profil-Wert ODER None.
+        # → None = HEURISTIK SKIPPT das Feld; im naechsten Tick uebernimmt
+        #   der LLM-Fallback (decide_node Pfad 1) die Entscheidung.
+        #
+        # Combobox-Sonderfall: options-basierte Comboboxen werden bereits
+        # von Heuristik 2a-bis bedient (Click zum Aufklappen). HIER nur noch
+        # EDITABLE-TEXT-comboboxen (autocomplete) — also welche, fuer die
+        # 2a-bis NICHT entschieden hat. Pruefung erfolgt analog zu 2a-bis.
+        #
+        # Pflicht-Kontext: survey-cli/survey/profile_loader.py KEYWORD-FAMILIEN.
+        # Erweiterung: neues Keyword-Pattern dort ergaenzen + Test in
+        # survey-cli/tests/test_profile_match_field.py hinzufuegen.
+        if not decision:
+            has_options_in_snapshot = any(
+                el.get("role") in ("option", "listbox") for el in elements
+            )
+            for e in elements:
+                if e["stable_id"] == avoid_id:
+                    continue
+                if e["role"] not in ("textbox", "searchbox", "spinbutton",
+                                     "combobox"):
+                    continue
+                if e["role"] == "combobox":
+                    is_native_select = e.get("tag", "").lower() == "select"
+                    if is_native_select or has_options_in_snapshot:
+                        # options-based combobox → von 2a-bis behandelt
+                        continue
+                if e.get("value"):
+                    continue  # bereits ausgefuellt
+                placeholder = (e.get("attrs") or {}).get("placeholder") or ""
+                val = ProfileLoader.match_field(
+                    role=e["role"],
+                    name=e.get("name") or "",
+                    profile=profile,
+                    placeholder=placeholder,
+                )
+                if val is None:
+                    # Kein Keyword-Match → LLM-Tick uebernimmt
+                    continue
+                decision = {"action": "fill",
+                            "stable_id": e["stable_id"],
+                            "value": val,
+                            "reason": "heuristic_fill:profile_match"}
+                break
+
+        # 2c continue button
+        if not decision:
+            cont = ("weiter", "next", "submit", "continue",
+                    "senden", "fortfahren", "ok")
+            for e in elements:
+                if e["stable_id"] == avoid_id:
+                    continue
+                if e["role"] == "button":
+                    name_low = (e.get("name") or "").lower()
+                    if any(w in name_low for w in cont):
+                        decision = {"action": "click",
+                                    "stable_id": e["stable_id"],
+                                    "reason": f"heuristic_button:{name_low[:30]}"}
+                        break
+
+        # 2d wait
+        if not decision:
+            decision = {"action": "wait", "reason": "no_candidate_found"}
+
+    state.decision = decision
+    print(f"[decide] action={decision.get('action')} "
+          f"stable_id={decision.get('stable_id','')[:10]} "
+          f"reason={decision.get('reason','')[:40]}")
+    return state
 
 
 # ── NODE 6: execute_node ──────────────────────────────────────────────────────
@@ -288,34 +569,90 @@ def decide_node(state: SurveyState) -> SurveyState:
 # Lines:    ~25
 
 def execute_node(state: SurveyState) -> SurveyState:
+    """Fuehrt state.decision aus via cdp_actuator (echter Klick + Verify).
+
+    Pflicht-Verify: success=False mit reason='no_dom_change' wird HIER als
+    Misserfolg behandelt — NICHT als success. Damit ist die alte Halluzination
+    "Performed ohne Wirkung" strukturell unmoeglich.
+
+    State-Updates:
+      state.last_action_result  {success, reason, before_hash, after_hash,
+                                  new_url, elapsed_ms, stable_id, action_type}
+      state.no_dom_change_count inkrementiert bei no_dom_change, sonst 0
+      state.consecutive_failures inkrementiert bei jedem failure
+    """
     if not state.tab_ws:
-        state.add_error("execute_node", "tab_ws not set"); state.status = "error"; return state
-    if not state.nim_actions:
-        state.batch_result = {"success": True, "results": [], "total_success": 0, "total_fail": 0, "elapsed_ms": 0}; return state
+        state.add_error("execute_node", "tab_ws not set")
+        state.status = "error"
+        return state
 
-    from ..safe_executor import SurveyFlowExecutor
-    tab_id = state.tab_ws.split("/devtools/page/")[-1]
-    executor = SurveyFlowExecutor(tab_id=tab_id)
-    if not executor.connect():
-        state.add_error("execute_node", "CDP connection failed"); state.status = "error"; return state
+    decision = state.decision or {}
+    action = decision.get("action") or ""
+    sid = decision.get("stable_id") or ""
 
-    # nim_actions → execute_actions format
-    def to_cmd(action):
-        t = action.get("action", ""); ref = action.get("ref", ""); val = action.get("value", "")
-        idx = state.snapshot_refs.get(ref, {}).get("idx", 0) or 0
-        if t == "select": return {"command": "select_radio", "params": {"radio_id": f"radio_idx_{idx}"}}
-        if t == "fill": return {"command": "fill_number", "params": {"input_id": f"input_idx_{idx}", "value": val}}
-        if t in ("submit", "click"): return {"command": "click_continue", "params": {"with_sleep": True, "sleep_seconds": 2}}
-        return None
+    # wait/done: keine CDP-Aktion
+    if action in ("wait", "done", ""):
+        state.last_action_result = {"success": True, "reason": action or "noop",
+                                    "stable_id": "", "action_type": action}
+        state.reset_failures()
+        state.no_dom_change_count = 0
+        state.batch_result = {"success": True, "results": [],
+                              "total_success": 0, "total_fail": 0,
+                              "elapsed_ms": 0}
+        time.sleep(1.0)
+        return state
 
-    actions = [to_cmd(a) for a in state.nim_actions if to_cmd(a)]
+    from ..cdp_client import CDPConnection
+    from ..cdp_actuator import Actuator
+
     try:
-        result = executor.execute_actions(actions); executor.disconnect()
-    except Exception as e:
-        state.add_error("execute_node", str(e)[:200]); state.status = "error"; return state
+        with CDPConnection(state.tab_ws, timeout=20) as cdp:
+            actuator = Actuator(cdp)
+            actuator.refresh_scan()
 
-    state.batch_result = result
-    state.increment_failures() if result.get("total_fail", 0) > 0 else state.reset_failures()
+            if action == "click" or action == "submit":
+                result = actuator.click(sid)
+            elif action == "fill":
+                result = actuator.fill(sid, decision.get("value", ""))
+            elif action == "press_key":
+                result = actuator.press_key(decision.get("key", "Enter"))
+            else:
+                state.add_error("execute_node", f"unknown action: {action!r}")
+                state.status = "error"
+                return state
+    except Exception as e:
+        state.add_error("execute_node", str(e)[:300])
+        state.increment_failures()
+        return state
+
+    state.last_action_result = {
+        "success": result.success,
+        "reason": result.reason,
+        "before_hash": result.before_hash,
+        "after_hash": result.after_hash,
+        "new_url": result.new_url,
+        "elapsed_ms": result.elapsed_ms,
+        "stable_id": sid,
+        "action_type": action,
+    }
+    state.batch_result = {
+        "success": result.success,
+        "results": [state.last_action_result],
+        "total_success": 1 if result.success else 0,
+        "total_fail": 0 if result.success else 1,
+        "elapsed_ms": result.elapsed_ms,
+    }
+
+    print(f"[act] {action} {sid[:10]} success={result.success} "
+          f"reason={result.reason} elapsed={result.elapsed_ms:.0f}ms")
+
+    if not result.success:
+        state.increment_failures()
+        if result.reason == "no_dom_change":
+            state.no_dom_change_count += 1
+    else:
+        state.reset_failures()
+        state.no_dom_change_count = 0
     return state
 
 

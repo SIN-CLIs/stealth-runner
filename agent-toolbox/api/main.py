@@ -240,6 +240,11 @@ from api.survey_actions import router as survey_router
 # Diese Endpoints ersetzen den monolithischen POST /workflow/run-best
 from api.survey_tools import router as survey_tools_router
 
+# ── v2 kanonische Tools (cdp_universal + cdp_actuator + captcha_router) ──
+# Top-Level Mount auf /v2/* — NICHT unter /survey, weil universal frame-übergreifend
+# arbeitet und keine Survey-spezifischen Annahmen macht.
+from api.survey_tools import universal_router_export
+
 # cookie_routes.py Router: Cookie-Management (extract, inject, verify)
 # Prefix: /cookies (definiert in cookie_routes.py)
 from api.cookie_routes import router as cookie_router
@@ -524,6 +529,12 @@ app.include_router(cookie_router)
 # Registriere Dashboard-Router (prefix="/dashboard", tags=["Dashboard"]).
 # Endpoints: POST /dashboard/scan, POST /dashboard/balance.
 app.include_router(dashboard_router)
+
+# Registriere Universal-v2-Router (prefix='/v2', tags=['universal-v2']).
+# Endpoints: POST /v2/scan, /v2/click, /v2/fill, /v2/press_key, /v2/captcha/*
+# Das ist der NEUE kanonische Pfad — siehe survey-cli/survey/cdp_universal.py
+# und survey-cli/survey/cdp_actuator.py.
+app.include_router(universal_router_export)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════

@@ -93,7 +93,7 @@ class SurveyFlowExecutor:
     def _enforce_sleep_if_needed(self, command_id: str):
         """
         Enforce mandatory sleep after input commands to prevent Chrome crash.
-        
+
         ROOT CAUSE (2026-05-10): click_continue immediately after select_radio
         causes ConnectionClosedError (Chrome tab crash). Minimum 2s sleep required.
         """
@@ -224,7 +224,7 @@ class SurveyFlowExecutor:
     def click_continue(self, with_sleep: bool = True, sleep_seconds: int = 2) -> bool:
         """
         Click continue button SAFELY.
-        
+
         CRITICAL: This command is BANNED if called immediately after select_radio
         without sleep. The with_sleep parameter enforces the safety delay.
         """
@@ -260,17 +260,17 @@ class SurveyFlowExecutor:
     def execute_actions(self, actions: List[Dict]) -> Dict[str, Any]:
         """
         Execute a list of actions with registry validation and safe sequence enforcement.
-        
+
         Each action dict should have:
           - "command": command ID (e.g., "select_radio", "click_continue")
           - "params": optional dict of parameters for the command
-        
+
         Safe sequences are enforced:
-          - After any input command (select_radio, fill_number, etc.), 
+          - After any input command (select_radio, fill_number, etc.),
             a minimum 2s sleep is enforced before click_continue
           - Banned commands are blocked with CommandBannedError
           - Unverified commands generate warnings but still execute
-        
+
         Returns:
             {
                 "success": bool,
@@ -345,7 +345,7 @@ class SurveyFlowExecutor:
     def _execute_generic_cdp(self, command_id: str, params: Dict) -> bool:
         """
         Execute a generic CDP command not in the method registry.
-        
+
         Used for commands that are not explicitly defined as methods
         but are still safe to execute (e.g., capture_*, custom JS).
         """
@@ -365,9 +365,9 @@ class SurveyFlowExecutor:
     def execute_safe_sequence(self, sequence_id: str, **kwargs) -> bool:
         """
         Execute a pre-verified safe sequence of commands.
-        
+
         Example:
-            executor.execute_safe_sequence("radio_then_continue", 
+            executor.execute_safe_sequence("radio_then_continue",
                 radio_id="ans25853.0.2")
         """
         steps = self.registry.get_safe_sequence(sequence_id)
@@ -403,7 +403,7 @@ class SurveyFlowExecutor:
     def run_with_validation(self, command_id: str, func: Callable, *args, **kwargs):
         """
         Run any function with pre-flight validation and post-flight recording.
-        
+
         Example:
             executor.run_with_validation(
                 "select_radio",

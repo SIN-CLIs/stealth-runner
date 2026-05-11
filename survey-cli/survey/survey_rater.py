@@ -12,7 +12,6 @@ BANNED METHODS — NIEMALS VERWENDEN:
 
 import json
 import time
-from typing import Optional
 
 from . import chrome
 

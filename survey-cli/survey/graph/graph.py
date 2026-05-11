@@ -113,6 +113,7 @@ from .nodes import (
     open_survey,
     inject_cookies,
     snapshot_node,
+    captcha_node,        # 2026-05-11 NEU: Captcha-Detection + Solve
     decide_node,
     execute_node,
     detect_completion,
@@ -267,6 +268,9 @@ def build_graph() -> StateGraph:
     graph.add_node("open_survey", open_survey)
     graph.add_node("inject_cookies", inject_cookies)
     graph.add_node("snapshot", snapshot_node)
+    # 2026-05-11: Captcha-Detection laeuft NACH snapshot, VOR decide.
+    # NO-OP wenn keine Captcha-iframes UND no_dom_change_count < 2.
+    graph.add_node("captcha", captcha_node)
     graph.add_node("decide", decide_node)
     graph.add_node("execute", execute_node)
     graph.add_node("detect_completion", detect_completion)
@@ -286,7 +290,9 @@ def build_graph() -> StateGraph:
 
     # Schritt 5: NEMO-Loop Edge (snapshot → decide → execute → detect_completion)
     # Nach detect_completion wird route() aufgerufen für conditional routing.
-    graph.add_edge("snapshot", "decide")
+    # NEMO-Loop NEU: snapshot → captcha (no-op meistens) → decide → execute
+    graph.add_edge("snapshot", "captcha")
+    graph.add_edge("captcha", "decide")
     graph.add_edge("decide", "execute")
     graph.add_edge("execute", "detect_completion")
 
@@ -390,22 +396,20 @@ def run_survey_loop(state: SurveyState) -> SurveyState:
         if state.status == "error":
             break
 
-        # Iteration inkrementieren (NEMO Schritt 2 — JEDE Iteration, nicht nur bei Actions!)
+        # NEU 2026-05-11: Captcha-Detection vor decide.
+        # NO-OP wenn keine Captcha-iframes und no_dom_change_count < 2.
+        state = captcha_node(state)
+
+        # Iteration inkrementieren (NEMO Schritt 2)
         state.increment_iteration()
 
-        # NIM entscheiden (NEMO Schritt 3)
+        # decide (Heuristik oder LLM)
         state = decide_node(state)
 
-        # Fallback: NEMO snapshot ohne Actions → nur detect completion
-        if not state.nim_actions:
-            state = detect_completion(state)
-            state = read_balance_after(state)
-        else:
-            # Batch ausführen (NEMO Schritt 4)
-            state = execute_node(state)
-            # completion detection
-            state = detect_completion(state)
-            state = read_balance_after(state)
+        # Execute decision (auch "wait" wird sauber gehandelt in execute_node)
+        state = execute_node(state)
+        state = detect_completion(state)
+        state = read_balance_after(state)
 
         # Routing
         next_node = route(state)

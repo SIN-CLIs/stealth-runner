@@ -17,8 +17,6 @@ BANNED METHODS — NIEMALS VERWENDEN:
   ❌ Hardcoded PIDs
 """
 
-import time
-from typing import Optional
 
 from . import chrome
 from .snapshot import detect_completion as _detect_completion_text

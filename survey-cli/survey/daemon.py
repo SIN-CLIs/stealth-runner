@@ -655,4 +655,4 @@ if __name__ == "__main__":
     elif cmd == "status":
         status()
     else:
-        print(f"Usage: python -m survey.daemon [run|start|stop|restart|status]")
+        print("Usage: python -m survey.daemon [run|start|stop|restart|status]")

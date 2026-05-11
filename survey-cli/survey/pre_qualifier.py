@@ -159,7 +159,7 @@ class PreQualifierHandler:
                 if resp_json.get("type") == "question":
                     current_details = resp_json
                     if self.debug:
-                        print(f"[PREQ] → Next question, retrying...")
+                        print("[PREQ] → Next question, retrying...")
                     continue
 
                 # Other response type
@@ -305,7 +305,7 @@ class PreQualifierHandler:
             if coords and coords != (0, 0):
                 self._dispatch_mouse_click(tab_ws, coords)
                 if self.debug:
-                    print(f"[PREQ-BROWSER] Clicked submit!")
+                    print("[PREQ-BROWSER] Clicked submit!")
 
         # Max steps reached
         if tab_closer:
