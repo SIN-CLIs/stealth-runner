@@ -440,3 +440,132 @@ async def universal_survey_answer(req: UniversalAnswerRequest) -> UniversalAnswe
             reason=f"exception: {type(e).__name__}: {e}",
             elapsed_ms=(time.monotonic() - start) * 1000
         )
+
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# GET ENDPOINTS (SR-41)
+# ═══════════════════════════════════════════════════════════════════════════════
+
+
+class SurveyStatusResponse(BaseModel):
+    """Response für GET /survey/status."""
+    status: Literal["running", "idle", "error"] = Field(description="Background-Loop Status")
+    current_survey: Optional[str] = Field(default=None, description="Aktuell laufende Survey ID")
+    surveys_completed: int = Field(default=0, description="Abgeschlossene Surveys in Session")
+    balance_earned: float = Field(default=0.0, description="Verdientes Guthaben in Session")
+    last_activity: Optional[str] = Field(default=None, description="Letzte Aktivität Timestamp")
+    errors: List[str] = Field(default=[], description="Letzte Fehler")
+
+
+class SurveyHistoryEntry(BaseModel):
+    """Einzelner History-Eintrag."""
+    survey_id: str
+    provider: str
+    status: str
+    earned: float
+    timestamp: str
+    duration_s: float
+
+
+class SurveyHistoryResponse(BaseModel):
+    """Response für GET /survey/history."""
+    status: Literal["ok", "error"] = Field(description="Ergebnis-Status")
+    count: int = Field(default=0, description="Anzahl der History-Einträge")
+    entries: List[SurveyHistoryEntry] = Field(default=[], description="History-Einträge")
+    learn_count: int = Field(default=0, description="Anzahl learn.md Einträge")
+    anti_learn_count: int = Field(default=0, description="Anzahl anti-learn.md Einträge")
+
+
+# In-Memory Session State (für Status-Tracking)
+_session_state = {
+    "current_survey": None,
+    "surveys_completed": 0,
+    "balance_earned": 0.0,
+    "last_activity": None,
+    "errors": [],
+}
+
+
+@router.get("/status", response_model=SurveyStatusResponse)
+async def get_survey_status() -> SurveyStatusResponse:
+    """
+    Aktueller Status des Survey-Background-Loops.
+
+    **Beispiel:**
+    ```bash
+    curl http://localhost:8000/survey/status
+    ```
+    """
+    from datetime import datetime
+    
+    return SurveyStatusResponse(
+        status="running" if _session_state["current_survey"] else "idle",
+        current_survey=_session_state["current_survey"],
+        surveys_completed=_session_state["surveys_completed"],
+        balance_earned=_session_state["balance_earned"],
+        last_activity=_session_state["last_activity"],
+        errors=_session_state["errors"][-5:],  # Letzte 5 Fehler
+    )
+
+
+@router.get("/history", response_model=SurveyHistoryResponse)
+async def get_survey_history(limit: int = 50) -> SurveyHistoryResponse:
+    """
+    Survey-History aus learn.md und anti-learn.md.
+
+    **Beispiel:**
+    ```bash
+    curl http://localhost:8000/survey/history?limit=20
+    ```
+    """
+    import os
+    from pathlib import Path
+    
+    entries = []
+    learn_count = 0
+    anti_learn_count = 0
+    
+    # Pfade zu learn.md / anti-learn.md
+    base_path = Path(__file__).parent.parent.parent / "survey-cli"
+    learn_path = base_path / "learn.md"
+    anti_learn_path = base_path / "anti-learn.md"
+    
+    # Parse learn.md (erfolgreiche Surveys)
+    if learn_path.exists():
+        try:
+            content = learn_path.read_text()
+            lines = content.strip().split("\n")
+            learn_count = len([l for l in lines if l.strip().startswith("-")])
+            
+            for line in lines[-limit:]:
+                if line.strip().startswith("-"):
+                    # Format: - Survey #ID (Provider): +X.XX€ [timestamp]
+                    parts = line.strip("- ").split()
+                    if len(parts) >= 3:
+                        entries.append(SurveyHistoryEntry(
+                            survey_id=parts[1] if len(parts) > 1 else "unknown",
+                            provider=parts[2].strip("():") if len(parts) > 2 else "unknown",
+                            status="completed",
+                            earned=float(parts[3].strip("+€")) if len(parts) > 3 else 0.0,
+                            timestamp="",
+                            duration_s=0.0,
+                        ))
+        except Exception:
+            pass
+    
+    # Parse anti-learn.md (fehlgeschlagene Surveys)
+    if anti_learn_path.exists():
+        try:
+            content = anti_learn_path.read_text()
+            lines = content.strip().split("\n")
+            anti_learn_count = len([l for l in lines if l.strip().startswith("-")])
+        except Exception:
+            pass
+    
+    return SurveyHistoryResponse(
+        status="ok",
+        count=len(entries),
+        entries=entries[:limit],
+        learn_count=learn_count,
+        anti_learn_count=anti_learn_count,
+    )
