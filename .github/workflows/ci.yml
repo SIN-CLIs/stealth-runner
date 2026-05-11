@@ -34,10 +34,14 @@ jobs:
         python-version: ["3.12", "3.13"]
 
     steps:
-      - uses: actions/checkout@v4
+      # AGENTS.md §13.8.4: Action-Versionen sind Brain-Eigentum, kein @latest.
+      # SR-65 (2026-05-11): Bump auf Node-24-Runtime vor 2026-06-02-Frist.
+      # checkout@v4 -> @v5, setup-python@v5 -> @v6. Folge-Bumps hier nachziehen
+      # und in §13.8.4 als Zeile + Datum verankern (Audit-Trail).
+      - uses: actions/checkout@v5
 
       - name: Set up Python ${{ matrix.python-version }}
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
 
