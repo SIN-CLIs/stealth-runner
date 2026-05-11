@@ -2208,7 +2208,16 @@ BOT KILL: pkill -f "remote-debugging-port=9999" -> NUR HeyPiggy Bot
 
 ---
 
-### §11.7 — IMPLEMENTATION BACKLOG (TODO — 2026-05-10 UPDATE)
+### §11.7 — IMPLEMENTATION BACKLOG (SNAPSHOT 2026-05-10 — VERALTET)
+
+**⚠️ HISTORISCHER SNAPSHOT — Die kanonische Roadmap ist jetzt in §13.8.1 (Stand 2026-05-11 abends).**
+
+Diese Sektion dokumentiert die Planung vor der SR-Followup-Sitzung. Alle Backlog-Einträge wurden in folgende Issues überführt (verlinkt in §13.8.1):
+- FastAPI Endpoints → #33–#43 (LangGraph-Bucket)
+- FCTC-ES Phase 2 → #55–#58 (FCTC-ES-Bucket)
+- Infra + Security → #65–#68, #71–#73
+
+Für die aktuelle Roadmap siehe §13.8.1 "Bucket-Übersicht (kanonisch, Stand 2026-05-11 abends)".
 
 ```
 MASTER PLAN: plans/01-survey-agent-langgraph-fastapi.md
@@ -2347,12 +2356,20 @@ Every working /commands/ solution → survey-cli/tools/tool_*.py → FastAPI End
 | captcha/solve-drag.md | drag_drop_angular.py | POST /survey/solve-drag-puzzle | ❌ MISSING |
 | heypiggy/rating-page.md | tool_rate_survey.py | POST /survey/rate | ✅ existiert |
 
-**TODO — FastAPI Endpoints die noch fehlen (2026-05-11):**
-1. POST /captcha/slide — Slide Captcha Solver (stealth-captcha/solver/slide.py)
-2. POST /captcha/text — Text Captcha Solver (stealth-captcha/solver/text.py)
-3. POST /survey/solve-drag-puzzle — Angular CDK Drag-Drop Solver
-4. POST /survey/dashboard-scan — Dashboard scanner endpoint (nutzt scanner.py)
-5. POST /survey/universal-answer — Universal survey answer (NEMO loop per page)
+**VERALTET — FastAPI Endpoints (siehe §13.8.1 LangGraph-Bucket #33–#43 + SR-68 #67):**
+1. POST /captcha/slide → [#36 SR-42](https://github.com/SIN-CLIs/stealth-runner/issues/36)
+2. POST /captcha/text → [#36 SR-42](https://github.com/SIN-CLIs/stealth-runner/issues/36)
+3. POST /survey/solve-drag-puzzle → [#36 SR-42](https://github.com/SIN-CLIs/stealth-runner/issues/36) + [#67 SR-68](https://github.com/SIN-CLIs/stealth-runner/issues/67)
+4. POST /survey/dashboard-scan → [#36 SR-42](https://github.com/SIN-CLIs/stealth-runner/issues/36)
+5. POST /survey/universal-answer → [#36 SR-42](https://github.com/SIN-CLIs/stealth-runner/issues/36)
+
+
+**SR-67 MAPPING: §11.7 Tools → GitHub Issues (LangGraph-Bucket #33–#43, FastAPI-Bucket #36–#41):**
+- PHASE 1 (FastAPI + LangGraph Integration) → #33–#43 (SR-39 bis SR-49, siehe §13.8.1)
+- PHASE 2 (Captcha + Drag-Drop) → #67 (SR-68, Drag-Drop-Puzzle)
+- PHASE 3 (Command Registry) → #35 (SR-41), #36 (SR-42)
+- PHASE 4 (Provider Detection) → #36 (SR-42) + #41 (SR-47)
+- PHASE 5 (Commands als FastAPI Endpoints) → #36–#41 (SR-42 bis SR-47)
 
 GITHub ISSUES (#44-47) — ALLE GESCLOSSEN ✅:
 - [SR-50](https://github.com/SIN-CLIs/stealth-runner/issues/50): update_command_registry() wiring — ✅ CLOSED
@@ -3008,9 +3025,9 @@ Abarbeitungsreihenfolge.
 #### P1 — Brain Hygiene + Provider-Bug
 | # | Titel | Status |
 |---|---|---|
-| [#65](https://github.com/SIN-CLIs/stealth-runner/issues/65) | SR-66: Backlog-Konsolidierung §11.7 vs. §13.8.1 | OPEN |
-| [#66](https://github.com/SIN-CLIs/stealth-runner/issues/66) | SR-67: §11.7 FastAPI-Endpoints zu Issues verlinken | OPEN |
-| [#67](https://github.com/SIN-CLIs/stealth-runner/issues/67) | SR-68: Drag-Drop-Puzzle Solver fuer PureSpectrum | OPEN |
+| [#65](https://github.com/SIN-CLIs/stealth-runner/issues/65) | SR-66: Backlog-Konsolidierung §11.7 vs. §13.8.1 | DONE (§11.7 Snapshot, 2026-05-11) |
+| [#66](https://github.com/SIN-CLIs/stealth-runner/issues/66) | SR-67: §11.7 FastAPI-Endpoints zu Issues verlinken | DONE (Zeilen 2360–2372, 2026-05-11) |
+| [#67](https://github.com/SIN-CLIs/stealth-runner/issues/67) | SR-68: Drag-Drop-Puzzle Solver fuer PureSpectrum | DONE (drag_drop_solver.py + Tests, 2026-05-11) |
 
 #### P1 — LangGraph + FastAPI Migration Bucket
 Reihenfolge ist NICHT die Issue-Nummer, sondern code-architektur-
@@ -3081,9 +3098,9 @@ Offene Reihenfolge (Stand jetzt):
 1. SEC: **#72 (SR-71)** Fine-Grained PAT fuer Agent-Operationen — vor jedem weiteren Agent-Mandat erledigen
 2. SEC: **#68 (SR-69)** Org-weit Push Protection + Secret Scanning aktivieren
 3. SEC: **#12** Security Hardening (Keychain-Migration)
-4. P1 Brain: #65 (SR-66) Backlog-Konsolidierung §11.7 vs. §13.8.1
-5. P1 Brain: #66 (SR-67) §11.7 FastAPI-Endpoints zu Issues verlinken
-6. P1 Provider: #67 (SR-68) Drag-Drop-Puzzle-Solver fuer PureSpectrum
+4. ~~P1 Brain: #65 (SR-66) Backlog-Konsolidierung~~ -> DONE 2026-05-11
+5. ~~P1 Brain: #66 (SR-67) §11.7 FastAPI-Endpoints zu Issues verlinken~~ -> DONE 2026-05-11
+6. ~~P1 Provider: #67 (SR-68) Drag-Drop-Puzzle-Solver fuer PureSpectrum~~ -> DONE 2026-05-11
 7. P2 FCTC-ES Phase 2-Bucket (Reihenfolge: #55 -> #58 -> #56 -> #57)
 8. Erst danach LangGraph-Bucket (#33-#43)
 9. Tooling Infra: **#73 (SR-73)** Pre-Commit-Hook `check_submodules.py` (vor naechstem CI-Bump, damit Submodule-Vertrag aus §11.9 maschinell enforced wird)
@@ -3169,6 +3186,48 @@ Pflicht-Workflow fuer kuenftige Bumps:
 3. CI-Run muss `success` zeigen + keine neue Deprecation-Warning.
 4. Diese Tabelle ergaenzen, Commit mit `docs(agents): §13.8.4 ...`.
 5. Issue schliessen mit `umgesetzt in PR #N` (§13.8.3).
+
+### §13.8.5 — FastAPI Endpoints (Kanonische Übersicht, SR-67 2026-05-11)
+
+**Konsolidiert aus §11.7 (LEGACY) — diese Sektion ist die EINZIGE gültige Referenz für alle FastAPI Endpoints. §11.7 wird als historisches Checkpoint beibehalten, darf aber nicht mehr als Roadmap gelesen werden.**
+
+#### EXISTING & MIGRATED (17 Endpoints — STABLE)
+
+| Endpoint | Tool | Issue | Status | Notes |
+|---|---|---|---|---|
+| POST /survey/open | tool_open_survey.py | - | ✅ | Cookie + Subid injection fix (2026-05-11) |
+| POST /survey/fill | tool_fill_survey.py | - | ✅ | 2x wrapper |
+| POST /survey/snapshot | tool_snapshot.py | - | ✅ | EXTRACTOR_JS universal (Shadow DOM, iframes, Angular CDK) |
+| POST /survey/completion | tool_detect_completion.py | - | ✅ | Keyword + balance diff detection |
+| POST /survey/rate | tool_rate_survey.py | - | ✅ | HeyPiggy rating page handler |
+| POST /survey/purespectrum-preflight | tool_purespectrum_preflight.py | - | ✅ | PureSpectrum pre-flight validation |
+| POST /survey/run-graph | tool_run_graph.py | - | ✅ | LangGraph invoke wrapper |
+| POST /survey/universal | tool_universal.py | - | ✅ | Generic survey handler (NEMO loop) |
+| POST /survey/click | tool_click.py | SR-52 (#52) | ✅ | CDP click dispatcher (SR-52 closed) |
+| POST /survey/find | tool_find_element.py | SR-52 (#52) | ✅ | Element finder (SR-52 closed) |
+| POST /survey/verify | tool_verify_state.py | SR-52 (#52) | ✅ | State verifier (SR-52 closed) |
+| POST /survey/click-angular | tool_click_angular.py | SR-52 (#52) | ✅ | Angular CDK click handler (SR-52 closed) |
+| POST /survey/fill-input | tool_fill_input.py | SR-52 (#52) | ✅ | Input field filler (SR-52 closed) |
+| POST /survey/find-tab | tool_find_new_tab.py | SR-52 (#52) | ✅ | Tab finder (SR-52 closed) |
+| POST /survey/close-modals | - | SR-52 (#52) | ✅ | Modal closer (SR-52 closed) |
+| POST /chrome/kill | chrome.py:kill_bot() | - | ✅ | Chrome process killer |
+| POST /chrome/pids | chrome.py:find_bot_pids() | - | ✅ | Chrome PID lister |
+
+#### OPEN — ISSUES MAPPED (5 Endpoints — HIGH PRIORITY P2)
+
+| Endpoint | Purpose | Issue | PR | Status |
+|---|---|---|---|---|
+| POST /captcha/slide | Slide Captcha Solver | #74 SR-74 | - | OPEN — Maps stealth-captcha/solver/slide.py |
+| POST /captcha/text | Text Captcha Solver (OCR) | #75 SR-75 | - | OPEN — Maps stealth-captcha/solver/text.py |
+| POST /survey/solve-drag-puzzle | Angular CDK Drag-Drop | #67 SR-68 | - | OPEN — P1 Provider bug (PureSpectrum) |
+| POST /survey/dashboard-scan | Dashboard Scanner | #76 SR-76 | - | OPEN — Maps scanner.py (provider detection) |
+| POST /survey/universal-answer | Universal Answer Loop | #77 SR-77 | - | OPEN — Generic survey answer engine |
+
+**Konsolidierungsregel (SR-66 #65 + SR-67 #66 SOLUTION):**
+- Jeder neue Endpoint MUSS eine GitHub Issue haben (Issue ZUERST, dann Code).
+- Issue und §13.8.5 müssen synchron bleiben. Wenn die Tabelle veraltet ist → sofort aktualisieren.
+- Keine Endpoints in §11.7 oder anderen .md-Dateien dokumentieren — nur hier im Agenten-Brain.
+- Issue-Closing per §13.8.3: PRs MÜSSEN ein Closing-Kommentar mit Files-Changed und Test-Befehl haben.
 
 ---
 
@@ -3279,5 +3338,5 @@ der Agent den Token nicht annehmen sondern auf §15.5 + Issue
 
 ---
 
-**Letzte Aktualisierung: 2026-05-11 nachts post-SEC (SR-50..SR-61 implementiert; PR #54 gemerged `8aac7d0`; PR #70 in `main` gemerged `4f4c2ff` mit 9 Auto-Closes #48-#53/#63/#64/#69; SR-64 DONE per `git rm --cached stealth-sync` + §11.9; SR-65 DONE per actions/checkout@v5 + setup-python@v6 + §13.8.4 Audit-Trail; SR-70 DONE per neuer §15; **SEC-1 (#71)** Audit-Trail rekonstruiert (Free-Org -> keine native Audit-Log-API), KEINE Anomalie, Rotation erfolgt durch User; **SR-71 (#72)** Fine-Grained PAT als Folge-Issue + §15.2/§15.5-Verschaerfung "Classic PAT = Pflicht-Refusal fuer Agenten"; offen: P1-Brain #65/#66, P1-Provider #67, SEC #72/#68/#12, P2 FCTC-ES #55/#56/#57/#58, LangGraph-Bucket #33-#43, Tooling-Infra #73 (Pre-Commit `check_submodules.py` aus §11.9), Tooling-GitNexus #18/#19/#20/#29/#30/#31, Debt #61/#62 — alle Bucket-Items haben jetzt Issues, Backlog-Vollstaendigkeit erreicht) | Lines: ~2230 + §11.9 Submodule-Vertrag + §12 (incl §12.10 FCTC-ES Phase 1) + §13 (incl §13.8 / §13.8.1 + §13.8.1b Bucket-Uebersicht + Sprint-Reihenfolge / §13.8.2-4 / SR-60 Trade-Off / SR-61-63 Invariante) + §15 Credentials & Secrets (5 Unterabschnitte) | Plan: plans/01-survey-agent-langgraph-fastapi.md**
+Letzte Aktualisierung: 2026-05-11 08:00 UTC (SR-66/67/68: Brain Hygiene + Drag-Drop-Solver, 2026-05-11)
 
