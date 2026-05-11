@@ -253,6 +253,16 @@ from api.cookie_routes import router as cookie_router
 # Prefix: /dashboard (definiert in dashboard_routes.py)
 from api.dashboard_routes import router as dashboard_router
 
+# captcha_routes.py Router: Captcha-Solver (slide, text, angular-drag-drop)
+# Prefix: /captcha (definiert in captcha_routes.py)
+# SR-74: POST /captcha/slide, SR-75: POST /captcha/text
+from api.captcha_routes import router as captcha_router
+
+# survey_universal_routes.py Router: Universal Survey-Automation
+# Prefix: /survey (definiert in survey_universal_routes.py)
+# SR-76: POST /survey/dashboard-scan, SR-77: POST /survey/universal-answer
+from api.survey_universal_routes import router as survey_universal_router
+
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # LAZY-LOADER: Schweren Code erst bei ERSTEM Zugriff laden
@@ -535,6 +545,16 @@ app.include_router(dashboard_router)
 # Das ist der NEUE kanonische Pfad — siehe survey-cli/survey/cdp_universal.py
 # und survey-cli/survey/cdp_actuator.py.
 app.include_router(universal_router_export)
+
+# Registriere Captcha-Router (prefix="/captcha", tags=["captcha"]).
+# Endpoints: POST /captcha/slide, POST /captcha/text, POST /captcha/angular-drag-drop.
+# SR-74, SR-75: Echte Solver-Integration aus stealth-captcha/solver/*
+app.include_router(captcha_router)
+
+# Registriere Survey-Universal-Router (prefix="/survey", tags=["survey-universal"]).
+# Endpoints: POST /survey/dashboard-scan, POST /survey/universal-answer.
+# SR-76, SR-77: Dashboard-Scanning und Universal Page-by-Page Answering
+app.include_router(survey_universal_router)
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
