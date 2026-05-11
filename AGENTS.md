@@ -2957,6 +2957,93 @@ Lektuere, (b) der zukuenftige LLM-Suggester (SR-57, #56) der
 auch Laufzeit-Aufbauten erkennen kann. Wer die Mask-Logik
 abschwaecht, MUSS gleichzeitig SR-57 als Ersatz-Gate liefern.
 
+### §13.8.1b — Bucket-Uebersicht (kanonisch, Stand 2026-05-11 abends)
+
+Nach der SR-Followup-Session sind alle offenen Issues in fuenf
+Buckets sortiert. Reihenfolge dieser Tabelle = empfohlene
+Abarbeitungsreihenfolge.
+
+#### P0 — System Integrity (blockiert Releases)
+| # | Titel | Status |
+|---|---|---|
+| [#63](https://github.com/SIN-CLIs/stealth-runner/issues/63) | SR-64: Submodule `stealth-sync` `.gitmodules` fix | OPEN |
+| [#64](https://github.com/SIN-CLIs/stealth-runner/issues/64) | SR-65: GitHub Actions Node-20-Deprecation Bump (Frist 2026-06-02) | OPEN |
+| (action) | PR #54 nach `feat/universal-cdp-scanner` mergen | PENDING |
+| (action) | PR `feat/universal-cdp-scanner` -> `main` oeffnen + mergen | PENDING |
+
+#### P1 — Brain Hygiene + Provider-Bug
+| # | Titel | Status |
+|---|---|---|
+| [#65](https://github.com/SIN-CLIs/stealth-runner/issues/65) | SR-66: Backlog-Konsolidierung §11.7 vs. §13.8.1 | OPEN |
+| [#66](https://github.com/SIN-CLIs/stealth-runner/issues/66) | SR-67: §11.7 FastAPI-Endpoints zu Issues verlinken | OPEN |
+| [#67](https://github.com/SIN-CLIs/stealth-runner/issues/67) | SR-68: Drag-Drop-Puzzle Solver fuer PureSpectrum | OPEN |
+
+#### P1 — LangGraph + FastAPI Migration Bucket
+Reihenfolge ist NICHT die Issue-Nummer, sondern code-architektur-
+diktiert. Alle Issues dieses Buckets touchen `survey/graph/nodes.py`
+oder `survey/runner*.py` — **nicht parallel zum FCTC-ES-Bucket
+starten**.
+
+| Rang | # | Titel |
+|---|---|---|
+| 1 | [#33](https://github.com/SIN-CLIs/stealth-runner/issues/33) | SR-39: `cmd_run` -> `run_survey_loop()` statt `SurveyRunner` |
+| 2 | [#34](https://github.com/SIN-CLIs/stealth-runner/issues/34) | SR-40: `cmd_watch` -> Graph invoken (Background-Task) |
+| 3 | [#35](https://github.com/SIN-CLIs/stealth-runner/issues/35) | SR-41: Balance-Tracking in `graph.py` |
+| 4 | [#42](https://github.com/SIN-CLIs/stealth-runner/issues/42) | SR-48: `run_survey_loop()` -> echtes `LangGraph.invoke()` |
+| 5 | [#43](https://github.com/SIN-CLIs/stealth-runner/issues/43) | SR-49: Graph compiled promotion (nach 10x Erfolg) |
+| 6 | [#36](https://github.com/SIN-CLIs/stealth-runner/issues/36) | SR-42: POST `/survey/run-graph` FastAPI Endpoint |
+| 7 | [#40](https://github.com/SIN-CLIs/stealth-runner/issues/40) | SR-46: Watch-Loop als FastAPI Background-Task |
+| 8 | [#41](https://github.com/SIN-CLIs/stealth-runner/issues/41) | SR-47: GET `/survey/status` + GET `/survey/history` |
+| 9 | [#37](https://github.com/SIN-CLIs/stealth-runner/issues/37) | SR-43: `decide_node` -> NIM Nemotron Decision |
+| 10 | [#39](https://github.com/SIN-CLIs/stealth-runner/issues/39) | SR-45: Auto-Doc + stealth-memory integrieren |
+
+#### P2 — FCTC-ES Phase 2 Bucket
+Roadmap-Reihenfolge (siehe §12.10). **Nicht parallel zum
+LangGraph-Bucket starten.**
+
+| Rang | # | Titel |
+|---|---|---|
+| 1 | [#55](https://github.com/SIN-CLIs/stealth-runner/issues/55) | SR-56: Eval-Harness `match_field` (Regression-Gate) |
+| 2 | [#58](https://github.com/SIN-CLIs/stealth-runner/issues/58) | SR-59: Persistente `miss_labels` in Telemetrie |
+| 3 | [#56](https://github.com/SIN-CLIs/stealth-runner/issues/56) | SR-57: FCTC-ES Phase 2 — LLM-Suggester |
+| 4 | [#57](https://github.com/SIN-CLIs/stealth-runner/issues/57) | SR-58: `survey learn apply` — Apply-Path |
+
+#### SEC — Security (hoechste Dringlichkeit nach P0)
+| # | Titel | Status |
+|---|---|---|
+| (action) | SEC-1: 3 PATs vom 2026-05-11 rotieren | PENDING (manuell) |
+| (action) | SEC-2: GitHub Audit-Log auf erwartete Aktionen pruefen | PENDING (manuell) |
+| [#68](https://github.com/SIN-CLIs/stealth-runner/issues/68) | SR-69: Org-weit Secret Scanning + Push Protection | OPEN |
+| [#69](https://github.com/SIN-CLIs/stealth-runner/issues/69) | SR-70: AGENTS.md §15 Credentials & Secrets als Brain-Regel | OPEN |
+| [#12](https://github.com/SIN-CLIs/stealth-runner/issues/12) | Security Hardening (Keychain + Temp-Profiles + Audit) | OPEN |
+
+#### Debt-Tracker (CI dokumentiert geignorte Regeln)
+| # | Titel | Status |
+|---|---|---|
+| [#61](https://github.com/SIN-CLIs/stealth-runner/issues/61) | SR-62: Style-Debt — E501/E701/E702 | OPEN |
+| [#62](https://github.com/SIN-CLIs/stealth-runner/issues/62) | SR-63: Test-Debt — 10 Test-Dateien (37 Failures) | OPEN |
+
+#### Tooling / Architektur (nach P0 + P1)
+| # | Titel | Status |
+|---|---|---|
+| [#18](https://github.com/SIN-CLIs/stealth-runner/issues/18) | Parallel Subagent Execution (haengt am FastAPI-Bucket) | OPEN |
+| [#19](https://github.com/SIN-CLIs/stealth-runner/issues/19) | Dynamic Subagent Registry (haengt an #18) | OPEN |
+| [#20](https://github.com/SIN-CLIs/stealth-runner/issues/20) | ADR-001 Cloud Provider — gehoert nach AGENTS.md §16 statt ADR-MD | OPEN |
+| [#29](https://github.com/SIN-CLIs/stealth-runner/issues/29) | GitNexus universal code intelligence | OPEN |
+| [#30](https://github.com/SIN-CLIs/stealth-runner/issues/30) | GitNexus periodisches Reindex per Cron/CI (haengt an #64) | OPEN |
+| [#31](https://github.com/SIN-CLIs/stealth-runner/issues/31) | GitNexus Impact Gate vor Commits (haengt an #30) | OPEN |
+
+#### Sprint-Reihenfolge (heute + morgen)
+1. SEC-1 (Token rotieren) — manuell, ueber GitHub-UI
+2. P0: PR #54 mergen -> PR `feat/universal-cdp-scanner` -> `main` mergen
+3. P0: #63 (SR-64) + #64 (SR-65) — Submodule + Action-Bumps
+4. Aktion: #48-#53 schliessen
+5. SEC: #68 (SR-69) + #69 (SR-70)
+6. P1 Brain: #65 (SR-66) + #66 (SR-67)
+7. P1 Provider: #67 (SR-68) Drag-Drop-Puzzle
+8. P2-Bucket starten (#55 -> #58 -> #56 -> #57)
+9. Danach erst LangGraph-Bucket (#33-#43)
+
 **SR-61 / SR-62 / SR-63 Invariante (kanonisch):** Wenn der
 CI-Trigger-Fix (SR-Followup, §13.8.2) zukuenftig wieder einen
 Schwung versteckter Findings sichtbar macht, MUSS der Reviewer
@@ -3021,5 +3108,5 @@ externen Tools — die Roadmap lebt im Agenten-Brain.
 
 ---
 
-**Letzte Aktualisierung: 2026-05-11 (SR-50..SR-55 implementiert; SR-56..SR-59 als P2 angelegt; CI-Trigger gefixt; SR-60/61 implementiert; SR-62/63 als Debt-Tracker angelegt) | Lines: ~2110 + §12 (incl §12.10 FCTC-ES Phase 1) + §13 (incl §13.8 / §13.8.1-3 / SR-60 Trade-Off / SR-61-63 Invariante) | Plan: plans/01-survey-agent-langgraph-fastapi.md**
+**Letzte Aktualisierung: 2026-05-11 abends (SR-50..SR-61 implementiert; SR-62..SR-70 als Issues + Bucket-Tabelle; CI gruen; Brain mit voller Bucket-Uebersicht §13.8.1b) | Lines: ~2200 + §12 (incl §12.10 FCTC-ES Phase 1) + §13 (incl §13.8 / §13.8.1 + §13.8.1b Bucket-Uebersicht / §13.8.2-3 / SR-60 Trade-Off / SR-61-63 Invariante) | Plan: plans/01-survey-agent-langgraph-fastapi.md**
 
