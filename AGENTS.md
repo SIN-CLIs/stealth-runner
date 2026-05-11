@@ -1129,7 +1129,7 @@ content: |
   ```
   1. SCAN: CDP JS -> finde Tab MIT .survey-item (document.querySelectorAll)
   2. START: CDP JS -> clickSurvey('ID') → Dashboard öffnet Modal
-  3. MODAL: CDP JS -> window.open interception + Target.createTarget → Survey-Tab ����ffnet sich
+  3. MODAL: CDP JS -> window.open interception + Target.createTarget → Survey-Tab ������ffnet sich
      ⚠️ CUA b.click() + CDP Input.dispatchMouseEvent = FAIL (Chrome Popup Blocker!)
      ✅ window.open interception (siehe §KRITISCH: "Umfrage starten" Problem)
      ⚠️ COOKIE TIMING: Target.createTarget öffnet neuen Tab OHNE Session-Cookies!
@@ -3000,7 +3000,7 @@ Abarbeitungsreihenfolge.
 | [#63](https://github.com/SIN-CLIs/stealth-runner/issues/63) | SR-64: Submodule `stealth-sync` `.gitmodules` fix | DONE (Option B, §11.9, 2026-05-11) |
 | [#64](https://github.com/SIN-CLIs/stealth-runner/issues/64) | SR-65: GitHub Actions Node-20-Deprecation Bump (Frist 2026-06-02) | DONE (`.github/workflows/ci.yml` v5/v6, 2026-05-11) |
 | (action) | PR #54 nach `feat/universal-cdp-scanner` mergen | DONE (`8aac7d0`, 2026-05-11) |
-| (action) | PR `feat/universal-cdp-scanner` -> `main` oeffnen + mergen | OPEN (PR #70, CI laeuft) |
+| (action) | PR `feat/universal-cdp-scanner` -> `main` oeffnen + mergen | DONE (PR #70 -> `4f4c2ff`, 2026-05-11) |
 
 #### P1 — Brain Hygiene + Provider-Bug
 | # | Titel | Status |
@@ -3042,8 +3042,8 @@ LangGraph-Bucket starten.**
 #### SEC — Security (hoechste Dringlichkeit nach P0)
 | # | Titel | Status |
 |---|---|---|
-| (action) | SEC-1: 3 PATs vom 2026-05-11 rotieren | PENDING (manuell) |
-| (action) | SEC-2: GitHub Audit-Log auf erwartete Aktionen pruefen | PENDING (manuell) |
+| [#71](https://github.com/SIN-CLIs/stealth-runner/issues/71) | SEC-1: PAT-Leak-Vorfall 2026-05-11 (Rotation + Audit-Trail) | Rotation erfolgt (User); Audit clean (siehe Issue-Body); Issue open zur Doku |
+| [#72](https://github.com/SIN-CLIs/stealth-runner/issues/72) | SR-71: Fine-Grained PAT fuer Agent-Operationen statt classic PAT (aus SEC-1) | OPEN |
 | [#68](https://github.com/SIN-CLIs/stealth-runner/issues/68) | SR-69: Org-weit Secret Scanning + Push Protection | OPEN |
 | [#69](https://github.com/SIN-CLIs/stealth-runner/issues/69) | SR-70: AGENTS.md §15 Credentials & Secrets als Brain-Regel | DONE (§15, 2026-05-11) |
 | [#12](https://github.com/SIN-CLIs/stealth-runner/issues/12) | Security Hardening (Keychain + Temp-Profiles + Audit) | OPEN |
@@ -3064,16 +3064,25 @@ LangGraph-Bucket starten.**
 | [#30](https://github.com/SIN-CLIs/stealth-runner/issues/30) | GitNexus periodisches Reindex per Cron/CI (haengt an #64) | OPEN |
 | [#31](https://github.com/SIN-CLIs/stealth-runner/issues/31) | GitNexus Impact Gate vor Commits (haengt an #30) | OPEN |
 
-#### Sprint-Reihenfolge (heute + morgen)
-1. SEC-1 (Token rotieren) — manuell, ueber GitHub-UI
-2. P0: PR #54 mergen -> PR `feat/universal-cdp-scanner` -> `main` mergen
-3. P0: #63 (SR-64) + #64 (SR-65) — Submodule + Action-Bumps
-4. Aktion: #48-#53 schliessen
-5. SEC: #68 (SR-69) + #69 (SR-70)
-6. P1 Brain: #65 (SR-66) + #66 (SR-67)
-7. P1 Provider: #67 (SR-68) Drag-Drop-Puzzle
-8. P2-Bucket starten (#55 -> #58 -> #56 -> #57)
-9. Danach erst LangGraph-Bucket (#33-#43)
+#### Sprint-Reihenfolge (Stand 2026-05-11 nachts — DONE-Eintraege rausgestrichen, OPEN-Reihenfolge bleibt)
+
+Erledigt in der 2026-05-11-Welle:
+- ~~SEC-1 (Token rotieren) — manuell~~ -> erfolgt durch User, dokumentiert in Issue #71
+- ~~P0: PR #54 mergen -> PR `feat/universal-cdp-scanner` -> `main` mergen~~ -> `8aac7d0` + `4f4c2ff`
+- ~~P0: #63 (SR-64) + #64 (SR-65)~~ -> DONE in PR #70
+- ~~Aktion: #48-#53 schliessen~~ -> automatisch geschlossen durch PR #70-Closes
+- ~~SEC: #69 (SR-70)~~ -> DONE in PR #70 (§15 Brain-Regel)
+
+Offene Reihenfolge (Stand jetzt):
+1. SEC: **#72 (SR-71)** Fine-Grained PAT fuer Agent-Operationen — vor jedem weiteren Agent-Mandat erledigen
+2. SEC: **#68 (SR-69)** Org-weit Push Protection + Secret Scanning aktivieren
+3. SEC: **#12** Security Hardening (Keychain-Migration)
+4. P1 Brain: #65 (SR-66) Backlog-Konsolidierung §11.7 vs. §13.8.1
+5. P1 Brain: #66 (SR-67) §11.7 FastAPI-Endpoints zu Issues verlinken
+6. P1 Provider: #67 (SR-68) Drag-Drop-Puzzle-Solver fuer PureSpectrum
+7. P2 FCTC-ES Phase 2-Bucket (Reihenfolge: #55 -> #58 -> #56 -> #57)
+8. Erst danach LangGraph-Bucket (#33-#43)
+9. Debt (#61, #62) und Tooling (#18-#31) als Background-Bucket
 
 **SR-61 / SR-62 / SR-63 Invariante (kanonisch):** Wenn der
 CI-Trigger-Fix (SR-Followup, §13.8.2) zukuenftig wieder einen
@@ -3187,7 +3196,8 @@ ist §15.3.
 
 | Quelle | Erlaubt für | Notiz |
 |--------|-------------|-------|
-| **macOS Keychain** | lokale Dev-PATs, Chrome-Cookies, NVIDIA-Keys | siehe Issue #12 (Security Hardening) |
+| **macOS Keychain** | lokale Dev-PATs, Chrome-Cookies, NVIDIA-Keys, Agent-PATs | siehe Issue #12 (Security Hardening) |
+| **Fine-Grained PAT (Agent-Operationen)** | nur Agent-Workflows, single-repo-scope, Expiration < 30d | Spezifikation siehe §15.5 + Issue #72 (SR-71). Classic PAT fuer Agenten = Pflicht-Refusal. |
 | **Vercel Project Vars** | Production-Secrets der v0-Apps | Settings → Vars |
 | **GitHub Actions Secrets** | CI-Tokens, Deploy-Keys | `gh secret set` |
 | **stealth-suite/.env (Dev-only)** | nur Public-Test-Endpoints | NIEMALS in Repo committen — siehe `.gitignore` |
@@ -3247,10 +3257,22 @@ Wenn der User einem Agenten ein Secret im Klartext schickt:
 **Historischer Vorfall:** 2026-05-11 — User schickte 3 PATs im Chat
 an v0. v0-Agent nutzte einen Token einmalig für `gh auth login`, mergte
 PR #54, eröffnete PR #70, fixte SR-64/SR-65/SR-70 — danach Rotation
-durch User gemäß §15.3. Brain-Regel §15.5 ist die Konsequenz daraus,
-damit der nächste Agent denselben Vorfall standardisiert behandelt.
+durch User gemäß §15.3 (Issue #71 SEC-1). Brain-Regel §15.5 ist die
+Konsequenz daraus, damit der nächste Agent denselben Vorfall
+standardisiert behandelt.
+
+**Verschärfung (Issue #72 SR-71, aus SEC-1 abgeleitet):** Wenn ein
+Agent einen Token via `gh auth login` annimmt, MUSS es ein
+**Fine-Grained PAT** mit single-repo-scope sein. Konkrete Pflicht-
+Permissions: `Contents: rw`, `Pull requests: rw`, `Issues: rw`,
+`Workflows: rw` (nur wenn nötig), `Metadata: r`. **Classic PAT
+ist Pflicht-Refusal** (Scope `admin:org`/`admin:enterprise`/
+`delete_repo`/`audit_log` ist Blast-Radius weit ueber dem
+Mandat). Wenn der User trotzdem einen Classic PAT reicht, MUSS
+der Agent den Token nicht annehmen sondern auf §15.5 + Issue
+#72 verweisen.
 
 ---
 
-**Letzte Aktualisierung: 2026-05-11 nachts (SR-50..SR-61 implementiert; PR #54 gemerged in `feat/universal-cdp-scanner`, `8aac7d0`; PR #70 `feat/universal-cdp-scanner` -> `main` offen mit Closes #48-#53; SR-64 (#63) DONE per `git rm --cached stealth-sync` + §11.9 Submodule-Vertrag; SR-65 (#64) DONE per `actions/checkout@v5` + `actions/setup-python@v6` + §13.8.4 Audit-Trail; SR-70 (#69) DONE per neuer §15 Credentials & Secrets; SEC-1 PAT-Rotation erfolgt durch User; offen: P1-Brain #65/#66, P1-Provider #67, SEC #68/#12, P2 FCTC-ES #55/#56/#57/#58, LangGraph-Bucket #33-#43, Tooling #18/#19/#20/#29/#30/#31, Debt #61/#62) | Lines: ~2200 + §11.9 Submodule-Vertrag + §12 (incl §12.10 FCTC-ES Phase 1) + §13 (incl §13.8 / §13.8.1 + §13.8.1b Bucket-Uebersicht / §13.8.2-4 / SR-60 Trade-Off / SR-61-63 Invariante) + §15 Credentials & Secrets | Plan: plans/01-survey-agent-langgraph-fastapi.md**
+**Letzte Aktualisierung: 2026-05-11 nachts post-SEC (SR-50..SR-61 implementiert; PR #54 gemerged `8aac7d0`; PR #70 in `main` gemerged `4f4c2ff` mit 9 Auto-Closes #48-#53/#63/#64/#69; SR-64 DONE per `git rm --cached stealth-sync` + §11.9; SR-65 DONE per actions/checkout@v5 + setup-python@v6 + §13.8.4 Audit-Trail; SR-70 DONE per neuer §15; **SEC-1 (#71)** Audit-Trail rekonstruiert (Free-Org -> keine native Audit-Log-API), KEINE Anomalie, Rotation erfolgt durch User; **SR-71 (#72)** Fine-Grained PAT als Folge-Issue + §15.2/§15.5-Verschaerfung "Classic PAT = Pflicht-Refusal fuer Agenten"; offen: P1-Brain #65/#66, P1-Provider #67, SEC #72/#68/#12, P2 FCTC-ES #55/#56/#57/#58, LangGraph-Bucket #33-#43, Tooling #18/#19/#20/#29/#30/#31, Debt #61/#62) | Lines: ~2230 + §11.9 Submodule-Vertrag + §12 (incl §12.10 FCTC-ES Phase 1) + §13 (incl §13.8 / §13.8.1 + §13.8.1b Bucket-Uebersicht + Sprint-Reihenfolge / §13.8.2-4 / SR-60 Trade-Off / SR-61-63 Invariante) + §15 Credentials & Secrets (5 Unterabschnitte) | Plan: plans/01-survey-agent-langgraph-fastapi.md**
 
