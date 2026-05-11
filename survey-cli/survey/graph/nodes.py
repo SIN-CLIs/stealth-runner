@@ -432,19 +432,45 @@ def decide_node(state: SurveyState) -> SurveyState:
                                 "reason": f"heuristic_radio:{e['name'][:30]}"}
                     break
 
-        # 2b leere textbox
+        # 2b leere textbox/searchbox/spinbutton/combobox — PROFIL-MAPPING
+        # ----------------------------------------------------------------
+        # Bisher (vor 2026-05-11): IMMER profile["city"] gefuellt, egal
+        # welches Feld. Das hat "Berlin" in E-Mail- und PLZ-Felder geschrieben
+        # und sofort Screen-Outs ausgeloest.
+        #
+        # Jetzt: ProfileLoader.match_field() prueft den Element-Namen
+        # (Label/Placeholder) gegen Keyword-Familien (DE/EN) und liefert
+        # den korrekten Profil-Wert ODER None.
+        # → None = HEURISTIK SKIPPT das Feld; im naechsten Tick uebernimmt
+        #   der LLM-Fallback (decide_node Pfad 1) die Entscheidung.
+        #
+        # Pflicht-Kontext: survey-cli/survey/profile_loader.py KEYWORD-FAMILIEN.
+        # Erweiterung: neues Keyword-Pattern dort ergaenzen + Test in
+        # survey-cli/tests/test_profile_match_field.py hinzufuegen.
         if not decision:
             for e in elements:
                 if e["stable_id"] == avoid_id:
                     continue
-                if e["role"] in ("textbox", "searchbox", "spinbutton"):
-                    if not e.get("value"):
-                        val = str(profile.get("city", "Berlin"))
-                        decision = {"action": "fill",
-                                    "stable_id": e["stable_id"],
-                                    "value": val,
-                                    "reason": "heuristic_fill"}
-                        break
+                if e["role"] not in ("textbox", "searchbox", "spinbutton",
+                                     "combobox"):
+                    continue
+                if e.get("value"):
+                    continue  # bereits ausgefuellt
+                placeholder = (e.get("attrs") or {}).get("placeholder") or ""
+                val = ProfileLoader.match_field(
+                    role=e["role"],
+                    name=e.get("name") or "",
+                    profile=profile,
+                    placeholder=placeholder,
+                )
+                if val is None:
+                    # Kein Keyword-Match → LLM-Tick uebernimmt
+                    continue
+                decision = {"action": "fill",
+                            "stable_id": e["stable_id"],
+                            "value": val,
+                            "reason": "heuristic_fill:profile_match"}
+                break
 
         # 2c continue button
         if not decision:

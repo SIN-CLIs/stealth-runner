@@ -1129,7 +1129,7 @@ content: |
   ```
   1. SCAN: CDP JS -> finde Tab MIT .survey-item (document.querySelectorAll)
   2. START: CDP JS -> clickSurvey('ID') → Dashboard öffnet Modal
-  3. MODAL: CDP JS -> window.open interception + Target.createTarget → Survey-Tab öffnet sich
+  3. MODAL: CDP JS -> window.open interception + Target.createTarget → Survey-Tab ��ffnet sich
      ⚠️ CUA b.click() + CDP Input.dispatchMouseEvent = FAIL (Chrome Popup Blocker!)
      ✅ window.open interception (siehe §KRITISCH: "Umfrage starten" Problem)
      ⚠️ COOKIE TIMING: Target.createTarget öffnet neuen Tab OHNE Session-Cookies!
@@ -1315,7 +1315,7 @@ content: |
   ### Hard Enforcement Regeln
   
   ```
-  ╔══════════════════════════════════════════════════════════════════╗
+  ╔══════════════════════════════════════════════════════════��═══════╗
   ║  REGEL 1: Agent ist NUR ein Trigger                              ║
   ║  ─────────────────────────────────────────────────────────────── ║
   ║   RICHTIG:  python run_survey.py                               ║
@@ -1654,7 +1654,7 @@ DAEMON LOOP (unbegrenzt):
 │  5. ANALYSIEREN → WARUM gescheitert?                  │
 │  6. FLOW ANPASSEN → nächsten Survey probieren         │
 │  7. WIEDERHOLEN                                        │
-└─────────────────────────────────────────────────────────┘
+└────────────────���────────────────────────────────────────┘
 ```
 
 **Survey-Typen lernen (fortlaufend):**
@@ -1991,7 +1991,7 @@ stealth-runner/                                   <- PRIMARY ORCHESTRATOR
 │           ├── lemin.py                          <- Lemin Puzzle Solver
 │           └── utils.py                          <- helper.py, screenshot(), get_chrome_ws()
 │
-├── [commands]/                                   <- VERIFIED Commands (chmod 444)
+├��─ [commands]/                                   <- VERIFIED Commands (chmod 444)
 │   ├── cmd-rules.md
 │   ├── bot-chrome/kill-bot-chrome.md             <- ✅ VERIFIED
 │   ├── bot-chrome/find-bot-pids.md               <- ✅ VERIFIED
@@ -2743,5 +2743,124 @@ survey-cli/survey/graph/compiled/
 
 ---
 
-**Letzte Aktualisierung: 2026-05-10 | Lines: ~2060 + §12 | Plan: plans/01-survey-agent-langgraph-fastapi.md**
+---
+
+## §13 — PROFIL-MAPPING & NIM-PARSER-REGRESSION (2026-05-11)
+
+### §13.1 — Was wurde geaendert (WHY)
+
+**Problem:** `decide_node` Heuristik 2b (survey-cli/survey/graph/nodes.py) hat
+JEDE leere `textbox / searchbox / spinbutton` mit `profile["city"]` gefuellt
+(Fallback "Berlin"). Effekt in Live-Runs:
+
+- E-Mail-Feld bekam `"Berlin"` → instant Validation-Error
+- PLZ-Feld bekam `"Berlin"` → instant Screen-Out
+- Geburtsjahr-Feld bekam `"Berlin"` → instant Screen-Out
+- → LLM-Fallback wurde im naechsten Tick getriggert (teuer, langsam,
+  manchmal `complete=true` falsch positiv)
+
+**Fix:** Neuer `ProfileLoader.match_field(role, name, profile, placeholder)`
+in `survey-cli/survey/profile_loader.py`. Heuristik 2b ruft jetzt diesen
+Matcher; bei `None` SKIPPT die Heuristik das Feld und der LLM-Tick uebernimmt.
+
+### §13.2 — Wo der Code lebt (WHERE)
+
+| Datei | Funktion / Zeile | Zweck |
+|---|---|---|
+| `survey-cli/survey/profile_loader.py` | `ProfileLoader.match_field` | DE/EN-Keyword-Matcher Label → Profilwert |
+| `survey-cli/survey/profile_loader.py` | `_normalize`, `_FIELD_PATTERNS` | Lowercase + Umlaut-Folding; Keyword-Familien |
+| `survey-cli/survey/graph/nodes.py` (Heuristik 2b, ~Zeile 449-) | `decide_node` | Ruft `ProfileLoader.match_field` statt `profile["city"]` |
+| `survey-cli/tests/test_profile_match_field.py` | Unit-Tests | 70+ Cases pro Keyword-Familie |
+| `survey-cli/tests/test_nim_parse_response.py` | Regression-Tests | NIM `parse_response()` gegen echte + kaputte Outputs |
+
+### §13.3 — Keyword-Familien (KANONISCH, NICHT AENDERN OHNE TEST!)
+
+Jeder Treffer ist `substring auf normalisiertem name/placeholder`. Reihenfolge
+= Prioritaet (erstes Match gewinnt). Bei Erweiterung IMMER:
+
+1. Pattern in `_FIELD_PATTERNS` ergaenzen
+2. Test-Case in `test_profile_match_field.py::TestMatchField` hinzufuegen
+3. Hier in §13.3 Tabelle eintragen
+
+| Familie | Profil-Key(s) | DE-Keywords | EN-Keywords | Format |
+|---|---|---|---|---|
+| `email` | `email` | mail, e-mail, email | email, e-mail | raw string |
+| `birth_year` | `birth_year`, `geburtsjahr` | geburtsjahr, jahr der geburt | birth year, year of birth | 4-digit string |
+| `age` | `age`, `alter` | alter, lebensjahre | age | int → string |
+| `postal_code` | `postal_code`, `plz`, `zip` | plz, postleitzahl | zip, postal code, postcode | string |
+| `city` | `city`, `stadt`, `ort`, `wohnort` | stadt, ort, wohnort | city, town | string |
+| `street` | `street`, `strasse` | strasse, straße | street, address line | string |
+| `house_number` | `house_number`, `hausnummer` | hausnummer, nr | house number, house no | string |
+| `phone` | `phone`, `telefon`, `mobile` | telefon, handy, mobil | phone, mobile, cell | string |
+| `name_first` | `first_name`, `vorname` | vorname | first name, given name | string |
+| `name_last` | `last_name`, `nachname`, `surname` | nachname, familienname | last name, surname, family name | string |
+| `name_full` | `name`, `full_name` | name (ohne vor/nach) | name, full name | string |
+| `household_size` | `household_size`, `haushaltsgroesse` | haushaltsgr, personen im haushalt | household size, persons in household | int → string |
+| `income` | `income`, `einkommen` | einkommen, haushaltseinkommen | income, household income | int → string |
+| `country` | `country`, `land` | land, herkunftsland | country | string |
+| `gender` | `gender`, `geschlecht` | geschlecht | gender, sex | string |
+
+**Default:** Wenn KEIN Pattern matcht → `match_field` returnt `None`.
+Heuristik 2b SKIPPT dann das Feld → LLM-Tick im naechsten Round.
+**NIEMALS** `profile["city"]` als Default zurueckgeben — das war der Bug.
+
+### §13.4 — NIM-Parser-Regression (parse_response)
+
+Datei: `survey-cli/tests/test_nim_parse_response.py`
+
+Deckt ab (Black-Box, kein Mock):
+
+- **Valides JSON:** `{"actions":[{"action":"click","stable_id":"x"}]}`
+- **Markdown-Fences:** ` ```json\n{...}\n``` `
+- **Mehrere Aktionen:** `actions: [...]` mit 2-3 Items
+- **Wait/Submit Contract:** parser respektiert `action=wait`, `action=submit`
+- **Complete-Flag:** `{"complete": true}` → parser propagiert
+- **Kaputte Inputs:**
+  - leerer String, None, " "
+  - kaputtes JSON (`{...broken`)
+  - `actions: []` (leeres Array)
+  - LLM-Geschwafel (Plain Text, kein JSON)
+  - Halbes JSON (`{"actions":[{"action"`)
+- **Idempotenz:** `parse(parse(x))` raised nicht
+- **Fallback-Contract:** Wenn parser nichts findet, returnt Fallback-Item mit
+  `action`-Key (decide_node interpretiert das dann).
+
+**Regression-Pflicht:** Bei jeder Aenderung an `nim.parse_response`:
+1. Test ausfuehren: `python -m unittest tests.test_nim_parse_response`
+2. Wenn neue Edge-Cases auftauchen (z.B. neuer LLM gibt andere Whitespace-
+   Patterns aus): Case in §13.4 + Test-Datei ergaenzen
+3. NIEMALS Test loeschen ohne Issue-Verweis im Commit-Msg.
+
+### §13.5 — Wie testen (RUN)
+
+```bash
+cd survey-cli
+uv venv && source .venv/bin/activate
+uv pip install openai   # nur fuer test_nim.py noetig
+python -m unittest tests.test_profile_match_field tests.test_nim_parse_response
+# Erwartet: Ran 94 tests in <1s — OK
+```
+
+### §13.6 — Beruehrte Dateien (DELTA 2026-05-11)
+
+```
+M  survey-cli/survey/graph/nodes.py            (Heuristik 2b: city → match_field)
+M  survey-cli/survey/profile_loader.py         (+ ProfileLoader.match_field, _FIELD_PATTERNS, _normalize)
+A  survey-cli/tests/test_profile_match_field.py (NEU: 70+ Cases)
+A  survey-cli/tests/test_nim_parse_response.py  (NEU: 24+ Cases)
+M  AGENTS.md                                   (+ §13)
+```
+
+### §13.7 — Nicht-Ziele (NON-GOALS)
+
+- Keine LLM-Integration im Matcher (rein deterministisch — schnell, testbar)
+- Kein Fuzzy-Matching (Levenshtein) — Keyword-Substring reicht und ist
+  vorhersagbar
+- Kein Lernen aus vergangenen Runs (gehoert in §12 FCTC-ES, nicht in den
+  Matcher)
+- Matcher gibt NIEMALS `"Berlin"` als Default-Fallback aus
+
+---
+
+**Letzte Aktualisierung: 2026-05-11 | Lines: ~2060 + §12 + §13 | Plan: plans/01-survey-agent-langgraph-fastapi.md**
 
