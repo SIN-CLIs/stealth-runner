@@ -465,17 +465,44 @@ def decide_node(state: SurveyState) -> SurveyState:
     Strategie (Reihenfolge):
       0) Wenn letzter Klick no_dom_change → schliesse vorheriges stable_id
          aus. Schutz gegen Issue #24 (anti-stuck loop).
+      0.5) QUALIFICATION FILTER: Filtere disqualifizierende Antworten aus!
+           NIEMALS "möchte nicht angeben", "keine Kinder", etc.
       1) NIM/LLM-Decide (falls verfuegbar): LLM bekommt flache Liste mit
          stable_id + role + name + state, liefert genau eine Decision.
       2) Heuristik-Fallback:
-         a) Erstes ungeklicktes Radio → click
+         a) Erstes ungeklicktes Radio → click (QUALIFICATION-SAFE!)
          b) Erste leere textbox → fill
          c) Button mit Name in {Weiter,Next,Submit,Continue,Senden,…} → click
          d) Sonst: action="wait"
+      3) CUA-FALLBACK: Wenn CDP-Click fehlschlägt (no_dom_change > 2),
+         nutze CUA-Driver für echte OS-Level Clicks.
+    
     Setzt state.decision = {action, stable_id?, value?, key?, reason}.
     nim_actions wird Backward-Compat parallel gefuellt.
+    
+    QUALIFICATION RULES (2026-05-11):
+      - NIEMALS "prefer not to say" / "möchte nicht angeben" auswählen
+      - IMMER positive Antworten: "ja Kinder", "ja Haustiere", etc.
+      - Bei Kinder/Tier-Fragen: IMMER "Ja" (sonst Disqualifikation!)
+      - Ziel: 100% Survey Completion Rate
     """
     from ..profile_loader import ProfileLoader
+    
+    # ══════════════════════════════════════════════════════════════════════════
+    # QUALIFICATION RULES IMPORT (2026-05-11)
+    # ══════════════════════════════════════════════════════════════════════════
+    try:
+        from ..qualification_rules import (
+            is_disqualifying_answer,
+            rank_answers_for_qualification,
+            filter_safe_answers,
+        )
+        HAS_QUALIFICATION_RULES = True
+    except ImportError:
+        HAS_QUALIFICATION_RULES = False
+        def is_disqualifying_answer(x): return False
+        def rank_answers_for_qualification(q, a): return list(range(len(a)))
+        def filter_safe_answers(a): return list(range(len(a)))
     try:
         from ..nim import get_nim
     except Exception:
@@ -523,7 +550,14 @@ def decide_node(state: SurveyState) -> SurveyState:
 
     # 2) Heuristik
     if not decision:
-        # 2a Radio/Checkbox
+        # 2a Radio/Checkbox — MIT QUALIFICATION FILTER!
+        # ──────────────────────────────────────────────────────────────────────
+        # WICHTIG: NIEMALS disqualifizierende Antworten auswählen!
+        # Der Agent MUSS positive Antworten wählen um nicht rausgeworfen zu werden.
+        # ──────────────────────────────────────────────────────────────────────
+        
+        # Sammle alle Radio-Optionen für diese Frage
+        radio_options = []
         for e in elements:
             if e["stable_id"] == avoid_id:
                 continue
@@ -531,9 +565,25 @@ def decide_node(state: SurveyState) -> SurveyState:
                 continue
             if e["role"] in ("radio", "checkbox", "switch"):
                 if not e.get("state", {}).get("checked"):
-                    decision = {"action": "click", "stable_id": e["stable_id"],
-                                "reason": f"heuristic_radio:{e['name'][:30]}"}
-                    break
+                    radio_options.append(e)
+        
+        # Filtere disqualifizierende Antworten aus
+        if radio_options and HAS_QUALIFICATION_RULES:
+            safe_options = [
+                e for e in radio_options
+                if not is_disqualifying_answer(e.get("name", "") or e.get("value", ""))
+            ]
+            # Wenn alle Optionen "unsafe" sind, nimm trotzdem eine (besser als nichts)
+            if safe_options:
+                radio_options = safe_options
+            else:
+                print("[decide] WARNING: Alle Optionen sind potenziell disqualifizierend!")
+        
+        # Wähle erste safe Option
+        if radio_options:
+            e = radio_options[0]
+            decision = {"action": "click", "stable_id": e["stable_id"],
+                        "reason": f"heuristic_radio_safe:{e['name'][:30]}"}
 
         # 2a-bis OPTIONS-BASED COMBOBOX (Dropdown) — KLICK ZUR EXPANSION
         # ----------------------------------------------------------------
@@ -751,6 +801,34 @@ def execute_node(state: SurveyState) -> SurveyState:
         state.increment_failures()
         if result.reason == "no_dom_change":
             state.no_dom_change_count += 1
+            
+            # ══════════════════════════════════════════════════════════════════
+            # CUA-FALLBACK (2026-05-11): Wenn CDP-Clicks 2+ mal fehlschlagen,
+            # nutze CUA-Driver für echte OS-Level Clicks.
+            # Das löst blockierte Consent-Pages (AYBEE, Ipsos, etc.)
+            # ══════════════════════════════════════════════════════════════════
+            if state.no_dom_change_count >= 2:
+                print(f"[execute] CUA-FALLBACK triggered: no_dom_change={state.no_dom_change_count}")
+                try:
+                    from ..cua_fallback import cua_click_blocked_element
+                    cua_result = cua_click_blocked_element(
+                        element_selector=sid,
+                        tab_ws_url=state.tab_ws
+                    )
+                    print(f"[execute] CUA result: {cua_result}")
+                    
+                    if cua_result.get("success"):
+                        # CUA hat geklickt — warte auf DOM-Change
+                        time.sleep(1.0)
+                        # Update result
+                        state.last_action_result["reason"] = f"cua_{cua_result.get('method', 'unknown')}"
+                        state.last_action_result["success"] = True
+                        state.no_dom_change_count = 0
+                        state.reset_failures()
+                except ImportError:
+                    print("[execute] CUA-Fallback not available (cua_fallback.py missing)")
+                except Exception as e:
+                    print(f"[execute] CUA-Fallback failed: {e}")
     else:
         state.reset_failures()
         state.no_dom_change_count = 0
