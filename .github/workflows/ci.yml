@@ -94,5 +94,13 @@ jobs:
             --ignore=survey-cli/tests/test_balance.py \
             --ignore=survey-cli/tests/test_action_selector.py
 
+      # SR-56 (FCTC-ES Phase 1): Eval-Harness für ProfileLoader.match_field
+      # Threshold: 0.92 F1-Score. Bei Regression → roter CI.
+      # Gold-Korpus: survey-cli/tests/fixtures/match_field_corpus.jsonl
+      - name: Run match_field eval harness (SR-56)
+        env:
+          PYTHONPATH: survey-cli
+        run: python survey-cli/tools/eval_match_field.py --threshold 0.92
+
       - name: Run pre-commit hooks
         run: pre-commit run --all-files || true

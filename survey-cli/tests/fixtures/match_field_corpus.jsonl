@@ -1,0 +1,222 @@
+# Gold-Korpus für ProfileLoader.FIELD_PATTERNS Evaluation
+# Format: {"role": "...", "label": "...", "placeholder": "...", "expected_key": "..."|null}
+# expected_key = logical_key aus FIELD_PATTERNS (email, phone, birth_year, postal_code, etc.)
+# Negative cases: expected_key = null (sollte NICHT matchen)
+#
+# CORPUS VERSION: 1.1 (2026-05-11)
+# CASES: 152 total (128 positive, 24 negative)
+# LANGUAGES: DE + EN
+
+# === EMAIL (10 cases) ===
+{"role": "textbox", "label": "E-Mail", "placeholder": "", "expected_key": "email"}
+{"role": "textbox", "label": "Email", "placeholder": "", "expected_key": "email"}
+{"role": "textbox", "label": "E-Mail-Adresse", "placeholder": "", "expected_key": "email"}
+{"role": "textbox", "label": "Email address", "placeholder": "", "expected_key": "email"}
+{"role": "textbox", "label": "Your email", "placeholder": "name@example.com", "expected_key": "email"}
+{"role": "textbox", "label": "Ihre E-Mail *", "placeholder": "", "expected_key": "email"}
+{"role": "textbox", "label": "Bitte E-Mail eingeben", "placeholder": "", "expected_key": "email"}
+{"role": "textbox", "label": "Contact email", "placeholder": "", "expected_key": "email"}
+{"role": "textbox", "label": "E-Mail:", "placeholder": "", "expected_key": "email"}
+{"role": "textbox", "label": "Mailadresse", "placeholder": "", "expected_key": "email"}
+
+# === PHONE (10 cases) ===
+{"role": "textbox", "label": "Telefon", "placeholder": "", "expected_key": "phone"}
+{"role": "textbox", "label": "Telefonnummer", "placeholder": "", "expected_key": "phone"}
+{"role": "textbox", "label": "Phone", "placeholder": "", "expected_key": "phone"}
+{"role": "textbox", "label": "Phone number", "placeholder": "", "expected_key": "phone"}
+{"role": "textbox", "label": "Mobile", "placeholder": "", "expected_key": "phone"}
+{"role": "textbox", "label": "Handy", "placeholder": "", "expected_key": "phone"}
+{"role": "textbox", "label": "Ihre Telefonnummer", "placeholder": "", "expected_key": "phone"}
+{"role": "textbox", "label": "Contact number", "placeholder": "", "expected_key": "phone"}
+{"role": "textbox", "label": "Mobilnummer", "placeholder": "", "expected_key": "phone"}
+{"role": "textbox", "label": "Tel. Nr.", "placeholder": "", "expected_key": "phone"}
+
+# === BIRTH YEAR (10 cases) ===
+{"role": "textbox", "label": "Geburtsjahr", "placeholder": "", "expected_key": "birth_year"}
+{"role": "textbox", "label": "Year of birth", "placeholder": "", "expected_key": "birth_year"}
+{"role": "textbox", "label": "Birth year", "placeholder": "", "expected_key": "birth_year"}
+{"role": "textbox", "label": "In welchem Jahr sind Sie geboren?", "placeholder": "", "expected_key": "birth_year"}
+{"role": "combobox", "label": "Geburtsjahr", "placeholder": "", "expected_key": "birth_year"}
+{"role": "combobox", "label": "Year of birth", "placeholder": "", "expected_key": "birth_year"}
+{"role": "textbox", "label": "Jahrgang", "placeholder": "", "expected_key": "birth_year"}
+{"role": "textbox", "label": "What year were you born?", "placeholder": "", "expected_key": "birth_year"}
+{"role": "combobox", "label": "In welchem Jahr wurden Sie geboren?", "placeholder": "", "expected_key": "birth_year"}
+{"role": "textbox", "label": "Jahr der Geburt", "placeholder": "", "expected_key": "birth_year"}
+
+# === POSTAL CODE / PLZ (10 cases) ===
+{"role": "textbox", "label": "PLZ", "placeholder": "", "expected_key": "postal_code"}
+{"role": "textbox", "label": "Postleitzahl", "placeholder": "", "expected_key": "postal_code"}
+{"role": "textbox", "label": "Zip code", "placeholder": "", "expected_key": "postal_code"}
+{"role": "textbox", "label": "Postal code", "placeholder": "", "expected_key": "postal_code"}
+{"role": "textbox", "label": "ZIP", "placeholder": "", "expected_key": "postal_code"}
+{"role": "textbox", "label": "Ihre PLZ", "placeholder": "", "expected_key": "postal_code"}
+{"role": "textbox", "label": "Postcode", "placeholder": "", "expected_key": "postal_code"}
+{"role": "textbox", "label": "Bitte PLZ eingeben", "placeholder": "", "expected_key": "postal_code"}
+{"role": "textbox", "label": "What is your postal code?", "placeholder": "", "expected_key": "postal_code"}
+{"role": "textbox", "label": "PLZ *", "placeholder": "", "expected_key": "postal_code"}
+
+# === HOUSEHOLD INCOME (8 cases) ===
+{"role": "combobox", "label": "Haushaltseinkommen", "placeholder": "", "expected_key": "hh_income"}
+{"role": "combobox", "label": "Household income", "placeholder": "", "expected_key": "hh_income"}
+{"role": "radio", "label": "Haushaltseinkommen", "placeholder": "", "expected_key": "hh_income"}
+{"role": "radio", "label": "Household income", "placeholder": "", "expected_key": "hh_income"}
+{"role": "combobox", "label": "Familieneinkommen", "placeholder": "", "expected_key": "hh_income"}
+{"role": "combobox", "label": "What is your household income?", "placeholder": "", "expected_key": "hh_income"}
+{"role": "radio", "label": "Monatliches Haushaltseinkommen", "placeholder": "", "expected_key": "hh_income"}
+{"role": "combobox", "label": "Combined household income", "placeholder": "", "expected_key": "hh_income"}
+
+# === PERSONAL INCOME (8 cases) ===
+{"role": "combobox", "label": "Einkommen", "placeholder": "", "expected_key": "income"}
+{"role": "combobox", "label": "Personal income", "placeholder": "", "expected_key": "income"}
+{"role": "combobox", "label": "Gehalt", "placeholder": "", "expected_key": "income"}
+{"role": "combobox", "label": "Salary", "placeholder": "", "expected_key": "income"}
+{"role": "radio", "label": "Nettoeinkommen", "placeholder": "", "expected_key": "income"}
+{"role": "combobox", "label": "Wie hoch ist Ihr Einkommen?", "placeholder": "", "expected_key": "income"}
+{"role": "combobox", "label": "Your income", "placeholder": "", "expected_key": "income"}
+{"role": "radio", "label": "Monthly income", "placeholder": "", "expected_key": "income"}
+
+# === FIRST NAME (10 cases) ===
+{"role": "textbox", "label": "Vorname", "placeholder": "", "expected_key": "first_name"}
+{"role": "textbox", "label": "Vorname *", "placeholder": "", "expected_key": "first_name"}
+{"role": "textbox", "label": "Vorname (Pflichtfeld)", "placeholder": "", "expected_key": "first_name"}
+{"role": "textbox", "label": "  Vorname:  ", "placeholder": "", "expected_key": "first_name"}
+{"role": "textbox", "label": "First name", "placeholder": "", "expected_key": "first_name"}
+{"role": "textbox", "label": "Given name", "placeholder": "Your first name", "expected_key": "first_name"}
+{"role": "textbox", "label": "Forename", "placeholder": "", "expected_key": "first_name"}
+{"role": "textbox", "label": "Wie lautet Ihr Vorname?", "placeholder": "", "expected_key": "first_name"}
+{"role": "textbox", "label": "Bitte geben Sie Ihren Vornamen ein", "placeholder": "", "expected_key": "first_name"}
+{"role": "textbox", "label": "Your first name", "placeholder": "", "expected_key": "first_name"}
+
+# === LAST NAME (10 cases) ===
+{"role": "textbox", "label": "Nachname", "placeholder": "", "expected_key": "last_name"}
+{"role": "textbox", "label": "Familienname", "placeholder": "", "expected_key": "last_name"}
+{"role": "textbox", "label": "Last name", "placeholder": "", "expected_key": "last_name"}
+{"role": "textbox", "label": "Surname", "placeholder": "", "expected_key": "last_name"}
+{"role": "textbox", "label": "Family name", "placeholder": "", "expected_key": "last_name"}
+{"role": "textbox", "label": "Nachname *", "placeholder": "", "expected_key": "last_name"}
+{"role": "textbox", "label": "Wie ist Ihr Nachname?", "placeholder": "", "expected_key": "last_name"}
+{"role": "textbox", "label": "Your last name", "placeholder": "", "expected_key": "last_name"}
+{"role": "textbox", "label": "  Nachname:  ", "placeholder": "", "expected_key": "last_name"}
+{"role": "textbox", "label": "Bitte Nachnamen eingeben", "placeholder": "", "expected_key": "last_name"}
+
+# === STREET / ADDRESS (8 cases) ===
+{"role": "textbox", "label": "Straße", "placeholder": "", "expected_key": "street"}
+{"role": "textbox", "label": "Street", "placeholder": "", "expected_key": "street"}
+{"role": "textbox", "label": "Address", "placeholder": "", "expected_key": "street"}
+{"role": "textbox", "label": "Adresse", "placeholder": "", "expected_key": "street"}
+{"role": "textbox", "label": "Street address", "placeholder": "", "expected_key": "street"}
+{"role": "textbox", "label": "Straße und Hausnummer", "placeholder": "", "expected_key": "street"}
+{"role": "textbox", "label": "Your address", "placeholder": "", "expected_key": "street"}
+{"role": "textbox", "label": "Address line", "placeholder": "", "expected_key": "street"}
+
+# === CITY (10 cases) ===
+{"role": "textbox", "label": "Stadt", "placeholder": "", "expected_key": "city"}
+{"role": "textbox", "label": "Ort", "placeholder": "", "expected_key": "city"}
+{"role": "textbox", "label": "City", "placeholder": "", "expected_key": "city"}
+{"role": "textbox", "label": "Town", "placeholder": "", "expected_key": "city"}
+{"role": "textbox", "label": "Wohnort", "placeholder": "", "expected_key": "city"}
+{"role": "textbox", "label": "In welcher Stadt wohnen Sie?", "placeholder": "", "expected_key": "city"}
+{"role": "textbox", "label": "Your city", "placeholder": "", "expected_key": "city"}
+{"role": "textbox", "label": "Stadt/Ort", "placeholder": "", "expected_key": "city"}
+{"role": "textbox", "label": "Bitte Stadt eingeben", "placeholder": "", "expected_key": "city"}
+{"role": "textbox", "label": "City *", "placeholder": "", "expected_key": "city"}
+
+# === COUNTRY (6 cases) ===
+{"role": "combobox", "label": "Land", "placeholder": "", "expected_key": "country"}
+{"role": "combobox", "label": "Country", "placeholder": "", "expected_key": "country"}
+{"role": "combobox", "label": "Wohnsitzland", "placeholder": "", "expected_key": "country"}
+{"role": "combobox", "label": "In welchem Land leben Sie?", "placeholder": "", "expected_key": "country"}
+{"role": "combobox", "label": "Nation of residence", "placeholder": "", "expected_key": "country"}
+{"role": "combobox", "label": "Herkunftsland", "placeholder": "", "expected_key": "country"}
+
+# === STATE / REGION (6 cases) ===
+{"role": "combobox", "label": "Bundesland", "placeholder": "", "expected_key": "state_region"}
+{"role": "combobox", "label": "State", "placeholder": "", "expected_key": "state_region"}
+{"role": "combobox", "label": "Region", "placeholder": "", "expected_key": "state_region"}
+{"role": "combobox", "label": "Province", "placeholder": "", "expected_key": "state_region"}
+{"role": "combobox", "label": "In welchem Bundesland?", "placeholder": "", "expected_key": "state_region"}
+{"role": "combobox", "label": "Your state or region", "placeholder": "", "expected_key": "state_region"}
+
+# === HOUSEHOLD SIZE (8 cases) ===
+{"role": "combobox", "label": "Haushaltsgröße", "placeholder": "", "expected_key": "household_size"}
+{"role": "textbox", "label": "Household size", "placeholder": "", "expected_key": "household_size"}
+{"role": "combobox", "label": "Wie viele Personen leben in Ihrem Haushalt?", "placeholder": "", "expected_key": "household_size"}
+{"role": "radio", "label": "People in household", "placeholder": "", "expected_key": "household_size"}
+{"role": "combobox", "label": "Personen im Haushalt", "placeholder": "", "expected_key": "household_size"}
+{"role": "textbox", "label": "How many people live in your household?", "placeholder": "", "expected_key": "household_size"}
+{"role": "combobox", "label": "Household members", "placeholder": "", "expected_key": "household_size"}
+{"role": "radio", "label": "Anzahl Haushaltsmitglieder", "placeholder": "", "expected_key": "household_size"}
+
+# === AGE (6 cases) ===
+{"role": "textbox", "label": "Alter", "placeholder": "", "expected_key": "age"}
+{"role": "textbox", "label": "Age", "placeholder": "", "expected_key": "age"}
+{"role": "spinbutton", "label": "Wie alt sind Sie?", "placeholder": "", "expected_key": "age"}
+{"role": "spinbutton", "label": "Your age", "placeholder": "", "expected_key": "age"}
+{"role": "combobox", "label": "Ihr Alter", "placeholder": "", "expected_key": "age"}
+{"role": "textbox", "label": "How old are you?", "placeholder": "", "expected_key": "age"}
+
+# === JOB TITLE (6 cases) ===
+{"role": "textbox", "label": "Beruf", "placeholder": "", "expected_key": "job_title"}
+{"role": "textbox", "label": "Job title", "placeholder": "", "expected_key": "job_title"}
+{"role": "textbox", "label": "Tätigkeit", "placeholder": "", "expected_key": "job_title"}
+{"role": "textbox", "label": "Occupation", "placeholder": "", "expected_key": "job_title"}
+{"role": "textbox", "label": "Profession", "placeholder": "", "expected_key": "job_title"}
+{"role": "textbox", "label": "Position", "placeholder": "", "expected_key": "job_title"}
+
+# === INDUSTRY (4 cases) ===
+{"role": "combobox", "label": "Branche", "placeholder": "", "expected_key": "industry"}
+{"role": "combobox", "label": "Industry", "placeholder": "", "expected_key": "industry"}
+{"role": "combobox", "label": "Sector", "placeholder": "", "expected_key": "industry"}
+{"role": "combobox", "label": "Wirtschaftszweig", "placeholder": "", "expected_key": "industry"}
+
+# === NATIONALITY (4 cases) ===
+{"role": "combobox", "label": "Nationalität", "placeholder": "", "expected_key": "nationality"}
+{"role": "combobox", "label": "Nationality", "placeholder": "", "expected_key": "nationality"}
+{"role": "combobox", "label": "Staatsangehörigkeit", "placeholder": "", "expected_key": "nationality"}
+{"role": "combobox", "label": "Staatsbürgerschaft", "placeholder": "", "expected_key": "nationality"}
+
+# === LANGUAGE (4 cases) ===
+{"role": "combobox", "label": "Sprache", "placeholder": "", "expected_key": "language"}
+{"role": "combobox", "label": "Language", "placeholder": "", "expected_key": "language"}
+{"role": "combobox", "label": "Muttersprache", "placeholder": "", "expected_key": "language"}
+{"role": "combobox", "label": "Primary language", "placeholder": "", "expected_key": "language"}
+
+# === GENDER (6 cases) ===
+{"role": "radio", "label": "Geschlecht", "placeholder": "", "expected_key": "gender"}
+{"role": "radio", "label": "Gender", "placeholder": "", "expected_key": "gender"}
+{"role": "combobox", "label": "Sex", "placeholder": "", "expected_key": "gender"}
+{"role": "radio", "label": "Was ist Ihr Geschlecht?", "placeholder": "", "expected_key": "gender"}
+{"role": "radio", "label": "What is your gender?", "placeholder": "", "expected_key": "gender"}
+{"role": "combobox", "label": "Geschlecht *", "placeholder": "", "expected_key": "gender"}
+
+# === FULL NAME (4 cases) ===
+{"role": "textbox", "label": "Name", "placeholder": "", "expected_key": "full_name"}
+{"role": "textbox", "label": "Full name", "placeholder": "", "expected_key": "full_name"}
+{"role": "textbox", "label": "Vollständiger Name", "placeholder": "", "expected_key": "full_name"}
+{"role": "textbox", "label": "Your name", "placeholder": "", "expected_key": "full_name"}
+
+# === NEGATIVE CASES (24 cases) - sollten NICHT matchen ===
+{"role": "textbox", "label": "Kommentar", "placeholder": "", "expected_key": null}
+{"role": "textbox", "label": "Comment", "placeholder": "", "expected_key": null}
+{"role": "textbox", "label": "Feedback", "placeholder": "", "expected_key": null}
+{"role": "textbox", "label": "Sonstige Anmerkungen", "placeholder": "", "expected_key": null}
+{"role": "textbox", "label": "Other", "placeholder": "", "expected_key": null}
+{"role": "textbox", "label": "Bitte beschreiben Sie", "placeholder": "", "expected_key": null}
+{"role": "textbox", "label": "Please describe", "placeholder": "", "expected_key": null}
+{"role": "radio", "label": "Stimmen Sie zu?", "placeholder": "", "expected_key": null}
+{"role": "radio", "label": "Do you agree?", "placeholder": "", "expected_key": null}
+{"role": "checkbox", "label": "Ich akzeptiere die AGB", "placeholder": "", "expected_key": null}
+{"role": "checkbox", "label": "I accept the terms", "placeholder": "", "expected_key": null}
+{"role": "button", "label": "Weiter", "placeholder": "", "expected_key": null}
+{"role": "button", "label": "Next", "placeholder": "", "expected_key": null}
+{"role": "button", "label": "Submit", "placeholder": "", "expected_key": null}
+{"role": "textbox", "label": "Captcha", "placeholder": "", "expected_key": null}
+{"role": "textbox", "label": "Verification code", "placeholder": "", "expected_key": null}
+{"role": "textbox", "label": "Promo code", "placeholder": "", "expected_key": null}
+{"role": "textbox", "label": "Gutscheincode", "placeholder": "", "expected_key": null}
+{"role": "radio", "label": "Wie zufrieden sind Sie?", "placeholder": "", "expected_key": null}
+{"role": "radio", "label": "How satisfied are you?", "placeholder": "", "expected_key": null}
+{"role": "textbox", "label": "Warum?", "placeholder": "", "expected_key": null}
+{"role": "textbox", "label": "Why?", "placeholder": "", "expected_key": null}
+{"role": "textbox", "label": "Sonstiges", "placeholder": "", "expected_key": null}
+{"role": "radio", "label": "Würden Sie empfehlen?", "placeholder": "", "expected_key": null}
