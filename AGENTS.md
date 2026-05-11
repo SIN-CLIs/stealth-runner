@@ -2389,7 +2389,7 @@ KRITISCHE BLOCKER (2026-05-11):
   - Status: 🔄 UNTESTED — braucht live E2E test
 - [❌] **Shadow DOM Element-Erfassung** — FIXED 2026-05-11
   - Problem: EXTRACTOR_JS erfasste NUR Normal-DOM, Shadow DOM (PureSpectrum) war blind
-  - Fix: Shadow DOM traversal in EXTRACTOR_JS — walk shadowRoot recursively (depth≤5)
+  - Fix: Shadow DOM traversal in EXTRACTOR_JS — walk shadowRoot recursively (depth���5)
   - Auch: Angular CDK drag-drop detection, HeyPiggy modal buttons, Captcha images, Iframes
 
 BALANCE TARGET (€5.00):
@@ -2860,7 +2860,26 @@ M  AGENTS.md                                   (+ §13)
   Matcher)
 - Matcher gibt NIEMALS `"Berlin"` als Default-Fallback aus
 
+### §13.8 — Offene Follow-Ups (Issue-Tracking, kanonisch)
+
+Diese Issues bilden die Roadmap fuer §13 + angrenzende Themen. Bei
+Abarbeitung jeweils Issue-Nummer im Commit-Msg referenzieren (`fixes #48`)
+und hier den Status updaten (`OPEN`, `IN PROGRESS`, `DONE <commit>`).
+
+| # | Titel | Status | Abhaengt von |
+|---|---|---|---|
+| [#48](https://github.com/SIN-CLIs/stealth-runner/issues/48) | SR-50: test_nim.py — Asserts an parse_response Contract alignen | OPEN | — |
+| [#49](https://github.com/SIN-CLIs/stealth-runner/issues/49) | SR-51: E2E-Smoke fuer ProfileLoader.match_field gegen echte Survey | OPEN | — |
+| [#50](https://github.com/SIN-CLIs/stealth-runner/issues/50) | SR-52: Combobox-Doppelbehandlung in decide_node 2b | OPEN | — |
+| [#51](https://github.com/SIN-CLIs/stealth-runner/issues/51) | SR-53: Profile-Schema erweitern (household_size, income, gender, country, phone, first/last_name) | OPEN | — |
+| [#52](https://github.com/SIN-CLIs/stealth-runner/issues/52) | SR-54: Matcher-Telemetrie — Hit/Miss-Counter pro Keyword-Familie | OPEN | #49 |
+| [#53](https://github.com/SIN-CLIs/stealth-runner/issues/53) | SR-55: §12 FCTC-ES Lernschleife — Matcher-Miss → Pattern-Vorschlag | OPEN | #49, #52 |
+
+**Pflicht:** Jedes weitere Follow-Up zu §13 → erst Issue anlegen, dann
+diese Tabelle ergaenzen. KEINE Tickets in separaten .md-Dateien oder
+externen Tools — die Roadmap lebt im Agenten-Brain.
+
 ---
 
-**Letzte Aktualisierung: 2026-05-11 | Lines: ~2060 + §12 + §13 | Plan: plans/01-survey-agent-langgraph-fastapi.md**
+**Letzte Aktualisierung: 2026-05-11 | Lines: ~2060 + §12 + §13 (incl §13.8) | Plan: plans/01-survey-agent-langgraph-fastapi.md**
 
