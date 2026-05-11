@@ -2934,6 +2934,7 @@ SR-56 (Eval-Gate) → SR-59 (miss_labels) → SR-57 (LLM-Suggester) → SR-58 (A
 | [#56](https://github.com/SIN-CLIs/stealth-runner/issues/56) | SR-57: FCTC-ES Phase 2 — LLM-Suggester fuer Matcher-Misses | OPEN | #53, #55 |
 | [#57](https://github.com/SIN-CLIs/stealth-runner/issues/57) | SR-58: `survey learn apply` — manueller Apply-Path mit AST-Roundtrip | OPEN | #53 |
 | [#58](https://github.com/SIN-CLIs/stealth-runner/issues/58) | SR-59: Persistente miss_labels in Matcher-Telemetrie (semantisch getaggt) | OPEN | #52, #53 |
+| [#59](https://github.com/SIN-CLIs/stealth-runner/issues/59) | **SR-60 (P1 blocker)**: `check_banned_patterns.py` — False Positives in Doku-Docstrings | OPEN | blockiert PR #54 |
 
 ### §13.8.2 — CI-Trigger (Brain-Regel, kanonisch)
 
@@ -2948,6 +2949,13 @@ laufen PRs ohne gruenes Gate:
 Bug-Historie: PR #54 (SR-50..SR-55) lief gegen
 `feat/universal-cdp-scanner` und wurde von CI ignoriert, weil
 `pull_request.branches: [main, master]` war. Fix in dieser Commit-Reihe.
+
+Empirischer Nachweis (CI-Run nach Fix, 2026-05-11):
+- `25652590969` (push fix/sr-50-55-followups) -> CI getriggert, faellt rot
+  weil `check_banned_patterns.py` False Positives wirft -> SR-60 (#59)
+- Das ist der erwartete Ausgang: vorher unsichtbare Bugs werden jetzt
+  sichtbar. **Niemals** `branches:`-Filter auf `pull_request`
+  reaktivieren.
 
 ### §13.8.3 — Issue-Closing-Pflicht (Brain-Regel, kanonisch)
 
