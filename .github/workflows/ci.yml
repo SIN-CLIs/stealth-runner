@@ -1,10 +1,30 @@
+# CI WORKFLOW — TRIGGER-MATRIX
+#
+# Diese Datei ist Teil des Agenten-Brains. Aenderungen an `on:` muessen
+# in AGENTS.md §13.8 (CI-Notiz) reflektiert werden, sonst laeuft eine
+# PR ohne gruenes CI durch.
+#
+# Geschichte:
+# - Initial: nur main/master (PRs gegen Integrationsbranches wie
+#   `feat/universal-cdp-scanner` liefen ohne CI durch -> SR-50..SR-55
+#   waren in PR #54 zwischenzeitlich ohne CI-Gate mergewuerdig).
+# - 2026-05-11 (SR-50..SR-59 Followup, dieser Commit): Erweitert auf
+#   `feat/**` und `fix/**` Push-Branches; `pull_request` ohne
+#   Branch-Filter, damit JEDE PR (auch gegen Integrationsbranches) ein
+#   gruenes Gate braucht.
 name: CI
 
 on:
   push:
-    branches: [main, master]
+    branches:
+      - main
+      - master
+      - "feat/**"
+      - "fix/**"
+  # WICHTIG: KEIN `branches:`-Filter. Sonst skippt CI auf PRs gegen
+  # Integrationsbranches (`feat/universal-cdp-scanner` etc.) und es
+  # entstehen Merges ohne Gate (vgl. PR #54 / SR-50..SR-55).
   pull_request:
-    branches: [main, master]
 
 jobs:
   test:

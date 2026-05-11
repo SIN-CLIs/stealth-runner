@@ -2923,11 +2923,53 @@ und hier den Status updaten (`OPEN`, `IN PROGRESS`, `DONE <commit>`).
 | [#52](https://github.com/SIN-CLIs/stealth-runner/issues/52) | SR-54: Matcher-Telemetrie — Hit/Miss-Counter pro Keyword-Familie | DONE (Branch `fix/sr-50-55-followups`) | #49 |
 | [#53](https://github.com/SIN-CLIs/stealth-runner/issues/53) | SR-55: §12 FCTC-ES Lernschleife — Matcher-Miss → Pattern-Vorschlag | DONE (Branch `fix/sr-50-55-followups`) | #49, #52 |
 
+### §13.8.1 — P2 Follow-Ups (Roadmap nach SR-55, FCTC-ES Phase 2+)
+
+Aus dem Hand-Over 2026-05-11 abgeleitet. Issues sind angelegt; Reihenfolge:
+SR-56 (Eval-Gate) → SR-59 (miss_labels) → SR-57 (LLM-Suggester) → SR-58 (Apply-Path).
+
+| # | Titel | Status | Abhaengt von |
+|---|---|---|---|
+| [#55](https://github.com/SIN-CLIs/stealth-runner/issues/55) | SR-56: Eval-Harness fuer ProfileLoader.match_field (Gold-Korpus + CI-Threshold) | OPEN | #48-#53 (DONE) |
+| [#56](https://github.com/SIN-CLIs/stealth-runner/issues/56) | SR-57: FCTC-ES Phase 2 — LLM-Suggester fuer Matcher-Misses | OPEN | #53, #55 |
+| [#57](https://github.com/SIN-CLIs/stealth-runner/issues/57) | SR-58: `survey learn apply` — manueller Apply-Path mit AST-Roundtrip | OPEN | #53 |
+| [#58](https://github.com/SIN-CLIs/stealth-runner/issues/58) | SR-59: Persistente miss_labels in Matcher-Telemetrie (semantisch getaggt) | OPEN | #52, #53 |
+
+### §13.8.2 — CI-Trigger (Brain-Regel, kanonisch)
+
+`.github/workflows/ci.yml::on` MUSS folgenden Vertrag erfuellen, sonst
+laufen PRs ohne gruenes Gate:
+
+- `push.branches`: `main`, `master`, `feat/**`, `fix/**`
+- `pull_request`: KEIN `branches:`-Filter (jede PR triggert CI, egal
+  welcher Base-Branch — verhindert Merge-ohne-Gate auf
+  Integrationsbranches wie `feat/universal-cdp-scanner`).
+
+Bug-Historie: PR #54 (SR-50..SR-55) lief gegen
+`feat/universal-cdp-scanner` und wurde von CI ignoriert, weil
+`pull_request.branches: [main, master]` war. Fix in dieser Commit-Reihe.
+
+### §13.8.3 — Issue-Closing-Pflicht (Brain-Regel, kanonisch)
+
+Bei jedem DONE-Status in §13.8 / §13.8.1 MUSS der Commit/PR
+zusaetzlich einen Issue-Kommentar mit folgenden Feldern hinterlassen
+(NICHT NUR die Tabelle hier updaten — sonst gibt's keinen
+Audit-Trail im Issue-View):
+
+- PR-Link (`umgesetzt in PR #N`)
+- Files-Changed (alle relevanten Pfade)
+- Test-Befehl (`python -m unittest tests.X`)
+- §13.8-Tabellenzeile-Ref (zur Rueck-Verlinkung)
+
+Bug-Historie: SR-50..SR-55 wurden in §13.8 als DONE markiert, aber die
+Issues #48-#53 hatten KEINEN Closing-Kommentar -> Reviewer haben den
+PR-Bezug nicht gesehen. Fix in dieser Commit-Reihe.
+
 **Pflicht:** Jedes weitere Follow-Up zu §13 → erst Issue anlegen, dann
 diese Tabelle ergaenzen. KEINE Tickets in separaten .md-Dateien oder
 externen Tools — die Roadmap lebt im Agenten-Brain.
 
 ---
 
-**Letzte Aktualisierung: 2026-05-11 (SR-50..SR-55 implementiert) | Lines: ~2060 + §12 (incl §12.10 FCTC-ES Phase 1) + §13 (incl §13.8) | Plan: plans/01-survey-agent-langgraph-fastapi.md**
+**Letzte Aktualisierung: 2026-05-11 (SR-50..SR-55 implementiert; SR-56..SR-59 als P2 angelegt; CI-Trigger gefixt) | Lines: ~2060 + §12 (incl §12.10 FCTC-ES Phase 1) + §13 (incl §13.8 / §13.8.1-3) | Plan: plans/01-survey-agent-langgraph-fastapi.md**
 
