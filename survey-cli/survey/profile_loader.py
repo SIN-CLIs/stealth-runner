@@ -93,38 +93,99 @@ BANNED METHODS — NIEMALS VERWENDEN
 from __future__ import annotations
 
 import json
+import logging
 import os
 import re
 from datetime import date
-from typing import Dict, Any, Optional, Tuple, List
+from typing import Dict, Any, Optional, Tuple, List, Set
+
+
+_LOG = logging.getLogger("survey.profile_loader")
 
 
 class ProfileLoader:
-    """Load persona profile from JSON files + map form fields to values.
+    """Load persona profile from JSON files + map form fields to profile values.
 
     Class-level constants:
       DEFAULT_PROFILE: Embedded fallback persona, used when no JSON found.
       FIELD_PATTERNS:  Ordered list of (profile_key, regex) tuples — earlier
                        entries win. Substring-match on lowercased label.
+      REQUIRED_KEYS:   Set of profile keys that MUST be present in every
+                       persona JSON. Missing keys cause a WARNING during
+                       load_profile() and reduce match_field coverage.
+      OPTIONAL_KEYS:   Set of keys that are nice-to-have. Missing optional
+                       keys are silent.
     """
 
     DEFAULT_PROFILE = {
         "name": "Jeremy Schulze",
+        "first_name": "Jeremy",
+        "last_name": "Schulze",
         "date_of_birth": "1993-11-13",
         "gender": "male",
         "gender_label": "Männlich",
+        "email": "jeremy.schulze.test@example.com",
+        "phone": "+49 30 1234567",
         "city": "Berlin",
         "state": "Berlin",
+        "country": "Deutschland",
         "zip": "10785",
+        "street": "Kurfürstenstraße 124",
         "household_size": 3,
         "marital_status": "married",
         "education": "abitur",
         "employment": "employed_fulltime",
         "employment_label": "Angestellte",
+        "job_title": "Meister",
+        "industry": "Handwerk",
         "household_income": "3000-4000",
         "personal_income": "1000-2000",
         "nationality": "Deutsch",
         "language": "Deutsch",
+    }
+
+    # ── REQUIRED_KEYS ────────────────────────────────────────────────────────
+    # Pflichtfelder fuer alle Personas. Wenn eines fehlt, springt der
+    # LLM-Fallback in decide_node Heuristik 2b oft — was teure Tokens und
+    # latente Risiken (halluzinierte Werte) bedeutet.
+    #
+    # Erweiterung: nur Felder eintragen, die einer FIELD_PATTERNS-Familie
+    # entsprechen UND fuer den Online-Markt-Forschung Standard sind
+    # (Demografie, Adresse, Kontakt, Haushalt).
+    REQUIRED_KEYS: Set[str] = {
+        "name",
+        "first_name",
+        "last_name",
+        "date_of_birth",
+        "gender",
+        "email",
+        "city",
+        "country",
+        "zip",
+        "street",
+        "household_size",
+        "personal_income",
+        "household_income",
+        "nationality",
+        "language",
+    }
+
+    OPTIONAL_KEYS: Set[str] = {
+        "gender_label",
+        "state",
+        "marital_status",
+        "education",
+        "employment",
+        "employment_label",
+        "job_title",
+        "industry",
+        "phone",
+        "age",
+        "interests",
+        "insurance_products",
+        "contracts",
+        "vehicles",
+        "pets",
     }
 
     # ── FIELD_PATTERNS ────────────────────────────────────────────────────────
@@ -147,9 +208,23 @@ class ProfileLoader:
         # Email — sehr spezifisches Pattern, ganz nach oben.
         ("email", re.compile(r"(e[\s\-]?mail|mailadresse|email\s*address)", re.I)),
 
+        # Phone — vor city/street, damit "Telefon-Nummer in Berlin" nicht
+        # in city laufen kann.
+        ("phone", re.compile(
+            r"(telefon|tel\.?\s*(nr|nummer)?|handy|mobil(?:nummer)?|"
+            r"phone(?:\s*number)?|mobile|cell)",
+            re.I,
+        )),
+
         # Birth year — vor age.
+        # ``year ... born`` deckt Phrasen wie "What year were you born?",
+        # "In welchem Jahr wurden Sie geboren?". Wir matchen "year"/"jahr"
+        # + bis zu 40 Zeichen + "born"/"geboren"/"geburt". Lazy (.{0,40}?)
+        # damit es nicht ueber mehrere Klauseln greift.
         ("birth_year", re.compile(
-            r"(geburtsjahr|jahrgang|year\s*of\s*birth|birth\s*year|year\s*you\s*were\s*born)",
+            r"(geburtsjahr|jahrgang|year\s*of\s*birth|birth\s*year|"
+            r"\byear\b.{0,40}?\bborn\b|"
+            r"\bjahr\b.{0,40}?\b(geboren|geburt)\b)",
             re.I,
         )),
 
@@ -187,9 +262,19 @@ class ProfileLoader:
         # City — auch "Wohnort" / "Ort".
         ("city", re.compile(r"(stadt|wohnort|\bort\b|\bcity\b|\btown\b)", re.I)),
 
-        # State / region.
+        # Country — vor state_region, sonst frisst "\bland\b" das "Deutschland".
+        # Spezifisch: "land" alleine wuerde sowohl "Bundesland" als auch
+        # "Land/Country" matchen — deshalb MUSS country zuerst geprueft werden,
+        # state_region matcht "\bland\b" nur als state.
+        ("country", re.compile(
+            r"(\bland\b|country|nation\s*of\s*residence|wohnsitzland|herkunftsland|"
+            r"in\s*welchem\s*land)",
+            re.I,
+        )),
+
+        # State / region.  ``\bland\b`` bewusst NICHT mehr — siehe country oben.
         ("state_region", re.compile(
-            r"(bundesland|\bregion\b|\bstate\b|province|\bland\b)", re.I,
+            r"(bundesland|\bregion\b|\bstate\b|province)", re.I,
         )),
 
         # Household size.
@@ -242,33 +327,61 @@ class ProfileLoader:
     # Loader
     # ────────────────────────────────────────────────────────────────────────
 
+    # Telemetrie (SR-54): pro Persona aggregiert.
+    # In-Process-Counter; cli "survey profile dump" zeigt sie an.
+    _telemetry: Dict[str, Dict[str, int]] = {}
+
     @classmethod
-    def load_profile(cls, module_dir: str = "") -> Dict[str, Any]:
+    def load_profile(
+        cls,
+        module_dir: str = "",
+        profile_name: str = "jeremy_schulze",
+    ) -> Dict[str, Any]:
         """Load profile from JSON or return default with calculated age.
 
         Args:
             module_dir: Directory to search for profiles/ subdirectory
+            profile_name: Basename ohne ``.json`` — z.B. ``"jeremy_schulze"``,
+                          ``"anna_meyer"``, ``"thomas_weber"``.
 
         Returns:
             Profile dict with guaranteed "age" key.
+
+        WARNINGS:
+            Wenn ein REQUIRED_KEYS-Feld fehlt, wird via
+            ``logging.WARNING`` geloggt. Dadurch sieht der Operator sofort,
+            dass die Persona unvollstaendig ist und die Heuristik 2b
+            entsprechend oft LLM-Fallback triggern wird.
         """
+        filename = f"{profile_name}.json"
         paths = [
-            os.path.join(module_dir, "profiles", "jeremy_schulze.json"),
-            os.path.join(os.path.dirname(module_dir), "config", "profiles", "jeremy_schulze.json"),
+            os.path.join(module_dir, "profiles", filename),
+            os.path.join(os.path.dirname(module_dir), "config", "profiles",
+                         filename),
+            # Standard-Location relativ zur survey/-Quelle.
+            os.path.join(os.path.dirname(os.path.abspath(__file__)),
+                         "profiles", filename),
         ]
 
         profile = None
+        loaded_from = ""
         for path in paths:
             if os.path.exists(path):
                 try:
                     with open(path) as f:
                         profile = json.load(f)
+                    loaded_from = path
                     break
-                except Exception:
-                    pass
+                except Exception as exc:
+                    _LOG.warning("profile_loader: bad json at %s (%s)",
+                                 path, exc)
 
         if not profile:
             profile = dict(cls.DEFAULT_PROFILE)
+            _LOG.warning(
+                "profile_loader: no JSON found for %r, using DEFAULT_PROFILE",
+                profile_name,
+            )
 
         # Dynamically calculate age from date_of_birth
         if "date_of_birth" in profile and "age" not in profile:
@@ -282,7 +395,53 @@ class ProfileLoader:
             except (ValueError, TypeError):
                 profile["age"] = 32
 
+        # Pflichtfeld-Pruefung
+        missing = cls._missing_required(profile)
+        if missing:
+            _LOG.warning(
+                "profile_loader: persona %r missing required keys: %s "
+                "(loaded from %s) — Heuristik 2b wird haeufiger LLM-Fallback "
+                "triggern. Fix: profiles/%s.json um diese Keys ergaenzen.",
+                profile_name, sorted(missing), loaded_from or "<default>",
+                profile_name,
+            )
+
+        # Telemetrie initialisieren
+        cls._telemetry.setdefault(profile_name, {
+            "loads": 0,
+            "match_hits": 0,
+            "match_misses": 0,
+            "missing_required_count": len(missing),
+        })
+        cls._telemetry[profile_name]["loads"] += 1
+        cls._telemetry[profile_name]["missing_required_count"] = len(missing)
+        cls._telemetry[profile_name]["loaded_from"] = loaded_from or "<default>"
+
         return profile
+
+    # ────────────────────────────────────────────────────────────────────────
+    # Pflichtfeld-Pruefung + Telemetrie-Inspect (SR-53 + SR-54)
+    # ────────────────────────────────────────────────────────────────────────
+
+    @classmethod
+    def _missing_required(cls, profile: Dict[str, Any]) -> Set[str]:
+        """Set der REQUIRED_KEYS, die im profile fehlen ODER leer sind."""
+        missing: Set[str] = set()
+        for key in cls.REQUIRED_KEYS:
+            v = profile.get(key)
+            if v is None or v == "" or v == []:
+                missing.add(key)
+        return missing
+
+    @classmethod
+    def telemetry(cls) -> Dict[str, Dict[str, Any]]:
+        """In-Memory Telemetry-Dump fuer CLI 'survey profile dump' (SR-54)."""
+        return {k: dict(v) for k, v in cls._telemetry.items()}
+
+    @classmethod
+    def reset_telemetry(cls) -> None:
+        """Nur fuer Tests — Counter zuruecksetzen."""
+        cls._telemetry.clear()
 
     # ────────────────────────────────────────────────────────────────────────
     # Field matching — used by decide_node Heuristik 2b
@@ -353,9 +512,49 @@ class ProfileLoader:
             if value is None or value == "":
                 # Match, aber Profile hat den Wert nicht → naechstes Pattern
                 continue
+            cls._record_match(profile, hit=True, logical_key=logical_key,
+                              role=role, label=label)
             return str(value)
 
+        cls._record_match(profile, hit=False, logical_key=None,
+                          role=role, label=label)
         return None
+
+    @classmethod
+    def _record_match(
+        cls,
+        profile: Dict[str, Any],
+        hit: bool,
+        logical_key: Optional[str],
+        role: str = "",
+        label: str = "",
+    ) -> None:
+        """Telemetrie-Hook fuer SR-54 + SR-55.
+
+        Bei Hits zaehlen wir den logical_key-Treffer. Bei Misses speichern
+        wir das **konkrete Label** in ``miss_labels`` — das ist die
+        Eingabequelle der Lernschleife (survey/learn/aggregator.py).
+        Wir cappen die Liste bei 500 Eintraegen pro Persona, damit
+        Long-Running-Runs den Speicher nicht sprengen.
+        """
+        ident = profile.get("_loader_name") or profile.get("name") or "anonymous"
+        bucket = cls._telemetry.setdefault(ident, {
+            "loads": 0, "match_hits": 0, "match_misses": 0,
+            "missing_required_count": 0,
+        })
+        if hit:
+            bucket["match_hits"] = bucket.get("match_hits", 0) + 1
+            if logical_key:
+                per_key = bucket.setdefault("per_key_hits", {})
+                per_key[logical_key] = per_key.get(logical_key, 0) + 1
+        else:
+            bucket["match_misses"] = bucket.get("match_misses", 0) + 1
+            if label:
+                miss_labels: List[Dict[str, str]] = bucket.setdefault(
+                    "miss_labels", []
+                )
+                if len(miss_labels) < 500:
+                    miss_labels.append({"role": role, "label": label[:200]})
 
     # ────────────────────────────────────────────────────────────────────────
     # Resolver — mappt logical_key → konkreter Profil-Wert
@@ -400,16 +599,32 @@ class ProfileLoader:
             return profile.get("state") or profile.get("region")
 
         if logical_key == "first_name":
+            # Direkter Key gewinnt vor split-aus-name.
+            direct = profile.get("first_name")
+            if direct:
+                return direct
             full = profile.get("name", "")
             return full.split()[0] if full and " " in full else (full or None)
 
         if logical_key == "last_name":
+            direct = profile.get("last_name")
+            if direct:
+                return direct
             full = profile.get("name", "")
             parts = full.split() if full else []
             return parts[-1] if len(parts) >= 2 else None
 
         if logical_key == "full_name":
-            return profile.get("name")
+            return profile.get("name") or (
+                f"{profile.get('first_name','')} {profile.get('last_name','')}".strip()
+                or None
+            )
+
+        if logical_key == "phone":
+            return profile.get("phone") or profile.get("phone_number")
+
+        if logical_key == "country":
+            return profile.get("country") or profile.get("nationality")
 
         if logical_key == "gender":
             return profile.get("gender_label") or profile.get("gender")

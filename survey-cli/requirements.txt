@@ -1,3 +1,17 @@
-# survey-cli — Minimal dependencies
+# survey-cli — Minimal runtime dependencies.
+#
+# History:
+# - Initial: only websocket-client + openai (CDP-WebSocket + LLM client).
+# - 2026-05-11 (SR-61 follow-up): `requests` added. `tools/tool_find_new_tab.py`
+#   imports `requests` at module top-level for `GET /json` (Chrome DevTools
+#   HTTP endpoint - faster than opening a WebSocket just to list tabs).
+#   Was missing because `pip install -r ... || true` in ci.yml silently
+#   masked the install failure (see AGENTS.md §13.8.2 / SR-62 contract).
+#
+# Adding a new top-level import?
+#   1. Add it here.
+#   2. Verify CI pip-install passes (no `|| true` since SR-61).
+#   3. Document the reason in this header.
 websocket-client>=1.6.0
 openai>=1.0.0
+requests>=2.31.0

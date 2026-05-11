@@ -124,10 +124,12 @@ from __future__ import annotations
 import json
 import os
 import time
+from typing import Any  # noqa: F401 — used in annotations under `from __future__ import annotations`
+
 import websocket
 
-from .state import SurveyState
 from .opencode_tool import delegate_task
+from .state import SurveyState
 
 # ── PATH CONSTANTS ─────────────────────────────────────────────────────────────
 
@@ -386,7 +388,7 @@ def decide_node(state: SurveyState) -> SurveyState:
     if last.get("success") is False and last.get("reason") == "no_dom_change":
         avoid_id = last.get("stable_id", "")
 
-    decision: Dict[str, Any] = {}
+    decision: dict[str, Any] = {}
 
     # 1) LLM-Decide (optional)
     if get_nim and elements:
@@ -432,7 +434,56 @@ def decide_node(state: SurveyState) -> SurveyState:
                                 "reason": f"heuristic_radio:{e['name'][:30]}"}
                     break
 
-        # 2b leere textbox/searchbox/spinbutton/combobox — PROFIL-MAPPING
+        # 2a-bis OPTIONS-BASED COMBOBOX (Dropdown) — KLICK ZUR EXPANSION
+        # ----------------------------------------------------------------
+        # WARUM DIESE REIHENFOLGE (siehe Issue #50 / SR-52):
+        # combobox-Elemente sind zwei sehr verschiedene Sachen:
+        #   (a) OPTIONS-BASED  — natives <select> ODER ARIA-combobox mit
+        #                        einer angekoppelten listbox/option-Liste.
+        #                        MUSS erst geklickt werden, damit sich die
+        #                        Option-Liste oeffnet; danach pickt der
+        #                        naechste Tick (LLM oder Heuristik 2a) eine
+        #                        konkrete <option>.
+        #   (b) EDITABLE TEXT  — autocomplete-Eingabefeld (z. B. City-Lookup).
+        #                        Verhaelt sich wie eine textbox →
+        #                        ProfileLoader.match_field() liefert den
+        #                        korrekten Wert, Heuristik 2b ist richtig.
+        #
+        # Wuerde Heuristik 2b alle Comboboxen anfassen, wuerden Dropdowns
+        # (a) faelschlich mit Profil-Text gefuellt — Browser ignoriert das,
+        # FSM rotiert in no_dom_change → Screen-Out.
+        # Deshalb: dedizierte Combobox-Behandlung VOR 2b.
+        #
+        # Detection (rein semantisch, keine CSS-Klassen):
+        #   - tag == "select"                        → immer options-based
+        #   - role == "combobox" und im Snapshot     → wahrscheinlich (a)
+        #     existieren option/listbox-Elemente
+        # Erweiterung dieser Liste: NUR ARIA-Roles, NIEMALS provider-CSS.
+        if not decision:
+            has_options_in_snapshot = any(
+                el.get("role") in ("option", "listbox") for el in elements
+            )
+            for e in elements:
+                if e["stable_id"] == avoid_id:
+                    continue
+                if e.get("state", {}).get("disabled"):
+                    continue
+                if e["role"] != "combobox":
+                    continue
+                is_native_select = e.get("tag", "").lower() == "select"
+                is_options_based = is_native_select or has_options_in_snapshot
+                if not is_options_based:
+                    # Editable-text-combobox → 2b uebernimmt
+                    continue
+                if e.get("state", {}).get("expanded"):
+                    # Liste schon offen — LLM/2a soll konkrete option waehlen
+                    continue
+                decision = {"action": "click",
+                            "stable_id": e["stable_id"],
+                            "reason": f"combobox_expand:{(e.get('name') or '')[:30]}"}
+                break
+
+        # 2b leere textbox/searchbox/spinbutton/combobox(editable) — PROFIL-MAPPING
         # ----------------------------------------------------------------
         # Bisher (vor 2026-05-11): IMMER profile["city"] gefuellt, egal
         # welches Feld. Das hat "Berlin" in E-Mail- und PLZ-Felder geschrieben
@@ -444,16 +495,29 @@ def decide_node(state: SurveyState) -> SurveyState:
         # → None = HEURISTIK SKIPPT das Feld; im naechsten Tick uebernimmt
         #   der LLM-Fallback (decide_node Pfad 1) die Entscheidung.
         #
+        # Combobox-Sonderfall: options-basierte Comboboxen werden bereits
+        # von Heuristik 2a-bis bedient (Click zum Aufklappen). HIER nur noch
+        # EDITABLE-TEXT-comboboxen (autocomplete) — also welche, fuer die
+        # 2a-bis NICHT entschieden hat. Pruefung erfolgt analog zu 2a-bis.
+        #
         # Pflicht-Kontext: survey-cli/survey/profile_loader.py KEYWORD-FAMILIEN.
         # Erweiterung: neues Keyword-Pattern dort ergaenzen + Test in
         # survey-cli/tests/test_profile_match_field.py hinzufuegen.
         if not decision:
+            has_options_in_snapshot = any(
+                el.get("role") in ("option", "listbox") for el in elements
+            )
             for e in elements:
                 if e["stable_id"] == avoid_id:
                     continue
                 if e["role"] not in ("textbox", "searchbox", "spinbutton",
                                      "combobox"):
                     continue
+                if e["role"] == "combobox":
+                    is_native_select = e.get("tag", "").lower() == "select"
+                    if is_native_select or has_options_in_snapshot:
+                        # options-based combobox → von 2a-bis behandelt
+                        continue
                 if e.get("value"):
                     continue  # bereits ausgefuellt
                 placeholder = (e.get("attrs") or {}).get("placeholder") or ""

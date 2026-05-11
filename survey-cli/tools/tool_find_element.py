@@ -35,9 +35,11 @@ Migration-Path fuer dieses Modul:
 LIES BEVOR DU DIESES MODUL AENDERST: AGENTS.md Sektion
 "KANONISCHE ARCHITEKTUR (2026-05-11)".
 ================================================================================
-"""
 
-"""Element Finding Tool - __frozen__=True
+================================================================================
+TOOL DOCSTRING (legacy, pre-deprecation):
+================================================================================
+Element Finding Tool - __frozen__=True
 
 REGEL: NUR finden, NICHT klicken. Klick = tool_click.py.
 
@@ -68,7 +70,6 @@ KORREKT:
   ✅ --force-renderer-accessibility
   ✅ NUR tool_*.py verwenden (nicht rohes cua-driver)
 """
-
 from __future__ import annotations
 import re
 import subprocess

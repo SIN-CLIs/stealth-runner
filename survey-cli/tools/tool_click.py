@@ -35,9 +35,11 @@ Migration-Path fuer dieses Modul:
 LIES BEVOR DU DIESES MODUL AENDERST: AGENTS.md Sektion
 "KANONISCHE ARCHITEKTUR (2026-05-11)".
 ================================================================================
-"""
 
-"""Click Tool — __frozen__=True
+================================================================================
+TOOL DOCSTRING (legacy, pre-deprecation):
+================================================================================
+Click Tool — __frozen__=True
 
 Agent nutzt rohes cua-driver call click — DARF NICHT.
 Dieses Tool:
@@ -67,7 +69,6 @@ KORREKT:
   ✅ --force-renderer-accessibility
   ✅ NUR tool_*.py verwenden (nicht rohes cua-driver)
 """
-
 from __future__ import annotations
 import json
 import subprocess

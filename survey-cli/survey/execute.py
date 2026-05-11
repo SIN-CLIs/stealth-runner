@@ -29,7 +29,7 @@ import re
 import time
 import hashlib
 import websocket
-from typing import Dict, List, Any, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
 from dataclasses import dataclass, field
 
 from .cdp_client import CDPConnection
@@ -363,24 +363,14 @@ class BatchExecutor:
         except Exception:
             return ""
 
-    @staticmethod
-    def detect_error_page(page_text: str) -> tuple[bool, str]:
-        """Detect common survey error pages from innerText."""
-        error_patterns = [
-            ("no app id", "CPX: No app ID specified"),
-            ("survey not available", "Survey not available"),
-            ("survey closed", "Survey closed"),
-            ("link has expired", "Link expired"),
-            ("survey has ended", "Survey ended"),
-            ("leider ist ein fehler aufgetreten", "Error page (German)"),
-            ("error occurred", "Error occurred"),
-            ("this survey is no longer available", "Survey unavailable"),
-        ]
-        text_lower = (page_text or "").lower()
-        for pattern, reason in error_patterns:
-            if pattern in text_lower:
-                return True, reason
-        return False, ""
+    # NOTE: An older `detect_error_page` lived here (8 patterns, simple
+    # innerText match). It was superseded by the SOTA-pattern version
+    # below (covers CPX, Samplicio, Cint, Toluna, Qualtrics, completion
+    # pages, screen-outs). The older copy was dead code because Python
+    # bound the later definition to the class attribute -- and was
+    # flagged as F811 by ruff once CI started enforcing it (SR-61).
+    # Removal is safe; the surviving definition is at the end of this
+    # class with a richer pattern set.
 
     @staticmethod
     def detect_validation_error(page_text: str) -> Optional[Dict]:
@@ -401,7 +391,6 @@ class BatchExecutor:
             (r"muss zwischen\s+(\d+)\s+und\s+(\d+)", "range_de"),
             (r"ungefähr\s+(\d+)", "example_de2"),
         ]
-        import re
         for pattern, kind in patterns:
             m = re.search(pattern, text, re.IGNORECASE)
             if m:
@@ -542,9 +531,13 @@ class BatchExecutor:
                         ws_url, before_hash, EXECUTION_VERIFY_MS * 2
                     )
                     if not changed2:
-                        # Last resort: try keyboard Enter
-                        try: cdp_keyboard_enter(ws_url)
-                        except: pass
+                        # Last resort: try keyboard Enter.
+                        # SR-61: split try/except onto separate lines AND
+                        # narrow bare `except` to Exception. Same semantics.
+                        try:
+                            cdp_keyboard_enter(ws_url)
+                        except Exception:
+                            pass
                         method_used += "+keyboard_fallback"
 
             if action_type == "wait":
@@ -567,7 +560,7 @@ class BatchExecutor:
         parts = js.replace("__CDP_CLICK__:", "").split(":")
         selector = parts[0] if parts else "button"
         idx = int(parts[1]) if len(parts) > 1 else 0
-        
+
         # Find element position
         ws.send(json.dumps({
             "id": 0, "method": "Runtime.evaluate",
@@ -583,15 +576,15 @@ class BatchExecutor:
 
     def _cdp_click_button(self, ws, js):
         """CDP click on button by text. js format: __CDP_CLICK_BUTTON__:text
-        
+
         Strategy: PRIMARY = CDP dispatchMouseEvent (works on Angular v19, React, all).
         Fallback = JS .click() (works on standard HTML, Qualtrics, etc.)
-        
+
         Angular v19 PROBLEM: element.click() and dispatchEvent ignored.
         SOLUTION: Real OS mouse event via Input.dispatchMouseEvent (isTrusted=true).
         """
         text = js.replace("__CDP_CLICK_BUTTON__:", "")
-        
+
         # 1. Find element position (viewport coords) via JS
         ws.send(json.dumps({
             "id": 0, "method": "Runtime.evaluate",
@@ -635,7 +628,7 @@ class BatchExecutor:
                 pos = json.loads(raw_val)
         except (json.JSONDecodeError, TypeError):
             pos = None
-        
+
         if not pos:
             # Button not found — try JS click as last resort
             ws.send(json.dumps({
@@ -659,12 +652,12 @@ class BatchExecutor:
                 val = r2.get("result",{}).get("result",{}).get("value","")
                 if val == "clicked":
                     return
-            except:
+            except Exception:
                 pass
             return
-        
+
         x, y = pos["x"], pos["y"]
-        
+
         # 2. CDP dispatchMouseEvent (Angular v19 needs this!)
         if pos.get("inView", False) and x > 0 and y > 0:
             for et in ["mouseMoved", "mousePressed", "mouseReleased"]:
@@ -702,7 +695,7 @@ class BatchExecutor:
 '''}}))
             try:
                 json.loads(ws.recv())
-            except:
+            except Exception:
                 pass
 
     def _cdp_click_role_button(self, ws, js):
@@ -919,19 +912,19 @@ def capture_dom_hash(ws_url: str, max_len: int = 2000) -> str:
         ws = websocket.create_connection(ws_url, timeout=8)
         ws.send(json.dumps({
             "id": 0, "method": "Runtime.evaluate",
-            "params": {"expression": f'''
-(function(){{
+            "params": {"expression": '''
+(function(){
     var els = document.querySelectorAll('input,button,select,textarea,a,label');
     var texts = [];
-    for(var i=0;i<els.length&&i<20;i++){{
+    for(var i=0;i<els.length&&i<20;i++){
         texts.push((els[i].textContent||els[i].value||els[i].name||'')+'|'+els[i].tagName+'|'+els[i].type);
-    }}
-    return JSON.stringify({{
+    }
+    return JSON.stringify({
         n: els.length,
         t: texts.join(';;'),
         url: location.href.substring(0,100)
-    }});
-}})()
+    });
+})()
 '''}
         }))
         r = json.loads(ws.recv())

@@ -5,7 +5,7 @@ NEMO SURVEY RUNNER — Core Execution Engine (1291 Zeilen, Herzstück)
 WAS IST DAS?
   Die Haupt-Ausführungs-Engine für Survey-Automation. Führt den NEMO-Loop
   für JEDE Survey-Seite aus:
-  
+
   NEMO LOOP (pro Seite):
   1. Compact Snapshot (CDP) → @eN Element-Refs
   2. NIM Decision (Nemotron 3 Omni) → Batch Actions
@@ -91,19 +91,16 @@ BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
 
 import json
 import os
-import re
 import time
 import hashlib
-import urllib.request
-import urllib.parse
 import websocket
-from typing import Dict, List, Any, Optional
+from typing import Dict, List, Optional
 from dataclasses import dataclass, field
 from . import chrome
-from .snapshot import generate_snapshot, detect_completion, detect_progress, CompactSnapshot
-from .nim import NIMClient, get_nim
+from .snapshot import generate_snapshot, detect_completion
+from .nim import get_nim
 from .execute import BatchExecutor, detect_language_page
-from .opener import SurveyOpener, SurveyTarget, OpenResult
+from .opener import SurveyOpener, SurveyTarget
 from .completion_detector import CompletionDetector
 from .balance_tracker import BalanceTracker
 from .action_selector import ActionSelector
@@ -115,14 +112,9 @@ from .autodoc import log_earnings, log_error, log_session, log_decision
 from .observability import get_logger
 from .observability.metrics import SurveyMetrics
 from .scanner import scan_dashboard, read_balance_with_backoff
-from .session_validator import validate_session, is_session_valid, get_session_status
+from .session_validator import validate_session, is_session_valid
 # Frozen tools — atomar, __frozen__=True, NICHT aendern
-from tools import (click as tool_click, fill as tool_fill,
-                   snapshot as tool_snapshot, detect_completion as tool_detect,
-                   close_modals as tool_close_modals, find_new_tab as tool_find_new_tab,
-                   get_tab_ids as tool_get_tab_ids, select_language as tool_select_language,
-                   AntiStuck as tool_AntiStuck, find_submit as tool_find_submit,
-                   find_unfilled as tool_find_unfilled)
+from tools import (AntiStuck as tool_AntiStuck)
 
 
 @dataclass
@@ -318,7 +310,7 @@ class SurveyRunner:
             n_closed = self._pre_survey_cleanup(dashboard_ws)
             if n_closed > 0:
                 get_logger().cleanup(0, 0, zombie_tabs=n_closed)
-        
+
         # 3b. Capture tabs before clickSurvey() for new-tab detection
         tabs_before = set()
         try:
@@ -326,7 +318,7 @@ class SurveyRunner:
                 tabs_before.add(p.get("id", ""))
         except Exception:
             pass
-        
+
 # 3c. Click survey card via DOM (reliable, has session cookies)
         # NOTE: survey_id from API may not match DOM onclick IDs.
         # _click_survey_card finds the card element and clicks it directly.
@@ -337,7 +329,7 @@ class SurveyRunner:
             result.status = "error"
             return result
         time.sleep(self.config.wait_page_load)
-        
+
         # 3d. Determine flow type (in-page vs new-tab)
         if detected_tab_id:
             tab_id = detected_tab_id
@@ -345,7 +337,7 @@ class SurveyRunner:
             get_logger().tab_switch(tab_id, reason="survey_new_tab")
         else:
             is_in_page = True   # In-page modal (survey within dashboard)
-        
+
         # 3e. Verify survey tab content (handle stuck loading / error pages)
         if tab_ws:
             page_text = BatchExecutor.read_page_text(tab_ws, 500).lower()
@@ -356,7 +348,7 @@ class SurveyRunner:
                 result.error = "Survey stuck on loading page"
                 log_earnings(survey_id, "unknown", 0, "screen_out", 0)
                 return result
-            
+
             # Detect ALL expired survey error pages (case-insensitive)
             if any(s in page_text for s in [
                 "no app id", "survey not available", "error - unable to start survey",
@@ -371,7 +363,7 @@ class SurveyRunner:
                 result.error = "Survey URL expired/error page"
                 log_earnings(survey_id, "unknown", 0, "screen_out", 0)
                 return result
-        
+
         # 3f. Get actual survey URL for provider detection
         actual_url = ""
         if not is_in_page:  # Only get URL for new-tab flow (in-page uses dashboard)
@@ -467,7 +459,7 @@ class SurveyRunner:
                 except Exception:
                     dom_hash = "error"
                     page_text = ""
-                
+
                 if dom_hash != "pending" and dom_hash != "error" and stuck_checker.is_stuck(dom_hash):
                     result.error = f"Stuck: {stuck_checker.threshold}x same DOM hash (anti_stuck tool)"
                     result.status = "error"
@@ -504,14 +496,14 @@ class SurveyRunner:
                     continue
 
                 # 5h. Check completion (BODY TEXT is PRIMARY!)
-                # 
+                #
                 # FIX (2026-05-10): Surveys show "Vielen Dank" in body text
                 # but URL stays the same. OLD CODE checked URL+title → MISSED
                 # completion → loop continued → background started next survey → 6 tabs!
-                # 
+                #
                 # FIX: Check BODY TEXT first (via _detect_completion_text).
                 # Check URL/title as BACKUP for surveys that redirect to completion URL.
-                # 
+                #
                 # Flow:
                 #   1. Read body text from survey tab (PRIMARY — catches completion)
                 #   2. Check URL/title completion redirect (BACKUP — rare case)
@@ -551,7 +543,6 @@ class SurveyRunner:
                             )
                             actions = lang_actions
                             # Skip NIM for language page (no NIM call)
-                            use_nim_override = False
                             executor = BatchExecutor(tab_ws, provider, config=self.config)
                             batch_result = executor.execute(actions, snapshot.refs)
                             time.sleep(self.config.wait_page_load)
@@ -564,9 +555,8 @@ class SurveyRunner:
                             survey_id=survey_id, context="nemo_loop", iteration=iteration + 1
                         )
                         # Fall through to normal NIM decision
-                    use_nim_override = True
                 else:
-                    use_nim_override = True
+                    pass
 
                 # 5i. NIM decision (with retry on empty actions)
                 if self.nim and self.config.use_nim:
@@ -703,7 +693,7 @@ class SurveyRunner:
                         pass
                     ws_reload.close()
                     if self.debug:
-                        print(f"[BALANCE] Dashboard tab reloaded — waiting for DOM update")
+                        print("[BALANCE] Dashboard tab reloaded — waiting for DOM update")
             time.sleep(4)  # Wait for reload + DOM update
             balance_after = read_balance_with_backoff(self.config.cdp_port)
             result.earned = self.balance_tracker.calculate_earned(

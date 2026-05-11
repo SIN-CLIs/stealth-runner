@@ -4,9 +4,9 @@ UNIVERSAL SURVEY LOOP — Das Herzstück des Agenten (2026-05-10)
 
 WAS IST DAS?
   Universaler Survey-Loop: EINE Funktion, JEDE Webseite, 100% zuverlässig.
-  
+
   Pattern: snapshot() → decide(NIM) → execute(CDP) → verify() → repeat
-  
+
   Kommt mit ANY Survey-Typ klar:
   - Pre-Qualifier (Einkommen, Alter, etc.)
   - Provider XYZ (PureSpectrum, Cint, Toluna, Qualtrics, etc.)
@@ -62,17 +62,14 @@ FUNKTIONIERT (aus /commands/surveys/survey-answer-patterns.md):
 ================================================================================"""
 
 from __future__ import annotations
-import asyncio
 import json
 import os
 import re
-import subprocess
-import sys
 import time
 import urllib.request
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Dict, List, Optional, Any, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import websocket
 
@@ -194,7 +191,7 @@ def _read_balance(port: int = 9999) -> float:
 
 def _extract_page(ws_url: str) -> Dict:
     """Extract complete page state for universal survey handling.
-    
+
     Returns:
         {
             "url": str,
@@ -230,7 +227,7 @@ def _extract_page(ws_url: str) -> Dict:
 
     body = meta.get("body", "")
     url = meta.get("url", "")
-    
+
     # 2. Detect provider from URL
     provider = "unknown"
     for p in ["purespectrum", "cint", "toluna", "qualtrics", "samplicio", "ipsos", "nfield", "irbureau", "strat7", "innovatemr", "decipher", "surveymonkey"]:
@@ -373,14 +370,14 @@ def _extract_page(ws_url: str) -> Dict:
 
 def _detect_completion(page: Dict) -> Tuple[str, str]:
     """Detect survey completion/screen-out from page state.
-    
+
     Returns: (status, reason)
-    - ("completed", "vielen dank") 
+    - ("completed", "vielen dank")
     - ("screen_out", "leider nicht geeignet")
     - ("running", "") — survey still in progress
     """
     body = page.get("body_text", "").lower()
-    url = page.get("url", "").lower()
+    page.get("url", "").lower()
     title = page.get("title", "").lower()
 
     # COMPLETED markers
@@ -426,7 +423,7 @@ def _nim_decide(page: Dict, profile: Dict) -> List[Dict]:
 
     body = page.get("body_text", "")
     elements = page.get("elements", {})
-    provider = page.get("provider", "unknown")
+    page.get("provider", "unknown")
 
     # Build prompt with ALL available information
     prompt = f"""Du beantwortest eine Online-Umfrage. Du siehst die Seite und musst handeln.
@@ -523,7 +520,7 @@ Antworte als JSON:
 
 def _pattern_decide(page: Dict, profile: Dict) -> List[Dict]:
     """Fallback decision using patterns (no NIM needed).
-    
+
     Rules:
     - If radios exist → click first one (usually safe default)
     - If text inputs exist → fill with profile data
@@ -545,13 +542,6 @@ def _pattern_decide(page: Dict, profile: Dict) -> List[Dict]:
         # Find best option based on question type
         if is_income:
             # Map income to option index
-            income_map = {
-                "0 - €13 000": 0,
-                "€13 000 - €19 499": 1,
-                "€19 500 - €38 999": 2,
-                "€39 000 - €64 999": 3,
-                "Mehr als €65 000": 4,
-            }
             target_income = profile.get("income", "€39 000 - €64 999")
             for idx, r in enumerate(radios):
                 if target_income in r.get("text", ""):
@@ -620,7 +610,7 @@ def _pattern_decide(page: Dict, profile: Dict) -> List[Dict]:
 
     # BUTTON: click "Weiter" or "Next" or "Fortfahren"
     buttons = elements.get("buttons", [])
-    button_names = [b.get("text", "").lower() for b in buttons]
+    [b.get("text", "").lower() for b in buttons]
     for b in buttons:
         txt = b.get("text", "").lower()
         if any(w in txt for w in ["weiter", "nächste", "next", "fortfahren", "submit", "absenden", "submit"]):
@@ -634,7 +624,7 @@ def _pattern_decide(page: Dict, profile: Dict) -> List[Dict]:
 
 def _execute_actions(ws_url: str, actions: List[Dict], page: Dict) -> Dict:
     """Execute actions using VERIFIED CDP patterns (from /commands/surveys/survey-answer-patterns.md).
-    
+
     These patterns are PROVEN to work on all survey providers.
     """
     elements = page.get("elements", {})
@@ -648,17 +638,25 @@ def _execute_actions(ws_url: str, actions: List[Dict], page: Dict) -> Dict:
                 idx = action.get("index", 0)
                 radios = elements.get("radios", [])
                 if idx < len(radios):
-                    js = f"""
+                    # SR-61 fix: previous version used `{r[{idx}]....}` inside the
+                    # outer f-string, which Python tried to evaluate against a
+                    # non-existent Python name `r` (the JS `var r = ...` is JS-side
+                    # only). Build the JS via plain `.format(idx=idx)` so JS-side
+                    # `r` stays JS-side.
+                    js_template = '''
 (function() {{
     var r = document.querySelectorAll('input[type=radio]');
     if (r[{idx}]) {{
         r[{idx}].checked = true;
         r[{idx}].dispatchEvent(new Event('change', {{bubbles: true}}));
-        return 'RADIO:{r[{idx}].parentElement.textContent.trim().substring(0,40)}';
+        return 'RADIO:' + (r[{idx}].parentElement
+            ? r[{idx}].parentElement.textContent.trim().substring(0, 40)
+            : '');
     }}
     return 'NOT_FOUND';
 }})()
-"""
+'''
+                    js = js_template.format(idx=idx)
                     res = _cdp_eval(ws_url, js)
                     if "RADIO:" in res:
                         result["success"] += 1
@@ -797,14 +795,14 @@ def run_universal_survey(
 ) -> UniversalSurveyResult:
     """
     Universal survey loop — the ONE function that handles ANY survey.
-    
+
     Args:
         ws_url: CDP WebSocket URL of the survey tab
         profile: Persona dict (from survey-cli/survey/profiles/jeremy.json)
         survey_id: Survey ID for logging
         max_steps: Maximum iterations (safety limit)
         cdp_port: CDP port
-    
+
     Returns:
         UniversalSurveyResult with status, earnings, history
     """
@@ -899,7 +897,7 @@ def run_universal_survey(
                     if "DIRECT_CLICK:" in direct:
                         result.history.append(f"  Direct click worked: {direct}")
                     else:
-                        result.history.append(f"  Direct click failed, retrying...")
+                        result.history.append("  Direct click failed, retrying...")
                         time.sleep(2)
 
         # Loop finished
@@ -957,7 +955,7 @@ if __name__ == "__main__":
     print(f"Steps: {result.steps}")
     print(f"Earned: €{result.earned:.2f} (before €{result.balance_before:.2f} → after €{result.balance_after:.2f})")
     print(f"Completion: {result.completion_detected}")
-    print(f"History:")
+    print("History:")
     for h in result.history[-5:]:
         print(f"  {h}")
     print(f"{'='*60}")

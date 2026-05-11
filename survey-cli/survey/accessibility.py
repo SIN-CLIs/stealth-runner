@@ -29,7 +29,7 @@ WARUM tccutil?
   macOS TCC (Transparency, Consent, Control) verwaltet Permissions.
   tccutil reset Accessibility com.google.Chrome → Permission zurücksetzen
   → macOS fragt erneut nach (User muss "Erlauben" klicken).
-  
+
   WARUM reset statt grant?
   macOS erlaubt keine automatische Grant ohne User-Interaktion.
   Reset = User muss erneut bestätigen (Sicherheit).
@@ -60,7 +60,6 @@ BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
 import subprocess
 import json
 import time
-import os
 
 
 def is_accessibility_enabled():
@@ -76,7 +75,7 @@ def is_accessibility_enabled():
             wid = w.get("window_id", 0)
             # Try to get AX-Tree for a Chrome window
             owner = w.get("owner", {}).get("name", "")
-            title = (w.get("title") or "").lower()
+            (w.get("title") or "").lower()
             if "google chrome" in owner.lower() or "chrome" in owner.lower():
                 result2 = subprocess.run(
                     ["cua-driver", "call", "get_window_state"],
@@ -135,7 +134,7 @@ def ensure_accessibility(port=9223, url="https://www.heypiggy.com/?page=dashboar
     # 🔥 GEFÄHRLICH: NIE "pkill -f Google Chrome" — tötet USER Chrome!
     # Stattdessen NUR Bot-Chrome beenden (profile=/tmp/heypiggy-new-*)
     print("[ACCESS] Restarting Chrome to apply permission...")
-    import subprocess as sp, re
+    import subprocess as sp
     ps_out = sp.run(["ps", "aux"], capture_output=True, text=True).stdout
     for line in ps_out.split('\n'):
         if '--user-data-dir=/tmp/heypiggy-new-' in line:
@@ -171,7 +170,7 @@ def ensure_accessibility(port=9223, url="https://www.heypiggy.com/?page=dashboar
 def start_cua_daemon():
     """Start cua-driver daemon if not running."""
     try:
-        result = subprocess.run(["pgrep", "-f", "cua-driver serve"], 
+        result = subprocess.run(["pgrep", "-f", "cua-driver serve"],
                                capture_output=True, text=True, timeout=5)
         if result.stdout.strip():
             return True

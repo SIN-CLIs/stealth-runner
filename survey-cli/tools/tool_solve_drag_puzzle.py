@@ -35,9 +35,11 @@ Migration-Path fuer dieses Modul:
 LIES BEVOR DU DIESES MODUL AENDERST: AGENTS.md Sektion
 "KANONISCHE ARCHITEKTUR (2026-05-11)".
 ================================================================================
-"""
 
-"""TOOL: solve_drag_puzzle — Angular CDK Drag-Drop (PureSpectrum "Zahl X")
+================================================================================
+TOOL DOCSTRING (legacy, pre-deprecation):
+================================================================================
+TOOL: solve_drag_puzzle — Angular CDK Drag-Drop (PureSpectrum "Zahl X")
 
 UNDER 300 LINES. APPROACH B (PRIMARY): CDP Input.dispatchMouseEvent chain.
 NOT synthetic PointerEvents — Angular CDK ignores synthetic events!
@@ -50,7 +52,6 @@ STATUS: __frozen__=True | Version: 2026-05-11
 BANNED: ❌ dispatchEvent(PointerEvent) | ❌ __ngContext__ traversal | ❌ window.ng
         ❌ playstealth | ❌ webauto-nodriver | ❌ hardcoded PIDs | ❌ pkill Chrome
 """
-
 from __future__ import annotations
 import json, asyncio, random, websocket
 from typing import Optional

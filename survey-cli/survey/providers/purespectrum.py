@@ -33,7 +33,7 @@ COMMANDS = {
     })("{value}")''',
 }
 
-from .base import ProviderAdapter
+from .base import ProviderAdapter  # noqa: E402 — provider files do sys.path setup above
 
 
 class PureSpectrumAdapter(ProviderAdapter):
@@ -59,7 +59,7 @@ def cdp_click(ws_url, x, y):
             json.loads(ws.recv())
         ws.close()
         return True
-    except:
+    except Exception:
         return False
 
 
@@ -68,13 +68,13 @@ def cdp_click_button(ws_url, text):
     try:
         ws = websocket.create_connection(ws_url, timeout=10)
         ws.send(json.dumps({"id":0,"method":"Runtime.evaluate",
-            "params":{"expression": f"var b=document.querySelector('button');if(b){{var r=b.getBoundingClientRect();return JSON.stringify({{x:r.x+r.width/2,y:r.y+r.height/2}});}}return'{{}}';"}}))
+            "params":{"expression": "var b=document.querySelector('button');if(b){var r=b.getBoundingClientRect();return JSON.stringify({x:r.x+r.width/2,y:r.y+r.height/2});}return'{}';"}}))
         r = json.loads(ws.recv())
         ws.close()
         pos = json.loads(r.get("result",{}).get("result",{}).get("value","{}"))
         if pos.get("x"):
             return cdp_click(ws_url, pos["x"], pos["y"])
-    except:
+    except Exception:
         pass
     return False
 
@@ -101,7 +101,7 @@ def fill_opinion_textarea(ws_url):
             "params":{"expression": "var t=document.querySelector('textarea');if(t){t.value='ROBOT I enjoy sharing my opinion about this topic.';t.dispatchEvent(new Event('input',{bubbles:true}));t.dispatchEvent(new Event('change',{bubbles:true}));return'filled';}return'none';"}}))
         json.loads(ws.recv()); ws.close()
         return True
-    except:
+    except Exception:
         return False
 
 
@@ -246,21 +246,21 @@ def solve_text_captcha(ws_url, debug=False):
 
 def shadow_dom_query_selector(ws_url, selector, tag_hint=""):
     """Query within Shadow DOM of PureSpectrum Web Components.
-    
+
     PureSpectrum uses Angular Elements with Shadow DOM (<ps-root>, <ps-button>, etc.).
     Standard document.querySelector() CANNOT pierce Shadow DOM.
-    
+
     Strategy:
       1. Find custom element matching tag_hint (e.g., 'ps-next-button')
       2. Access element.shadowRoot
       3. Query within shadowRoot using selector
       4. Return element info (tagName, text, position, etc.)
-    
+
     Args:
         ws_url: CDP WebSocket URL
         selector: CSS selector to find WITHIN shadow DOM (e.g., 'button', 'input')
         tag_hint: Custom element tag name hint (e.g., 'ps-next-button', 'ps-root')
-    
+
     Returns:
         Dict with element info, or None if not found
     """
@@ -272,7 +272,7 @@ def shadow_dom_query_selector(ws_url, selector, tag_hint=""):
     // Find all custom elements matching tag_hint, or all custom elements if no hint
     var hints = ['ps-root', 'ps-next-button', 'ps-button', 'ps-input', 'ps-radio', 'ps-checkbox'];
     if ('{tag_hint}') hints.unshift('{tag_hint}');  // Prioritize hinted tag
-    
+
     for (var tag of hints) {{
         var elements = document.querySelectorAll(tag);
         for (var el of elements) {{
@@ -296,7 +296,7 @@ def shadow_dom_query_selector(ws_url, selector, tag_hint=""):
             }}
         }}
     }}
-    
+
     // Fallback: Try standard DOM (no Shadow DOM)
     var fallback = document.querySelector('{selector}');
     if (fallback) {{
@@ -314,35 +314,35 @@ def shadow_dom_query_selector(ws_url, selector, tag_hint=""):
             hasShadowDOM: false
         }});
     }}
-    
+
     return JSON.stringify({{found: false}});
 }})();
 """}}))
         r = json.loads(ws.recv())
         ws.close()
-        
+
         result = json.loads(r.get("result", {}).get("result", {}).get("value", "{}"))
         return result if result.get("found") else None
-    except Exception as e:
+    except Exception:
         return None
 
 
 def shadow_dom_click(ws_url, selector, tag_hint="", debug=False):
     """Click element within Shadow DOM using CDP mouse events.
-    
+
     Standard JS .click() does NOT work on Web Components because:
       - Events don't bubble through Shadow DOM boundary by default
       - Angular Elements use synthetic event dispatching
       - isTrusted check may fail
-    
+
     Solution: CDP Input.dispatchMouseEvent (real browser engine events).
-    
+
     Args:
         ws_url: CDP WebSocket URL
         selector: CSS selector within Shadow DOM
         tag_hint: Custom element tag name (e.g., 'ps-next-button')
         debug: Print debug info
-    
+
     Returns:
         True if clicked, False otherwise
     """
@@ -351,41 +351,41 @@ def shadow_dom_click(ws_url, selector, tag_hint="", debug=False):
         if debug:
             print(f"  [SHADOW] Element not found: {selector} in {tag_hint or 'any custom element'}")
         return False
-    
+
     if element.get("disabled"):
         if debug:
             print(f"  [SHADOW] Element disabled: {element.get('text', '')}")
         return False
-    
+
     x, y = element["x"], element["y"]
     if debug:
         print(f"  [SHADOW] Clicking {element.get('tag', '?')}>{element.get('targetTag', '?')} "
               f"at ({x:.1f},{y:.1f}) text='{element.get('text', '')}'")
-    
+
     return cdp_click(ws_url, x, y)
 
 
 def shadow_dom_fill(ws_url, selector, value, tag_hint="", debug=False):
     """Fill input within Shadow DOM using native value setter.
-    
+
     Args:
         ws_url: CDP WebSocket URL
         selector: CSS selector for input/textarea within Shadow DOM
         value: Text to fill
         tag_hint: Custom element tag name (e.g., 'ps-input')
         debug: Print debug info
-    
+
     Returns:
         True if filled, False otherwise
     """
     element = shadow_dom_query_selector(ws_url, selector, tag_hint)
     if not element:
         return False
-    
+
     if debug:
         print(f"  [SHADOW] Filling {element.get('tag', '?')}>{element.get('targetTag', '?')} "
               f"with '{value[:20]}...'")
-    
+
     try:
         ws = websocket.create_connection(ws_url, timeout=10)
         ws.send(json.dumps({"id": 0, "method": "Runtime.evaluate",
@@ -393,7 +393,7 @@ def shadow_dom_fill(ws_url, selector, value, tag_hint="", debug=False):
 (function() {{
     var hints = ['ps-root', 'ps-next-button', 'ps-button', 'ps-input', 'ps-radio', 'ps-checkbox'];
     if ('{tag_hint}') hints.unshift('{tag_hint}');
-    
+
     for (var tag of hints) {{
         var elements = document.querySelectorAll(tag);
         for (var el of elements) {{
@@ -401,18 +401,18 @@ def shadow_dom_fill(ws_url, selector, value, tag_hint="", debug=False):
                 var target = el.shadowRoot.querySelector('{selector}');
                 if (target) {{
                     // Native setter for Angular form binding
-                    var proto = target.tagName === 'TEXTAREA' 
-                        ? window.HTMLTextAreaElement.prototype 
+                    var proto = target.tagName === 'TEXTAREA'
+                        ? window.HTMLTextAreaElement.prototype
                         : window.HTMLInputElement.prototype;
                     var nativeSetter = Object.getOwnPropertyDescriptor(proto, 'value').set;
                     if (nativeSetter) nativeSetter.call(target, '{value}');
                     else target.value = '{value}';
-                    
+
                     // Dispatch events for Angular change detection
                     target.dispatchEvent(new Event('input', {{bubbles: true, cancelable: true}}));
                     target.dispatchEvent(new Event('change', {{bubbles: true, cancelable: true}}));
                     target.dispatchEvent(new Event('blur', {{bubbles: true, cancelable: true}}));
-                    
+
                     return 'filled:' + target.value;
                 }}
             }}
@@ -424,17 +424,17 @@ def shadow_dom_fill(ws_url, selector, value, tag_hint="", debug=False):
         json.loads(ws.recv())
         ws.close()
         return True
-    except:
+    except Exception:
         return False
 
 
 def shadow_dom_exists(ws_url, tag_hint=""):
     """Check if Shadow DOM custom elements exist on page.
-    
+
     Args:
         ws_url: CDP WebSocket URL
         tag_hint: Specific tag to check (e.g., 'ps-root')
-    
+
     Returns:
         True if Shadow DOM elements found, False otherwise
     """
@@ -445,7 +445,7 @@ def shadow_dom_exists(ws_url, tag_hint=""):
 (function() {{
     var tags = ['ps-root', 'ps-next-button', 'ps-button', 'ps-input', 'ps-radio', 'ps-checkbox', 'ps-select'];
     if ('{tag_hint}') tags = ['{tag_hint}'];
-    
+
     for (var tag of tags) {{
         var els = document.querySelectorAll(tag);
         for (var el of els) {{
@@ -459,7 +459,7 @@ def shadow_dom_exists(ws_url, tag_hint=""):
         ws.close()
         result = json.loads(r.get("result", {}).get("result", {}).get("value", "{}"))
         return result.get("found", False)
-    except:
+    except Exception:
         return False
 
 
@@ -479,7 +479,7 @@ def solve_drag_puzzle(ws_url):
     Return shape kept for backward compat with solve_purespectrum_preflight().
     """
     try:
-        from stealth_captcha.solver.drag_drop_angular import solve_drag_puzzle_new, DragDropResult
+        from stealth_captcha.solver.drag_drop_angular import solve_drag_puzzle_new
         result = solve_drag_puzzle_new(ws_url)
 
         if result.status == "solved":
@@ -522,7 +522,7 @@ def read_page_text(ws_url, max_len=1000):
             "params":{"expression": f"document.body.innerText.substring(0,{max_len})"}}))
         r = json.loads(ws.recv()); ws.close()
         return r.get("result",{}).get("result",{}).get("value","")
-    except:
+    except Exception:
         return ""
 
 
@@ -530,10 +530,10 @@ def read_page_text(ws_url, max_len=1000):
 
 def navigate_purespectrum_shadow_dom(ws_url, max_steps=15, debug=False):
     """Navigate PureSpectrum survey pages using Shadow DOM piercing.
-    
+
     PureSpectrum switches to Web Components (ps-*) after the drag puzzle (~66%).
     Standard DOM queries fail because elements are inside Shadow DOM.
-    
+
     Strategy:
       1. Detect if Shadow DOM is active (ps-* elements present)
       2. For each page:
@@ -543,12 +543,12 @@ def navigate_purespectrum_shadow_dom(ws_url, max_steps=15, debug=False):
          - Wait for page transition
       3. Detect completion (completion markers in page text)
       4. Detect screen-out (disqualification text)
-    
+
     Args:
         ws_url: CDP WebSocket URL
         max_steps: Maximum pages to navigate (safety limit)
         debug: Print debug info
-    
+
     Returns:
         {"status": "completed|screen_out|error|max_steps", "pages": N, "error": msg}
     """
@@ -557,32 +557,32 @@ def navigate_purespectrum_shadow_dom(ws_url, max_steps=15, debug=False):
         if debug:
             print("  [SHADOW] No Shadow DOM detected — skipping shadow navigation")
         return {"status": "no_shadow_dom", "pages": 0}
-    
+
     if debug:
         print("  [SHADOW] Shadow DOM detected! Starting navigation...")
-    
+
     for step in range(max_steps):
         time.sleep(2)  # Wait for page to settle
-        
+
         # Read page text for completion/screen-out detection
         text = read_page_text(ws_url, 1500).lower()
-        
+
         # Check completion
         for marker in COMPLETION_MARKERS:
             if marker in text:
                 if debug:
                     print(f"  [SHADOW] COMPLETED after {step} pages (marker: '{marker}')")
                 return {"status": "completed", "pages": step}
-        
+
         # Check screen-out
         if any(x in text for x in ["leider", "nicht geeignet", "disqualif", "screenout", "nicht qualifiziert"]):
             if debug:
                 print(f"  [SHADOW] SCREEN-OUT after {step} pages")
             return {"status": "screen_out", "pages": step}
-        
+
         # Try to interact with Shadow DOM elements
         clicked = False
-        
+
         # 1. Try to click radio buttons (select first option on each page)
         # PureSpectrum uses <ps-radio> or <input type="radio"> within Shadow DOM
         radio = shadow_dom_query_selector(ws_url, "input[type='radio']", "ps-radio")
@@ -592,7 +592,7 @@ def navigate_purespectrum_shadow_dom(ws_url, max_steps=15, debug=False):
             if shadow_dom_click(ws_url, "input[type='radio']", "ps-radio", debug=debug):
                 clicked = True
                 time.sleep(0.5)
-        
+
         # 2. Try to fill text inputs (if any)
         text_input = shadow_dom_query_selector(ws_url, "input[type='text']", "ps-input")
         if text_input and not text_input.get("disabled"):
@@ -605,12 +605,12 @@ def navigate_purespectrum_shadow_dom(ws_url, max_steps=15, debug=False):
                 fill_value = "Berlin"
             elif "plz" in text or "postal" in text:
                 fill_value = "10785"
-            
+
             if debug:
                 print(f"  [SHADOW] Page {step}: Text input found, filling '{fill_value}'...")
             if shadow_dom_fill(ws_url, "input[type='text']", fill_value, "ps-input", debug=debug):
                 clicked = True
-        
+
         # 3. Try to click next/submit button (CRITICAL — must be last)
         # Try multiple button selectors within Shadow DOM
         button_selectors = [
@@ -619,7 +619,7 @@ def navigate_purespectrum_shadow_dom(ws_url, max_steps=15, debug=False):
             ("[type='submit']", "ps-root"),     # Submit inside ps-root
             ("button", ""),                     # Any button in any Shadow DOM
         ]
-        
+
         for selector, tag in button_selectors:
             btn = shadow_dom_query_selector(ws_url, selector, tag)
             if btn and not btn.get("disabled"):
@@ -631,7 +631,7 @@ def navigate_purespectrum_shadow_dom(ws_url, max_steps=15, debug=False):
                     if shadow_dom_click(ws_url, selector, tag, debug=debug):
                         clicked = True
                         break
-        
+
         if not clicked:
             if debug:
                 print(f"  [SHADOW] Page {step}: No clickable elements found — page might be complete")
@@ -643,7 +643,7 @@ def navigate_purespectrum_shadow_dom(ws_url, max_steps=15, debug=False):
             # Try standard DOM fallback
             if not any(x in text for x in ["bitte legen", "zahl", "puzzle"]):
                 return {"status": "unknown", "pages": step, "error": "No Shadow DOM elements found and no completion markers"}
-    
+
     return {"status": "max_steps", "pages": max_steps, "error": f"Reached max {max_steps} steps"}
 
 
@@ -693,12 +693,12 @@ def solve_purespectrum_preflight(ws_url, debug=False):
             print("  [PREFLIGHT] Shadow DOM detected after puzzle — starting navigation...")
         nav_result = navigate_purespectrum_shadow_dom(ws_url, max_steps=15, debug=debug)
         steps.append(f"shadow_nav:{nav_result.get('status')}:{nav_result.get('pages')}")
-        
+
         if nav_result.get("status") == "completed":
             return {"success": True, "steps": steps, "pages": nav_result.get("pages")}
         elif nav_result.get("status") == "screen_out":
             return {"success": True, "steps": steps, "screen_out": True, "pages": nav_result.get("pages")}
         elif nav_result.get("status") == "error":
             return {"success": False, "steps": steps, "error": nav_result.get("error")}
-    
+
     return {"success": True, "steps": steps}

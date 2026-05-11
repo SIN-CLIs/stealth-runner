@@ -5,7 +5,7 @@ COMPACT DOM SNAPSHOT — @eN Token-Efficient Element Extraction
 WAS IST DAS?
   Erzeugt kompakte DOM-Snapshots mit @eN Referenzen aus einer Webseite.
   Nutzt CDP Runtime.evaluate im Browser (nicht cua-driver).
-  
+
   UNTERscheidet sich von src/stealth_survey/compact_snapshot.py:
   - Diese Datei: Survey-CLI-Version (für survey.py)
   - src/stealth_survey/compact_snapshot.py: NEMO-Version (für run_survey.py)
@@ -131,7 +131,7 @@ class CompactSnapshot:
 # - Provider-specific selectors (Qualtrics, Toluna, PureSpectrum)
 # - Iframe content extraction
 # - Sort by Y-position (questions before answers)
-ELEMENT_EXTRACTOR_JS = '''
+ELEMENT_EXTRACTOR_JS = r'''
 (function(){
     var out = [];
     var seen = new Set();
