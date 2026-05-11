@@ -167,6 +167,61 @@ content: |
   - Wenn ein v1-Endpoint dasselbe besser kann als v2 → das ist ein Bug
     in v2, melde ihn als Issue. Keine Workarounds in Tool-Code.
 
+  ### Graph-Verdrahtung (LangGraph-Knoten ab 2026-05-11)
+
+  Der Survey-Graph hat jetzt FUENF Hauptknoten pro Iteration:
+
+  ```
+  ensure_chrome ──► open_survey ──► inject_cookies ──► read_balance_before
+                                                                 │
+                                                                 ▼
+                            ┌──── snapshot ◄────────────┐
+                            │       │                   │
+                            │       ▼                   │
+                            │   captcha  (NEU)          │
+                            │       │                   │
+                            │       ▼                   │
+                            │    decide                 │
+                            │       │                   │
+                            │       ▼                   │
+                            │   execute ───► detect_completion ──► (loop or end)
+                            │                       │
+                            └───────────────────────┘
+                                          │
+                                          ▼
+                                  read_balance_after ──► done
+  ```
+
+  Knoten-Pflichten:
+
+  - `snapshot_node`     ruft `cdp_universal.scan()`. Setzt
+                        `state.universal_elements` und `state.captcha_frames`.
+  - `captcha_node`      NEU. Setzt `captcha_solved_this_iteration`.
+                        NO-OP wenn `captcha_frames` leer UND
+                        `no_dom_change_count < 2`. Sonst:
+                        `captcha_router.detect_and_solve()`.
+  - `decide_node`       Setzt `state.decision = {action, stable_id, value?, …}`.
+                        LLM-first, Heuristik-Fallback. Beachtet `avoid_id`
+                        wenn letzter Klick `no_dom_change`.
+  - `execute_node`      Fuehrt `state.decision` via `cdp_actuator.Actuator` aus.
+                        Setzt `state.last_action_result`.
+                        Inkrementiert `no_dom_change_count` bei
+                        `reason='no_dom_change'`.
+  - `detect_completion` Liest URL + body.innerText + balance-Diff.
+                        Backward-Compat: nutzt `state.batch_result`
+                        (parallel zu `last_action_result` gefuellt).
+
+  Backward-Compat-Felder im State (NICHT in neuem Code verwenden):
+  `state.snapshot_refs`, `state.nim_actions`, `state.batch_result`.
+  Sie werden weiterhin gespiegelt, damit alte Tools nicht brechen.
+
+  Banned-Patterns in Knoten:
+  - KEIN direktes `Runtime.evaluate("el.click()")` mehr.
+  - KEIN `document.querySelectorAll(...)[idx].click()`.
+  - KEIN Captcha-Check in `decide_node` oder `execute_node`
+    (gehoert in `captcha_node`).
+  - KEIN Klick-Erfolg ohne `actuator.click()` Verify-Pfad.
+
   ### Inline-Dokumentations-Pflicht
   Alle vier kanonischen Module enthalten eine umfassende Inline-Doku als
   Modul-Docstring am Anfang der Datei (siehe `cdp_universal.py`,

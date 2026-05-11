@@ -1,3 +1,42 @@
+"""================================================================================
+DEPRECATED 2026-05-11 — Wird ersetzt durch die kanonische v2-Pipeline.
+================================================================================
+
+Dieser Tool-Pfad ist LEGACY. Er bleibt nur fuer Backward-Compat bestehender
+Integrationen erhalten. NEUER Code MUSS gegen die folgenden Endpoints
+programmieren:
+
+    POST /v2/scan         → ersetzt /survey/snapshot, /survey/scan
+    POST /v2/click        → ersetzt /survey/click, /survey/click-angular
+    POST /v2/fill         → ersetzt /survey/fill-input
+    POST /v2/press_key    → neu
+    POST /v2/captcha/*    → ersetzt /survey/solve-captcha,
+                            /survey/solve-drag-puzzle
+
+Die Implementierungen leben in:
+    survey-cli/survey/cdp_universal.py      Universal Scanner (AX-Tree pierce)
+    survey-cli/survey/cdp_actuator.py       Maus-Events + Pflicht-Verify
+    survey-cli/survey/captcha_router.py     Detection + Solver-Routing
+    agent-toolbox/api/endpoints/universal.py FastAPI-Endpoints unter /v2/*
+
+WARUM DIESER TOOL-PFAD STIRBT:
+  - Y-Sort-Reihenfolge → instabile @eN-Indizes bei Reflow
+  - el.click() / .value = "..." → von React/Angular ignoriert
+  - Keine Pflicht-Verify nach Aktion → Halluzinationen "Performed without effect"
+  - Provider-spezifisches JS hardcoded → jeder neue Provider = Patch
+  - walkShadows(depth>5) → tieferes Shadow-DOM unsichtbar
+  - iframes nur gezaehlt, nie betreten
+
+Migration-Path fuer dieses Modul:
+  → Wrap die alte API auf /v2/*. Wenn das alte Tool z.B. (selector) erwartet,
+    intern via /v2/scan einen Match auf attrs.id / name finden und dessen
+    stable_id an /v2/click weitergeben. So bleibt die externe API stabil.
+
+LIES BEVOR DU DIESES MODUL AENDERST: AGENTS.md Sektion
+"KANONISCHE ARCHITEKTUR (2026-05-11)".
+================================================================================
+"""
+
 """Element Finding Tool - __frozen__=True
 
 REGEL: NUR finden, NICHT klicken. Klick = tool_click.py.

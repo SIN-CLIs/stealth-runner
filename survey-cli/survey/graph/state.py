@@ -382,6 +382,63 @@ class SurveyState:
     Format: "3 consecutive failures at iteration 7: {last_error_message}"
     Wird für Reporting und learn.md docs genutzt."""
 
+    # ── KANONISCHE PIPELINE FELDER (2026-05-11) ──────────────────────────────
+    # Diese Felder ersetzen funktional snapshot_refs + nim_actions wenn der
+    # Graph auf die v2-Pipeline (cdp_universal + cdp_actuator + captcha_router)
+    # umgestellt ist. snapshot_refs/nim_actions bleiben für Backward-Compat
+    # vorhanden — neuer Code MUSS aber universal_elements/decision benutzen.
+    #
+    # Siehe AGENTS.md "KANONISCHE ARCHITEKTUR (2026-05-11)" und die Module
+    # survey-cli/survey/cdp_universal.py + cdp_actuator.py + captcha_router.py.
+
+    universal_elements: List[Dict[str, Any]] = field(default_factory=list)
+    """Flache Liste von UniversalElement-Dicts aus cdp_universal.scan().
+    Jedes Element: {stable_id, frame_id, role, name, value, tag, text,
+                    state, bbox, attrs, frame_url}
+    Wird von snapshot_node() gesetzt (ab v2-Pipeline).
+    Wird von decide_node() für LLM/Heuristik-Auswahl genutzt.
+    stable_id ist der EINZIGE legitime Identifier für click/fill — niemals
+    Index oder CSS-Selektor mehr."""
+
+    captcha_frames: List[Dict[str, str]] = field(default_factory=list)
+    """Liste der iframes deren URL nach Captcha-Provider aussieht.
+    Jedes Element: {frame_id, url}
+    Wird von snapshot_node() gesetzt.
+    Wird von captcha_node() als Trigger genutzt.
+    Detection-Patterns siehe captcha_router.IFRAME_URL_TO_TYPE."""
+
+    last_action_result: Dict[str, Any] = field(default_factory=dict)
+    """Result der letzten Aktuator-Aktion (click/fill/press_key).
+    Format: {success, reason, before_hash, after_hash, new_url, elapsed_ms,
+             stable_id, action_type}
+    Wird von execute_node() gesetzt.
+    Wird von detect_completion_node() für Navigation-Detection genutzt.
+    success=False mit reason='no_dom_change' → wichtigster Indikator dass
+    der Klick KEINE Wirkung hatte (= alter Halluzinations-Fall, jetzt sichtbar)."""
+
+    no_dom_change_count: int = 0
+    """Anzahl direkt aufeinanderfolgender Aktionen mit reason='no_dom_change'.
+    Wird in execute_node() inkrementiert/resetet.
+    TRIGGER: no_dom_change_count >= 2 → decide_node MUSS anderes Element wählen
+    (Hint wird im next decide_node-Aufruf gesetzt).
+    Schutz gegen Endlos-Klick-Loop (Issue #24 anti-stuck loop)."""
+
+    decision: Dict[str, Any] = field(default_factory=dict)
+    """Aktuelle Entscheidung des decide_node — ein einziger atomarer Schritt.
+    Format: {action: "click"|"fill"|"press_key"|"submit"|"wait"|"done",
+             stable_id: str (für click/fill), value: str (für fill),
+             key: str (für press_key), reason: str (Begründung der Wahl)}
+    Wird von decide_node() gesetzt.
+    Wird von execute_node() ausgeführt.
+    KEINE Listen mehr — jede Iteration GENAU EINE Aktion. Verifyable."""
+
+    captcha_solved_this_iteration: bool = False
+    """Flag ob in dieser Iteration ein Captcha gelöst wurde.
+    Wird von captcha_node() auf True gesetzt.
+    Wird vor nächster Iteration auf False resetet.
+    Dient als Hint für decide_node (Page-Refresh erwartet)."""
+
+
     # ── Property Helpers ─────────────────────────────────────────────────────
 
     @property

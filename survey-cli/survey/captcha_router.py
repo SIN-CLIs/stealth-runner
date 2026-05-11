@@ -146,7 +146,7 @@ def _check_angular_drag_puzzle(cdp: CDPConnection) -> CaptchaDetection | None:
         "var drop=document.querySelector('.cdk-drop-list,.drop-zone');"
         "if(!drop) return JSON.stringify({found:false});"
         "var text=(document.body.innerText||'').toLowerCase();"
-        "var match=text.match(/zahl\\s*(\\d+)|number\\s*(\\d+)/);"
+        r"var match=text.match(/zahl\s*(\d+)|number\s*(\d+)/);"
         "if(!match) return JSON.stringify({found:false});"
         "return JSON.stringify({found:true,target:match[1]||match[2]});"
         "})()"
