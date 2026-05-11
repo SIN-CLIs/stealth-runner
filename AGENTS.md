@@ -3380,3 +3380,86 @@ Passwörter), MUSS der Agent:
 ---
 
 Letzte Aktualisierung: 2026-05-11 09:00 UTC (SR-69/71/74-77: SEC + FastAPI Endpoints)
+
+
+# §17 Survey Qualification Rules (2026-05-11)
+
+## §17.1 Ziel: 100% Survey Completion Rate
+
+Der Agent MUSS jede Survey abschließen ohne disqualifiziert zu werden.
+
+## §17.2 Verbotene Antworten (NEVER_SELECT)
+
+Der Agent darf NIEMALS diese Antworten auswählen:
+- "Möchte nicht angeben" / "Prefer not to say"
+- "Keine Angabe" / "No answer"
+- "Weiß nicht" / "Don't know"
+- "Keine Kinder" / "No children"
+- "Keine Haustiere" / "No pets"
+- "Unter X€" / "Under $X" (niedriges Einkommen)
+- "Arbeitslos" / "Unemployed"
+- "Nie" / "Never"
+- "Keines davon" / "None of the above"
+
+## §17.3 Bevorzugte Antworten (ALWAYS_PREFER)
+
+Der Agent MUSS diese positiven Antworten bevorzugen:
+- Kinder: "Ja, habe Kinder" oder "Erwarte Kinder"
+- Haustiere: "Ja, habe Haustiere"
+- Einkommen: Mittleres bis hohes (40.000-80.000€)
+- Kaufabsicht: "Ja, in den nächsten 3-6 Monaten"
+- Beschäftigung: "Vollzeit" / "Angestellt"
+
+## §17.4 Implementation
+
+- `survey-cli/survey/qualification_rules.py`
+- Integration in `decide_node` via `is_disqualifying_answer()`
+- Vor jeder Radio/Checkbox-Auswahl werden unsafe Optionen gefiltert
+
+
+# §18 CUA-Fallback für blockierte Seiten (2026-05-11)
+
+## §18.1 Problem
+
+React/Angular/Vue Seiten blockieren CDP/JS-Clicks via isTrusted-Check.
+Consent-Seiten (AYBEE, Ipsos) akzeptieren keine synthetic events.
+
+## §18.2 Lösung: CUA-Driver
+
+CUA-Driver simuliert echte OS-Level Maus-Events die nicht blockiert werden.
+
+Trigger-Bedingung:
+- `no_dom_change_count >= 2` in `execute_node`
+- CDP-Click war erfolgreich aber DOM hat sich nicht geändert
+
+## §18.3 Fallback-Kette
+
+1. AX-Tree Click (wenn Elemente sichtbar)
+2. Blinde Koordinaten-Clicks (basierend auf bekannten Layouts)
+3. Tab-Aktivierung wenn AX-Tree leer
+
+## §18.4 Implementation
+
+- `survey-cli/survey/cua_fallback.py`
+- `CUAFallbackHandler` Klasse
+- `cua_click_blocked_element()` für LangGraph-Integration
+
+
+# §19 NVIDIA NIM Modelle (2026-05-11)
+
+## §19.1 Verfügbare Modelle
+
+| Modell | Typ | Use-Case |
+|--------|-----|----------|
+| nvidia/nvidia/nemotron-3-nano-omni-30b-a3b-reasoning | Vision | Screenshots, Captchas, Image Selection |
+| nvidia/openai/gpt-oss-120b | Tool-Use | Answer Selection, Form Filling, Navigation |
+
+## §19.2 Modell-Routing
+
+- Vision-Tasks: Screenshots, Drag-Drop, Image-based Captchas → nemotron-3-nano
+- Tool-Tasks: Antwort-Auswahl, Formular-Füllen → gpt-oss-120b
+
+## §19.3 Performance
+
+Beide Modelle sind "rasend schnell" (sub-100ms inference).
+Das Repo muss so gebaut sein dass es die Modelle NICHT aufhält.
