@@ -1129,7 +1129,7 @@ content: |
   ```
   1. SCAN: CDP JS -> finde Tab MIT .survey-item (document.querySelectorAll)
   2. START: CDP JS -> clickSurvey('ID') → Dashboard öffnet Modal
-  3. MODAL: CDP JS -> window.open interception + Target.createTarget → Survey-Tab ��ffnet sich
+  3. MODAL: CDP JS -> window.open interception + Target.createTarget → Survey-Tab ����ffnet sich
      ⚠️ CUA b.click() + CDP Input.dispatchMouseEvent = FAIL (Chrome Popup Blocker!)
      ✅ window.open interception (siehe §KRITISCH: "Umfrage starten" Problem)
      ⚠️ COOKIE TIMING: Target.createTarget öffnet neuen Tab OHNE Session-Cookies!
@@ -1315,7 +1315,7 @@ content: |
   ### Hard Enforcement Regeln
   
   ```
-  ╔══════════════════════════════════════════════════════════��═══════╗
+  ╔═════════════════════════════════════════════════════════�����═══════╗
   ║  REGEL 1: Agent ist NUR ein Trigger                              ║
   ║  ─────────────────────────────────────────────────────────────── ║
   ║   RICHTIG:  python run_survey.py                               ║
@@ -2003,8 +2003,13 @@ stealth-runner/                                   <- PRIMARY ORCHESTRATOR
 │   ├── cua-driver/click.md, set-value.md, list-windows.md, get-window-state.md, switch-tab.md
 │   └── heypiggy/credentials.md, rating-page.md
 │
-├── [stealth-sync]/                               <- Sync Daemon
 ├── [stealth-sota]/                               <- SOTA Extensions: chaos_engine, security_hardening, self_healing, observability, determinism
+# HINWEIS (SR-64, 2026-05-11): stealth-sync ist NICHT mehr als Submodul eingebettet.
+#   Pointer war eine Leiche ohne .gitmodules-URL — CI brach mit
+#   `fatal: No url found for submodule path 'stealth-sync'` auf jedem Run.
+#   Fix: `git rm --cached stealth-sync` auf feat/universal-cdp-scanner.
+#   Falls Inhalt benoetigt: separat klonen nach <repo-root>/stealth-sync und
+#   in .gitignore eintragen. Brain-Regel siehe §11.9 (Submodule-Vertrag).
 │
 ├── [.opencode/skills]/                           <- OpenCode Agent Skills (cavecrew, caveman, diagnose, etc.)
 ├── [.claude/skills]/                             <- Claude Agent Skills (gitnexus, grill-me, etc.)
@@ -2389,7 +2394,7 @@ KRITISCHE BLOCKER (2026-05-11):
   - Status: 🔄 UNTESTED — braucht live E2E test
 - [❌] **Shadow DOM Element-Erfassung** — FIXED 2026-05-11
   - Problem: EXTRACTOR_JS erfasste NUR Normal-DOM, Shadow DOM (PureSpectrum) war blind
-  - Fix: Shadow DOM traversal in EXTRACTOR_JS — walk shadowRoot recursively (depth�����5)
+  - Fix: Shadow DOM traversal in EXTRACTOR_JS — walk shadowRoot recursively (depth�������5)
   - Auch: Angular CDK drag-drop detection, HeyPiggy modal buttons, Captcha images, Iframes
 
 BALANCE TARGET (€5.00):
@@ -2476,6 +2481,32 @@ SURVEY TYPES         -> AGENTS.md §8 SURVEY TYP KATALOG
 TOOL REGISTRY        -> opencode.json (tool Manifest + Tool Registration)
 ENV CREDENTIALS      -> NVIDIA_API_KEY, Chrome Binary, Profile 901, CDP 9999, API 8889
 ```
+
+---
+
+### §11.9 — Submodule-Vertrag (Brain-Regel, kanonisch, SR-64 2026-05-11)
+
+**Invariante:** Jeder Pfad im Working-Tree, der via `git ls-tree HEAD <pfad>`
+als `160000 commit <sha>` (Submodule-Pointer) markiert ist, MUSS einen
+korrespondierenden `.gitmodules`-Eintrag mit `path` UND `url` haben.
+Andernfalls bricht jeder CI-Step der `git submodule update --init --recursive`
+oder `git submodule foreach` aufruft mit
+`fatal: No url found for submodule path '<pfad>' in .gitmodules`.
+
+**Optionen bei Verletzung (entweder/oder, niemals "lassen wir mal"):**
+- **A — Pfad bleibt:** `.gitmodules` ergaenzen
+  (`[submodule "<name>"]`, `path = <pfad>`, `url = <repo-url>`).
+- **B — Pfad weg:** `git rm --cached <pfad>` + lokales Verzeichnis raus
+  (Working-Tree-Leiche bereinigen). `.gitignore`-Eintrag wenn der Pfad
+  weiterhin lokal genutzt wird (z.B. fuer Dev-Klone).
+
+**Historischer Vorfall:** `stealth-sync` war Pointer ohne URL —
+Option B gewaehlt (SR-64, commit auf feat/universal-cdp-scanner).
+Dev-Workflow: `git clone <stealth-sync-url> stealth-sync` lokal.
+
+**Pre-Commit-Schutz (optional, Folge-Ticket):** `scripts/check_submodules.py`
+darf nur exit 0 zurueckgeben, wenn jede 160000-Zeile von `git ls-tree HEAD`
+durch `git config -f .gitmodules submodule.<name>.url` aufloesbar ist.
 
 ---
 
@@ -2966,10 +2997,10 @@ Abarbeitungsreihenfolge.
 #### P0 — System Integrity (blockiert Releases)
 | # | Titel | Status |
 |---|---|---|
-| [#63](https://github.com/SIN-CLIs/stealth-runner/issues/63) | SR-64: Submodule `stealth-sync` `.gitmodules` fix | OPEN |
-| [#64](https://github.com/SIN-CLIs/stealth-runner/issues/64) | SR-65: GitHub Actions Node-20-Deprecation Bump (Frist 2026-06-02) | OPEN |
-| (action) | PR #54 nach `feat/universal-cdp-scanner` mergen | PENDING |
-| (action) | PR `feat/universal-cdp-scanner` -> `main` oeffnen + mergen | PENDING |
+| [#63](https://github.com/SIN-CLIs/stealth-runner/issues/63) | SR-64: Submodule `stealth-sync` `.gitmodules` fix | DONE (Option B, §11.9, 2026-05-11) |
+| [#64](https://github.com/SIN-CLIs/stealth-runner/issues/64) | SR-65: GitHub Actions Node-20-Deprecation Bump (Frist 2026-06-02) | DONE (`.github/workflows/ci.yml` v5/v6, 2026-05-11) |
+| (action) | PR #54 nach `feat/universal-cdp-scanner` mergen | DONE (`8aac7d0`, 2026-05-11) |
+| (action) | PR `feat/universal-cdp-scanner` -> `main` oeffnen + mergen | OPEN (PR #70, CI laeuft) |
 
 #### P1 — Brain Hygiene + Provider-Bug
 | # | Titel | Status |
@@ -3014,7 +3045,7 @@ LangGraph-Bucket starten.**
 | (action) | SEC-1: 3 PATs vom 2026-05-11 rotieren | PENDING (manuell) |
 | (action) | SEC-2: GitHub Audit-Log auf erwartete Aktionen pruefen | PENDING (manuell) |
 | [#68](https://github.com/SIN-CLIs/stealth-runner/issues/68) | SR-69: Org-weit Secret Scanning + Push Protection | OPEN |
-| [#69](https://github.com/SIN-CLIs/stealth-runner/issues/69) | SR-70: AGENTS.md §15 Credentials & Secrets als Brain-Regel | OPEN |
+| [#69](https://github.com/SIN-CLIs/stealth-runner/issues/69) | SR-70: AGENTS.md §15 Credentials & Secrets als Brain-Regel | DONE (§15, 2026-05-11) |
 | [#12](https://github.com/SIN-CLIs/stealth-runner/issues/12) | Security Hardening (Keychain + Temp-Profiles + Audit) | OPEN |
 
 #### Debt-Tracker (CI dokumentiert geignorte Regeln)
@@ -3106,7 +3137,120 @@ PR-Bezug nicht gesehen. Fix in dieser Commit-Reihe.
 diese Tabelle ergaenzen. KEINE Tickets in separaten .md-Dateien oder
 externen Tools — die Roadmap lebt im Agenten-Brain.
 
+### §13.8.4 — Action-Versions-Audit-Trail (Brain-Regel, kanonisch, SR-65 2026-05-11)
+
+Action-Versionen in `.github/workflows/*.yml` werden NICHT floaten gelassen
+(`@vN` ist Major-Pin, NICHT `@latest`). Bumps sind explizit, commit-getrennt
+und werden hier als Zeile + Datum verankert — sonst gibt es keinen
+Audit-Trail wenn GitHub erneut Runtime-Deprecations ankuendigt.
+
+| Datum | Action | Vorher -> Nachher | Grund | Commit/PR |
+|---|---|---|---|---|
+| 2026-05-11 | `actions/checkout` | v4 -> v5 | Node-20-Deprecation (Frist 2026-06-02), SR-65 (#64) | PR #70 |
+| 2026-05-11 | `actions/setup-python` | v5 -> v6 | Node-20-Deprecation (Frist 2026-06-02), SR-65 (#64) | PR #70 |
+
+Pflicht-Workflow fuer kuenftige Bumps:
+1. Issue anlegen mit Label `infra` + Klasse (P0 wenn deadline-driven).
+2. Bump in eigenem Commit/PR (NICHT mit Code-Aenderungen vermischen).
+3. CI-Run muss `success` zeigen + keine neue Deprecation-Warning.
+4. Diese Tabelle ergaenzen, Commit mit `docs(agents): §13.8.4 ...`.
+5. Issue schliessen mit `umgesetzt in PR #N` (§13.8.3).
+
 ---
 
-**Letzte Aktualisierung: 2026-05-11 abends (SR-50..SR-61 implementiert; SR-62..SR-70 als Issues + Bucket-Tabelle; CI gruen; Brain mit voller Bucket-Uebersicht §13.8.1b) | Lines: ~2200 + §12 (incl §12.10 FCTC-ES Phase 1) + §13 (incl §13.8 / §13.8.1 + §13.8.1b Bucket-Uebersicht / §13.8.2-3 / SR-60 Trade-Off / SR-61-63 Invariante) | Plan: plans/01-survey-agent-langgraph-fastapi.md**
+## §15 — CREDENTIALS & SECRETS (Brain-Regel, kanonisch, SR-70 2026-05-11)
+
+Diese Sektion ersetzt jede separate `SECURITY.md` (die nach Brain-Regel
+"keine externen MD-Dateien" verboten ist). Auslöser: Token-Leak-Vorfall
+vom **2026-05-11** (3 PATs in Chat geteilt — alle rotiert).
+
+### §15.1 — Keine Klartextoffenlegung (NIEMALS)
+
+Tokens, API-Keys, Passwörter, Cookie-Secrets, OAuth-Refresh-Tokens, SSH-Keys,
+Webhook-Signing-Secrets, Datenbank-Connection-Strings mit Inline-Credentials
+oder Personal Access Tokens (PATs) dürfen **niemals** erscheinen in:
+
+- Chat-Nachrichten (an v0, opencode, Claude, ChatGPT, Qwen, andere Agenten)
+- Pull-Request-Beschreibungen oder PR-Kommentaren
+- Commit-Messages oder Tag-Annotations
+- Issue-Bodies oder Issue-Kommentaren
+- AGENTS.md selbst oder anderen Repo-Dateien (`*.md`, `*.py`, `*.json`, `*.yml`, `*.env`)
+- CI-Logs (echo eines Secret-Werts in einer Workflow-Step → bricht §15.1)
+- Screenshots oder Bilder im Anhang
+- Stack-Traces, Debug-Logs (siehe `survey-cli/scripts/check_banned_patterns.py`)
+
+Wenn ein Klartext-Wert in einem dieser Kanäle landet → der Wert gilt als
+kompromittiert, **auch wenn nur eine Person ihn gesehen hat**. Pflicht-Reaktion
+ist §15.3.
+
+### §15.2 — Storage (wo Secrets leben dürfen)
+
+| Quelle | Erlaubt für | Notiz |
+|--------|-------------|-------|
+| **macOS Keychain** | lokale Dev-PATs, Chrome-Cookies, NVIDIA-Keys | siehe Issue #12 (Security Hardening) |
+| **Vercel Project Vars** | Production-Secrets der v0-Apps | Settings → Vars |
+| **GitHub Actions Secrets** | CI-Tokens, Deploy-Keys | `gh secret set` |
+| **stealth-suite/.env (Dev-only)** | nur Public-Test-Endpoints | NIEMALS in Repo committen — siehe `.gitignore` |
+| ~~Repo-Dateien~~ | **NIEMALS** | jedes `.env`, `*.json` mit Secret im Klartext = SEC-Eskalation |
+
+Pre-Receive-Schutz (Push Protection, SR-69 #68) ist Pflicht. Wer einen
+neuen Repo unter `SIN-CLIs/*` erstellt, MUSS Push-Protection aktivieren
+**bevor** der erste Commit gepusht wird.
+
+### §15.3 — Operator-Checkliste bei Leak-Verdacht (5 Schritte, in dieser Reihenfolge)
+
+1. **Token revoken** (sofort, < 1h Frist).
+   - GitHub-PAT: https://github.com/settings/tokens → Revoke
+   - Vercel Token: Account Settings → Tokens → Revoke
+   - NVIDIA NIM Key: https://build.nvidia.com → Keys → Revoke
+   - macOS Keychain Entry: `security delete-generic-password -s <service>`
+2. **Audit-Log prüfen.**
+   - GitHub: https://github.com/organizations/SIN-CLIs/settings/audit-log
+   - Filter: `actor:<user> created:>=<leak-date>` — jede Aktion gegen
+     erwartete Liste (Commit, PR-Comment, Issue-Open) prüfen. Anomalie
+     (z.B. `repo.transfer`, `org.add_member`, `repo.access`) → Eskalation
+     an Repo-Owner UND alle Co-Maintainer per separatem Kanal.
+3. **Issue anlegen** auf `SIN-CLIs/stealth-runner` mit Label `security`.
+   Titel: `SEC-<n>: <kurze Beschreibung des Leak-Vorfalls>`.
+   Body: Quelle (Chat/PR/Commit), Zeitpunkt, betroffene Tokens (nur Service-
+   Bezeichnung — KEINE Token-Präfixe oder Stellen!), Rotation-Bestätigung
+   pro Token, Audit-Log-Ergebnis.
+4. **AGENTS.md Footer-Timestamp aktualisieren** (siehe Footer dieser Datei).
+   Format: `Letzte Aktualisierung: <datum> (SEC-<n>: ...)`.
+5. **Lessons-Learned in `anti-learn.md`** (1-Zeilen-Entry, nicht in §15).
+   Wenn das Pattern recurrent ist → neue §15.x-Unterregel.
+
+### §15.4 — Rotationsfrist (kanonisch)
+
+- **GitHub PAT / Fine-Grained PAT:** < 1h nach Verdacht. KEINE Ausnahme.
+- **Vercel Token:** < 1h.
+- **NVIDIA / Provider-API-Key:** < 4h (langsamer Rollover möglich).
+- **Cookie-Secrets (HeyPiggy, etc.):** < 24h via Re-Login.
+- **DB-Connection-Strings:** < 24h via Connection-Pool-Rotate.
+
+Wer eine Rotation > Frist verzögert → Verstoß gegen §15. Pflicht ist
+Issue-Anlage mit Begründung.
+
+### §15.5 — Agenten-Vertrag (für v0, opencode, Claude, Qwen, andere)
+
+Wenn der User einem Agenten ein Secret im Klartext schickt:
+
+1. Agent darf das Secret **nicht** an Drittsysteme weiterleiten (Webhooks, externe APIs).
+2. Agent darf das Secret **nicht** in generierten Files persistieren
+   (Code-Output, Tool-Calls, MCP-Aufrufe). Statt dessen: Hinweis auf
+   `process.env.<NAME>` / GitHub-Actions-Secret / Keychain-Lookup.
+3. Agent muss den User auf §15.3 hinweisen (Rotation + Audit).
+4. Agent darf das Secret **einmal** für eine vom User explizit
+   beauftragte Authentifizierungs-Operation verwenden (z.B. `gh auth login`),
+   danach: aus dem In-Memory-Kontext verwerfen.
+
+**Historischer Vorfall:** 2026-05-11 — User schickte 3 PATs im Chat
+an v0. v0-Agent nutzte einen Token einmalig für `gh auth login`, mergte
+PR #54, eröffnete PR #70, fixte SR-64/SR-65/SR-70 — danach Rotation
+durch User gemäß §15.3. Brain-Regel §15.5 ist die Konsequenz daraus,
+damit der nächste Agent denselben Vorfall standardisiert behandelt.
+
+---
+
+**Letzte Aktualisierung: 2026-05-11 nachts (SR-50..SR-61 implementiert; PR #54 gemerged in `feat/universal-cdp-scanner`, `8aac7d0`; PR #70 `feat/universal-cdp-scanner` -> `main` offen mit Closes #48-#53; SR-64 (#63) DONE per `git rm --cached stealth-sync` + §11.9 Submodule-Vertrag; SR-65 (#64) DONE per `actions/checkout@v5` + `actions/setup-python@v6` + §13.8.4 Audit-Trail; SR-70 (#69) DONE per neuer §15 Credentials & Secrets; SEC-1 PAT-Rotation erfolgt durch User; offen: P1-Brain #65/#66, P1-Provider #67, SEC #68/#12, P2 FCTC-ES #55/#56/#57/#58, LangGraph-Bucket #33-#43, Tooling #18/#19/#20/#29/#30/#31, Debt #61/#62) | Lines: ~2200 + §11.9 Submodule-Vertrag + §12 (incl §12.10 FCTC-ES Phase 1) + §13 (incl §13.8 / §13.8.1 + §13.8.1b Bucket-Uebersicht / §13.8.2-4 / SR-60 Trade-Off / SR-61-63 Invariante) + §15 Credentials & Secrets | Plan: plans/01-survey-agent-langgraph-fastapi.md**
 
