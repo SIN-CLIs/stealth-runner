@@ -167,6 +167,68 @@ content: |
   - Wenn ein v1-Endpoint dasselbe besser kann als v2 → das ist ein Bug
     in v2, melde ihn als Issue. Keine Workarounds in Tool-Code.
 
+  ### NIM/LLM-Vertrag (ab 2026-05-11, stable_id-Schema)
+
+  `survey/nim.py::NIMClient.decide(snapshot, profile)` erwartet jetzt:
+
+  ```python
+  snapshot = {
+    "elements": [
+        {"stable_id": "<id>", "role": "button|radio|textbox|...",
+         "name": "<accessible name>", "value": "<current value>",
+         "checked": bool},
+        ...
+    ],
+    "avoid_stable_id": "<id of element that just produced no_dom_change>",
+    "no_dom_change_count": int,
+    "iteration": int,
+    "provider": "qualtrics|purespectrum|...",
+  }
+  ```
+
+  Antwort-Schema das das Modell produzieren muss:
+
+  ```json
+  {"actions": [
+      {"stable_id": "<id from list>", "action": "click"},
+      {"stable_id": "<id from list>", "action": "fill", "value": "<text>"},
+      {"action": "wait"},
+      {"action": "complete"}
+  ]}
+  ```
+
+  - GENAU EINE Action pro Decide. Verify im execute_node prueft danach.
+  - `action="submit"` ist abgeschafft — Continue-Buttons sind normale
+    `click` mit stable_id.
+  - `action="select"` ist abgeschafft — Radios/Checkboxen werden mit
+    `click` auf den stable_id selektiert.
+  - Wenn `avoid_stable_id` gesetzt ist: das Modell MUSS einen ANDEREN
+    stable_id waehlen (Anti-Stuck-Loop, Issue #24).
+
+  Backward-Compat: Wenn der Aufrufer noch `snapshot["refs"]` (alt) und
+  KEINE `snapshot["elements"]` schickt, schaltet `build_survey_prompt()`
+  automatisch in den LEGACY-Prompt mit `@eN`-Indizes zurueck. Wird
+  entfernt sobald alle Tools migriert sind.
+
+  ### Captcha-Adapter (survey/captcha_adapters.py)
+
+  Sync/Async-Bruecke zwischen `captcha_router._solver_for()` und den
+  Solvern in `stealth-captcha/`. Lookup-Reihenfolge:
+    1. `survey.captcha_adapters.get_adapter(type)` (Vorrang, lokales Repo)
+    2. `stealth_captcha.solver.<type>.solve` (Fallback fuer drop-in solver)
+
+  Heute gebridged:
+    - `angular_drag_drop` → sync, wrapped `solve_drag_puzzle_new(ws_url)`
+    - `visual_text`       → async, asyncio.run + _SessionStub-Adapter
+                            ueber sync CDPConnection
+  Heute STUB (klare reason="solver_not_yet_bridged"):
+    - `hcaptcha`, `recaptcha`, `turnstile`
+
+  Neuer Captcha-Typ:
+    1. Adapter-Funktion `<type>_solve(cdp, detection)` in captcha_adapters.py
+    2. Eintrag in `ADAPTERS`-Dict
+    3. Detector im captcha_router (IFRAME_URL_TO_TYPE oder DOM-Check)
+
   ### Graph-Verdrahtung (LangGraph-Knoten ab 2026-05-11)
 
   Der Survey-Graph hat jetzt FUENF Hauptknoten pro Iteration:

@@ -202,44 +202,41 @@ def _solver_for(captcha_type: str):
 
     Solver-Convention: ``def solve(cdp, detection) -> CaptchaResult``.
 
-    Die echten Solver leben in ``stealth-captcha/``. Wer einen neuen
-    Captcha-Typ unterstützen will, fügt:
+    LOOKUP-REIHENFOLGE (2026-05-11):
+      1) ``survey.captcha_adapters`` — sync/async-Bridges hier im Repo.
+         Hat IMMER Vorrang weil Adapter-Logik (Result-Mapping, asyncio.run)
+         dort lebt, nicht in den fremden Solver-Modulen.
+      2) ``stealth_captcha.solver.<type>.solve`` — direkter Pfad fuer
+         Solver die bereits die richtige sync-Signatur erfuellen
+         (z.B. wenn jemand spaeter einen drop-in Solver schreibt).
 
-      1) Einen Eintrag in ``IFRAME_URL_TO_TYPE`` oder einen DOM-Check oben.
-      2) Ein Solver-Modul in ``stealth_captcha/solver/<type>.py`` mit der
-         Signatur ``def solve(cdp, detection) -> CaptchaResult``.
-      3) Einen Mapping-Eintrag hier unten.
+    Wenn beides fehlt → None → CaptchaRouter liefert
+    ``CaptchaResult(solved=False, reason="no_solver_for_type")``.
+
+    Neuer Captcha-Typ unterstuetzen:
+      a) ``survey/captcha_adapters.py`` um <type>_solve erweitern + in
+         ADAPTERS eintragen.
+      b) Detector im captcha_router (IFRAME_URL_TO_TYPE oder DOM-Check).
     """
-    if captcha_type == "angular_drag_drop":
-        try:
-            from stealth_captcha.solver.drag_drop_angular import solve  # noqa
-            return solve
-        except Exception:
-            return None
-    if captcha_type == "hcaptcha":
-        try:
-            from stealth_captcha.solver.hcaptcha import solve  # noqa
-            return solve
-        except Exception:
-            return None
-    if captcha_type == "recaptcha":
-        try:
-            from stealth_captcha.solver.recaptcha import solve  # noqa
-            return solve
-        except Exception:
-            return None
-    if captcha_type == "turnstile":
-        try:
-            from stealth_captcha.solver.turnstile import solve  # noqa
-            return solve
-        except Exception:
-            return None
-    if captcha_type == "visual_text":
-        try:
-            from stealth_captcha.solver.visual_text import solve  # noqa
-            return solve
-        except Exception:
-            return None
+    # 1) Adapter im survey-cli (bevorzugt)
+    try:
+        from .captcha_adapters import get_adapter as _get_adapter
+        adapter = _get_adapter(captcha_type)
+        if adapter is not None:
+            return adapter
+    except Exception:
+        pass  # captcha_adapters import-Fehler — versuche Fallback
+
+    # 2) Direkter Solver in stealth_captcha (Fallback)
+    try:
+        import importlib
+        mod = importlib.import_module(
+            f"stealth_captcha.solver.{captcha_type}"
+        )
+        if hasattr(mod, "solve"):
+            return mod.solve
+    except Exception:
+        pass
     return None
 
 
