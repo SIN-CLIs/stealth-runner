@@ -2389,7 +2389,7 @@ KRITISCHE BLOCKER (2026-05-11):
   - Status: 🔄 UNTESTED — braucht live E2E test
 - [❌] **Shadow DOM Element-Erfassung** — FIXED 2026-05-11
   - Problem: EXTRACTOR_JS erfasste NUR Normal-DOM, Shadow DOM (PureSpectrum) war blind
-  - Fix: Shadow DOM traversal in EXTRACTOR_JS — walk shadowRoot recursively (depth���5)
+  - Fix: Shadow DOM traversal in EXTRACTOR_JS — walk shadowRoot recursively (depth�����5)
   - Auch: Angular CDK drag-drop detection, HeyPiggy modal buttons, Captcha images, Iframes
 
 BALANCE TARGET (€5.00):
@@ -2741,6 +2741,54 @@ survey-cli/survey/graph/compiled/
 2. 0× delegated (consecutive_failures < 3 in allen Runs)
 3. Keine errors in state.errors
 
+#### §12.10 — FCTC-ES PHASE 1: MATCHER-LERNSCHLEIFE (2026-05-11, NEW — SR-55)
+
+**Status:** Phase 1 IMPLEMENTIERT. Lernsignal = jeder `ProfileLoader.match_field`-Miss
+in einem laufenden Survey. Output = Pattern-Vorschlaege (JSONL), die ein Mensch
+manuell in `survey/profile_loader.py::FIELD_PATTERNS` einarbeitet.
+
+**Module: `survey-cli/survey/learn/`**
+
+```
+survey-cli/survey/learn/
+├── __init__.py        ← Public API (aggregate_misses, suggest_family, ...)
+├── __main__.py        ← `python -m survey.learn <action>`
+├── aggregator.py      ← liest matcher-telemetry-*.jsonl, gruppiert
+├── suggester.py       ← Token+Substring-Heuristik, KEINE LLM-Dependency
+└── cli.py             ← `aggregate`, `review` (interaktiv)
+```
+
+**Pipeline:**
+
+1. **Signal:** Jeder Survey-Run schreibt am Ende `logs/matcher-telemetry-{run_id}.jsonl`
+   mit Counter + Liste der gemissen Labels (`miss_labels: [{role, label}]`).
+   Implementiert in `survey/profile_loader.py::_record_match` + `_persist_matcher_telemetry`.
+2. **Aggregate:** `python -m survey.learn aggregate [--min-count 2]`
+   → normalisiert Labels (Strip Pflicht-Marker, lowercase, multi-WS), gruppiert
+     per `(role, normalized_label)`, schreibt `logs/pattern-suggestions-{date}.jsonl`.
+3. **Suggest:** `suggester.suggest_family(label)` vergleicht Label-Token-Set mit
+   bekannten `FAMILY_TOKENS` (DE+EN). Substring-Hits (z.B. "nummer" in "faxnummer")
+   werden mit 0.7 gewichtet, Exact-Token-Hits mit 1.0.
+4. **Review:** `python -m survey.learn review` zeigt jeden Vorschlag interaktiv,
+   schreibt akzeptierte in `pattern-suggestions-accepted.jsonl` (Reviewer-Inbox).
+5. **Apply:** **MANUELL ONLY** — Mensch oeffnet die accepted-Datei und
+   erweitert `FIELD_PATTERNS`. Test in `tests/test_profile_match_field.py`
+   ergaenzen, dann smoke-Tool laufen lassen.
+
+**Sicherheitsgurt — NIEMALS AUTO-APPLY:**
+
+```python
+# survey/learn/cli.py:46
+_AUTO_APPLY = False  # NIEMALS True ohne §12 Update + Code-Review
+```
+
+Begruendung: Patterns sind sicherheitsrelevant. Ein falsch gefolgert "Hausnummer
+gehoert zu phone" wuerde im naechsten Survey die Telefon-Nummer ins
+Adress-Feld schreiben → Screen-Out. Eval-Harness existiert erst in Phase 2.
+
+**Tests:** `tests/test_learn.py` (16 cases) deckt suggester, normalize_label,
+aggregator + CLI ab.
+
 ---
 
 ---
@@ -2868,12 +2916,12 @@ und hier den Status updaten (`OPEN`, `IN PROGRESS`, `DONE <commit>`).
 
 | # | Titel | Status | Abhaengt von |
 |---|---|---|---|
-| [#48](https://github.com/SIN-CLIs/stealth-runner/issues/48) | SR-50: test_nim.py — Asserts an parse_response Contract alignen | OPEN | — |
-| [#49](https://github.com/SIN-CLIs/stealth-runner/issues/49) | SR-51: E2E-Smoke fuer ProfileLoader.match_field gegen echte Survey | OPEN | — |
-| [#50](https://github.com/SIN-CLIs/stealth-runner/issues/50) | SR-52: Combobox-Doppelbehandlung in decide_node 2b | OPEN | — |
-| [#51](https://github.com/SIN-CLIs/stealth-runner/issues/51) | SR-53: Profile-Schema erweitern (household_size, income, gender, country, phone, first/last_name) | OPEN | — |
-| [#52](https://github.com/SIN-CLIs/stealth-runner/issues/52) | SR-54: Matcher-Telemetrie — Hit/Miss-Counter pro Keyword-Familie | OPEN | #49 |
-| [#53](https://github.com/SIN-CLIs/stealth-runner/issues/53) | SR-55: §12 FCTC-ES Lernschleife — Matcher-Miss → Pattern-Vorschlag | OPEN | #49, #52 |
+| [#48](https://github.com/SIN-CLIs/stealth-runner/issues/48) | SR-50: test_nim.py — Asserts an parse_response Contract alignen | DONE (Branch `fix/sr-50-55-followups`) | — |
+| [#49](https://github.com/SIN-CLIs/stealth-runner/issues/49) | SR-51: Smoke-Korpus fuer ProfileLoader.match_field | DONE (Branch `fix/sr-50-55-followups`) | — |
+| [#50](https://github.com/SIN-CLIs/stealth-runner/issues/50) | SR-52: Combobox-Doppelbehandlung in decide_node 2b | DONE (Branch `fix/sr-50-55-followups`) | — |
+| [#51](https://github.com/SIN-CLIs/stealth-runner/issues/51) | SR-53: Profile-Schema erweitern (household_size, income, gender, country, phone, first/last_name) | DONE (Branch `fix/sr-50-55-followups`) | — |
+| [#52](https://github.com/SIN-CLIs/stealth-runner/issues/52) | SR-54: Matcher-Telemetrie — Hit/Miss-Counter pro Keyword-Familie | DONE (Branch `fix/sr-50-55-followups`) | #49 |
+| [#53](https://github.com/SIN-CLIs/stealth-runner/issues/53) | SR-55: §12 FCTC-ES Lernschleife — Matcher-Miss → Pattern-Vorschlag | DONE (Branch `fix/sr-50-55-followups`) | #49, #52 |
 
 **Pflicht:** Jedes weitere Follow-Up zu §13 → erst Issue anlegen, dann
 diese Tabelle ergaenzen. KEINE Tickets in separaten .md-Dateien oder
@@ -2881,5 +2929,5 @@ externen Tools — die Roadmap lebt im Agenten-Brain.
 
 ---
 
-**Letzte Aktualisierung: 2026-05-11 | Lines: ~2060 + §12 + §13 (incl §13.8) | Plan: plans/01-survey-agent-langgraph-fastapi.md**
+**Letzte Aktualisierung: 2026-05-11 (SR-50..SR-55 implementiert) | Lines: ~2060 + §12 (incl §12.10 FCTC-ES Phase 1) + §13 (incl §13.8) | Plan: plans/01-survey-agent-langgraph-fastapi.md**
 

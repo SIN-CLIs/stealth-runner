@@ -1199,18 +1199,87 @@ def cmd_opencode(args):
 def cmd_profile(args):
     """
     ================================================================================
-    KOMMANDO: profile — Aktuelles Persona-Profil anzeigen
+    KOMMANDO: profile — Aktuelles Persona-Profil anzeigen + Telemetrie-Dump
     ================================================================================
+
+    Subaktionen (``profile_action`` aus argparse):
+
+      ``show``      (default) — zeigt das geladene Profil tabellarisch an.
+      ``dump``               — gibt Matcher-Telemetrie als JSON nach stdout
+                                und (falls ``--out`` gesetzt) zusaetzlich
+                                nach Datei aus. Format: ein Persona-Block
+                                pro Zeile JSONL-kompatibel + Stdout-Summary.
+
+    Die Telemetrie wird IN PROCESS aggregiert. ``profile dump`` zeigt also
+    NUR Daten, die seit dem letzten Prozess-Start gesammelt wurden — fuer
+    persistente Statistiken nutze ``logs/matcher-telemetry-{run_id}.jsonl``,
+    das von ``cmd_run`` am Survey-Ende geschrieben wird.
     """
-    from survey.runner import SurveyRunner
-    runner = SurveyRunner()
-    profile = runner.profile
-    print(f"\n{'='*50}")
-    print(f"  CURRENT PROFILE")
-    print(f"{'='*50}")
-    for k, v in profile.items():
-        print(f"  {k:25s}: {v}")
-    print()
+    action = getattr(args, "profile_action", None) or "show"
+    profile_name = getattr(args, "name", None) or "jeremy_schulze"
+
+    from survey.profile_loader import ProfileLoader
+
+    if action == "show":
+        profile = ProfileLoader.load_profile(profile_name=profile_name)
+        missing = ProfileLoader._missing_required(profile)
+        print(f"\n{'='*60}")
+        print(f"  PERSONA: {profile_name}")
+        if missing:
+            print(f"  WARNING: missing required keys: {sorted(missing)}")
+        print(f"{'='*60}")
+        for k, v in profile.items():
+            if k.startswith("_"):
+                continue
+            print(f"  {k:25s}: {v}")
+        print()
+        return
+
+    if action == "dump":
+        telem = ProfileLoader.telemetry()
+        out_path = getattr(args, "out", None)
+
+        # Stdout-Summary
+        print(f"\n{'='*60}")
+        print("  MATCHER TELEMETRY (in-process)")
+        print(f"{'='*60}")
+        if not telem:
+            print("  <empty — kein match_field()/load_profile() bisher>")
+        for persona, bucket in telem.items():
+            hits = bucket.get("match_hits", 0)
+            miss = bucket.get("match_misses", 0)
+            total = hits + miss
+            rate = (hits / total * 100.0) if total else 0.0
+            print(f"  [{persona}]")
+            print(f"    loads:           {bucket.get('loads', 0)}")
+            print(f"    loaded_from:     {bucket.get('loaded_from', '<n/a>')}")
+            print(f"    missing_required:{bucket.get('missing_required_count', 0)}")
+            print(f"    match_hits:      {hits}")
+            print(f"    match_misses:    {miss}  (hit-rate {rate:.1f}%)")
+            per_key = bucket.get("per_key_hits", {})
+            if per_key:
+                top = sorted(per_key.items(), key=lambda kv: -kv[1])[:10]
+                print(f"    top hits:        {top}")
+        print()
+
+        # JSON Out
+        import json
+        payload = json.dumps(telem, ensure_ascii=False, indent=2)
+        print(payload)
+        if out_path:
+            try:
+                with open(out_path, "w") as f:
+                    for persona, bucket in telem.items():
+                        line = json.dumps(
+                            {"persona": persona, **bucket}, ensure_ascii=False,
+                        )
+                        f.write(line + "\n")
+                print(f"\n[profile dump] wrote JSONL to {out_path}")
+            except Exception as exc:
+                print(f"[profile dump] write failed: {exc}")
+        return
+
+    print(f"unknown profile_action: {action!r}")
 
 
 # ============================================================================
@@ -1280,6 +1349,41 @@ def _print_result_graph(state):
         last = state.errors[-1]
         print(f"  Last error: {last.get('node', '?')}: {last.get('error', '?')[:60]}")
     print(f"{'='*50}\n")
+
+    # SR-54: Matcher-Telemetrie pro Run als JSONL persistieren.
+    _persist_matcher_telemetry(state.survey_id or "unknown")
+
+
+def _persist_matcher_telemetry(run_id: str) -> None:
+    """Schreibt ProfileLoader.telemetry() nach logs/matcher-telemetry-{run_id}.jsonl.
+
+    Nicht-fataler Logger-Schritt: Fehler werden nur via print gemeldet, der
+    Survey-Run ist bereits fertig. Eine Zeile pro Persona → JSONL.
+    """
+    import json
+    try:
+        from survey.profile_loader import ProfileLoader
+        telem = ProfileLoader.telemetry()
+        if not telem:
+            return
+        log_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "logs")
+        os.makedirs(log_dir, exist_ok=True)
+        path = os.path.join(log_dir, f"matcher-telemetry-{run_id}.jsonl")
+        with open(path, "w") as f:
+            for persona, bucket in telem.items():
+                f.write(json.dumps(
+                    {"persona": persona, **bucket}, ensure_ascii=False,
+                ) + "\n")
+        # Kleines Stdout-Summary: Top-5 Miss-Familien fehlt — wir haben
+        # nur Miss-Counter, nicht per-key Miss. Fuer SR-51 erweitern.
+        total_hits = sum(b.get("match_hits", 0) for b in telem.values())
+        total_miss = sum(b.get("match_misses", 0) for b in telem.values())
+        total = total_hits + total_miss
+        rate = (total_hits / total * 100.0) if total else 0.0
+        print(f"[matcher-telemetry] {total_hits} hits / {total_miss} miss "
+              f"({rate:.1f}% hit-rate) -> {path}")
+    except Exception as exc:
+        print(f"[matcher-telemetry] write failed: {exc}")
 
 
 def _detect_provider_from_url(url):
@@ -1425,9 +1529,23 @@ def main():
     p.add_argument("--timeout", type=int, default=300, help="Wait timeout in seconds")
 
     # ============================================================================
-    # SUBCOMMAND: profile — Aktuelles Persona-Profil anzeigen
+    # SUBCOMMAND: profile — Persona anzeigen ODER Matcher-Telemetrie dumpen
     # ============================================================================
-    sub.add_parser("profile", help="Show current persona profile")
+    # WARUM nested? "profile" hat zwei Wirkungen: show vs dump. nargs="?" mit
+    # Choices erlaubt:
+    #   survey profile                 → show (default)
+    #   survey profile show --name anna_meyer
+    #   survey profile dump --out logs/matcher-{run}.jsonl
+    p = sub.add_parser("profile", help="Show persona or dump matcher telemetry")
+    p.add_argument(
+        "profile_action", nargs="?", default="show",
+        choices=("show", "dump"),
+        help="show=Profil anzeigen, dump=Matcher-Telemetrie (SR-54) ausgeben",
+    )
+    p.add_argument("--name", type=str, default="jeremy_schulze",
+                   help="Persona-Basename (default: jeremy_schulze)")
+    p.add_argument("--out", type=str, default="",
+                   help="Pfad fuer JSONL-Output (nur bei dump)")
 
     # ============================================================================
     # ARGUMENTE PARSEN
