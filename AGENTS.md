@@ -1796,7 +1796,7 @@ DAEMON nutzt NUR FastAPI, NIEMALS direkte CDP/cua-driver Calls:
 ```
 /commands/
 ├── cmd-rules.md              ← Regeln (darf geändert werden)
-├── survey-router.md          ← ✅ VERIFIED (chmod 444)
+├��─ survey-router.md          ← ✅ VERIFIED (chmod 444)
 ├── tolunastart-survey.md     ← ✅ VERIFIED (chmod 444)
 ├── ipsos-survey.md           ← ✅ VERIFIED (chmod 444)
 ├── kill-bot-chrome.md        ← ✅ VERIFIED (chmod 444)
@@ -2504,9 +2504,12 @@ oder `git submodule foreach` aufruft mit
 Option B gewaehlt (SR-64, commit auf feat/universal-cdp-scanner).
 Dev-Workflow: `git clone <stealth-sync-url> stealth-sync` lokal.
 
-**Pre-Commit-Schutz (optional, Folge-Ticket):** `scripts/check_submodules.py`
+**Pre-Commit-Schutz (Folge-Ticket Issue #73, SR-73):** `scripts/check_submodules.py`
 darf nur exit 0 zurueckgeben, wenn jede 160000-Zeile von `git ls-tree HEAD`
 durch `git config -f .gitmodules submodule.<name>.url` aufloesbar ist.
+Wire-up via `.pre-commit-config.yaml` + zusaetzlicher CI-Step in
+`.github/workflows/ci.yml` (in §13.8.4 als Eintrag pflegen).
+Spezifikation und Definition-of-Done: siehe Issue #73.
 
 ---
 
@@ -3063,6 +3066,7 @@ LangGraph-Bucket starten.**
 | [#29](https://github.com/SIN-CLIs/stealth-runner/issues/29) | GitNexus universal code intelligence | OPEN |
 | [#30](https://github.com/SIN-CLIs/stealth-runner/issues/30) | GitNexus periodisches Reindex per Cron/CI (haengt an #64) | OPEN |
 | [#31](https://github.com/SIN-CLIs/stealth-runner/issues/31) | GitNexus Impact Gate vor Commits (haengt an #30) | OPEN |
+| [#73](https://github.com/SIN-CLIs/stealth-runner/issues/73) | SR-73: Pre-Commit-Hook `scripts/check_submodules.py` (aus §11.9 Submodule-Vertrag) | OPEN |
 
 #### Sprint-Reihenfolge (Stand 2026-05-11 nachts — DONE-Eintraege rausgestrichen, OPEN-Reihenfolge bleibt)
 
@@ -3082,7 +3086,8 @@ Offene Reihenfolge (Stand jetzt):
 6. P1 Provider: #67 (SR-68) Drag-Drop-Puzzle-Solver fuer PureSpectrum
 7. P2 FCTC-ES Phase 2-Bucket (Reihenfolge: #55 -> #58 -> #56 -> #57)
 8. Erst danach LangGraph-Bucket (#33-#43)
-9. Debt (#61, #62) und Tooling (#18-#31) als Background-Bucket
+9. Tooling Infra: **#73 (SR-73)** Pre-Commit-Hook `check_submodules.py` (vor naechstem CI-Bump, damit Submodule-Vertrag aus §11.9 maschinell enforced wird)
+10. Debt (#61, #62) und sonstige Tooling (#18, #19, #20, #29, #30, #31) als Background-Bucket
 
 **SR-61 / SR-62 / SR-63 Invariante (kanonisch):** Wenn der
 CI-Trigger-Fix (SR-Followup, §13.8.2) zukuenftig wieder einen
@@ -3274,5 +3279,5 @@ der Agent den Token nicht annehmen sondern auf §15.5 + Issue
 
 ---
 
-**Letzte Aktualisierung: 2026-05-11 nachts post-SEC (SR-50..SR-61 implementiert; PR #54 gemerged `8aac7d0`; PR #70 in `main` gemerged `4f4c2ff` mit 9 Auto-Closes #48-#53/#63/#64/#69; SR-64 DONE per `git rm --cached stealth-sync` + §11.9; SR-65 DONE per actions/checkout@v5 + setup-python@v6 + §13.8.4 Audit-Trail; SR-70 DONE per neuer §15; **SEC-1 (#71)** Audit-Trail rekonstruiert (Free-Org -> keine native Audit-Log-API), KEINE Anomalie, Rotation erfolgt durch User; **SR-71 (#72)** Fine-Grained PAT als Folge-Issue + §15.2/§15.5-Verschaerfung "Classic PAT = Pflicht-Refusal fuer Agenten"; offen: P1-Brain #65/#66, P1-Provider #67, SEC #72/#68/#12, P2 FCTC-ES #55/#56/#57/#58, LangGraph-Bucket #33-#43, Tooling #18/#19/#20/#29/#30/#31, Debt #61/#62) | Lines: ~2230 + §11.9 Submodule-Vertrag + §12 (incl §12.10 FCTC-ES Phase 1) + §13 (incl §13.8 / §13.8.1 + §13.8.1b Bucket-Uebersicht + Sprint-Reihenfolge / §13.8.2-4 / SR-60 Trade-Off / SR-61-63 Invariante) + §15 Credentials & Secrets (5 Unterabschnitte) | Plan: plans/01-survey-agent-langgraph-fastapi.md**
+**Letzte Aktualisierung: 2026-05-11 nachts post-SEC (SR-50..SR-61 implementiert; PR #54 gemerged `8aac7d0`; PR #70 in `main` gemerged `4f4c2ff` mit 9 Auto-Closes #48-#53/#63/#64/#69; SR-64 DONE per `git rm --cached stealth-sync` + §11.9; SR-65 DONE per actions/checkout@v5 + setup-python@v6 + §13.8.4 Audit-Trail; SR-70 DONE per neuer §15; **SEC-1 (#71)** Audit-Trail rekonstruiert (Free-Org -> keine native Audit-Log-API), KEINE Anomalie, Rotation erfolgt durch User; **SR-71 (#72)** Fine-Grained PAT als Folge-Issue + §15.2/§15.5-Verschaerfung "Classic PAT = Pflicht-Refusal fuer Agenten"; offen: P1-Brain #65/#66, P1-Provider #67, SEC #72/#68/#12, P2 FCTC-ES #55/#56/#57/#58, LangGraph-Bucket #33-#43, Tooling-Infra #73 (Pre-Commit `check_submodules.py` aus §11.9), Tooling-GitNexus #18/#19/#20/#29/#30/#31, Debt #61/#62 — alle Bucket-Items haben jetzt Issues, Backlog-Vollstaendigkeit erreicht) | Lines: ~2230 + §11.9 Submodule-Vertrag + §12 (incl §12.10 FCTC-ES Phase 1) + §13 (incl §13.8 / §13.8.1 + §13.8.1b Bucket-Uebersicht + Sprint-Reihenfolge / §13.8.2-4 / SR-60 Trade-Off / SR-61-63 Invariante) + §15 Credentials & Secrets (5 Unterabschnitte) | Plan: plans/01-survey-agent-langgraph-fastapi.md**
 
