@@ -3025,9 +3025,9 @@ Abarbeitungsreihenfolge.
 #### P1 — Brain Hygiene + Provider-Bug
 | # | Titel | Status |
 |---|---|---|
-| [#65](https://github.com/SIN-CLIs/stealth-runner/issues/65) | SR-66: Backlog-Konsolidierung §11.7 vs. §13.8.1 | OPEN |
-| [#66](https://github.com/SIN-CLIs/stealth-runner/issues/66) | SR-67: §11.7 FastAPI-Endpoints zu Issues verlinken | OPEN |
-| [#67](https://github.com/SIN-CLIs/stealth-runner/issues/67) | SR-68: Drag-Drop-Puzzle Solver fuer PureSpectrum | OPEN |
+| [#65](https://github.com/SIN-CLIs/stealth-runner/issues/65) | SR-66: Backlog-Konsolidierung §11.7 vs. §13.8.1 | DONE (§11.7 Snapshot, 2026-05-11) |
+| [#66](https://github.com/SIN-CLIs/stealth-runner/issues/66) | SR-67: §11.7 FastAPI-Endpoints zu Issues verlinken | DONE (Zeilen 2360–2372, 2026-05-11) |
+| [#67](https://github.com/SIN-CLIs/stealth-runner/issues/67) | SR-68: Drag-Drop-Puzzle Solver fuer PureSpectrum | DONE (drag_drop_solver.py + Tests, 2026-05-11) |
 
 #### P1 — LangGraph + FastAPI Migration Bucket
 Reihenfolge ist NICHT die Issue-Nummer, sondern code-architektur-
@@ -3098,9 +3098,9 @@ Offene Reihenfolge (Stand jetzt):
 1. SEC: **#72 (SR-71)** Fine-Grained PAT fuer Agent-Operationen — vor jedem weiteren Agent-Mandat erledigen
 2. SEC: **#68 (SR-69)** Org-weit Push Protection + Secret Scanning aktivieren
 3. SEC: **#12** Security Hardening (Keychain-Migration)
-4. P1 Brain: #65 (SR-66) Backlog-Konsolidierung §11.7 vs. §13.8.1
-5. P1 Brain: #66 (SR-67) §11.7 FastAPI-Endpoints zu Issues verlinken
-6. P1 Provider: #67 (SR-68) Drag-Drop-Puzzle-Solver fuer PureSpectrum
+4. ~~P1 Brain: #65 (SR-66) Backlog-Konsolidierung~~ -> DONE 2026-05-11
+5. ~~P1 Brain: #66 (SR-67) §11.7 FastAPI-Endpoints zu Issues verlinken~~ -> DONE 2026-05-11
+6. ~~P1 Provider: #67 (SR-68) Drag-Drop-Puzzle-Solver fuer PureSpectrum~~ -> DONE 2026-05-11
 7. P2 FCTC-ES Phase 2-Bucket (Reihenfolge: #55 -> #58 -> #56 -> #57)
 8. Erst danach LangGraph-Bucket (#33-#43)
 9. Tooling Infra: **#73 (SR-73)** Pre-Commit-Hook `check_submodules.py` (vor naechstem CI-Bump, damit Submodule-Vertrag aus §11.9 maschinell enforced wird)
