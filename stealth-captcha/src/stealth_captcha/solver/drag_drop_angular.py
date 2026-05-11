@@ -180,9 +180,16 @@ def _try_approach_a_playwright_mouse(ws_url: str, number: str, page_info: Dict) 
     """
     _log(f"APPROACH A: Playwright raw mouse API for number={number}")
     
+    # Extract CDP port from ws_url
+    import re
+    port_match = re.search(r':(\d+)/', ws_url)
+    cdp_port = int(port_match.group(1)) if port_match else 9999
+    _log(f"Extracted CDP port: {cdp_port}")
+    
     import subprocess
     result = subprocess.run(
         ["python3", "-c", f"""
+cdp_port = {cdp_port}
 import asyncio
 import json
 
@@ -192,20 +199,36 @@ async def solve():
     debug = []
     
     async with async_playwright() as p:
-        browser = await p.chromium.connect_over_cdp('http://127.0.0.1:9999')
+        browser = await p.chromium.connect_over_cdp(f'http://127.0.0.1:{{cdp_port}}')
         
-        # Find the purespectrum survey page
+        # Find ANY page with Angular CDK drag-drop puzzle (provider-agnostic)
         target_page = None
         for ctx in browser.contexts:
             for page in ctx.pages:
-                if 'purespectrum' in page.url and 'survey_id' in page.url:
-                    target_page = page
-                    break
+                try:
+                    # Check if this page has the drag-drop puzzle
+                    has_puzzle = await page.locator('.cdk-drag').count() > 0
+                    has_text = 'Zahl' in await page.inner_text('body') or 'number' in (await page.inner_text('body')).lower()
+                    if has_puzzle and has_text:
+                        target_page = page
+                        break
+                except Exception:
+                    continue
             if target_page:
                 break
         
+        # Fallback: try to find page with survey_id in URL (any provider)
         if not target_page:
-            return {{"success": False, "error": "No purespectrum page found", "debug": debug}}
+            for ctx in browser.contexts:
+                for page in ctx.pages:
+                    if 'survey' in page.url.lower():
+                        target_page = page
+                        break
+                if target_page:
+                    break
+        
+        if not target_page:
+            return {{"success": False, "error": "No page with Angular drag-drop puzzle found", "debug": debug}}
         
         debug.append(f"Found page: {{target_page.url}}")
         
@@ -307,7 +330,7 @@ async def solve():
 result = asyncio.run(solve())
 print(json.dumps(result))
 """],
-        capture_output=True, text=True, timeout=45, cwd="/Users/jeremy/dev/stealth-runner"
+        capture_output=True, text=True, timeout=45, cwd=None  # Let subprocess use current working directory
     )
     
     output = result.stdout.strip()
