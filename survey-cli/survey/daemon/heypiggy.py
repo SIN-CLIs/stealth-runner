@@ -19,7 +19,7 @@ from typing import Any
 from .browser_driver import BrowserDriver, ElementInfo
 from .survey_parser import SurveyParser, ParsedSurvey, Question, QuestionType
 from .answer_engine import AnswerEngine, Persona, Answer
-from .captcha_solver import CaptchaSolverQueue, CaptchaTask, CaptchaType
+from .captcha_solver import CaptchaSolver, CaptchaTask, CaptchaType
 from .stealth import StealthBrowser, ProxyConfig
 
 logger = logging.getLogger(__name__)
@@ -68,7 +68,7 @@ class HeyPiggyConnector:
     def __init__(
         self,
         persona: Persona,
-        captcha_api_key: str | None = None,
+        nvidia_local: bool = True,
         proxy: ProxyConfig | None = None,
         headless: bool = True,
     ):
@@ -80,12 +80,12 @@ class HeyPiggyConnector:
         self._browser: BrowserDriver | None = None
         self._parser = SurveyParser()
         self._answer_engine = AnswerEngine(persona)
-        self._captcha_solver: CaptchaSolverQueue | None = None
+        self._captcha_solver: CaptchaSolver | None = None
         
         if captcha_api_key:
-            self._captcha_solver = CaptchaSolverQueue(
-                primary_provider="2captcha",
-                primary_api_key=captcha_api_key,
+            self._captcha_solver = CaptchaSolver(
+                use_local=nvidia_local,
+                
             )
         
         self._logged_in = False
@@ -653,7 +653,7 @@ async def run_heypiggy_session(
     email: str,
     password: str,
     persona: Persona,
-    captcha_api_key: str | None = None,
+    nvidia_local: bool = True,
     max_surveys: int = 10,
     headless: bool = True,
 ) -> dict:
