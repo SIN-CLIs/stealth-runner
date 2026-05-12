@@ -2,6 +2,33 @@
 content: |
   # AGENTS.md - Stealth-Runner NEXT-GEN (2026-05-06)
 
+  ## STATUS INDEX (machine-readable — update on every PR)
+
+  | Issue | Status   | Code Location / Plan                                                                 |
+  |-------|----------|--------------------------------------------------------------------------------------|
+  | #84   | DONE     | `survey-cli/survey/cdp_actuator.py::_wait_for_dom_stable` (MutationObserver wait)    |
+  | #85   | DONE     | `survey-cli/survey/cdp_actuator.py` (no_dom_change retry: 4x exp 0/200/400/800 ms)   |
+  | #86   | DONE     | `survey-cli/survey/cdp_actuator.py::_wait_for_position_stable` (animation wait)      |
+  | #87   | PLANNED  | `_plans/87-form-validation.md` (Form Validation Detection — P2)                      |
+  | #88   | EPIC     | Master tracking issue — 100% framework-agnostic survey completion                    |
+  | #91   | PLANNED  | `_plans/repo-cleanup.md` (remove 57 legacy MDs + 6 stray assets)                     |
+  | #92   | IN-PROG  | `_plans/agents-status-index.md` (this section)                                       |
+  | #93   | PLANNED  | `_plans/oopif-autoattach.md` (Target.setAutoAttach flatten=True for OOPIFs)          |
+  | #94   | PLANNED  | `_plans/js-dialog-handler.md` (Page.javascriptDialogOpening auto-dismiss)            |
+
+  ### Update Rules (read before editing this table)
+  - One line per work item. Always point to a code symbol (`file::function`) OR a plan file path.
+  - Status values: `DONE` | `IN-PROG` | `PLANNED` | `BLOCKED` | `EPIC`.
+  - When a PR closes an issue: flip status to `DONE`, replace plan path with the canonical code location, and delete the plan file in the same PR.
+  - When a new issue is opened: add its row here in the same PR.
+  - Keep this table directly under the top heading so agents see it within the first 30 lines.
+
+  ### Coverage Snapshot (as of the latest audit)
+  - **In-tab perception:** top frame + iframes (`Page.getFrameTree`), cross-origin iframes (`--force-renderer-accessibility`), Shadow DOM open + closed (`DOM.getFlattenedDocument(pierce=True)`), custom elements, ARIA via `Accessibility.getFullAXTree`, box-model + pre/post hash diff + stable IDs across frames, MutationObserver wait (#84), 4x retry with re-scan (#85), position-stability wait (#86).
+  - **Known gaps (tracked):** OOPIF events if renderer-accessibility flag fails → #93. JS dialogs (alert/confirm/prompt/beforeunload) block the page → #94.
+  - **Explicitly out of scope:** macOS menu bar / Dock / OS popups / Chrome browser-UI — surveys run inside the tab, not in OS chrome.
+
+
   ## 🆕 ISSUE #81/#82/#83: PRODUCTION-READY CORE INTEGRATION (2026-05-11)
 
   ### Was ist neu?
