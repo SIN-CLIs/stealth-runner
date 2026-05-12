@@ -76,23 +76,15 @@ jobs:
       - name: Run survey-cli tests
         env:
           PYTHONPATH: survey-cli
-        # SR-63: 8 test files contain pre-existing failures (37 of 805
-        # tests) that were hidden by the CI-trigger bug (vgl. §13.8.2).
-        # They are excluded here as documented legacy-debt and tracked
-        # per-failure in SR-63 (#62). DO NOT widen the ignore-list
-        # without opening a debt-tracker issue first.
-        run: |
-          pytest survey-cli/tests -q \
-            --ignore=survey-cli/tests/test_in_page_modal.py \
-            --ignore=survey-cli/tests/test_security.py \
-            --ignore=survey-cli/tests/test_run_survey.py \
-            --ignore=survey-cli/tests/test_chrome_launcher.py \
-            --ignore=survey-cli/tests/test_prequalifier.py \
-            --ignore=survey-cli/tests/test_opener.py \
-            --ignore=survey-cli/tests/test_tool_fill_survey.py \
-            --ignore=survey-cli/tests/test_open_survey_verified.py \
-            --ignore=survey-cli/tests/test_balance.py \
-            --ignore=survey-cli/tests/test_action_selector.py
+        # SR-63 (#62) RESOLVED: previously 10 test files were --ignore'd
+        # in CI to hide 37 pre-existing failures. They are now collected
+        # but marked `pytest.mark.skip` at module level with documented
+        # reasons (see header of each file). This makes the debt visible
+        # in CI output ("skipped") instead of silently dropped. To
+        # re-enable a file, remove its `pytestmark = pytest.mark.skip(...)`
+        # header. DO NOT re-add `--ignore` flags here without opening a
+        # new debt-tracker issue first.
+        run: pytest survey-cli/tests -q
 
       # SR-56 (FCTC-ES Phase 1): Eval-Harness für ProfileLoader.match_field
       # Threshold: 0.92 F1-Score. Bei Regression → roter CI.

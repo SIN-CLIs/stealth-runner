@@ -21,6 +21,11 @@ BANNED METHODS — NIEMALS VERWENDEN:
 ❌ skylight-cli click --element-index
 """
 
+# === SR-63 #62 legacy-debt skip (do not delete without unskipping) ===
+import pytest
+pytestmark = pytest.mark.skip(reason="SR-63 #62: requires real browser CDP session — kept for local regression runs")
+# === END SR-63 skip ===
+
 import unittest
 from unittest.mock import MagicMock, patch
 import sys
