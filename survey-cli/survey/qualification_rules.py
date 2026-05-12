@@ -51,7 +51,7 @@ NEVER_SELECT_PATTERNS = [
     r"weniger\s*als",
     r"arbeitslos",
     r"nicht\s*berufstätig",
-    
+
     # Englisch
     r"prefer\s*not\s*(to\s*)?(say|answer|disclose)",
     r"rather\s*not\s*say",
@@ -89,7 +89,7 @@ ALWAYS_PREFER_PATTERNS = [
         r"erwart.*kind",  # erwartet Kind
         r"expect.*child",
     ]),
-    
+
     # Haustiere
     (r"haustier|pet|animal", [
         r"ja.*haustier",
@@ -99,7 +99,7 @@ ALWAYS_PREFER_PATTERNS = [
         r"hund|dog",
         r"katze|cat",
     ]),
-    
+
     # Kaufabsicht
     (r"kaufen|purchase|buy|interest", [
         r"ja.*interesse",
@@ -113,7 +113,7 @@ ALWAYS_PREFER_PATTERNS = [
         r"sehr\s*wahrscheinlich",
         r"very\s*likely",
     ]),
-    
+
     # Einkommen (mittleres bis hohes)
     (r"einkommen|income|salary|gehalt", [
         r"40\.?000.*60\.?000",
@@ -124,7 +124,7 @@ ALWAYS_PREFER_PATTERNS = [
         r"3\.?000.*4\.?000.*€",
         r"4\.?000.*5\.?000.*€",
     ]),
-    
+
     # Beschäftigung
     (r"beruf|employ|job|work|occupation", [
         r"vollzeit",
@@ -225,16 +225,16 @@ def record_qualification_block(
 
 def get_preferred_answer(question_text: str, answers: list[str]) -> Optional[int]:
     """Findet die beste Antwort für eine Qualification-Frage.
-    
+
     Args:
         question_text: Der Fragetext
         answers: Liste der Antwortoptionen
-        
+
     Returns:
         Index der bevorzugten Antwort, oder None wenn keine Präferenz
     """
     question_lower = question_text.lower()
-    
+
     # 1. Finde relevante Präferenz-Patterns
     for question_pattern, answer_patterns in ALWAYS_PREFER_PATTERNS:
         if re.search(question_pattern, question_lower, re.IGNORECASE):
@@ -244,55 +244,55 @@ def get_preferred_answer(question_text: str, answers: list[str]) -> Optional[int
                 for pref_pattern in answer_patterns:
                     if re.search(pref_pattern, answer_lower, re.IGNORECASE):
                         return i
-    
+
     return None
 
 
 def filter_safe_answers(answers: list[str]) -> list[int]:
     """Filtert Antworten die NICHT disqualifizierend sind.
-    
+
     Args:
         answers: Liste der Antwortoptionen
-        
+
     Returns:
         Liste der Indizes von sicheren Antworten
     """
     safe_indices = []
-    
+
     for i, answer in enumerate(answers):
         if not is_disqualifying_answer(answer):
             safe_indices.append(i)
-    
+
     return safe_indices
 
 
 def rank_answers_for_qualification(question_text: str, answers: list[str]) -> list[int]:
     """Rankt Antworten nach Qualification-Wahrscheinlichkeit.
-    
+
     Returns:
         Sortierte Liste der Indizes (beste zuerst)
     """
     # 1. Preferred answer (wenn vorhanden)
     preferred = get_preferred_answer(question_text, answers)
-    
+
     # 2. Safe answers (nicht disqualifizierend)
     safe = filter_safe_answers(answers)
-    
+
     # 3. Ranking aufbauen
     ranked = []
-    
+
     if preferred is not None and preferred in safe:
         ranked.append(preferred)
-    
+
     for idx in safe:
         if idx not in ranked:
             ranked.append(idx)
-    
+
     # 4. Unsafe answers am Ende (nur als Fallback)
     for i in range(len(answers)):
         if i not in ranked:
             ranked.append(i)
-    
+
     return ranked
 
 
@@ -302,10 +302,10 @@ def rank_answers_for_qualification(question_text: str, answers: list[str]) -> li
 
 def get_fast_answer_strategy(question_type: str) -> dict:
     """Gibt schnelle Antwort-Strategie für Fragetyp zurück.
-    
+
     Args:
         question_type: "single_choice", "multiple_choice", "rating", etc.
-        
+
     Returns:
         Strategy dict mit Anweisungen
     """
@@ -336,7 +336,7 @@ def get_fast_answer_strategy(question_type: str) -> dict:
             "timeout_ms": 2000,
         },
     }
-    
+
     return strategies.get(question_type, strategies["single_choice"])
 
 
@@ -352,16 +352,15 @@ NVIDIA_MODELS = {
 
 def get_nvidia_model_for_task(task: str) -> str:
     """Wählt das beste Nvidia-Modell für eine Aufgabe.
-    
+
     Args:
         task: "screenshot_analysis", "answer_selection", "captcha", etc.
-        
+
     Returns:
         Modell-Name für Nvidia NIM API
     """
     vision_tasks = ["screenshot_analysis", "captcha", "image_selection", "drag_drop"]
-    tool_tasks = ["answer_selection", "form_filling", "navigation"]
-    
+
     if task in vision_tasks:
         return NVIDIA_MODELS["vision"]
     else:
