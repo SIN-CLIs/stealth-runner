@@ -861,7 +861,7 @@ class SurveyRunner:
             results.append(result)
             started_count += 1
             print(
-                f"[LOOP]   → {result.status} | {'+' + str(result.earned) + '€' if result.earned > 0 else str(result.earned) + '€'} | {result.error[:50] if result.error else 'no error'}"
+                f"[LOOP]   → {result.status} | {'+' + str(result.earned) + '€' if result.earned > 0 else str(result.earned) + '€'} | {result.error[:50] if result.error else 'no error'}"  # noqa: E501
             )  # noqa: E501
 
             if result.status == "completed":
