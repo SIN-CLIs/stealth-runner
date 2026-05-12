@@ -76,6 +76,41 @@ This ensures:
   - Absolut keine premature DOM-hashes
 
 
+ISSUE #85: NO_DOM_CHANGE RETRY STRATEGY (Automatischer Klick-Retry)
+------
+Alte Verhaltensweise: ``actuator.click()`` → bei ``no_dom_change`` Aufgabe.
+                       Caller (nodes.py) zählt Failures hoch, triggert
+                       CUA-Fallback erst nach 2 globalen Misses.
+Problem:
+  - Survey steckt fest auf "weicher" Race-Condition (z.B. Submit-Button
+    war 100ms disabled durch async validation)
+  - CUA-Fallback ist teuer (3-5s extra OS-Level-Klicks) — sollte LAST
+    RESORT sein, nicht zweite Wahl
+  - Single-Shot-Clicks kollidieren mit Doppelclick-Schutz vieler SPAs
+
+Neue Verhaltensweise: ``actuator.click_with_retry()``
+  1. Attempt 1: sofort (delay=0)
+  2. Wenn no_dom_change → ``refresh_scan()`` + warten 200ms
+  3. Attempt 2: erneut klicken (Element-Cache jetzt frisch!)
+  4. Wenn weiter no_dom_change → warten 400ms → Attempt 3
+  5. Wenn weiter no_dom_change → warten 800ms → Attempt 4
+  6. Nach 4 Fehlversuchen: ActionResult(success=False, attempts=4)
+     → Caller darf jetzt CUA-Fallback triggern
+
+WHY EXPONENTIAL BACKOFF?
+  - Schnelle SPAs: 1. Attempt klappt meist → 0ms Overhead
+  - Mittelschnelle Race-Conditions: 2.-3. Attempt klappt (~600ms Overhead)
+  - Echt tote Klicks (Overlay, falscher Selektor): bleiben nach 4 Attempts
+    tot → CUA übernimmt
+  - Total Worst-Case: ~1.4s extra Wartezeit vor CUA-Eskalation
+  - Vermeidet "thundering herd" gegen flackernde Elemente
+
+REFRESH-SCAN ZWISCHEN ATTEMPTS:
+  Pflicht. Grund: nach einem fehlgeschlagenen Klick hat das DOM evtl. doch
+  minimal verändert (Class-Toggle, hover-state) — das kann den Element-
+  Cache invalidieren. Ohne refresh klicken wir auf gestale Koordinaten.
+
+
 FÜLLEN VON TEXTFELDERN
 ----------------------
 Auch hier KEIN ``el.value = "..."``. Stattdessen:
@@ -104,19 +139,29 @@ PUBLIC API
 
     actuator = Actuator(cdp)
 
-    actuator.click(stable_id)                  -> ActionResult
+    actuator.click(stable_id)                  -> ActionResult   # Single-shot (Low-Level)
+    actuator.click_with_retry(stable_id)       -> ActionResult   # Issue #85: Retry-Wrapper (PREFERRED!)
     actuator.fill(stable_id, value)            -> ActionResult
     actuator.press_key(key)                    -> ActionResult   # global key
     actuator.scroll_into_view(stable_id)       -> ActionResult
 
     ActionResult:
         success:    bool
-        reason:     str ("ok" | "no_dom_change" | "element_not_visible" | ...)
+        reason:     str ("ok" | "no_dom_change" | "no_dom_change_after_retries"
+                          | "element_not_visible" | ...)
         before_hash: str
         after_hash:  str
-        elapsed_ms:  float
-        new_url:    str  (falls Page.navigate ausgelöst wurde)
+        elapsed_ms:  float    (GESAMT-Zeit inkl. aller Retries bei click_with_retry)
+        new_url:    str       (falls Page.navigate ausgelöst wurde)
         dom_stable_ms: float  (Issue #84: actual MutationObserver wait time)
+        attempts:    int      (Issue #85: 1..4 Klick-Versuche)
+
+WANN WELCHE METHODE?
+--------------------
+  - ``click_with_retry()``: STANDARD für alle Button-Klicks aus execute_node.
+                             Wickelt Race-Conditions selbst ab (Issue #85).
+  - ``click()``:             Low-Level, für internen Gebrauch (z.B. fill()
+                             braucht single-shot focus-click) oder Tests.
 
 
 BANNED (siehe AGENTS.md REGEL 1)
@@ -152,6 +197,25 @@ _DOM_STABILITY_MAX_WAIT_MS = 5000  # Max 5s warten auf SPA-Rendering
 # Tastendrücke pro Sekunde beim Tippen (humanlike).
 _KEYS_PER_S = 18.0
 
+# ── Issue #85: no_dom_change Retry Strategy ──────────────────────────
+# Wenn ein Klick "no_dom_change" liefert, würde der Survey-Flow stecken
+# bleiben. Häufige Ursachen für "no_dom_change":
+#   - Element noch nicht final gerendert (Race trotz Issue #84)
+#   - Sticky/Fixed Overlay verdeckt den Hit-Point (siehe Issue #86)
+#   - Element gerade animiert weg (siehe Issue #87)
+#   - Doppelclick-Schutz im SPA-Framework
+#   - Async Validation hat den Submit-Button kurzzeitig deaktiviert
+#
+# Schema (Wartezeit VOR jedem Attempt in ms):
+#   Attempt 1: 0      (sofort)
+#   Attempt 2: 200    (kurze Pause, evtl. Race-Condition resolved)
+#   Attempt 3: 400    (mittlere Pause)
+#   Attempt 4: 800    (lange Pause, falls Element ge-throttled)
+# Gesamt-Worst-Case: ~1.4s extra Wartezeit auf "echt tote" Klicks.
+# Nach 4 fehlgeschlagenen Attempts → zurück an Caller (CUA-Fallback).
+_RETRY_MAX_ATTEMPTS = 4
+_RETRY_BACKOFF_MS = [0, 200, 400, 800]  # Wartezeit VOR jedem Attempt
+
 
 @dataclass
 class ActionResult:
@@ -162,6 +226,7 @@ class ActionResult:
     elapsed_ms: float = 0.0
     new_url: str = ""
     dom_stable_ms: float = 0.0  # Issue #84: MutationObserver wait time
+    attempts: int = 1            # Issue #85: Anzahl Klick-Versuche (1 = direkt OK)
     extra: dict[str, Any] | None = None
 
 
@@ -410,6 +475,122 @@ class Actuator:
             elapsed_ms=elapsed_ms,
             new_url=after_url if navigated else "",
             dom_stable_ms=dom_stable_ms,
+        )
+
+    def click_with_retry(self, stable_id: str) -> ActionResult:
+        """Issue #85: Klick mit automatischem Retry bei ``no_dom_change``.
+
+        Hochlevel-API: Das ist die Methode, die ``execute_node`` aus
+        ``graph/nodes.py`` aufruft. Sie wickelt die Retry-Logik komplett
+        intern ab, sodass der Caller nur EIN ``ActionResult`` zurückbekommt.
+
+        ALGORITHMUS
+        -----------
+        ::
+
+            for i in 1..4:
+                if i > 1:
+                    sleep(_RETRY_BACKOFF_MS[i-1])
+                    refresh_scan()             # DOM kann sich minimal geändert haben
+                result = self.click(stable_id)
+                if result.success:
+                    result.attempts = i
+                    return result
+                if result.reason != "no_dom_change":
+                    # Harte Fehler (element_not_visible, dispatch_failed) NICHT retryen
+                    result.attempts = i
+                    return result
+            # Alle 4 Attempts no_dom_change → Caller darf CUA-Fallback fahren
+            return ActionResult(success=False, reason="no_dom_change_after_retries",
+                                attempts=_RETRY_MAX_ATTEMPTS, ...)
+
+        WICHTIG — WAS NICHT RETRIED WIRD
+        ---------------------------------
+        Nur ``no_dom_change`` ist ein Retry-Grund. Diese Fehler werden
+        SOFORT zurückgegeben (Retry würde nichts ändern):
+          - ``unknown_stable_id``  → Element war nie im Cache (refresh_scan
+                                     hilft nichts, weil sid aus altem Scan stammt)
+          - ``element_not_visible`` → Scroll oder Box-Model failt
+          - ``dispatch_failed``    → CDP-Connection-Problem
+          - ``scroll_failed``      → DOM-Operation failt
+
+        REFRESH-SCAN ZWISCHEN ATTEMPTS
+        ------------------------------
+        Vor Attempt 2/3/4 wird ``refresh_scan()`` gerufen. Das ist
+        unverzichtbar, weil:
+          1. Box-Koordinaten könnten sich verschoben haben (Layout-Shift)
+          2. Element könnte unsichtbar geworden sein (display:none Toggle)
+          3. ``stable_id`` ist DOM-strukturell — sollte über minor Mutations
+             stabil sein. Wenn nicht mehr im Cache → ``unknown_stable_id``
+             und Funktion bricht ab.
+
+        RETURNS
+        -------
+        ActionResult mit:
+          - ``success``: True wenn irgendein Attempt klappte
+          - ``attempts``: 1..4 (wie viele Versuche bis Erfolg/Aufgabe)
+          - ``reason``:
+              * "ok" / "navigated" → erfolgreich
+              * "no_dom_change_after_retries" → 4× kein DOM-Change
+              * sonstige → harter Abbruch nach Attempt 1
+          - ``elapsed_ms``: GESAMT-Zeit über alle Attempts (inkl. Backoffs)
+          - Übrige Felder vom LETZTEN Attempt
+
+        BEISPIEL
+        --------
+        >>> result = actuator.click_with_retry("button_submit_xyz")
+        >>> if not result.success and result.reason == "no_dom_change_after_retries":
+        ...     # Eskalation: CUA-Fallback (OS-Level-Klick)
+        ...     cua_click_blocked_element(...)
+        """
+        t0 = time.time()
+        last_result: ActionResult | None = None
+
+        for attempt_idx in range(_RETRY_MAX_ATTEMPTS):
+            attempt_num = attempt_idx + 1
+
+            # Vor Attempts >1: Backoff + Scan refresh
+            if attempt_idx > 0:
+                backoff_ms = _RETRY_BACKOFF_MS[attempt_idx]
+                time.sleep(backoff_ms / 1000.0)
+                # Scan refresh: DOM kann sich seit letztem Versuch verändert haben
+                # (Layout-Shift, hover-state, async render-completion). Nur so
+                # bekommen wir frische Box-Koordinaten.
+                try:
+                    self.refresh_scan()
+                except Exception:
+                    # Wenn refresh failed (z.B. tab closed), nutze alten Cache
+                    pass
+
+            result = self.click(stable_id)
+
+            # ERFOLG → sofort zurück
+            if result.success:
+                result.attempts = attempt_num
+                result.elapsed_ms = (time.time() - t0) * 1000.0
+                return result
+
+            # HARTER FEHLER (nicht no_dom_change) → nicht retryen
+            if result.reason != "no_dom_change":
+                result.attempts = attempt_num
+                result.elapsed_ms = (time.time() - t0) * 1000.0
+                return result
+
+            # no_dom_change → weiterer Attempt
+            last_result = result
+            print(f"[retry] click {stable_id[:10]} attempt={attempt_num}/{_RETRY_MAX_ATTEMPTS} "
+                  f"no_dom_change, retrying in {_RETRY_BACKOFF_MS[min(attempt_idx+1, _RETRY_MAX_ATTEMPTS-1)]}ms")
+
+        # Alle Attempts erschöpft, alle no_dom_change
+        assert last_result is not None
+        return ActionResult(
+            success=False,
+            reason="no_dom_change_after_retries",
+            before_hash=last_result.before_hash,
+            after_hash=last_result.after_hash,
+            elapsed_ms=(time.time() - t0) * 1000.0,
+            dom_stable_ms=last_result.dom_stable_ms,
+            attempts=_RETRY_MAX_ATTEMPTS,
         )
 
     def fill(self, stable_id: str, value: str, *, clear: bool = True) -> ActionResult:
