@@ -35,9 +35,10 @@ Module Status: NEW (SR-138, 2026-05-12)
 ================================================================================
 """
 
+# ruff: noqa: E501  # Long lines are inside NIM model prompts; wrapping changes prompt token boundaries.
+
 from __future__ import annotations
 
-import base64
 import json
 import logging
 import os
@@ -288,7 +289,7 @@ class NimSecondarySolver:
         # Strip markdown code blocks
         if raw.startswith("```"):
             lines = raw.split("\n")
-            lines = [l for l in lines if not l.strip().startswith("```")]
+            lines = [line for line in lines if not line.strip().startswith("```")]
             raw = "\n".join(lines)
         # Try direct parse
         try:
