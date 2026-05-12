@@ -1,4 +1,4 @@
-# SR-157 — Repo Path-Authority + Codebase Reconciliation
+# SR-161 — Repo Path-Authority + Codebase Reconciliation
 
 ## Root Cause Diagnosis (data, not opinion)
 
@@ -83,16 +83,16 @@ Establish single source of truth and enforce it via tooling:
 ### Quality
 - [ ] ruff clean (E,W,F line-length 100, py312)
 - [ ] mypy --strict clean for all moved files
-- [ ] Closes #157 (and references #155 as resolved part)
-- [ ] Branch: `feat/157-repo-reconciliation`
+- [ ] Closes #161 (and references #155 as resolved part)
+- [ ] Branch: `feat/159-repo-reconciliation`
 
 ## Out of Scope
 
 - New question types (SR-150 owns)
 - Proxy / IP work (SR-151 owns)
 - Reliability/DLQ (SR-152 owns)
-- Observability (SR-159 owns)
-- CI hardening beyond path-guard (SR-158 owns)
+- Observability (SR-161 owns)
+- CI hardening beyond path-guard (SR-160 owns)
 
 ## Pre-flight Mandatory Steps (for the agent picking this up)
 
@@ -115,4 +115,4 @@ Establish single source of truth and enforce it via tooling:
 
 ## Parallel-Safety
 
-**This track BLOCKS SR-158 and SR-159** until the path table is published in AGENTS.md (they need to know where to put their files). Run SR-157 first.
+**This track BLOCKS SR-160 and SR-161** until the path table is published in AGENTS.md (they need to know where to put their files). Run SR-161 first.

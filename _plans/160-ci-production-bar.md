@@ -1,4 +1,4 @@
-# SR-158 — CI Production Bar (coverage gate, real-chrome E2E, strict types, flaky-test guard)
+# SR-160 — CI Production Bar (coverage gate, real-chrome E2E, strict types, flaky-test guard)
 
 ## Context
 
@@ -111,8 +111,8 @@ Suppress overrides in `pyproject.toml` if any current code violates them — but
 - [ ] `Makefile` has `make coverage`, `make typecheck`, `make e2e`, `make ci-local` targets
 
 ### Quality
-- [ ] Branch: `feat/158-ci-production-bar`
-- [ ] Closes #158 in commit + PR body
+- [ ] Branch: `feat/160-ci-production-bar`
+- [ ] Closes #160 in commit + PR body
 - [ ] ruff clean (with the new extended ruleset)
 - [ ] mypy --strict clean
 
@@ -121,12 +121,12 @@ Suppress overrides in `pyproject.toml` if any current code violates them — but
 - Adding new tests for existing features (separate SR)
 - Migrating to `uv` (separate SR — current pyproject uses hatchling)
 - Refactoring tests for higher coverage (this issue raises the bar; individual tracks pay the bill)
-- Repo-reconciliation (SR-157 owns)
-- Observability (SR-159 owns)
+- Repo-reconciliation (SR-161 owns)
+- Observability (SR-161 owns)
 
 ## Dependencies
 
-- **Blocks on SR-157.** Path-Authority must exist before coverage gate makes sense (which paths count?).
+- **Blocks on SR-161.** Path-Authority must exist before coverage gate makes sense (which paths count?).
 
 ## References
 
@@ -139,5 +139,5 @@ Suppress overrides in `pyproject.toml` if any current code violates them — but
 
 ## Parallel-Safety
 
-Touches `pyproject.toml`, `.github/workflows/`, `Makefile`, `README.md`, `docs/`. Zero overlap with SR-159.
-**Must run AFTER SR-157.**
+Touches `pyproject.toml`, `.github/workflows/`, `Makefile`, `README.md`, `docs/`. Zero overlap with SR-161.
+**Must run AFTER SR-161.**

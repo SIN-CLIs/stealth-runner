@@ -1,4 +1,4 @@
-# SR-159 — Observability + Alerting (Prometheus, structured logs, Sentry, Grafana)
+# SR-161 — Observability + Alerting (Prometheus, structured logs, Sentry, Grafana)
 
 ## Context
 
@@ -194,9 +194,9 @@ User imports the dashboard JSON into their own Grafana instance pointing at thei
 - [ ] 2 endpoint: /observability/metrics 200, content-type correct
 
 ### Quality
-- [ ] Branch: `feat/159-observability-alerting`
-- [ ] Closes #159 in commit + PR body
-- [ ] ruff clean (with SR-158's extended ruleset if landed)
+- [ ] Branch: `feat/161-observability-alerting`
+- [ ] Closes #161 in commit + PR body
+- [ ] ruff clean (with SR-160's extended ruleset if landed)
 - [ ] mypy --strict clean
 
 ## Out of Scope
@@ -204,12 +204,12 @@ User imports the dashboard JSON into their own Grafana instance pointing at thei
 - OpenTelemetry instrumentation (future)
 - Distributed tracing (future; span-id correlation in logs is enough for now)
 - Loki / CloudWatch shipping (deployment-specific; structured JSON output is sufficient for the daemon to be observable wherever logs land)
-- Repo-reconciliation (SR-157 owns)
-- CI hardening (SR-158 owns)
+- Repo-reconciliation (SR-161 owns)
+- CI hardening (SR-160 owns)
 
 ## Dependencies
 
-- **Blocks on SR-157** (must know which path to use)
+- **Blocks on SR-161** (must know which path to use)
 - Soft-depends on SR-152 (uses the DLQ size as one of the SLOs); SR-152's PR #156 must land first or the DLQ-SLO panel will be skipped with a warning
 
 ## References
@@ -223,5 +223,5 @@ User imports the dashboard JSON into their own Grafana instance pointing at thei
 
 ## Parallel-Safety
 
-Touches `survey-cli/survey/observability/` (new files), the daemon (small surgical adds), pyproject (deps). Zero overlap with SR-158.
-**Must run AFTER SR-157.**
+Touches `survey-cli/survey/observability/` (new files), the daemon (small surgical adds), pyproject (deps). Zero overlap with SR-160.
+**Must run AFTER SR-161.**
