@@ -1,0 +1,50 @@
+{"label": "E-Mail-Adresse", "role": "textbox", "expected_family": "email", "lang": "de", "notes": "trivial DE"}
+{"label": "Email address", "role": "textbox", "expected_family": "email", "lang": "en", "notes": "trivial EN"}
+{"label": "Mobilnummer", "role": "textbox", "expected_family": "phone", "lang": "de", "notes": "compound DE, substring match"}
+{"label": "Phone number", "role": "textbox", "expected_family": "phone", "lang": "en", "notes": "trivial EN"}
+{"label": "Geburtsjahr", "role": "textbox", "expected_family": "birth_year", "lang": "de", "notes": "compound DE"}
+{"label": "Year of birth", "role": "combobox", "expected_family": "birth_year", "lang": "en", "notes": "multi-token EN"}
+{"label": "PLZ", "role": "textbox", "expected_family": "postal_code", "lang": "de", "notes": "abbrev DE"}
+{"label": "Postal code", "role": "textbox", "expected_family": "postal_code", "lang": "en", "notes": "trivial EN"}
+{"label": "Haushaltseinkommen", "role": "combobox", "expected_family": "hh_income", "lang": "de", "notes": "compound DE"}
+{"label": "Total household income", "role": "combobox", "expected_family": "hh_income", "lang": "en", "notes": "multi-token EN"}
+{"label": "Persoenliches Nettoeinkommen", "role": "combobox", "expected_family": "income", "lang": "de", "notes": "personal-income, beats hh_income"}
+{"label": "Monthly salary", "role": "textbox", "expected_family": "income", "lang": "en", "notes": "phrasing variant"}
+{"label": "Vorname", "role": "textbox", "expected_family": "first_name", "lang": "de", "notes": "trivial DE"}
+{"label": "Given name", "role": "textbox", "expected_family": "first_name", "lang": "en", "notes": "rarer EN phrasing"}
+{"label": "Nachname", "role": "textbox", "expected_family": "last_name", "lang": "de", "notes": "trivial DE"}
+{"label": "Surname", "role": "textbox", "expected_family": "last_name", "lang": "en", "notes": "trivial EN"}
+{"label": "Strassenname und Hausnummer", "role": "textbox", "expected_family": "street", "lang": "de", "notes": "compound DE"}
+{"label": "Street address", "role": "textbox", "expected_family": "street", "lang": "en", "notes": "multi-token EN"}
+{"label": "Wohnort", "role": "textbox", "expected_family": "city", "lang": "de", "notes": "synonym DE"}
+{"label": "City", "role": "textbox", "expected_family": "city", "lang": "en", "notes": "trivial EN"}
+{"label": "In welchem Land leben Sie?", "role": "combobox", "expected_family": "country", "lang": "de", "notes": "interrogative DE"}
+{"label": "Country of residence", "role": "combobox", "expected_family": "country", "lang": "en", "notes": "multi-token EN"}
+{"label": "Bundesland", "role": "combobox", "expected_family": "state_region", "lang": "de", "notes": "compound DE"}
+{"label": "State or province", "role": "combobox", "expected_family": "state_region", "lang": "en", "notes": "multi-token EN"}
+{"label": "Wie viele Personen leben in Ihrem Haushalt?", "role": "combobox", "expected_family": "household_size", "lang": "de", "notes": "interrogative DE — phase-2 lift candidate"}
+{"label": "Number of people in your household", "role": "combobox", "expected_family": "household_size", "lang": "en", "notes": "multi-token EN"}
+{"label": "Wie alt sind Sie?", "role": "textbox", "expected_family": "age", "lang": "de", "notes": "interrogative DE"}
+{"label": "Your age", "role": "textbox", "expected_family": "age", "lang": "en", "notes": "trivial EN"}
+{"label": "Berufsbezeichnung", "role": "textbox", "expected_family": "job_title", "lang": "de", "notes": "compound DE"}
+{"label": "Job title", "role": "textbox", "expected_family": "job_title", "lang": "en", "notes": "trivial EN"}
+{"label": "Branche", "role": "combobox", "expected_family": "industry", "lang": "de", "notes": "trivial DE"}
+{"label": "Industry sector", "role": "combobox", "expected_family": "industry", "lang": "en", "notes": "multi-token EN"}
+{"label": "Staatsangehoerigkeit", "role": "combobox", "expected_family": "nationality", "lang": "de", "notes": "long compound DE"}
+{"label": "Nationality", "role": "combobox", "expected_family": "nationality", "lang": "en", "notes": "trivial EN"}
+{"label": "Muttersprache", "role": "combobox", "expected_family": "language", "lang": "de", "notes": "compound DE"}
+{"label": "Native language", "role": "combobox", "expected_family": "language", "lang": "en", "notes": "multi-token EN"}
+{"label": "Geschlecht", "role": "radiogroup", "expected_family": "gender", "lang": "de", "notes": "trivial DE"}
+{"label": "Your gender", "role": "radiogroup", "expected_family": "gender", "lang": "en", "notes": "trivial EN"}
+{"label": "Vollstaendiger Name", "role": "textbox", "expected_family": "full_name", "lang": "de", "notes": "compound DE"}
+{"label": "Full name", "role": "textbox", "expected_family": "full_name", "lang": "en", "notes": "trivial EN"}
+{"label": "Lieblingsfarbe", "role": "textbox", "expected_family": null, "lang": "de", "notes": "true negative — favorite color"}
+{"label": "Hobbies und Interessen", "role": "textbox", "expected_family": null, "lang": "de", "notes": "true negative — hobbies"}
+{"label": "Ihr Sternzeichen", "role": "combobox", "expected_family": null, "lang": "de", "notes": "true negative — zodiac"}
+{"label": "Bevorzugte Marke", "role": "textbox", "expected_family": null, "lang": "de", "notes": "true negative — brand preference"}
+{"label": "Favorite restaurant", "role": "textbox", "expected_family": null, "lang": "en", "notes": "true negative — restaurant"}
+{"label": "Pet ownership", "role": "radiogroup", "expected_family": null, "lang": "en", "notes": "true negative — pets"}
+{"label": "Religious affiliation", "role": "combobox", "expected_family": null, "lang": "en", "notes": "true negative — religion"}
+{"label": "Political party preference", "role": "combobox", "expected_family": null, "lang": "en", "notes": "true negative — politics"}
+{"label": "Highest education level", "role": "combobox", "expected_family": null, "lang": "en", "notes": "true negative — education not in 20 families"}
+{"label": "Marital status", "role": "combobox", "expected_family": null, "lang": "en", "notes": "true negative — marital status not modeled"}
