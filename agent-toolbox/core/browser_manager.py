@@ -585,15 +585,6 @@ class BrowserManager:
             self.headless = headless
 
         # ═══════════════════════════════════════════════════════════════════════
-        # PROXY SUPPORT (SR-151)
-        # ═══════════════════════════════════════════════════════════════════════
-        
-        # proxy: Optional ProxyEntry fuer Proxy-Server Support.
-        # WARUM? Anti-Detection Layer 3 (Network). Datacenter IPs werden geblockt.
-        # Wenn gesetzt → Chrome startet mit --proxy-server Flag.
-        # Format: "http://user:pass@host:port" oder "socks5://..."
-        self.proxy: Optional["ProxyEntry"] = proxy
-        
         # Wenn Client CDP-Port ändert → aktualisieren.
         # WARNUNG: Wenn Chrome bereits auf altem Port läuft → Konflikt!
         # Der Client muss sicherstellen dass alter Chrome beendet wurde.
