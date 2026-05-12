@@ -1,0 +1,93 @@
+# SR-101: FCTC-ES Suggester Eval-Harness
+#
+# DESIGN
+# ------
+# - workflow_dispatch ONLY. NEVER auto-triggered on push/pull_request.
+#   Rationale: phase=2 + mode=live makes real API calls (cost risk).
+#   The eval is a *diagnostic tool*, not a PR-gate.
+# - Action versions per AGENTS.md §13.8.4: actions/checkout@v5,
+#   actions/setup-python@v6. NEVER @latest.
+# - AI_GATEWAY_API_KEY is only set in the env for mode=live. The mock
+#   path runs without secrets — works on forks and unprivileged PRs
+#   (if anyone ever wires this to PRs, which we explicitly do NOT).
+# - Artifact upload: last-report.json with 30-day retention so future
+#   heuristic-PR authors can pull historical reports for forensics.
+
+name: SR-101 — learn-suggester eval
+
+on:
+  workflow_dispatch:
+    inputs:
+      phase:
+        description: "Eval phase (1=heuristic, 2=LLM)"
+        type: choice
+        required: true
+        default: "1"
+        options: ["1", "2"]
+      mode:
+        description: "Phase-2 engine mode (mock=deterministic, live=real API)"
+        type: choice
+        required: true
+        default: "mock"
+        options: ["mock", "live"]
+      min_phase1_accuracy:
+        description: "Phase 1 accuracy threshold (eval fails below this)"
+        type: string
+        required: false
+        default: "0.65"
+
+permissions:
+  contents: read
+
+jobs:
+  eval:
+    runs-on: ubuntu-latest
+
+    steps:
+      # AGENTS.md §13.8.4: pinned action versions, never @latest.
+      - uses: actions/checkout@v5
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r survey-cli/requirements.txt
+
+      - name: Run eval (phase=${{ inputs.phase }} mode=${{ inputs.mode }})
+        working-directory: survey-cli
+        env:
+          # Only forward the API key when the live mode actually needs it.
+          # In mock mode the env var is intentionally absent — proves the
+          # mock path works without any secrets.
+          AI_GATEWAY_API_KEY: ${{ inputs.mode == 'live' && secrets.AI_GATEWAY_API_KEY || '' }}
+        run: |
+          set -eux
+          MODE_FLAG="--mock"
+          if [ "${{ inputs.mode }}" = "live" ]; then
+            MODE_FLAG="--live"
+          fi
+          # Phase 1 ignores the mode flag — only forward it for phase 2.
+          if [ "${{ inputs.phase }}" = "2" ]; then
+            python -m evals.learn_suggester.run_eval \
+              --phase 2 \
+              "$MODE_FLAG" \
+              --min-phase1-accuracy ${{ inputs.min_phase1_accuracy }} \
+              --exit-non-zero-on-threshold-miss
+          else
+            python -m evals.learn_suggester.run_eval \
+              --phase 1 \
+              --min-phase1-accuracy ${{ inputs.min_phase1_accuracy }} \
+              --exit-non-zero-on-threshold-miss
+          fi
+
+      - name: Upload last-report.json artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: learn-suggester-eval-report
+          path: survey-cli/evals/learn_suggester/last-report.json
+          retention-days: 30
