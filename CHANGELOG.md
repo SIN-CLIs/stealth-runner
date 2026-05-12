@@ -1,4 +1,82 @@
-# changelog.md — Changelog Stealth Suite
+# Changelog
+
+## [Unreleased] - 2026-05-12
+
+### Changed
+- **Repo cleanup (#91)**: removed all legacy root-level Markdown files and stray
+  binary assets. Only `AGENTS.md`, `README.md`, `CHANGELOG.md` remain at root.
+- **AGENTS.md (#91)**: absorbed the full verbatim content of `STATUS.md`,
+  `bugs.md`, `anti-learn.md`, `learn.md`, `roadmap.md`, `goal.md` into a new
+  "MIGRATED LEGACY DOCS" section so the agent brain remains the single source
+  of truth. STATUS INDEX at the top is now the canonical project state.
+- **changelog.md → CHANGELOG.md**: renamed to follow convention.
+
+### Removed (root-level legacy files merged into AGENTS.md or deemed obsolete)
+- `CONTRIBUTING.md`
+- `INTEGRATION_PLAN.md`
+- `STATUS.md`
+- `SUPPORT.md`
+- `ULTIMATE-PLAN.md`
+- `anti-learn.md`
+- `api.md`
+- `architecture.md`
+- `banned.md`
+- `benchmarks.md`
+- `brain.md`
+- `bugs.md`
+- `commands.md`
+- `design.md`
+- `faq.md`
+- `fix.md`
+- `goal.md`
+- `graph-report-template.md`
+- `graph-report.md`
+- `graphify.md`
+- `history.md`
+- `infisical.md`
+- `issues.md`
+- `learn.md`
+- `opencode.md`
+- `plan-sr-29-ps-captcha-ocr.md`
+- `plan-sr-32-provider-detect.md`
+- `plan-sr-33-persona-system.md`
+- `plan-sr-34-test-suite.md`
+- `plan-sr-35-chrome-safety.md`
+- `plan-sr-36-docs-cleanup.md`
+- `plan-sr-37-skylight-compact.md`
+- `registry-actuation.md`
+- `registry-credentials.md`
+- `registry-google.md`
+- `registry-graphify.md`
+- `registry-macos.md`
+- `registry-perception.md`
+- `registry-skills.md`
+- `registry-surveys.md`
+- `registry.md`
+- `roadmap.md`
+- `security.md`
+- `session-log-2026-05-06.md`
+- `session-log-2026-05-07.md`
+- `session-versager.md`
+- `sinrules.md`
+- `state.md`
+- `successful.md`
+- `testing.md`
+- `tool-manifest.md`
+- `tool-registry.md`
+- `troubleshooting.md`
+- `usage.md`
+
+### Removed (stray binary assets at root)
+- `2captcha.com__lemin_2026-05-03_22-59-15.jpg`
+- `2captcha.com__lemin_2026-05-03_23-00-40.jpg`
+- `2captcha.com__lemin_2026-05-03_23-00-55.jpg`
+- `2captcha.com__lemin_2026-05-03_23-00-59.jpg`
+- `skylight_screenshot.png`
+- `vision_input.jpg`
+
+## Historical entries
+
 
 > **Zweck**: Jede signifikante Änderung wird hier mit Datum und Referenz dokumentiert.
 > Format: `YYYY-MM-DD | Typ | Beschreibung | Issue/PR`
