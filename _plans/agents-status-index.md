@@ -18,15 +18,14 @@ Insert immediately under the first heading of `AGENTS.md`, before any narrative:
 | #86   | DONE        | survey-cli/survey/cdp_actuator.py::_wait_for_position_stable   |
 | #87   | PLANNED     | _plans/87-form-validation.md                                  |
 | #88   | EPIC        | (this file)                                                   |
-| TBD-A | PLANNED     | _plans/repo-cleanup.md                                        |
-| TBD-B | PLANNED     | _plans/oopif-autoattach.md                                    |
-| TBD-C | PLANNED     | _plans/js-dialog-handler.md                                   |
+| #91   | PLANNED     | _plans/repo-cleanup.md                                        |
+| #93   | PLANNED     | _plans/oopif-autoattach.md                                    |
+| #94   | PLANNED     | _plans/js-dialog-handler.md                                   |
 ```
 
 ## Rules
 - Update entry on every PR that changes the status of a tracked work item.
 - One line per entry. Always point to a code symbol (`file::function`) or a plan file.
-- Replace `TBD-X` placeholders with real issue numbers once issues are created.
 
 ## Acceptance Criteria
 - New `STATUS INDEX` section exists in AGENTS.md, directly under the top heading.
