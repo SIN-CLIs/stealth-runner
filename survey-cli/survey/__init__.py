@@ -22,3 +22,6 @@ BANNED METHODS — NIEMALS VERWENDEN:
 ❌ killall Google Chrome
 ❌ skylight-cli click --element-index
 """
+
+from . import daemon  # LangGraph daemon; also forces discovery
+
