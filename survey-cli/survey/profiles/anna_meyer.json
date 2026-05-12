@@ -28,5 +28,10 @@
   "contracts": ["mobilfunk", "strom", "gas", "internet"],
   "interests": ["reisen", "kultur", "fitness"],
   "vehicles": ["pkw"],
-  "pets": []
+  "pets": [],
+  "conjoint_preferences": {
+    "price_weight": 0.35,
+    "brand_weight": 0.35,
+    "feature_weights": {"quality": 0.15, "convenience": 0.15}
+  }
 }
