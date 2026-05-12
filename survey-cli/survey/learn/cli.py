@@ -42,6 +42,13 @@ from .status import (
     report_to_json,
     summarize_inbox,
 )
+# SR-109 #109: audit-log dashboard (apply-side complement to status)
+from .audit import (
+    AuditFilters,
+    format_human_report as format_audit_report,
+    report_to_json as audit_report_to_json,
+    summarize_audit,
+)
 from .aggregator import (
     aggregate_misses,
     default_suggestions_path,
@@ -358,6 +365,77 @@ def cmd_status(args: argparse.Namespace) -> int:
 
 
 
+def cmd_audit(args: argparse.Namespace) -> int:
+    """SR-109 #109: read-only audit-log dashboard.
+
+    Default: scan all ``learn-applied-*.jsonl`` in ``--logs`` dir,
+    aggregate counts by decision/source/family/model, print human report.
+    With ``--json`` emit machine-readable JSON instead.
+
+    Strict read-only: opens files with ``"r"`` ONLY; never creates new
+    audit-log outputs nor modifies existing ones. Mirrors ``cmd_status``
+    in spirit and constraints.
+    """
+    import glob
+    from datetime import datetime, timezone
+
+    log_dir = args.logs or _logs_dir()
+
+    if args.input:
+        input_paths = [args.input] if os.path.exists(args.input) else []
+    else:
+        input_paths = sorted(glob.glob(
+            os.path.join(log_dir, "learn-applied-*.jsonl")))
+
+    if not input_paths:
+        print(f"[learn] no learn-applied-*.jsonl found "
+              f"(searched {log_dir})")
+        return 0
+
+    records = []
+    for path in input_paths:
+        with open(path) as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    records.append(json.loads(line))
+
+    # Parse --since (optional)
+    since_dt = None
+    if args.since:
+        try:
+            since_dt = datetime.fromisoformat(
+                str(args.since).replace("Z", "+00:00"))
+            if since_dt.tzinfo is None:
+                since_dt = since_dt.replace(tzinfo=timezone.utc)
+        except (ValueError, TypeError):
+            sys.stderr.write(
+                f"[learn] --since: cannot parse ISO timestamp "
+                f"{args.since!r} -- ignored.\n"
+            )
+            since_dt = None
+
+    filters = AuditFilters(
+        decision=args.filter_decision,
+        source=args.filter_source,
+        family=args.filter_family or None,
+        since=since_dt,
+    )
+    report = summarize_audit(
+        records,
+        filters=filters,
+        files_scanned=len(input_paths),
+    )
+
+    if args.json:
+        print(json.dumps(audit_report_to_json(report, top=args.top),
+                         indent=2, ensure_ascii=False))
+    else:
+        print(format_audit_report(report, top=args.top))
+
+    return 0
+
+
 def build_argparser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="survey learn")
     sub = p.add_subparsers(dest="action", required=True)
@@ -454,6 +532,36 @@ def build_argparser() -> argparse.ArgumentParser:
                        help="Exit 1 wenn open-count > 0 (CI smoke-gate). "
                             "Read-only -- modifiziert nichts.")
     p_sts.set_defaults(func=cmd_status)
+
+    # SR-109 #109: read-only audit-log dashboard (apply-side).
+    p_aud = sub.add_parser(
+        "audit",
+        help="Read-only Audit-Dashboard: counts by decision/source/family")
+    p_aud.add_argument("--logs", default=None,
+                       help="Logs-Verzeichnis (default: survey-cli/logs)")
+    p_aud.add_argument("--input", default=None,
+                       help="Statt multi-file scan, eine einzelne JSONL lesen")
+    p_aud.add_argument(
+        "--filter-decision",
+        choices=["all", "applied", "rejected_by_gate",
+                 "rejected_by_reviewer", "rejected_by_ast"],
+        default="all",
+        help="Filter auf decision field. Default: all.")
+    p_aud.add_argument("--filter-source",
+                       choices=["all", "substring", "llm"], default="all",
+                       help="Filter auf source field. Default: all.")
+    p_aud.add_argument("--filter-family", default=None,
+                       help="Filter auf family (exakter Match). Default: alle.")
+    p_aud.add_argument("--since", default=None, metavar="ISO",
+                       help="Nur records mit timestamp >= ISO (z.B. "
+                            "2026-05-01T00:00:00Z). Records ohne timestamp "
+                            "werden ausgeschlossen.")
+    p_aud.add_argument("--top", type=int, default=10, metavar="N",
+                       help="Limit fuer top-N family/label/model-Listen. "
+                            "Default: 10.")
+    p_aud.add_argument("--json", action="store_true",
+                       help="JSON statt human-readable Output")
+    p_aud.set_defaults(func=cmd_audit)
 
     return p
 

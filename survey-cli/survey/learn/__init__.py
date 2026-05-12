@@ -77,6 +77,15 @@ from .status import (
     report_to_json,
     summarize_inbox,
 )
+# SR-109 #109 — read-only audit-log dashboard pure functions
+from .audit import (
+    AuditFilters,
+    AuditReport,
+    format_human_report as format_audit_human_report,
+    passes_filters as passes_audit_filters,
+    report_to_json as audit_report_to_json,
+    summarize_audit,
+)
 # SR-102 #102 — source-aware batch-review pure functions
 from .review import (
     ReviewRules,
@@ -123,4 +132,11 @@ __all__ = [
     "passes_filters",
     "report_to_json",
     "summarize_inbox",
+    # SR-109 #109
+    "AuditFilters",
+    "AuditReport",
+    "format_audit_human_report",
+    "passes_audit_filters",
+    "audit_report_to_json",
+    "summarize_audit",
 ]
