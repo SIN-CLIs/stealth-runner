@@ -2,11 +2,16 @@
 Browser Driver - Playwright-based stealth browser automation.
 
 Integrates with StealthBrowser for anti-detection and human-like behavior.
+
+SR-150 extensions:
+    - drag_element(source_sel, target_sel) — CDP-based drag operation
+    - play_media(selector, max_seconds) — play video/audio and wait
 """
 from __future__ import annotations
 
 import asyncio
 import logging
+import random
 from contextlib import asynccontextmanager
 from dataclasses import dataclass
 from pathlib import Path
@@ -39,6 +44,8 @@ class BrowserDriver:
 
     Provides high-level API for survey automation with
     built-in anti-detection and human-like behavior.
+
+    SR-150: drag_element(), play_media() primitives added.
     """
 
     def __init__(
@@ -360,3 +367,246 @@ class BrowserDriver:
         """Rotate browser fingerprint and session."""
         self.stealth.rotate_session()
         logger.info("Rotated browser identity")
+
+    # -------------------------------------------------------------------------
+    # SR-150: Extended Primitives for drag-drop and media playback
+    # -------------------------------------------------------------------------
+
+    async def drag_element(
+        self,
+        source_sel: str,
+        target_sel: str,
+        jitter: bool = True,
+    ) -> bool:
+        """SR-150: Drag element from source to target using CDP mouse events.
+        
+        Implements realistic drag-and-drop with:
+        - Human-like mouse path (10-step Bezier with timing jitter)
+        - mouseDown → multiple mouseMoved → mouseUp sequence
+        - No Playwright page.mouse.down() calls — pure CDP for stealth
+        
+        Args:
+            source_sel: CSS selector for drag source element
+            target_sel: CSS selector for drop target element
+            jitter: Add random timing/position jitter (default True)
+            
+        Returns:
+            True if drag completed successfully, False otherwise
+        """
+        try:
+            # Get source element bounding box
+            source = await self._page.query_selector(source_sel)
+            if not source:
+                logger.warning(f"Drag source not found: {source_sel}")
+                return False
+            
+            source_box = await source.bounding_box()
+            if not source_box:
+                logger.warning(f"Drag source has no bounding box: {source_sel}")
+                return False
+
+            # Get target element bounding box
+            target = await self._page.query_selector(target_sel)
+            if not target:
+                logger.warning(f"Drag target not found: {target_sel}")
+                return False
+            
+            target_box = await target.bounding_box()
+            if not target_box:
+                logger.warning(f"Drag target has no bounding box: {target_sel}")
+                return False
+
+            # Calculate center points with optional jitter
+            jitter_px = 5 if jitter else 0
+            source_x = source_box["x"] + source_box["width"] / 2 + random.randint(-jitter_px, jitter_px)
+            source_y = source_box["y"] + source_box["height"] / 2 + random.randint(-jitter_px, jitter_px)
+            target_x = target_box["x"] + target_box["width"] / 2 + random.randint(-jitter_px, jitter_px)
+            target_y = target_box["y"] + target_box["height"] / 2 + random.randint(-jitter_px, jitter_px)
+
+            # Get CDP session
+            cdp = await self._page.context.new_cdp_session(self._page)
+
+            # Generate 10-step path with Bezier-like curve
+            steps = 10
+            path_points = []
+            for i in range(steps + 1):
+                t = i / steps
+                # Quadratic bezier with control point offset for natural curve
+                ctrl_x = (source_x + target_x) / 2 + (target_y - source_y) * 0.1
+                ctrl_y = (source_y + target_y) / 2 - (target_x - source_x) * 0.1
+                x = (1 - t) ** 2 * source_x + 2 * (1 - t) * t * ctrl_x + t ** 2 * target_x
+                y = (1 - t) ** 2 * source_y + 2 * (1 - t) * t * ctrl_y + t ** 2 * target_y
+                # Add micro-jitter
+                if jitter and 0 < i < steps:
+                    x += random.uniform(-2, 2)
+                    y += random.uniform(-2, 2)
+                path_points.append((x, y))
+
+            # Move to source first
+            await cdp.send("Input.dispatchMouseEvent", {
+                "type": "mouseMoved",
+                "x": source_x,
+                "y": source_y,
+            })
+            await asyncio.sleep(random.uniform(0.05, 0.15) if jitter else 0.05)
+
+            # Mouse down
+            await cdp.send("Input.dispatchMouseEvent", {
+                "type": "mousePressed",
+                "x": source_x,
+                "y": source_y,
+                "button": "left",
+                "clickCount": 1,
+            })
+            await asyncio.sleep(random.uniform(0.08, 0.15) if jitter else 0.1)
+
+            # Drag along path
+            for x, y in path_points[1:]:
+                await cdp.send("Input.dispatchMouseEvent", {
+                    "type": "mouseMoved",
+                    "x": x,
+                    "y": y,
+                    "button": "left",
+                })
+                delay = random.uniform(0.02, 0.06) if jitter else 0.03
+                await asyncio.sleep(delay)
+
+            # Mouse up at target
+            await cdp.send("Input.dispatchMouseEvent", {
+                "type": "mouseReleased",
+                "x": target_x,
+                "y": target_y,
+                "button": "left",
+                "clickCount": 1,
+            })
+
+            await cdp.detach()
+            logger.debug(f"Dragged {source_sel} → {target_sel}")
+            return True
+
+        except Exception as e:
+            logger.warning(f"Drag failed: {e}")
+            return False
+
+    async def play_media(
+        self,
+        selector: str,
+        max_seconds: float | None = None,
+    ) -> float:
+        """SR-150: Play video/audio element and wait for completion.
+        
+        Uses CDP Runtime.evaluate to control media playback directly.
+        Waits for the 'ended' event or max_seconds timeout.
+        
+        Args:
+            selector: CSS selector for <video> or <audio> element
+            max_seconds: Maximum seconds to wait (None = wait for full duration)
+            
+        Returns:
+            Actual seconds played (may be less than duration if max_seconds hit)
+        """
+        try:
+            # Get element and verify it's a media element
+            element = await self._page.query_selector(selector)
+            if not element:
+                logger.warning(f"Media element not found: {selector}")
+                return 0.0
+
+            tag = await element.evaluate("el => el.tagName.toLowerCase()")
+            if tag not in ("video", "audio"):
+                logger.warning(f"Element is not a media element: {selector} (tag={tag})")
+                return 0.0
+
+            # Get media duration via CDP
+            cdp = await self._page.context.new_cdp_session(self._page)
+            
+            # Get duration
+            duration_result = await cdp.send("Runtime.evaluate", {
+                "expression": f"document.querySelector('{selector}').duration || 30",
+                "returnByValue": True,
+            })
+            duration = duration_result.get("result", {}).get("value", 30.0)
+            
+            # Cap at max_seconds if specified
+            if max_seconds is not None and duration > max_seconds:
+                duration = max_seconds
+            
+            # Warn for very long media
+            if duration > 120:
+                logger.warning(f"Long media detected ({duration}s), proceeding anyway: {selector}")
+
+            # For audio, mute before playing (avoid noise on host)
+            if tag == "audio":
+                await cdp.send("Runtime.evaluate", {
+                    "expression": f"document.querySelector('{selector}').muted = true",
+                })
+
+            # Start playback
+            await cdp.send("Runtime.evaluate", {
+                "expression": f"document.querySelector('{selector}').play()",
+            })
+            logger.debug(f"Started playing {tag}: {selector} (duration={duration}s)")
+
+            # Wait for media to complete (with small jitter buffer)
+            jitter = random.uniform(0.3, 0.8)
+            await asyncio.sleep(duration + jitter)
+
+            # Pause to ensure clean state
+            await cdp.send("Runtime.evaluate", {
+                "expression": f"document.querySelector('{selector}').pause()",
+            })
+
+            await cdp.detach()
+            logger.debug(f"Finished playing {tag}: {selector}")
+            return duration
+
+        except Exception as e:
+            logger.warning(f"Media playback failed: {e}")
+            return 0.0
+
+    async def click_at(self, x: int, y: int) -> bool:
+        """Click at specific coordinates (for hotspot questions).
+        
+        Args:
+            x: X coordinate
+            y: Y coordinate
+            
+        Returns:
+            True if click succeeded
+        """
+        try:
+            cdp = await self._page.context.new_cdp_session(self._page)
+            
+            # Move to position
+            await cdp.send("Input.dispatchMouseEvent", {
+                "type": "mouseMoved",
+                "x": x,
+                "y": y,
+            })
+            await asyncio.sleep(random.uniform(0.05, 0.1))
+            
+            # Click
+            await cdp.send("Input.dispatchMouseEvent", {
+                "type": "mousePressed",
+                "x": x,
+                "y": y,
+                "button": "left",
+                "clickCount": 1,
+            })
+            await asyncio.sleep(random.uniform(0.05, 0.1))
+            
+            await cdp.send("Input.dispatchMouseEvent", {
+                "type": "mouseReleased",
+                "x": x,
+                "y": y,
+                "button": "left",
+                "clickCount": 1,
+            })
+            
+            await cdp.detach()
+            logger.debug(f"Clicked at ({x}, {y})")
+            return True
+            
+        except Exception as e:
+            logger.warning(f"Click at coordinates failed: {e}")
+            return False
