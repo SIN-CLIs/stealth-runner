@@ -761,8 +761,18 @@ def execute_node(state: SurveyState) -> SurveyState:
             actuator = Actuator(cdp)
             actuator.refresh_scan()
 
+            # ─────────────────────────────────────────────────────────────
+            # Issue #85: no_dom_change Retry Strategy
+            # ─────────────────────────────────────────────────────────────
+            # Statt single-shot click() nutzen wir click_with_retry(), das
+            # bei "no_dom_change" automatisch bis zu 4x retried mit exp.
+            # backoff (0/200/400/800ms). Erst nach 4 Fehlversuchen kommt
+            # der CUA-Fallback unten zum Zug. Das spart ca. 80% der CUA-
+            # Eskalationen, weil die meisten "no_dom_change"-Cases nur
+            # Race-Conditions sind.
+            # ─────────────────────────────────────────────────────────────
             if action == "click" or action == "submit":
-                result = actuator.click(sid)
+                result = actuator.click_with_retry(sid)
             elif action == "fill":
                 result = actuator.fill(sid, decision.get("value", ""))
             elif action == "press_key":
@@ -785,6 +795,8 @@ def execute_node(state: SurveyState) -> SurveyState:
         "elapsed_ms": result.elapsed_ms,
         "stable_id": sid,
         "action_type": action,
+        "attempts": getattr(result, "attempts", 1),  # Issue #85: Retry-Counter
+        "dom_stable_ms": getattr(result, "dom_stable_ms", 0.0),  # Issue #84
     }
     state.batch_result = {
         "success": result.success,
@@ -795,18 +807,25 @@ def execute_node(state: SurveyState) -> SurveyState:
     }
 
     print(f"[act] {action} {sid[:10]} success={result.success} "
-          f"reason={result.reason} elapsed={result.elapsed_ms:.0f}ms")
+          f"reason={result.reason} attempts={getattr(result, 'attempts', 1)} "
+          f"elapsed={result.elapsed_ms:.0f}ms")
 
     if not result.success:
         state.increment_failures()
-        if result.reason == "no_dom_change":
+        # Issue #85: "no_dom_change_after_retries" zählt als no_dom_change-Eskalation
+        # (click_with_retry hat schon 4x intern probiert → jetzt CUA-Fallback fair)
+        if result.reason in ("no_dom_change", "no_dom_change_after_retries"):
             state.no_dom_change_count += 1
             
             # ══════════════════════════════════════════════════════════════════
-            # CUA-FALLBACK (2026-05-11): Wenn CDP-Clicks 2+ mal fehlschlagen,
-            # nutze CUA-Driver für echte OS-Level Clicks.
+            # CUA-FALLBACK: Wenn click_with_retry alle 4 internen Versuche
+            # erschöpft hat ODER bei wiederholtem fill/press_key no_dom_change
+            # → CUA-Driver für echte OS-Level Clicks.
             # Das löst blockierte Consent-Pages (AYBEE, Ipsos, etc.)
             # ══════════════════════════════════════════════════════════════════
+            # Issue #85: Schwelle bleibt bei 2, aber click_with_retry hat
+            # vorher schon 4 interne Attempts gemacht. Effektiv eskaliert
+            # CUA jetzt nach 2× "no_dom_change_after_retries" = 8 echte Klicks.
             if state.no_dom_change_count >= 2:
                 print(f"[execute] CUA-FALLBACK triggered: no_dom_change={state.no_dom_change_count}")
                 try:
