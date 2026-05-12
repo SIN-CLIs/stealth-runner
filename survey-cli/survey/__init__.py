@@ -23,5 +23,8 @@ BANNED METHODS — NIEMALS VERWENDEN:
 ❌ skylight-cli click --element-index
 """
 
-from . import daemon  # LangGraph daemon; also forces discovery
+# daemon submodule — auto-discovered by package loader
 
+
+
+__all__ = ["daemon"]
