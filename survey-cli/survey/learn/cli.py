@@ -55,6 +55,12 @@ from .aggregator import (
     write_suggestions,
 )
 from .apply import apply_inbox  # SR-58 #57
+# SR-112 #112: per-keyword inverse-lookup (apply-side, mirror to audit)
+from .explain import (
+    find_explanations,
+    format_human_report as format_explain_report,
+    report_to_json as explain_report_to_json,
+)
 
 
 # ── HARTCODIERT FALSE — niemals aendern ohne §12 Update + Review ────────────
@@ -567,9 +573,120 @@ def build_argparser() -> argparse.ArgumentParser:
                        help="JSON statt human-readable Output")
     p_aud.set_defaults(func=cmd_audit)
 
+    # SR-112 #112: per-keyword inverse-lookup (apply-side diagnostic).
+    p_xpl = sub.add_parser(
+        "explain",
+        help="Read-only per-keyword inverse-lookup over audit records")
+    p_xpl.add_argument("query", type=str,
+                       help="Query string (case-insensitive substring). "
+                            "Auto-detects mode: 'role:label' -> label, "
+                            "else -> keyword. Override via --by.")
+    p_xpl.add_argument("--logs", default=None,
+                       help="Logs-Verzeichnis (default: survey-cli/logs)")
+    p_xpl.add_argument("--input", default=None,
+                       help="Statt multi-file scan, eine einzelne JSONL lesen")
+    p_xpl.add_argument(
+        "--by",
+        choices=["auto", "keyword", "family", "label"],
+        default="auto",
+        help="Match-mode. Default: auto.")
+    p_xpl.add_argument("--limit", type=int, default=5, metavar="N",
+                       help="Max anzahl Treffer im Output. Default: 5.")
+    p_xpl.add_argument("--include-rejects", action="store_true",
+                       help="Schaltet rejected_* decision-records dazu. "
+                            "Default: applied-only.")
+    p_xpl.add_argument("--json", action="store_true",
+                       help="JSON statt human-readable Output")
+    p_xpl.set_defaults(func=cmd_explain)
+
+
     return p
 
 
+
+
+def cmd_explain(args: argparse.Namespace) -> int:
+    """SR-112 #112: read-only per-keyword inverse-lookup over audit records.
+
+    Default scans ``logs/learn-applied-*.jsonl``. Per query, returns
+    matching audit-records (applied-only by default; --include-rejects
+    opt-in), sorted newest first, limited to ``--limit N``.
+
+    Strict read-only: opens files with ``"r"`` ONLY. Mirrors ``cmd_status``
+    and ``cmd_audit`` constraints.
+    """
+    import glob
+
+    log_dir = args.logs or _logs_dir()
+
+    if args.input:
+        input_paths = [args.input] if os.path.exists(args.input) else []
+    else:
+        input_paths = sorted(glob.glob(
+            os.path.join(log_dir, "learn-applied-*.jsonl")))
+
+    if not input_paths:
+        print(f"[learn] no learn-applied-*.jsonl found "
+              f"(searched {log_dir})")
+        return 0
+
+    # Load all records, tagging each with its origin filename so the
+    # explanation snapshot can display log_file. ``__file__`` is an
+    # internal dunder-key that never collides with real schema fields.
+    records: List[dict] = []
+    for path in input_paths:
+        basename = os.path.basename(path)
+        with open(path) as f:
+            for line in f:
+                line = line.strip()
+                if not line:
+                    continue
+                rec = json.loads(line)
+                rec["__file__"] = basename
+                records.append(rec)
+
+    mode = args.by  # already auto/keyword/family/label from argparse choices
+
+    # Also count rejects-that-would-match for the human-readable hint.
+    reject_count_excluded = 0
+    if not args.include_rejects:
+        from .explain import record_matches, _normalize_decision
+        for rec in records:
+            if _normalize_decision(rec) == "applied":
+                continue
+            if record_matches(rec, args.query, mode):
+                reject_count_excluded += 1
+
+    explanations = find_explanations(
+        records,
+        query=args.query,
+        mode=mode,
+        limit=args.limit,
+        include_rejects=args.include_rejects,
+    )
+
+    if args.json:
+        print(json.dumps(
+            explain_report_to_json(
+                explanations,
+                query=args.query,
+                match_mode=mode,
+                limit=args.limit,
+                include_rejects=args.include_rejects,
+            ),
+            indent=2, ensure_ascii=False,
+        ))
+    else:
+        print(format_explain_report(
+            explanations,
+            query=args.query,
+            match_mode=mode,
+            limit=args.limit,
+            include_rejects=args.include_rejects,
+            reject_count_excluded=reject_count_excluded,
+        ))
+
+    return 0
 def main(argv: List[str] | None = None) -> int:
     parser = build_argparser()
     args = parser.parse_args(argv)

@@ -96,6 +96,15 @@ from .review import (
     partition_records,
     normalize_source,
 )
+# SR-112 #112 — per-keyword inverse-lookup pure functions
+from .explain import (
+    Explanation,
+    detect_match_mode,
+    find_explanations,
+    format_human_report as format_explain_human_report,
+    record_matches,
+    report_to_json as explain_report_to_json,
+)
 
 __all__ = [
     "aggregate_misses",
