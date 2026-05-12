@@ -77,7 +77,7 @@ async def cmd_run_survey(args) -> int:
     
     graph = SurveyAgentGraph(
         persona=persona,
-        captcha_api_key=config.get("captcha_api_key"),
+        nvidia_local=True,  # FREE NVIDIA Vision for CAPTCHAs
         headless=not args.visible,
     )
     
@@ -119,7 +119,7 @@ async def cmd_heypiggy(args) -> int:
         email=email,
         password=password,
         persona=persona,
-        captcha_api_key=config.get("captcha_api_key"),
+        nvidia_local=True,  # FREE NVIDIA Vision for CAPTCHAs
         max_surveys=args.max_surveys,
         headless=not args.visible,
     )
@@ -160,7 +160,7 @@ def cmd_daemon_start(args) -> int:
     
     daemon = SurveyDaemon(
         persona=persona,
-        captcha_api_key=config.get("captcha_api_key"),
+        nvidia_local=True,  # FREE NVIDIA Vision for CAPTCHAs
     )
     
     try:
@@ -294,7 +294,7 @@ def cmd_config(args) -> int:
     print("  survey config --set key=value      Set config value")
     print("  survey config --delete key         Delete config key")
     print("\nExamples:")
-    print("  survey config --set captcha_api_key=xxx")
+    print("  # No API key needed - uses FREE NVIDIA Vision model")
     print("  survey config --set persona.age=28")
     print("  survey config --set heypiggy_email=user@email.com")
     
