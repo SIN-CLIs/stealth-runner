@@ -70,6 +70,7 @@ def test_update_stealth_memory_success_local_jsonl():
                 "success": state.balance_after > state.balance_before,
                 "balance_before": state.balance_before,
                 "balance_after": state.balance_after,
+                "balance_earned": max(0, state.balance_after - state.balance_before),
                 "status": state.status,
             }
             assert outcome["success"] is True
