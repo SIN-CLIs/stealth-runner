@@ -290,19 +290,15 @@ def _to_explanation(record: dict) -> Explanation:
     return Explanation(
         decision=_normalize_decision(record),
         family=_normalize_family(record),
-        keyword=(str(record["keyword"])
-                 if record.get("keyword") else None),
+        keyword=(str(record["keyword"]) if record.get("keyword") else None),
         role=role,
         label=label,
         source=_normalize_source(record),
-        confidence=(float(record["confidence"])
-                    if record.get("confidence") is not None else None),
+        confidence=(float(record["confidence"]) if record.get("confidence") is not None else None),
         model=(str(record["model"]) if record.get("model") else None),
-        prompt_hash=(str(record["prompt_hash"])
-                     if record.get("prompt_hash") else None),
+        prompt_hash=(str(record["prompt_hash"]) if record.get("prompt_hash") else None),
         timestamp_iso=ts_iso,
-        log_file=(str(record["__file__"])
-                  if record.get("__file__") else None),
+        log_file=(str(record["__file__"]) if record.get("__file__") else None),
         reason=(str(record["reason"]) if record.get("reason") else None),
     )
 
@@ -389,17 +385,11 @@ def format_human_report(
         match_mode = detect_match_mode(query)
 
     lines: List[str] = []
-    lines.append(
-        f"[learn] explain query: {query!r}  "
-        f"(matched as {match_mode})"
-    )
+    lines.append(f"[learn] explain query: {query!r}  (matched as {match_mode})")
     lines.append("")
 
     if not explanations:
-        lines.append(
-            f"No audit-record matched query {query!r} "
-            f"in mode={match_mode!r}."
-        )
+        lines.append(f"No audit-record matched query {query!r} in mode={match_mode!r}.")
         if not include_rejects and reject_count_excluded > 0:
             lines.append(
                 f"({reject_count_excluded} reject record(s) matched but "
@@ -407,16 +397,11 @@ def format_human_report(
             )
         return "\n".join(lines)
 
-    lines.append(
-        f"Found {len(explanations)} audit-record(s) "
-        f"(newest first), limit={limit}:"
-    )
+    lines.append(f"Found {len(explanations)} audit-record(s) (newest first), limit={limit}:")
     lines.append("")
 
     for i, exp in enumerate(explanations, start=1):
-        lines.append(
-            f"[{i}] {_fmt_value(exp.timestamp_iso)}  {exp.decision}"
-        )
+        lines.append(f"[{i}] {_fmt_value(exp.timestamp_iso)}  {exp.decision}")
         if exp.family:
             lines.append(f"    family:       {exp.family}")
         if exp.keyword:
@@ -466,8 +451,7 @@ def report_to_json(
         "match_mode": match_mode,
         "limit": limit,
         "include_rejects": include_rejects,
-        "total_matches": (total_matches if total_matches is not None
-                          else len(explanations)),
+        "total_matches": (total_matches if total_matches is not None else len(explanations)),
         "explanations": [
             {
                 "decision": e.decision,

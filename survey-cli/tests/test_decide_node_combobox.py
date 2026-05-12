@@ -49,6 +49,7 @@ from survey.graph.state import SurveyState
 # Element-Factory
 # ----------------------------------------------------------------------------
 
+
 def _element(
     stable_id: str,
     role: str,
@@ -97,19 +98,26 @@ _FAKE_PROFILE = {
 # (a) OPTIONS-BASED COMBOBOX: native <select>
 # ----------------------------------------------------------------------------
 
+
 class TestNativeSelectClickedNotFilled(unittest.TestCase):
     """tag='select' → 2a-bis MUSS click_expand emittieren, 2b NICHT fill."""
 
     def test_native_select_click_expand(self):
         elements = [
-            _element("sel001abc0000000", role="combobox", name="Bundesland",
-                     tag="select", state={"expanded": False}),
+            _element(
+                "sel001abc0000000",
+                role="combobox",
+                name="Bundesland",
+                tag="select",
+                state={"expanded": False},
+            ),
         ]
         state = _state_with(elements)
 
-        with patch("survey.profile_loader.ProfileLoader.load_profile",
-                   return_value=_FAKE_PROFILE), \
-             patch("survey.nim.get_nim", side_effect=ImportError):
+        with (
+            patch("survey.profile_loader.ProfileLoader.load_profile", return_value=_FAKE_PROFILE),
+            patch("survey.nim.get_nim", side_effect=ImportError),
+        ):
             out = decide_node(state)
 
         self.assertEqual(out.decision["action"], "click")
@@ -122,14 +130,20 @@ class TestExpandedNativeSelectNotReClicked(unittest.TestCase):
 
     def test_expanded_combobox_skipped(self):
         elements = [
-            _element("sel001abc0000000", role="combobox", name="Bundesland",
-                     tag="select", state={"expanded": True}),
+            _element(
+                "sel001abc0000000",
+                role="combobox",
+                name="Bundesland",
+                tag="select",
+                state={"expanded": True},
+            ),
         ]
         state = _state_with(elements)
 
-        with patch("survey.profile_loader.ProfileLoader.load_profile",
-                   return_value=_FAKE_PROFILE), \
-             patch("survey.nim.get_nim", side_effect=ImportError):
+        with (
+            patch("survey.profile_loader.ProfileLoader.load_profile", return_value=_FAKE_PROFILE),
+            patch("survey.nim.get_nim", side_effect=ImportError),
+        ):
             out = decide_node(state)
 
         # Kein expand-Click, kein fill (combobox ohne match_field-Mapping
@@ -141,20 +155,27 @@ class TestExpandedNativeSelectNotReClicked(unittest.TestCase):
 # (a') ARIA-COMBOBOX + sichtbare listbox/option-Geschwister
 # ----------------------------------------------------------------------------
 
+
 class TestAriaComboboxWithListboxClickedNotFilled(unittest.TestCase):
     """role=combobox + role=listbox im Snapshot → options-based → click."""
 
     def test_aria_combobox_with_listbox_click(self):
         elements = [
-            _element("cb0001000000abcd", role="combobox", name="Land",
-                     tag="div", state={"expanded": False}),
+            _element(
+                "cb0001000000abcd",
+                role="combobox",
+                name="Land",
+                tag="div",
+                state={"expanded": False},
+            ),
             _element("lb0002000000abcd", role="listbox", tag="div"),
         ]
         state = _state_with(elements)
 
-        with patch("survey.profile_loader.ProfileLoader.load_profile",
-                   return_value=_FAKE_PROFILE), \
-             patch("survey.nim.get_nim", side_effect=ImportError):
+        with (
+            patch("survey.profile_loader.ProfileLoader.load_profile", return_value=_FAKE_PROFILE),
+            patch("survey.nim.get_nim", side_effect=ImportError),
+        ):
             out = decide_node(state)
 
         self.assertEqual(out.decision["action"], "click")
@@ -166,21 +187,28 @@ class TestAriaComboboxWithListboxClickedNotFilled(unittest.TestCase):
 # (b) EDITABLE-TEXT COMBOBOX
 # ----------------------------------------------------------------------------
 
+
 class TestEditableComboboxFilledNotClicked(unittest.TestCase):
     """role=combobox, NICHT select, KEINE option-Geschwister → 2b fill."""
 
     def test_editable_combobox_profile_fill(self):
         # Name = "Stadt" → match_field liefert profile['city']
         elements = [
-            _element("ed0001000000abcd", role="combobox", name="Stadt",
-                     tag="input", attrs={"placeholder": "Ihre Stadt"},
-                     state={"expanded": False}),
+            _element(
+                "ed0001000000abcd",
+                role="combobox",
+                name="Stadt",
+                tag="input",
+                attrs={"placeholder": "Ihre Stadt"},
+                state={"expanded": False},
+            ),
         ]
         state = _state_with(elements)
 
-        with patch("survey.profile_loader.ProfileLoader.load_profile",
-                   return_value=_FAKE_PROFILE), \
-             patch("survey.nim.get_nim", side_effect=ImportError):
+        with (
+            patch("survey.profile_loader.ProfileLoader.load_profile", return_value=_FAKE_PROFILE),
+            patch("survey.nim.get_nim", side_effect=ImportError),
+        ):
             out = decide_node(state)
 
         self.assertEqual(out.decision["action"], "fill")
@@ -193,21 +221,32 @@ class TestEditableComboboxFilledNotClicked(unittest.TestCase):
 # (c) MIXED SNAPSHOT — Dropdown + Editable Combobox + textbox
 # ----------------------------------------------------------------------------
 
+
 class TestComboboxOrderingDropdownBeforeFill(unittest.TestCase):
     """Im selben Snapshot kommt 2a-bis (Dropdown) VOR 2b (Fill)."""
 
     def test_dropdown_expand_picked_over_textbox(self):
         elements = [
-            _element("dd000000000000ab", role="combobox", name="Bundesland",
-                     tag="select", state={"expanded": False}),
-            _element("tb000000000000cd", role="textbox", name="Stadt",
-                     attrs={"placeholder": "Ihre Stadt"}),
+            _element(
+                "dd000000000000ab",
+                role="combobox",
+                name="Bundesland",
+                tag="select",
+                state={"expanded": False},
+            ),
+            _element(
+                "tb000000000000cd",
+                role="textbox",
+                name="Stadt",
+                attrs={"placeholder": "Ihre Stadt"},
+            ),
         ]
         state = _state_with(elements)
 
-        with patch("survey.profile_loader.ProfileLoader.load_profile",
-                   return_value=_FAKE_PROFILE), \
-             patch("survey.nim.get_nim", side_effect=ImportError):
+        with (
+            patch("survey.profile_loader.ProfileLoader.load_profile", return_value=_FAKE_PROFILE),
+            patch("survey.nim.get_nim", side_effect=ImportError),
+        ):
             out = decide_node(state)
 
         # 2a-bis MUSS gewinnen — Dropdown muss zuerst aufgeklappt werden
@@ -220,14 +259,20 @@ class TestDisabledComboboxSkipped(unittest.TestCase):
 
     def test_disabled_native_select_skipped(self):
         elements = [
-            _element("ds000000000000ab", role="combobox", name="Bundesland",
-                     tag="select", state={"expanded": False, "disabled": True}),
+            _element(
+                "ds000000000000ab",
+                role="combobox",
+                name="Bundesland",
+                tag="select",
+                state={"expanded": False, "disabled": True},
+            ),
         ]
         state = _state_with(elements)
 
-        with patch("survey.profile_loader.ProfileLoader.load_profile",
-                   return_value=_FAKE_PROFILE), \
-             patch("survey.nim.get_nim", side_effect=ImportError):
+        with (
+            patch("survey.profile_loader.ProfileLoader.load_profile", return_value=_FAKE_PROFILE),
+            patch("survey.nim.get_nim", side_effect=ImportError),
+        ):
             out = decide_node(state)
 
         self.assertEqual(out.decision["action"], "wait")
@@ -238,18 +283,25 @@ class TestAvoidIdAppliesToCombobox(unittest.TestCase):
 
     def test_avoid_id_skips_combobox_expand(self):
         elements = [
-            _element("av000000000000ab", role="combobox", name="Bundesland",
-                     tag="select", state={"expanded": False}),
+            _element(
+                "av000000000000ab",
+                role="combobox",
+                name="Bundesland",
+                tag="select",
+                state={"expanded": False},
+            ),
         ]
         state = _state_with(elements)
         state.last_action_result = {
-            "success": False, "reason": "no_dom_change",
+            "success": False,
+            "reason": "no_dom_change",
             "stable_id": "av000000000000ab",
         }
 
-        with patch("survey.profile_loader.ProfileLoader.load_profile",
-                   return_value=_FAKE_PROFILE), \
-             patch("survey.nim.get_nim", side_effect=ImportError):
+        with (
+            patch("survey.profile_loader.ProfileLoader.load_profile", return_value=_FAKE_PROFILE),
+            patch("survey.nim.get_nim", side_effect=ImportError),
+        ):
             out = decide_node(state)
 
         # 2a-bis skipt → 2b skipt (avoid_id wird in 2b auch geprueft) → wait

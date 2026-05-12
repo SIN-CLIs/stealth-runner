@@ -63,16 +63,20 @@ TIMEOUT_S = 30
 RETRIES = 2
 
 # Captcha-Typen die Audio-Modus unterstützen
-SUPPORTED_TYPES = frozenset({
-    "recaptcha",
-    "hcaptcha",
-})
+SUPPORTED_TYPES = frozenset(
+    {
+        "recaptcha",
+        "hcaptcha",
+    }
+)
 
 # ── RESULT DATACLASS ───────────────────────────────────────────────────────
+
 
 @dataclass
 class CaptchaResult:
     """Ergebnis eines Captcha-Lösungsversuchs."""
+
     solved: bool
     captcha_type: str = ""
     token: str = ""
@@ -82,6 +86,7 @@ class CaptchaResult:
 
 
 # ── AUDIO EXTRACTION ───────────────────────────────────────────────────────
+
 
 def _click_audio_button(cdp, ctype: str) -> bool:
     """Klicke den Audio-Accessibility-Button im Captcha iframe.
@@ -193,6 +198,7 @@ def _download_audio_b64(audio_url: str) -> Optional[str]:
 
 # ── NIM ASR CLIENT ─────────────────────────────────────────────────────────
 
+
 class AudioSolver:
     """NVIDIA NIM Parakeet ASR Solver für Audio-Captchas.
 
@@ -263,7 +269,7 @@ class AudioSolver:
             except URLError as e:
                 self._record_failure(f"network: {e.reason}")
                 if attempt < RETRIES:
-                    time.sleep(2 ** attempt)
+                    time.sleep(2**attempt)
             except Exception as e:
                 self._record_failure(f"unknown: {e}")
                 break
@@ -276,6 +282,7 @@ class AudioSolver:
         """
         try:
             from openai import OpenAI
+
             client = OpenAI(api_key=self.api_key, base_url=NIM_BASE_URL)
 
             # Decode audio to temp file (OpenAI API braucht file-like object)

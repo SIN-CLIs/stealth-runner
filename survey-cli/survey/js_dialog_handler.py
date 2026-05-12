@@ -137,13 +137,13 @@ class DialogEvent:
     darauf.
     """
 
-    type: str            # "alert" | "confirm" | "prompt" | "beforeunload"
-    message: str         # vom Page-Skript an alert/confirm/prompt gegebener Text
+    type: str  # "alert" | "confirm" | "prompt" | "beforeunload"
+    message: str  # vom Page-Skript an alert/confirm/prompt gegebener Text
     default_prompt: str  # nur bei type="prompt": defaultPrompt-Parameter
-    url: str             # URL des Frames, der den Dialog ausgelöst hat
-    accepted: bool       # True = wir haben den Dialog mit "OK" geschlossen
-    prompt_text: str     # bei prompt: der Text, den wir injiziert haben (""=leer)
-    ts: float            # Wallclock-Zeit (time.time()) der Behandlung
+    url: str  # URL des Frames, der den Dialog ausgelöst hat
+    accepted: bool  # True = wir haben den Dialog mit "OK" geschlossen
+    prompt_text: str  # bei prompt: der Text, den wir injiziert haben (""=leer)
+    ts: float  # Wallclock-Zeit (time.time()) der Behandlung
 
 
 # Policy-Signatur: (dialog_type, message) → (accept, prompt_text)
@@ -347,7 +347,7 @@ class JsDialogHandler:
         self.events.append(
             DialogEvent(
                 type=dtype,
-                message=message[:500],          # Schutz vor Riesen-Strings
+                message=message[:500],  # Schutz vor Riesen-Strings
                 default_prompt=default_prompt[:500],
                 url=url,
                 accepted=bool(accept),

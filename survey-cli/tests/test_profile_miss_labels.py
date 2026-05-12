@@ -40,14 +40,20 @@ from survey.learn.aggregator import cluster_miss_labels
 
 # Pflichtfelder pro miss_label-Record (SR-59 #58 Schema).
 REQUIRED_FIELDS = {
-    "role", "label",                       # backward-compat
-    "ts", "question_text", "page_url",
-    "snapshot_hash", "candidate_keys", "user_value_provided",
+    "role",
+    "label",  # backward-compat
+    "ts",
+    "question_text",
+    "page_url",
+    "snapshot_hash",
+    "candidate_keys",
+    "user_value_provided",
 }
 
 
-def _force_miss(label: str, profile_name: str = "jeremy_schulze",
-                role: str = "textbox", page_url: str = None) -> dict:
+def _force_miss(
+    label: str, profile_name: str = "jeremy_schulze", role: str = "textbox", page_url: str = None
+) -> dict:
     """Trigger one matcher miss + return the bucket for inspection."""
     profile = ProfileLoader.load_profile(profile_name=profile_name)
     profile["_loader_name"] = profile_name
@@ -70,7 +76,8 @@ class TestMissLabelSchema(unittest.TestCase):
         self.assertEqual(len(mls), 1, f"expected 1 miss_label, got {len(mls)}")
         record = mls[0]
         self.assertEqual(
-            set(record.keys()) & REQUIRED_FIELDS, REQUIRED_FIELDS,
+            set(record.keys()) & REQUIRED_FIELDS,
+            REQUIRED_FIELDS,
             f"missing fields: {REQUIRED_FIELDS - set(record.keys())}",
         )
 
@@ -79,9 +86,9 @@ class TestMissLabelSchema(unittest.TestCase):
         record = bucket["miss_labels"][0]
         # ISO 8601 mit timezone — fromisoformat akzeptiert "+00:00".
         from datetime import datetime
+
         parsed = datetime.fromisoformat(record["ts"])
-        self.assertIsNotNone(parsed.tzinfo,
-                             f"ts must carry timezone: {record['ts']!r}")
+        self.assertIsNotNone(parsed.tzinfo, f"ts must carry timezone: {record['ts']!r}")
 
     def test_snapshot_hash_is_stable(self):
         """Gleiches Label → gleicher snapshot_hash (12 Hex-Zeichen)."""
@@ -92,14 +99,11 @@ class TestMissLabelSchema(unittest.TestCase):
         h2 = bucket2["miss_labels"][0]["snapshot_hash"]
         self.assertEqual(h1, h2, "snapshot_hash unstable across runs")
         self.assertEqual(len(h1), 12)
-        self.assertTrue(all(c in "0123456789abcdef" for c in h1),
-                        f"non-hex chars in hash: {h1!r}")
+        self.assertTrue(all(c in "0123456789abcdef" for c in h1), f"non-hex chars in hash: {h1!r}")
 
     def test_page_url_forwarded_from_profile(self):
-        bucket = _force_miss("Was magst du?",
-                             page_url="https://example.com/survey/q1")
-        self.assertEqual(bucket["miss_labels"][0]["page_url"],
-                         "https://example.com/survey/q1")
+        bucket = _force_miss("Was magst du?", page_url="https://example.com/survey/q1")
+        self.assertEqual(bucket["miss_labels"][0]["page_url"], "https://example.com/survey/q1")
 
     def test_page_url_defaults_to_none(self):
         bucket = _force_miss("Lieblingstier?")
@@ -115,8 +119,9 @@ class TestPrivacyInvariant(unittest.TestCase):
     def test_user_value_provided_is_boolean(self):
         bucket = _force_miss("Lieblings-Wein?")
         record = bucket["miss_labels"][0]
-        self.assertIsInstance(record["user_value_provided"], bool,
-                              "user_value_provided MUSS bool sein (PII-Schutz)")
+        self.assertIsInstance(
+            record["user_value_provided"], bool, "user_value_provided MUSS bool sein (PII-Schutz)"
+        )
         # Default-Wert ist False — kein User-Eingriff bei Miss.
         self.assertFalse(record["user_value_provided"])
 
@@ -125,8 +130,7 @@ class TestPrivacyInvariant(unittest.TestCase):
         bucket = _force_miss("Geheimes Lieblingswort?")
         record = bucket["miss_labels"][0]
         for forbidden in ("user_value", "value", "user_input", "input"):
-            self.assertNotIn(forbidden, record,
-                             f"PII-leak risk: '{forbidden}' in miss_label")
+            self.assertNotIn(forbidden, record, f"PII-leak risk: '{forbidden}' in miss_label")
 
 
 class TestCandidateKeys(unittest.TestCase):
@@ -148,8 +152,7 @@ class TestCandidateKeys(unittest.TestCase):
 
     def test_max_k_respected(self):
         # Label mit MEHREREN Familie-Hints → max_k limitiert.
-        cands = ProfileLoader._guess_candidate_keys(
-            "Email Telefon Stadt Strasse Land", max_k=2)
+        cands = ProfileLoader._guess_candidate_keys("Email Telefon Stadt Strasse Land", max_k=2)
         self.assertLessEqual(len(cands), 2)
 
     def test_empty_text_returns_empty(self):
@@ -174,7 +177,8 @@ class TestJsonlRoundtrip(unittest.TestCase):
             with open(path, "w") as f:
                 for persona, bucket in telem.items():
                     line = json.dumps(
-                        {"persona": persona, **bucket}, ensure_ascii=False,
+                        {"persona": persona, **bucket},
+                        ensure_ascii=False,
                     )
                     f.write(line + "\n")
 
@@ -185,9 +189,11 @@ class TestJsonlRoundtrip(unittest.TestCase):
         mls = recs[0].get("miss_labels", [])
         self.assertGreaterEqual(len(mls), 2)
         for ml in mls:
-            self.assertEqual(set(ml.keys()) & REQUIRED_FIELDS,
-                             REQUIRED_FIELDS,
-                             f"roundtrip dropped fields: {ml.keys()}")
+            self.assertEqual(
+                set(ml.keys()) & REQUIRED_FIELDS,
+                REQUIRED_FIELDS,
+                f"roundtrip dropped fields: {ml.keys()}",
+            )
 
 
 class TestClusterMissLabels(unittest.TestCase):
@@ -201,8 +207,7 @@ class TestClusterMissLabels(unittest.TestCase):
         ]
         clusters = cluster_miss_labels(ml, threshold=0.5)
         # Erwartet: 2 Cluster — PLZ-Variante + Pizza
-        self.assertEqual(len(clusters), 2,
-                         f"expected 2 clusters, got {list(clusters.keys())}")
+        self.assertEqual(len(clusters), 2, f"expected 2 clusters, got {list(clusters.keys())}")
         sizes = sorted(len(v) for v in clusters.values())
         self.assertEqual(sizes, [1, 2])
 
@@ -218,8 +223,7 @@ class TestClusterMissLabels(unittest.TestCase):
 
     def test_threshold_strictness(self):
         # Zwei voellig unaehnliche Labels → 2 Cluster bei threshold 0.9
-        ml = [{"question_text": "Postleitzahl Berlin"},
-              {"question_text": "Lieblings Pizza Belag"}]
+        ml = [{"question_text": "Postleitzahl Berlin"}, {"question_text": "Lieblings Pizza Belag"}]
         self.assertEqual(len(cluster_miss_labels(ml, threshold=0.9)), 2)
 
 

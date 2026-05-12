@@ -53,8 +53,11 @@ def _iter_telemetry_files(log_dir: str) -> Iterable[str]:
     """Yield matcher-telemetry-*.jsonl files in log_dir (sorted, newest first)."""
     if not os.path.isdir(log_dir):
         return
-    names = [n for n in os.listdir(log_dir)
-             if n.startswith("matcher-telemetry-") and n.endswith(".jsonl")]
+    names = [
+        n
+        for n in os.listdir(log_dir)
+        if n.startswith("matcher-telemetry-") and n.endswith(".jsonl")
+    ]
     names.sort(reverse=True)
     for n in names:
         yield os.path.join(log_dir, n)
@@ -120,7 +123,7 @@ def aggregate_misses(
     # gesetzt hat aber AI_GATEWAY_API_KEY fehlt.
     if use_llm and not _llm_is_available():
         _llm_warn()  # one-shot stderr msg; use_llm bleibt True (caller
-                     # entscheidet, ob das ein Hard-Fail ist).
+        # entscheidet, ob das ein Hard-Fail ist).
 
     allowed_families = list(FAMILY_TOKENS.keys())
 
@@ -150,17 +153,16 @@ def aggregate_misses(
         # ``< 0.20`` matches the suggest_family() default min_confidence
         # threshold — sub-threshold heuristic already returns family=None,
         # but we add the explicit guard so future threshold-bumps stay safe.
-        if use_llm and _llm_is_available() and (
-            sug.family is None or sug.confidence < 0.20
-        ):
+        if use_llm and _llm_is_available() and (sug.family is None or sug.confidence < 0.20):
             llm: LLMSuggestion = suggest_via_llm(
-                norm, allowed_families, model=llm_model,
+                norm,
+                allowed_families,
+                model=llm_model,
             )
             # Only OVERRIDE the heuristic record if the LLM actually returned
             # a family — otherwise we keep the heuristic's None (which is
             # itself a useful signal: "new family needed").
-            if llm.family is not None and \
-                    llm.confidence >= llm_min_confidence:
+            if llm.family is not None and llm.confidence >= llm_min_confidence:
                 record["suggested_family"] = llm.family
                 record["confidence"] = round(llm.confidence, 3)
                 record["source"] = "llm"
@@ -201,6 +203,7 @@ def default_suggestions_path(log_dir: str) -> str:
     today = datetime.date.today().isoformat()
     return os.path.join(log_dir, f"pattern-suggestions-{today}.jsonl")
 
+
 # ────────────────────────────────────────────────────────────────────────────
 # SR-59 #58: Token-Jaccard clustering of miss_labels
 # ────────────────────────────────────────────────────────────────────────────
@@ -220,13 +223,46 @@ def default_suggestions_path(log_dir: str) -> str:
 # ``user_value_provided`` is forwarded verbatim — it remains boolean.
 
 _TOKEN_RE = re.compile(r"[A-Za-zÄÖÜäöüß0-9]+")
-_STOP_TOKENS = frozenset({
-    "der", "die", "das", "des", "dem", "den",
-    "ein", "eine", "einen", "einem", "einer",
-    "und", "oder", "in", "im", "an", "auf", "fuer", "für", "von", "mit",
-    "is", "are", "the", "a", "an", "of", "to", "for", "in", "on", "or", "and",
-    "you", "your", "is",
-})
+_STOP_TOKENS = frozenset(
+    {
+        "der",
+        "die",
+        "das",
+        "des",
+        "dem",
+        "den",
+        "ein",
+        "eine",
+        "einen",
+        "einem",
+        "einer",
+        "und",
+        "oder",
+        "in",
+        "im",
+        "an",
+        "auf",
+        "fuer",
+        "für",
+        "von",
+        "mit",
+        "is",
+        "are",
+        "the",
+        "a",
+        "an",
+        "of",
+        "to",
+        "for",
+        "in",
+        "on",
+        "or",
+        "and",
+        "you",
+        "your",
+        "is",
+    }
+)
 
 
 def _tokenize(text: str) -> "frozenset[str]":

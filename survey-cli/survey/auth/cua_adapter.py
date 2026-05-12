@@ -65,8 +65,7 @@ class CuaAdapter:
         r = self.run(["cua-driver", "call", "list_windows"])
         return r.json().get("windows", [])
 
-    def call(self, pid: int, wid: int, method: str,
-             params: Optional[dict] = None) -> dict:
+    def call(self, pid: int, wid: int, method: str, params: Optional[dict] = None) -> dict:
         """Call cua-driver method with JSON parameters."""
         p = dict(params or {})
         p["pid"] = pid
@@ -81,15 +80,16 @@ class CuaAdapter:
             return d.get("tree_markdown", "").split("\n")
         return []
 
-    def find_idx(self, tree: List[str], keyword: str,
-                 roles: Optional[List[str]] = None) -> Optional[int]:
+    def find_idx(
+        self, tree: List[str], keyword: str, roles: Optional[List[str]] = None
+    ) -> Optional[int]:
         """Find element_index by keyword and role in AX-Tree."""
         if roles is None:
             roles = ["AXButton", "AXLink", "AXTextField"]
         for role in roles:
             for line in tree:
                 if keyword.lower() in line.lower() and role in line:
-                    m = re.search(r'- \[(\d+)\]', line)
+                    m = re.search(r"- \[(\d+)\]", line)
                     if m:
                         return int(m.group(1))
         return None
@@ -103,13 +103,11 @@ class CuaAdapter:
         stderr = r.get("stderr", "")
         return "performed" in stdout.lower() or "performed" in stderr.lower()
 
-    def type(self, pid: int, wid: int, idx: Optional[int],
-             value: str) -> bool:
+    def type(self, pid: int, wid: int, idx: Optional[int], value: str) -> bool:
         """Type text into AXTextField via cua-driver set_value."""
         if idx is None:
             return False
-        r = self.call(pid, wid, "set_value",
-                      {"element_index": idx, "value": value})
+        r = self.call(pid, wid, "set_value", {"element_index": idx, "value": value})
         stdout = r.get("stdout", "")
         return "performed" in stdout.lower() or "set" in stdout.lower()
 

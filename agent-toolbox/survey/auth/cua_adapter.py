@@ -1,4 +1,4 @@
-"""================================================================================
+r"""================================================================================
 survey/auth/cua_adapter.py — CUA-Driver Subprocess Wrapper
 ================================================================================
 
@@ -37,11 +37,11 @@ ARCHITEKTUR:
 CUA-DRIVER KOMMUNIKATION:
   cua-driver call list_windows
     → JSON: {"windows": [{"pid": 123, "window_id": 456, "title": "...", ...}]}
-  
+
   cua-driver call get_window_state
     → stdin: {"pid": 123, "window_id": 456}
     → JSON: {"tree_markdown": "- [0] AXButton 'Weiter'..."}
-  
+
   cua-driver call click
     → stdin: {"pid": 123, "window_id": 456, "element_index": 35}
     → stdout: "Performed AXPress on [35] AXButton"
@@ -148,7 +148,6 @@ import subprocess
 # WARUM Type Hints? → IDE zeigt Autocomplete, mypy findet Fehler früh.
 # List[dict]: cua-driver gibt Liste von Fenster-Dictionaries zurück.
 # Tuple[Optional[int], Optional[int]]: find_bot_window gibt (pid, wid) oder (None, None).
-from typing import List, Tuple, Optional
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -156,18 +155,18 @@ from typing import List, Tuple, Optional
 # ═══════════════════════════════════════════════════════════════════════════════
 class CuaResult:
     """Ergebnis eines cua-driver Aufrufs.
-    
+
     WARUM eigene Klasse statt dict?
     → Typsicherheit: CuaResult hat explizite Felder (stdout, stderr, returncode).
     → Kein "Magic Dict" mit unklaren Keys.
     → Erweiterbar: Später können wir parsed_json als Property hinzufügen.
     → Klarer Vertrag: Wer CuaAdapter.run() aufruft, bekommt CuaResult zurück.
-    
+
     ATTRIBUTE:
       stdout (str): cua-driver stdout (JSON oder Text).
       stderr (str): cua-driver stderr (Fehlermeldungen oder "performed").
       returncode (int): Exit-Code (0 = Erfolg, !=0 = Fehler).
-    
+
     WARUM stderr manchmal Erfolg?
       → cua-driver ist ein Rust-Binary. Rust's println! geht zu stdout,
         eprintln! geht zu stderr. Der Entwickler hat Erfolgsmeldungen
@@ -177,12 +176,12 @@ class CuaResult:
 
     def __init__(self, stdout: str = "", stderr: str = "", returncode: int = 0):
         """Initialisiere CuaResult.
-        
+
         WARUM Defaults ("", "", 0)?
           → Wenn cua-driver crasht → stdout/stderr könnten leer sein.
           → Default-Werte verhindern None-Errors beim Zugriff.
           → returncode=0 = Erfolg (auch wenn stdout leer → kein Erfolg nachweisbar).
-        
+
         Args:
             stdout: Roher stdout-Text vom cua-driver Prozess.
             stderr: Roher stderr-Text vom cua-driver Prozess.
@@ -191,11 +190,11 @@ class CuaResult:
         # stdout: Rohe Ausgabe des cua-driver Prozesses.
         # WARUM public Attribut? Der Aufrufer muss stdout prüfen (z.B. auf "performed").
         self.stdout = stdout
-        
+
         # stderr: Fehlerausgabe des cua-driver Prozesses.
         # WARUM public Attribut? Manche Erfolgsmeldungen sind auf stderr (siehe oben).
         self.stderr = stderr
-        
+
         # returncode: Exit-Code des Prozesses.
         # WARUM public Attribut? Nicht-Zero bedeutet cua-driver selbst crashte.
         # Hinweis: returncode=0 heißt NICHT dass der Klick erfolgreich war!
@@ -205,30 +204,30 @@ class CuaResult:
 
     def json(self) -> dict:
         """Parse stdout als JSON, gib {} zurück bei Fehler.
-        
+
         ABLAUF:
           1. Prüfe ob self.stdout existiert und nicht leer ist.
           2. Versuche json.loads(self.stdout) → Dictionary.
           3. Bei JSONDecodeError → {} zurückgeben (fail-soft).
           4. Bei leerem stdout → {} zurückgeben.
-        
+
         WARUM {} statt None?
           → Client-Code kann .get("windows", []) auf None nicht aufrufen.
           → .get() funktioniert nur auf dict → {} ist sicherer.
           → Fail-soft: Wenn cua-driver kein JSON ausgibt → leeres Dict.
-        
+
         WARUM Exception-fangen?
           → cua-driver könnte "Error: ..." auf stdout schreiben (kein JSON).
           → Ohne try/except → json.loads() wirft JSONDecodeError → Crash.
           → Mit try/except → {} zurück → Client kann fortfahren.
-        
+
         WARUM nicht logging?
           → Dies ist ein Low-Level-Wrapper. Keine Side-Effects (kein Logging).
           → GoogleOAuthFlow loggt Ergebnisse (higher-level).
-        
+
         Returns:
             dict: Geparstes JSON oder leeres Dictionary bei Fehler.
-        
+
         Example:
             r = adapter.run(["cua-driver", "call", "list_windows"])
             data = r.json()
@@ -254,29 +253,29 @@ class CuaResult:
 # ═══════════════════════════════════════════════════════════════════════════════
 class CuaAdapter:
     """Low-Level Wrapper für das cua-driver Binary.
-    
+
     WARUM "Low-Level"?
       → Diese Klasse macht KEINE intelligenten Entscheidungen.
       → Sie führt cua-driver Befehle aus und gibt Rohergebnisse zurück.
       → Intelligenz (Retry, Verify, Fallback) ist in GoogleOAuthFlow.
-    
+
     WARUM "Adapter" Pattern?
       → cua-driver hat ein spezifisches Protokoll (JSON stdin → stdout).
       → Diese Klasse ADAPTIERT das Protokoll auf eine Python-API.
       → Ohne Adapter: Jeder Aufrufer müsste subprocess.run + json.loads kennen.
       → Mit Adapter: Einfache Methoden (click, type, list_windows).
-    
+
     LEBENSZYKLUS:
       1. Erstellen: CuaAdapter(timeout=15)
       2. Verwenden: adapter.click(pid, wid, idx)
       3. Zerstören: Garbage Collection (kein explizites cleanup nötig).
-    
+
     THREAD-SICHERHEIT:
       → subprocess.run ist NICHT thread-safe bei gleichem stdin/stdout.
       → Mehrere gleichzeitige Aufrufe → Race Conditions.
       → In unserem Flow: NUR sequentielle Aufrufe (ein Schritt nach dem anderen).
       → Wenn parallel nötig → pro Thread ein CuaAdapter-Objekt.
-    
+
     WARUM timeout konfigurierbar?
       → Standard: 15s (deckt 99% der Fälle ab).
       → Langsame Systeme / viele Fenster → 30s.
@@ -287,18 +286,18 @@ class CuaAdapter:
 
     def __init__(self, timeout: int = 15):
         """Initialisiere CuaAdapter.
-        
+
         Args:
             timeout: Maximale Wartezeit in Sekunden für cua-driver Aufrufe.
                      Default: 15s (für AX-Tree Scan ausreichend).
-        
+
         WARUM timeout=15?
           → list_windows: ~1-2s (wenige Fenster).
           → get_window_state: ~3-5s (AX-Tree Scan der ganzen Seite).
           → click: ~1-2s (einzelnes Element).
           → set_value: ~1-2s (Text eingeben).
           → 15s = Safety-Margin für langsame Operationen.
-        
+
         WARUM int statt float?
           → subprocess.run timeout Parameter akzeptiert int oder float.
           → Ganze Sekunden sind ausreichend (keine Sub-Sekunde nötig).
@@ -310,7 +309,7 @@ class CuaAdapter:
 
     def run(self, cmd: list[str], input_: str | None = None) -> CuaResult:
         """Führe cua-driver Befehl aus mit optionalem stdin Input.
-        
+
         ABLAUF:
           1. Erstelle kwargs Dict für subprocess.run.
           2. Wenn input_ gesetzt → kwargs["input"] = input_ (stdin).
@@ -318,35 +317,35 @@ class CuaAdapter:
           4. Fange TimeoutExpired ab → CuaResult mit leerem stdout.
           5. Fange andere Exceptions ab → CuaResult mit leerem stdout.
           6. Gib CuaResult zurück (stdout, stderr, returncode).
-        
+
         WARUM capture_output=True?
           → Wir müssen stdout/stderr LESEN (für JSON-Parsing und "performed" Check).
           → Ohne capture_output → stdout/stderr gehen an Terminal (verschwinden).
           → capture_output=True → stdout/stderr werden intern gespeichert.
-        
+
         WARUM text=True?
           → stdout/stderr als String (nicht Bytes).
           → json.loads() braucht String (Bytes → Decode-Error).
           → "performed" in stdout → funktioniert nur mit String.
-        
+
         WARUM kwargs Pattern?
           → Wenn input_ None → kein "input" Key in kwargs.
           → subprocess.run(["cmd"], input=None) → stdin = leer (nicht None).
           → Wenn input_ gesetzt → stdin = JSON-String.
           → Dynamisches kwargs ist sauberer als if/else mit zwei run() Aufrufen.
-        
+
         WARUM TimeoutExpired abfangen?
           → cua-driver könnte hängen (Chrome nicht erreichbar, AX-Tree leer).
           → Ohne Abfangen → subprocess.run wirft TimeoutExpired → Crash.
           → Mit Abfangen → CuaResult mit leerem stdout → Client kann reagieren.
           → WARUM leerer stdout? Kein Ergebnis verfügbar → fail-soft.
-        
+
         WARUM Exception abfangen?
           → cua-driver Binary könnte fehlen (FileNotFoundError).
           → cua-driver könnte crashen (returncode != 0).
           → Ohne Abfangen → Crash im Low-Level-Code.
           → Mit Abfangen → CuaResult mit returncode=-1 → Higher-Level reagiert.
-        
+
         Args:
             cmd: Command-Line-Argumente als Liste.
                  Beispiel: ["cua-driver", "call", "list_windows"]
@@ -354,16 +353,16 @@ class CuaAdapter:
             input_: Optionaler JSON-String für stdin.
                     Beispiel: '{"pid": 123, "window_id": 456, "element_index": 35}'
                     None = kein stdin (für Methoden ohne Parameter).
-        
+
         Returns:
             CuaResult mit stdout, stderr, returncode.
             Bei Timeout/Exception → CuaResult mit leerem stdout.
-        
+
         Example:
             # list_windows (kein stdin)
             r = adapter.run(["cua-driver", "call", "list_windows"])
             # r.stdout = '{"windows": [...]}'
-            
+
             # click (mit stdin)
             r = adapter.run(
                 ["cua-driver", "call", "click"],
@@ -381,13 +380,13 @@ class CuaAdapter:
             # Timeout: Wenn cua-driver hängt → breche ab.
             "timeout": self.timeout,
         }
-        
+
         # Wenn input_ gesetzt → füge "input" zu kwargs hinzu.
         # WARUM nur wenn input_? subprocess.run mit input=None sendet leeres stdin.
         # Das ist OK, aber explizit ist sauberer.
         if input_:
             kwargs["input"] = input_
-        
+
         try:
             # Führe cua-driver aus.
             # WARUM subprocess.run (nicht Popen/call)?
@@ -395,7 +394,7 @@ class CuaAdapter:
             #   → Popen ist async (wir brauchen Sync-Ergebnis).
             #   → call ist veraltet (Python 3.5+, run ist modern).
             result = subprocess.run(cmd, **kwargs)
-            
+
             # Erstelle CuaResult aus Prozess-Ergebnis.
             # WARUM nicht direkt return? CuaResult ist konsistenter.
             return CuaResult(
@@ -415,21 +414,21 @@ class CuaAdapter:
             # -1 ist außerhalb dieses Bereichs → eindeutig "Wrapper-Fehler".
             return CuaResult(stdout="", stderr="", returncode=-1)
 
-    def list_windows(self) -> List[dict]:
+    def list_windows(self) -> list[dict]:
         """Liste ALLE Fenster via cua-driver auf.
-        
+
         ABLAUF:
           1. Führe cua-driver call list_windows aus.
           2. Parse stdout als JSON.
           3. Extrahiere "windows" Array.
           4. Gib Liste von Fenster-Dictionaries zurück.
-        
+
         WARUM "windows" Key?
           → cua-driver gibt {"windows": [{"pid": 123, ...}, ...]} zurück.
           → Nicht direkt eine Liste → wir müssen .get("windows", []) verwenden.
           → WARUM .get() statt ["windows"]? Wenn Key fehlt → KeyError.
           → .get("windows", []) gibt leere Liste → sicher.
-        
+
         FENSTER-DICT STRUKTUR:
           {
             "pid": 12345,           # Prozess-ID (Chrome)
@@ -439,25 +438,25 @@ class CuaAdapter:
             "bounds": {"x": 0, "y": 25, "width": 1440, "height": 875},
             "z_index": 5             # Stacking-Order (höher = vorne)
           }
-        
+
         WARUM bounds?
           → Position und Größe des Fensters.
           → Nützlich für find_bot_window (height > 100 Filter).
-        
+
         WARUM z_index?
           → Höher = Fenster ist weiter vorne (sichtbarer).
           → Bei mehreren Chrome-Fenstern → sortiere nach z_index descending.
           → Das vorderste Fenster ist wahrscheinlich das Aktive.
-        
+
         WARUM List[dict] statt TypedDict?
           → cua-driver ist ein externes Tool → Schema kann sich ändern.
           → dict ist flexibler (neue Keys werden ignoriert).
           → TypedDict würde bei neuen Keys Fehler werfen.
-        
+
         Returns:
             Liste von Fenster-Dictionaries.
             Bei Fehler → leere Liste [] (nicht None!).
-        
+
         Example:
             windows = adapter.list_windows()
             # windows = [
@@ -468,15 +467,14 @@ class CuaAdapter:
         # Führe cua-driver call list_windows aus.
         # WARUM kein stdin? list_windows braucht keine Parameter.
         r = self.run(["cua-driver", "call", "list_windows"])
-        
+
         # Parse JSON und extrahiere "windows" Array.
         # WARUM .get("windows", [])? Fail-soft wenn Key fehlt oder JSON ungültig.
         return r.json().get("windows", [])
 
-    def call(self, pid: int, wid: int, method: str,
-             params: Optional[dict] = None) -> dict:
+    def call(self, pid: int, wid: int, method: str, params: dict | None = None) -> dict:
         """Rufe eine einzelne cua-driver Methode auf.
-        
+
         ABLAUF:
           1. Erstelle Parameter-Dictionary mit pid und window_id.
           2. Füge optionale params hinzu (z.B. {"element_index": 35}).
@@ -484,41 +482,41 @@ class CuaAdapter:
           4. Führe cua-driver call <method> aus mit JSON als stdin.
           5. Parse stdout als JSON.
           6. Füge stdout und stderr zum Ergebnis hinzu (für "performed"-Check).
-        
+
         WARUM pid + wid IMMER?
           → Jede CUA-Operation braucht Kontext: Welcher Prozess? Welches Fenster?
           → Ohne pid/wid → cua-driver weiß nicht welches Fenster gemeint ist.
           → pid = Prozess-ID (Chrome). wid = Fenster-ID (macOS).
-        
+
         WARUM params Optional?
           → Manche Methoden brauchen keine Extra-Parameter.
             Beispiel: get_window_state braucht nur pid + wid.
           → Andere Methoden brauchen Extra-Parameter.
             Beispiel: click braucht {"element_index": 35}.
           → params=None → keine Extra-Parameter → nur pid + wid.
-        
+
         WARUM dict(params or {})?
           → Wenn params=None → dict(None) wirft TypeError.
           → dict({}) → leeres Dict (sicher).
           → Wir kopieren das Dict (nicht Referenz) → keine Seiteneffekte.
-        
+
         WARUM stdout/stderr im Ergebnis?
           → cua-driver gibt Erfolg als Rohtext (nicht JSON):
             "Performed AXPress on [35] AXButton"
           → Das ist KEIN JSON → json() würde {} zurückgeben.
           → Wir fügen stdout/std stderr zum Dict hinzu → Aufrufer kann prüfen.
           → WARUM nicht immer json.loads? Manche Ausgaben sind Text, keine JSON.
-        
+
         Args:
             pid: Prozess-ID des Chrome-Prozesses.
             wid: Fenster-ID (von list_windows).
             method: CUA-Methode (z.B. "click", "set_value", "get_window_state").
             params: Optionale Extra-Parameter als Dictionary.
-        
+
         Returns:
             dict: JSON-Ergebnis + stdout + stderr Keys.
             Bei Fehler → {"stdout": "", "stderr": ""}.
-        
+
         Example:
             d = adapter.call(123, 456, "click", {"element_index": 35})
             # d = {
@@ -530,74 +528,74 @@ class CuaAdapter:
         # Kopiere params (oder leeres Dict) damit wir pid/wid hinzufügen können.
         # WARUM Kopie? Nicht das Original-Dict des Aufrufers modifizieren.
         p = dict(params or {})
-        
+
         # Füge pid und window_id hinzu.
         # WARUM zuerst pid, dann wid? Reihenfolge ist egal (JSON-Objekt).
         # Aber konsistente Reihenfolge → lesbarerer Debug-Output.
         p["pid"] = pid
         p["window_id"] = wid
-        
+
         # Führe cua-driver call <method> aus.
         # WARUM json.dumps()? cua-driver erwartet JSON als stdin.
         r = self.run(["cua-driver", "call", method], json.dumps(p))
-        
+
         # Parse stdout als JSON (falls cua-driver JSON zurückgibt).
         d = r.json()
-        
+
         # Füge stdout und stderr hinzu (für "performed"-Check im Aufrufer).
         # WARUM extra Keys? Aufrufer (click/type) prüft auf "performed".
         # Ohne diese Keys → Aufrufer müsste CuaResult Objekt halten.
         # Mit diesen Keys → Aufrufer kann einfach d["stdout"] prüfen.
         d["stdout"] = r.stdout
         d["stderr"] = r.stderr
-        
+
         return d
 
-    def get_tree(self, pid: int, wid: int) -> List[str]:
+    def get_tree(self, pid: int, wid: int) -> list[str]:
         """Hole AX-Tree als Liste von Strings.
-        
+
         ABLAUF:
           1. Rufe get_window_state auf (cua-driver Methode).
           2. Extrahiere "tree_markdown" aus der JSON-Antwort.
           3. Splitte bei \n in einzelne Zeilen.
           4. Gib Liste von Zeilen zurück.
-        
+
         WARUM "tree_markdown"?
           → cua-driver formatiert den AX-Tree als Markdown-ähnliche Liste:
             - [0] AXButton 'Schließen' @(100,200,50,30)
             - [1] AXLink 'Google Login-Symbol' @(731,651,132,41)
           → "tree_markdown" ist der Key in der JSON-Antwort.
-        
+
         WARUM List[str] statt komplexem Objekt?
           → Einfacher zu parsen (Regex auf Strings).
           → find_idx() kann einfach durch Zeilen iterieren.
           → Weniger Speicher als komplexe Objekt-Struktur.
-        
+
         WARUM .split("\n")?
           → Jede Zeile repräsentiert ein Element im AX-Tree.
           → Zeilenweise Verarbeitung → einfacher als komplexer Parser.
           → Wir können einfach "for line in tree" iterieren.
-        
+
         AX-TREE ZEILENFORMAT:
           "- [35] AXButton 'Weiter' @(1095,706,91,40)"
           → [35] = element_index (für click/set_value).
           → AXButton = Role (AXButton, AXLink, AXTextField, etc.).
           → 'Weiter' = Label/Text (für keyword-Matching).
           → @(1095,706,91,40) = Bounds (x, y, width, height).
-        
+
         WARUM List[str] bei Fehler?
           → Bei leerem tree_markdown → .split("\n") → [""] (Liste mit einem leeren String).
           → WARUM nicht []? .split() auf leerem String gibt [""] zurück.
           → Wir prüfen explizit: if isinstance(d, dict) → sonst [].
-        
+
         Args:
             pid: Prozess-ID des Chrome-Prozesses.
             wid: Fenster-ID (von list_windows).
-        
+
         Returns:
             Liste von AX-Tree Zeilen.
             Bei Fehler → leere Liste [].
-        
+
         Example:
             tree = adapter.get_tree(123, 456)
             # tree = [
@@ -608,7 +606,7 @@ class CuaAdapter:
         """
         # Rufe get_window_state auf (keine Extra-Parameter nötig).
         d = self.call(pid, wid, "get_window_state")
-        
+
         # Prüfe ob Antwort ein Dictionary ist (kein Fehler).
         # WARUM isinstance? Wenn cua-driver crashte → call() gibt leeres Dict {} zurück.
         # {} ist ein dict → wir können .get() aufrufen.
@@ -616,14 +614,15 @@ class CuaAdapter:
             # Extrahiere tree_markdown und splitte in Zeilen.
             # WARUM .get("tree_markdown", "")? Fail-soft wenn Key fehlt.
             return d.get("tree_markdown", "").split("\n")
-        
+
         # Bei ungültiger Antwort → leere Liste.
         return []
 
-    def find_idx(self, tree: List[str], keyword: str,
-                 roles: Optional[List[str]] = None) -> Optional[int]:
-        """Finde element_index via Keyword und Role im AX-Tree.
-        
+    def find_idx(
+        self, tree: list[str], keyword: str, roles: list[str] | None = None
+    ) -> int | None:
+        r"""Finde element_index via Keyword und Role im AX-Tree.
+
         ABLAUF:
           1. Wenn roles=None → verwende Defaults ["AXButton", "AXLink", "AXTextField"].
           2. Für jede Role in roles:
@@ -633,54 +632,54 @@ class CuaAdapter:
                c. Extrahiere Index via Regex: r'- \[(\d+)\]'.
                d. Wenn gefunden → gib Index als int zurück.
           3. Wenn nichts gefunden → gib None zurück.
-        
+
         WARUM keyword.lower() in line.lower()?
           → Case-Insensitive: "Weiter", "weiter", "WEITER" matcht alle.
           → Deutsche Umlaute funktionieren mit .lower().
           → WARUM nicht re.IGNORECASE? Einfacher: beide Strings lowercase.
           → WARUM "in" statt ==? Partielles Matching: "Weiter" matcht
             "- [35] AXButton 'Weiter'" → "weiter" in der Zeile.
-        
+
         WARUM Role-Prüfung?
           → Keyword "weiter" könnte in AXButton UND AXTextField vorkommen.
           → Wir wollen den BUTTON "Weiter", nicht ein Textfeld.
           → Role schränkt ein: NUR Elemente mit dieser Role.
-        
+
         WARUM Defaults ["AXButton", "AXLink", "AXTextField"]?
           → Die häufigsten interaktiven Elemente.
           → AXButton = normale Buttons ("Weiter", "Fortfahren").
           → AXLink = Links ("Google Login-Symbol").
           → AXTextField = Text-Eingabefelder ("E-Mail oder Telefonnummer").
           → WARUM diese 3? Sie decken 95% der Google OAuth Elemente ab.
-        
+
         WARUM Regex r'- \[(\d+)\]'?
           → AX-Tree Format: "- [35] AXButton 'Weiter'"
           → \[ = literale Klammer [ (escaped weil [ in Regex eine Character-Class ist).
           → (\d+) = eine oder mehrere Ziffern (Capturing Group).
           → \] = literale Klammer ].
           → m.group(1) = die Ziffern als String → int() konvertiert zu Integer.
-        
+
         WARUM Erste Match gewinnt?
           → Wir geben beim ersten Treffer zurück (return, nicht append).
           → Wenn mehrere Elemente das gleiche Keyword haben → erstes wird genommen.
           → In der Praxis: Google OAuth hat nur ein "Weiter" Button.
           → Wenn mehrere → ist die Seite unerwartet → erstes ist oft das richtige.
-        
+
         WARUM None statt -1?
           → None ist expliziter: "Nicht gefunden".
           → -1 könnte ein echter Index sein (wenn jemand bei -1 anfängt).
           → click() und type() prüfen "if idx is None → return False".
           → Das ist sauberer als "if idx == -1".
-        
+
         Args:
             tree: AX-Tree als Liste von Zeilen (von get_tree()).
             keyword: Suchbegriff (z.B. "weiter", "google", "e-mail").
             roles: Liste erlaubter Roles (z.B. ["AXButton", "AXLink"]).
                    None = ["AXButton", "AXLink", "AXTextField"].
-        
+
         Returns:
             element_index (int) oder None wenn nicht gefunden.
-        
+
         Example:
             idx = adapter.find_idx(tree, "weiter", ["AXButton"])
             # idx = 35 (oder None wenn nicht gefunden)
@@ -689,7 +688,7 @@ class CuaAdapter:
         # Aufrufer muss nicht immer ["AXButton", "AXLink", "AXTextField"] angeben.
         if roles is None:
             roles = ["AXButton", "AXLink", "AXTextField"]
-        
+
         # Iteriere über alle Roles.
         # WARUM äußere Schleife (roles) vor innerer (tree)?
         # → Wir priorisieren die erste Role.
@@ -703,66 +702,66 @@ class CuaAdapter:
                 if keyword.lower() in line.lower() and role in line:
                     # Extrahiere Index via Regex.
                     # WARUM re.search? Findet das erste Vorkommen in der Zeile.
-                    m = re.search(r'- \[(\d+)\]', line)
+                    m = re.search(r"- \[(\d+)\]", line)
                     if m:
                         # Konvertiere zu Integer und gib zurück.
                         # WARUM int()? cua-driver erwartet Integer-Index.
                         # m.group(1) ist ein String (z.B. "35") → int("35") = 35.
                         return int(m.group(1))
-        
+
         # Nichts gefunden → None.
         # WARUM nicht Exception werfen? Fail-soft → Aufrufer kann reagieren.
         # GoogleOAuthFlow prüft idx is None → gibt Fehler-Reason zurück.
         return None
 
-    def click(self, pid: int, wid: int, idx: Optional[int]) -> bool:
+    def click(self, pid: int, wid: int, idx: int | None) -> bool:
         """Klicke auf ein Element via cua-driver AXPress.
-        
+
         ABLAUF:
           1. Wenn idx is None → False zurückgeben (kein Element gefunden).
           2. Rufe cua-driver call click auf mit {"element_index": idx}.
           3. Prüfe ob "performed" in stdout ODER stderr enthalten ist.
           4. Gib True/False zurück.
-        
+
         WARUM AXPress?
           → AXPress ist die Accessibility-Aktion "Drücken".
           → Nicht Mouse-Click → Accessibility-API Event.
           → Vorteil: Funktioniert auch wenn Element nicht sichtbar/verdeckt ist.
           → Vorteil: Keine Koordinaten nötig (Position-unabhängig).
-        
+
         WARUM "performed" prüfen?
           → cua-driver gibt bei Erfolg aus: "Performed AXPress on [35] AXButton".
           → WARUM nicht returncode? returncode=0 heißt nur "Prozess lief durch".
           → Erfolg wird durch Text-Matching bestimmt.
           → WARUM stdout OR stderr? Siehe CuaResult Erklärung oben.
           → WARUM .lower()? cua-driver könnte "Performed" oder "performed" schreiben.
-        
+
         WARUM False bei idx is None?
           → find_idx() gibt None zurück wenn Element nicht gefunden.
           → Wenn wir mit None klicken → cua-driver Fehler → Zeitverschwendung.
           → Frühes Return → schneller, weniger Log-Noise.
-        
+
         WICHTIG: VERIFY fehlt!
           → Diese Methode prüft NICHT ob der Klick WIRKLICH funktionierte.
           → Sie prüft nur ob cua-driver "performed" sagte.
           → "performed" != Element wurde aktiviert (Event könnte fehlschlagen).
           → VERIFY muss im Aufrufer (GoogleOAuthFlow) gemacht werden!
           → Siehe AGENTS.md §Verify-Box: Nach Klick → Zustand prüfen.
-        
+
         BANNED: Niemals hardcoded idx verwenden!
           → idx ändert sich bei jeder Seite.
           → Immer find_idx() → click() Pattern verwenden.
           → Hardcoded idx = fragile, bricht bei jeder UI-Änderung.
-        
+
         Args:
             pid: Prozess-ID des Chrome-Prozesses.
             wid: Fenster-ID.
             idx: element_index (von find_idx) oder None.
-        
+
         Returns:
             True wenn "performed" in stdout/stderr gefunden.
             False wenn idx is None oder "performed" nicht gefunden.
-        
+
         Example:
             idx = adapter.find_idx(tree, "weiter", ["AXButton"])
             success = adapter.click(pid, wid, idx)
@@ -772,57 +771,56 @@ class CuaAdapter:
         # WARUM? Nicht cua-driver mit None belästigen.
         if idx is None:
             return False
-        
+
         # Führe click aus.
         r = self.call(pid, wid, "click", {"element_index": idx})
-        
+
         # Extrahiere stdout und stderr.
         stdout = r.get("stdout", "")
         stderr = r.get("stderr", "")
-        
+
         # Prüfe ob "performed" in stdout oder stderr.
         # WARUM .lower()? Case-insensitive Matching.
         return "performed" in stdout.lower() or "performed" in stderr.lower()
 
-    def type(self, pid: int, wid: int, idx: Optional[int],
-             value: str) -> bool:
+    def type(self, pid: int, wid: int, idx: int | None, value: str) -> bool:
         """Tippe Text in AXTextField via cua-driver set_value.
-        
+
         ABLAUF:
           1. Wenn idx is None → False zurückgeben.
           2. Rufe cua-driver call set_value auf mit element_index und value.
           3. Prüfe ob "performed" oder "set" in stdout enthalten ist.
           4. Gib True/False zurück.
-        
+
         WARUM set_value (nicht type/type_keys)?
           → set_value setzt den Wert DIREKT (nicht simuliert Tastendrücke).
           → Vorteil: Schneller (keine Verzögerung zwischen Tasten).
           → Vorteil: Keine Focus-Probleme (Wert wird direkt gesetzt).
           → Vorteil: Funktioniert auch wenn Feld nicht fokussiert ist.
-        
+
         WARUM "performed" oder "set"?
           → cua-driver gibt unterschiedliche Erfolgsmeldungen:
             "Performed set_value on [25] AXTextField"
             "Set value on [25] AXTextField"
           → Wir prüfen BEIDE Strings → robustere Erkennung.
           → WARUM nicht nur "performed"? Manche Versionen sagen "set".
-        
+
         WARUM keine Verify?
           → Wie bei click(): Wir prüfen nur ob cua-driver "performed" sagte.
           → Wir prüfen NICHT ob der Text WIRKLICH im Feld steht.
           → Verify muss im Aufrufer gemacht werden (GoogleOAuthFlow).
           → Aber: set_value ist zuverlässiger als click (weniger Race-Conditions).
-        
+
         Args:
             pid: Prozess-ID des Chrome-Prozesses.
             wid: Fenster-ID.
             idx: element_index des AXTextField (von find_idx) oder None.
             value: Der einzutippende Text (z.B. "zukunftsorientierte.energie@gmail.com").
-        
+
         Returns:
             True wenn "performed" oder "set" in stdout gefunden.
             False wenn idx is None oder kein Erfolg.
-        
+
         Example:
             idx = adapter.find_idx(tree, "e-mail", ["AXTextField"])
             success = adapter.type(pid, wid, idx, "email@example.com")
@@ -831,24 +829,23 @@ class CuaAdapter:
         # Frühes Return wenn kein Index gefunden.
         if idx is None:
             return False
-        
+
         # Führe set_value aus.
-        r = self.call(pid, wid, "set_value",
-                      {"element_index": idx, "value": value})
-        
+        r = self.call(pid, wid, "set_value", {"element_index": idx, "value": value})
+
         # Extrahiere stdout.
         stdout = r.get("stdout", "")
-        
+
         # Prüfe ob "performed" oder "set" in stdout.
         # WARUM .lower()? Case-insensitive Matching.
         return "performed" in stdout.lower() or "set" in stdout.lower()
 
     def find_bot_window(
         self,
-        keywords: Optional[List[str]] = None,
-    ) -> Tuple[Optional[int], Optional[int]]:
+        keywords: list[str] | None = None,
+    ) -> tuple[int | None, int | None]:
         """Finde Bot-Chrome Fenster via Keywords.
-        
+
         ABLAUF:
           1. Rufe list_windows() auf → alle Fenster.
           2. Für jedes Fenster:
@@ -860,7 +857,7 @@ class CuaAdapter:
              d. Wenn keywords None:
                 Gib (pid, wid) zurück (erstes Chrome-Fenster).
           3. Wenn nichts gefunden → (None, None).
-        
+
         WARUM height > 100?
           → macOS hat viele kleine UI-Elemente:
             - Menüleiste: height ~25
@@ -871,42 +868,42 @@ class CuaAdapter:
           → Filter height > 100 entfernt ALLE nicht-Browser-Fenster.
           → WARUM nicht > 500? Manche Browser-Fenster sind minimiert/verkleinert.
           → 100 ist konservativ: entfernt Menüleiste aber behält kleine Browser.
-        
+
         WARUM "chrome" in app_name.lower()?
           → app_name kommt von macOS: "Google Chrome", "Safari", "Firefox".
           → Wir wollen NUR Chrome (CUA arbeitet mit Chrome zusammen).
           → .lower() für Case-Insensitivität.
           → WARUM nicht exakter Match? "Google Chrome" vs "google chrome".
-        
+
         WARUM keywords Optional?
           → Wenn keywords=None → erstes Chrome-Fenster wird genommen.
           → Nützlich als Fallback: "Nimm irgendein Chrome-Fenster".
           → Wenn keywords gesetzt → spezifische Suche (z.B. "heypiggy").
-        
+
         WARUM any() statt all()?
           → any(k in t for k in keywords) → EINES der Keywords muss matchten.
           → all() würde verlangen dass ALLE Keywords im Titel sind.
           → any() ist flexibler: ["google", "anmelden"] matcht beides.
-        
+
         WARUM (pid, wid) Tuple?
           → Konvention in diesem Projekt: (pid, wid) = Fenster-Referenz.
           → None, None = "nicht gefunden".
           → Tuple ist immutable → sicherer als Liste (keine Seiteneffekte).
-        
+
         WARUM Erstes Match gewinnt?
           → Wir iterieren über alle Fenster und geben beim ersten Treffer zurück.
           → Bei mehreren Chrome-Fenstern → erstes passende wird genommen.
           → In der Praxis: Meistens gibt es nur ein passendes Fenster.
-        
+
         Args:
             keywords: Liste von Keywords für Fenster-Titel-Matching.
                       None = erstes Chrome-Fenster.
                       Beispiel: ["heypiggy", "dashboard", "verdienen"]
                       Beispiel: ["google", "anmelden", "accounts"]
-        
+
         Returns:
             (pid, wid) Tuple oder (None, None) wenn nicht gefunden.
-        
+
         Example:
             pid, wid = adapter.find_bot_window(["heypiggy", "dashboard"])
             # pid = 12345, wid = 67890 (oder None, None)
@@ -916,27 +913,27 @@ class CuaAdapter:
         for w in self.list_windows():
             # Extrahiere bounds (Fenster-Größe).
             b = w.get("bounds", {})
-            
+
             # Extrahiere Titel (lowercase für Case-Insensitive Matching).
             t = (w.get("title") or "").lower()
-            
+
             # Extrahiere App-Name (lowercase).
             n = (w.get("app_name") or "").lower()
-            
+
             # Extrahiere PID.
             pid = w.get("pid")
-            
+
             # FILTER 1: Höhe muss > 100 sein.
             # WARUM height > 100? Entfernt Menüleiste, Dock, Popups.
             # WARUM .get("height", 0)? Wenn bounds nicht existiert → height=0 → wird abgelehnt.
             if b.get("height", 0) < 100:
                 continue
-            
+
             # FILTER 2: Muss Chrome sein.
             # WARUM continue (nicht return)? Wir wollen das NÄCHSTE Fenster prüfen.
             if "chrome" not in n:
                 continue
-            
+
             # Wenn keywords gesetzt → prüfe Titel-Matching.
             if keywords:
                 # any(): EINES der Keywords muss im Titel enthalten sein.
@@ -946,6 +943,6 @@ class CuaAdapter:
             else:
                 # Keine keywords → erstes Chrome-Fenster.
                 return pid, w.get("window_id")
-        
+
         # Nichts gefunden → (None, None).
         return None, None

@@ -13,7 +13,6 @@ import importlib.util
 import sys
 from pathlib import Path
 
-
 ROOT = Path(__file__).resolve().parent
 SURVEY_CLI_DIR = ROOT / "survey-cli"
 SURVEY_ENTRY = SURVEY_CLI_DIR / "survey.py"
@@ -22,7 +21,9 @@ SURVEY_ENTRY = SURVEY_CLI_DIR / "survey.py"
 def _legacy_to_canonical(argv: list[str]) -> list[str]:
     """Map old root flags to canonical survey-cli subcommands."""
     parser = argparse.ArgumentParser(add_help=False)
-    parser.add_argument("--mode", choices=["legacy", "nim", "scan", "loop", "snapshot"], default="scan")
+    parser.add_argument(
+        "--mode", choices=["legacy", "nim", "scan", "loop", "snapshot"], default="scan"
+    )
     parser.add_argument("--survey-id")
     parser.add_argument("--url")
     parser.add_argument("--max", type=int, default=5)
@@ -47,7 +48,9 @@ def _legacy_to_canonical(argv: list[str]) -> list[str]:
     elif args.mode == "snapshot":
         mapped.append("status")
     elif args.mode == "legacy":
-        raise SystemExit("legacy mode was removed with the deleted app/ FCTES tree; use survey-cli login/scan/run/loop")
+        raise SystemExit(
+            "legacy mode was removed with the deleted app/ FCTES tree; use survey-cli login/scan/run/loop"
+        )
 
     return mapped + passthrough
 
@@ -67,14 +70,15 @@ def _load_survey_entry():
 def _delegate_to_toolbox_api(argv: list[str]) -> int:
     """Try to delegate to the running Agent-Toolbox API on localhost:8000."""
     try:
-        import urllib.request
-        import urllib.error
         import json as _json
+        import urllib.error
+        import urllib.request
 
         # Map legacy --mode to API endpoints
         parser = argparse.ArgumentParser(add_help=False)
-        parser.add_argument("--mode", choices=["legacy", "nim", "scan", "loop", "snapshot"],
-                            default="scan")
+        parser.add_argument(
+            "--mode", choices=["legacy", "nim", "scan", "loop", "snapshot"], default="scan"
+        )
         args, _ = parser.parse_known_args(argv)
 
         url = None
@@ -94,9 +98,10 @@ def _delegate_to_toolbox_api(argv: list[str]) -> int:
 
         if url:
             req = urllib.request.Request(
-                url, data=payload,
+                url,
+                data=payload,
                 headers={"Content-Type": "application/json"},
-                method="POST" if payload else "GET"
+                method="POST" if payload else "GET",
             )
             with urllib.request.urlopen(req, timeout=10) as resp:
                 data = _json.loads(resp.read().decode())
@@ -120,7 +125,9 @@ def main(argv: list[str] | None = None):
         if api_result == 0:
             return 0
 
-    canonical_args = _legacy_to_canonical(argv) if any(a == "--mode" for a in argv) or not argv else argv
+    canonical_args = (
+        _legacy_to_canonical(argv) if any(a == "--mode" for a in argv) or not argv else argv
+    )
     module = _load_survey_entry()
 
     old_argv = sys.argv[:]

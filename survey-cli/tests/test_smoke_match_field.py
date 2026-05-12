@@ -63,8 +63,7 @@ class SmokeMatchFieldRegressionTest(unittest.TestCase):
         )
 
     def test_corpus_is_nonempty(self) -> None:
-        self.assertGreater(len(smoke.CORPUS), 50,
-                           "Korpus ist zu klein — bitte erweitern.")
+        self.assertGreater(len(smoke.CORPUS), 50, "Korpus ist zu klein — bitte erweitern.")
         # Sanity: jedes Item hat exakt 4 Felder
         # (role, label, placeholder, expected_key).
         for item in smoke.CORPUS:

@@ -23,7 +23,10 @@ BANNED METHODS — NIEMALS VERWENDEN:
 
 # === SR-63 #62 legacy-debt skip (do not delete without unskipping) ===
 import pytest
-pytestmark = pytest.mark.skip(reason="SR-63 #62: requires real browser CDP session — kept for local regression runs")
+
+pytestmark = pytest.mark.skip(
+    reason="SR-63 #62: requires real browser CDP session — kept for local regression runs"
+)
 # === END SR-63 skip ===
 
 import unittest
@@ -49,8 +52,9 @@ class TestInPageModalProviderDetection(unittest.TestCase):
         mock_dash.return_value = "ws://localhost:9999/db"
 
         # _click_survey_card returns (dashboard_ws, None) — no new tab
-        with patch.object(runner, "_click_survey_card",
-                          return_value=("ws://localhost:9999/db", None)):
+        with patch.object(
+            runner, "_click_survey_card", return_value=("ws://localhost:9999/db", None)
+        ):
             result = runner.run_survey("test_001", survey_url="in-page://modal")
 
         # Provider should NOT be overwritten to generic
@@ -116,16 +120,17 @@ class TestInPageModalNoNewTab(unittest.TestCase):
     @patch("survey.runner.read_balance_with_backoff", return_value=2.00)
     @patch("survey.runner.chrome.create_blank_tab")
     @patch("survey.runner.chrome.create_tab")
-    def test_create_tab_not_called_for_modal(self, mock_create_tab,
-                                              mock_blank_tab, mock_bal,
-                                              mock_tabs, mock_dash):
+    def test_create_tab_not_called_for_modal(
+        self, mock_create_tab, mock_blank_tab, mock_bal, mock_tabs, mock_dash
+    ):
         """Neither create_blank_tab nor create_tab are called for modal."""
         runner = SurveyRunner(RunnerConfig(cdp_port=9999))
         mock_tabs.return_value = []
         mock_dash.return_value = "ws://localhost:9999/db"
 
-        with patch.object(runner, "_click_survey_card",
-                          return_value=("ws://localhost:9999/db", None)):
+        with patch.object(
+            runner, "_click_survey_card", return_value=("ws://localhost:9999/db", None)
+        ):
             runner.run_survey("test_modal", survey_url="in-page://modal")
 
         # New tab creation should NOT happen
@@ -141,9 +146,12 @@ class TestInPageModalNoNewTab(unittest.TestCase):
         mock_tabs.return_value = []
         mock_dash.return_value = "ws://localhost:9999/db"
 
-        with patch.object(runner, "_click_survey_card",
-                          return_value=("ws://localhost:9999/db", None)), \
-             patch.object(runner, "_close_tab") as mock_close:
+        with (
+            patch.object(
+                runner, "_click_survey_card", return_value=("ws://localhost:9999/db", None)
+            ),
+            patch.object(runner, "_close_tab") as mock_close,
+        ):
             runner.run_survey("test_modal", survey_url="in-page://modal")
 
         mock_close.assert_not_called()
@@ -157,9 +165,12 @@ class TestInPageModalNoNewTab(unittest.TestCase):
         mock_tabs.return_value = []
         mock_dash.return_value = "ws://localhost:9999/db"
 
-        with patch.object(runner, "_click_survey_card",
-                          return_value=("ws://localhost:9999/db", None)), \
-             patch("survey.runner.chrome.inject_stealth_to_tab") as mock_inject:
+        with (
+            patch.object(
+                runner, "_click_survey_card", return_value=("ws://localhost:9999/db", None)
+            ),
+            patch("survey.runner.chrome.inject_stealth_to_tab") as mock_inject,
+        ):
             runner.run_survey("test_modal", survey_url="in-page://modal")
 
         mock_inject.assert_not_called()

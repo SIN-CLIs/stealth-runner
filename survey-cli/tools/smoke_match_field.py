@@ -77,13 +77,11 @@ CORPUS: list[tuple[str, str, str, str]] = [
     ("textbox", "First name", "", "first_name"),
     ("textbox", "Given name", "Your first name", "first_name"),
     ("textbox", "Forename", "", "first_name"),
-
     # Last name
     ("textbox", "Nachname", "", "last_name"),
     ("textbox", "Last name *", "", "last_name"),
     ("textbox", "Surname", "", "last_name"),
     ("textbox", "Family name", "", "last_name"),
-
     # Email
     ("textbox", "E-Mail", "", "email"),
     ("textbox", "E-Mail-Adresse *", "", "email"),
@@ -91,7 +89,6 @@ CORPUS: list[tuple[str, str, str, str]] = [
     ("textbox", "Email address", "you@example.com", "email"),
     ("textbox", "Mailadresse", "", "email"),
     ("textbox", "Ihre E-Mail:", "", "email"),
-
     # Postal code
     ("textbox", "PLZ", "", "postal_code"),
     ("textbox", "Postleitzahl *", "", "postal_code"),
@@ -101,7 +98,6 @@ CORPUS: list[tuple[str, str, str, str]] = [
     ("textbox", "Postcode", "", "postal_code"),
     ("spinbutton", "PLZ", "", "postal_code"),
     ("textbox", "Bitte geben Sie Ihre PLZ ein", "", "postal_code"),
-
     # City
     ("textbox", "Stadt", "", "city"),
     ("textbox", "Stadt *", "", "city"),
@@ -110,27 +106,23 @@ CORPUS: list[tuple[str, str, str, str]] = [
     ("textbox", "City", "", "city"),
     ("textbox", "Town", "", "city"),
     ("textbox", "In welcher Stadt wohnen Sie?", "", "city"),
-
     # State / region
     ("textbox", "Bundesland", "", "state_region"),
     ("textbox", "Region", "", "state_region"),
     ("textbox", "State", "", "state_region"),
     ("textbox", "Province", "", "state_region"),
-
     # Country
     ("textbox", "Land", "", "country"),
     ("textbox", "Wohnsitzland", "", "country"),
     ("textbox", "Country", "", "country"),
     ("textbox", "Country of residence", "", "country"),
     ("combobox", "In welchem Land wohnen Sie?", "", "country"),
-
     # Street
     ("textbox", "Straße", "", "street"),
     ("textbox", "Strasse und Hausnummer", "", "street"),
     ("textbox", "Address", "", "street"),
     ("textbox", "Street", "", "street"),
     ("textbox", "Adresse *", "", "street"),
-
     # Birth year
     ("textbox", "Geburtsjahr", "", "birth_year"),
     ("spinbutton", "Geburtsjahr *", "", "birth_year"),
@@ -138,67 +130,56 @@ CORPUS: list[tuple[str, str, str, str]] = [
     ("textbox", "Year of birth", "YYYY", "birth_year"),
     ("textbox", "Birth year", "", "birth_year"),
     ("textbox", "What year were you born?", "", "birth_year"),
-
     # Age
     ("spinbutton", "Alter", "", "age"),
     ("textbox", "Wie alt sind Sie?", "", "age"),
     ("spinbutton", "Age", "", "age"),
     ("textbox", "Your age", "", "age"),
-
     # Gender
     ("textbox", "Geschlecht", "", "gender"),
     ("textbox", "Gender", "", "gender"),
     ("textbox", "Sex", "", "gender"),
-
     # Household size
     ("spinbutton", "Haushaltsgröße", "", "household_size"),
     ("spinbutton", "Personen im Haushalt", "", "household_size"),
     ("spinbutton", "Household size", "", "household_size"),
     ("spinbutton", "People in household", "", "household_size"),
-    ("spinbutton", "Wie viele Personen leben in Ihrem Haushalt?", "",
-     "household_size"),
-
+    ("spinbutton", "Wie viele Personen leben in Ihrem Haushalt?", "", "household_size"),
     # Personal income
     ("textbox", "Einkommen", "", "income"),
     ("textbox", "Gehalt", "", "income"),
     ("textbox", "Salary", "", "income"),
     ("textbox", "Personal income", "", "income"),
-
     # Household income
     ("textbox", "Haushaltseinkommen", "", "hh_income"),
     ("textbox", "Household income", "", "hh_income"),
     ("textbox", "Familieneinkommen", "", "hh_income"),
-
     # Phone
     ("textbox", "Telefonnummer", "", "phone"),
     ("textbox", "Handy", "", "phone"),
     ("textbox", "Mobilnummer", "", "phone"),
     ("textbox", "Phone", "", "phone"),
     ("textbox", "Phone number", "+49 ...", "phone"),
-
     # Job / industry
     ("textbox", "Beruf", "", "job_title"),
     ("textbox", "Job title", "", "job_title"),
     ("textbox", "Branche", "", "industry"),
     ("textbox", "Industry", "", "industry"),
-
     # Nationality / language
     ("textbox", "Nationalität", "", "nationality"),
     ("textbox", "Staatsangehörigkeit", "", "nationality"),
     ("textbox", "Muttersprache", "", "language"),
     ("textbox", "Sprache", "", "language"),
     ("textbox", "Language", "", "language"),
-
     # Full name (vorsichtig — kommt nach first/last in Patterns)
     ("textbox", "Vollständiger Name", "", "full_name"),
     ("textbox", "Full name", "", "full_name"),
-
     # NEGATIV-FAELLE: matcht hoffentlich NICHTS
     ("textbox", "Lieblingsfarbe?", "", None),
     ("textbox", "Hobby", "", None),
     ("textbox", "Wie zufrieden waren Sie?", "", None),
-    ("button",  "Weiter", "", None),
-    ("radio",   "Ja", "", None),
+    ("button", "Weiter", "", None),
+    ("radio", "Ja", "", None),
 ]
 
 
@@ -229,9 +210,7 @@ class SmokeResult:
     @property
     def false_positive_rate(self) -> float:
         """FP-Rate fuer negative Faelle in **Prozent** (0..100)."""
-        return (
-            len(self.false_positives) / self.n_neg * 100.0
-        ) if self.n_neg else 0.0
+        return (len(self.false_positives) / self.n_neg * 100.0) if self.n_neg else 0.0
 
 
 def run_smoke(
@@ -302,12 +281,11 @@ def main() -> int:
     parser = argparse.ArgumentParser(
         description="Smoke-Test ProfileLoader.match_field gegen synth. Korpus"
     )
-    parser.add_argument("--profile", default="jeremy_schulze",
-                        help="Persona-Basename")
-    parser.add_argument("--out", default="",
-                        help="JSONL-Output (default: logs/smoke-{date}.jsonl)")
-    parser.add_argument("--threshold", type=float, default=0.70,
-                        help="Mindest-Hit-Rate fuer positive Faelle")
+    parser.add_argument("--profile", default="jeremy_schulze", help="Persona-Basename")
+    parser.add_argument("--out", default="", help="JSONL-Output (default: logs/smoke-{date}.jsonl)")
+    parser.add_argument(
+        "--threshold", type=float, default=0.70, help="Mindest-Hit-Rate fuer positive Faelle"
+    )
     args = parser.parse_args()
 
     res = run_smoke(args.profile, write_jsonl=True, out_path=args.out)
@@ -320,8 +298,9 @@ def main() -> int:
     print(f"  HITS (richtig):   {res.hits}  → hit-rate {res.hit_rate:.1f}%")
     print(f"  WRONG_FAMILY:     {res.wrong_family}")
     print(f"  MISSES:           {len(res.misses)}")
-    print(f"  FALSE_POSITIVES:  {len(res.false_positives)}  "
-          f"→ fp-rate {res.false_positive_rate:.1f}%")
+    print(
+        f"  FALSE_POSITIVES:  {len(res.false_positives)}  → fp-rate {res.false_positive_rate:.1f}%"
+    )
     print()
     if res.misses:
         print("  Top MISS-Labels:")
@@ -337,11 +316,9 @@ def main() -> int:
     threshold_pct = args.threshold * 100.0
     print()
     if res.hit_rate < threshold_pct:
-        print(f"  FAIL: hit-rate {res.hit_rate:.1f}% < threshold "
-              f"{threshold_pct:.1f}%")
+        print(f"  FAIL: hit-rate {res.hit_rate:.1f}% < threshold {threshold_pct:.1f}%")
         return 1
-    print(f"  OK:   hit-rate {res.hit_rate:.1f}% >= threshold "
-          f"{threshold_pct:.1f}%")
+    print(f"  OK:   hit-rate {res.hit_rate:.1f}% >= threshold {threshold_pct:.1f}%")
     return 0
 
 

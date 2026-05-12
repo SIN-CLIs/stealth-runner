@@ -40,9 +40,9 @@ class MaskerTests(unittest.TestCase):
         src = (
             '"""BANNED METHODS:\n'
             '    pkill -f "Google Chrome"\n'
-            '    killall Google Chrome\n'
+            "    killall Google Chrome\n"
             '"""\n'
-            'x = 1\n'
+            "x = 1\n"
         )
         masked = cbp._mask_strings_and_comments(src)
         # The banned strings must be GONE from the masked output.
@@ -68,10 +68,7 @@ class MaskerTests(unittest.TestCase):
         self.assertIn("doc =", masked)
 
     def test_executable_code_survives(self) -> None:
-        src = (
-            'import subprocess\n'
-            'subprocess.run(["pkill", "-f", "Google Chrome"])\n'
-        )
+        src = 'import subprocess\nsubprocess.run(["pkill", "-f", "Google Chrome"])\n'
         masked = cbp._mask_strings_and_comments(src)
         # subprocess.run is bare code -> survives
         self.assertIn("subprocess.run", masked)
@@ -91,41 +88,52 @@ class ScanFileTests(unittest.TestCase):
     def test_docstring_with_banned_list_is_NOT_flagged(self) -> None:
         # This is the exact PR #54 false-positive shape.
         import tempfile
+
         with tempfile.TemporaryDirectory() as td:
-            f = self._write(Path(td), "doc_only.py", (
-                '"""Module that documents banned commands.\n'
-                '\n'
-                'BANNED METHODS - NEVER USE:\n'
-                '    pkill -f "Google Chrome"\n'
-                '    killall Google Chrome\n'
-                '    playstealth launch\n'
-                '"""\n'
-                '\n'
-                'def hello() -> str:\n'
-                '    return "hi"\n'
-            ))
+            f = self._write(
+                Path(td),
+                "doc_only.py",
+                (
+                    '"""Module that documents banned commands.\n'
+                    "\n"
+                    "BANNED METHODS - NEVER USE:\n"
+                    '    pkill -f "Google Chrome"\n'
+                    "    killall Google Chrome\n"
+                    "    playstealth launch\n"
+                    '"""\n'
+                    "\n"
+                    "def hello() -> str:\n"
+                    '    return "hi"\n'
+                ),
+            )
             hits = cbp.scan_file(f)
-            self.assertEqual(hits, [],
-                f"docstring listing banned commands MUST NOT be flagged; got {hits}")
+            self.assertEqual(
+                hits, [], f"docstring listing banned commands MUST NOT be flagged; got {hits}"
+            )
 
     def test_comment_block_with_banned_list_is_NOT_flagged(self) -> None:
         import tempfile
+
         with tempfile.TemporaryDirectory() as td:
-            f = self._write(Path(td), "comment_only.py", (
-                '# BANNED:\n'
-                '#   pkill -f "Google Chrome"\n'
-                '#   killall Google Chrome\n'
-                'value = 42\n'
-            ))
+            f = self._write(
+                Path(td),
+                "comment_only.py",
+                (
+                    "# BANNED:\n"
+                    '#   pkill -f "Google Chrome"\n'
+                    "#   killall Google Chrome\n"
+                    "value = 42\n"
+                ),
+            )
             self.assertEqual(cbp.scan_file(f), [])
 
     def test_real_pkill_call_IS_flagged(self) -> None:
         import tempfile
+
         with tempfile.TemporaryDirectory() as td:
-            f = self._write(Path(td), "bad.py", (
-                'import os\n'
-                'os.system("pkill -f Google Chrome")\n'
-            ))
+            f = self._write(
+                Path(td), "bad.py", ('import os\nos.system("pkill -f Google Chrome")\n')
+            )
             hits = cbp.scan_file(f)
             # The string-literal "pkill -f Google Chrome" is MASKED, so
             # this case is actually NOT flagged by the masker — and that
@@ -135,15 +143,19 @@ class ScanFileTests(unittest.TestCase):
             # so future authors do not "fix" the masker without also
             # adding a rule that scans string-content (see SR-57 LLM
             # suggester / SR-60 follow-ups for that direction).
-            self.assertEqual(hits, [],
+            self.assertEqual(
+                hits,
+                [],
                 "Banned strings inside string-literals are masked; this "
-                "is the deliberate trade-off documented in the script header.")
+                "is the deliberate trade-off documented in the script header.",
+            )
 
     def test_real_webauto_call_IS_flagged(self) -> None:
         """`webauto-nodriver` as a bare token (not inside a string) MUST
         still be flagged. We synthesise that via a non-string occurrence
         like an import alias attempt."""
         import tempfile
+
         with tempfile.TemporaryDirectory() as td:
             # The pattern is `webauto-nodriver`; in real Python this can
             # only appear as a string (CLI invocation) or hyphenated
@@ -153,9 +165,7 @@ class ScanFileTests(unittest.TestCase):
             # behaviour with a passing-no-hit case here; if the rule-set
             # ever moves to scan string-content for `webauto-nodriver`,
             # this test must be updated together with the script header.
-            f = self._write(Path(td), "tool.py", (
-                'cmd = "webauto-nodriver --start"\n'
-            ))
+            f = self._write(Path(td), "tool.py", ('cmd = "webauto-nodriver --start"\n'))
             self.assertEqual(cbp.scan_file(f), [])
 
 
@@ -166,8 +176,9 @@ class SelfScanTests(unittest.TestCase):
 
     def test_script_does_not_flag_itself(self) -> None:
         hits = cbp.scan_file(_SCRIPT)
-        self.assertEqual(hits, [],
-            f"check_banned_patterns.py must not flag its own doc-list; got {hits}")
+        self.assertEqual(
+            hits, [], f"check_banned_patterns.py must not flag its own doc-list; got {hits}"
+        )
 
 
 if __name__ == "__main__":

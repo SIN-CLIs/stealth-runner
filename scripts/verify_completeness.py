@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """================================================================================
 VERIFY COMPLETENESS — Pre-Commit Code Quality Gate
 ================================================================================
@@ -44,12 +43,10 @@ BANNED METHODS — NIEMALS VERWENDEN:
   ❌ killall Google Chrome
 ================================================================================"""
 
-import os
+import ast
 import re
 import sys
-import ast
 from pathlib import Path
-from typing import List, Tuple, Optional
 
 # ═════════════════════════════════════════════════════════════════════════════
 # KONSTANTEN
@@ -62,52 +59,66 @@ ROOT_DIR = Path(__file__).parent.parent
 # EXCLUDE_DIRS: Verzeichnisse die NICHT geprueft werden
 #   → WARUM diese? Externe Dependencies, Build-Artifacts, Git-Metadata.
 EXCLUDE_DIRS = {
-    ".git", "__pycache__", "node_modules", ".venv", "venv",
-    "dist", "build", ".eggs", "*.egg-info",
+    ".git",
+    "__pycache__",
+    "node_modules",
+    ".venv",
+    "venv",
+    "dist",
+    "build",
+    ".eggs",
+    "*.egg-info",
 }
 
 # BANNED_PATTERNS: Regex-Patterns die NICHT im Code vorkommen duerfen
 #   → WARUM diese? Siehe AGENTS.md §BANNED.
 BANNED_PATTERNS = [
     # playstealth launch (BANNED — setzt Accessibility Flag nicht)
-    (r'playstealth\s+launch', 'playstealth launch detected — use SessionManager.launch() instead'),
+    (r"playstealth\s+launch", "playstealth launch detected — use SessionManager.launch() instead"),
     # webauto-nodriver (ABSOLUT BANNED)
-    (r'webauto.nodriver', 'webauto-nodriver detected — ABSOLUTELY BANNED'),
+    (r"webauto.nodriver", "webauto-nodriver detected — ABSOLUTELY BANNED"),
     # pkill -f "Google Chrome" (tötet User Chrome!)
-    (r'pkill\s+-f\s+["\']?Google\s+Chrome', 'pkill -f "Google Chrome" detected — KILLS USER CHROME!'),
+    (
+        r'pkill\s+-f\s+["\']?Google\s+Chrome',
+        'pkill -f "Google Chrome" detected — KILLS USER CHROME!',
+    ),
     # killall Google Chrome (tötet ALLE Chrome!)
-    (r'killall\s+Google\s+Chrome', 'killall Google Chrome detected — KILLS ALL CHROME!'),
+    (r"killall\s+Google\s+Chrome", "killall Google Chrome detected — KILLS ALL CHROME!"),
     # Fixed profile path (korruptiert nach Neustart)
-    (r'/tmp/heypiggy-bot(?!-new-)', 'Fixed profile /tmp/heypiggy-bot detected — use timestamped profile'),
+    (
+        r"/tmp/heypiggy-bot(?!-new-)",
+        "Fixed profile /tmp/heypiggy-bot detected — use timestamped profile",
+    ),
 ]
 
 # CREDENTIAL_PATTERNS: Regex fuer hardcoded Credentials
 #   → WARUM diese? Verhindert dass Secrets ins Repo committet werden.
 CREDENTIAL_PATTERNS = [
     # NVIDIA API Key (nvapi-...)
-    (r'["\']nvapi-[a-zA-Z0-9_-]{20,}["\']', 'Hardcoded NVIDIA API key'),
+    (r'["\']nvapi-[a-zA-Z0-9_-]{20,}["\']', "Hardcoded NVIDIA API key"),
     # OpenAI API Key (sk-...)
-    (r'["\']sk-[a-zA-Z0-9_-]{20,}["\']', 'Hardcoded OpenAI API key'),
+    (r'["\']sk-[a-zA-Z0-9_-]{20,}["\']', "Hardcoded OpenAI API key"),
     # Fireworks API Key (fw_...)
-    (r'["\']fw_[a-zA-Z0-9_-]{20,}["\']', 'Hardcoded Fireworks API key'),
+    (r'["\']fw_[a-zA-Z0-9_-]{20,}["\']', "Hardcoded Fireworks API key"),
     # Generic API key assignment
-    (r'api_key\s*=\s*["\'][^"\']{10,}["\']', 'Hardcoded api_key assignment'),
+    (r'api_key\s*=\s*["\'][^"\']{10,}["\']', "Hardcoded api_key assignment"),
     # Password assignment
-    (r'password\s*=\s*["\'][^"\']+["\']', 'Hardcoded password assignment'),
+    (r'password\s*=\s*["\'][^"\']+["\']', "Hardcoded password assignment"),
     # Secret assignment
-    (r'secret\s*=\s*["\'][^"\']+["\']', 'Hardcoded secret assignment'),
+    (r'secret\s*=\s*["\'][^"\']+["\']', "Hardcoded secret assignment"),
 ]
 
 # PID_PATTERNS: Regex fuer hardcoded PIDs
 #   → WARUM 4-6 stellige Zahlen? PIDs sind typisch 4-6 stellig.
 PID_PATTERNS = [
-    (r'(?<!["\w])pid\s*[=:]\s*(\d{4,6})(?!["\w])', 'Hardcoded PID detected'),
+    (r'(?<!["\w])pid\s*[=:]\s*(\d{4,6})(?!["\w])', "Hardcoded PID detected"),
 ]
+
 
 # ═════════════════════════════════════════════════════════════════════════════
 # HELPER: get_python_files()
 # ═════════════════════════════════════════════════════════════════════════════
-def get_python_files(root: Path) -> List[Path]:
+def get_python_files(root: Path) -> list[Path]:
     """Findet alle Python-Dateien im Projekt (rekursiv).
 
     Args:
@@ -131,7 +142,7 @@ def get_python_files(root: Path) -> List[Path]:
 # ═════════════════════════════════════════════════════════════════════════════
 # CHECK 1: Docstring-Praesenz
 # ═════════════════════════════════════════════════════════════════════════════
-def check_docstrings(file: Path) -> List[str]:
+def check_docstrings(file: Path) -> list[str]:
     """Prueft ob jede public Funktion/Klasse einen Docstring hat.
 
     Args:
@@ -155,12 +166,11 @@ def check_docstrings(file: Path) -> List[str]:
     for node in ast.walk(tree):
         # Klassen pruefen
         if isinstance(node, ast.ClassDef):
-            if not node.name.startswith("_"):
-                if not ast.get_docstring(node):
-                    errors.append(f"{file}:{node.lineno}: Class '{node.name}' missing docstring")
+            if not node.name.startswith("_") and not ast.get_docstring(node):
+                errors.append(f"{file}:{node.lineno}: Class '{node.name}' missing docstring")
 
         # Funktionen pruefen
-        elif isinstance(node, (ast.FunctionDef, ast.AsyncFunctionDef)):
+        elif isinstance(node, ast.FunctionDef | ast.AsyncFunctionDef):
             # Private Funktionen (_ prefix) ignorieren
             if node.name.startswith("_") and not node.name.startswith("__"):
                 continue
@@ -176,7 +186,7 @@ def check_docstrings(file: Path) -> List[str]:
 # ═════════════════════════════════════════════════════════════════════════════
 # CHECK 2: BANNED-Method Header
 # ═════════════════════════════════════════════════════════════════════════════
-def check_banned_header(file: Path) -> List[str]:
+def check_banned_header(file: Path) -> list[str]:
     """Prueft ob Datei einen BANNED-Methods-Header hat.
 
     Args:
@@ -210,7 +220,7 @@ def check_banned_header(file: Path) -> List[str]:
 # ═════════════════════════════════════════════════════════════════════════════
 # CHECK 3: Hardcoded PIDs
 # ═════════════════════════════════════════════════════════════════════════════
-def check_hardcoded_pids(file: Path) -> List[str]:
+def check_hardcoded_pids(file: Path) -> list[str]:
     """Prueft auf hardcoded PID-Zuweisungen.
 
     Args:
@@ -232,7 +242,7 @@ def check_hardcoded_pids(file: Path) -> List[str]:
     for pattern, message in PID_PATTERNS:
         for match in re.finditer(pattern, content, re.IGNORECASE):
             # Kontext holen (Zeilennummer berechnen)
-            line_num = content[:match.start()].count("\n") + 1
+            line_num = content[: match.start()].count("\n") + 1
             line = content.split("\n")[line_num - 1].strip()
 
             # WARUM diese Ausnahmen? Beispiele/Doku sind OK.
@@ -249,7 +259,7 @@ def check_hardcoded_pids(file: Path) -> List[str]:
 # ═════════════════════════════════════════════════════════════════════════════
 # CHECK 4: Hardcoded Credentials
 # ═════════════════════════════════════════════════════════════════════════════
-def check_hardcoded_credentials(file: Path) -> List[str]:
+def check_hardcoded_credentials(file: Path) -> list[str]:
     """Prueft auf hardcoded API Keys, Emails, Passwoerter.
 
     Args:
@@ -269,7 +279,7 @@ def check_hardcoded_credentials(file: Path) -> List[str]:
 
     for pattern, message in CREDENTIAL_PATTERNS:
         for match in re.finditer(pattern, content):
-            line_num = content[:match.start()].count("\n") + 1
+            line_num = content[: match.start()].count("\n") + 1
             line = content.split("\n")[line_num - 1].strip()
 
             # WARUM diese Ausnahmen? Env-Vars und Examples sind OK.
@@ -290,7 +300,7 @@ def check_hardcoded_credentials(file: Path) -> List[str]:
 # ═════════════════════════════════════════════════════════════════════════════
 # CHECK 5: BANNED Patterns
 # ═════════════════════════════════════════════════════════════════════════════
-def check_banned_patterns(file: Path) -> List[str]:
+def check_banned_patterns(file: Path) -> list[str]:
     """Prueft auf BANNED Code-Patterns.
 
     Args:
@@ -309,13 +319,16 @@ def check_banned_patterns(file: Path) -> List[str]:
 
     for pattern, message in BANNED_PATTERNS:
         for match in re.finditer(pattern, content):
-            line_num = content[:match.start()].count("\n") + 1
+            line_num = content[: match.start()].count("\n") + 1
             line = content.split("\n")[line_num - 1].strip()
 
             # WARUM diese Ausnahme? Dokumentation von BANNED Patterns ist OK.
             if line.startswith("#") and "BANNED" in line.upper():
                 continue
-            if '"""' in line and "BANNED" in content[max(0, match.start()-100):match.start()].upper():
+            if (
+                '"""' in line
+                and "BANNED" in content[max(0, match.start() - 100) : match.start()].upper()
+            ):
                 continue
 
             errors.append(f"{file}:{line_num}: {message}: {line[:80]}")
@@ -326,7 +339,7 @@ def check_banned_patterns(file: Path) -> List[str]:
 # ═════════════════════════════════════════════════════════════════════════════
 # CHECK 6: Test-Abdeckung (Warnung)
 # ═════════════════════════════════════════════════════════════════════════════
-def check_test_coverage(file: Path) -> List[str]:
+def check_test_coverage(file: Path) -> list[str]:
     """Prueft ob fuer jede .py Datei eine Test-Datei existiert.
 
     Args:
@@ -364,7 +377,7 @@ def check_test_coverage(file: Path) -> List[str]:
 # ═════════════════════════════════════════════════════════════════════════════
 # MAIN: verify_completeness()
 # ═════════════════════════════════════════════════════════════════════════════
-def verify_completeness(root: Optional[Path] = None) -> Tuple[int, int, int]:
+def verify_completeness(root: Path | None = None) -> tuple[int, int, int]:
     """Fuehrt ALLE Checks aus und gibt Ergebnis zurueck.
 
     Args:
@@ -391,7 +404,7 @@ def verify_completeness(root: Optional[Path] = None) -> Tuple[int, int, int]:
 
     for file in python_files:
         files_checked += 1
-        rel_path = file.relative_to(root)
+        file.relative_to(root)
 
         # Check 1: Docstrings
         all_errors.extend(check_docstrings(file))
@@ -444,27 +457,29 @@ def verify_completeness(root: Optional[Path] = None) -> Tuple[int, int, int]:
 if __name__ == "__main__":
     import argparse
 
-    parser = argparse.ArgumentParser(
-        description="Verify code completeness before commit"
-    )
+    parser = argparse.ArgumentParser(description="Verify code completeness before commit")
     parser.add_argument(
         "--root",
         type=Path,
         default=ROOT_DIR,
-        help="Root directory to check (default: project root)"
+        help="Root directory to check (default: project root)",
     )
     parser.add_argument(
         "--check",
         type=str,
-        choices=["docstrings", "banned-header", "pids", "credentials", "banned-patterns", "test-coverage", "all"],
+        choices=[
+            "docstrings",
+            "banned-header",
+            "pids",
+            "credentials",
+            "banned-patterns",
+            "test-coverage",
+            "all",
+        ],
         default="all",
-        help="Specific check to run (default: all)"
+        help="Specific check to run (default: all)",
     )
-    parser.add_argument(
-        "--file",
-        type=Path,
-        help="Check a single file instead of all files"
-    )
+    parser.add_argument("--file", type=Path, help="Check a single file instead of all files")
 
     args = parser.parse_args()
 

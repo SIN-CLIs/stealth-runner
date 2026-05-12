@@ -68,6 +68,7 @@ from .llm_client import (
     is_available as llm_is_available,
     prompt_hash,
 )
+
 # SR-104 #104 — read-only inbox dashboard pure functions
 from .status import (
     StatusFilters,
@@ -77,6 +78,7 @@ from .status import (
     report_to_json,
     summarize_inbox,
 )
+
 # SR-109 #109 — read-only audit-log dashboard pure functions
 from .audit import (
     AuditFilters,
@@ -86,6 +88,7 @@ from .audit import (
     report_to_json as audit_report_to_json,
     summarize_audit,
 )
+
 # SR-102 #102 — source-aware batch-review pure functions
 from .review import (
     ReviewRules,
@@ -96,6 +99,7 @@ from .review import (
     partition_records,
     normalize_source,
 )
+
 # SR-112 #112 — per-keyword inverse-lookup pure functions
 from .explain import (
     Explanation,

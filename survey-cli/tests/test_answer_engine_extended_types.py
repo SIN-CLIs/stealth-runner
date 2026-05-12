@@ -6,6 +6,7 @@ Each type has 4+ tests: happy-path, determinism, persona-consistency, edge-case.
 
 No real browser launch — browser_driver primitives are mocked.
 """
+
 from __future__ import annotations
 
 import unittest
@@ -13,7 +14,7 @@ from unittest.mock import AsyncMock, patch, MagicMock
 import tempfile
 import os
 
-from survey.daemon.answer_engine import AnswerEngine, Persona, Answer
+from survey.daemon.answer_engine import AnswerEngine, Persona
 from survey.daemon.survey_parser import Question, QuestionType, QuestionOption
 
 
@@ -26,7 +27,11 @@ class TestDragDropAnswers(unittest.TestCase):
             age=30,
             gender="male",
             interests=["technology", "gaming"],
-            conjoint_preferences={"price_weight": 0.4, "brand_weight": 0.3, "feature_weights": {"quality": 0.15, "convenience": 0.15}},
+            conjoint_preferences={
+                "price_weight": 0.4,
+                "brand_weight": 0.3,
+                "feature_weights": {"quality": 0.15, "convenience": 0.15},
+            },
         )
         self.engine = AnswerEngine(self.persona, db_path=self.db_path)
 
@@ -47,7 +52,7 @@ class TestDragDropAnswers(unittest.TestCase):
             ],
         )
         answer = self.engine.generate_answer(question)
-        
+
         self.assertEqual(answer.question_id, "dd_1")
         self.assertIsInstance(answer.value, list)
         self.assertEqual(len(answer.value), 3)
@@ -66,14 +71,16 @@ class TestDragDropAnswers(unittest.TestCase):
                 QuestionOption(value="z", label="Item Z"),
             ],
         )
-        
+
         # First run
         first_answer = self.engine.generate_answer(question)
-        
+
         # Create fresh engines with same persona to test determinism
         for _ in range(100):
             fresh_engine = AnswerEngine(self.persona, db_path=tempfile.mktemp(suffix=".db"))
-            answer = fresh_engine._generate_drag_drop_answer(question, fresh_engine._hash_question(question))
+            answer = fresh_engine._generate_drag_drop_answer(
+                question, fresh_engine._hash_question(question)
+            )
             self.assertEqual(answer.value, first_answer.value)
 
     def test_drag_drop_persona_consistency(self):
@@ -87,10 +94,10 @@ class TestDragDropAnswers(unittest.TestCase):
                 QuestionOption(value="2", label="Two"),
             ],
         )
-        
+
         answer1 = self.engine.generate_answer(question)
         answer2 = self.engine.generate_answer(question)
-        
+
         # Should return historical answer
         self.assertEqual(answer1.value, answer2.value)
         self.assertEqual(answer2.reasoning, "Historical consistency")
@@ -104,7 +111,7 @@ class TestDragDropAnswers(unittest.TestCase):
             options=[],
         )
         answer = self.engine.generate_answer(question)
-        
+
         # Should fall back to default
         self.assertEqual(answer.value, "N/A")
         self.assertLess(answer.confidence, 0.5)
@@ -134,7 +141,7 @@ class TestHotspotAnswers(unittest.TestCase):
             ],
         )
         answer = self.engine.generate_answer(question)
-        
+
         self.assertIn("x", answer.value)
         self.assertIn("y", answer.value)
         # Should pick center of larger area (200, 200) with jitter
@@ -150,14 +157,16 @@ class TestHotspotAnswers(unittest.TestCase):
             text="Click area",
             hotspot_areas=[{"coords": [0, 0, 100, 100], "label": "zone"}],
         )
-        
+
         # Run multiple times with same persona
         answers = []
         for _ in range(10):
             fresh_engine = AnswerEngine(self.persona, db_path=tempfile.mktemp(suffix=".db"))
-            answer = fresh_engine._generate_hotspot_answer(question, fresh_engine._hash_question(question))
+            answer = fresh_engine._generate_hotspot_answer(
+                question, fresh_engine._hash_question(question)
+            )
             answers.append(answer.value)
-        
+
         # All x values should be within jitter range of each other
         x_values = [a["x"] for a in answers]
         self.assertLess(max(x_values) - min(x_values), 15)  # max jitter spread
@@ -170,10 +179,10 @@ class TestHotspotAnswers(unittest.TestCase):
             text="Click here",
             hotspot_areas=[{"coords": [50, 50, 150, 150], "label": "target"}],
         )
-        
+
         answer1 = self.engine.generate_answer(question)
         answer2 = self.engine.generate_answer(question)
-        
+
         self.assertEqual(answer1.value, answer2.value)
 
     def test_hotspot_no_areas(self):
@@ -185,7 +194,7 @@ class TestHotspotAnswers(unittest.TestCase):
             hotspot_areas=[],
         )
         answer = self.engine.generate_answer(question)
-        
+
         # Should click near center (200, 150 default)
         self.assertIn("x", answer.value)
         self.assertIn("y", answer.value)
@@ -226,7 +235,7 @@ class TestConjointAnswers(unittest.TestCase):
             ],
         )
         answer = self.engine.generate_answer(question)
-        
+
         self.assertIn("selected_card", answer.value)
         self.assertIn("card_count", answer.value)
         self.assertEqual(answer.value["card_count"], 3)
@@ -243,12 +252,16 @@ class TestConjointAnswers(unittest.TestCase):
                 {"features": {"price": "$150", "brand": "B"}},
             ],
         )
-        
-        first_answer = self.engine._generate_conjoint_answer(question, self.engine._hash_question(question))
-        
+
+        first_answer = self.engine._generate_conjoint_answer(
+            question, self.engine._hash_question(question)
+        )
+
         for _ in range(50):
             fresh_engine = AnswerEngine(self.persona, db_path=tempfile.mktemp(suffix=".db"))
-            answer = fresh_engine._generate_conjoint_answer(question, fresh_engine._hash_question(question))
+            answer = fresh_engine._generate_conjoint_answer(
+                question, fresh_engine._hash_question(question)
+            )
             self.assertEqual(answer.value["selected_card"], first_answer.value["selected_card"])
 
     def test_conjoint_persona_consistency(self):
@@ -259,10 +272,10 @@ class TestConjointAnswers(unittest.TestCase):
             text="Choose product",
             conjoint_cards=[{"features": {"price": "$99"}}],
         )
-        
+
         answer1 = self.engine.generate_answer(question)
         answer2 = self.engine.generate_answer(question)
-        
+
         self.assertEqual(answer1.value, answer2.value)
 
     def test_conjoint_no_cards_fallback(self):
@@ -278,7 +291,7 @@ class TestConjointAnswers(unittest.TestCase):
             ],
         )
         answer = self.engine.generate_answer(question)
-        
+
         self.assertIn(answer.value, ["opt1", "opt2"])
 
 
@@ -312,7 +325,7 @@ class TestMaxDiffAnswers(unittest.TestCase):
             ],
         )
         answer = self.engine.generate_answer(question)
-        
+
         self.assertIn("most", answer.value)
         self.assertIn("least", answer.value)
         self.assertNotEqual(answer.value["most"], answer.value["least"])
@@ -330,12 +343,16 @@ class TestMaxDiffAnswers(unittest.TestCase):
                 QuestionOption(value="z", label="Z"),
             ],
         )
-        
-        first_answer = self.engine._generate_max_diff_answer(question, self.engine._hash_question(question))
-        
+
+        first_answer = self.engine._generate_max_diff_answer(
+            question, self.engine._hash_question(question)
+        )
+
         for _ in range(50):
             fresh_engine = AnswerEngine(self.persona, db_path=tempfile.mktemp(suffix=".db"))
-            answer = fresh_engine._generate_max_diff_answer(question, fresh_engine._hash_question(question))
+            answer = fresh_engine._generate_max_diff_answer(
+                question, fresh_engine._hash_question(question)
+            )
             self.assertEqual(answer.value["most"], first_answer.value["most"])
             self.assertEqual(answer.value["least"], first_answer.value["least"])
 
@@ -350,10 +367,10 @@ class TestMaxDiffAnswers(unittest.TestCase):
                 QuestionOption(value="2", label="Two"),
             ],
         )
-        
+
         answer1 = self.engine.generate_answer(question)
         answer2 = self.engine.generate_answer(question)
-        
+
         self.assertEqual(answer1.value, answer2.value)
 
     def test_max_diff_insufficient_options(self):
@@ -365,7 +382,7 @@ class TestMaxDiffAnswers(unittest.TestCase):
             options=[QuestionOption(value="only", label="Only option")],
         )
         answer = self.engine.generate_answer(question)
-        
+
         # Should fall back to default
         self.assertEqual(answer.value, "only")
 
@@ -391,7 +408,7 @@ class TestVideoAdAnswers(unittest.TestCase):
             media_selector="#video-player",
         )
         answer = self.engine.generate_answer(question)
-        
+
         self.assertEqual(answer.value["action"], "play_video")
         self.assertEqual(answer.value["media_selector"], "#video-player")
         self.assertIn("estimated_duration", answer.value)
@@ -405,10 +422,12 @@ class TestVideoAdAnswers(unittest.TestCase):
             text="Video ad",
             media_selector="video",
         )
-        
+
         for _ in range(10):
             fresh_engine = AnswerEngine(self.persona, db_path=tempfile.mktemp(suffix=".db"))
-            answer = fresh_engine._generate_video_ad_answer(question, fresh_engine._hash_question(question))
+            answer = fresh_engine._generate_video_ad_answer(
+                question, fresh_engine._hash_question(question)
+            )
             self.assertEqual(answer.value["action"], "play_video")
             self.assertEqual(answer.value["media_selector"], "video")
 
@@ -420,10 +439,10 @@ class TestVideoAdAnswers(unittest.TestCase):
             text="Watch",
             media_selector="#vid",
         )
-        
+
         answer1 = self.engine.generate_answer(question)
         answer2 = self.engine.generate_answer(question)
-        
+
         self.assertEqual(answer1.value, answer2.value)
 
     def test_video_ad_no_selector(self):
@@ -435,7 +454,7 @@ class TestVideoAdAnswers(unittest.TestCase):
             media_selector=None,
         )
         answer = self.engine.generate_answer(question)
-        
+
         self.assertEqual(answer.value["media_selector"], "video")
 
 
@@ -460,7 +479,7 @@ class TestAudioAdAnswers(unittest.TestCase):
             media_selector="#audio-player",
         )
         answer = self.engine.generate_answer(question)
-        
+
         self.assertEqual(answer.value["action"], "play_audio")
         self.assertEqual(answer.value["media_selector"], "#audio-player")
         self.assertTrue(answer.value["muted"])
@@ -474,10 +493,12 @@ class TestAudioAdAnswers(unittest.TestCase):
             text="Audio ad",
             media_selector="audio",
         )
-        
+
         for _ in range(10):
             fresh_engine = AnswerEngine(self.persona, db_path=tempfile.mktemp(suffix=".db"))
-            answer = fresh_engine._generate_audio_ad_answer(question, fresh_engine._hash_question(question))
+            answer = fresh_engine._generate_audio_ad_answer(
+                question, fresh_engine._hash_question(question)
+            )
             self.assertEqual(answer.value["action"], "play_audio")
             self.assertTrue(answer.value["muted"])
 
@@ -489,10 +510,10 @@ class TestAudioAdAnswers(unittest.TestCase):
             text="Listen",
             media_selector="#aud",
         )
-        
+
         answer1 = self.engine.generate_answer(question)
         answer2 = self.engine.generate_answer(question)
-        
+
         self.assertEqual(answer1.value, answer2.value)
 
     def test_audio_ad_no_selector(self):
@@ -504,7 +525,7 @@ class TestAudioAdAnswers(unittest.TestCase):
             media_selector=None,
         )
         answer = self.engine.generate_answer(question)
-        
+
         self.assertEqual(answer.value["media_selector"], "audio")
 
 
@@ -516,13 +537,14 @@ class TestBrowserDriverPrimitives(unittest.TestCase):
         """drag_element has correct signature."""
         mock_driver = MagicMock()
         mock_driver.drag_element = AsyncMock(return_value=True)
-        
+
         # Verify signature accepts source_sel, target_sel, jitter
         import asyncio
+
         result = asyncio.get_event_loop().run_until_complete(
             mock_driver.drag_element("source", "target", jitter=True)
         )
-        
+
         mock_driver.drag_element.assert_called_once_with("source", "target", jitter=True)
         self.assertTrue(result)
 
@@ -531,12 +553,13 @@ class TestBrowserDriverPrimitives(unittest.TestCase):
         """play_media has correct signature."""
         mock_driver = MagicMock()
         mock_driver.play_media = AsyncMock(return_value=30.5)
-        
+
         import asyncio
+
         result = asyncio.get_event_loop().run_until_complete(
             mock_driver.play_media("video", max_seconds=60.0)
         )
-        
+
         mock_driver.play_media.assert_called_once_with("video", max_seconds=60.0)
         self.assertEqual(result, 30.5)
 

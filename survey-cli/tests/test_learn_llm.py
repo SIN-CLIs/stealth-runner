@@ -49,8 +49,8 @@ def _fake_urlopen_response(payload: dict, status: int = 200):
     body = json.dumps(payload).encode("utf-8")
     fake = mock.MagicMock()
     fake.__enter__ = mock.MagicMock(
-        return_value=mock.MagicMock(
-            read=mock.MagicMock(return_value=body)))
+        return_value=mock.MagicMock(read=mock.MagicMock(return_value=body))
+    )
     fake.__exit__ = mock.MagicMock(return_value=False)
     return fake
 
@@ -69,7 +69,6 @@ def _openai_shape(content: str, model: str = "openai/gpt-5-mini") -> dict:
 
 
 class TestLLMClient(unittest.TestCase):
-
     def test_no_api_key_returns_none_without_network(self):
         with mock.patch.dict(os.environ, {}, clear=True):
             r = call_llm("hello")
@@ -93,7 +92,10 @@ class TestLLMClient(unittest.TestCase):
 
     def test_http_error_is_contained(self):
         err = urllib.error.HTTPError(
-            url="x", code=429, msg="Too Many", hdrs={},
+            url="x",
+            code=429,
+            msg="Too Many",
+            hdrs={},
             fp=io.BytesIO(b'{"error":"rate-limit"}'),
         )
         with mock.patch.dict(os.environ, {"AI_GATEWAY_API_KEY": "test"}):
@@ -153,8 +155,7 @@ class TestLLMClient(unittest.TestCase):
 
             def __enter__(self_inner):
                 inner = mock.MagicMock()
-                inner.read = mock.MagicMock(
-                    return_value=json.dumps(_openai_shape("ok")).encode())
+                inner.read = mock.MagicMock(return_value=json.dumps(_openai_shape("ok")).encode())
                 return inner
 
             def __exit__(self_inner, *a):
@@ -169,8 +170,7 @@ class TestLLMClient(unittest.TestCase):
 
         self.assertEqual(captured["body"]["model"], "anthropic/claude-opus-4.6")
         self.assertEqual(captured["body"]["temperature"], 0.0)
-        self.assertEqual(
-            captured["body"]["response_format"], {"type": "json_object"})
+        self.assertEqual(captured["body"]["response_format"], {"type": "json_object"})
         msgs = captured["body"]["messages"]
         self.assertEqual(msgs[1]["content"], "hello world")
         # Auth header
@@ -186,17 +186,19 @@ class TestLLMClient(unittest.TestCase):
 
             def __enter__(self_inner):
                 inner = mock.MagicMock()
-                inner.read = mock.MagicMock(
-                    return_value=json.dumps(_openai_shape("x")).encode())
+                inner.read = mock.MagicMock(return_value=json.dumps(_openai_shape("x")).encode())
                 return inner
 
             def __exit__(self_inner, *a):
                 return False
 
-        with mock.patch.dict(os.environ, {
-            "AI_GATEWAY_API_KEY": "tk",
-            "SR_AI_GATEWAY_URL": "https://custom.example/v1/chat/completions",
-        }):
+        with mock.patch.dict(
+            os.environ,
+            {
+                "AI_GATEWAY_API_KEY": "tk",
+                "SR_AI_GATEWAY_URL": "https://custom.example/v1/chat/completions",
+            },
+        ):
             with mock.patch(
                 "survey.learn.llm_client.urllib.request.urlopen",
                 side_effect=FakeCtx,
@@ -228,24 +230,29 @@ class TestLLMClient(unittest.TestCase):
 
 
 class TestSuggestViaLLM(unittest.TestCase):
-
-    def _patch_call_llm(self, content, model="openai/gpt-5-mini",
-                        error=None):
+    def _patch_call_llm(self, content, model="openai/gpt-5-mini", error=None):
         from survey.learn.llm_client import LLMResponse
+
         return mock.patch.object(
-            suggester_mod, "call_llm",
+            suggester_mod,
+            "call_llm",
             return_value=LLMResponse(
-                content=content, model=model,
+                content=content,
+                model=model,
                 prompt_hash="abc123def456",
-                error=error, latency_ms=42,
+                error=error,
+                latency_ms=42,
             ),
         )
 
     def test_valid_response_parsed(self):
-        content = json.dumps({
-            "family": "household_size", "confidence": 0.92,
-            "reason": "asks about number of persons in household",
-        })
+        content = json.dumps(
+            {
+                "family": "household_size",
+                "confidence": 0.92,
+                "reason": "asks about number of persons in household",
+            }
+        )
         with self._patch_call_llm(content):
             r = suggest_via_llm(
                 "wie viele personen leben in ihrem haushalt",
@@ -258,10 +265,13 @@ class TestSuggestViaLLM(unittest.TestCase):
         self.assertIsNone(r.error)
 
     def test_family_null_means_no_match(self):
-        content = json.dumps({
-            "family": None, "confidence": 0.0,
-            "reason": "asks about favourite colour, not in profile",
-        })
+        content = json.dumps(
+            {
+                "family": None,
+                "confidence": 0.0,
+                "reason": "asks about favourite colour, not in profile",
+            }
+        )
         with self._patch_call_llm(content):
             r = suggest_via_llm(
                 "lieblingsfarbe",
@@ -272,11 +282,13 @@ class TestSuggestViaLLM(unittest.TestCase):
         self.assertIsNone(r.error)
 
     def test_hallucinated_family_rejected(self):
-        content = json.dumps({
-            "family": "lieblingsfarbe",  # not in allowed list
-            "confidence": 0.99,
-            "reason": "made up family",
-        })
+        content = json.dumps(
+            {
+                "family": "lieblingsfarbe",  # not in allowed list
+                "confidence": 0.99,
+                "reason": "made up family",
+            }
+        )
         with self._patch_call_llm(content):
             r = suggest_via_llm(
                 "lieblingsfarbe",
@@ -286,33 +298,32 @@ class TestSuggestViaLLM(unittest.TestCase):
         self.assertIn("hallucination", r.error)
 
     def test_confidence_clamped_to_unit_interval(self):
-        content = json.dumps({
-            "family": "phone", "confidence": 1.7,  # nonsense
-            "reason": "x",
-        })
+        content = json.dumps(
+            {
+                "family": "phone",
+                "confidence": 1.7,  # nonsense
+                "reason": "x",
+            }
+        )
         with self._patch_call_llm(content):
-            r = suggest_via_llm("handy",
-                                allowed_families=["phone"])
+            r = suggest_via_llm("handy", allowed_families=["phone"])
         self.assertEqual(r.confidence, 1.0)
 
-        content2 = json.dumps({
-            "family": "phone", "confidence": -0.3,
-            "reason": "x",
-        })
+        content2 = json.dumps(
+            {
+                "family": "phone",
+                "confidence": -0.3,
+                "reason": "x",
+            }
+        )
         with self._patch_call_llm(content2):
-            r = suggest_via_llm("handy",
-                                allowed_families=["phone"])
+            r = suggest_via_llm("handy", allowed_families=["phone"])
         self.assertEqual(r.confidence, 0.0)
 
     def test_markdown_codefence_stripped(self):
-        content = (
-            "```json\n"
-            '{"family": "email", "confidence": 0.9, "reason": "mail"}\n'
-            "```"
-        )
+        content = '```json\n{"family": "email", "confidence": 0.9, "reason": "mail"}\n```'
         with self._patch_call_llm(content):
-            r = suggest_via_llm("emailadresse",
-                                allowed_families=["email", "phone"])
+            r = suggest_via_llm("emailadresse", allowed_families=["email", "phone"])
         self.assertEqual(r.family, "email")
         self.assertAlmostEqual(r.confidence, 0.9)
 
@@ -323,8 +334,7 @@ class TestSuggestViaLLM(unittest.TestCase):
         self.assertIn("non-json", r.error)
 
     def test_llm_unavailable_propagates_error_field(self):
-        with self._patch_call_llm(None,
-                                  error="no AI_GATEWAY_API_KEY"):
+        with self._patch_call_llm(None, error="no AI_GATEWAY_API_KEY"):
             r = suggest_via_llm("x", allowed_families=["phone"])
         self.assertIsNone(r.family)
         self.assertEqual(r.confidence, 0.0)
@@ -342,22 +352,27 @@ class TestSuggestViaLLM(unittest.TestCase):
 
     def test_reason_truncated_to_140_chars(self):
         long_reason = "x" * 500
-        content = json.dumps({
-            "family": "phone", "confidence": 0.9,
-            "reason": long_reason,
-        })
+        content = json.dumps(
+            {
+                "family": "phone",
+                "confidence": 0.9,
+                "reason": long_reason,
+            }
+        )
         with self._patch_call_llm(content):
-            r = suggest_via_llm("handy",
-                                allowed_families=["phone"])
+            r = suggest_via_llm("handy", allowed_families=["phone"])
         self.assertEqual(len(r.reason), 140)
 
     def test_family_string_case_normalized(self):
-        content = json.dumps({
-            "family": "PHONE", "confidence": 0.8, "reason": "x",
-        })
+        content = json.dumps(
+            {
+                "family": "PHONE",
+                "confidence": 0.8,
+                "reason": "x",
+            }
+        )
         with self._patch_call_llm(content):
-            r = suggest_via_llm("handy",
-                                allowed_families=["phone"])
+            r = suggest_via_llm("handy", allowed_families=["phone"])
         self.assertEqual(r.family, "phone")
 
 
@@ -375,24 +390,31 @@ class _AggFixture:
         os.makedirs(self.logs)
         path = os.path.join(self.logs, "matcher-telemetry-20260512.jsonl")
         with open(path, "w") as f:
-            f.write(json.dumps({
-                "persona": "p1",
-                "miss_labels": miss_labels,
-            }) + "\n")
+            f.write(
+                json.dumps(
+                    {
+                        "persona": "p1",
+                        "miss_labels": miss_labels,
+                    }
+                )
+                + "\n"
+            )
 
     def cleanup(self):
         import shutil
+
         shutil.rmtree(self.td, ignore_errors=True)
 
 
 class TestAggregateLLM(unittest.TestCase):
-
     def test_use_llm_false_keeps_substring_source(self):
         """Default behaviour (use_llm=False) — every record gets
         source='substring' but otherwise byte-equivalent to pre-#56."""
-        fx = _AggFixture([
-            {"role": "textbox", "label": "Mobilfunknummer"},
-        ])
+        fx = _AggFixture(
+            [
+                {"role": "textbox", "label": "Mobilfunknummer"},
+            ]
+        )
         try:
             recs = aggregate_misses(log_dir=fx.logs, min_count=1)
             self.assertEqual(len(recs), 1)
@@ -412,27 +434,39 @@ class TestAggregateLLM(unittest.TestCase):
         Labels like "Wie viele Personen ..." actually DO match the
         household_size heuristic, so they would NOT trigger LLM-fallback.
         """
-        fx = _AggFixture([
-            {"role": "textbox", "label": "Lieblings-Pizza"},
-        ])
+        fx = _AggFixture(
+            [
+                {"role": "textbox", "label": "Lieblings-Pizza"},
+            ]
+        )
         try:
             from survey.learn.suggester import LLMSuggestion
 
             def fake_llm(label, allowed, *, model=None, timeout=20.0):
                 return LLMSuggestion(
-                    family="household_size", confidence=0.9,
+                    family="household_size",
+                    confidence=0.9,
                     reason="contrived test: LLM picks an existing family",
                     model="openai/gpt-5-mini",
                     prompt_hash="cafe1234face",
                 )
 
-            with mock.patch.object(
-                aggregator_mod, "suggest_via_llm", side_effect=fake_llm,
-            ), mock.patch.object(
-                aggregator_mod, "_llm_is_available", return_value=True,
+            with (
+                mock.patch.object(
+                    aggregator_mod,
+                    "suggest_via_llm",
+                    side_effect=fake_llm,
+                ),
+                mock.patch.object(
+                    aggregator_mod,
+                    "_llm_is_available",
+                    return_value=True,
+                ),
             ):
                 recs = aggregate_misses(
-                    log_dir=fx.logs, min_count=1, use_llm=True,
+                    log_dir=fx.logs,
+                    min_count=1,
+                    use_llm=True,
                 )
             self.assertEqual(len(recs), 1)
             rec = recs[0]
@@ -451,17 +485,27 @@ class TestAggregateLLM(unittest.TestCase):
     def test_llm_does_not_override_high_confidence_heuristic(self):
         """Wenn die Heuristik bereits >=0.20 ist, LLM wird gar nicht
         gerufen — Kosten + Determinismus."""
-        fx = _AggFixture([
-            {"role": "textbox", "label": "Mobilfunknummer"},  # heuristic OK
-        ])
+        fx = _AggFixture(
+            [
+                {"role": "textbox", "label": "Mobilfunknummer"},  # heuristic OK
+            ]
+        )
         try:
-            with mock.patch.object(
-                aggregator_mod, "suggest_via_llm",
-            ) as llm_mock, mock.patch.object(
-                aggregator_mod, "_llm_is_available", return_value=True,
+            with (
+                mock.patch.object(
+                    aggregator_mod,
+                    "suggest_via_llm",
+                ) as llm_mock,
+                mock.patch.object(
+                    aggregator_mod,
+                    "_llm_is_available",
+                    return_value=True,
+                ),
             ):
                 recs = aggregate_misses(
-                    log_dir=fx.logs, min_count=1, use_llm=True,
+                    log_dir=fx.logs,
+                    min_count=1,
+                    use_llm=True,
                 )
             llm_mock.assert_not_called()
             self.assertEqual(recs[0]["source"], "substring")
@@ -471,15 +515,21 @@ class TestAggregateLLM(unittest.TestCase):
     def test_use_llm_without_api_key_warns_and_keeps_substring(self):
         """use_llm=True + no key → 1x stderr warning, kein crash, alle
         records bleiben source=substring (oder None bei unklassifizierten)."""
-        fx = _AggFixture([
-            {"role": "textbox", "label": "Lieblings-Pizza"},
-        ])
+        fx = _AggFixture(
+            [
+                {"role": "textbox", "label": "Lieblings-Pizza"},
+            ]
+        )
         try:
             with mock.patch.object(
-                aggregator_mod, "_llm_is_available", return_value=False,
+                aggregator_mod,
+                "_llm_is_available",
+                return_value=False,
             ):
                 recs = aggregate_misses(
-                    log_dir=fx.logs, min_count=1, use_llm=True,
+                    log_dir=fx.logs,
+                    min_count=1,
+                    use_llm=True,
                 )
             self.assertEqual(len(recs), 1)
             # Heuristic returns None family for "lieblings-pizza", aber
@@ -493,25 +543,37 @@ class TestAggregateLLM(unittest.TestCase):
         """LLM-Call gelang, aber das Modell sagte family=null — wir behalten
         den Heuristik-Record (None) UND notieren prompt_hash + model fuer
         Audit."""
-        fx = _AggFixture([
-            {"role": "textbox", "label": "Lieblings-Pizza"},
-        ])
+        fx = _AggFixture(
+            [
+                {"role": "textbox", "label": "Lieblings-Pizza"},
+            ]
+        )
         try:
             from survey.learn.suggester import LLMSuggestion
 
-            with mock.patch.object(
-                aggregator_mod, "suggest_via_llm",
-                return_value=LLMSuggestion(
-                    family=None, confidence=0.0, reason="",
-                    model="openai/gpt-5-mini",
-                    prompt_hash="bad1cafe1234",
-                    error="hallucination",
+            with (
+                mock.patch.object(
+                    aggregator_mod,
+                    "suggest_via_llm",
+                    return_value=LLMSuggestion(
+                        family=None,
+                        confidence=0.0,
+                        reason="",
+                        model="openai/gpt-5-mini",
+                        prompt_hash="bad1cafe1234",
+                        error="hallucination",
+                    ),
                 ),
-            ), mock.patch.object(
-                aggregator_mod, "_llm_is_available", return_value=True,
+                mock.patch.object(
+                    aggregator_mod,
+                    "_llm_is_available",
+                    return_value=True,
+                ),
             ):
                 recs = aggregate_misses(
-                    log_dir=fx.logs, min_count=1, use_llm=True,
+                    log_dir=fx.logs,
+                    min_count=1,
+                    use_llm=True,
                 )
             rec = recs[0]
             self.assertEqual(rec["source"], "substring")
@@ -528,7 +590,6 @@ class TestAggregateLLM(unittest.TestCase):
 
 
 class TestPrivacyAndSafety(unittest.TestCase):
-
     def test_prompt_only_contains_label_text_not_user_values(self):
         """SR-57 #56 § Privacy: Der Prompt enthaelt das LABEL, niemals den
         User-Value. matcher-telemetry-records koennen ``user_value`` haben,
@@ -542,20 +603,16 @@ class TestPrivacyAndSafety(unittest.TestCase):
         self.assertIn("wie viele personen", prompt)
         self.assertIn("household_size", prompt)
         # Stable: keine Zeit/User/Persona/PII-Reference im prompt-template.
-        forbidden = ["user_value", "persona=", "timestamp", "USER",
-                     "@", "vorname", "nachname"]
+        forbidden = ["user_value", "persona=", "timestamp", "USER", "@", "vorname", "nachname"]
         for f in forbidden:
-            self.assertNotIn(f, prompt,
-                             f"prompt leaks {f!r}: {prompt!r}")
+            self.assertNotIn(f, prompt, f"prompt leaks {f!r}: {prompt!r}")
 
     def test_prompt_hash_stable_for_fixed_inputs(self):
         """Die Familie-Reihenfolge im Prompt ist sortiert → prompt_hash ist
         unabhaengig von der Reihenfolge, in der die Caller die Familien
         uebergeben."""
-        p1 = suggester_mod._build_llm_prompt(
-            "x", ["phone", "email", "household_size"])
-        p2 = suggester_mod._build_llm_prompt(
-            "x", ["household_size", "email", "phone"])
+        p1 = suggester_mod._build_llm_prompt("x", ["phone", "email", "household_size"])
+        p2 = suggester_mod._build_llm_prompt("x", ["household_size", "email", "phone"])
         self.assertEqual(p1, p2)
         self.assertEqual(prompt_hash(p1), prompt_hash(p2))
 
@@ -565,8 +622,7 @@ class TestPrivacyAndSafety(unittest.TestCase):
         with mock.patch.dict(os.environ, {"AI_GATEWAY_API_KEY": "SECRET-KEY"}):
             with mock.patch(
                 "survey.learn.llm_client.urllib.request.urlopen",
-                side_effect=urllib.error.URLError(
-                    "key=SECRET-KEY exposed in error msg"),
+                side_effect=urllib.error.URLError("key=SECRET-KEY exposed in error msg"),
             ):
                 r = call_llm("x")
         self.assertIsNotNone(r.error)

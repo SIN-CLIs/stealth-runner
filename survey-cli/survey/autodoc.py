@@ -50,8 +50,15 @@ def _daily_file(name: str) -> Path:
 
 # ── Public API ─────────────────────────────────────────
 
-def log_earnings(survey_id: str, provider: str, amount: float,
-                 status: str, duration_s: float, details: Optional[Dict] = None):
+
+def log_earnings(
+    survey_id: str,
+    provider: str,
+    amount: float,
+    status: str,
+    duration_s: float,
+    details: Optional[Dict] = None,
+):
     """Log survey earnings (append-only).
 
     Args:
@@ -80,8 +87,13 @@ def log_earnings(survey_id: str, provider: str, amount: float,
     return entry
 
 
-def log_error(context: str, error: str, survey_id: str = "",
-              provider: str = "", details: Optional[Dict] = None):
+def log_error(
+    context: str,
+    error: str,
+    survey_id: str = "",
+    provider: str = "",
+    details: Optional[Dict] = None,
+):
     """Log an error (append-only).
 
     Captures full stack trace automatically.
@@ -132,9 +144,14 @@ def log_session(action: str, status: str, details: Optional[Dict] = None):
         f.write(json.dumps(entry) + "\n")
 
 
-def log_decision(snapshot_elements: int, actions: List[Dict],
-                 nim_calls: int, elapsed_ms: float,
-                 survey_id: str = "", provider: str = ""):
+def log_decision(
+    snapshot_elements: int,
+    actions: List[Dict],
+    nim_calls: int,
+    elapsed_ms: float,
+    survey_id: str = "",
+    provider: str = "",
+):
     """Log a NEMO decision (for debugging/analysis).
 
     Args:
@@ -165,6 +182,7 @@ def log_decision(snapshot_elements: int, actions: List[Dict],
 
 # ── Summary Generation ─────────────────────────────────
 
+
 def generate_summary(days: int = 7) -> Dict[str, Any]:
     """Generate a summary of recent activity.
 
@@ -186,7 +204,7 @@ def generate_summary(days: int = 7) -> Dict[str, Any]:
 
     # Scan daily files
     for i in range(days):
-        date = (datetime.now().timestamp() - i * 86400)
+        date = datetime.now().timestamp() - i * 86400
         date_str = datetime.fromtimestamp(date).strftime("%Y-%m-%d")
 
         # Earnings
@@ -203,8 +221,7 @@ def generate_summary(days: int = 7) -> Dict[str, Any]:
                         else:
                             summary["surveys_failed"] += 1
                         prov = e.get("provider", "unknown")
-                        summary["by_provider"][prov] = \
-                            summary["by_provider"].get(prov, 0) + 1
+                        summary["by_provider"][prov] = summary["by_provider"].get(prov, 0) + 1
                     except (json.JSONDecodeError, KeyError):
                         pass
 
@@ -220,9 +237,9 @@ def generate_summary(days: int = 7) -> Dict[str, Any]:
 
 def print_summary(summary: Dict[str, Any]):
     """Print a formatted summary."""
-    print(f"\n{'='*50}")
+    print(f"\n{'=' * 50}")
     print("  SURVEY SUMMARY")
-    print(f"{'='*50}")
+    print(f"{'=' * 50}")
     print(f"  Total earned:   {summary['total_earned']:.2f}€")
     print(f"  Completed:      {summary['surveys_completed']}")
     print(f"  Failed/Blocked: {summary['surveys_failed']}")
@@ -231,4 +248,4 @@ def print_summary(summary: Dict[str, Any]):
         print("\n  By Provider:")
         for prov, count in sorted(summary["by_provider"].items(), key=lambda x: -x[1]):
             print(f"    {prov:20s}: {count}")
-    print(f"{'='*50}\n")
+    print(f"{'=' * 50}\n")

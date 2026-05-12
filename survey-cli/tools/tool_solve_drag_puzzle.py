@@ -52,8 +52,12 @@ STATUS: __frozen__=True | Version: 2026-05-11
 BANNED: ❌ dispatchEvent(PointerEvent) | ❌ __ngContext__ traversal | ❌ window.ng
         ❌ playstealth | ❌ webauto-nodriver | ❌ hardcoded PIDs | ❌ pkill Chrome
 """
+
 from __future__ import annotations
-import json, asyncio, random, websocket
+import json
+import asyncio
+import random
+import websocket
 from typing import Optional
 
 __frozen__ = True
@@ -65,7 +69,8 @@ def _extract_number(ws_url: str) -> Optional[str]:
     try:
         ws = websocket.create_connection(ws_url, timeout=10)
         ws.send(json.dumps({"id": 0, "method": "Runtime.evaluate", "params": {"expression": js}}))
-        r = json.loads(ws.recv()); ws.close()
+        r = json.loads(ws.recv())
+        ws.close()
         return r.get("result", {}).get("result", {}).get("value")
     except Exception:
         return None
@@ -83,7 +88,8 @@ def _get_page_info(ws_url: str) -> dict:
     try:
         ws = websocket.create_connection(ws_url, timeout=10)
         ws.send(json.dumps({"id": 0, "method": "Runtime.evaluate", "params": {"expression": js}}))
-        r = json.loads(ws.recv()); ws.close()
+        r = json.loads(ws.recv())
+        ws.close()
         return r.get("result", {}).get("result", {}).get("value", {})
     except Exception:
         return {}
@@ -91,10 +97,24 @@ def _get_page_info(ws_url: str) -> dict:
 
 def _cdp_mouse(ws_url: str, event_type: str, x: float, y: float, button: str = "left", cc: int = 1):
     ws = websocket.create_connection(ws_url, timeout=10)
-    ws.send(json.dumps({"id": 0, "method": "Input.dispatchMouseEvent", "params": {
-        "type": event_type, "x": x, "y": y, "button": button,
-        "clickCount": cc, "pointerType": "mouse"}}))
-    _ = json.loads(ws.recv()); ws.close()
+    ws.send(
+        json.dumps(
+            {
+                "id": 0,
+                "method": "Input.dispatchMouseEvent",
+                "params": {
+                    "type": event_type,
+                    "x": x,
+                    "y": y,
+                    "button": button,
+                    "clickCount": cc,
+                    "pointerType": "mouse",
+                },
+            }
+        )
+    )
+    _ = json.loads(ws.recv())
+    ws.close()
 
 
 async def _solve_async(ws_url: str, number: str) -> dict:
@@ -108,17 +128,24 @@ async def _solve_async(ws_url: str, number: str) -> dict:
     try:
         ws = websocket.create_connection(ws_url, timeout=10)
         ws.send(json.dumps({"id": 0, "method": "Runtime.evaluate", "params": {"expression": js}}))
-        r = json.loads(ws.recv()); ws.close()
+        r = json.loads(ws.recv())
+        ws.close()
         geo = r.get("result", {}).get("result", {}).get("value")
-        if not geo: return {"status": "error", "reason": "no_positions"}
+        if not geo:
+            return {"status": "error", "reason": "no_positions"}
     except Exception as e:
         return {"status": "error", "reason": str(e)[:100]}
 
     sx, sy, ex, ey = geo["sx"], geo["sy"], geo["ex"], geo["ey"]
 
     # Build arc path (10 points, upward arc)
-    points = [(sx + (ex-sx)*(i/10), sy + (ey-sy)*(i/10) - 20*(1-abs(2*i/10-1)) + random.uniform(-1,1))
-              for i in range(1, 11)]
+    points = [
+        (
+            sx + (ex - sx) * (i / 10),
+            sy + (ey - sy) * (i / 10) - 20 * (1 - abs(2 * i / 10 - 1)) + random.uniform(-1, 1),
+        )
+        for i in range(1, 11)
+    ]
 
     _cdp_mouse(ws_url, "mousePressed", sx, sy)
     await asyncio.sleep(0.05)
@@ -132,21 +159,31 @@ async def _solve_async(ws_url: str, number: str) -> dict:
     verify_js = "(function(){var btns=document.querySelectorAll('button');for(var b=0;b<btns.length;b++){var t=(btns[b].innerText||'').trim();if((t.includes('Nächste')||t.includes('Weiter'))&&!btns[b].disabled){btns[b].click();return true;}}return false;})()"
     try:
         ws = websocket.create_connection(ws_url, timeout=10)
-        ws.send(json.dumps({"id": 0, "method": "Runtime.evaluate", "params": {"expression": verify_js}}))
-        r = json.loads(ws.recv()); ws.close()
+        ws.send(
+            json.dumps({"id": 0, "method": "Runtime.evaluate", "params": {"expression": verify_js}})
+        )
+        r = json.loads(ws.recv())
+        ws.close()
         clicked = r.get("result", {}).get("result", {}).get("value", False)
     except Exception:
         clicked = False
 
-    return {"status": "ok", "number": number, "button_clicked": clicked,
-            "source": (round(sx,1), round(sy,1)), "target": (round(ex,1), round(ey,1))}
+    return {
+        "status": "ok",
+        "number": number,
+        "button_clicked": clicked,
+        "source": (round(sx, 1), round(sy, 1)),
+        "target": (round(ex, 1), round(ey, 1)),
+    }
 
 
 def _registry(ok: bool, details: dict):
     try:
         from survey.command_registry import CommandRegistry
+
         CommandRegistry().record_command("solve_drag_puzzle", ok, details)
-    except Exception: pass
+    except Exception:
+        pass
 
 
 def solve(ws_url: str) -> dict:
@@ -164,8 +201,10 @@ def solve(ws_url: str) -> dict:
     """
     try:
         from survey.command_registry import CommandRegistry
+
         CommandRegistry().validate_command("solve_drag_puzzle")
-    except Exception: pass
+    except Exception:
+        pass
 
     page_info = _get_page_info(ws_url)
     if not page_info.get("dragCount"):
@@ -184,5 +223,8 @@ def solve(ws_url: str) -> dict:
 
 if __name__ == "__main__":
     import sys
-    if len(sys.argv) < 2: print("Usage: tool_solve_drag_puzzle.py <ws_url>")
-    else: print(json.dumps(solve(sys.argv[1]), indent=2))
+
+    if len(sys.argv) < 2:
+        print("Usage: tool_solve_drag_puzzle.py <ws_url>")
+    else:
+        print(json.dumps(solve(sys.argv[1]), indent=2))

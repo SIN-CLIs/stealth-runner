@@ -44,6 +44,7 @@ class SurveyStatus(str, Enum):
 
 class AgentState(TypedDict):
     """LangGraph state for survey agent."""
+
     survey_url: str
     survey_id: str
     current_page: int
@@ -145,7 +146,7 @@ class SurveyAgentGraph:
                 "complete": "complete",
                 "disqualified": "handle_error",
                 "error": "handle_error",
-            }
+            },
         )
 
         graph.add_edge("solve_captcha", "parse")
@@ -158,7 +159,7 @@ class SurveyAgentGraph:
                 "next_page": "parse",
                 "complete": "complete",
                 "error": "handle_error",
-            }
+            },
         )
 
         graph.add_edge("complete", END)
@@ -211,7 +212,9 @@ class SurveyAgentGraph:
         state["captcha_required"] = parsed.captcha_detected
         state["total_pages"] = max(state["total_pages"], parsed.total_pages)
 
-        logger.info(f"Found {len(state['questions'])} questions, captcha: {state['captcha_required']}")
+        logger.info(
+            f"Found {len(state['questions'])} questions, captcha: {state['captcha_required']}"
+        )
 
         return state
 
@@ -220,7 +223,13 @@ class SurveyAgentGraph:
         html = state["html_content"].lower()
 
         # Check for disqualification
-        dq_patterns = ["don't qualify", "do not qualify", "disqualified", "screened out", "quota full"]
+        dq_patterns = [
+            "don't qualify",
+            "do not qualify",
+            "disqualified",
+            "screened out",
+            "quota full",
+        ]
         for pattern in dq_patterns:
             if pattern in html:
                 state["status"] = SurveyStatus.DISQUALIFIED.value
@@ -228,7 +237,12 @@ class SurveyAgentGraph:
                 return state
 
         # Check for completion
-        complete_patterns = ["thank you for completing", "survey completed", "successfully completed", "points credited"]
+        complete_patterns = [
+            "thank you for completing",
+            "survey completed",
+            "successfully completed",
+            "points credited",
+        ]
         for pattern in complete_patterns:
             if pattern in html:
                 state["status"] = SurveyStatus.COMPLETED.value
@@ -269,6 +283,7 @@ class SurveyAgentGraph:
             return state
 
         import re
+
         html = state["html_content"]
 
         # Extract site key
@@ -279,7 +294,9 @@ class SurveyAgentGraph:
             return state
 
         site_key = site_key_match.group(1)
-        captcha_type = CaptchaType.HCAPTCHA if "hcaptcha" in html.lower() else CaptchaType.RECAPTCHA_V2
+        captcha_type = (
+            CaptchaType.HCAPTCHA if "hcaptcha" in html.lower() else CaptchaType.RECAPTCHA_V2
+        )
 
         task = CaptchaTask(
             type=captcha_type,
@@ -296,13 +313,13 @@ class SurveyAgentGraph:
 
         # Inject token
         if captcha_type == CaptchaType.RECAPTCHA_V2:
-            await self._browser.evaluate(f'''
+            await self._browser.evaluate(f"""
                 document.getElementById('g-recaptcha-response').innerHTML = '{result.token}';
-            ''')
+            """)
         else:
-            await self._browser.evaluate(f'''
+            await self._browser.evaluate(f"""
                 document.querySelector('[name="h-captcha-response"]').value = '{result.token}';
-            ''')
+            """)
 
         state["captcha_solved"] = True
         logger.info(f"CAPTCHA solved in {result.solve_time:.1f}s")
@@ -317,11 +334,14 @@ class SurveyAgentGraph:
         for q_data in state["questions"]:
             # Reconstruct Question object
             from .survey_parser import QuestionOption
+
             question = Question(
                 id=q_data["id"],
                 type=QuestionType(q_data["type"]),
                 text=q_data["text"],
-                options=[QuestionOption(value=o["value"], label=o["label"]) for o in q_data["options"]],
+                options=[
+                    QuestionOption(value=o["value"], label=o["label"]) for o in q_data["options"]
+                ],
                 required=q_data["required"],
                 element_selector=q_data.get("selector"),
             )
@@ -330,11 +350,13 @@ class SurveyAgentGraph:
             answer = self._answer_engine.generate_answer(question)
 
             # Store answer
-            state["answers"].append({
-                "question_id": question.id,
-                "value": answer.value,
-                "confidence": answer.confidence,
-            })
+            state["answers"].append(
+                {
+                    "question_id": question.id,
+                    "value": answer.value,
+                    "confidence": answer.confidence,
+                }
+            )
 
             # Fill answer in browser
             await self._fill_answer(question, answer)
@@ -368,10 +390,10 @@ class SurveyAgentGraph:
 
             elif question.type == QuestionType.SLIDER:
                 selector = question.element_selector or 'input[type="range"]'
-                await self._browser.evaluate(f'''
+                await self._browser.evaluate(f"""
                     const el = document.querySelector('{selector}');
                     if (el) {{ el.value = {answer.value}; el.dispatchEvent(new Event('change')); }}
-                ''')
+                """)
 
             elif question.type == QuestionType.NUMBER:
                 selector = question.element_selector or 'input[type="number"]'
@@ -389,8 +411,12 @@ class SurveyAgentGraph:
         submit_selectors = [
             'button[type="submit"]',
             'input[type="submit"]',
-            '.next-btn', '.continue-btn', '.submit-btn',
-            '#next', '#continue', '#submit',
+            ".next-btn",
+            ".continue-btn",
+            ".submit-btn",
+            "#next",
+            "#continue",
+            "#submit",
             'button:has-text("Next")',
             'button:has-text("Continue")',
             'button:has-text("Submit")',
@@ -464,20 +490,23 @@ class SurveyAgentGraph:
     def _save_state(self, state: AgentState) -> None:
         """Persist state to SQLite."""
         conn = sqlite3.connect(self.db_path)
-        conn.execute("""
+        conn.execute(
+            """
             INSERT OR REPLACE INTO survey_sessions
             (id, url, status, state_json, started_at, completed_at, earnings, error)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        """, (
-            state["survey_id"],
-            state["survey_url"],
-            state["status"],
-            json.dumps({k: v for k, v in state.items() if k != "html_content"}),
-            state["started_at"],
-            state.get("completed_at"),
-            state.get("earnings", 0),
-            state.get("error"),
-        ))
+        """,
+            (
+                state["survey_id"],
+                state["survey_url"],
+                state["status"],
+                json.dumps({k: v for k, v in state.items() if k != "html_content"}),
+                state["started_at"],
+                state.get("completed_at"),
+                state.get("earnings", 0),
+                state.get("error"),
+            ),
+        )
         conn.commit()
         conn.close()
 

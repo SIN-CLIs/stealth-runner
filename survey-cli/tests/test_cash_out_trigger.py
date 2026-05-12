@@ -24,10 +24,7 @@ class TestCashOutTrigger(unittest.TestCase):
                 stdout='{"windows": [{"pid": 71234, "window_id": 5, '
                 '"title": "HeyPiggy Dashboard"}]}'
             ),
-            MagicMock(
-                stdout='{"tree_markdown": "[3] AXLink Auszahlung\\n[4] AXLink '
-                'Umfragen\\n"}'
-            ),
+            MagicMock(stdout='{"tree_markdown": "[3] AXLink Auszahlung\\n[4] AXLink Umfragen\\n"}'),
             MagicMock(stdout="Performed AXPress on [3]"),
         ]
 
@@ -35,9 +32,7 @@ class TestCashOutTrigger(unittest.TestCase):
         result = trigger.trigger(balance_target=5.0)
 
         self.assertTrue(result)
-        mock_log.assert_called_once_with(
-            "cash_out", "triggered", {"balance_target": 5.0}
-        )
+        mock_log.assert_called_once_with("cash_out", "triggered", {"balance_target": 5.0})
         self.assertEqual(mock_run.call_count, 3)
 
     @patch("survey.cash_out_trigger.subprocess.run")

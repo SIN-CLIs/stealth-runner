@@ -46,6 +46,7 @@ class SecretsClient:
         try:
             if self._config_path.exists():
                 import yaml
+
                 with open(self._config_path) as f:
                     self._config = yaml.safe_load(f) or {}
         except Exception:
@@ -64,10 +65,8 @@ class SecretsClient:
         return CPXCredentials(
             app_id=os.getenv("CPX_APP_ID", "11644"),
             ext_user_id=os.getenv("CPX_EXT_USER_ID", "2525530"),
-            secure_hash=os.getenv("CPX_SECURE_HASH",
-                                  "ae75b0feca27c0f8eb356d7117d978ec"),
-            email=os.getenv("CPX_EMAIL",
-                            "zukunftsorientierte.energie@gmail.com"),
+            secure_hash=os.getenv("CPX_SECURE_HASH", "ae75b0feca27c0f8eb356d7117d978ec"),
+            email=os.getenv("CPX_EMAIL", "zukunftsorientierte.energie@gmail.com"),
         )
 
 

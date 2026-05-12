@@ -16,13 +16,14 @@ Test coverage:
 import json
 import os
 import tempfile
+
 import pytest
 from check_audit_log_schema import (
-    parse_timestamp,
-    validate_record,
     check_logs,
     format_human,
     format_json,
+    parse_timestamp,
+    validate_record,
 )
 
 
@@ -264,17 +265,27 @@ class TestCheckLogs:
         with tempfile.TemporaryDirectory() as tmpdir:
             log_file = os.path.join(tmpdir, "learn-applied-2026-05-12.jsonl")
             with open(log_file, "w") as f:
-                f.write(json.dumps({
-                    "decision": "applied",
-                    "family": "f1",
-                    "keyword": "k1",
-                    "source": "substring",
-                    "confidence": 0.9,
-                    "timestamp": "2026-05-12T10:05:33Z",
-                }) + "\n")
-                f.write(json.dumps({
-                    "decision": "rejected_by_gate",
-                }) + "\n")
+                f.write(
+                    json.dumps(
+                        {
+                            "decision": "applied",
+                            "family": "f1",
+                            "keyword": "k1",
+                            "source": "substring",
+                            "confidence": 0.9,
+                            "timestamp": "2026-05-12T10:05:33Z",
+                        }
+                    )
+                    + "\n"
+                )
+                f.write(
+                    json.dumps(
+                        {
+                            "decision": "rejected_by_gate",
+                        }
+                    )
+                    + "\n"
+                )
 
             violations, total_records, total_files = check_logs(tmpdir)
             assert violations == []
@@ -286,11 +297,16 @@ class TestCheckLogs:
         with tempfile.TemporaryDirectory() as tmpdir:
             log_file = os.path.join(tmpdir, "learn-applied-2026-05-12.jsonl")
             with open(log_file, "w") as f:
-                f.write(json.dumps({
-                    "decision": "applied",
-                    "family": "f1",
-                    # Missing required fields
-                }) + "\n")
+                f.write(
+                    json.dumps(
+                        {
+                            "decision": "applied",
+                            "family": "f1",
+                            # Missing required fields
+                        }
+                    )
+                    + "\n"
+                )
 
             violations, total_records, total_files = check_logs(tmpdir)
             assert len(violations) > 0
@@ -301,7 +317,7 @@ class TestCheckLogs:
         """Multiple log files should all be scanned."""
         with tempfile.TemporaryDirectory() as tmpdir:
             for i in range(3):
-                log_file = os.path.join(tmpdir, f"learn-applied-2026-05-{12+i:02d}.jsonl")
+                log_file = os.path.join(tmpdir, f"learn-applied-2026-05-{12 + i:02d}.jsonl")
                 with open(log_file, "w") as f:
                     f.write(json.dumps({"decision": "rejected_by_ast"}) + "\n")
 

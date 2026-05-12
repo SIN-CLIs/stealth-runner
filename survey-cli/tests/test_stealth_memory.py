@@ -2,11 +2,10 @@
 
 Tests for _update_stealth_memory() and detect_completion_with_memory().
 """
-import json
+
 import pytest
 from datetime import datetime
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch
 
 # Assuming nodes module is importable
 # from survey_cli.survey.graph.nodes import _update_stealth_memory, detect_completion_with_memory
@@ -15,6 +14,7 @@ from unittest.mock import Mock, patch, MagicMock
 
 class FakeSurveyState:
     """Mock SurveyState for testing."""
+
     def __init__(self, **kw):
         self.survey_id = kw.get("survey_id", "test-survey-1")
         self.run_id = kw.get("run_id", "run-001")
@@ -41,7 +41,7 @@ def test_update_stealth_memory_success_local_jsonl():
         balance_before=5.0,
         balance_after=7.5,
         status="completed",
-        provider="purespectrum"
+        provider="purespectrum",
     )
 
     # Mock Path to capture write location
@@ -51,16 +51,19 @@ def test_update_stealth_memory_success_local_jsonl():
         class MockFile:
             def __enter__(self):
                 return self
+
             def __exit__(self, *args):
                 pass
+
             def write(self, data):
                 written_data["content"] = data
+
         return MockFile()
 
     with patch("pathlib.Path.mkdir"):
         with patch("builtins.open", mock_open):
             # Simulate nodes module call (would be from survey.graph.nodes)
-            from unittest.mock import MagicMock
+
             # Simplified inline test since we can't import the actual module
             outcome = {
                 "ts": datetime.now().isoformat(),
@@ -84,7 +87,7 @@ def test_update_stealth_memory_failed_outcome():
         balance_before=5.0,
         balance_after=4.0,  # No gain
         status="screen_out",
-        errors=[{"error": "Eligible check failed", "iteration": 2}]
+        errors=[{"error": "Eligible check failed", "iteration": 2}],
     )
 
     outcome = {
@@ -103,7 +106,7 @@ def test_detect_completion_calls_memory_on_success():
         completion_detected=True,
         status="completed",
         balance_before=3.0,
-        balance_after=6.5
+        balance_after=6.5,
     )
 
     # If detect_completion_with_memory is called, it should:
@@ -118,11 +121,7 @@ def test_detect_completion_calls_memory_on_success():
 
 def test_stealth_memory_best_effort_swallows_errors():
     """Test _update_stealth_memory swallows I/O errors and logs them."""
-    state = FakeSurveyState(
-        survey_id="s-err",
-        balance_before=1.0,
-        balance_after=2.0
-    )
+    FakeSurveyState(survey_id="s-err", balance_before=1.0, balance_after=2.0)
 
     # If Path.mkdir raises, the error should be caught and logged via state.add_error
     # without breaking the survey run

@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SurveyOffer:
     """Survey offer from a platform."""
+
     id: str
     platform: str
     title: str
@@ -48,6 +49,7 @@ class SurveyOffer:
 @dataclass
 class SurveyResult:
     """Result of a survey attempt."""
+
     offer_id: str
     platform: str
     status: str  # completed, disqualified, abandoned, error
@@ -146,15 +148,17 @@ class SwagbucksSource(SurveySource):
                 reward = int(match.group(2))
                 time_min = int(match.group(3))
 
-                offers.append(SurveyOffer(
-                    id=f"sb_{survey_id}",
-                    platform="swagbucks",
-                    title=f"Swagbucks Survey #{survey_id}",
-                    url=f"{self.BASE_URL}/surveys/router/{survey_id}",
-                    estimated_time_minutes=time_min,
-                    reward_amount=reward / 100,  # SB to USD
-                    reward_currency="USD",
-                ))
+                offers.append(
+                    SurveyOffer(
+                        id=f"sb_{survey_id}",
+                        platform="swagbucks",
+                        title=f"Swagbucks Survey #{survey_id}",
+                        url=f"{self.BASE_URL}/surveys/router/{survey_id}",
+                        estimated_time_minutes=time_min,
+                        reward_amount=reward / 100,  # SB to USD
+                        reward_currency="USD",
+                    )
+                )
 
             logger.info(f"Found {len(offers)} Swagbucks surveys")
 
@@ -243,16 +247,18 @@ class ProlificSource(SurveySource):
                 studies = response.json().get("results", [])
 
                 for study in studies:
-                    offers.append(SurveyOffer(
-                        id=f"prolific_{study['id']}",
-                        platform="prolific",
-                        title=study.get("name", "Prolific Study"),
-                        url=study.get("study_url", ""),
-                        estimated_time_minutes=study.get("estimated_completion_time", 10),
-                        reward_amount=study.get("reward", 0) / 100,
-                        reward_currency=study.get("currency", "GBP"),
-                        requirements=study.get("eligibility_requirements", {}),
-                    ))
+                    offers.append(
+                        SurveyOffer(
+                            id=f"prolific_{study['id']}",
+                            platform="prolific",
+                            title=study.get("name", "Prolific Study"),
+                            url=study.get("study_url", ""),
+                            estimated_time_minutes=study.get("estimated_completion_time", 10),
+                            reward_amount=study.get("reward", 0) / 100,
+                            reward_currency=study.get("currency", "GBP"),
+                            requirements=study.get("eligibility_requirements", {}),
+                        )
+                    )
 
             logger.info(f"Found {len(offers)} Prolific studies")
 
@@ -358,10 +364,7 @@ class SurveyRouter:
         all_offers = []
 
         # Fetch from all sources in parallel
-        tasks = [
-            source.get_available_surveys()
-            for source in self.sources.values()
-        ]
+        tasks = [source.get_available_surveys() for source in self.sources.values()]
         results = await asyncio.gather(*tasks, return_exceptions=True)
 
         for result in results:
@@ -370,7 +373,8 @@ class SurveyRouter:
 
         # Filter offers
         filtered = [
-            offer for offer in all_offers
+            offer
+            for offer in all_offers
             if offer.id not in self._blacklist
             and offer.hourly_rate >= min_hourly_rate
             and offer.estimated_time_minutes <= max_time_minutes
@@ -409,7 +413,9 @@ class SurveyRouter:
             "total_attempts": len(self._completed_today),
             "completed": len(completed),
             "disqualified": len(disqualified),
-            "completion_rate": len(completed) / len(self._completed_today) if self._completed_today else 0,
+            "completion_rate": len(completed) / len(self._completed_today)
+            if self._completed_today
+            else 0,
             "total_earnings": total_earnings,
             "total_time_minutes": total_time,
             "effective_hourly_rate": (total_earnings / total_time * 60) if total_time > 0 else 0,

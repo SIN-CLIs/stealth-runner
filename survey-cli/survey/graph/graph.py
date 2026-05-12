@@ -113,7 +113,7 @@ from .nodes import (
     open_survey,
     inject_cookies,
     snapshot_node,
-    captcha_node,        # 2026-05-11 NEU: Captcha-Detection + Solve
+    captcha_node,  # 2026-05-11 NEU: Captcha-Detection + Solve
     decide_node,
     execute_node,
     detect_completion,
@@ -130,8 +130,15 @@ import os
 
 # Versuche .venv Path zur Sicherheit hinzuzufügen
 _VENV_SITE_PACKAGES = os.path.join(
-    os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))),
-    ".venv", "lib", "python3.12", "site-packages"
+    os.path.dirname(
+        os.path.dirname(
+            os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+        )
+    ),
+    ".venv",
+    "lib",
+    "python3.12",
+    "site-packages",
 )
 if os.path.isdir(_VENV_SITE_PACKAGES) and _VENV_SITE_PACKAGES not in sys.path:
     sys.path.insert(0, _VENV_SITE_PACKAGES)
@@ -164,9 +171,9 @@ except ImportError:
 
 try:
     # Repo-Root in sys.path haengen, sodass `import core` funktioniert.
-    _REPO_ROOT = os.path.dirname(os.path.dirname(os.path.dirname(
-        os.path.dirname(os.path.abspath(__file__))
-    )))
+    _REPO_ROOT = os.path.dirname(
+        os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+    )
     if _REPO_ROOT not in sys.path:
         sys.path.insert(0, _REPO_ROOT)
     from core.langgraph_integration import (
@@ -183,14 +190,18 @@ try:
         bootstrap_core,  # noqa: F401
         BudgetExceededError,
     )
+
     CORE_AVAILABLE = True
 except ImportError as _core_err:
     CORE_AVAILABLE = False
+
     # Fallback: identity wrapper, kein Schutz, aber Code laeuft.
     def sync_node_with_core(name, func, **_kw):  # type: ignore[no-redef]
         return func
+
     def run_survey_with_core(state, *, run_fn, **_kw):  # type: ignore[no-redef]
         return run_fn(state)
+
     class BudgetExceededError(Exception):  # type: ignore[no-redef]
         pass
 
@@ -208,9 +219,7 @@ except ImportError as _core_err:
 #   4. else → "snapshot"
 
 
-def route(state: SurveyState) -> Literal[
-    "snapshot", "human_delegate", "END"
-]:
+def route(state: SurveyState) -> Literal["snapshot", "human_delegate", "END"]:
     """Entscheide welche Node als nächstes ausgeführt wird.
 
     Dies ist das zentrale Routing "Gehirn" des Graph. Nach jedem
@@ -297,10 +306,7 @@ def build_graph() -> StateGraph:
         compiled.invoke(initial_state) → final_state
     """
     if not LANGGRAPH_AVAILABLE:
-        raise ImportError(
-            "langgraph is not installed. "
-            "Install with: pip install langgraph"
-        )
+        raise ImportError("langgraph is not installed. Install with: pip install langgraph")
 
     # Schritt 1: StateGraph mit SurveyState als Schema erstellen
     # We use dict as schema for LangGraph compatibility
@@ -315,33 +321,32 @@ def build_graph() -> StateGraph:
     #   - capture_failure() Screenshot wenn config.enable_screenshots_on_error
     # Wenn core nicht verfuegbar ist, ist sync_node_with_core ein no-op
     # identity wrapper (siehe oben CORE_AVAILABLE branch).
-    graph.add_node("ensure_chrome",
-                   sync_node_with_core("ensure_chrome", ensure_chrome,
-                                       capture_screenshot_on_fail=False))
-    graph.add_node("read_balance_before",
-                   sync_node_with_core("read_balance_before", read_balance_before))
-    graph.add_node("open_survey",
-                   sync_node_with_core("open_survey", open_survey))
-    graph.add_node("inject_cookies",
-                   sync_node_with_core("inject_cookies", inject_cookies,
-                                       capture_screenshot_on_fail=False))
-    graph.add_node("snapshot",
-                   sync_node_with_core("snapshot", snapshot_node))
+    graph.add_node(
+        "ensure_chrome",
+        sync_node_with_core("ensure_chrome", ensure_chrome, capture_screenshot_on_fail=False),
+    )
+    graph.add_node(
+        "read_balance_before", sync_node_with_core("read_balance_before", read_balance_before)
+    )
+    graph.add_node("open_survey", sync_node_with_core("open_survey", open_survey))
+    graph.add_node(
+        "inject_cookies",
+        sync_node_with_core("inject_cookies", inject_cookies, capture_screenshot_on_fail=False),
+    )
+    graph.add_node("snapshot", sync_node_with_core("snapshot", snapshot_node))
     # 2026-05-11: Captcha-Detection laeuft NACH snapshot, VOR decide.
     # NO-OP wenn keine Captcha-iframes UND no_dom_change_count < 2.
-    graph.add_node("captcha",
-                   sync_node_with_core("captcha", captcha_node))
-    graph.add_node("decide",
-                   sync_node_with_core("decide", decide_node))
-    graph.add_node("execute",
-                   sync_node_with_core("execute", execute_node))
-    graph.add_node("detect_completion",
-                   sync_node_with_core("detect_completion", detect_completion))
-    graph.add_node("read_balance_after",
-                   sync_node_with_core("read_balance_after", read_balance_after))
-    graph.add_node("human_delegate",
-                   sync_node_with_core("human_delegate", human_delegate,
-                                       capture_screenshot_on_fail=False))
+    graph.add_node("captcha", sync_node_with_core("captcha", captcha_node))
+    graph.add_node("decide", sync_node_with_core("decide", decide_node))
+    graph.add_node("execute", sync_node_with_core("execute", execute_node))
+    graph.add_node("detect_completion", sync_node_with_core("detect_completion", detect_completion))
+    graph.add_node(
+        "read_balance_after", sync_node_with_core("read_balance_after", read_balance_after)
+    )
+    graph.add_node(
+        "human_delegate",
+        sync_node_with_core("human_delegate", human_delegate, capture_screenshot_on_fail=False),
+    )
 
     # Schritt 3: Start-Edge (START → ensure_chrome)
     graph.add_edge(START, "ensure_chrome")
@@ -371,9 +376,9 @@ def build_graph() -> StateGraph:
         "read_balance_after",
         route,
         {
-            "snapshot": "snapshot",        # Continue: NEMO Loop
+            "snapshot": "snapshot",  # Continue: NEMO Loop
             "human_delegate": "human_delegate",  # Escalation
-            "END": END,                    # Terminal
+            "END": END,  # Terminal
         },
     )
 
@@ -405,10 +410,7 @@ def create_graph():
         'completed'
     """
     if not LANGGRAPH_AVAILABLE:
-        raise ImportError(
-            "langgraph is not installed. "
-            "Install with: pip install langgraph"
-        )
+        raise ImportError("langgraph is not installed. Install with: pip install langgraph")
     _graph = build_graph()
     return _graph.compile()
 
@@ -538,6 +540,7 @@ def run_survey_protected(
     """
     if use_langgraph and LANGGRAPH_AVAILABLE:
         compiled = create_graph()
+
         def _run(s):
             # LangGraph kennt unsere CoreCtx-Attribute nicht — bei dict-state
             # waere das ein Problem, aber wir nutzen SurveyState (dataclass)
@@ -546,6 +549,6 @@ def run_survey_protected(
             # Die SurveyState-class hat _core_ctx als Plain-Attribut, das
             # bei dataclass.replace() copied wird.
             return compiled.invoke(s)
+
         return run_survey_with_core(state, run_fn=_run, max_seconds=max_seconds)
-    return run_survey_with_core(state, run_fn=run_survey_loop,
-                                 max_seconds=max_seconds)
+    return run_survey_with_core(state, run_fn=run_survey_loop, max_seconds=max_seconds)

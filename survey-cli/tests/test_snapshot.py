@@ -21,7 +21,7 @@ BANNED METHODS — NIEMALS VERWENDEN:
 """
 
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 import json
 import sys
 import os
@@ -29,8 +29,12 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from survey.snapshot import (
-    _detect_questions, _detect_progress, asdict,
-    generate_snapshot, CompactSnapshot, detect_provider
+    _detect_questions,
+    _detect_progress,
+    asdict,
+    generate_snapshot,
+    CompactSnapshot,
+    detect_provider,
 )
 
 
@@ -38,7 +42,6 @@ from survey.snapshot import (
 # Test _detect_questions
 # =============================================================================
 class TestDetectQuestions(unittest.TestCase):
-
     def test_simple_labels(self):
         elements = [
             {"role": "label", "text": "Geschlecht"},
@@ -49,9 +52,9 @@ class TestDetectQuestions(unittest.TestCase):
 
     def test_ignores_short_text(self):
         elements = [
-            {"role": "label", "text": "Ja"},       # < 5 chars → ignored
-            {"role": "label", "text": "Nein"},     # 4 chars → ignored
-            {"role": "label", "text": "Weiblich"}, # 8 chars → kept
+            {"role": "label", "text": "Ja"},  # < 5 chars → ignored
+            {"role": "label", "text": "Nein"},  # 4 chars → ignored
+            {"role": "label", "text": "Weiblich"},  # 8 chars → kept
         ]
         result = _detect_questions(elements)
         self.assertEqual(result, ["Weiblich"])
@@ -88,8 +91,10 @@ class TestDetectQuestions(unittest.TestCase):
 
     def test_long_question(self):
         elements = [
-            {"role": "label",
-             "text": "Wie zufrieden sind Sie insgesamt mit den angebotenen Produkten und Dienstleistungen?"}
+            {
+                "role": "label",
+                "text": "Wie zufrieden sind Sie insgesamt mit den angebotenen Produkten und Dienstleistungen?",
+            }
         ]
         result = _detect_questions(elements)
         self.assertEqual(len(result), 1)
@@ -104,7 +109,6 @@ class TestDetectQuestions(unittest.TestCase):
 # Test _detect_progress
 # =============================================================================
 class TestDetectProgress(unittest.TestCase):
-
     def test_percent_with_digit(self):
         elements = [{"text": "Seite 3 von 10 (30%)"}]
         self.assertEqual(_detect_progress(elements), "Seite 3 von 10 (30%)")
@@ -153,7 +157,6 @@ class TestDetectProgress(unittest.TestCase):
 # Test asdict (stdlib dataclasses.asdict)
 # =============================================================================
 class TestAsdict(unittest.TestCase):
-
     def test_simple_snapshot(self):
         snap = CompactSnapshot(
             refs={"@e0": {"role": "button", "text": "Weiter"}},
@@ -222,30 +225,31 @@ class TestAsdict(unittest.TestCase):
 # Test detect_provider (already covered in test_detection, add edge cases)
 # =============================================================================
 class TestDetectProvider(unittest.TestCase):
-
     def test_cpx_subdomain(self):
-        self.assertIn(detect_provider("https:// Panels-Surveys.cpx panel.com/"),
-                      ("cpx", "unknown"))
+        self.assertIn(detect_provider("https:// Panels-Surveys.cpx panel.com/"), ("cpx", "unknown"))
 
     def test_qualtrics_domains(self):
-        self.assertIn(detect_provider("https:// university.qualtrics.com/Survey/"),
-                      ("qualtrics", "unknown"))
+        self.assertIn(
+            detect_provider("https:// university.qualtrics.com/Survey/"), ("qualtrics", "unknown")
+        )
 
     def test_tolunastart(self):
-        self.assertIn(detect_provider("https:// start.tolunastart.com/"),
-                      ("tolunastart", "unknown"))
+        self.assertIn(
+            detect_provider("https:// start.tolunastart.com/"), ("tolunastart", "unknown")
+        )
 
     def test_samplicio(self):
-        self.assertIn(detect_provider("https:// rx.samplicio.us/consent/"),
-                      ("samplicio", "unknown"))
+        self.assertIn(
+            detect_provider("https:// rx.samplicio.us/consent/"), ("samplicio", "unknown")
+        )
 
     def test_cint(self):
-        self.assertIn(detect_provider("https:// s.cint.com/Survey/Fingerprint/"),
-                      ("cint", "unknown"))
+        self.assertIn(
+            detect_provider("https:// s.cint.com/Survey/Fingerprint/"), ("cint", "unknown")
+        )
 
     def test_cloudresearch(self):
-        self.assertIn(detect_provider("https:// opnsurf.com/"),
-                      ("cloudresearch", "unknown"))
+        self.assertIn(detect_provider("https:// opnsurf.com/"), ("cloudresearch", "unknown"))
 
     def test_unknown(self):
         self.assertEqual(detect_provider("https:// completely.random-site.xyz/"), "unknown")
@@ -263,6 +267,7 @@ class MockWs:
 
     recv() returns JSON strings which the module's json.loads parses.
     """
+
     def __init__(self, responses):
         self._responses = responses
         self._idx = 0
@@ -289,37 +294,60 @@ class MockWs:
 
 
 class TestGenerateSnapshot(unittest.TestCase):
-
     def test_basic_snapshot(self):
         """Minimal working snapshot with page + elements."""
-        meta_resp = json.dumps({
-            "result": {
+        meta_resp = json.dumps(
+            {
                 "result": {
-                    "value": json.dumps({
-                        "url": "https://example.samplicio.us/",
-                        "title": "Survey",
-                        "innerText": "Question text here",
-                    })
+                    "result": {
+                        "value": json.dumps(
+                            {
+                                "url": "https://example.samplicio.us/",
+                                "title": "Survey",
+                                "innerText": "Question text here",
+                            }
+                        )
+                    }
                 }
             }
-        })
-        elements_resp = json.dumps({
-            "result": {
+        )
+        elements_resp = json.dumps(
+            {
                 "result": {
-                    "value": json.dumps({
-                        "elements": [
-                            {"role": "button", "tag": "button", "text": "Weiter",
-                             "label": "", "name": "", "value": "", "type": "", "enabled": True},
-                            {"role": "radio", "tag": "input", "text": "Option A",
-                             "label": "", "name": "", "value": "", "type": "radio", "enabled": True},
-                        ],
-                        "modalCenter": None,
-                    })
+                    "result": {
+                        "value": json.dumps(
+                            {
+                                "elements": [
+                                    {
+                                        "role": "button",
+                                        "tag": "button",
+                                        "text": "Weiter",
+                                        "label": "",
+                                        "name": "",
+                                        "value": "",
+                                        "type": "",
+                                        "enabled": True,
+                                    },
+                                    {
+                                        "role": "radio",
+                                        "tag": "input",
+                                        "text": "Option A",
+                                        "label": "",
+                                        "name": "",
+                                        "value": "",
+                                        "type": "radio",
+                                        "enabled": True,
+                                    },
+                                ],
+                                "modalCenter": None,
+                            }
+                        )
+                    }
                 }
             }
-        })
+        )
         mock_ws = MockWs([meta_resp, elements_resp])
-        with patch('websocket.create_connection', return_value=mock_ws):
+        with patch("websocket.create_connection", return_value=mock_ws):
             snap = generate_snapshot("ws://localhost:9999", include_semantic=False)
 
         self.assertIsInstance(snap, CompactSnapshot)
@@ -334,100 +362,219 @@ class TestGenerateSnapshot(unittest.TestCase):
 
     def test_ref_indices_increment(self):
         """Element refs increment from @e0."""
-        meta_resp = json.dumps({
-            "result": {"result": {"value": json.dumps(
-                {"url": "https://test.com", "title": "Test", "innerText": ""})}}
-        })
-        elements_resp = json.dumps({
-            "result": {"result": {"value": json.dumps({
-                "elements": [
-                    {"role": "button", "tag": "button", "text": "A",
-                     "label": "", "name": "", "value": "", "type": "", "enabled": True},
-                    {"role": "button", "tag": "button", "text": "B",
-                     "label": "", "name": "", "value": "", "type": "", "enabled": True},
-                    {"role": "button", "tag": "button", "text": "C",
-                     "label": "", "name": "", "value": "", "type": "", "enabled": True},
-                ],
-                "modalCenter": None,
-            })}}
-        })
+        meta_resp = json.dumps(
+            {
+                "result": {
+                    "result": {
+                        "value": json.dumps(
+                            {"url": "https://test.com", "title": "Test", "innerText": ""}
+                        )
+                    }
+                }
+            }
+        )
+        elements_resp = json.dumps(
+            {
+                "result": {
+                    "result": {
+                        "value": json.dumps(
+                            {
+                                "elements": [
+                                    {
+                                        "role": "button",
+                                        "tag": "button",
+                                        "text": "A",
+                                        "label": "",
+                                        "name": "",
+                                        "value": "",
+                                        "type": "",
+                                        "enabled": True,
+                                    },
+                                    {
+                                        "role": "button",
+                                        "tag": "button",
+                                        "text": "B",
+                                        "label": "",
+                                        "name": "",
+                                        "value": "",
+                                        "type": "",
+                                        "enabled": True,
+                                    },
+                                    {
+                                        "role": "button",
+                                        "tag": "button",
+                                        "text": "C",
+                                        "label": "",
+                                        "name": "",
+                                        "value": "",
+                                        "type": "",
+                                        "enabled": True,
+                                    },
+                                ],
+                                "modalCenter": None,
+                            }
+                        )
+                    }
+                }
+            }
+        )
         mock_ws = MockWs([meta_resp, elements_resp])
-        with patch('websocket.create_connection', return_value=mock_ws):
+        with patch("websocket.create_connection", return_value=mock_ws):
             snap = generate_snapshot("ws://localhost:9999", include_semantic=False)
         refs = list(snap.refs.keys())
         self.assertEqual(refs, ["@e0", "@e1", "@e2"])
 
     def test_semantic_questions_extracted(self):
         """include_semantic=True → _detect_questions runs."""
-        meta_resp = json.dumps({
-            "result": {"result": {"value": json.dumps(
-                {"url": "https://test.com", "title": "Test", "innerText": ""})}}
-        })
-        elements_resp = json.dumps({
-            "result": {"result": {"value": json.dumps({
-                "elements": [
-                    {"role": "label", "tag": "label", "text": "Was ist Ihr Geschlecht?",
-                     "label": "", "name": "", "value": "", "type": "", "enabled": True},
-                    {"role": "button", "tag": "button", "text": "Weiter",
-                     "label": "", "name": "", "value": "", "type": "", "enabled": True},
-                ],
-                "modalCenter": None,
-            })}}
-        })
+        meta_resp = json.dumps(
+            {
+                "result": {
+                    "result": {
+                        "value": json.dumps(
+                            {"url": "https://test.com", "title": "Test", "innerText": ""}
+                        )
+                    }
+                }
+            }
+        )
+        elements_resp = json.dumps(
+            {
+                "result": {
+                    "result": {
+                        "value": json.dumps(
+                            {
+                                "elements": [
+                                    {
+                                        "role": "label",
+                                        "tag": "label",
+                                        "text": "Was ist Ihr Geschlecht?",
+                                        "label": "",
+                                        "name": "",
+                                        "value": "",
+                                        "type": "",
+                                        "enabled": True,
+                                    },
+                                    {
+                                        "role": "button",
+                                        "tag": "button",
+                                        "text": "Weiter",
+                                        "label": "",
+                                        "name": "",
+                                        "value": "",
+                                        "type": "",
+                                        "enabled": True,
+                                    },
+                                ],
+                                "modalCenter": None,
+                            }
+                        )
+                    }
+                }
+            }
+        )
         mock_ws = MockWs([meta_resp, elements_resp])
-        with patch('websocket.create_connection', return_value=mock_ws):
+        with patch("websocket.create_connection", return_value=mock_ws):
             snap = generate_snapshot("ws://localhost:9999", include_semantic=True)
         self.assertEqual(snap.semantic.get("questions"), ["Was ist Ihr Geschlecht?"])
 
     def test_semantic_buttons_extracted(self):
         """include_semantic=True → buttons list up to 5."""
-        meta_resp = json.dumps({
-            "result": {"result": {"value": json.dumps(
-                {"url": "https://test.com", "title": "Test", "innerText": ""})}}
-        })
-        elements_resp = json.dumps({
-            "result": {"result": {"value": json.dumps({
-                "elements": [
-                    {"role": "button", "tag": "button", "text": "Start",
-                     "label": "", "name": "", "value": "", "type": "", "enabled": True},
-                    {"role": "button", "tag": "button", "text": "Weiter",
-                     "label": "", "name": "", "value": "", "type": "", "enabled": True},
-                    {"role": "button", "tag": "button", "text": "Zurück",
-                     "label": "", "name": "", "value": "", "type": "", "enabled": True},
-                ],
-                "modalCenter": None,
-            })}}
-        })
+        meta_resp = json.dumps(
+            {
+                "result": {
+                    "result": {
+                        "value": json.dumps(
+                            {"url": "https://test.com", "title": "Test", "innerText": ""}
+                        )
+                    }
+                }
+            }
+        )
+        elements_resp = json.dumps(
+            {
+                "result": {
+                    "result": {
+                        "value": json.dumps(
+                            {
+                                "elements": [
+                                    {
+                                        "role": "button",
+                                        "tag": "button",
+                                        "text": "Start",
+                                        "label": "",
+                                        "name": "",
+                                        "value": "",
+                                        "type": "",
+                                        "enabled": True,
+                                    },
+                                    {
+                                        "role": "button",
+                                        "tag": "button",
+                                        "text": "Weiter",
+                                        "label": "",
+                                        "name": "",
+                                        "value": "",
+                                        "type": "",
+                                        "enabled": True,
+                                    },
+                                    {
+                                        "role": "button",
+                                        "tag": "button",
+                                        "text": "Zurück",
+                                        "label": "",
+                                        "name": "",
+                                        "value": "",
+                                        "type": "",
+                                        "enabled": True,
+                                    },
+                                ],
+                                "modalCenter": None,
+                            }
+                        )
+                    }
+                }
+            }
+        )
         mock_ws = MockWs([meta_resp, elements_resp])
-        with patch('websocket.create_connection', return_value=mock_ws):
+        with patch("websocket.create_connection", return_value=mock_ws):
             snap = generate_snapshot("ws://localhost:9999", include_semantic=True)
         self.assertEqual(snap.semantic.get("buttons"), ["Start", "Weiter", "Zurück"])
 
     def test_empty_elements_handled(self):
         """No elements found → refs={}."""
-        meta_resp = json.dumps({
-            "result": {"result": {"value": json.dumps(
-                {"url": "https://test.com", "title": "Test", "innerText": ""})}}
-        })
-        elements_resp = json.dumps({
-            "result": {"result": {"value": "[]"}}
-        })
+        meta_resp = json.dumps(
+            {
+                "result": {
+                    "result": {
+                        "value": json.dumps(
+                            {"url": "https://test.com", "title": "Test", "innerText": ""}
+                        )
+                    }
+                }
+            }
+        )
+        elements_resp = json.dumps({"result": {"result": {"value": "[]"}}})
         mock_ws = MockWs([meta_resp, elements_resp])
-        with patch('websocket.create_connection', return_value=mock_ws):
+        with patch("websocket.create_connection", return_value=mock_ws):
             snap = generate_snapshot("ws://localhost:9999", include_semantic=False)
         self.assertEqual(snap.refs, {})
 
     def test_missing_innerText_handled(self):
         """Page with no body text."""
-        meta_resp = json.dumps({
-            "result": {"result": {"value": json.dumps(
-                {"url": "https://test.com", "title": "", "innerText": ""})}}
-        })
-        elements_resp = json.dumps({
-            "result": {"result": {"value": "[]"}}
-        })
+        meta_resp = json.dumps(
+            {
+                "result": {
+                    "result": {
+                        "value": json.dumps(
+                            {"url": "https://test.com", "title": "", "innerText": ""}
+                        )
+                    }
+                }
+            }
+        )
+        elements_resp = json.dumps({"result": {"result": {"value": "[]"}}})
         mock_ws = MockWs([meta_resp, elements_resp])
-        with patch('websocket.create_connection', return_value=mock_ws):
+        with patch("websocket.create_connection", return_value=mock_ws):
             snap = generate_snapshot("ws://localhost:9999", include_semantic=False)
         self.assertIsInstance(snap, CompactSnapshot)
         self.assertEqual(snap.title, "")
@@ -437,29 +584,51 @@ class TestGenerateSnapshot(unittest.TestCase):
         meta_resp = json.dumps({"error": "timeout"})
         elements_resp = json.dumps({"error": "timeout"})
         mock_ws = MockWs([meta_resp, elements_resp])
-        with patch('websocket.create_connection', return_value=mock_ws):
+        with patch("websocket.create_connection", return_value=mock_ws):
             snap = generate_snapshot("ws://localhost:9999", include_semantic=False)
         self.assertIsInstance(snap, CompactSnapshot)
         self.assertEqual(snap.url, "")
 
     def test_all_element_fields_captured(self):
         """Every field from ELEMENT_EXTRACTOR_JS is preserved."""
-        meta_resp = json.dumps({
-            "result": {"result": {"value": json.dumps(
-                {"url": "https://test.com", "title": "Test", "innerText": ""})}}
-        })
-        elements_resp = json.dumps({
-            "result": {"result": {"value": json.dumps({
-                "elements": [
-                    {"role": "textbox", "tag": "input", "text": "Berlin",
-                     "label": "Stadt", "name": "city", "value": "Berlin",
-                     "type": "text", "enabled": True},
-                ],
-                "modalCenter": None,
-            })}}
-        })
+        meta_resp = json.dumps(
+            {
+                "result": {
+                    "result": {
+                        "value": json.dumps(
+                            {"url": "https://test.com", "title": "Test", "innerText": ""}
+                        )
+                    }
+                }
+            }
+        )
+        elements_resp = json.dumps(
+            {
+                "result": {
+                    "result": {
+                        "value": json.dumps(
+                            {
+                                "elements": [
+                                    {
+                                        "role": "textbox",
+                                        "tag": "input",
+                                        "text": "Berlin",
+                                        "label": "Stadt",
+                                        "name": "city",
+                                        "value": "Berlin",
+                                        "type": "text",
+                                        "enabled": True,
+                                    },
+                                ],
+                                "modalCenter": None,
+                            }
+                        )
+                    }
+                }
+            }
+        )
         mock_ws = MockWs([meta_resp, elements_resp])
-        with patch('websocket.create_connection', return_value=mock_ws):
+        with patch("websocket.create_connection", return_value=mock_ws):
             snap = generate_snapshot("ws://localhost:9999", include_semantic=False)
         e0 = snap.refs["@e0"]
         self.assertEqual(e0["role"], "textbox")
@@ -472,35 +641,63 @@ class TestGenerateSnapshot(unittest.TestCase):
 
     def test_disabled_element_enabled_false(self):
         """Disabled element has enabled=False."""
-        meta_resp = json.dumps({
-            "result": {"result": {"value": json.dumps(
-                {"url": "https://test.com", "title": "Test", "innerText": ""})}}
-        })
-        elements_resp = json.dumps({
-            "result": {"result": {"value": json.dumps({
-                "elements": [
-                    {"role": "button", "tag": "button", "text": "Submit",
-                     "label": "", "name": "", "value": "", "type": "", "enabled": False},
-                ],
-                "modalCenter": None,
-            })}}
-        })
+        meta_resp = json.dumps(
+            {
+                "result": {
+                    "result": {
+                        "value": json.dumps(
+                            {"url": "https://test.com", "title": "Test", "innerText": ""}
+                        )
+                    }
+                }
+            }
+        )
+        elements_resp = json.dumps(
+            {
+                "result": {
+                    "result": {
+                        "value": json.dumps(
+                            {
+                                "elements": [
+                                    {
+                                        "role": "button",
+                                        "tag": "button",
+                                        "text": "Submit",
+                                        "label": "",
+                                        "name": "",
+                                        "value": "",
+                                        "type": "",
+                                        "enabled": False,
+                                    },
+                                ],
+                                "modalCenter": None,
+                            }
+                        )
+                    }
+                }
+            }
+        )
         mock_ws = MockWs([meta_resp, elements_resp])
-        with patch('websocket.create_connection', return_value=mock_ws):
+        with patch("websocket.create_connection", return_value=mock_ws):
             snap = generate_snapshot("ws://localhost:9999", include_semantic=False)
         self.assertFalse(snap.refs["@e0"]["enabled"])
 
     def test_sends_two_runtime_evaluate_calls(self):
         """generate_snapshot sends exactly 2 CDP calls: metadata + elements."""
-        meta_resp = json.dumps({
-            "result": {"result": {"value": json.dumps(
-                {"url": "https://test.com", "title": "Test", "innerText": ""})}}
-        })
-        elements_resp = json.dumps({
-            "result": {"result": {"value": "[]"}}
-        })
+        meta_resp = json.dumps(
+            {
+                "result": {
+                    "result": {
+                        "value": json.dumps(
+                            {"url": "https://test.com", "title": "Test", "innerText": ""}
+                        )
+                    }
+                }
+            }
+        )
+        elements_resp = json.dumps({"result": {"result": {"value": "[]"}}})
         mock_ws = MockWs([meta_resp, elements_resp])
-        with patch('websocket.create_connection', return_value=mock_ws):
+        with patch("websocket.create_connection", return_value=mock_ws):
             generate_snapshot("ws://localhost:9999", include_semantic=False)
         eval_calls = [s for s in mock_ws.sent if s.get("method") == "Runtime.evaluate"]
         self.assertEqual(len(eval_calls), 2)
@@ -510,7 +707,6 @@ class TestGenerateSnapshot(unittest.TestCase):
 # Test CompactSnapshot edge cases
 # =============================================================================
 class TestCompactSnapshotEdgeCases(unittest.TestCase):
-
     def test_very_long_text_truncated(self):
         """Text > 80 chars is truncated by ELEMENT_EXTRACTOR_JS, reflected in snapshot."""
         snap = CompactSnapshot(

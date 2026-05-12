@@ -23,7 +23,6 @@ INTEGRATION:
 =================================================================================="""
 
 import json
-import re
 import time
 import urllib.request
 import websocket
@@ -34,7 +33,7 @@ CHROME_PORT = 9999
 def find_surveys(dashboard_ws: str, max_surveys: int = 20) -> dict:
     """
     Findet alle Survey-IDs auf dem HeyPiggy Dashboard.
-    
+
     Returns:
         {
             "status": "ok" | "error",
@@ -48,9 +47,13 @@ def find_surveys(dashboard_ws: str, max_surveys: int = 20) -> dict:
     """
     try:
         ws = websocket.create_connection(dashboard_ws, timeout=15)
-        ws.send(json.dumps({
-            "id": 1, "method": "Runtime.evaluate",
-            "params": {"expression": """
+        ws.send(
+            json.dumps(
+                {
+                    "id": 1,
+                    "method": "Runtime.evaluate",
+                    "params": {
+                        "expression": """
 (function() {
     var results = [];
     
@@ -116,14 +119,17 @@ def find_surveys(dashboard_ws: str, max_surveys: int = 20) -> dict:
         count: results.length
     });
 })()
-"""}
-        }))
+"""
+                    },
+                }
+            )
+        )
         r = json.loads(ws.recv())
         ws.close()
-        
+
         raw = r.get("result", {}).get("result", {}).get("value", "{}")
         data = json.loads(raw)
-        
+
         return {
             "status": "ok",
             "surveys": data.get("surveys", []),
@@ -135,17 +141,17 @@ def find_surveys(dashboard_ws: str, max_surveys: int = 20) -> dict:
 
 def find_first_survey(dashboard_ws: str) -> dict:
     """Findet die erste/beste Survey auf dem Dashboard.
-    
+
     Sortiert nach: hoechster Reward zuerst.
     """
     result = find_surveys(dashboard_ws)
     if result["status"] != "ok" or not result["surveys"]:
         return {"status": "error", "reason": "No surveys found"}
-    
+
     # Sort by reward (highest first)
     surveys = sorted(result["surveys"], key=lambda s: s.get("reward", 0), reverse=True)
     first = surveys[0]
-    
+
     return {
         "status": "ok",
         "id": first["id"],
@@ -158,7 +164,7 @@ def find_first_survey(dashboard_ws: str) -> dict:
 def click_survey(dashboard_ws: str, survey_id: str, timeout: float = 5.0) -> dict:
     """
     Klickt Survey-Card via clickSurvey() auf dem Dashboard.
-    
+
     Returns:
         {
             "status": "ok" | "clicked" | "error",
@@ -171,32 +177,41 @@ def click_survey(dashboard_ws: str, survey_id: str, timeout: float = 5.0) -> dic
     # Get initial tab list
     pages_before = {}
     try:
-        pages = json.loads(urllib.request.urlopen(f"http://127.0.0.1:{CHROME_PORT}/json", timeout=5).read())
+        pages = json.loads(
+            urllib.request.urlopen(f"http://127.0.0.1:{CHROME_PORT}/json", timeout=5).read()
+        )
         pages_before = {p.get("id", ""): p.get("url", "") for p in pages}
     except Exception:
         pass
-    
+
     # Click survey card
     try:
         ws = websocket.create_connection(dashboard_ws, timeout=15)
-        ws.send(json.dumps({
-            "id": 1, "method": "Runtime.evaluate",
-            "params": {"expression": f'clickSurvey("{survey_id}")'}
-        }))
+        ws.send(
+            json.dumps(
+                {
+                    "id": 1,
+                    "method": "Runtime.evaluate",
+                    "params": {"expression": f'clickSurvey("{survey_id}")'},
+                }
+            )
+        )
         json.loads(ws.recv())  # consume response
         ws.close()
         print(f"  [CLICK] clickSurvey('{survey_id}') executed")
     except Exception as e:
         return {"status": "error", "reason": str(e)}
-    
+
     # Wait for page transition
     time.sleep(timeout)
-    
+
     # Find new tab
     new_tab_ws = None
     new_tab_url = None
     try:
-        pages = json.loads(urllib.request.urlopen(f"http://127.0.0.1:{CHROME_PORT}/json", timeout=5).read())
+        pages = json.loads(
+            urllib.request.urlopen(f"http://127.0.0.1:{CHROME_PORT}/json", timeout=5).read()
+        )
         for p in pages:
             tab_id = p.get("id", "")
             url = p.get("url", "")
@@ -209,27 +224,35 @@ def click_survey(dashboard_ws: str, survey_id: str, timeout: float = 5.0) -> dic
                     break
     except Exception:
         pass
-    
+
     # Get dashboard body text to check for modal
     modal_detected = False
     body_text = ""
     try:
         ws = websocket.create_connection(dashboard_ws, timeout=15)
-        ws.send(json.dumps({
-            "id": 2, "method": "Runtime.evaluate",
-            "params": {"expression": "document.body.innerText.substring(0, 500)"}
-        }))
+        ws.send(
+            json.dumps(
+                {
+                    "id": 2,
+                    "method": "Runtime.evaluate",
+                    "params": {"expression": "document.body.innerText.substring(0, 500)"},
+                }
+            )
+        )
         r = json.loads(ws.recv())
         ws.close()
         body_text = r.get("result", {}).get("result", {}).get("value", "")
-        
+
         # Modal detection: overlay, popup, oder survey-start button
-        if any(w in body_text.lower() for w in ["umfrage starten", "survey start", "teilnehmen", "beginnen"]):
+        if any(
+            w in body_text.lower()
+            for w in ["umfrage starten", "survey start", "teilnehmen", "beginnen"]
+        ):
             modal_detected = True
-            print(f"  [MODAL] Detected on dashboard")
+            print("  [MODAL] Detected on dashboard")
     except Exception:
         pass
-    
+
     return {
         "status": "ok" if new_tab_ws or modal_detected else "error",
         "new_tab_ws": new_tab_ws,
@@ -242,32 +265,35 @@ def click_survey(dashboard_ws: str, survey_id: str, timeout: float = 5.0) -> dic
 if __name__ == "__main__":
     # Test with current dashboard
     import sys
+
     sys.path.insert(0, "/Users/jeremy/dev/stealth-runner/survey-cli")
     from commands.preflight_check import preflight_check
-    
+
     check = preflight_check()
     if not check["ready"]:
         print("Session not ready. Run start_heypiggy first.")
         sys.exit(1)
-    
-    print(f"\n{'='*50}")
-    print(f"  FIND SURVEY — Dashboard scan")
-    print(f"{'='*50}")
-    
+
+    print(f"\n{'=' * 50}")
+    print("  FIND SURVEY — Dashboard scan")
+    print(f"{'=' * 50}")
+
     # Find surveys
     result = find_surveys(check["tab_ws"])
     print(f"  Surveys found: {result['count']}")
-    
+
     for s in result.get("surveys", [])[:5]:
         print(f"  [{s['idx']}] ID={s['id']} | Reward=€{s['reward']:.2f} | {s['text'][:50]}")
-    
+
     if result.get("surveys"):
         # Try to click first survey
         first = sorted(result["surveys"], key=lambda x: x["reward"], reverse=True)[0]
         print(f"\n  Clicking survey {first['id']} (€{first['reward']:.2f})...")
         click_result = click_survey(check["tab_ws"], first["id"])
         print(f"  Status: {click_result['status']}")
-        print(f"  New tab WS: {click_result['new_tab_ws'][:50] if click_result['new_tab_ws'] else 'NONE'}")
+        print(
+            f"  New tab WS: {click_result['new_tab_ws'][:50] if click_result['new_tab_ws'] else 'NONE'}"
+        )
         print(f"  Modal: {'YES' if click_result['modal_detected'] else 'NO'}")
-    
-    print(f"{'='*50}")
+
+    print(f"{'=' * 50}")

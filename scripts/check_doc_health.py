@@ -11,6 +11,7 @@ Usage:
     python3 scripts/check_doc_health.py --json       # JSON Output
     python3 scripts/check_doc_health.py --violations # Nur UPPERCASE-Verstöße
 """
+
 from __future__ import annotations
 
 import json
@@ -47,47 +48,86 @@ SIN_CLIS_REPOS = [
 
 # Tier 1: Core (MUSS in JEDEM Repo vorhanden sein)
 REQUIRED_CORE = [
-    "sinrules.md", "agents.md", "brain.md", "fix.md",
-    "successful.md", "learn.md", "anti-learn.md", "banned.md",
-    "history.md", "registry.md", "issues.md", "changelog.md",
-    "goal.md", "roadmap.md",
+    "sinrules.md",
+    "agents.md",
+    "brain.md",
+    "fix.md",
+    "successful.md",
+    "learn.md",
+    "anti-learn.md",
+    "banned.md",
+    "history.md",
+    "registry.md",
+    "issues.md",
+    "changelog.md",
+    "goal.md",
+    "roadmap.md",
 ]
 
 # Tier 2: Extra (sollte vorhanden sein)
 REQUIRED_EXTRA = [
-    "readme.md", "architecture.md", "api.md", "usage.md",
-    "testing.md", "benchmarks.md", "plan.md", "faq.md",
-    "security.md", "contributing.md", "troubleshooting.md",
-    "support.md", "design.md", "commands.md",
+    "readme.md",
+    "architecture.md",
+    "api.md",
+    "usage.md",
+    "testing.md",
+    "benchmarks.md",
+    "plan.md",
+    "faq.md",
+    "security.md",
+    "contributing.md",
+    "troubleshooting.md",
+    "support.md",
+    "design.md",
+    "commands.md",
 ]
 
 # Tier 3: Registry (Katalog-Dateien)
 REQUIRED_REGISTRY = [
-    "registry-perception.md", "registry-actuation.md",
-    "registry-graphify.md", "registry-skills.md",
+    "registry-perception.md",
+    "registry-actuation.md",
+    "registry-graphify.md",
+    "registry-skills.md",
     "registry-credentials.md",
 ]
 
 # Tier 4: Spezifisch (projektabhängig)
 REQUIRED_SPECIFIC = [
-    "graphify.md", "graph-report.md", "infisical.md",
-    "tool-registry.md", "tool-manifest.md", "opencode.md", "state.md",
+    "graphify.md",
+    "graph-report.md",
+    "infisical.md",
+    "tool-registry.md",
+    "tool-manifest.md",
+    "opencode.md",
+    "state.md",
 ]
 
 # Tier 5: Extended Registry + Infra (6 files)
 REQUIRED_EXTENDED = [
-    "registry-google.md", "registry-surveys.md", "registry-macos.md",
-    "graph.json", "manifest.json", ".opencode/opencode.json",
+    "registry-google.md",
+    "registry-surveys.md",
+    "registry-macos.md",
+    "graph.json",
+    "manifest.json",
+    ".opencode/opencode.json",
 ]
 
 # UPPERCASE violations (existieren in lowercase? wenn ja → in Ordnung, sonst → violation)
 UPPERCASE_VIOLATIONS = [
-    "AGENTS.md", "README.md", "CHANGELOG.md", "SECURITY.md",
-    "CONTRIBUTING.md", "SUPPORT.md", "CODE_OF_CONDUCT.md",
-    "GRAPH_REPORT.md", "INFISICAL_ENV_VARS.md",
+    "AGENTS.md",
+    "README.md",
+    "CHANGELOG.md",
+    "SECURITY.md",
+    "CONTRIBUTING.md",
+    "SUPPORT.md",
+    "CODE_OF_CONDUCT.md",
+    "GRAPH_REPORT.md",
+    "INFISICAL_ENV_VARS.md",
 ]
 
-ALL_REQUIRED = REQUIRED_CORE + REQUIRED_EXTRA + REQUIRED_REGISTRY + REQUIRED_SPECIFIC + REQUIRED_EXTENDED
+ALL_REQUIRED = (
+    REQUIRED_CORE + REQUIRED_EXTRA + REQUIRED_REGISTRY + REQUIRED_SPECIFIC + REQUIRED_EXTENDED
+)
 
 DEV_ROOT = Path("/Users/jeremy/dev")
 
@@ -113,11 +153,13 @@ def find_repo(name: str) -> Path | None:
     # Try find
     result = subprocess.run(
         ["find", str(DEV_ROOT), "-maxdepth", "3", "-name", name, "-type", "d"],
-        capture_output=True, text=True, timeout=5
+        capture_output=True,
+        text=True,
+        timeout=5,
     )
-    for line in result.stdout.strip().split('\n'):
+    for line in result.stdout.strip().split("\n"):
         p = Path(line)
-        if p.is_dir() and '.git' not in str(p) and 'node_modules' not in str(p):
+        if p.is_dir() and ".git" not in str(p) and "node_modules" not in str(p):
             return p
     return None
 
@@ -126,11 +168,16 @@ def check_repo(repo_path: Path) -> dict:
     """SOTA Audit: check ALL required files + UPPERCASE violations."""
     result = {
         "repo": str(repo_path),
-        "core_found": [], "core_missing": [],
-        "extra_found": [], "extra_missing": [],
-        "registry_found": [], "registry_missing": [],
-        "specific_found": [], "specific_missing": [],
-        "extended_found": [], "extended_missing": [],
+        "core_found": [],
+        "core_missing": [],
+        "extra_found": [],
+        "extra_missing": [],
+        "registry_found": [],
+        "registry_missing": [],
+        "specific_found": [],
+        "specific_missing": [],
+        "extended_found": [],
+        "extended_missing": [],
         "uppercase_violations": [],
     }
     # Tier 1: Core
@@ -173,9 +220,11 @@ def check_repo(repo_path: Path) -> dict:
                 result["uppercase_violations"].append(f)
     # Scoring
     total_found = (
-        len(result["core_found"]) + len(result["extra_found"]) +
-        len(result["registry_found"]) + len(result["specific_found"]) +
-        len(result["extended_found"])
+        len(result["core_found"])
+        + len(result["extra_found"])
+        + len(result["registry_found"])
+        + len(result["specific_found"])
+        + len(result["extended_found"])
     )
     total_required = len(ALL_REQUIRED)
     result["score"] = total_found
@@ -233,8 +282,10 @@ def main():
             continue
         print(f"  {status} {name}: {pct}% ({total}/{max_s}){vflag}")
         if r["core_missing"]:
-            print(f"     CORE missing: {', '.join(r['core_missing'][:4])}" +
-                  (f" +{len(r['core_missing'])-4}" if len(r['core_missing']) > 4 else ""))
+            print(
+                f"     CORE missing: {', '.join(r['core_missing'][:4])}"
+                + (f" +{len(r['core_missing']) - 4}" if len(r["core_missing"]) > 4 else "")
+            )
         if r["uppercase_violations"]:
             print(f"     UPPER violations: {', '.join(r['uppercase_violations'])}")
     if json_mode:
@@ -243,7 +294,9 @@ def main():
         total_found = sum(r["score"] for r in results)
         total_max = sum(r["max_score"] for r in results)
         total_v = sum(r["violation_count"] for r in results)
-        print(f"\n  📊 SOTA: {total_found}/{total_max} ({round(100*total_found/total_max,1)}%) | {total_v} UPPERCASE | {len(results)} repos")
+        print(
+            f"\n  📊 SOTA: {total_found}/{total_max} ({round(100 * total_found / total_max, 1)}%) | {total_v} UPPERCASE | {len(results)} repos"
+        )
 
 
 if __name__ == "__main__":

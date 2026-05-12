@@ -57,7 +57,6 @@ def _rec(**overrides) -> dict:
 
 
 class TestPlanAction(unittest.TestCase):
-
     def test_default_rules_returns_ask(self):
         self.assertEqual(plan_action(_rec(), ReviewRules()), "ask")
 
@@ -75,22 +74,19 @@ class TestPlanAction(unittest.TestCase):
 
     def test_filter_open_only_disabled_processes_any_status(self):
         self.assertEqual(
-            plan_action(_rec(status="accepted"),
-                        ReviewRules(filter_open_only=False)),
+            plan_action(_rec(status="accepted"), ReviewRules(filter_open_only=False)),
             "ask",
         )
 
     def test_filter_source_substring_skips_llm_records(self):
         self.assertEqual(
-            plan_action(_rec(source="llm"),
-                        ReviewRules(filter_source="substring")),
+            plan_action(_rec(source="llm"), ReviewRules(filter_source="substring")),
             "filtered",
         )
 
     def test_filter_source_llm_skips_substring_records(self):
         self.assertEqual(
-            plan_action(_rec(source="substring"),
-                        ReviewRules(filter_source="llm")),
+            plan_action(_rec(source="substring"), ReviewRules(filter_source="llm")),
             "filtered",
         )
 
@@ -159,8 +155,7 @@ class TestPlanAction(unittest.TestCase):
             _rec(source="llm", status="rejected"),
         ]
         out = partition_records(records, rules)
-        self.assertEqual([a for _, a in out],
-                         ["filtered", "ask", "already_done"])
+        self.assertEqual([a for _, a in out], ["filtered", "ask", "already_done"])
 
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -169,7 +164,6 @@ class TestPlanAction(unittest.TestCase):
 
 
 class TestApplyStatus(unittest.TestCase):
-
     def test_accept_sets_accepted(self):
         out = apply_status(_rec(), "accept")
         self.assertEqual(out["status"], "accepted")
@@ -196,28 +190,32 @@ class TestApplyStatus(unittest.TestCase):
 
 
 class TestFormatDisplay(unittest.TestCase):
-
     def test_substring_record_shows_source(self):
         s = format_display_line(_rec(source="substring", confidence=0.9))
         self.assertIn("source=substring", s)
         self.assertIn("conf=0.90", s)
 
     def test_llm_record_shows_model_and_hash(self):
-        s = format_display_line(_rec(
-            source="llm", confidence=0.91,
-            model="openai/gpt-5-mini",
-            prompt_hash="abc123def456",
-        ))
+        s = format_display_line(
+            _rec(
+                source="llm",
+                confidence=0.91,
+                model="openai/gpt-5-mini",
+                prompt_hash="abc123def456",
+            )
+        )
         self.assertIn("source=llm", s)
         self.assertIn("openai/gpt-5-mini", s)
         self.assertIn("hash=abc123de", s)
 
     def test_llm_record_truncates_very_long_model_id(self):
-        s = format_display_line(_rec(
-            source="llm",
-            model="some-very-long-vendor/extremely-long-model-name-v2.7-rc3",
-            prompt_hash="d" * 12,
-        ))
+        s = format_display_line(
+            _rec(
+                source="llm",
+                model="some-very-long-vendor/extremely-long-model-name-v2.7-rc3",
+                prompt_hash="d" * 12,
+            )
+        )
         # Original model length > 30 — should be truncated with "..."
         self.assertIn("...", s)
 
@@ -238,18 +236,16 @@ class _ReviewFixture:
         self.td = tempfile.mkdtemp(prefix="review-")
         self.logs = os.path.join(self.td, "logs")
         os.makedirs(self.logs)
-        self.suggestions_path = os.path.join(
-            self.logs, "pattern-suggestions-20260512.jsonl")
+        self.suggestions_path = os.path.join(self.logs, "pattern-suggestions-20260512.jsonl")
         with open(self.suggestions_path, "w") as f:
             for r in records:
                 f.write(json.dumps(r) + "\n")
-        self.accepted_path = os.path.join(
-            self.logs, "pattern-suggestions-accepted.jsonl")
-        self.rejected_path = os.path.join(
-            self.logs, "pattern-suggestions-rejected.jsonl")
+        self.accepted_path = os.path.join(self.logs, "pattern-suggestions-accepted.jsonl")
+        self.rejected_path = os.path.join(self.logs, "pattern-suggestions-rejected.jsonl")
 
     def cleanup(self):
         import shutil
+
         shutil.rmtree(self.td, ignore_errors=True)
 
     def read_input(self):
@@ -273,26 +269,33 @@ def _run_review(fx, *args):
     """Invoke cli.main(["review", ...]) capturing stdout."""
     buf = io.StringIO()
     with mock.patch.object(sys, "stdout", buf):
-        rc = cli_mod.main([
-            "review",
-            "--logs", fx.logs,
-            "--input", fx.suggestions_path,
-            *args,
-        ])
+        rc = cli_mod.main(
+            [
+                "review",
+                "--logs",
+                fx.logs,
+                "--input",
+                fx.suggestions_path,
+                *args,
+            ]
+        )
     return rc, buf.getvalue()
 
 
 class TestCmdReview(unittest.TestCase):
-
     def test_auto_accept_high_conf_substring_only(self):
-        fx = _ReviewFixture([
-            _rec(normalized_label="a", source="substring", confidence=0.95),
-            _rec(normalized_label="b", source="substring", confidence=0.5),
-            _rec(normalized_label="c", source="llm", confidence=0.99),
-        ])
+        fx = _ReviewFixture(
+            [
+                _rec(normalized_label="a", source="substring", confidence=0.95),
+                _rec(normalized_label="b", source="substring", confidence=0.5),
+                _rec(normalized_label="c", source="llm", confidence=0.99),
+            ]
+        )
         try:
             rc, out = _run_review(
-                fx, "--auto-accept-substring-above", "0.9",
+                fx,
+                "--auto-accept-substring-above",
+                "0.9",
                 "--non-interactive",
             )
             self.assertEqual(rc, 0)
@@ -310,14 +313,18 @@ class TestCmdReview(unittest.TestCase):
             fx.cleanup()
 
     def test_auto_reject_low_conf_llm(self):
-        fx = _ReviewFixture([
-            _rec(normalized_label="a", source="llm", confidence=0.5),
-            _rec(normalized_label="b", source="llm", confidence=0.9),
-            _rec(normalized_label="c", source="substring", confidence=0.99),
-        ])
+        fx = _ReviewFixture(
+            [
+                _rec(normalized_label="a", source="llm", confidence=0.5),
+                _rec(normalized_label="b", source="llm", confidence=0.9),
+                _rec(normalized_label="c", source="substring", confidence=0.99),
+            ]
+        )
         try:
             rc, out = _run_review(
-                fx, "--auto-reject-llm-below", "0.85",
+                fx,
+                "--auto-reject-llm-below",
+                "0.85",
                 "--non-interactive",
             )
             self.assertEqual(rc, 0)
@@ -330,17 +337,21 @@ class TestCmdReview(unittest.TestCase):
             fx.cleanup()
 
     def test_combined_auto_rules(self):
-        fx = _ReviewFixture([
-            _rec(normalized_label="hi-sub",  source="substring", confidence=0.95),
-            _rec(normalized_label="lo-sub",  source="substring", confidence=0.4),
-            _rec(normalized_label="hi-llm",  source="llm",       confidence=0.9),
-            _rec(normalized_label="lo-llm",  source="llm",       confidence=0.5),
-        ])
+        fx = _ReviewFixture(
+            [
+                _rec(normalized_label="hi-sub", source="substring", confidence=0.95),
+                _rec(normalized_label="lo-sub", source="substring", confidence=0.4),
+                _rec(normalized_label="hi-llm", source="llm", confidence=0.9),
+                _rec(normalized_label="lo-llm", source="llm", confidence=0.5),
+            ]
+        )
         try:
             rc, out = _run_review(
                 fx,
-                "--auto-accept-substring-above", "0.9",
-                "--auto-reject-llm-below", "0.85",
+                "--auto-accept-substring-above",
+                "0.9",
+                "--auto-reject-llm-below",
+                "0.85",
                 "--non-interactive",
             )
             self.assertEqual(rc, 0)
@@ -358,14 +369,19 @@ class TestCmdReview(unittest.TestCase):
             fx.cleanup()
 
     def test_filter_source_llm_only(self):
-        fx = _ReviewFixture([
-            _rec(normalized_label="a", source="substring", confidence=0.99),
-            _rec(normalized_label="b", source="llm", confidence=0.5),
-        ])
+        fx = _ReviewFixture(
+            [
+                _rec(normalized_label="a", source="substring", confidence=0.99),
+                _rec(normalized_label="b", source="llm", confidence=0.5),
+            ]
+        )
         try:
             rc, out = _run_review(
-                fx, "--filter-source", "llm",
-                "--auto-reject-llm-below", "0.85",
+                fx,
+                "--filter-source",
+                "llm",
+                "--auto-reject-llm-below",
+                "0.85",
                 "--non-interactive",
             )
             self.assertEqual(rc, 0)
@@ -377,17 +393,20 @@ class TestCmdReview(unittest.TestCase):
             fx.cleanup()
 
     def test_idempotent_rerun_changes_nothing(self):
-        fx = _ReviewFixture([
-            _rec(normalized_label="a", source="substring", confidence=0.99),
-        ])
+        fx = _ReviewFixture(
+            [
+                _rec(normalized_label="a", source="substring", confidence=0.99),
+            ]
+        )
         try:
-            _run_review(fx, "--auto-accept-substring-above", "0.9",
-                        "--non-interactive")
+            _run_review(fx, "--auto-accept-substring-above", "0.9", "--non-interactive")
             len_before = len(fx.read_accepted())
             # Re-run: input file now has status="accepted", should be
             # already_done, no new output.
             rc, out = _run_review(
-                fx, "--auto-accept-substring-above", "0.9",
+                fx,
+                "--auto-accept-substring-above",
+                "0.9",
                 "--non-interactive",
             )
             self.assertEqual(rc, 0)
@@ -398,13 +417,18 @@ class TestCmdReview(unittest.TestCase):
             fx.cleanup()
 
     def test_dry_run_writes_no_files_and_no_status_flip(self):
-        fx = _ReviewFixture([
-            _rec(normalized_label="a", source="substring", confidence=0.99),
-        ])
+        fx = _ReviewFixture(
+            [
+                _rec(normalized_label="a", source="substring", confidence=0.99),
+            ]
+        )
         try:
             rc, out = _run_review(
-                fx, "--auto-accept-substring-above", "0.9",
-                "--non-interactive", "--dry-run",
+                fx,
+                "--auto-accept-substring-above",
+                "0.9",
+                "--non-interactive",
+                "--dry-run",
             )
             self.assertEqual(rc, 0)
             self.assertFalse(os.path.exists(fx.accepted_path))
@@ -416,13 +440,22 @@ class TestCmdReview(unittest.TestCase):
 
     def test_display_shows_llm_fields_for_llm_records(self):
         """Regression-guard: pre-#102 cmd_review never showed source/model."""
-        fx = _ReviewFixture([
-            _rec(normalized_label="x", source="llm", confidence=0.7,
-                 model="openai/gpt-5-mini", prompt_hash="cafe1234dead"),
-        ])
+        fx = _ReviewFixture(
+            [
+                _rec(
+                    normalized_label="x",
+                    source="llm",
+                    confidence=0.7,
+                    model="openai/gpt-5-mini",
+                    prompt_hash="cafe1234dead",
+                ),
+            ]
+        )
         try:
             rc, out = _run_review(
-                fx, "--auto-reject-llm-below", "0.85",
+                fx,
+                "--auto-reject-llm-below",
+                "0.85",
                 "--non-interactive",
             )
             self.assertEqual(rc, 0)

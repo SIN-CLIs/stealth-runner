@@ -66,10 +66,10 @@ import os
 import statistics
 import time
 from collections import defaultdict
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from datetime import datetime
-from typing import Any, Callable, Optional
-
+from typing import Any
 
 # -- METRIC-SAMPLE / STATS -----------------------------------------------------
 
@@ -77,6 +77,7 @@ from typing import Any, Callable, Optional
 @dataclass
 class MetricSample:
     """Einzelner Messwert mit Timestamp + Labels."""
+
     value: float
     timestamp: float = field(default_factory=time.time)
     labels: dict[str, str] = field(default_factory=dict)
@@ -90,6 +91,7 @@ class MetricStats:
     deshalb approximativ bei sehr hohem Throughput, fuer Survey-Use-Case
     (max 50 Surveys/Stunde) komplett ausreichend.
     """
+
     count: int = 0
     sum: float = 0.0
     min: float = float("inf")
@@ -195,7 +197,7 @@ class AnalyticsCollector:
     class timer:
         """Misst Dauer eines With-Blocks. Funktioniert sync und async."""
 
-        def __init__(self, collector: "AnalyticsCollector", name: str, **labels):
+        def __init__(self, collector: AnalyticsCollector, name: str, **labels):
             self.collector = collector
             self.name = name
             self.labels = labels
@@ -215,12 +217,12 @@ class AnalyticsCollector:
         async def __aexit__(self, *args):
             self.collector.record(self.name, time.time() - self.start, **self.labels)
 
-    def timer(self, name: str, **labels) -> "AnalyticsCollector.timer":  # type: ignore[no-redef]
+    def timer(self, name: str, **labels) -> AnalyticsCollector.timer:  # type: ignore[no-redef]
         return AnalyticsCollector.timer(self, name, **labels)
 
     # -- Read-API -----------------------------------------------------------
 
-    def get_stats(self, name: str, **labels) -> Optional[dict]:
+    def get_stats(self, name: str, **labels) -> dict | None:
         key = self._make_key(name, labels)
         if key in self._metrics:
             return self._metrics[key].to_dict()
@@ -268,9 +270,7 @@ class MetricsExporter:
         lines: list[str] = []
         lines.append("# HELP stealth_uptime_seconds Time since process start")
         lines.append("# TYPE stealth_uptime_seconds gauge")
-        lines.append(
-            f"stealth_uptime_seconds {time.time() - self.collector._start_time:.2f}"
-        )
+        lines.append(f"stealth_uptime_seconds {time.time() - self.collector._start_time:.2f}")
         for key, stats in self.collector._metrics.items():
             safe = key.replace("-", "_").replace(".", "_")
             lines.append(f"# TYPE {safe} summary")
@@ -323,6 +323,7 @@ class MetricsExporter:
 @dataclass
 class ComponentHealth:
     """Status einer einzelnen Komponente."""
+
     name: str
     status: str  # healthy | degraded | unhealthy
     latency_ms: float = 0.0
@@ -358,7 +359,8 @@ class HealthChecker:
     async def check(self, name: str) -> ComponentHealth:
         if name not in self._checks:
             return ComponentHealth(
-                name=name, status="unknown",
+                name=name,
+                status="unknown",
                 details={"error": "check not registered"},
             )
         start = time.time()
@@ -370,12 +372,17 @@ class HealthChecker:
                 status, details = check_func()
             latency = (time.time() - start) * 1000
             health = ComponentHealth(
-                name=name, status=status, latency_ms=latency, details=details or {},
+                name=name,
+                status=status,
+                latency_ms=latency,
+                details=details or {},
             )
         except Exception as e:
             latency = (time.time() - start) * 1000
             health = ComponentHealth(
-                name=name, status="unhealthy", latency_ms=latency,
+                name=name,
+                status="unhealthy",
+                latency_ms=latency,
                 details={"error": str(e)},
             )
         self._results[name] = health
@@ -409,10 +416,9 @@ class HealthChecker:
 async def check_chrome_cdp(port: int = 9999) -> tuple[str, dict]:
     """Bot-Chrome auf Port 9999 erreichbar?"""
     import urllib.request
+
     try:
-        with urllib.request.urlopen(
-            f"http://127.0.0.1:{port}/json/version", timeout=2
-        ) as r:
+        with urllib.request.urlopen(f"http://127.0.0.1:{port}/json/version", timeout=2) as r:
             data = json.load(r)
             return "healthy", {"browser": data.get("Browser", "unknown"), "port": port}
     except Exception as e:
@@ -425,10 +431,9 @@ async def check_supabase(url: str, key: str) -> tuple[str, dict]:
         return "degraded", {"reason": "not_configured"}
     try:
         import httpx
+
         async with httpx.AsyncClient() as client:
-            resp = await client.get(
-                f"{url}/rest/v1/", headers={"apikey": key}, timeout=5.0
-            )
+            resp = await client.get(f"{url}/rest/v1/", headers={"apikey": key}, timeout=5.0)
             if resp.status_code == 200:
                 return "healthy", {}
             return "degraded", {"status_code": resp.status_code}
@@ -477,6 +482,7 @@ async def check_captcha_quota(api_key: str) -> tuple[str, dict]:
         return "degraded", {"reason": "no_api_key"}
     try:
         import httpx
+
         async with httpx.AsyncClient() as client:
             resp = await client.get(
                 f"https://2captcha.com/res.php?key={api_key}&action=getbalance",

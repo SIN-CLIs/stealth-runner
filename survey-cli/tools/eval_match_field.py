@@ -58,22 +58,23 @@ from survey.profile_loader import ProfileLoader  # noqa: E402
 @dataclass
 class EvalResult:
     """Ergebnis der Evaluation."""
+
     total: int
     true_positives: int
     false_positives: int
     false_negatives: int
     true_negatives: int
-    
+
     @property
     def precision(self) -> float:
         denom = self.true_positives + self.false_positives
         return self.true_positives / denom if denom > 0 else 0.0
-    
+
     @property
     def recall(self) -> float:
         denom = self.true_positives + self.false_negatives
         return self.true_positives / denom if denom > 0 else 0.0
-    
+
     @property
     def f1(self) -> float:
         p, r = self.precision, self.recall
@@ -82,7 +83,7 @@ class EvalResult:
 
 def load_corpus(corpus_path: Path) -> list[dict]:
     """Lädt Gold-Korpus aus JSONL-Datei.
-    
+
     Format pro Zeile:
     {
         "role": "textbox",
@@ -107,36 +108,36 @@ def load_corpus(corpus_path: Path) -> list[dict]:
 
 def match_pattern_key(label: str, placeholder: str = "") -> Optional[str]:
     """Direkter Pattern-Match auf FIELD_PATTERNS, gibt logical_key zurück.
-    
+
     Dies testet die Pattern-Logik direkt, unabhängig von match_field()
     die auch role-Filtering und value-resolution macht.
     """
     combined = (label + " " + (placeholder or "")).strip().lower()
-    
+
     for logical_key, pattern in ProfileLoader.FIELD_PATTERNS:
         if pattern.search(combined):
             return logical_key
-    
+
     return None
 
 
 def evaluate(corpus: list[dict], verbose: bool = False) -> EvalResult:
     """Evaluiert FIELD_PATTERNS Pattern-Matching gegen den Gold-Korpus.
-    
+
     Testet direkt die Regex-Pattern, nicht die match_field() Funktion.
     """
     tp = fp = fn = tn = 0
     misses = []
-    
+
     for case in corpus:
-        role = case.get("role", "textbox")
+        case.get("role", "textbox")
         label = case.get("label", "")
         placeholder = case.get("placeholder", "")
         expected_key = case.get("expected_key")  # None für negative cases
-        
+
         # Pattern-Match
         predicted_key = match_pattern_key(label, placeholder)
-        
+
         # Klassifizierung
         if expected_key is not None:  # Positive case (erwarten Match)
             if predicted_key == expected_key:
@@ -145,22 +146,23 @@ def evaluate(corpus: list[dict], verbose: bool = False) -> EvalResult:
                     print(f"[TP] '{label}' -> '{predicted_key}'")
             elif predicted_key is not None:
                 fp += 1
-                misses.append({
-                    "type": "FP",
-                    "label": label,
-                    "expected": expected_key,
-                    "predicted": predicted_key
-                })
+                misses.append(
+                    {
+                        "type": "FP",
+                        "label": label,
+                        "expected": expected_key,
+                        "predicted": predicted_key,
+                    }
+                )
                 if verbose:
-                    print(f"[FP] '{label}' -> predicted '{predicted_key}', expected '{expected_key}'")
+                    print(
+                        f"[FP] '{label}' -> predicted '{predicted_key}', expected '{expected_key}'"
+                    )
             else:
                 fn += 1
-                misses.append({
-                    "type": "FN",
-                    "label": label,
-                    "expected": expected_key,
-                    "predicted": None
-                })
+                misses.append(
+                    {"type": "FN", "label": label, "expected": expected_key, "predicted": None}
+                )
                 if verbose:
                     print(f"[FN] '{label}' -> NO MATCH, expected '{expected_key}'")
         else:  # Negative case (erwarten kein Match)
@@ -170,70 +172,58 @@ def evaluate(corpus: list[dict], verbose: bool = False) -> EvalResult:
                     print(f"[TN] '{label}' -> NO MATCH (correct)")
             else:
                 fp += 1
-                misses.append({
-                    "type": "FP_NEG",
-                    "label": label,
-                    "expected": None,
-                    "predicted": predicted_key
-                })
+                misses.append(
+                    {"type": "FP_NEG", "label": label, "expected": None, "predicted": predicted_key}
+                )
                 if verbose:
                     print(f"[FP] '{label}' -> predicted '{predicted_key}', expected NO MATCH")
-    
+
     if verbose and misses:
         print("\n=== MISSES ===")
         for m in misses:
             print(f"  {m['type']}: '{m['label']}' expected={m['expected']} got={m['predicted']}")
-    
+
     return EvalResult(
         total=len(corpus),
         true_positives=tp,
         false_positives=fp,
         false_negatives=fn,
-        true_negatives=tn
+        true_negatives=tn,
     )
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description="Eval-Harness für ProfileLoader.FIELD_PATTERNS"
-    )
+    parser = argparse.ArgumentParser(description="Eval-Harness für ProfileLoader.FIELD_PATTERNS")
     parser.add_argument(
         "--corpus",
         type=Path,
         default=PARENT / "tests" / "fixtures" / "match_field_corpus.jsonl",
-        help="Pfad zum Gold-Korpus (JSONL)"
+        help="Pfad zum Gold-Korpus (JSONL)",
     )
     parser.add_argument(
-        "--threshold",
-        type=float,
-        default=0.92,
-        help="Minimum F1-Score für CI-Pass (default: 0.92)"
+        "--threshold", type=float, default=0.92, help="Minimum F1-Score für CI-Pass (default: 0.92)"
     )
-    parser.add_argument(
-        "--verbose", "-v",
-        action="store_true",
-        help="Zeige jeden Test-Case"
-    )
+    parser.add_argument("--verbose", "-v", action="store_true", help="Zeige jeden Test-Case")
     args = parser.parse_args()
-    
+
     # Corpus laden
     if not args.corpus.exists():
         print(f"[ERROR] Corpus nicht gefunden: {args.corpus}", file=sys.stderr)
         print("[HINT] Erstelle survey-cli/tests/fixtures/match_field_corpus.jsonl", file=sys.stderr)
         sys.exit(1)
-    
+
     corpus = load_corpus(args.corpus)
     if not corpus:
         print("[ERROR] Leerer Corpus", file=sys.stderr)
         sys.exit(1)
-    
+
     print(f"[EVAL] Corpus: {len(corpus)} cases")
     print(f"[EVAL] Threshold: F1 >= {args.threshold}")
     print()
-    
+
     # Evaluation
     result = evaluate(corpus, verbose=args.verbose)
-    
+
     # Report
     print("=" * 60)
     print("EVAL RESULTS")
@@ -248,7 +238,7 @@ def main():
     print(f"Recall:           {result.recall:.4f}")
     print(f"F1 Score:         {result.f1:.4f}")
     print("=" * 60)
-    
+
     # Threshold Check
     if result.f1 >= args.threshold:
         print(f"\n[PASS] F1 {result.f1:.4f} >= threshold {args.threshold}")

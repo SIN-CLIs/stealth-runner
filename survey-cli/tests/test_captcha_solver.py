@@ -23,19 +23,25 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Also add project root so cli.modules is importable
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 
-MOCK_WINDOWS = json.dumps({
-    "windows": [
-        {"pid": 12345, "window_id": 100, "title": "Survey", "bounds": {"x": 100, "y": 50, "height": 800}}
-    ]
-})
+MOCK_WINDOWS = json.dumps(
+    {
+        "windows": [
+            {
+                "pid": 12345,
+                "window_id": 100,
+                "title": "Survey",
+                "bounds": {"x": 100, "y": 50, "height": 800},
+            }
+        ]
+    }
+)
 
-MOCK_TREE = json.dumps({
-    "tree_markdown": "- [1] AXWebArea @(73,87)"
-})
+MOCK_TREE = json.dumps({"tree_markdown": "- [1] AXWebArea @(73,87)"})
 
 
 def _make_run_side_effect():
     """Configure subprocess.run to return shaped responses."""
+
     def _side_effect(cmd_override=None, **kwargs):
         result = MagicMock()
         result.stdout = ""
@@ -56,14 +62,19 @@ def _make_run_side_effect():
         elif "page" in cmd_str:
             input_data = str(kwargs.get("input", ""))
             if "gc-drag-block" in input_data and "getBoundingClientRect" in input_data:
-                result.stdout = "```\n" + json.dumps({"fx":200,"fy":300,"tx":400,"ty":310}) + "\n```"
+                result.stdout = (
+                    "```\n" + json.dumps({"fx": 200, "fy": 300, "tx": 400, "ty": 310}) + "\n```"
+                )
             elif ".left" in input_data and "style" in input_data:
-                result.stdout = "```\n" + json.dumps({"left":"0px"}) + "\n```"
+                result.stdout = "```\n" + json.dumps({"left": "0px"}) + "\n```"
             elif "getBoundingClientRect" in input_data:
-                result.stdout = "```\n" + json.dumps({"fx":100,"fy":200,"tx":300,"ty":210}) + "\n```"
+                result.stdout = (
+                    "```\n" + json.dumps({"fx": 100, "fy": 200, "tx": 300, "ty": 210}) + "\n```"
+                )
             else:
                 result.stdout = "```\n{}\n```"
         return result
+
     return _side_effect
 
 
@@ -71,13 +82,9 @@ class TestCaptchaSolver(unittest.TestCase):
     """Test CaptchaSolver — slide captcha solving with mocked cua-driver."""
 
     def setUp(self):
-        self._run_patcher = patch(
-            "cli.modules.captcha_solver.subprocess.run"
-        )
+        self._run_patcher = patch("cli.modules.captcha_solver.subprocess.run")
         self.mock_run = self._run_patcher.start()
-        self._sleep_patcher = patch(
-            "cli.modules.captcha_solver.time.sleep"
-        )
+        self._sleep_patcher = patch("cli.modules.captcha_solver.time.sleep")
         self.mock_sleep = self._sleep_patcher.start()
 
     def tearDown(self):
@@ -88,6 +95,7 @@ class TestCaptchaSolver(unittest.TestCase):
         """CaptchaSolver stores pid and wid."""
         self.mock_run.side_effect = _make_run_side_effect()
         from cli.modules.captcha_solver import CaptchaSolver
+
         solver = CaptchaSolver(pid=12345, wid=100)
         self.assertEqual(solver.pid, 12345)
         self.assertEqual(solver.wid, 100)
@@ -96,6 +104,7 @@ class TestCaptchaSolver(unittest.TestCase):
         """_refresh_offsets sets _wx, _wy from bounds."""
         self.mock_run.side_effect = _make_run_side_effect()
         from cli.modules.captcha_solver import CaptchaSolver
+
         solver = CaptchaSolver(pid=12345, wid=100)
         self.assertEqual(solver._wx, 100)
         self.assertEqual(solver._wy, 50)
@@ -104,6 +113,7 @@ class TestCaptchaSolver(unittest.TestCase):
         """dom_to_window adds toolbar offset to y coordinate."""
         self.mock_run.side_effect = _make_run_side_effect()
         from cli.modules.captcha_solver import CaptchaSolver
+
         solver = CaptchaSolver(pid=12345, wid=100)
         wx, wy = solver.dom_to_window(100, 200)
         self.assertEqual(wx, 100)
@@ -113,6 +123,7 @@ class TestCaptchaSolver(unittest.TestCase):
         """drag() calls cua-driver with correct params."""
         self.mock_run.side_effect = _make_run_side_effect()
         from cli.modules.captcha_solver import CaptchaSolver
+
         solver = CaptchaSolver(pid=12345, wid=100)
         result = solver.drag(100, 200, 300, 400)
         self.assertTrue(result)
@@ -121,6 +132,7 @@ class TestCaptchaSolver(unittest.TestCase):
         """solve_slide returns True when captcha solved."""
         self.mock_run.side_effect = _make_run_side_effect()
         from cli.modules.captcha_solver import CaptchaSolver
+
         solver = CaptchaSolver(pid=12345, wid=100)
         # Should work without crashing
         try:
@@ -134,12 +146,13 @@ class TestCaptchaSolver(unittest.TestCase):
         # Monkey-patch js and drag before constructing CaptchaSolver
         # to avoid real cua-driver subprocess calls in _refresh_offsets
         import cli.modules.captcha_solver as cs_mod
+
         orig_js = cs_mod.CaptchaSolver.js
         orig_refresh = cs_mod.CaptchaSolver._refresh_offsets
         cs_mod.CaptchaSolver._refresh_offsets = lambda self: None
         try:
             solver = cs_mod.CaptchaSolver(pid=12345, wid=100)
-            solver.js = lambda code: '{}'
+            solver.js = lambda code: "{}"
             result = solver.solve_slide()
             self.assertFalse(result)
         finally:
@@ -150,6 +163,7 @@ class TestCaptchaSolver(unittest.TestCase):
         """solve_dragdrop works with valid selectors."""
         self.mock_run.side_effect = _make_run_side_effect()
         from cli.modules.captcha_solver import CaptchaSolver
+
         solver = CaptchaSolver(pid=12345, wid=100)
         try:
             result = solver.solve_dragdrop(".source", ".target")
@@ -161,6 +175,7 @@ class TestCaptchaSolver(unittest.TestCase):
         """js() method executes JavaScript and returns result."""
         self.mock_run.side_effect = _make_run_side_effect()
         from cli.modules.captcha_solver import CaptchaSolver
+
         solver = CaptchaSolver(pid=12345, wid=100)
         result = solver.js("document.title")
         self.assertIsInstance(result, str)

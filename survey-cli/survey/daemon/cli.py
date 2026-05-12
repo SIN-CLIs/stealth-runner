@@ -106,7 +106,9 @@ async def cmd_heypiggy(args) -> int:
 
     # Get credentials
     email = args.email or config.get("heypiggy_email") or os.environ.get("HEYPIGGY_EMAIL")
-    password = args.password or config.get("heypiggy_password") or os.environ.get("HEYPIGGY_PASSWORD")
+    password = (
+        args.password or config.get("heypiggy_password") or os.environ.get("HEYPIGGY_PASSWORD")
+    )
 
     if not email or not password:
         print("Error: HeyPiggy credentials required")
@@ -208,6 +210,7 @@ def cmd_daemon_status(args) -> int:
 
     # Show recent stats
     from .survey_agent_graph import SurveyAgentGraph
+
     try:
         graph = SurveyAgentGraph(persona=get_persona())
         stats = graph.get_stats()
@@ -320,7 +323,9 @@ def main(args: list[str] | None = None) -> int:
     heypiggy_parser = subparsers.add_parser("heypiggy", help="Run HeyPiggy session")
     heypiggy_parser.add_argument("--email", help="HeyPiggy email")
     heypiggy_parser.add_argument("--password", help="HeyPiggy password")
-    heypiggy_parser.add_argument("--max-surveys", type=int, default=10, help="Max surveys to complete")
+    heypiggy_parser.add_argument(
+        "--max-surveys", type=int, default=10, help="Max surveys to complete"
+    )
     heypiggy_parser.add_argument("--visible", action="store_true", help="Show browser window")
 
     # survey daemon

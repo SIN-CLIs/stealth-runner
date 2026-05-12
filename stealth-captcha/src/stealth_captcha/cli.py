@@ -55,8 +55,12 @@ def main(log_level: str) -> None:
 @click.option("--url", required=True, help="Page URL containing the slide captcha")
 @click.option("--block-selector", default=".gc-drag-block", help="CSS selector for drag block")
 @click.option("--target-selector", default=".gc-drag-target", help="CSS selector for target zone")
-@click.option("--use-existing-chrome", is_flag=True, default=False,
-              help="Connect to already-running Chrome on STEALTH_CDP_PORT (default 9222)")
+@click.option(
+    "--use-existing-chrome",
+    is_flag=True,
+    default=False,
+    help="Connect to already-running Chrome on STEALTH_CDP_PORT (default 9222)",
+)
 def solve_slide(
     url: str,
     block_selector: str,
@@ -64,9 +68,7 @@ def solve_slide(
     use_existing_chrome: bool,
 ) -> None:
     """Solve a GoCaptcha / NetEase / GeeTest slide captcha."""
-    asyncio.run(
-        _solve_slide_async(url, block_selector, target_selector, use_existing_chrome)
-    )
+    asyncio.run(_solve_slide_async(url, block_selector, target_selector, use_existing_chrome))
 
 
 async def _solve_slide_async(

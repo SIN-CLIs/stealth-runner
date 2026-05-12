@@ -44,6 +44,7 @@ class TestClickCore(unittest.TestCase):
 
     def _set_get_state(self, markdown=""):
         """Configure subprocess.run for get_window_state and click."""
+
         def _run_side_effect(cmd, **kwargs):
             result = MagicMock()
             result.returncode = 0
@@ -58,12 +59,14 @@ class TestClickCore(unittest.TestCase):
             elif "set_value" in cmd_str:
                 result.stdout = "Set AXValue"
             return result
+
         self.mock_run.side_effect = _run_side_effect
 
     def test_click_by_index(self):
         """click() with element_index skips find_element."""
         self._set_get_state()
         from tools.tool_click import click
+
         result = click(pid=12345, wid=100, element_index=99, verify=False)
         self.assertEqual(result["status"], "ok")
         self.assertEqual(result["element_index"], 99)
@@ -71,16 +74,18 @@ class TestClickCore(unittest.TestCase):
     def test_click_verify_enabled_checks_state(self):
         """click with verify=True resets AX-Tree after click."""
         from tools.tool_click import _verify_click
-        result = _verify_click(pid=12345, wid=100, element_index=42,
-                                role="AXButton", label="Weiter")
+
+        result = _verify_click(
+            pid=12345, wid=100, element_index=42, role="AXButton", label="Weiter"
+        )
         self.assertIsInstance(result, bool)
 
     def test_click_verify_link_always_true(self):
         """AXLink verification always returns True."""
         self._set_get_state()
         from tools.tool_click import _verify_click
-        result = _verify_click(pid=12345, wid=100, element_index=54,
-                                role="AXLink", label="Google")
+
+        result = _verify_click(pid=12345, wid=100, element_index=54, role="AXLink", label="Google")
         self.assertTrue(result)
 
     def test_click_raw_performed(self):
@@ -90,6 +95,7 @@ class TestClickCore(unittest.TestCase):
         result_mock.returncode = 0
         self.mock_run.return_value = result_mock
         from tools.tool_click import _click_raw
+
         self.assertTrue(_click_raw(12345, 100, 42))
 
     def test_click_raw_failure(self):
@@ -99,12 +105,14 @@ class TestClickCore(unittest.TestCase):
         result_mock.returncode = 1
         self.mock_run.return_value = result_mock
         from tools.tool_click import _click_raw
+
         self.assertFalse(_click_raw(12345, 100, 42))
 
     def test_click_raw_exception(self):
         """_click_raw returns False on exception."""
         self.mock_run.side_effect = RuntimeError("subprocess bomb")
         from tools.tool_click import _click_raw
+
         self.assertFalse(_click_raw(12345, 100, 42))
 
     def test_get_state_returns_markdown(self):
@@ -114,6 +122,7 @@ class TestClickCore(unittest.TestCase):
         result_mock.returncode = 0
         self.mock_run.return_value = result_mock
         from tools.tool_click import _get_state
+
         md = _get_state(12345, 100)
         self.assertIn("AXButton", md)
 
@@ -123,6 +132,7 @@ class TestClickCore(unittest.TestCase):
         result_mock.returncode = 1
         self.mock_run.return_value = result_mock
         from tools.tool_click import _get_state
+
         self.assertEqual(_get_state(12345, 100), "")
 
     def test_press_key_success(self):
@@ -132,6 +142,7 @@ class TestClickCore(unittest.TestCase):
         result_mock.returncode = 0
         self.mock_run.return_value = result_mock
         from tools.tool_click import press_key
+
         result = press_key(pid=12345, key="return")
         self.assertEqual(result["status"], "ok")
 
@@ -143,6 +154,7 @@ class TestClickCore(unittest.TestCase):
         result_mock.returncode = 1
         self.mock_run.return_value = result_mock
         from tools.tool_click import press_key
+
         result = press_key(pid=12345, key="return")
         self.assertEqual(result["status"], "error")
 
@@ -150,6 +162,7 @@ class TestClickCore(unittest.TestCase):
         """press_key() catches exceptions gracefully."""
         self.mock_run.side_effect = RuntimeError("subprocess bomb")
         from tools.tool_click import press_key
+
         result = press_key(pid=12345, key="return")
         self.assertEqual(result["status"], "error")
 

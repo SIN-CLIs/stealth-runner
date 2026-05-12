@@ -70,11 +70,12 @@ KORREKT:
   ✅ --force-renderer-accessibility
   ✅ NUR tool_*.py verwenden (nicht rohes cua-driver)
 """
+
 from __future__ import annotations
 import re
 import subprocess
 import json
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 __frozen__ = True
 __version__ = "2026-05-07"
@@ -90,21 +91,27 @@ def _parse_markdown(markdown: str) -> List[Dict]:
     # - [42] AXButton   <- no text
     # - [42] AXStaticText ("Some text")
     pattern = re.compile(
-        r'- \[(\d+)\]\s+(AX[\w]+)(?:\s*\(([^)]*)\))?(?:\s*@\((\d+),(\d+),(\d+),(\d+)\))?'
+        r"- \[(\d+)\]\s+(AX[\w]+)(?:\s*\(([^)]*)\))?(?:\s*@\((\d+),(\d+),(\d+),(\d+)\))?"
     )
     for match in pattern.finditer(markdown):
         idx, role = int(match.group(1)), match.group(2)
         text = match.group(3) or ""
         bounds = None
         if match.group(4):
-            bounds = (int(match.group(4)), int(match.group(5)),
-                      int(match.group(6)), int(match.group(7)))
-        elements.append({
-            "element_index": idx,
-            "role": role,
-            "text": text.strip(),
-            "bounds": bounds,
-        })
+            bounds = (
+                int(match.group(4)),
+                int(match.group(5)),
+                int(match.group(6)),
+                int(match.group(7)),
+            )
+        elements.append(
+            {
+                "element_index": idx,
+                "role": role,
+                "text": text.strip(),
+                "bounds": bounds,
+            }
+        )
     return elements
 
 
@@ -113,7 +120,9 @@ def _get_state(pid: int, wid: int) -> str:
         result = subprocess.run(
             [CUA_BIN, "call", "get_window_state"],
             input=json.dumps({"pid": pid, "window_id": wid}),
-            capture_output=True, text=True, timeout=30
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
         if result.returncode != 0:
             return ""
@@ -138,7 +147,7 @@ def _boundary_match(label: str, text: str) -> bool:
     try:
         escaped = re.escape(label)
         # Negative lookahead: NOT followed by word-char
-        pattern = r'\b' + escaped + r'(?!\w)'
+        pattern = r"\b" + escaped + r"(?!\w)"
         return bool(re.search(pattern, text, re.IGNORECASE))
     except re.error:
         return False
@@ -209,8 +218,9 @@ def find_element(
     return None
 
 
-def find_all(markdown_or_state, role: str, label: Optional[str] = None,
-             text_sub: Optional[str] = None) -> List[Dict]:
+def find_all(
+    markdown_or_state, role: str, label: Optional[str] = None, text_sub: Optional[str] = None
+) -> List[Dict]:
     """Find ALL matching elements (not just first).
 
     Returns:
@@ -244,8 +254,9 @@ def find_all(markdown_or_state, role: str, label: Optional[str] = None,
     return results
 
 
-def find_in_window(pid: int, wid: int, role: str,
-                   label: Optional[str] = None, text_sub: Optional[str] = None) -> Optional[Dict]:
+def find_in_window(
+    pid: int, wid: int, role: str, label: Optional[str] = None, text_sub: Optional[str] = None
+) -> Optional[Dict]:
     """Find element in a specific window (pid + wid)."""
     return find_element((pid, wid), role, label, text_sub)
 
@@ -288,7 +299,9 @@ def diagnose(markdown_or_state, role: str, label: Optional[str] = None) -> Dict:
     return {
         "elements_total": len(elements),
         "role_matches": len(role_elements),
-        "role_elements": [{"idx": e["element_index"], "text": e["text"]} for e in role_elements[:10]],
+        "role_elements": [
+            {"idx": e["element_index"], "text": e["text"]} for e in role_elements[:10]
+        ],
         "label_requested": label,
         "markdown_lines": len(markdown.split(nl)) if markdown else 0,
     }
@@ -310,8 +323,9 @@ if __name__ == "__main__":
     assert find_element(md, "AXButton", label="Weiter")["element_index"] == 246
     # "Weiter" does NOT match "Weitere Informationen" (different word)
     result_weiter = find_element(md, "AXButton", label="Weiter")
-    assert result_weiter is None or result_weiter["element_index"] == 246, \
+    assert result_weiter is None or result_weiter["element_index"] == 246, (
         f"'Weiter' should only match 'Weiter', got: {result_weiter}"
+    )
     # "Weitere" DOES match "Weitere Informationen" (complete word)
     assert find_element(md, "AXButton", label="Weitere")["element_index"] == 247
 

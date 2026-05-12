@@ -132,6 +132,7 @@ class SurveyDaemon:
 
     def _setup_signal_handlers(self) -> None:
         """Setup graceful shutdown on SIGTERM/SIGINT."""
+
         def handle_shutdown(signum, frame):
             logger.info(f"Received signal {signum}, initiating shutdown...")
             self._running = False
@@ -153,15 +154,18 @@ class SurveyDaemon:
 
     async def _start_health_server(self) -> None:
         """Start health check HTTP server."""
+
         async def handle_health(reader, writer):
             await reader.read(1024)
 
             stats = self._agent.get_stats() if self._agent else {}
-            response_body = json.dumps({
-                "status": "running" if self._running else "stopping",
-                "uptime_seconds": (datetime.now() - self._start_time).total_seconds(),
-                "stats": stats,
-            })
+            response_body = json.dumps(
+                {
+                    "status": "running" if self._running else "stopping",
+                    "uptime_seconds": (datetime.now() - self._start_time).total_seconds(),
+                    "stats": stats,
+                }
+            )
 
             response = (
                 f"HTTP/1.1 200 OK\r\n"
@@ -222,7 +226,11 @@ class SurveyDaemon:
             try:
                 # Check working hours
                 current_hour = datetime.now().hour
-                if not (limits["working_hours"]["start"] <= current_hour < limits["working_hours"]["end"]):
+                if not (
+                    limits["working_hours"]["start"]
+                    <= current_hour
+                    < limits["working_hours"]["end"]
+                ):
                     logger.info("Outside working hours, sleeping...")
                     await asyncio.sleep(300)
                     continue
@@ -372,7 +380,9 @@ def install_launchagent() -> Path:
         f.write(plist_content)
 
     logger.info(f"LaunchAgent installed: {plist_path}")
-    logger.info("Run: launchctl load -w ~/Library/LaunchAgents/com.stealth-runner.survey-daemon.plist")
+    logger.info(
+        "Run: launchctl load -w ~/Library/LaunchAgents/com.stealth-runner.survey-daemon.plist"
+    )
 
     return plist_path
 

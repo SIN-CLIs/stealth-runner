@@ -143,12 +143,37 @@ from .oopif_registry import OopifRegistry
 # AX-Rollen, die als "klickbar/interaktiv" gelten.
 # Bewusst großzügig. Lieber zu viel listen als zu wenig.
 INTERACTIVE_ROLES: set[str] = {
-    "button", "link", "checkbox", "radio", "menuitem", "menuitemcheckbox",
-    "menuitemradio", "tab", "treeitem", "option", "switch", "slider",
-    "spinbutton", "textbox", "searchbox", "combobox", "listbox",
-    "scrollbar", "progressbar", "form", "search",
-    "group", "row", "cell", "gridcell", "columnheader", "rowheader",
-    "dialog", "alertdialog", "menu", "menubar",
+    "button",
+    "link",
+    "checkbox",
+    "radio",
+    "menuitem",
+    "menuitemcheckbox",
+    "menuitemradio",
+    "tab",
+    "treeitem",
+    "option",
+    "switch",
+    "slider",
+    "spinbutton",
+    "textbox",
+    "searchbox",
+    "combobox",
+    "listbox",
+    "scrollbar",
+    "progressbar",
+    "form",
+    "search",
+    "group",
+    "row",
+    "cell",
+    "gridcell",
+    "columnheader",
+    "rowheader",
+    "dialog",
+    "alertdialog",
+    "menu",
+    "menubar",
 }
 
 
@@ -189,10 +214,18 @@ class ScanResult:
 # captcha_router.py). Wer hier eintragen will: NUR iframe-URLs, keine
 # CSS-Klassen, keine Texte.
 _CAPTCHA_URL_HINTS: tuple[str, ...] = (
-    "hcaptcha.com", "recaptcha", "google.com/recaptcha",
-    "challenges.cloudflare.com", "turnstile",
-    "geetest.com", "lemin.io", "/captcha", "/challenge",
-    "datadome", "perimeterx", "px-captcha",
+    "hcaptcha.com",
+    "recaptcha",
+    "google.com/recaptcha",
+    "challenges.cloudflare.com",
+    "turnstile",
+    "geetest.com",
+    "lemin.io",
+    "/captcha",
+    "/challenge",
+    "datadome",
+    "perimeterx",
+    "px-captcha",
 )
 
 
@@ -243,7 +276,9 @@ def _ax_string(ax_node: dict[str, Any], key: str) -> str:
 
 
 def _build_dom_index(
-    cdp: CDPConnection, *, session_id: str | None = None,
+    cdp: CDPConnection,
+    *,
+    session_id: str | None = None,
 ) -> dict[int, dict[str, Any]]:
     """Mappt backendNodeId → DOM-Node-Dict via
     ``DOM.getFlattenedDocument(pierce=True)``. Enthält ALLE Frames und
@@ -348,9 +383,7 @@ def _scan_session(
     cdp.call("Accessibility.enable", retry=False, session_id=session_id)
 
     dom_index = _build_dom_index(cdp, session_id=session_id)
-    ax_result = cdp.call_result(
-        "Accessibility.getFullAXTree", {}, session_id=session_id
-    )
+    ax_result = cdp.call_result("Accessibility.getFullAXTree", {}, session_id=session_id)
     ax_nodes = ax_result.get("nodes", [])
 
     for ax in ax_nodes:
@@ -368,14 +401,8 @@ def _scan_session(
             continue
 
         dom_node = dom_index.get(backend_node_id)
-        frame_id = (
-            ax.get("frameId")
-            or (dom_node or {}).get("frameId")
-            or fallback_frame_id
-        )
-        frame_url = frame_id_to_url.get(
-            frame_id, fallback_frame_url or ""
-        )
+        frame_id = ax.get("frameId") or (dom_node or {}).get("frameId") or fallback_frame_id
+        frame_url = frame_id_to_url.get(frame_id, fallback_frame_url or "")
 
         bbox: dict[str, float] | None = None
         try:
@@ -509,9 +536,7 @@ def scan_port(port: int = 9999, url_contains: str = "") -> ScanResult:
         url_contains: Wenn gesetzt → erster Page-Tab dessen URL diesen
             Substring enthält. Sonst erster Page-Tab.
     """
-    raw = urllib.request.urlopen(
-        f"http://127.0.0.1:{port}/json/list", timeout=5
-    ).read()
+    raw = urllib.request.urlopen(f"http://127.0.0.1:{port}/json/list", timeout=5).read()
     pages = json.loads(raw)
     chosen = None
     for p in pages:
@@ -522,7 +547,5 @@ def scan_port(port: int = 9999, url_contains: str = "") -> ScanResult:
         chosen = p
         break
     if not chosen:
-        raise RuntimeError(
-            f"No page tab found on port {port} matching {url_contains!r}"
-        )
+        raise RuntimeError(f"No page tab found on port {port} matching {url_contains!r}")
     return scan_ws(chosen["webSocketDebuggerUrl"])

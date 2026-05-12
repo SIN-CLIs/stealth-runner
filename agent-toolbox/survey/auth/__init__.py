@@ -83,14 +83,14 @@ WARNUNG:
 # WARUM zuerst? Abhängigkeit der anderen Klassen (LoginVerifier braucht CuaAdapter).
 from .cua_adapter import CuaAdapter
 
-# LoginVerifier: Prüft Login-State via AX-Tree.
-# WARUM zweite? Hängt von CuaAdapter ab, aber ist unabhängig von GoogleOAuthFlow.
-from .login_verifier import LoginVerifier
-
 # GoogleOAuthFlow: Haupt-Logik für 6-Step OAuth.
 # LoginResult: Dataclass für Ergebnis.
 # WARUM zusammen? Beide kommen aus google_oauth.py, sind konzeptionell verbunden.
 from .google_oauth import GoogleOAuthFlow, LoginResult
+
+# LoginVerifier: Prüft Login-State via AX-Tree.
+# WARUM zweite? Hängt von CuaAdapter ab, aber ist unabhängig von GoogleOAuthFlow.
+from .login_verifier import LoginVerifier
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # __all__: Explizite Export-Liste
@@ -101,8 +101,8 @@ from .google_oauth import GoogleOAuthFlow, LoginResult
 # → Wenn jemand from survey.auth import SOME_INTERNAL_FUNC macht → NameError.
 # → Das ist Python's "public API contract".
 __all__ = [
-    "CuaAdapter",       # Low-Level: cua-driver subprocess wrapper
-    "LoginVerifier",    # Session-Check: "abmelden" im AX-Tree?
+    "CuaAdapter",  # Low-Level: cua-driver subprocess wrapper
+    "LoginVerifier",  # Session-Check: "abmelden" im AX-Tree?
     "GoogleOAuthFlow",  # Orchestration: 6-Step Google OAuth
-    "LoginResult",      # Ergebnis-Dataclass: status, pid, wid, reason
+    "LoginResult",  # Ergebnis-Dataclass: status, pid, wid, reason
 ]

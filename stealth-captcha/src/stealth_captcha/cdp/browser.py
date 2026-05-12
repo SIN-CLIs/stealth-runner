@@ -147,11 +147,14 @@ class StealthBrowser:
         binary = self.binary or _find_chrome()
         self.user_data_dir.mkdir(parents=True, exist_ok=True)
 
-        flags = list(_STEALTH_FLAGS) + [
-            f"--remote-debugging-port={self.port}",
-            f"--user-data-dir={self.user_data_dir}",
-            "--remote-allow-origins=\"*\"",  # 🔥 MIT Quotes! Ohne Quotes expandiert zsh * → "no matches found"
-        ]
+        flags = (
+            list(_STEALTH_FLAGS)
+            + [
+                f"--remote-debugging-port={self.port}",
+                f"--user-data-dir={self.user_data_dir}",
+                '--remote-allow-origins="*"',  # 🔥 MIT Quotes! Ohne Quotes expandiert zsh * → "no matches found"
+            ]
+        )
 
         if self.headless:
             flags.append("--headless=new")

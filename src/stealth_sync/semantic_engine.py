@@ -11,9 +11,10 @@
 #   ❌ killall Google Chrome — tötet ALLE Chrome
 
 import os
-from typing import Dict, List, Any, Optional
-import structlog
 import time
+from typing import Any
+
+import structlog
 from openai import OpenAI
 
 logger = structlog.get_logger(__name__)
@@ -21,9 +22,7 @@ logger = structlog.get_logger(__name__)
 # Classification categories for OpenCode sessions
 # These match conventional commit types for consistency with Stealth Suite
 CATEGORIES = ["fix", "new", "refactor", "doc", "test", "chore", "feat"]
-from typing import Dict, List, Any, Optional
 import structlog
-from openai import OpenAI
 
 logger = structlog.get_logger(__name__)
 
@@ -33,7 +32,7 @@ CATEGORIES = ["fix", "new", "refactor", "doc", "test", "chore", "feat"]
 
 class SemanticAnalyzer:
     """Analyzes OpenCode session messages and classifies them using NVIDIA NIM API.
-    
+
     This class connects to the NVIDIA Nemotron 3 Nano Omni model (30B-A3B MoE)
     which is already used by the Stealth Suite for vision tasks, ensuring consistency
     across the entire toolchain.
@@ -41,12 +40,12 @@ class SemanticAnalyzer:
 
     def __init__(
         self,
-        api_key: Optional[str] = None,
-        base_url: Optional[str] = None,
-        model: Optional[str] = None,
+        api_key: str | None = None,
+        base_url: str | None = None,
+        model: str | None = None,
     ):
         """Initialize the semantic analyzer with NVIDIA NIM credentials.
-        
+
         Args:
             api_key: NVIDIA API key (or set NVIDIA_API_KEY env var)
             base_url: NVIDIA NIM base URL (default: integrate.api.nvidia.com/v1)
@@ -62,17 +61,15 @@ class SemanticAnalyzer:
         self.client = OpenAI(api_key=self.api_key, base_url=self.base_url)
         logger.info("Initialized SemanticAnalyzer", model=self.model)
 
-    def classify_session(
-        self, messages: List[Dict[str, Any]]
-    ) -> Dict[str, Any]:
+    def classify_session(self, messages: list[dict[str, Any]]) -> dict[str, Any]:
         """Classify an OpenCode session based on its messages.
-        
+
         Uses NVIDIA NIM API to analyze the session content and categorize it
         into one of the predefined CATEGORIES.
-        
+
         Args:
             messages: List of message dictionaries from the OpenCode database
-            
+
         Returns:
             Dictionary with 'category' and 'confidence' keys
         """
@@ -91,16 +88,16 @@ class SemanticAnalyzer:
             logger.error("Classification failed", error=str(e))
             return {"category": "unknown", "confidence": 0.0}
 
-    def _build_classification_prompt(self, messages: List[Dict[str, Any]]) -> str:
+    def _build_classification_prompt(self, messages: list[dict[str, Any]]) -> str:
         """Build a prompt for NVIDIA NIM to classify the OpenCode session.
-        
+
         This method extracts the role and content from the first 10 messages
         to create a compact prompt. The prompt asks the LLM to categorize
         into exactly one of the predefined CATEGORIES.
-        
+
         Args:
             messages: List of message dictionaries from OpenCode DB
-            
+
         Returns:
             A formatted prompt string ready for the NVIDIA NIM API
         """
@@ -143,16 +140,16 @@ Session messages:
 Return ONLY the category name, nothing else.
 """
 
-    def _parse_classification(self, text: str) -> Dict[str, Any]:
+    def _parse_classification(self, text: str) -> dict[str, Any]:
         """Parse the classification response from NVIDIA NIM API.
-        
+
         The LLM should return just the category name, but we handle
         cases where it might return additional text by checking if any
         known category appears in the response.
-        
+
         Args:
             text: Raw text response from the NVIDIA NIM API
-            
+
         Returns:
             Dictionary with 'category' and 'confidence' keys
         """
@@ -170,19 +167,19 @@ Return ONLY the category name, nothing else.
         return {"category": "unknown", "confidence": 0.0}
 
     def generate_doc_unit(
-        self, session_id: str, messages: List[Dict[str, Any]], classification: Dict[str, Any]
-    ) -> Dict[str, Any]:
+        self, session_id: str, messages: list[dict[str, Any]], classification: dict[str, Any]
+    ) -> dict[str, Any]:
         """Generate a structured documentation unit from session analysis.
-        
+
         This method creates a comprehensive documentation unit that includes
         session metadata, classification results, message statistics, and
         a summary. This unit can be serialized to YAML or JSON.
-        
+
         Args:
             session_id: The OpenCode session ID (e.g., ses_XYZ)
             messages: List of message dictionaries from the session
             classification: Classification result from classify_session()
-            
+
         Returns:
             A dictionary representing the documentation unit
         """
@@ -202,15 +199,15 @@ Return ONLY the category name, nothing else.
             "summary": self._summarize_messages(messages),
         }
 
-    def _summarize_messages(self, messages: List[Dict[str, Any]]) -> str:
+    def _summarize_messages(self, messages: list[dict[str, Any]]) -> str:
         """Create a brief summary of the session messages.
-        
+
         In a production system, this would call NVIDIA NIM to generate
         a proper summary. For now, it returns a simple message count.
-        
+
         Args:
             messages: List of message dictionaries
-            
+
         Returns:
             A human-readable summary string
         """

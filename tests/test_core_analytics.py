@@ -1,5 +1,5 @@
 """Tests fuer core/analytics.py — AnalyticsCollector, Metric-Recording."""
-import pytest
+
 from core.analytics import AnalyticsCollector
 
 

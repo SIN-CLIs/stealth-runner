@@ -25,10 +25,11 @@ BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
 
 from __future__ import annotations
 
+import contextlib
 import sys
 import time
 from pathlib import Path
-from typing import Any, Dict, List, Literal, Optional
+from typing import Any, Literal
 
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
@@ -44,66 +45,66 @@ sys.path.insert(0, str(Path(__file__).parent.parent.parent / "survey-cli"))
 
 class DashboardScanRequest(BaseModel):
     """Request für POST /survey/dashboard-scan."""
+
     cdp_port: int = Field(default=9999, ge=1024, le=65535, description="CDP Port")
-    skip_providers: List[str] = Field(
-        default=["surveyrouter"],
-        description="Provider die übersprungen werden sollen"
+    skip_providers: list[str] = Field(
+        default=["surveyrouter"], description="Provider die übersprungen werden sollen"
     )
     max_surveys: int = Field(default=15, ge=1, le=50, description="Max Surveys zum Scannen")
 
 
 class SurveyEntry(BaseModel):
     """Einzelner Survey-Eintrag aus dem Dashboard-Scan."""
+
     id: str = Field(description="Survey ID")
     type: str = Field(description="Survey Type (okay, question, error)")
     provider: str = Field(description="Erkannter Provider")
-    href: Optional[str] = Field(default=None, description="Survey URL")
+    href: str | None = Field(default=None, description="Survey URL")
     trust_score: float = Field(default=0.1, description="Trust Score 0.0-1.0")
-    reward: Optional[float] = Field(default=None, description="Reward in EUR")
-    duration: Optional[int] = Field(default=None, description="Geschätzte Dauer in Minuten")
+    reward: float | None = Field(default=None, description="Reward in EUR")
+    duration: int | None = Field(default=None, description="Geschätzte Dauer in Minuten")
 
 
 class DashboardScanResponse(BaseModel):
     """Response für POST /survey/dashboard-scan."""
+
     status: Literal["ok", "error"] = Field(description="Ergebnis-Status")
     count: int = Field(default=0, description="Anzahl gefundener Surveys")
     viable_count: int = Field(default=0, description="Anzahl direkt startbarer Surveys")
-    viable: List[SurveyEntry] = Field(default=[], description="Direkt startbare Surveys")
-    pre_qualifiers: List[SurveyEntry] = Field(default=[], description="Pre-Qualifier Fragen")
-    provider_counts: Dict[str, int] = Field(default={}, description="Surveys pro Provider")
-    balance: Optional[float] = Field(default=None, description="Aktueller Kontostand EUR")
-    reason: Optional[str] = Field(default=None, description="Fehler-Grund bei error")
+    viable: list[SurveyEntry] = Field(default=[], description="Direkt startbare Surveys")
+    pre_qualifiers: list[SurveyEntry] = Field(default=[], description="Pre-Qualifier Fragen")
+    provider_counts: dict[str, int] = Field(default={}, description="Surveys pro Provider")
+    balance: float | None = Field(default=None, description="Aktueller Kontostand EUR")
+    reason: str | None = Field(default=None, description="Fehler-Grund bei error")
 
 
 class UniversalAnswerRequest(BaseModel):
     """Request für POST /survey/universal-answer."""
+
     cdp_ws_url: str = Field(..., description="CDP WebSocket URL der Survey-Page")
     manual_mode: bool = Field(
         default=True,
-        description="True: Loop nur einmal pro Page (manual approval). False: Full auto-loop (DANGEROUS)"
+        description="True: Loop nur einmal pro Page (manual approval). False: Full auto-loop (DANGEROUS)",
     )
     max_pages: int = Field(default=50, ge=1, le=200, description="Max Pages pro Survey")
-    profile: Dict[str, Any] = Field(
-        default={},
-        description="Antwort-Profil (z.B. {'age': '35', 'gender': 'male'})"
+    profile: dict[str, Any] = Field(
+        default={}, description="Antwort-Profil (z.B. {'age': '35', 'gender': 'male'})"
     )
 
 
 class UniversalAnswerResponse(BaseModel):
     """Response für POST /survey/universal-answer."""
+
     status: Literal["in_progress", "completed", "disqualified", "error"] = Field(
         description="Aktueller Survey-Status"
     )
     pages_completed: int = Field(default=0, description="Abgeschlossene Seiten")
-    current_page: Optional[int] = Field(default=None, description="Aktuelle Seite (1-based)")
+    current_page: int | None = Field(default=None, description="Aktuelle Seite (1-based)")
     questions_answered: int = Field(default=0, description="Beantwortete Fragen")
-    current_question_type: Optional[str] = Field(default=None, description="Aktueller Fragen-Typ")
-    state_snapshot: Dict[str, Any] = Field(
-        default={},
-        description="State-Snapshot für Resumption"
-    )
+    current_question_type: str | None = Field(default=None, description="Aktueller Fragen-Typ")
+    state_snapshot: dict[str, Any] = Field(default={}, description="State-Snapshot für Resumption")
     elapsed_ms: float = Field(default=0.0, description="Laufzeit in ms")
-    reason: Optional[str] = Field(default=None, description="Status-Details")
+    reason: str | None = Field(default=None, description="Status-Details")
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -122,12 +123,13 @@ def _get_scanner():
     """Lazy-Load scanner.py Module."""
     try:
         from survey.scanner import (
-            scan_dashboard,
-            read_balance_with_backoff,
+            PROVIDER_TRUST_SCORES,
             detect_provider,
             get_trust_score,
-            PROVIDER_TRUST_SCORES,
+            read_balance_with_backoff,
+            scan_dashboard,
         )
+
         return {
             "scan_dashboard": scan_dashboard,
             "read_balance": read_balance_with_backoff,
@@ -143,17 +145,18 @@ def _get_universal_handler():
     """Lazy-Load UniversalSurveyHandler."""
     try:
         from api.universal_survey_handler import (
-            detect_question_type,
             QuestionType,
+            detect_question_type,
             generate_consent_js,
-            generate_single_choice_js,
-            generate_multiple_choice_js,
             generate_dropdown_js,
             generate_matrix_js,
+            generate_multiple_choice_js,
             generate_ranking_js,
-            generate_text_input_js,
+            generate_single_choice_js,
             generate_star_rating_js,
+            generate_text_input_js,
         )
+
         return {
             "detect_question_type": detect_question_type,
             "QuestionType": QuestionType,
@@ -166,7 +169,7 @@ def _get_universal_handler():
                 "ranking_select": generate_ranking_js,
                 "text_input": generate_text_input_js,
                 "star_rating": generate_star_rating_js,
-            }
+            },
         }
     except ImportError as e:
         raise RuntimeError(f"UniversalSurveyHandler import failed: {e}") from e
@@ -176,6 +179,7 @@ def _get_cdp_connection(ws_url: str):
     """Erstellt eine sync CDPConnection."""
     try:
         from survey.cdp_client import CDPConnection
+
         return CDPConnection(ws_url)
     except ImportError as e:
         raise RuntimeError(f"CDPConnection requires survey-cli: {e}") from e
@@ -212,20 +216,17 @@ async def scan_survey_dashboard(req: DashboardScanRequest) -> DashboardScanRespo
     - Cint: 0.7 (Cloudflare blocking risk)
     - PureSpectrum: 0.3 (high screen-out rate)
     """
-    start = time.monotonic()
-    
+    time.monotonic()
+
     try:
         scanner = _get_scanner()
     except RuntimeError as e:
         return DashboardScanResponse(status="error", reason=str(e))
-    
+
     try:
         # Scan dashboard
-        surveys = scanner["scan_dashboard"](
-            port=req.cdp_port,
-            skip_providers=req.skip_providers
-        )
-        
+        surveys = scanner["scan_dashboard"](port=req.cdp_port, skip_providers=req.skip_providers)
+
         if not surveys:
             return DashboardScanResponse(
                 status="ok",
@@ -234,18 +235,18 @@ async def scan_survey_dashboard(req: DashboardScanRequest) -> DashboardScanRespo
                 viable=[],
                 pre_qualifiers=[],
                 provider_counts={},
-                balance=scanner["read_balance"](req.cdp_port)
+                balance=scanner["read_balance"](req.cdp_port),
             )
-        
+
         # Kategorisieren
         viable = []
         pre_qualifiers = []
-        provider_counts: Dict[str, int] = {}
-        
-        for s in surveys[:req.max_surveys]:
+        provider_counts: dict[str, int] = {}
+
+        for s in surveys[: req.max_surveys]:
             provider = s.get("provider", "unknown")
             provider_counts[provider] = provider_counts.get(provider, 0) + 1
-            
+
             entry = SurveyEntry(
                 id=s.get("id", ""),
                 type=s.get("type", "unknown"),
@@ -255,15 +256,15 @@ async def scan_survey_dashboard(req: DashboardScanRequest) -> DashboardScanRespo
                 reward=s.get("reward"),
                 duration=s.get("duration"),
             )
-            
+
             if s.get("type") == "okay":
                 viable.append(entry)
             elif s.get("type") == "question":
                 pre_qualifiers.append(entry)
-        
+
         # Balance auslesen
         balance = scanner["read_balance"](req.cdp_port)
-        
+
         return DashboardScanResponse(
             status="ok",
             count=len(surveys),
@@ -273,7 +274,7 @@ async def scan_survey_dashboard(req: DashboardScanRequest) -> DashboardScanRespo
             provider_counts=provider_counts,
             balance=balance,
         )
-    
+
     except Exception as e:
         return DashboardScanResponse(status="error", reason=f"exception: {type(e).__name__}: {e}")
 
@@ -309,22 +310,24 @@ async def universal_survey_answer(req: UniversalAnswerRequest) -> UniversalAnswe
     - star_rating: Star rating (CPX)
     """
     start = time.monotonic()
-    
+
     try:
         handler = _get_universal_handler()
     except RuntimeError as e:
-        return UniversalAnswerResponse(status="error", reason=str(e),
-                                       elapsed_ms=(time.monotonic() - start) * 1000)
-    
+        return UniversalAnswerResponse(
+            status="error", reason=str(e), elapsed_ms=(time.monotonic() - start) * 1000
+        )
+
     try:
         cdp = _get_cdp_connection(req.cdp_ws_url)
     except RuntimeError as e:
-        return UniversalAnswerResponse(status="error", reason=str(e),
-                                       elapsed_ms=(time.monotonic() - start) * 1000)
-    
+        return UniversalAnswerResponse(
+            status="error", reason=str(e), elapsed_ms=(time.monotonic() - start) * 1000
+        )
+
     try:
         cdp.connect()
-        
+
         # 1. Page-Info sammeln
         page_info_js = """
         (function() {
@@ -333,7 +336,7 @@ async def universal_survey_answer(req: UniversalAnswerRequest) -> UniversalAnswe
             var selects = document.querySelectorAll('select').length;
             var text_inputs = document.querySelectorAll('input[type=text], textarea').length;
             var stars = document.querySelectorAll('.star, .rating-star, [data-rating]').length;
-            
+
             return JSON.stringify({
                 url: location.href,
                 title: document.title,
@@ -348,17 +351,18 @@ async def universal_survey_answer(req: UniversalAnswerRequest) -> UniversalAnswe
             });
         })()
         """
-        
+
         result = cdp.call("Runtime.evaluate", {"expression": page_info_js})
         page_info_str = result.get("result", {}).get("result", {}).get("value", "{}")
-        
+
         import json
+
         page_info = json.loads(page_info_str)
-        
+
         # 2. Question-Type erkennen
         q_type = handler["detect_question_type"](page_info)
         QuestionType = handler["QuestionType"]
-        
+
         # 3. Check für Complete/Disqualified
         if q_type == QuestionType.COMPLETE:
             cdp.close()
@@ -367,9 +371,9 @@ async def universal_survey_answer(req: UniversalAnswerRequest) -> UniversalAnswe
                 pages_completed=0,
                 current_question_type=q_type,
                 elapsed_ms=(time.monotonic() - start) * 1000,
-                reason="Survey completed successfully"
+                reason="Survey completed successfully",
             )
-        
+
         if q_type == QuestionType.DISQUALIFIED:
             cdp.close()
             return UniversalAnswerResponse(
@@ -377,24 +381,21 @@ async def universal_survey_answer(req: UniversalAnswerRequest) -> UniversalAnswe
                 pages_completed=0,
                 current_question_type=q_type,
                 elapsed_ms=(time.monotonic() - start) * 1000,
-                reason="Disqualified from survey"
+                reason="Disqualified from survey",
             )
-        
+
         # 4. JS für Antwort generieren
         generators = handler["generators"]
-        if q_type in generators:
-            answer_js = generators[q_type]()
-        else:
-            answer_js = None
-        
+        answer_js = generators[q_type]() if q_type in generators else None
+
         questions_answered = 0
-        
+
         if answer_js:
             # 5. JS ausführen
             answer_result = cdp.call("Runtime.evaluate", {"expression": answer_js})
-            answer_value = answer_result.get("result", {}).get("result", {}).get("value", "")
+            answer_result.get("result", {}).get("result", {}).get("value", "")
             questions_answered = 1
-            
+
             # 6. Next-Button klicken (falls nicht manual_mode oder Consent)
             if not req.manual_mode or q_type == QuestionType.CONSENT:
                 next_js = """
@@ -402,7 +403,7 @@ async def universal_survey_answer(req: UniversalAnswerRequest) -> UniversalAnswe
                     var btns = document.querySelectorAll('button, input[type=submit], a.next, .next-btn');
                     for (var i = 0; i < btns.length; i++) {
                         var text = (btns[i].innerText || btns[i].value || '').toLowerCase();
-                        if (text.includes('next') || text.includes('weiter') || text.includes('continue') || 
+                        if (text.includes('next') || text.includes('weiter') || text.includes('continue') ||
                             text.includes('nächste') || text.includes('absenden') || text.includes('submit')) {
                             btns[i].click();
                             return 'NEXT_CLICKED: ' + text;
@@ -412,9 +413,9 @@ async def universal_survey_answer(req: UniversalAnswerRequest) -> UniversalAnswe
                 })()
                 """
                 cdp.call("Runtime.evaluate", {"expression": next_js})
-        
+
         cdp.close()
-        
+
         return UniversalAnswerResponse(
             status="in_progress",
             pages_completed=1 if questions_answered > 0 else 0,
@@ -427,18 +428,16 @@ async def universal_survey_answer(req: UniversalAnswerRequest) -> UniversalAnswe
                 "manual_mode": req.manual_mode,
             },
             elapsed_ms=(time.monotonic() - start) * 1000,
-            reason=f"Answered {q_type}, {'paused for manual approval' if req.manual_mode else 'auto-continuing'}"
+            reason=f"Answered {q_type}, {'paused for manual approval' if req.manual_mode else 'auto-continuing'}",
         )
-    
+
     except Exception as e:
-        try:
+        with contextlib.suppress(Exception):
             cdp.close()
-        except Exception:
-            pass
         return UniversalAnswerResponse(
             status="error",
             reason=f"exception: {type(e).__name__}: {e}",
-            elapsed_ms=(time.monotonic() - start) * 1000
+            elapsed_ms=(time.monotonic() - start) * 1000,
         )
 
 
@@ -449,16 +448,18 @@ async def universal_survey_answer(req: UniversalAnswerRequest) -> UniversalAnswe
 
 class SurveyStatusResponse(BaseModel):
     """Response für GET /survey/status."""
+
     status: Literal["running", "idle", "error"] = Field(description="Background-Loop Status")
-    current_survey: Optional[str] = Field(default=None, description="Aktuell laufende Survey ID")
+    current_survey: str | None = Field(default=None, description="Aktuell laufende Survey ID")
     surveys_completed: int = Field(default=0, description="Abgeschlossene Surveys in Session")
     balance_earned: float = Field(default=0.0, description="Verdientes Guthaben in Session")
-    last_activity: Optional[str] = Field(default=None, description="Letzte Aktivität Timestamp")
-    errors: List[str] = Field(default=[], description="Letzte Fehler")
+    last_activity: str | None = Field(default=None, description="Letzte Aktivität Timestamp")
+    errors: list[str] = Field(default=[], description="Letzte Fehler")
 
 
 class SurveyHistoryEntry(BaseModel):
     """Einzelner History-Eintrag."""
+
     survey_id: str
     provider: str
     status: str
@@ -469,9 +470,10 @@ class SurveyHistoryEntry(BaseModel):
 
 class SurveyHistoryResponse(BaseModel):
     """Response für GET /survey/history."""
+
     status: Literal["ok", "error"] = Field(description="Ergebnis-Status")
     count: int = Field(default=0, description="Anzahl der History-Einträge")
-    entries: List[SurveyHistoryEntry] = Field(default=[], description="History-Einträge")
+    entries: list[SurveyHistoryEntry] = Field(default=[], description="History-Einträge")
     learn_count: int = Field(default=0, description="Anzahl learn.md Einträge")
     anti_learn_count: int = Field(default=0, description="Anzahl anti-learn.md Einträge")
 
@@ -496,8 +498,7 @@ async def get_survey_status() -> SurveyStatusResponse:
     curl http://localhost:8000/survey/status
     ```
     """
-    from datetime import datetime
-    
+
     return SurveyStatusResponse(
         status="running" if _session_state["current_survey"] else "idle",
         current_survey=_session_state["current_survey"],
@@ -518,41 +519,42 @@ async def get_survey_history(limit: int = 50) -> SurveyHistoryResponse:
     curl http://localhost:8000/survey/history?limit=20
     ```
     """
-    import os
     from pathlib import Path
-    
+
     entries = []
     learn_count = 0
     anti_learn_count = 0
-    
+
     # Pfade zu learn.md / anti-learn.md
     base_path = Path(__file__).parent.parent.parent / "survey-cli"
     learn_path = base_path / "learn.md"
     anti_learn_path = base_path / "anti-learn.md"
-    
+
     # Parse learn.md (erfolgreiche Surveys)
     if learn_path.exists():
         try:
             content = learn_path.read_text()
             lines = content.strip().split("\n")
             learn_count = len([l for l in lines if l.strip().startswith("-")])
-            
+
             for line in lines[-limit:]:
                 if line.strip().startswith("-"):
                     # Format: - Survey #ID (Provider): +X.XX€ [timestamp]
                     parts = line.strip("- ").split()
                     if len(parts) >= 3:
-                        entries.append(SurveyHistoryEntry(
-                            survey_id=parts[1] if len(parts) > 1 else "unknown",
-                            provider=parts[2].strip("():") if len(parts) > 2 else "unknown",
-                            status="completed",
-                            earned=float(parts[3].strip("+€")) if len(parts) > 3 else 0.0,
-                            timestamp="",
-                            duration_s=0.0,
-                        ))
+                        entries.append(
+                            SurveyHistoryEntry(
+                                survey_id=parts[1] if len(parts) > 1 else "unknown",
+                                provider=parts[2].strip("():") if len(parts) > 2 else "unknown",
+                                status="completed",
+                                earned=float(parts[3].strip("+€")) if len(parts) > 3 else 0.0,
+                                timestamp="",
+                                duration_s=0.0,
+                            )
+                        )
         except Exception:
             pass
-    
+
     # Parse anti-learn.md (fehlgeschlagene Surveys)
     if anti_learn_path.exists():
         try:
@@ -561,7 +563,7 @@ async def get_survey_history(limit: int = 50) -> SurveyHistoryResponse:
             anti_learn_count = len([l for l in lines if l.strip().startswith("-")])
         except Exception:
             pass
-    
+
     return SurveyHistoryResponse(
         status="ok",
         count=len(entries),

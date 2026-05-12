@@ -93,11 +93,13 @@ EventHandler = Callable[[str, "dict[str, Any]", "str | None"], None]
 
 class CDPError(Exception):
     """CDP command returned an error."""
+
     pass
 
 
 class CDPConnectionError(Exception):
     """CDP WebSocket connection failed after retries."""
+
     pass
 
 
@@ -161,18 +163,16 @@ class CDPConnection:
         last_error = None
         for attempt in range(self.max_retries):
             try:
-                self._ws = websocket.create_connection(
-                    self.ws_url, timeout=self.timeout
-                )
+                self._ws = websocket.create_connection(self.ws_url, timeout=self.timeout)
                 # settimeout may not exist on mock objects
-                if hasattr(self._ws, 'settimeout'):
+                if hasattr(self._ws, "settimeout"):
                     self._ws.settimeout(self.timeout)
                 return
             except Exception as e:
                 last_error = e
                 if attempt < self.max_retries - 1:
                     wait = min(
-                        self.backoff_base * (2 ** attempt),
+                        self.backoff_base * (2**attempt),
                         self.backoff_max,
                     )
                     time.sleep(wait)
@@ -251,9 +251,7 @@ class CDPConnection:
 
                 # Check for CDP error
                 if "error" in response_data:
-                    raise CDPError(
-                        f"CDP command {method} failed: {response_data['error']}"
-                    )
+                    raise CDPError(f"CDP command {method} failed: {response_data['error']}")
 
                 return response_data
 
@@ -277,7 +275,7 @@ class CDPConnection:
                         pass
                     # Wait with backoff before retry
                     wait = min(
-                        self.backoff_base * (2 ** attempt),
+                        self.backoff_base * (2**attempt),
                         self.backoff_max,
                     )
                     time.sleep(wait)
@@ -358,9 +356,7 @@ class CDPConnection:
         prev_timeout: float | None = None
         # Nur Real-Sockets unterstützen settimeout; Tests mit Mock-Objekten
         # nicht.
-        has_settimeout = hasattr(self._ws, "settimeout") and hasattr(
-            self._ws, "gettimeout"
-        )
+        has_settimeout = hasattr(self._ws, "settimeout") and hasattr(self._ws, "gettimeout")
         if has_settimeout:
             try:
                 prev_timeout = self._ws.gettimeout()

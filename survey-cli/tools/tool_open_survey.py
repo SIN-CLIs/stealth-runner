@@ -41,7 +41,6 @@ import os
 import subprocess
 import time
 import urllib.request
-import re
 from typing import Dict, Optional, List
 
 __frozen__ = True
@@ -56,16 +55,24 @@ def _get_details_url(port: int = CDP_PORT) -> str:
     """Get live details_url from dashboard page."""
     try:
         import websocket
-        pages = json.loads(urllib.request.urlopen(
-            f"http://127.0.0.1:{port}/json", timeout=3).read())
+
+        pages = json.loads(
+            urllib.request.urlopen(f"http://127.0.0.1:{port}/json", timeout=3).read()
+        )
         for p in pages:
             if "dashboard" in p.get("url", "").lower():
-                ws = websocket.create_connection(
-                    p["webSocketDebuggerUrl"], timeout=10)
-                ws.send(json.dumps({
-                    "id": 0, "method": "Runtime.evaluate",
-                    "params": {"expression": "typeof details_url !== 'undefined' ? details_url : ''"}
-                }))
+                ws = websocket.create_connection(p["webSocketDebuggerUrl"], timeout=10)
+                ws.send(
+                    json.dumps(
+                        {
+                            "id": 0,
+                            "method": "Runtime.evaluate",
+                            "params": {
+                                "expression": "typeof details_url !== 'undefined' ? details_url : ''"
+                            },
+                        }
+                    )
+                )
                 r = json.loads(ws.recv())
                 ws.close()
                 url = r.get("result", {}).get("result", {}).get("value", "")
@@ -88,14 +95,15 @@ def _get_survey_url(survey_id: str, port: int = CDP_PORT) -> Optional[str]:
     """Fetch actual survey URL from CPX API."""
     details_url = _get_details_url(port)
     try:
-        resp = json.loads(urllib.request.urlopen(
-            details_url + "&survey_id=" + survey_id, timeout=8).read())
+        resp = json.loads(
+            urllib.request.urlopen(details_url + "&survey_id=" + survey_id, timeout=8).read()
+        )
         if resp.get("type") == "okay":
             return resp.get("href")
         # Handle pre-qualifier
         if resp.get("type") == "question":
             return None  # Pre-qualifier not handled here
-    except Exception as e:
+    except Exception:
         return None
     return None
 
@@ -104,10 +112,10 @@ def _get_survey_url(survey_id: str, port: int = CDP_PORT) -> Optional[str]:
 # CDP HELPERS
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 def _get_cdp_pages(port: int = CDP_PORT) -> List[Dict]:
     try:
-        return json.loads(urllib.request.urlopen(
-            f"http://127.0.0.1:{port}/json", timeout=3).read())
+        return json.loads(urllib.request.urlopen(f"http://127.0.0.1:{port}/json", timeout=3).read())
     except Exception:
         return []
 
@@ -129,6 +137,7 @@ def _create_tab(url: str, port: int = CDP_PORT) -> Optional[str]:
     """
     try:
         import websocket
+
         pages = _get_cdp_pages(port)
         if not pages:
             return None
@@ -137,10 +146,9 @@ def _create_tab(url: str, port: int = CDP_PORT) -> Optional[str]:
             return None
         # 1) Create blank tab so we can attach and inject cookies BEFORE navigation
         ws = websocket.create_connection(ws_url, timeout=10)
-        ws.send(json.dumps({
-            "id": 1, "method": "Target.createTarget",
-            "params": {"url": "about:blank"}
-        }))
+        ws.send(
+            json.dumps({"id": 1, "method": "Target.createTarget", "params": {"url": "about:blank"}})
+        )
         r = json.loads(ws.recv())
         ws.close()
         target_id = r.get("result", {}).get("targetId")
@@ -161,7 +169,19 @@ def _create_tab(url: str, port: int = CDP_PORT) -> Optional[str]:
                 with open(cookie_file) as f:
                     data = json.load(f)
                 heypiggy_cookies = [
-                    {k: c[k] for k in ["name", "value", "domain", "path", "expires", "secure", "httpOnly"] if k in c}
+                    {
+                        k: c[k]
+                        for k in [
+                            "name",
+                            "value",
+                            "domain",
+                            "path",
+                            "expires",
+                            "secure",
+                            "httpOnly",
+                        ]
+                        if k in c
+                    }
                     for c in data.get("cookies", [])
                     if "heypiggy" in c.get("domain", "").lower()
                 ]
@@ -169,20 +189,22 @@ def _create_tab(url: str, port: int = CDP_PORT) -> Optional[str]:
                     ws3 = websocket.create_connection(tab_ws, timeout=10)
                     ws3.send(json.dumps({"id": 1, "method": "Network.enable"}))
                     json.loads(ws3.recv())
-                    ws3.send(json.dumps({
-                        "id": 2, "method": "Network.setCookies",
-                        "params": {"cookies": heypiggy_cookies}
-                    }))
+                    ws3.send(
+                        json.dumps(
+                            {
+                                "id": 2,
+                                "method": "Network.setCookies",
+                                "params": {"cookies": heypiggy_cookies},
+                            }
+                        )
+                    )
                     json.loads(ws3.recv())
                     ws3.close()
             except Exception:
                 pass  # Continue even if cookie injection fails
         # 4) Navigate to the actual survey URL
         ws2 = websocket.create_connection(tab_ws, timeout=10)
-        ws2.send(json.dumps({
-            "id": 1, "method": "Page.navigate",
-            "params": {"url": url}
-        }))
+        ws2.send(json.dumps({"id": 1, "method": "Page.navigate", "params": {"url": url}}))
         json.loads(ws2.recv())
         ws2.close()
         return target_id
@@ -193,16 +215,22 @@ def _create_tab(url: str, port: int = CDP_PORT) -> Optional[str]:
 def _close_tab(tab_id: str, port: int = CDP_PORT) -> bool:
     try:
         import websocket
+
         pages = _get_cdp_pages(port)
         for p in pages:
             if p.get("id") == tab_id:
                 ws_url = p.get("webSocketDebuggerUrl")
                 if ws_url:
                     ws = websocket.create_connection(ws_url, timeout=10)
-                    ws.send(json.dumps({
-                        "id": 1, "method": "Target.closeTarget",
-                        "params": {"targetId": tab_id}
-                    }))
+                    ws.send(
+                        json.dumps(
+                            {
+                                "id": 1,
+                                "method": "Target.closeTarget",
+                                "params": {"targetId": tab_id},
+                            }
+                        )
+                    )
                     json.loads(ws.recv())
                     ws.close()
                     return True
@@ -237,7 +265,10 @@ def _find_new_tab(old_tab_ids: set, port: int = CDP_PORT) -> Optional[Dict]:
 # TESTED: survey 67064749 → purespectrum tab opened successfully
 # ═══════════════════════════════════════════════════════════════════════════
 
-def _click_modal_button_cdp(ws_url: str, port: int = CDP_PORT, cpx_url: Optional[str] = None) -> Optional[Dict]:
+
+def _click_modal_button_cdp(
+    ws_url: str, port: int = CDP_PORT, cpx_url: Optional[str] = None
+) -> Optional[Dict]:
     """Click 'Umfrage starten' in modal via window.open interception + Target.createTarget.
 
     Args:
@@ -250,10 +281,10 @@ def _click_modal_button_cdp(ws_url: str, port: int = CDP_PORT, cpx_url: Optional
     Returns: {"status": "ok", "tab_id": str, "ws_url": str, "url": str} oder None
     """
     import websocket
-    
+
     try:
         ws = websocket.create_connection(ws_url, timeout=10)
-        
+
         # Step 1: Check modal state und find "Umfrage starten" button
         await_expr = """
 (function() {
@@ -272,8 +303,16 @@ def _click_modal_button_cdp(ws_url: str, port: int = CDP_PORT, cpx_url: Optional
   return JSON.stringify({error: 'no_starten_button'});
 })()
         """
-        
-        ws.send(json.dumps({"id": 1, "method": "Runtime.evaluate", "params": {"expression": await_expr.strip()}}))
+
+        ws.send(
+            json.dumps(
+                {
+                    "id": 1,
+                    "method": "Runtime.evaluate",
+                    "params": {"expression": await_expr.strip()},
+                }
+            )
+        )
         r = json.loads(ws.recv())
         btn_info = r.get("result", {}).get("result", {}).get("value", "{}")
         if isinstance(btn_info, str):
@@ -281,11 +320,11 @@ def _click_modal_button_cdp(ws_url: str, port: int = CDP_PORT, cpx_url: Optional
                 btn_info = json.loads(btn_info)
             except:
                 btn_info = {}
-        
+
         if btn_info.get("error"):
             ws.close()
             return None
-        
+
         # Step 2: window.open interception → capture URL
         intercept_expr = """
 (function() {
@@ -304,12 +343,20 @@ def _click_modal_button_cdp(ws_url: str, port: int = CDP_PORT, cpx_url: Optional
   return surveyURL || 'window.open_not_called';
 })()
         """
-        
-        ws.send(json.dumps({"id": 2, "method": "Runtime.evaluate", "params": {"expression": intercept_expr.strip()}}))
+
+        ws.send(
+            json.dumps(
+                {
+                    "id": 2,
+                    "method": "Runtime.evaluate",
+                    "params": {"expression": intercept_expr.strip()},
+                }
+            )
+        )
         r = json.loads(ws.recv())
         survey_url = r.get("result", {}).get("result", {}).get("value", "")
         ws.close()
-        
+
         if not survey_url or survey_url == "window.open_not_called":
             return None
 
@@ -335,35 +382,34 @@ def _click_modal_button_cdp(ws_url: str, port: int = CDP_PORT, cpx_url: Optional
         pages = _get_cdp_pages(port)
         if not pages:
             return None
-        
+
         browser_ws = pages[0].get("webSocketDebuggerUrl")
         if not browser_ws:
             return None
-        
+
         # 3a: Create blank tab
         ws2 = websocket.create_connection(browser_ws, timeout=10)
-        ws2.send(json.dumps({
-            "id": 1, "method": "Target.createTarget",
-            "params": {"url": "about:blank"}
-        }))
+        ws2.send(
+            json.dumps({"id": 1, "method": "Target.createTarget", "params": {"url": "about:blank"}})
+        )
         r = json.loads(ws2.recv())
         ws2.close()
-        
+
         target_id = r.get("result", {}).get("targetId")
         if not target_id:
             return None
-        
+
         # 3b: Get the new tab's WebSocket URL
         time.sleep(0.5)  # Small wait for tab to register
         pages2 = _get_cdp_pages(port)
         new_tab = next((p for p in pages2 if p.get("id") == target_id), None)
         if not new_tab:
             return None
-        
+
         tab_ws = new_tab.get("webSocketDebuggerUrl")
         if not tab_ws:
             return None
-        
+
         # 3c: Inject HeyPiggy session cookies BEFORE navigation
         cookie_file = os.path.expanduser("~/.stealth/heypiggy-backup/heypiggy-cookies.json")
         if os.path.exists(cookie_file):
@@ -371,7 +417,19 @@ def _click_modal_button_cdp(ws_url: str, port: int = CDP_PORT, cpx_url: Optional
                 with open(cookie_file) as f:
                     data = json.load(f)
                 heypiggy_cookies = [
-                    {k: c[k] for k in ["name", "value", "domain", "path", "expires", "secure", "httpOnly"] if k in c}
+                    {
+                        k: c[k]
+                        for k in [
+                            "name",
+                            "value",
+                            "domain",
+                            "path",
+                            "expires",
+                            "secure",
+                            "httpOnly",
+                        ]
+                        if k in c
+                    }
                     for c in data.get("cookies", [])
                     if "heypiggy" in c.get("domain", "").lower()
                 ]
@@ -379,29 +437,31 @@ def _click_modal_button_cdp(ws_url: str, port: int = CDP_PORT, cpx_url: Optional
                     ws3 = websocket.create_connection(tab_ws, timeout=10)
                     ws3.send(json.dumps({"id": 1, "method": "Network.enable"}))
                     json.loads(ws3.recv())
-                    ws3.send(json.dumps({
-                        "id": 2, "method": "Network.setCookies",
-                        "params": {"cookies": heypiggy_cookies}
-                    }))
+                    ws3.send(
+                        json.dumps(
+                            {
+                                "id": 2,
+                                "method": "Network.setCookies",
+                                "params": {"cookies": heypiggy_cookies},
+                            }
+                        )
+                    )
                     json.loads(ws3.recv())
                     ws3.close()
-            except Exception as e:
+            except Exception:
                 pass  # Cookie injection failure — continue anyway
-        
+
         # 3d: NOW navigate to survey URL (cookies injected first!)
         ws4 = websocket.create_connection(tab_ws, timeout=10)
-        ws4.send(json.dumps({
-            "id": 1, "method": "Page.navigate",
-            "params": {"url": final_nav_url}
-        }))
+        ws4.send(json.dumps({"id": 1, "method": "Page.navigate", "params": {"url": final_nav_url}}))
         json.loads(ws4.recv())
         ws4.close()
-        
+
         # Step 4: Wait for tab to load and return info
         time.sleep(3)
         pages3 = _get_cdp_pages(port)
         loaded_tab = next((p for p in pages3 if p.get("id") == target_id), None)
-        
+
         if loaded_tab:
             return {
                 "status": "ok",
@@ -409,14 +469,16 @@ def _click_modal_button_cdp(ws_url: str, port: int = CDP_PORT, cpx_url: Optional
                 "ws_url": loaded_tab.get("webSocketDebuggerUrl"),
                 "url": final_nav_url,
             }
-        
+
         return None
-    
+
     except Exception:
         return None
 
 
-def _handle_modal_with_cdp(ws_url: str, port: int = CDP_PORT, cpx_url: Optional[str] = None) -> Optional[Dict]:
+def _handle_modal_with_cdp(
+    ws_url: str, port: int = CDP_PORT, cpx_url: Optional[str] = None
+) -> Optional[Dict]:
     """Handle modal via CDP JS (pre-qualifier or "Umfrage starten").
 
     Args:
@@ -431,12 +493,18 @@ def _handle_modal_with_cdp(ws_url: str, port: int = CDP_PORT, cpx_url: Optional[
     Returns tab info dict or None.
     """
     import websocket
-    
+
     try:
         ws = websocket.create_connection(ws_url, timeout=10)
-        
+
         # Get all visible modal buttons
-        ws.send(json.dumps({"id": 1, "method": "Runtime.evaluate", "params": {"expression": """
+        ws.send(
+            json.dumps(
+                {
+                    "id": 1,
+                    "method": "Runtime.evaluate",
+                    "params": {
+                        "expression": """
 (function() {
   var m = document.querySelector('.modal.show');
   if (!m) return null;
@@ -453,7 +521,11 @@ def _handle_modal_with_cdp(ws_url: str, port: int = CDP_PORT, cpx_url: Optional[
   }
   return JSON.stringify(result);
 })()
-        """.strip()}}))
+        """.strip()
+                    },
+                }
+            )
+        )
         r = json.loads(ws.recv())
         btns_str = r.get("result", {}).get("result", {}).get("value", "[]")
         if isinstance(btns_str, str):
@@ -463,45 +535,51 @@ def _handle_modal_with_cdp(ws_url: str, port: int = CDP_PORT, cpx_url: Optional[
                 btns = []
         else:
             btns = []
-        
+
         ws.close()
-        
+
         if not btns:
             return None
-        
+
         # Check for pre-qualifier vs "Umfrage starten"
         has_starten = any("starten" in b["text"].lower() for b in btns)
         has_submit = any("submitQuestion" in b.get("onclick", "") for b in btns)
-        
+
         if has_starten:
             # "Umfrage starten" → use window.open interception method
             return _click_modal_button_cdp(ws_url, port, cpx_url)
-        
+
         elif has_submit:
             # Pre-qualifier → click submit then check for "Umfrage starten"
             return _handle_pre_qualifier_modal(ws_url, port)
-        
+
         return None
-    
+
     except Exception:
         return None
 
 
 def _handle_pre_qualifier_modal(ws_url: str, port: int = CDP_PORT) -> Optional[Dict]:
     """Handle pre-qualifier modal: click submit, then handle resulting modal.
-    
+
     Pre-qualifier flow:
     1. Modal has radio buttons (e.g., 23 B2B options) + "Nächste" / submitQuestion() button
     2. Click submit → page updates → "Umfrage starten" button appears
     3. Then use window.open interception method
     """
     import websocket
-    
+
     try:
         ws = websocket.create_connection(ws_url, timeout=10)
-        
+
         # Click the visible submit button (Nächste)
-        ws.send(json.dumps({"id": 1, "method": "Runtime.evaluate", "params": {"expression": """
+        ws.send(
+            json.dumps(
+                {
+                    "id": 1,
+                    "method": "Runtime.evaluate",
+                    "params": {
+                        "expression": """
 (function() {
   var m = document.querySelector('.modal.show');
   if (!m) return 'no_modal';
@@ -515,20 +593,24 @@ def _handle_pre_qualifier_modal(ws_url: str, port: int = CDP_PORT) -> Optional[D
   }
   return 'submit_btn_not_found';
 })()
-        """.strip()}}))
+        """.strip()
+                    },
+                }
+            )
+        )
         r = json.loads(ws.recv())
         ws.close()
-        
+
         result = r.get("result", {}).get("result", {}).get("value", "")
         if result != "submitted":
             return None
-        
+
         # Wait for modal to update with "Umfrage starten"
         time.sleep(2)
-        
+
         # Now handle the updated modal
         return _handle_modal_with_cdp(ws_url, port)
-    
+
     except Exception:
         return None
 
@@ -537,12 +619,15 @@ def _handle_pre_qualifier_modal(ws_url: str, port: int = CDP_PORT) -> Optional[D
 # CUA HELPERS (for modal handling)
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 def _get_state(pid: int, wid: int) -> str:
     try:
         result = subprocess.run(
             [CUA_BIN, "call", "get_window_state"],
             input=json.dumps({"pid": pid, "window_id": wid}),
-            capture_output=True, text=True, timeout=30,
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
         if result.returncode != 0:
             return ""
@@ -557,7 +642,9 @@ def _click_cua(pid: int, wid: int, element_index: int) -> bool:
         result = subprocess.run(
             [CUA_BIN, "call", "click"],
             input=json.dumps({"pid": pid, "window_id": wid, "element_index": element_index}),
-            capture_output=True, text=True, timeout=15,
+            capture_output=True,
+            text=True,
+            timeout=15,
         )
         return result.returncode == 0 and "Performed" in result.stdout
     except Exception:
@@ -566,6 +653,7 @@ def _click_cua(pid: int, wid: int, element_index: int) -> bool:
 
 def _find_element(markdown: str, role: str, label: str) -> Optional[Dict]:
     from tools.tool_find_element import find_element
+
     return find_element(markdown, role=role, label=label)
 
 
@@ -600,6 +688,7 @@ def _detect_provider(url: str) -> str:
 # MAIN: open_survey()
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 def open_survey(
     survey_id: str,
     pid: int,
@@ -620,7 +709,7 @@ def open_survey(
     Returns:
         {"status": "ok", "tab_id": str, "ws_url": str, "provider": str, "url": str, "flow": str}
         {"status": "error", "reason": str, "stage": str}
-    
+
     MODAL CLICK FIX (2026-05-09):
     - CUA click on "Umfrage starten" FAILS: Chrome blocks window.open()
     - CDP b.click() FAILS: same reason
@@ -632,7 +721,7 @@ def open_survey(
     """
     # 1. Try CPX API first (fast path for direct surveys)
     survey_url = _get_survey_url(survey_id, port)
-    
+
     # 2. Get dashboard CDP info
     dashboard_ws = _get_dashboard_ws(port)
     if not dashboard_ws:
@@ -645,11 +734,17 @@ def open_survey(
     # 3. Click survey card on dashboard (ALWAYS — triggers modal/pre-qualifier)
     try:
         import websocket
+
         ws = websocket.create_connection(dashboard_ws, timeout=10)
-        ws.send(json.dumps({
-            "id": 0, "method": "Runtime.evaluate",
-            "params": {"expression": f"clickSurvey({survey_id})"}
-        }))
+        ws.send(
+            json.dumps(
+                {
+                    "id": 0,
+                    "method": "Runtime.evaluate",
+                    "params": {"expression": f"clickSurvey({survey_id})"},
+                }
+            )
+        )
         json.loads(ws.recv())
         ws.close()
     except Exception as e:
@@ -683,10 +778,15 @@ def open_survey(
         provider = _detect_provider(final_url)
         try:
             ws = websocket.create_connection(tab_ws, timeout=10)
-            ws.send(json.dumps({
-                "id": 0, "method": "Runtime.evaluate",
-                "params": {"expression": "document.location.href"}
-            }))
+            ws.send(
+                json.dumps(
+                    {
+                        "id": 0,
+                        "method": "Runtime.evaluate",
+                        "params": {"expression": "document.location.href"},
+                    }
+                )
+            )
             r = json.loads(ws.recv())
             ws.close()
             actual_url = r.get("result", {}).get("result", {}).get("value", final_url)
@@ -718,10 +818,15 @@ def open_survey(
 
         try:
             ws = websocket.create_connection(tab_ws, timeout=10)
-            ws.send(json.dumps({
-                "id": 0, "method": "Runtime.evaluate",
-                "params": {"expression": "document.location.href"}
-            }))
+            ws.send(
+                json.dumps(
+                    {
+                        "id": 0,
+                        "method": "Runtime.evaluate",
+                        "params": {"expression": "document.location.href"},
+                    }
+                )
+            )
             r = json.loads(ws.recv())
             ws.close()
             actual_url = r.get("result", {}).get("result", {}).get("value", tab_url)
@@ -745,12 +850,18 @@ def open_survey(
     for p in pages:
         if "dashboard" in p.get("url", "").lower():
             try:
-                ws = websocket.create_connection(
-                    p.get("webSocketDebuggerUrl"), timeout=10)
-                ws.send(json.dumps({
-                    "id": 0, "method": "Runtime.evaluate",
-                    "params": {"expression": "document.querySelector('iframe')?.src || document.location.href"}
-                }))
+                ws = websocket.create_connection(p.get("webSocketDebuggerUrl"), timeout=10)
+                ws.send(
+                    json.dumps(
+                        {
+                            "id": 0,
+                            "method": "Runtime.evaluate",
+                            "params": {
+                                "expression": "document.querySelector('iframe')?.src || document.location.href"
+                            },
+                        }
+                    )
+                )
                 r = json.loads(ws.recv())
                 ws.close()
                 survey_page = r.get("result", {}).get("result", {}).get("value", "")
@@ -796,6 +907,7 @@ def open_survey(
 # ═══════════════════════════════════════════════════════════════════════════
 # CLOSE SURVEY TAB
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 def close_survey_tab(tab_id: str, port: int = CDP_PORT) -> bool:
     """Close a survey tab and return to dashboard."""

@@ -7,7 +7,7 @@ ANSWER_SURVEY — Universal Survey Answer Tool (MANUAL TESTING ONLY!)
 WAS DAS TUT:
   Nimmt einen Survey-Tab WS URL und beantwortet EINE Seite nach der anderen.
   Erkennt universal: Consent, Fragen, Completion, Screen-Out.
-  
+
   **DIES IST KEIN AUTO-RUN TOOL!**
   **FÜR MANUELLE TESTING — eine Seite nach der anderen, jeder Schritt verifiziert!**
 
@@ -29,7 +29,7 @@ BEFOLGT:
 
 VERIFIZIERTE PATTERNS (aus commands/surveys/survey-answer-patterns.md):
   - Radio Button: input[type=radio] -> checked + dispatchEvent(change)
-  - Checkbox: input[type=checkbox] -> click() 
+  - Checkbox: input[type=checkbox] -> click()
   - Text Input: value setzen + dispatchEvent(input + change)
   - Submit: document.querySelector("form").submit() ODER Button klicken
   - Click by Text: textContent === "Text" -> click()
@@ -49,20 +49,19 @@ import asyncio
 import json
 import os
 import subprocess
-import time
 import hashlib
 from datetime import datetime
-from typing import Dict, Any, List, Optional
+from typing import Dict
 
 # ═════════════════════════════════════════════════════════════════════════════
 # IMPORTS — vorhandene tools nutzen
 # ═════════════════════════════════════════════════════════════════════════════
 sys_path = "/Users/jeremy/dev/stealth-runner/survey-cli"
 import sys
+
 sys.path.insert(0, sys_path)
 
-from tools.tool_snapshot import EXTRACTOR_JS, snapshot, find_submit, find_unfilled
-from survey.completion_detector import CompletionDetector
+from tools.tool_snapshot import EXTRACTOR_JS
 from survey.session_validator import validate_session
 
 CHROME_PORT = 9999
@@ -208,24 +207,29 @@ CDP_CLICK_BY_TEXT_JS = """
 # CAPTCHA SOLVER — PureSpectrum Visual Captcha via Llama 90B (NVIDIA NIM)
 # ═════════════════════════════════════════════════════════════════════════════
 
+
 async def solve_captcha(ws) -> str:
     """Detect and solve PureSpectrum captchas (ROBOT text + visual image).
-    
+
     Strategy:
     - ROBOT captcha: type "ROBOT" in input field + click Nächste
     - Visual captcha: extract base64 PNG, send to Llama 90B, type result + click Nächste
-    
+
     Model: meta/llama-3.2-90b-vision-instruct (NVIDIA NIM)
     API: https://integrate.api.nvidia.com/v1/chat/completions
     """
-    import os, base64, urllib.request
-    
+    import base64
+    import urllib.request
+
     # Get page text to detect captcha type
     page_text = await cdp_execute_js(ws, 100, "document.body.innerText.substring(0, 500)")
-    
+
     if "ROBOT" in page_text.upper() or "ich bin kein roboter" in page_text.lower():
         # ROBOT text captcha
-        await cdp_execute_js(ws, 101, """
+        await cdp_execute_js(
+            ws,
+            101,
+            """
 (function(){
     var inp = document.querySelector('input[type=text], input[type=password], textarea');
     if(inp) {
@@ -246,9 +250,13 @@ async def solve_captcha(ws) -> str:
     }
     return 'ROBOT_INPUT_NOT_FOUND';
 })()
-""")
+""",
+        )
         await asyncio.sleep(0.5)
-        await cdp_execute_js(ws, 102, """
+        await cdp_execute_js(
+            ws,
+            102,
+            """
 (function(){
     var b = [...document.querySelectorAll('button')].find(function(b){
         return b.innerText.includes('N') && b.innerText.includes('chste');
@@ -256,12 +264,16 @@ async def solve_captcha(ws) -> str:
     if(b) { b.click(); return 'CLICKED:' + b.innerText; }
     return 'NOT_FOUND';
 })()
-""")
+""",
+        )
         await asyncio.sleep(3)
         return "ROBOT_SOLVED"
-    
+
     # Visual captcha: extract base64 image
-    captcha_data = await cdp_execute_js(ws, 110, """
+    captcha_data = await cdp_execute_js(
+        ws,
+        110,
+        """
 (function(){
     // Find captcha image (base64 PNG)
     var imgs = document.querySelectorAll('img');
@@ -274,35 +286,55 @@ async def solve_captcha(ws) -> str:
     if(canvases.length > 0) return 'canvas:' + canvases[0].toDataURL('image/png');
     return 'NO_CAPTCHA_IMAGE';
 })()
-""")
-    
-    if not captcha_data or captcha_data == "NO_CAPTCHA_IMAGE" or not captcha_data.startswith("data:image"):
+""",
+    )
+
+    if (
+        not captcha_data
+        or captcha_data == "NO_CAPTCHA_IMAGE"
+        or not captcha_data.startswith("data:image")
+    ):
         return "CAPTCHA_NO_IMAGE"
-    
+
     # Extract base64 and call Llama 90B
     try:
-        b64 = captcha_data.split(",")[1] if "," in captcha_data else captcha_data.split("data:image/png;base64,")[1]
+        b64 = (
+            captcha_data.split(",")[1]
+            if "," in captcha_data
+            else captcha_data.split("data:image/png;base64,")[1]
+        )
         img_bytes = base64.b64decode(b64)
     except Exception as e:
         return f"CAPTCHA_DECODE_ERROR:{e}"
-    
+
     # Call NVIDIA NIM with Llama 90B Vision
     img_b64 = base64.b64encode(img_bytes).decode()
     payload = {
         "model": "meta/llama-3.2-90b-vision-instruct",
-        "messages": [{"role": "user", "content": [
-            {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{img_b64}"}},
-            {"type": "text", "text": "The image shows a CAPTCHA code. Read and return ONLY the characters shown, nothing else. Example: ABC123"}
-        ]}],
-        "max_tokens": 20
+        "messages": [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{img_b64}"}},
+                    {
+                        "type": "text",
+                        "text": "The image shows a CAPTCHA code. Read and return ONLY the characters shown, nothing else. Example: ABC123",
+                    },
+                ],
+            }
+        ],
+        "max_tokens": 20,
     }
-    
+
     try:
         req = urllib.request.Request(
             "https://integrate.api.nvidia.com/v1/chat/completions",
             data=json.dumps(payload).encode(),
-            headers={"Authorization": f"Bearer {os.environ['NVIDIA_API_KEY']}", "Content-Type": "application/json"},
-            method="POST"
+            headers={
+                "Authorization": f"Bearer {os.environ['NVIDIA_API_KEY']}",
+                "Content-Type": "application/json",
+            },
+            method="POST",
         )
         with urllib.request.urlopen(req, timeout=30) as resp:
             result = json.loads(resp.read())
@@ -313,20 +345,31 @@ async def solve_captcha(ws) -> str:
                 req2 = urllib.request.Request(
                     "https://integrate.api.nvidia.com/v1/chat/completions",
                     data=json.dumps(payload).encode(),
-                    headers={"Authorization": f"Bearer {os.environ['NVIDIA_API_KEY']}", "Content-Type": "application/json"},
-                    method="POST"
+                    headers={
+                        "Authorization": f"Bearer {os.environ['NVIDIA_API_KEY']}",
+                        "Content-Type": "application/json",
+                    },
+                    method="POST",
                 )
                 with urllib.request.urlopen(req2, timeout=30) as resp2:
                     result2 = json.loads(resp2.read())
-                    code = result2.get("choices", [{}])[0].get("message", {}).get("content", "").strip()
+                    code = (
+                        result2.get("choices", [{}])[0]
+                        .get("message", {})
+                        .get("content", "")
+                        .strip()
+                    )
     except Exception as e:
         return f"CAPTCHA_API_ERROR:{e}"
-    
+
     if not code:
         return "CAPTCHA_API_EMPTY"
-    
+
     # Fill captcha and click Nächste
-    await cdp_execute_js(ws, 120, f"""
+    await cdp_execute_js(
+        ws,
+        120,
+        f"""
 (function(){{
     var inp = document.querySelector('input[type=text], textarea');
     if(!inp) {{ 
@@ -346,10 +389,14 @@ async def solve_captcha(ws) -> str:
     }}
     return 'INPUT_NOT_FOUND';
 }})()
-""")
+""",
+    )
     await asyncio.sleep(0.5)
-    
-    await cdp_execute_js(ws, 121, """
+
+    await cdp_execute_js(
+        ws,
+        121,
+        """
 (function(){
     var b = [...document.querySelectorAll('button')].find(function(b){
         return b.innerText.includes('N') && b.innerText.includes('chste');
@@ -357,8 +404,9 @@ async def solve_captcha(ws) -> str:
     if(b) { b.click(); return 'CLICKED:' + b.innerText; }
     return 'NOT_FOUND';
 })()
-""")
-    
+""",
+    )
+
     await asyncio.sleep(3)
     return f"CAPTCHA_SOLVED:{code}"
 
@@ -367,28 +415,35 @@ async def solve_captcha(ws) -> str:
 # DRAG-DROP SOLVER — PureSpectrum Angular CDK Puzzle (66%)
 # ═════════════════════════════════════════════════════════════════════════════
 
+
 async def solve_drag_drop(ws) -> str:
     """Solve PureSpectrum "Zahl X" Angular CDK drag-drop puzzle.
-    
+
     Uses CDP Input.dispatchMouseEvent (Approach B) — REAL browser-level mouse events
     trigger Angular CDK's pointer event handlers. Verified working 2026-05-10.
     """
-    import time
-    
+
     # Extract target number
-    number = await cdp_execute_js(ws, 200, """
+    number = await cdp_execute_js(
+        ws,
+        200,
+        """
 (function(){
     var t = document.body.innerText;
     var m = t.match(/Bitte legen Sie die Zahl (\\d+)/);
     return m ? m[1] : null;
 })()
-""")
-    
+""",
+    )
+
     if not number:
         return "DRAG_NO_NUMBER"
-    
+
     # Get element positions
-    coords = await cdp_execute_js(ws, 201, f"""
+    coords = await cdp_execute_js(
+        ws,
+        201,
+        f"""
 (function(){{
     var img = document.querySelector('img[alt="{number}"]');
     var dropZones = document.querySelectorAll('.cdk-drop-list');
@@ -403,29 +458,43 @@ async def solve_drag_drop(ws) -> str:
         ey: r2.top + r2.height/2
     }});
 }})()
-""")
-    
+""",
+    )
+
     try:
         pos = json.loads(coords)
     except:
         return f"DRAG_PARSE_ERROR:{coords}"
-    
+
     if pos.get("error"):
         return f"DRAG_ERROR:{pos['error']}"
-    
+
     sx, sy = pos["sx"], pos["sy"]
     ex, ey = pos["ex"], pos["ey"]
-    
+
     # Enable Input domain
     await ws.send(json.dumps({"id": 202, "method": "Input.enable"}))
     await asyncio.wait_for(ws.recv(), timeout=5)
-    
+
     # mousePressed
-    await ws.send(json.dumps({"id": 203, "method": "Input.dispatchMouseEvent",
-        "params": {"type": "mousePressed", "x": sx, "y": sy, "button": "left", "clickCount": 1}}))
+    await ws.send(
+        json.dumps(
+            {
+                "id": 203,
+                "method": "Input.dispatchMouseEvent",
+                "params": {
+                    "type": "mousePressed",
+                    "x": sx,
+                    "y": sy,
+                    "button": "left",
+                    "clickCount": 1,
+                },
+            }
+        )
+    )
     await asyncio.wait_for(ws.recv(), timeout=5)
     await asyncio.sleep(0.3)
-    
+
     # 10-step mouseMoved with arc
     for i in range(1, 11):
         t = i / 10
@@ -433,22 +502,45 @@ async def solve_drag_drop(ws) -> str:
         iy = sy + (ey - sy) * t
         arc_off = 20 * (1 - abs(2 * t - 1))
         iy -= arc_off
-        await ws.send(json.dumps({"id": 203 + i, "method": "Input.dispatchMouseEvent",
-            "params": {"type": "mouseMoved", "x": ix, "y": iy, "button": "left"}}))
+        await ws.send(
+            json.dumps(
+                {
+                    "id": 203 + i,
+                    "method": "Input.dispatchMouseEvent",
+                    "params": {"type": "mouseMoved", "x": ix, "y": iy, "button": "left"},
+                }
+            )
+        )
         await asyncio.wait_for(ws.recv(), timeout=5)
         await asyncio.sleep(0.05)
-    
+
     await asyncio.sleep(0.3)
-    
+
     # mouseReleased
-    await ws.send(json.dumps({"id": 220, "method": "Input.dispatchMouseEvent",
-        "params": {"type": "mouseReleased", "x": ex, "y": ey, "button": "left", "clickCount": 1}}))
+    await ws.send(
+        json.dumps(
+            {
+                "id": 220,
+                "method": "Input.dispatchMouseEvent",
+                "params": {
+                    "type": "mouseReleased",
+                    "x": ex,
+                    "y": ey,
+                    "button": "left",
+                    "clickCount": 1,
+                },
+            }
+        )
+    )
     await asyncio.wait_for(ws.recv(), timeout=5)
-    
+
     await asyncio.sleep(2)
-    
+
     # Verify and click Nächste
-    verify = await cdp_execute_js(ws, 221, """
+    verify = await cdp_execute_js(
+        ws,
+        221,
+        """
 (function(){
     var dz = document.querySelectorAll('.cdk-drop-list');
     var tz = dz.length > 1 ? dz[1] : null;
@@ -462,12 +554,16 @@ async def solve_drag_drop(ws) -> str:
         btnDisabled: btn ? btn.disabled : null
     });
 })()
-""")
-    
+""",
+    )
+
     try:
         v = json.loads(verify)
         if v.get("btnDisabled") is False:
-            await cdp_execute_js(ws, 222, """
+            await cdp_execute_js(
+                ws,
+                222,
+                """
 (function(){
     var b = [...document.querySelectorAll('button')].find(function(b){
         return b.innerText.includes('N') && b.innerText.includes('chste');
@@ -475,10 +571,11 @@ async def solve_drag_drop(ws) -> str:
     if(b) { b.click(); return 'CLICKED:' + b.innerText; }
     return 'NOT_FOUND';
 })()
-""")
+""",
+            )
             await asyncio.sleep(3)
             return f"DRAG_SOLVED:{number}->btn_enabled"
-        return f"DRAG_FAILED:btn_disabled"
+        return "DRAG_FAILED:btn_disabled"
     except:
         return f"DRAG_VERIFY_ERROR:{verify}"
 
@@ -487,9 +584,14 @@ async def solve_drag_drop(ws) -> str:
 # HELPER: CDP execute (async, mit event drain)
 # ═════════════════════════════════════════════════════════════════════════════
 
+
 async def cdp_eval(ws, msg_id, expression, timeout=15):
     """CDP Runtime.evaluate + response empfangen (ignoriert events)."""
-    await ws.send(json.dumps({"id": msg_id, "method": "Runtime.evaluate", "params": {"expression": expression}}))
+    await ws.send(
+        json.dumps(
+            {"id": msg_id, "method": "Runtime.evaluate", "params": {"expression": expression}}
+        )
+    )
     deadline = asyncio.get_running_loop().time() + timeout
     for _ in range(200):
         remaining = max(0.1, deadline - asyncio.get_running_loop().time())
@@ -517,10 +619,11 @@ async def cdp_execute_js(ws, msg_id, expression, timeout=20) -> str:
 # PAGE TYPE DETECTION
 # ═════════════════════════════════════════════════════════════════════════════
 
+
 def detect_page_type(snap: Dict) -> str:
     """
     Erkennt Seitentyp anhand bodyText + URL.
-    
+
     Returns:
         "consent"    → Cookie/Privacy Banner
         "prequal"    → Pre-Qualifier (Alter, PLZ, etc.)
@@ -531,47 +634,119 @@ def detect_page_type(snap: Dict) -> str:
         "unknown"    → Nicht erkannt
     """
     body = (snap.get("bodyText", "") or "").lower()
-    url = (snap.get("url", "") or "").lower()
-    
+    (snap.get("url", "") or "").lower()
+
     # Screen-Out Keywords
-    for kw in ["umfrage passt nicht", "leider", "nicht geeignet", "vorzeitig beendet",
-               "screen out", "disqualifiz", "sorry, we could not", "not eligible",
-               "keine passende umfrage", "nicht teilnehmen"]:
+    for kw in [
+        "umfrage passt nicht",
+        "leider",
+        "nicht geeignet",
+        "vorzeitig beendet",
+        "screen out",
+        "disqualifiz",
+        "sorry, we could not",
+        "not eligible",
+        "keine passende umfrage",
+        "nicht teilnehmen",
+    ]:
         if kw in body:
             return "screen_out"
-    
+
     # Completion Keywords
-    for kw in ["vielen dank", "thank you", "abgeschlossen", "completed", "fertig",
-               "danke für", "survey complete", "ihre antworten", "rewarded"]:
+    for kw in [
+        "vielen dank",
+        "thank you",
+        "abgeschlossen",
+        "completed",
+        "fertig",
+        "danke für",
+        "survey complete",
+        "ihre antworten",
+        "rewarded",
+    ]:
         if kw in body:
             return "completion"
-    
+
     # Consent / Cookie Banner
-    if any(kw in body for kw in ["alle akzeptieren", "accept all", "cookie", "zustimmen",
-                                  "privacy", "einwilligung", "consent"]):
+    if any(
+        kw in body
+        for kw in [
+            "alle akzeptieren",
+            "accept all",
+            "cookie",
+            "zustimmen",
+            "privacy",
+            "einwilligung",
+            "consent",
+        ]
+    ):
         if any(kw in body for kw in ["akzeptieren", "accept", "zustim", "agree", "consent"]):
             return "consent"
-    
+
     # Captcha
-    if any(kw in body for kw in ["robot", "captcha", "ich bin kein roboter", "are you a robot",
-                                  "bitte bestätigen", "verify you're human", "bitte geben sie den code ein",
-                                  "geben sie ihre antwort"]):
+    if any(
+        kw in body
+        for kw in [
+            "robot",
+            "captcha",
+            "ich bin kein roboter",
+            "are you a robot",
+            "bitte bestätigen",
+            "verify you're human",
+            "bitte geben sie den code ein",
+            "geben sie ihre antwort",
+        ]
+    ):
         return "captcha"
-    
+
     # Drag-Drop Puzzle (PureSpectrum Angular CDK)
     if "Bitte legen Sie die Zahl" in body and "Kästchen" in body:
         return "drag_drop"
-    
+
     # Pre-Qualifier (kurze Fragen vor Survey-Start)
-    if any(kw in body for kw in ["wie alt sind sie", "what is your age", "birth", "geburt",
-                                  "postleitzahl", "plz", "postal code", "gender", "geschlecht"]):
+    if any(
+        kw in body
+        for kw in [
+            "wie alt sind sie",
+            "what is your age",
+            "birth",
+            "geburt",
+            "postleitzahl",
+            "plz",
+            "postal code",
+            "gender",
+            "geschlecht",
+        ]
+    ):
         return "prequal"
-    
+
     # Questions (normale Survey-Seiten)
-    if any(kw in body for kw in ["frage", "question", "bitte wählen", "please select",
-                                  "stimme zu", "stimmen sie zu", "nie", "immer", "0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"]):
+    if any(
+        kw in body
+        for kw in [
+            "frage",
+            "question",
+            "bitte wählen",
+            "please select",
+            "stimme zu",
+            "stimmen sie zu",
+            "nie",
+            "immer",
+            "0",
+            "1",
+            "2",
+            "3",
+            "4",
+            "5",
+            "6",
+            "7",
+            "8",
+            "9",
+            "10",
+        ]
+    ):
         return "questions"
-    
+
     return "unknown"
 
 
@@ -586,23 +761,24 @@ def get_body_text(snap: Dict) -> str:
 # ANSWER PAGE — Universal logic (KEIN provider Hardcode!)
 # ═════════════════════════════════════════════════════════════════════════════
 
+
 async def answer_page(ws, snap: Dict) -> Dict[str, str]:
     """
     Beantwortet EINE Survey-Seite basierend auf Element-Typen.
-    
+
     KEIN provider-spezifischer Hardcode! Universal:
     1. Checkboxen zuerst (multi-select braucht Zeit)
     2. Radio-Buttons (einfache Auswahl)
     3. Text-Felder (PLZ, Name, etc.)
     4. Textareas (Kommentare)
     5. Captcha → Captcha-Solver (TODO: integrate)
-    
+
     Returns:
         {"actions": ["RADIO:...", "TEXT:10785", ...], "status": "ok"}
     """
     actions = []
     page_type = detect_page_type(snap)
-    
+
     # Consent: Click "Zustimmen und fortfahren" / "Accept" / "Agree"
     if page_type == "consent":
         # Versuche verschiedene Consent-Button-Texte (partial match!)
@@ -616,14 +792,18 @@ async def answer_page(ws, snap: Dict) -> Dict[str, str]:
             "Alles akzeptieren",
         ]
         for text in consent_texts:
-            result = await cdp_execute_js(ws, 10, CDP_CLICK_BY_TEXT_JS.replace("CLICKED", "") +
-                                          f"'{text}')()")
+            result = await cdp_execute_js(
+                ws, 10, CDP_CLICK_BY_TEXT_JS.replace("CLICKED", "") + f"'{text}')()"
+            )
             if result.startswith("CLICKED:"):
                 actions.append(f"CONSENT:{result}")
                 return {"actions": actions, "status": "ok", "type": "consent"}
-        
+
         # Fallback: Button im sichtbaren Bereich clicken
-        result = await cdp_execute_js(ws, 15, """
+        result = await cdp_execute_js(
+            ws,
+            15,
+            """
 (function() {
     var btns = document.querySelectorAll('button');
     for(var i = 0; i < btns.length; i++) {
@@ -635,67 +815,69 @@ async def answer_page(ws, snap: Dict) -> Dict[str, str]:
     }
     return 'NO_BTN';
 })()
-""")
+""",
+        )
         actions.append(f"CONSENT_FALLBACK:{result}")
         return {"actions": actions, "status": "ok", "type": "consent"}
-    
+
     # Captcha: Solve using NVIDIA NIM + Llama 90B vision
     if page_type == "captcha":
         captcha_result = await solve_captcha(ws)
         actions.append(f"CAPTCHA:{captcha_result}")
         return {"actions": actions, "status": "ok", "type": "captcha"}
-    
+
     # Drag-Drop Puzzle: Angular CDK puzzle at 66%
     if page_type == "drag_drop":
         drag_result = await solve_drag_drop(ws)
         actions.append(f"DRAG_DROP:{drag_result}")
         return {"actions": actions, "status": "ok", "type": "drag_drop"}
-    
+
     # Screen-out: Nichts machen, Survey ist vorbei
     if page_type == "screen_out":
         actions.append("SCREEN_OUT_DETECTED")
         return {"actions": actions, "status": "done", "type": "screen_out"}
-    
+
     # Completion: Survey ist fertig
     if page_type == "completion":
         actions.append("COMPLETION_DETECTED")
         return {"actions": actions, "status": "done", "type": "completion"}
-    
+
     # Questions / Pre-Qualifier — gleiche Logik
     elements = snap.get("elements", [])
     has_checkboxes = any(e.get("type", "").startswith("checkbox") for e in elements)
     has_radios = any(e.get("type", "").startswith("radio") for e in elements)
     has_text = any(e.get("type") == "input" for e in elements)
     has_textarea = any(e.get("type") == "textarea" for e in elements)
-    
+
     # Reihenfolge: Checkboxen → Radios → Text → Textarea
-    
+
     # 1. Checkboxen (multi-select, first unchecked)
     if has_checkboxes:
         result = await cdp_execute_js(ws, 20, CDP_CHECKBOX_JS)
         actions.append(f"CHECKBOX:{result}")
-    
+
     # 2. Radio-Buttons (mittlere Option waehlen)
     if has_radios:
         result = await cdp_execute_js(ws, 21, CDP_RADIO_JS)
         actions.append(f"RADIO:{result}")
-    
+
     # 3. Text Inputs (PLZ, Name, etc.)
     if has_text:
         result = await cdp_execute_js(ws, 22, CDP_TEXT_JS)
         actions.append(f"TEXT:{result}")
-    
+
     # 4. Textarea (Kommentar-Felder)
     if has_textarea:
         result = await cdp_execute_js(ws, 23, CDP_TEXTAREA_JS)
         actions.append(f"TEXTAREA:{result}")
-    
+
     return {"actions": actions, "status": "ok", "type": page_type}
 
 
 # ═════════════════════════════════════════════════════════════════════════════
 # SUBMIT — Click submit/next/continue button
 # ═════════════════════════════════════════════════════════════════════════════
+
 
 async def click_submit(ws, timeout=10) -> str:
     """Klicke Next/Weiter/Submit/Continue Button."""
@@ -707,16 +889,24 @@ async def click_submit(ws, timeout=10) -> str:
 # SNAPSHOT via CDP (tool_snapshot.py EXTRACTOR_JS)
 # ═════════════════════════════════════════════════════════════════════════════
 
+
 async def capture_page(ws) -> Dict:
     """
     Erstellt DOM-Snapshot via CDP Runtime.evaluate mit EXTRACTOR_JS.
-    
+
     Nutzt tool_snapshot.py:EXTRACTOR_JS (100% reliable, kein skylight-cli).
     Bietet: elements[], url, title, bodyText, hash.
     """
-    await ws.send(json.dumps({"id": 1, "method": "Runtime.evaluate",
-                              "params": {"expression": EXTRACTOR_JS, "returnByValue": True}}))
-    
+    await ws.send(
+        json.dumps(
+            {
+                "id": 1,
+                "method": "Runtime.evaluate",
+                "params": {"expression": EXTRACTOR_JS, "returnByValue": True},
+            }
+        )
+    )
+
     deadline = asyncio.get_running_loop().time() + 15
     for _ in range(100):
         remaining = max(0.1, deadline - asyncio.get_running_loop().time())
@@ -744,17 +934,18 @@ async def capture_page(ws) -> Dict:
 # MAIN: answer_survey() — MANUELLE TESTING, nicht auto-run!
 # ═════════════════════════════════════════════════════════════════════════════
 
+
 async def answer_survey(survey_ws_url: str, max_pages: int = MAX_PAGES) -> Dict:
     """
     Haupt-Funktion: Beantwortet einen Survey Seite fuer Seite.
-    
+
     MANUELLE TESTING: Dieser Loop ist fuer EINZELNE Survey-Sessions gedacht,
     NICHT fuer automatisierten Background-Daemon!
-    
+
     Args:
         survey_ws_url: CDP WebSocket URL des Survey-Tabs
         max_pages: Max Seiten bevor STOP (Safety)
-        
+
     Returns:
         {
             "status": "completed" | "screen_out" | "stuck" | "max_pages" | "error",
@@ -764,19 +955,19 @@ async def answer_survey(survey_ws_url: str, max_pages: int = MAX_PAGES) -> Dict:
             "final_url": str,
         }
     """
-    print(f"\n{'='*60}")
-    print(f"  ANSWER_SURVEY — Manual Testing Mode")
-    print(f"{'='*60}")
+    print(f"\n{'=' * 60}")
+    print("  ANSWER_SURVEY — Manual Testing Mode")
+    print(f"{'=' * 60}")
     print(f"  Survey Tab WS: {survey_ws_url[:60]}...")
-    
+
     # Pre-Flight: Session validieren
     if not validate_session(CHROME_PORT):
         return {"status": "error", "reason": "Session invalid — cookies expired?"}
-    print(f"  [PREFLIGHT] Session: OK")
-    
+    print("  [PREFLIGHT] Session: OK")
+
     # Import websockets here
     import websockets
-    
+
     results = {
         "status": "unknown",
         "pages_processed": 0,
@@ -784,78 +975,78 @@ async def answer_survey(survey_ws_url: str, max_pages: int = MAX_PAGES) -> Dict:
         "hashes": [],
         "final_url": "",
     }
-    
+
     hash_counts = {}  # Anti-Stuck: hash -> count
-    
+
     async with websockets.connect(survey_ws_url) as ws:
         for page_num in range(1, max_pages + 1):
             print(f"\n  --- Page {page_num}/{max_pages} ---")
-            
+
             # 1. Capture Page (CDP only, kein skylight-cli!)
             snap = await capture_page(ws)
             url = snap.get("url", "")
             dom_hash = snap.get("hash", "")
             elements = snap.get("elements", [])
-            
+
             print(f"  [URL] {url[:80]}")
             print(f"  [HASH] {dom_hash}")
             print(f"  [ELEMENTS] {len(elements)} interaktive Elemente")
-            
+
             results["final_url"] = url
             results["hashes"].append(dom_hash)
-            
+
             # Anti-Stuck: Hash mehrfach gleich?
             hash_counts[dom_hash] = hash_counts.get(dom_hash, 0) + 1
             if hash_counts[dom_hash] >= STUCK_THRESHOLD:
                 print(f"  [STUCK] Hash '{dom_hash}' seen {hash_counts[dom_hash]}x — STOP")
                 results["status"] = "stuck"
                 break
-            
+
             # 2. Detect Page Type
             page_type = detect_page_type(snap)
             print(f"  [TYPE] {page_type}")
-            
+
             if page_type in ("screen_out", "completion"):
                 results["status"] = page_type
                 print(f"  [DONE] {page_type.upper()}")
                 break
-            
+
             # 3. Answer Page (universal, kein provider hardcode!)
             answer_result = await answer_page(ws, snap)
             actions = answer_result.get("actions", [])
             for a in actions:
                 print(f"    [ACTION] {a}")
                 results["actions"].append(a)
-            
+
             if answer_result.get("status") in ("done", "skipped"):
                 results["status"] = answer_result.get("status")
                 break
-            
+
             # 4. Submit (Next / Continue / Submit)
-            print(f"  [SUBMIT] Clicking submit button...")
+            print("  [SUBMIT] Clicking submit button...")
             submit_result = await click_submit(ws)
             print(f"    [SUBMIT] {submit_result}")
             results["actions"].append(f"SUBMIT:{submit_result}")
-            
+
             # Warten auf Naechste Seite (SPA transition)
             await asyncio.sleep(3)
-            
+
             results["pages_processed"] = page_num
-        
+
         # Max pages reached
         if results["status"] == "unknown":
             results["status"] = "max_pages"
-    
-    print(f"\n{'='*60}")
+
+    print(f"\n{'=' * 60}")
     print(f"  RESULT: {results['status'].upper()}")
     print(f"  Pages: {results['pages_processed']}")
     print(f"  Actions: {len(results['actions'])}")
     print(f"  Final URL: {results['final_url'][:100]}")
-    print(f"{'='*60}")
-    
+    print(f"{'=' * 60}")
+
     # Update Command Registry
     _update_registry("answer_survey", results["status"] in ("completed", "screen_out"), results)
-    
+
     return results
 
 
@@ -866,9 +1057,9 @@ def _update_registry(command_id: str, success: bool, result: Dict):
             registry = json.load(f)
     except:
         registry = {"version": "1.0.0", "commands": []}
-    
+
     now = datetime.utcnow().isoformat() + "Z"
-    
+
     # Find or create command entry
     found = False
     for cmd in registry["commands"]:
@@ -885,22 +1076,24 @@ def _update_registry(command_id: str, success: bool, result: Dict):
             cmd["last_result"]["final_url"] = result.get("final_url", "")
             cmd["last_result"]["status"] = result.get("status", "")
             break
-    
+
     if not found:
-        registry["commands"].append({
-            "id": command_id,
-            "description": "Universal Survey Answer Tool (CDP only, no skylight-cli, manual testing)",
-            "path": "survey-cli/commands/answer_survey.py",
-            "success_count": 1 if success else 0,
-            "failure_count": 0 if success else 1,
-            "last_success": now if success else None,
-            "last_run": now,
-            "status": "testing",
-            "notes": f"Manual testing: {result.get('pages_processed', 0)} pages, status={result.get('status','')}"
-        })
-    
+        registry["commands"].append(
+            {
+                "id": command_id,
+                "description": "Universal Survey Answer Tool (CDP only, no skylight-cli, manual testing)",
+                "path": "survey-cli/commands/answer_survey.py",
+                "success_count": 1 if success else 0,
+                "failure_count": 0 if success else 1,
+                "last_success": now if success else None,
+                "last_run": now,
+                "status": "testing",
+                "notes": f"Manual testing: {result.get('pages_processed', 0)} pages, status={result.get('status', '')}",
+            }
+        )
+
     registry["last_updated"] = now
-    
+
     with open(REGISTRY_PATH, "w") as f:
         json.dump(registry, f, indent=2)
     print(f"  [REGISTRY] Updated: {command_id} -> {'success' if success else 'failure'}")
@@ -916,15 +1109,19 @@ if __name__ == "__main__":
         print("Example: python answer_survey.py ws://127.0.0.1:9999/devtools/page/ABC123...")
         print("\n  MANUELLE TESTING — KEIN AUTO-RUN!")
         sys.exit(1)
-    
+
     ws_url = sys.argv[1]
-    
+
     if ws_url == "--test":
         # Selbst-Test: Survey Tab WS aus Chrome lesen
-        pages = json.loads(subprocess.run(
-            ["curl", "-s", f"http://127.0.0.1:{CHROME_PORT}/json/list"],
-            capture_output=True, text=True).stdout)
-        
+        pages = json.loads(
+            subprocess.run(
+                ["curl", "-s", f"http://127.0.0.1:{CHROME_PORT}/json/list"],
+                capture_output=True,
+                text=True,
+            ).stdout
+        )
+
         # Survey-Tab finden (nicht dashboard)
         survey_tab = None
         for p in pages:
@@ -932,20 +1129,20 @@ if __name__ == "__main__":
             if "dashboard" not in url and "heypiggy" not in url and p.get("type") == "page":
                 survey_tab = p
                 break
-        
+
         if not survey_tab:
             print("ERROR: Kein Survey-Tab gefunden (nur Dashboard?)")
             print("Tipp: Zuerst open_survey.py ausfuehren!")
             sys.exit(1)
-        
+
         ws_url = survey_tab["webSocketDebuggerUrl"]
         print(f"Auto-detected Survey Tab: {survey_tab['url'][:80]}")
-    
+
     result = asyncio.run(answer_survey(ws_url))
-    
+
     print(f"\nFinal Status: {result['status']}")
     print(f"Pages Processed: {result['pages_processed']}")
-    
+
     if result["status"] == "completed":
         print("  → Survey komplett! Balance pruefen!")
     elif result["status"] == "screen_out":

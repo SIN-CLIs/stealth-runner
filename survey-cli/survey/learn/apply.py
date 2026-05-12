@@ -136,15 +136,14 @@ def _gate_confidence(entry: InboxEntry) -> Tuple[bool, str]:
         return False, "no suggested_family (new family needed)"
     if entry.source == "substring":
         if entry.confidence < _SUBSTRING_MIN_CONFIDENCE:
-            return (False,
-                    f"substring confidence {entry.confidence:.2f} "
-                    f"< {_SUBSTRING_MIN_CONFIDENCE}")
+            return (
+                False,
+                f"substring confidence {entry.confidence:.2f} < {_SUBSTRING_MIN_CONFIDENCE}",
+            )
         return True, ""
     if entry.source == "llm":
         if entry.confidence < _LLM_MIN_CONFIDENCE:
-            return (False,
-                    f"llm confidence {entry.confidence:.2f} "
-                    f"< {_LLM_MIN_CONFIDENCE}")
+            return (False, f"llm confidence {entry.confidence:.2f} < {_LLM_MIN_CONFIDENCE}")
         return True, ""
     if entry.source == "manual":
         # Manuell eingetragen vom Reviewer → kein Schwellwert-Check, der
@@ -157,7 +156,8 @@ def _gate_confidence(entry: InboxEntry) -> Tuple[bool, str]:
 
 
 def _find_field_patterns_tuple(
-    tree: ast.Module, family: str,
+    tree: ast.Module,
+    family: str,
 ) -> Optional[ast.Tuple]:
     """Walk AST, find ``FIELD_PATTERNS`` list, return the tuple for ``family``.
 
@@ -169,9 +169,11 @@ def _find_field_patterns_tuple(
             continue
         for stmt in cls.body:
             target_node = None
-            if isinstance(stmt, ast.AnnAssign) \
-                    and isinstance(stmt.target, ast.Name) \
-                    and stmt.target.id == "FIELD_PATTERNS":
+            if (
+                isinstance(stmt, ast.AnnAssign)
+                and isinstance(stmt.target, ast.Name)
+                and stmt.target.id == "FIELD_PATTERNS"
+            ):
                 target_node = stmt.value
             elif isinstance(stmt, ast.Assign):
                 for t in stmt.targets:
@@ -197,7 +199,9 @@ def _line_col_to_offset(source: str, line: int, col: int) -> int:
 
 
 def _last_string_token_in_range(
-    source: str, start: int, end: int,
+    source: str,
+    start: int,
+    end: int,
 ) -> Optional[Tuple[int, int, str, str]]:
     """Finde den rechtesten STRING-Token zwischen byte offsets [start, end).
 
@@ -237,13 +241,15 @@ def _last_string_token_in_range(
         quote_kind = m.group(2)
         if not raw.endswith(quote_kind):
             continue
-        content = raw[len(prefix): -len(quote_kind)]
+        content = raw[len(prefix) : -len(quote_kind)]
         last = (abs_start, abs_end, prefix, content)
     return last
 
 
 def apply_keyword_to_family(
-    source: str, family: str, keyword: str,
+    source: str,
+    family: str,
+    keyword: str,
 ) -> str:
     """Inject ``keyword`` als neue Alternation-Variante in ``family``'s Regex.
 
@@ -293,8 +299,7 @@ def apply_keyword_to_family(
     last_tok = _last_string_token_in_range(source, arg_start, arg_end)
     if last_tok is None:
         raise ValueError(
-            f"could not locate string literal in re.compile arg for "
-            f"family {family!r}",
+            f"could not locate string literal in re.compile arg for family {family!r}",
         )
     tok_start, tok_end, prefix, content = last_tok
 
@@ -324,7 +329,7 @@ def apply_keyword_to_family(
     if not (prefix.startswith("r") or prefix.startswith("R")):
         raise ValueError(
             f"family {family!r} uses non-raw string literal "
-            f"({prefix!r}); apply requires r\"...\" for safe escaping.",
+            f'({prefix!r}); apply requires r"..." for safe escaping.',
         )
 
     # Splice: finde Position des LETZTEN ``)`` in content, fuege davor
@@ -333,13 +338,12 @@ def apply_keyword_to_family(
     splice_pos = content.rfind(")")
     if splice_pos < 0:
         raise ValueError(
-            "content unexpectedly has no closing ')' — "
-            "should be unreachable",
+            "content unexpectedly has no closing ')' — should be unreachable",
         )
     new_content = content[:splice_pos] + "|" + esc + content[splice_pos:]
 
     # Replace token in source.
-    new_token = prefix + new_content + source[tok_end - 1: tok_end]
+    new_token = prefix + new_content + source[tok_end - 1 : tok_end]
     # ^ kludge: ``prefix`` includes opening quote, original token's last char
     # is closing quote → recover it from source[tok_end-1:tok_end]
     new_source = source[:tok_start] + new_token + source[tok_end:]
@@ -359,14 +363,14 @@ def apply_keyword_to_family(
     # sehen, obwohl das gemergte Resultat korrekt ist.
     new_tup = _find_field_patterns_tuple(new_tree, family)
     if new_tup is None:
-        raise ValueError(
-            f"post-splice AST: family {family!r} no longer findable")
+        raise ValueError(f"post-splice AST: family {family!r} no longer findable")
     new_call = new_tup.elts[1]
     if not (isinstance(new_call, ast.Call) and new_call.args):
         raise ValueError("post-splice AST: re.compile shape broken")
     new_pattern_node = new_call.args[0]
-    if not isinstance(new_pattern_node, ast.Constant) \
-            or not isinstance(new_pattern_node.value, str):
+    if not isinstance(new_pattern_node, ast.Constant) or not isinstance(
+        new_pattern_node.value, str
+    ):
         raise ValueError(
             "post-splice AST: first arg of re.compile is not a string "
             "Constant — implicit-concat may have failed",
@@ -386,17 +390,20 @@ def apply_keyword_to_family(
 
 def compute_diff(before: str, after: str, path: str = _TARGET_REL_PATH) -> str:
     """Unified diff fuer Dry-Run-Anzeige."""
-    return "".join(difflib.unified_diff(
-        before.splitlines(keepends=True),
-        after.splitlines(keepends=True),
-        fromfile=f"a/{path}",
-        tofile=f"b/{path}",
-        n=2,
-    ))
+    return "".join(
+        difflib.unified_diff(
+            before.splitlines(keepends=True),
+            after.splitlines(keepends=True),
+            fromfile=f"a/{path}",
+            tofile=f"b/{path}",
+            n=2,
+        )
+    )
 
 
 def _run_smoke_tests(
-    project_root: str, test_paths: Iterable[str],
+    project_root: str,
+    test_paths: Iterable[str],
 ) -> Tuple[bool, str]:
     """Subprocess ``pytest`` auf einer Smoke-Test-Liste.
 
@@ -411,7 +418,10 @@ def _run_smoke_tests(
     cmd = [sys.executable, "-m", "pytest", "-q", *test_paths]
     try:
         proc = subprocess.run(
-            cmd, cwd=project_root, capture_output=True, text=True,
+            cmd,
+            cwd=project_root,
+            capture_output=True,
+            text=True,
             timeout=120,
         )
     except subprocess.TimeoutExpired:
@@ -448,8 +458,11 @@ def _git_head_sha(project_root: str) -> Optional[str]:
     """Best-effort ``git rev-parse HEAD`` — None wenn nicht in Git oder kein git."""
     try:
         proc = subprocess.run(
-            ["git", "rev-parse", "HEAD"], cwd=project_root,
-            capture_output=True, text=True, timeout=5,
+            ["git", "rev-parse", "HEAD"],
+            cwd=project_root,
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
         if proc.returncode == 0:
             return proc.stdout.strip()
@@ -460,8 +473,7 @@ def _git_head_sha(project_root: str) -> Optional[str]:
 
 def _audit_log_path(log_dir: str) -> str:
     """logs/learn-applied-{ISO8601-z}.jsonl"""
-    ts = datetime.datetime.now(datetime.timezone.utc).strftime(
-        "%Y%m%dT%H%M%SZ")
+    ts = datetime.datetime.now(datetime.timezone.utc).strftime("%Y%m%dT%H%M%SZ")
     return os.path.join(log_dir, f"learn-applied-{ts}.jsonl")
 
 
@@ -479,8 +491,7 @@ def _resolve_paths(target_path: Optional[str]) -> Tuple[str, str, str]:
     else:
         # apply.py liegt in survey-cli/survey/learn/apply.py → 3 hoch
         here = os.path.dirname(os.path.abspath(__file__))
-        target = os.path.normpath(
-            os.path.join(here, "..", "profile_loader.py"))
+        target = os.path.normpath(os.path.join(here, "..", "profile_loader.py"))
     # project_root = parent of "survey/" dir = survey-cli/
     survey_pkg = os.path.dirname(target)  # survey-cli/survey/
     project_root = os.path.dirname(survey_pkg)  # survey-cli/
@@ -504,7 +515,8 @@ def _read_inbox(path: str) -> List[InboxEntry]:
 
 
 def _decide_per_entry(
-    entry: InboxEntry, mode: str,
+    entry: InboxEntry,
+    mode: str,
 ) -> str:
     """Returns one of {"accept", "reject", "skip", "quit"}.
 
@@ -602,11 +614,13 @@ def apply_inbox(
         ok, reason = _gate_confidence(entry)
         if not ok:
             result.rejected += 1
-            audit_records.append({
-                "decision": "rejected_by_gate",
-                "reason": reason,
-                "entry": entry.__dict__,
-            })
+            audit_records.append(
+                {
+                    "decision": "rejected_by_gate",
+                    "reason": reason,
+                    "entry": entry.__dict__,
+                }
+            )
             continue
 
         decision = _decide_per_entry(entry, mode)
@@ -615,42 +629,49 @@ def apply_inbox(
             continue
         if decision == "reject":
             result.rejected += 1
-            audit_records.append({
-                "decision": "rejected_by_reviewer",
-                "entry": entry.__dict__,
-            })
+            audit_records.append(
+                {
+                    "decision": "rejected_by_reviewer",
+                    "entry": entry.__dict__,
+                }
+            )
             continue
         if decision == "quit":
             break
         # decision == "accept"
         try:
             new_source = apply_keyword_to_family(
-                current_source, entry.suggested_family,
+                current_source,
+                entry.suggested_family,
                 entry.normalized_label,
             )
         except ValueError as e:
             result.rejected += 1
-            audit_records.append({
-                "decision": "rejected_by_ast",
-                "reason": str(e),
-                "entry": entry.__dict__,
-            })
+            audit_records.append(
+                {
+                    "decision": "rejected_by_ast",
+                    "reason": str(e),
+                    "entry": entry.__dict__,
+                }
+            )
             continue
         current_source = new_source
         result.accepted += 1
-        result.applied_keywords.append(
-            (entry.suggested_family, entry.normalized_label))
-        audit_records.append({
-            "decision": "applied",
-            "family": entry.suggested_family,
-            "keyword": entry.normalized_label,
-            "source": entry.source,
-            "confidence": entry.confidence,
-            "model": entry.model,
-            "prompt_hash": entry.prompt_hash,
-            "timestamp": datetime.datetime.now(
-                datetime.timezone.utc).isoformat(timespec="seconds"),
-        })
+        result.applied_keywords.append((entry.suggested_family, entry.normalized_label))
+        audit_records.append(
+            {
+                "decision": "applied",
+                "family": entry.suggested_family,
+                "keyword": entry.normalized_label,
+                "source": entry.source,
+                "confidence": entry.confidence,
+                "model": entry.model,
+                "prompt_hash": entry.prompt_hash,
+                "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(
+                    timespec="seconds"
+                ),
+            }
+        )
 
     # Dry-run: kein Write, kein Audit-Log, nur Diff stdout
     if mode == "dry-run":
@@ -696,8 +717,7 @@ def apply_inbox(
     with open(audit_path, "w", encoding="utf-8") as f:
         header = {
             "kind": "header",
-            "ts": datetime.datetime.now(
-                datetime.timezone.utc).isoformat(timespec="seconds"),
+            "ts": datetime.datetime.now(datetime.timezone.utc).isoformat(timespec="seconds"),
             "mode": mode,
             "inbox_path": os.path.abspath(inbox_path),
             "target_path": os.path.abspath(target),

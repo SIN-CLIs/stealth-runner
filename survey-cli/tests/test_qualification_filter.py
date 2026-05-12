@@ -17,10 +17,7 @@ Pflicht-Kontext: SR-80 / AGENTS.md Deep-Dive "Issue #80".
 from __future__ import annotations
 
 import json
-import os
 import sys
-import tempfile
-from datetime import datetime
 from pathlib import Path
 from unittest import mock
 
@@ -65,9 +62,7 @@ def test_matched_pattern_consistent_with_is_disqualifying():
     for s in samples:
         is_dq = is_disqualifying_answer(s)
         pat = matched_disqualifying_pattern(s)
-        assert is_dq == (pat is not None), (
-            f"Mismatch for '{s}': is_dq={is_dq}, pat={pat}"
-        )
+        assert is_dq == (pat is not None), f"Mismatch for '{s}': is_dq={is_dq}, pat={pat}"
 
 
 def test_record_qualification_block_writes_jsonl(tmp_path, monkeypatch):
@@ -86,6 +81,7 @@ def test_record_qualification_block_writes_jsonl(tmp_path, monkeypatch):
 
     def fake_open(path, mode="r", *a, **kw):  # type: ignore[no-untyped-def]
         if "qualification-blocks" in str(path) and "a" in mode:
+
             class _F:
                 def write(self_inner, data):
                     captured.append(data)
@@ -95,6 +91,7 @@ def test_record_qualification_block_writes_jsonl(tmp_path, monkeypatch):
 
                 def __exit__(self_inner, *exc):
                     return False
+
             return _F()
         return real_open(path, mode, *a, **kw)
 
@@ -125,6 +122,7 @@ def test_record_qualification_block_writes_jsonl(tmp_path, monkeypatch):
 
 def test_record_qualification_block_swallows_io_errors():
     """Telemetry darf NIE einen Survey-Run brechen — auch wenn open() crasht."""
+
     def boom(*a, **kw):
         raise OSError("disk full")
 
@@ -143,6 +141,7 @@ def test_record_qualification_block_auto_resolves_pattern():
 
     def fake_open(path, mode="r", *a, **kw):  # type: ignore[no-untyped-def]
         if "qualification-blocks" in str(path) and "a" in mode:
+
             class _F:
                 def write(self_inner, data):
                     captured.append(data)
@@ -152,6 +151,7 @@ def test_record_qualification_block_auto_resolves_pattern():
 
                 def __exit__(self_inner, *exc):
                     return False
+
             return _F()
         return open(path, mode, *a, **kw)
 

@@ -2,14 +2,11 @@
 
 from __future__ import annotations
 
-import os
-
-import pytest
-
 
 def test_get_config_returns_singleton(tmp_config):
     """Zweiter get_config()-Aufruf MUSS dasselbe Objekt liefern."""
     from core import get_config
+
     a = get_config()
     b = get_config()
     assert a is b, "get_config() must return same instance"
@@ -18,6 +15,7 @@ def test_get_config_returns_singleton(tmp_config):
 def test_chrome_cdp_url_property(tmp_config):
     """cdp_url MUSS f'http://{host}:{port}' liefern."""
     from core import get_config
+
     cfg = get_config()
     assert cfg.chrome.cdp_url == f"http://{cfg.chrome.host}:{cfg.chrome.port}"
     assert cfg.chrome.cdp_url.startswith("http://")
@@ -27,6 +25,7 @@ def test_chrome_cdp_url_property(tmp_config):
 def test_budget_max_seconds_default(tmp_config):
     """Default Survey-Budget == 120s (Ziel: < 2 Min pro Survey)."""
     from core import get_config
+
     cfg = get_config()
     assert cfg.budget.max_seconds == 120.0, (
         "Default budget MUST be 120s — siehe AGENTS.md Ziel: "
@@ -41,7 +40,8 @@ def test_env_override_chrome_port(monkeypatch, tmp_path):
     monkeypatch.setenv("SCREENSHOT_DIR", str(tmp_path / "sc"))
     monkeypatch.setenv("AUDIT_LOG_DIR", str(tmp_path / "a"))
     monkeypatch.setenv("CHROME_EXECUTABLE", "/usr/bin/echo")
-    from core import reset_singletons, get_config
+    from core import get_config, reset_singletons
+
     reset_singletons()
     cfg = get_config()
     assert cfg.chrome.port == 12345
@@ -50,7 +50,8 @@ def test_env_override_chrome_port(monkeypatch, tmp_path):
 def test_twocaptcha_api_key_redaction_safe(tmp_config, monkeypatch):
     """twocaptcha_api_key NICHT im __repr__ ausgegeben."""
     monkeypatch.setenv("TWOCAPTCHA_API_KEY", "supersecret_key_xyz")
-    from core import reset_singletons, get_config
+    from core import get_config, reset_singletons
+
     reset_singletons()
     cfg = get_config()
     # API key MUSS gesetzt sein, aber __repr__ darf ihn nicht leaken
@@ -69,7 +70,9 @@ def test_paths_created_on_bootstrap(tmp_config):
     und Screenshots-on-Failure landen nirgendwo.
     """
     import asyncio
+
     from core import bootstrap_core, get_config
+
     asyncio.run(bootstrap_core())
     cfg = get_config()
     assert cfg.checkpoint_dir.exists(), f"checkpoint_dir missing: {cfg.checkpoint_dir}"

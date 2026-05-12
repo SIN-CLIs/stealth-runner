@@ -35,7 +35,6 @@ import os
 import tempfile
 
 import pytest
-
 from check_inbox_log_schema import (
     check_logs,
     format_human,
@@ -80,15 +79,17 @@ class TestValidRecords:
         assert warn is None
 
     def test_T02_valid_all_optional_fields(self):
-        rec = mk({
-            "suggested_family": "engineering",
-            "count": 5,
-            "sample_labels": ["backend dev", "swe"],
-            "matched_tokens": ["backend"],
-            "model": "gpt-4",
-            "prompt_hash": "abc123",
-            "source": "llm",
-        })
+        rec = mk(
+            {
+                "suggested_family": "engineering",
+                "count": 5,
+                "sample_labels": ["backend dev", "swe"],
+                "matched_tokens": ["backend"],
+                "model": "gpt-4",
+                "prompt_hash": "abc123",
+                "source": "llm",
+            }
+        )
         viol, warn = validate_record(rec, "f.jsonl", 1)
         assert viol is None
         assert warn is None  # model is set, so no warning
@@ -124,9 +125,7 @@ class TestRequiredFields:
         assert any("non-empty" in e for e in viol["errors"])
 
     def test_T08_empty_normalized_label(self):
-        viol, _ = validate_record(
-            mk({"normalized_label": ""}), "f.jsonl", 1
-        )
+        viol, _ = validate_record(mk({"normalized_label": ""}), "f.jsonl", 1)
         assert viol is not None
         assert any("non-empty" in e for e in viol["errors"])
 
@@ -192,16 +191,12 @@ class TestOptionalFields:
         assert any("count" in e and ">= 0" in e for e in viol["errors"])
 
     def test_T16_sample_labels_non_string_element(self):
-        viol, _ = validate_record(
-            mk({"sample_labels": ["ok", 42]}), "f.jsonl", 1
-        )
+        viol, _ = validate_record(mk({"sample_labels": ["ok", 42]}), "f.jsonl", 1)
         assert viol is not None
         assert any("sample_labels" in e for e in viol["errors"])
 
     def test_T17_matched_tokens_not_list(self):
-        viol, _ = validate_record(
-            mk({"matched_tokens": "oops"}), "f.jsonl", 1
-        )
+        viol, _ = validate_record(mk({"matched_tokens": "oops"}), "f.jsonl", 1)
         assert viol is not None
         assert any("matched_tokens" in e and "list" in e for e in viol["errors"])
 
@@ -222,10 +217,7 @@ class TestOptionalFields:
 class TestCheckLogs:
     def test_T20_malformed_json_line(self):
         with tempfile.TemporaryDirectory() as d:
-            write_jsonl(
-                os.path.join(d, "pattern-suggestions-20260512.jsonl"),
-                []
-            )
+            write_jsonl(os.path.join(d, "pattern-suggestions-20260512.jsonl"), [])
             p = os.path.join(d, "pattern-suggestions-20260512.jsonl")
             with open(p, "w") as f:
                 f.write("{ not valid json \n")
@@ -235,9 +227,7 @@ class TestCheckLogs:
 
     def test_T21_empty_file(self):
         with tempfile.TemporaryDirectory() as d:
-            open(os.path.join(
-                d, "pattern-suggestions-20260512.jsonl"
-            ), "w").close()
+            open(os.path.join(d, "pattern-suggestions-20260512.jsonl"), "w").close()
             viols, warns, recs, files = check_logs(d)
             assert files == 1
             assert recs == 0
@@ -255,21 +245,21 @@ class TestCheckLogs:
     def test_T23_multi_file_aggregation(self):
         with tempfile.TemporaryDirectory() as d:
             for i in range(3):
-                fname = f"pattern-suggestions-2026050{i+1}.jsonl"
+                fname = f"pattern-suggestions-2026050{i + 1}.jsonl"
                 write_jsonl(
                     os.path.join(d, fname),
-                    [mk(), mk(omit=["role"])]  # 1 valid, 1 invalid each
+                    [mk(), mk(omit=["role"])],  # 1 valid, 1 invalid each
                 )
             viols, warns, recs, files = check_logs(d)
             assert files == 3
-            assert recs == 6        # all examined records (valid + invalid)
+            assert recs == 6  # all examined records (valid + invalid)
             assert len(viols) == 3  # 1 violation per file
 
     def test_T24_multiple_errors_in_one_record(self):
         rec = {
-            "role": "",              # empty
+            "role": "",  # empty
             "normalized_label": "",  # empty
-            "confidence": 2.0,       # out of range
+            "confidence": 2.0,  # out of range
             # source: missing
         }
         viol, _ = validate_record(rec, "f.jsonl", 1)
@@ -309,7 +299,7 @@ class TestFormatting:
             assert len(warns) == 1
             # --strict would return rc=1 when warnings > 0
             has_violations = len(viols) > 0
-            has_warnings   = len(warns) > 0
+            has_warnings = len(warns) > 0
             strict_rc = 1 if (has_violations or has_warnings) else 0
             assert strict_rc == 1
 

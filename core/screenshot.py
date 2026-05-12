@@ -44,7 +44,7 @@ import logging
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
+from typing import Any
 
 log = logging.getLogger("core.screenshot")
 
@@ -52,9 +52,10 @@ log = logging.getLogger("core.screenshot")
 @dataclass
 class FailureArtifact:
     """Resultat eines capture_failure-Aufrufs."""
+
     directory: Path
-    screenshot_path: Optional[Path]
-    html_path: Optional[Path]
+    screenshot_path: Path | None
+    html_path: Path | None
     log_path: Path
     reason: str
     timestamp: float
@@ -64,8 +65,8 @@ async def capture_failure(
     cdp_url: str,
     run_id: str,
     reason: str,
-    extra: Optional[dict[str, Any]] = None,
-    base_dir: Optional[Path] = None,
+    extra: dict[str, Any] | None = None,
+    base_dir: Path | None = None,
 ) -> FailureArtifact:
     """Capture komplette Forensik fuer eine gescheiterte Survey.
 
@@ -97,8 +98,8 @@ async def capture_failure(
         "extra": extra or {},
     }
 
-    screenshot_path: Optional[Path] = None
-    html_path: Optional[Path] = None
+    screenshot_path: Path | None = None
+    html_path: Path | None = None
 
     try:
         screenshot_b64, html = await _capture_via_cdp(cdp_url)
@@ -110,17 +111,17 @@ async def capture_failure(
             html_path.write_text(html, encoding="utf-8")
         log_payload["cdp_ok"] = True
     except Exception as e:
-        log.warning("screenshot.cdp_failed run_id=%s reason=%s err=%s",
-                    run_id, reason, e)
+        log.warning("screenshot.cdp_failed run_id=%s reason=%s err=%s", run_id, reason, e)
         log_payload["cdp_ok"] = False
         log_payload["cdp_error"] = str(e)
 
-    log_path.write_text(json.dumps(log_payload, indent=2, default=str),
-                        encoding="utf-8")
+    log_path.write_text(json.dumps(log_payload, indent=2, default=str), encoding="utf-8")
 
     log.info(
         "screenshot.captured run_id=%s reason=%s dir=%s",
-        run_id, reason, folder,
+        run_id,
+        reason,
+        folder,
     )
     return FailureArtifact(
         directory=folder,
@@ -135,7 +136,7 @@ async def capture_failure(
 # ── CDP-Implementierung ──────────────────────────────────────────────────────
 
 
-async def _capture_via_cdp(cdp_url: str) -> tuple[Optional[str], Optional[str]]:
+async def _capture_via_cdp(cdp_url: str) -> tuple[str | None, str | None]:
     """Holt PNG (base64) und HTML aus dem aktiven Chrome-Tab via CDP.
 
     Erwartet einen laufenden Chrome mit --remote-debugging-port. Verbindet
@@ -163,20 +164,24 @@ async def _capture_via_cdp(cdp_url: str) -> tuple[Optional[str], Optional[str]]:
 
     # 2) WebSocket-Session: Screenshot + outerHTML
     async with websockets.connect(ws_url, max_size=20 * 1024 * 1024) as ws:
-        screenshot_b64 = await _cdp_call(ws, 1, "Page.captureScreenshot",
-                                          {"format": "png"})
+        screenshot_b64 = await _cdp_call(ws, 1, "Page.captureScreenshot", {"format": "png"})
         screenshot = (screenshot_b64 or {}).get("data")
 
-        html_result = await _cdp_call(ws, 2, "Runtime.evaluate", {
-            "expression": "document.documentElement.outerHTML",
-            "returnByValue": True,
-        })
+        html_result = await _cdp_call(
+            ws,
+            2,
+            "Runtime.evaluate",
+            {
+                "expression": "document.documentElement.outerHTML",
+                "returnByValue": True,
+            },
+        )
         html = ((html_result or {}).get("result") or {}).get("value")
 
     return screenshot, html
 
 
-async def _cdp_call(ws: Any, msg_id: int, method: str, params: dict) -> Optional[dict]:
+async def _cdp_call(ws: Any, msg_id: int, method: str, params: dict) -> dict | None:
     """Schicke einen CDP-Call und warte ueber max 3 s auf Antwort."""
     await ws.send(json.dumps({"id": msg_id, "method": method, "params": params}))
     try:
@@ -185,15 +190,14 @@ async def _cdp_call(ws: Any, msg_id: int, method: str, params: dict) -> Optional
             msg = json.loads(raw)
             if msg.get("id") == msg_id:
                 return msg.get("result")
-    except asyncio.TimeoutError:
+    except TimeoutError:
         return None
 
 
 # ── Rotation ─────────────────────────────────────────────────────────────────
 
 
-def prune_old_artifacts(max_age_days: int = 7,
-                        base_dir: Optional[Path] = None) -> int:
+def prune_old_artifacts(max_age_days: int = 7, base_dir: Path | None = None) -> int:
     """Loescht Artifact-Folders aelter als max_age_days.
 
     Returns: Anzahl geloeschter Ordner. Fehler werden geloggt aber nicht geworfen.
@@ -216,6 +220,5 @@ def prune_old_artifacts(max_age_days: int = 7,
                     artifact_dir.rmdir()
                     deleted += 1
             except Exception as e:
-                log.warning("screenshot.prune_failed dir=%s err=%s",
-                            artifact_dir, e)
+                log.warning("screenshot.prune_failed dir=%s err=%s", artifact_dir, e)
     return deleted

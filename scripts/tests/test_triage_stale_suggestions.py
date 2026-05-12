@@ -32,7 +32,7 @@ import shutil
 import sys
 import tempfile
 import unittest
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 # Load the script by file path (it's a script, not a package member). Same
@@ -40,7 +40,8 @@ from pathlib import Path
 _HERE = Path(__file__).resolve()
 _SCRIPT = _HERE.parent.parent / "triage_stale_suggestions.py"
 _spec = importlib.util.spec_from_file_location(
-    "triage_stale_suggestions", _SCRIPT,
+    "triage_stale_suggestions",
+    _SCRIPT,
 )
 assert _spec is not None and _spec.loader is not None
 triage_mod = importlib.util.module_from_spec(_spec)
@@ -53,7 +54,7 @@ _spec.loader.exec_module(triage_mod)  # type: ignore[union-attr]
 
 def _iso(dt: datetime) -> str:
     """ISO-8601 UTC with trailing Z."""
-    return dt.astimezone(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return dt.astimezone(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _write_jsonl(path: Path, records):
@@ -73,7 +74,7 @@ def _record(
     first_seen_override=None,
 ):
     """Build a pattern-suggestions record with sensible defaults."""
-    now = datetime.now(timezone.utc)
+    now = datetime.now(UTC)
     fs = first_seen_override
     if fs is None:
         fs = _iso(now - timedelta(days=days_old)) if days_old is not None else None
@@ -103,33 +104,46 @@ class TriageStaleSuggestionsTests(unittest.TestCase):
 
     # 1. Empty input -- no JSONL files at all.
     def test_empty_logs_dir_exits_zero_stale_zero(self):
-        rc = triage_mod.main([
-            "--logs", str(self.tmp),
-            "--exit-non-zero-if-stale",
-        ])
+        rc = triage_mod.main(
+            [
+                "--logs",
+                str(self.tmp),
+                "--exit-non-zero-if-stale",
+            ]
+        )
         self.assertEqual(rc, 0)
 
     # 2. Fresh open records -- none stale.
     def test_no_stale_records_exits_zero(self):
         f = self.tmp / "pattern-suggestions-2026-05-12.jsonl"
-        _write_jsonl(f, [
-            _record(days_old=3),
-            _record(days_old=10, label="email"),
-        ])
-        rc = triage_mod.main([
-            "--logs", str(self.tmp),
-            "--age-days", "14",
-            "--exit-non-zero-if-stale",
-        ])
+        _write_jsonl(
+            f,
+            [
+                _record(days_old=3),
+                _record(days_old=10, label="email"),
+            ],
+        )
+        rc = triage_mod.main(
+            [
+                "--logs",
+                str(self.tmp),
+                "--age-days",
+                "14",
+                "--exit-non-zero-if-stale",
+            ]
+        )
         self.assertEqual(rc, 0)
 
     # 3. Stale records found in DEFAULT mode -> exit 0 (read-only diagnostic).
     def test_stale_default_mode_exits_zero(self):
         f = self.tmp / "pattern-suggestions-2026-05-12.jsonl"
-        _write_jsonl(f, [
-            _record(days_old=22),
-            _record(days_old=5),
-        ])
+        _write_jsonl(
+            f,
+            [
+                _record(days_old=22),
+                _record(days_old=5),
+            ],
+        )
         rc = triage_mod.main(["--logs", str(self.tmp), "--age-days", "14"])
         self.assertEqual(rc, 0, "default mode is always read-only diagnostic")
 
@@ -137,33 +151,44 @@ class TriageStaleSuggestionsTests(unittest.TestCase):
     def test_exit_nonzero_when_stale(self):
         f = self.tmp / "pattern-suggestions-2026-05-12.jsonl"
         _write_jsonl(f, [_record(days_old=22)])
-        rc = triage_mod.main([
-            "--logs", str(self.tmp),
-            "--age-days", "14",
-            "--exit-non-zero-if-stale",
-        ])
+        rc = triage_mod.main(
+            [
+                "--logs",
+                str(self.tmp),
+                "--age-days",
+                "14",
+                "--exit-non-zero-if-stale",
+            ]
+        )
         self.assertEqual(rc, 1)
 
     # 5. --exit-non-zero-if-stale with NO stale -> exit 0.
     def test_exit_zero_when_no_stale_with_flag(self):
         f = self.tmp / "pattern-suggestions-2026-05-12.jsonl"
         _write_jsonl(f, [_record(days_old=5)])
-        rc = triage_mod.main([
-            "--logs", str(self.tmp),
-            "--age-days", "14",
-            "--exit-non-zero-if-stale",
-        ])
+        rc = triage_mod.main(
+            [
+                "--logs",
+                str(self.tmp),
+                "--age-days",
+                "14",
+                "--exit-non-zero-if-stale",
+            ]
+        )
         self.assertEqual(rc, 0)
 
     # 6. --filter-source llm excludes substring stale records.
     def test_filter_source_llm_excludes_substring_stale(self):
         f = self.tmp / "pattern-suggestions-2026-05-12.jsonl"
-        _write_jsonl(f, [
-            _record(days_old=30, source="substring", label="mobil"),
-            _record(days_old=30, source="llm", label="haushalt"),
-        ])
+        _write_jsonl(
+            f,
+            [
+                _record(days_old=30, source="substring", label="mobil"),
+                _record(days_old=30, source="llm", label="haushalt"),
+            ],
+        )
         # Use the pure helper directly for deterministic count assertions.
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         summary_llm = triage_mod.triage(
             logs_dir=str(self.tmp),
             age_days=14,
@@ -193,20 +218,27 @@ class TriageStaleSuggestionsTests(unittest.TestCase):
     # 7. Records without first_seen are NEVER stale (defensive).
     def test_records_without_first_seen_not_stale(self):
         f = self.tmp / "pattern-suggestions-2026-05-12.jsonl"
-        _write_jsonl(f, [
-            # No first_seen at all (legacy record).
-            {"role": "textbox", "normalized_label": "x", "status": "open"},
-            # Empty first_seen string.
-            {
-                "role": "textbox", "normalized_label": "y",
-                "status": "open", "first_seen": "",
-            },
-            # Malformed first_seen.
-            {
-                "role": "textbox", "normalized_label": "z",
-                "status": "open", "first_seen": "not-a-date",
-            },
-        ])
+        _write_jsonl(
+            f,
+            [
+                # No first_seen at all (legacy record).
+                {"role": "textbox", "normalized_label": "x", "status": "open"},
+                # Empty first_seen string.
+                {
+                    "role": "textbox",
+                    "normalized_label": "y",
+                    "status": "open",
+                    "first_seen": "",
+                },
+                # Malformed first_seen.
+                {
+                    "role": "textbox",
+                    "normalized_label": "z",
+                    "status": "open",
+                    "first_seen": "not-a-date",
+                },
+            ],
+        )
         summary = triage_mod.triage(
             logs_dir=str(self.tmp),
             age_days=1,
@@ -219,29 +251,42 @@ class TriageStaleSuggestionsTests(unittest.TestCase):
     # 8. --json output is parseable and has expected schema.
     def test_json_output_schema(self):
         f = self.tmp / "pattern-suggestions-2026-05-12.jsonl"
-        _write_jsonl(f, [
-            _record(days_old=22, label="mobilnummer"),
-            _record(days_old=3, label="fresh"),
-        ])
+        _write_jsonl(
+            f,
+            [
+                _record(days_old=22, label="mobilnummer"),
+                _record(days_old=3, label="fresh"),
+            ],
+        )
 
         captured = io.StringIO()
         old_stdout = sys.stdout
         sys.stdout = captured
         try:
-            rc = triage_mod.main([
-                "--logs", str(self.tmp),
-                "--age-days", "14",
-                "--json",
-            ])
+            rc = triage_mod.main(
+                [
+                    "--logs",
+                    str(self.tmp),
+                    "--age-days",
+                    "14",
+                    "--json",
+                ]
+            )
         finally:
             sys.stdout = old_stdout
 
         self.assertEqual(rc, 0)
         parsed = json.loads(captured.getvalue())
         expected_keys = {
-            "threshold_days", "filter_source", "logs_dir",
-            "files_scanned", "total_open", "stale_count",
-            "stale_percent", "oldest_age_days", "stale_records",
+            "threshold_days",
+            "filter_source",
+            "logs_dir",
+            "files_scanned",
+            "total_open",
+            "stale_count",
+            "stale_percent",
+            "oldest_age_days",
+            "stale_records",
         }
         self.assertEqual(set(parsed.keys()), expected_keys)
         self.assertEqual(parsed["threshold_days"], 14)
@@ -251,18 +296,20 @@ class TriageStaleSuggestionsTests(unittest.TestCase):
         self.assertEqual(parsed["oldest_age_days"], 22)
         self.assertEqual(len(parsed["stale_records"]), 1)
         rec0 = parsed["stale_records"][0]
-        for k in ("age_days", "source", "family", "role", "label",
-                  "count", "first_seen"):
+        for k in ("age_days", "source", "family", "role", "label", "count", "first_seen"):
             self.assertIn(k, rec0)
 
     # 9. Closed records (status=accepted/rejected) are NEVER stale.
     def test_closed_records_never_stale(self):
         f = self.tmp / "pattern-suggestions-2026-05-12.jsonl"
-        _write_jsonl(f, [
-            _record(days_old=99, status="accepted"),
-            _record(days_old=99, status="rejected"),
-            _record(days_old=99, status="open", label="genuine_stale"),
-        ])
+        _write_jsonl(
+            f,
+            [
+                _record(days_old=99, status="accepted"),
+                _record(days_old=99, status="rejected"),
+                _record(days_old=99, status="open", label="genuine_stale"),
+            ],
+        )
         summary = triage_mod.triage(
             logs_dir=str(self.tmp),
             age_days=14,
@@ -270,7 +317,8 @@ class TriageStaleSuggestionsTests(unittest.TestCase):
         )
         self.assertEqual(summary["stale_count"], 1)
         self.assertEqual(
-            summary["stale_records"][0]["label"], "genuine_stale",
+            summary["stale_records"][0]["label"],
+            "genuine_stale",
         )
 
     # 10. READ-ONLY AUDIT: script never opens any file in write mode.
@@ -301,9 +349,9 @@ class TriageStaleSuggestionsTests(unittest.TestCase):
             builtins.open = real_open
 
         self.assertEqual(
-            offenders, [],
-            "triage_stale_suggestions opened a file in write mode: "
-            f"{offenders}",
+            offenders,
+            [],
+            f"triage_stale_suggestions opened a file in write mode: {offenders}",
         )
 
     # 11. Output-sink files (*-accepted.jsonl, *-rejected.jsonl) are skipped.
@@ -334,9 +382,7 @@ class TriageStaleSuggestionsTests(unittest.TestCase):
         legacy = {
             "role": "textbox",
             "normalized_label": "phone",
-            "first_seen": _iso(
-                datetime.now(timezone.utc) - timedelta(days=22)
-            ),
+            "first_seen": _iso(datetime.now(UTC) - timedelta(days=22)),
             "source": "substring",
         }
         _write_jsonl(f, [legacy])
@@ -365,13 +411,18 @@ class TriageMalformedInputTests(unittest.TestCase):
             fh.write("{}\n")  # parseable but no fields -> open, no first_seen
             fh.write("\n")  # blank
             fh.write('"a-string"\n')  # parses but not a dict -> skipped
-            fh.write(json.dumps({
-                "role": "textbox",
-                "normalized_label": "phone",
-                "first_seen": (
-                    datetime.now(timezone.utc) - timedelta(days=22)
-                ).strftime("%Y-%m-%dT%H:%M:%SZ"),
-            }) + "\n")
+            fh.write(
+                json.dumps(
+                    {
+                        "role": "textbox",
+                        "normalized_label": "phone",
+                        "first_seen": (datetime.now(UTC) - timedelta(days=22)).strftime(
+                            "%Y-%m-%dT%H:%M:%SZ"
+                        ),
+                    }
+                )
+                + "\n"
+            )
         summary = triage_mod.triage(
             logs_dir=str(self.tmp),
             age_days=14,

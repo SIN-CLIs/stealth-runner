@@ -40,6 +40,7 @@ def _daily_file(name: str) -> Path:
 
 # ── Singleton ────────────────────────────────────────────
 
+
 class _SurveyMetrics:
     """Thread-safe in-memory metrics singleton with JSONL persistence."""
 
@@ -123,7 +124,9 @@ class _SurveyMetrics:
             return {
                 **self._counters,
                 "nim_avg_latency_ms": (sum(nims) / len(nims)) if nims else 0,
-                "nim_p95_latency_ms": sorted(nims)[int(len(nims) * 0.95)] if len(nims) > 1 else (nims[0] if nims else 0),  # noqa: E501
+                "nim_p95_latency_ms": sorted(nims)[int(len(nims) * 0.95)]
+                if len(nims) > 1
+                else (nims[0] if nims else 0),  # noqa: E501
                 "batch_avg_latency_ms": (sum(batches) / len(batches)) if batches else 0,
                 "survey_avg_duration_s": (sum(durations) / len(durations)) if durations else 0,
                 "session_duration_s": round(time.time() - self._session_start, 1),
@@ -145,8 +148,9 @@ class _SurveyMetrics:
     def reset(self):
         """Reset all counters (for testing)."""
         with self._lock:
-            self._counters = {k: 0 if isinstance(v, float) else v
-                              for k, v in self._counters.items()}
+            self._counters = {
+                k: 0 if isinstance(v, float) else v for k, v in self._counters.items()
+            }
             self._nim_latency_ms.clear()
             self._batch_latency_ms.clear()
             self._survey_durations_s.clear()

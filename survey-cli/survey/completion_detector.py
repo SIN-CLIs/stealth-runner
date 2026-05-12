@@ -17,7 +17,6 @@ BANNED METHODS — NIEMALS VERWENDEN:
   ❌ Hardcoded PIDs
 """
 
-
 from . import chrome
 from .snapshot import detect_completion as _detect_completion_text
 from .execute import BatchExecutor

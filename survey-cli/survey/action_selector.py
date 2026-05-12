@@ -21,13 +21,24 @@ class ActionSelector:
 
     # Preferred persona keywords for German surveys
     PREFERRED_ANSWERS = [
-        "berlin", "männlich", "weiblich", "deutsch",
-        "angestellt", "verheiratet", "mittlere", "master",
+        "berlin",
+        "männlich",
+        "weiblich",
+        "deutsch",
+        "angestellt",
+        "verheiratet",
+        "mittlere",
+        "master",
     ]
 
     # Submit button keywords (German + English)
     SUBMIT_KEYWORDS = [
-        "weiter", "next", "submit", "nächste", "forward", "fortfahren",
+        "weiter",
+        "next",
+        "submit",
+        "nächste",
+        "forward",
+        "fortfahren",
     ]
 
     @classmethod
@@ -101,12 +112,14 @@ class ActionSelector:
                 placeholder = info.get("placeholder", "").lower()
                 if "gemüse" in placeholder or "hobby" in placeholder:
                     return {
-                        "ref": ref, "action": "fill",
+                        "ref": ref,
+                        "action": "fill",
                         "value": "Karotten werden von vielen Menschen gegessen, weil sie gesund und vielseitig sind.",  # noqa: E501
                     }
                 elif "beschreiben" in placeholder:
                     return {
-                        "ref": ref, "action": "fill",
+                        "ref": ref,
+                        "action": "fill",
                         "value": "Ich finde das Thema interessant und nehme gerne an Umfragen teil.",  # noqa: E501
                     }
                 else:

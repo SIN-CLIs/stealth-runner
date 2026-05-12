@@ -41,7 +41,7 @@ BANNED METHODS:
 
 from __future__ import annotations
 import json
-from typing import List, Dict, Optional
+from typing import Dict, Optional
 
 __frozen__ = True
 __version__ = "2026-05-11"
@@ -49,10 +49,12 @@ __version__ = "2026-05-11"
 
 # ── Pre-Flight: Chrome running check ─────────────────────────────────────────
 
+
 def _preflight(port: int) -> bool:
     """Check if Chrome is running with CDP on specified port."""
     try:
         import urllib.request
+
         resp = urllib.request.urlopen(f"http://127.0.0.1:{port}/json/version", timeout=5)
         return resp.status == 200
     except Exception:
@@ -63,6 +65,7 @@ def _update_registry(success: bool, details: dict):
     """Auto-Update: record scan result."""
     try:
         import survey.command_registry as cr_module
+
         reg = cr_module.CommandRegistry()
         reg.record_command("scan_dashboard", success, details)
     except Exception:
@@ -70,6 +73,7 @@ def _update_registry(success: bool, details: dict):
 
 
 # ── Core: scan_dashboard ──────────────────────────────────────────────────────
+
 
 def scan(port: int = 9999) -> dict:
     """Scan HeyPiggy dashboard for available surveys.
@@ -110,7 +114,13 @@ def scan(port: int = 9999) -> dict:
 
         if not surveys:
             _update_registry(False, {"reason": "no_surveys_found"})
-            return {"status": "ok", "count": 0, "viable": [], "pre_qualifiers": [], "provider_counts": {}}
+            return {
+                "status": "ok",
+                "count": 0,
+                "viable": [],
+                "pre_qualifiers": [],
+                "provider_counts": {},
+            }
 
         # Categorize
         viable = [s for s in surveys if s.get("type") == "okay"]
@@ -131,11 +141,14 @@ def scan(port: int = 9999) -> dict:
             "provider_counts": provider_counts,
         }
 
-        _update_registry(True, {
-            "count": len(surveys),
-            "viable": len(viable),
-            "providers": list(provider_counts.keys()),
-        })
+        _update_registry(
+            True,
+            {
+                "count": len(surveys),
+                "viable": len(viable),
+                "providers": list(provider_counts.keys()),
+            },
+        )
 
         return result
 
@@ -148,6 +161,7 @@ def scan(port: int = 9999) -> dict:
 
 
 # ── Public API: get next viable survey ────────────────────────────────────────
+
 
 def get_next_survey(port: int = 9999, min_trust: float = 0.5) -> Optional[dict]:
     """Get the next best survey to attempt.
@@ -172,6 +186,7 @@ def get_next_survey(port: int = 9999, min_trust: float = 0.5) -> Optional[dict]:
 
 if __name__ == "__main__":
     import sys
+
     port = int(sys.argv[1]) if len(sys.argv) > 1 else 9999
     result = scan(port)
     print(json.dumps(result, indent=2, ensure_ascii=False))

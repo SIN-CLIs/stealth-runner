@@ -24,6 +24,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 class MockModalWS:
     """Mock WebSocket returning a closed count."""
+
     def __init__(self, closed_count=2):
         self._count = closed_count
         self.closed = False
@@ -32,9 +33,7 @@ class MockModalWS:
         pass
 
     def recv(self):
-        return json.dumps({
-            "result": {"result": {"value": self._count}}
-        })
+        return json.dumps({"result": {"result": {"value": self._count}}})
 
     def close(self):
         self.closed = True
@@ -45,9 +44,7 @@ class TestCloseModals(unittest.TestCase):
 
     def setUp(self):
         self.ws_url = "ws://127.0.0.1:9999/devtools/page/mockTab"
-        self._ws_patcher = patch(
-            "tools.tool_close_modals.websocket.create_connection"
-        )
+        self._ws_patcher = patch("tools.tool_close_modals.websocket.create_connection")
         self.mock_create = self._ws_patcher.start()
 
     def tearDown(self):
@@ -58,6 +55,7 @@ class TestCloseModals(unittest.TestCase):
         mock_ws = MockModalWS(closed_count=3)
         self.mock_create.return_value = mock_ws
         from tools.tool_close_modals import close_modals
+
         result = close_modals(self.ws_url)
         self.assertEqual(result, 3)
         self.assertTrue(mock_ws.closed)
@@ -67,6 +65,7 @@ class TestCloseModals(unittest.TestCase):
         mock_ws = MockModalWS(closed_count=0)
         self.mock_create.return_value = mock_ws
         from tools.tool_close_modals import close_modals
+
         result = close_modals(self.ws_url)
         self.assertEqual(result, 0)
 
@@ -75,6 +74,7 @@ class TestCloseModals(unittest.TestCase):
         mock_ws = MockModalWS(closed_count=5)
         self.mock_create.return_value = mock_ws
         from tools.tool_close_modals import close_modals
+
         result = close_modals(self.ws_url)
         self.assertIsInstance(result, int)
 
@@ -82,17 +82,17 @@ class TestCloseModals(unittest.TestCase):
         """Returns 0 when WebSocket connection fails."""
         self.mock_create.side_effect = ConnectionError("WS failed")
         from tools.tool_close_modals import close_modals
+
         result = close_modals(self.ws_url)
         self.assertEqual(result, 0)
 
     def test_close_modals_null_result_returns_zero(self):
         """Returns 0 when CDP returns null/None."""
         mock_ws = MagicMock()
-        mock_ws.recv.return_value = json.dumps({
-            "result": {"result": {"value": None}}
-        })
+        mock_ws.recv.return_value = json.dumps({"result": {"result": {"value": None}}})
         self.mock_create.return_value = mock_ws
         from tools.tool_close_modals import close_modals
+
         result = close_modals(self.ws_url)
         self.assertEqual(result, 0)
 
@@ -102,6 +102,7 @@ class TestCloseModals(unittest.TestCase):
         mock_ws.recv.side_effect = RuntimeError("msg parse fail")
         self.mock_create.return_value = mock_ws
         from tools.tool_close_modals import close_modals
+
         result = close_modals(self.ws_url)
         self.assertEqual(result, 0)
         mock_ws.close.assert_not_called()  # exception caught before close

@@ -74,9 +74,9 @@ import argparse
 import hashlib
 import json
 import sys
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Dict, Optional, Tuple
+from typing import Any
 
 # Public helpers (also imported by tests).
 __all__ = [
@@ -120,7 +120,7 @@ def sha256_of_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def parse_snapshot_timestamp(value: Any) -> Optional[datetime]:
+def parse_snapshot_timestamp(value: Any) -> datetime | None:
     """Parse the compact UTC snapshot timestamp (YYYYMMDDTHHMMSSZ).
 
     Returns a timezone-aware UTC datetime, or None if the value is not
@@ -135,12 +135,12 @@ def parse_snapshot_timestamp(value: Any) -> Optional[datetime]:
         dt = datetime.strptime(s, SNAPSHOT_TS_FORMAT)
     except (ValueError, TypeError):
         return None
-    return dt.replace(tzinfo=timezone.utc)
+    return dt.replace(tzinfo=UTC)
 
 
 def read_newest_snapshot(
     log_path: Path,
-) -> Tuple[Optional[Dict[str, Any]], Optional[str]]:
+) -> tuple[dict[str, Any] | None, str | None]:
     """Return (newest_snapshot_dict, error_message).
 
     Walks the JSONL append-log and keeps the LAST successfully-parsed
@@ -154,7 +154,7 @@ def read_newest_snapshot(
     if not log_path.exists():
         return None, f"promotion log not found: {log_path}"
 
-    newest: Optional[Dict[str, Any]] = None
+    newest: dict[str, Any] | None = None
     try:
         with log_path.open("r", encoding="utf-8") as f:
             for raw in f:
@@ -168,9 +168,7 @@ def read_newest_snapshot(
                     # well-formed snapshot. Drift detection should not
                     # be blocked by an unrelated bad line.
                     continue
-                if isinstance(record, dict) and isinstance(
-                    record.get("snapshot"), dict
-                ):
+                if isinstance(record, dict) and isinstance(record.get("snapshot"), dict):
                     newest = record["snapshot"]
     except OSError as e:
         return None, f"cannot read promotion log {log_path}: {e}"
@@ -183,8 +181,8 @@ def read_newest_snapshot(
 def compute_drift(
     graph_path: Path,
     log_path: Path,
-    now: Optional[datetime] = None,
-) -> Tuple[Dict[str, Any], Optional[str]]:
+    now: datetime | None = None,
+) -> tuple[dict[str, Any], str | None]:
     """Compute drift result, returning (result_dict, error_message).
 
     On error_message != None the result_dict is still populated with
@@ -202,9 +200,9 @@ def compute_drift(
       - promotion_log  (str)
     """
     if now is None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
-    result: Dict[str, Any] = {
+    result: dict[str, Any] = {
         "drift": None,
         "current_sha256": None,
         "snapshot_sha256": None,
@@ -242,7 +240,7 @@ def compute_drift(
     return result, None
 
 
-def format_human(result: Dict[str, Any], error: Optional[str]) -> str:
+def format_human(result: dict[str, Any], error: str | None) -> str:
     """Human-readable single-block report."""
     if error is not None:
         return f"✗ ERROR: {error}"
@@ -275,7 +273,7 @@ def format_human(result: Dict[str, Any], error: Optional[str]) -> str:
     return "\n".join(lines)
 
 
-def format_json(result: Dict[str, Any], error: Optional[str]) -> str:
+def format_json(result: dict[str, Any], error: str | None) -> str:
     """JSON output. `error` is None on success."""
     payload = dict(result)
     payload["error"] = error
@@ -283,7 +281,7 @@ def format_json(result: Dict[str, Any], error: Optional[str]) -> str:
     return json.dumps(payload, indent=2, sort_keys=True)
 
 
-def main(argv: Optional[list[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     """Main entry point. Returns a process exit code."""
     parser = argparse.ArgumentParser(
         description=(

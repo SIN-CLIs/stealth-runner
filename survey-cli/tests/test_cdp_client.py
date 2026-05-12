@@ -22,18 +22,20 @@ BANNED METHODS — NIEMALS VERWENDEN:
 """
 
 import unittest
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 import json
 import websocket
 
 import sys
 import os
+
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from survey.cdp_client import CDPConnection, CDPError, CDPConnectionError
 
 
 # ── Helpers ────────────────────────────────────────────────────
+
 
 def _make_ws_with_responses(responses: list[str]):
     """Create a fake WebSocket that returns responses in sequence."""
@@ -49,10 +51,7 @@ def _make_cdp_response(msg_id: int, result: dict | None = None) -> str:
 
 def _make_cdp_error(msg_id: int, message: str) -> str:
     """Create a CDP error response JSON string."""
-    return json.dumps({
-        "id": msg_id,
-        "error": {"code": -32000, "message": message}
-    })
+    return json.dumps({"id": msg_id, "error": {"code": -32000, "message": message}})
 
 
 # ── Tests ──────────────────────────────────────────────────────
@@ -177,7 +176,7 @@ class TestCDPConnectionRetry(unittest.TestCase):
         ws1 = MagicMock()
         ws1.send.side_effect = websocket.WebSocketException("Broken pipe")
 
-        from survey.cdp_client import websocket as ws_mod
+
         ws2 = _make_ws_with_responses([_make_cdp_response(1, {"ok": True})])
 
         mock_create.side_effect = [ws1, ws2]

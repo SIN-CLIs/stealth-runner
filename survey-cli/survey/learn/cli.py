@@ -33,8 +33,11 @@ import sys
 from typing import List
 
 from .review import (
-    ReviewRules, ReviewSummary,
-    plan_action, apply_status, format_display_line,
+    ReviewRules,
+    ReviewSummary,
+    plan_action,
+    apply_status,
+    format_display_line,
 )
 from .status import (
     StatusFilters,
@@ -42,6 +45,7 @@ from .status import (
     report_to_json,
     summarize_inbox,
 )
+
 # SR-109 #109: audit-log dashboard (apply-side complement to status)
 from .audit import (
     AuditFilters,
@@ -55,6 +59,7 @@ from .aggregator import (
     write_suggestions,
 )
 from .apply import apply_inbox  # SR-58 #57
+
 # SR-112 #112: per-keyword inverse-lookup (apply-side, mirror to audit)
 from .explain import (
     find_explanations,
@@ -75,7 +80,9 @@ def _logs_dir() -> str:
 def cmd_aggregate(args: argparse.Namespace) -> int:
     log_dir = args.logs or _logs_dir()
     suggestions = aggregate_misses(
-        log_dir=log_dir, min_count=args.min_count, persona=args.persona,
+        log_dir=log_dir,
+        min_count=args.min_count,
+        persona=args.persona,
         # SR-57 #56: optional Phase-2 LLM-fallback.
         use_llm=args.llm,
         llm_model=args.llm_model or None,
@@ -86,12 +93,10 @@ def cmd_aggregate(args: argparse.Namespace) -> int:
     print(f"[learn] wrote {len(suggestions)} suggestions to {out_path}")
     if args.llm:
         n_llm = sum(1 for s in suggestions if s.get("source") == "llm")
-        n_substr = sum(1 for s in suggestions
-                       if s.get("source") == "substring")
+        n_substr = sum(1 for s in suggestions if s.get("source") == "substring")
         print(f"[learn] sources: substring={n_substr} llm={n_llm}")
     if not suggestions:
-        print("[learn] (no misses with count >= "
-              f"{args.min_count} — nothing to suggest)")
+        print(f"[learn] (no misses with count >= {args.min_count} — nothing to suggest)")
     return 0
 
 
@@ -122,8 +127,7 @@ def cmd_review(args: argparse.Namespace) -> int:
     log_dir = args.logs or _logs_dir()
     suggestions_path = args.input or default_suggestions_path(log_dir)
     if not os.path.exists(suggestions_path):
-        print(f"[learn] no suggestions file at {suggestions_path} — "
-              "run 'aggregate' first.")
+        print(f"[learn] no suggestions file at {suggestions_path} — run 'aggregate' first.")
         return 1
 
     items: List[dict] = []
@@ -135,11 +139,11 @@ def cmd_review(args: argparse.Namespace) -> int:
 
     rules = ReviewRules(
         auto_accept_substring_above=(
-            args.auto_accept_substring_above
-            if args.auto_accept_substring_above >= 0 else None),
+            args.auto_accept_substring_above if args.auto_accept_substring_above >= 0 else None
+        ),
         auto_reject_llm_below=(
-            args.auto_reject_llm_below
-            if args.auto_reject_llm_below >= 0 else None),
+            args.auto_reject_llm_below if args.auto_reject_llm_below >= 0 else None
+        ),
         filter_source=args.filter_source,
         non_interactive=args.non_interactive,
         filter_open_only=True,
@@ -176,20 +180,20 @@ def cmd_review(args: argparse.Namespace) -> int:
                 if not args.dry_run:
                     target = accepted_f if action == "accept" else rejected_f
                     assert target is not None
-                    target.write(
-                        json.dumps(flipped, ensure_ascii=False) + "\n")
+                    target.write(json.dumps(flipped, ensure_ascii=False) + "\n")
                     target.flush()
                 summary.bump(action, src)
-                print(f"[{i}/{len(items)}] auto-{action}: "
-                      f"{format_display_line(flipped)}")
+                print(f"[{i}/{len(items)}] auto-{action}: {format_display_line(flipped)}")
                 continue
 
             # action == "ask"
             print()
-            print(f"[{i}/{len(items)}] "
-                  f"role={item.get('role', '?')} "
-                  f"label={item.get('normalized_label', '?')!r} "
-                  f"count={item.get('count', 0)}")
+            print(
+                f"[{i}/{len(items)}] "
+                f"role={item.get('role', '?')} "
+                f"label={item.get('normalized_label', '?')!r} "
+                f"count={item.get('count', 0)}"
+            )
             print(f"        {format_display_line(item)}")
             matched = item.get("matched_tokens", [])
             if matched:
@@ -202,9 +206,7 @@ def cmd_review(args: argparse.Namespace) -> int:
                 summary.bump("ask", src)
                 continue
 
-            choice = _interactive_choice(
-                "        Action [a]ccept / [r]eject / [s]kip / [q]uit: "
-            )
+            choice = _interactive_choice("        Action [a]ccept / [r]eject / [s]kip / [q]uit: ")
             if choice == "a" and accepted_f is not None:
                 flipped = apply_status(item, "accept")
                 items[i - 1] = flipped
@@ -237,17 +239,21 @@ def cmd_review(args: argparse.Namespace) -> int:
                 f.write(json.dumps(rec, ensure_ascii=False) + "\n")
 
     print()
-    print(f"[learn] review done: accepted={summary.accepted} "
-          f"rejected={summary.rejected} skipped={summary.asked} "
-          f"filtered={summary.filtered} already_done={summary.already_done}")
+    print(
+        f"[learn] review done: accepted={summary.accepted} "
+        f"rejected={summary.rejected} skipped={summary.asked} "
+        f"filtered={summary.filtered} already_done={summary.already_done}"
+    )
     if summary.by_source:
-        bs = ", ".join(f"{k}={v}" for k, v in
-                       sorted(summary.by_source.items()))
+        bs = ", ".join(f"{k}={v}" for k, v in sorted(summary.by_source.items()))
         print(f"[learn] by_source: {bs}")
     if not _AUTO_APPLY and summary.accepted:
-        print(f"[learn] NEXT STEP (manual): open {accepted_path}, "
-              "uebernimm die Patterns in survey/profile_loader.py")
+        print(
+            f"[learn] NEXT STEP (manual): open {accepted_path}, "
+            "uebernimm die Patterns in survey/profile_loader.py"
+        )
     return 0
+
 
 def cmd_apply(args: argparse.Namespace) -> int:
     """SR-58 #57 — manueller, auditierter Apply von Inbox-Eintraegen.
@@ -267,8 +273,7 @@ def cmd_apply(args: argparse.Namespace) -> int:
       2  = inkompatibler Flag-Mix (sollte argparse abfangen).
     """
     if args.approve_all and args.interactive:
-        print("[learn-apply] --approve-all und --interactive sind exklusiv.",
-              file=sys.stderr)
+        print("[learn-apply] --approve-all und --interactive sind exklusiv.", file=sys.stderr)
         return 2
     if args.approve_all:
         mode = "approve-all"
@@ -287,13 +292,17 @@ def cmd_apply(args: argparse.Namespace) -> int:
     if result.error:
         print(f"[learn-apply] ERROR: {result.error}", file=sys.stderr)
         if result.rolled_back:
-            print("[learn-apply] rollback successful — profile_loader.py "
-                  "is back to pre-apply state.", file=sys.stderr)
+            print(
+                "[learn-apply] rollback successful — profile_loader.py is back to pre-apply state.",
+                file=sys.stderr,
+            )
         return 1
 
     print(f"[learn-apply] mode={mode}")
-    print(f"[learn-apply] accepted={result.accepted} "
-          f"rejected={result.rejected} skipped={result.skipped}")
+    print(
+        f"[learn-apply] accepted={result.accepted} "
+        f"rejected={result.rejected} skipped={result.skipped}"
+    )
     for fam, kw in result.applied_keywords:
         print(f"[learn-apply]   + {fam}: {kw}")
     if result.audit_log_path:
@@ -302,9 +311,11 @@ def cmd_apply(args: argparse.Namespace) -> int:
         if not result.applied_keywords:
             print("[learn-apply] (dry-run: no candidate above confidence gate)")
         else:
-            print(f"[learn-apply] (dry-run: {len(result.applied_keywords)} "
-                  "candidate(s) above gate — diff printed above, "
-                  "no files written)")
+            print(
+                f"[learn-apply] (dry-run: {len(result.applied_keywords)} "
+                "candidate(s) above gate — diff printed above, "
+                "no files written)"
+            )
     return 0
 
 
@@ -320,21 +331,22 @@ def cmd_status(args: argparse.Namespace) -> int:
     accepted/rejected/audit log outputs.
     """
     import glob
+
     log_dir = args.logs or _logs_dir()
 
     if args.input:
         input_paths = [args.input] if os.path.exists(args.input) else []
     else:
-        input_paths = sorted(glob.glob(
-            os.path.join(log_dir, "pattern-suggestions-*.jsonl")))
+        input_paths = sorted(glob.glob(os.path.join(log_dir, "pattern-suggestions-*.jsonl")))
         # Skip accepted/rejected derived files -- nur die roh-inbox.
-        input_paths = [p for p in input_paths
-                       if not (p.endswith("-accepted.jsonl")
-                               or p.endswith("-rejected.jsonl"))]
+        input_paths = [
+            p
+            for p in input_paths
+            if not (p.endswith("-accepted.jsonl") or p.endswith("-rejected.jsonl"))
+        ]
 
     if not input_paths:
-        print(f"[learn] no pattern-suggestions-*.jsonl found "
-              f"(searched {log_dir})")
+        print(f"[learn] no pattern-suggestions-*.jsonl found (searched {log_dir})")
         return 0 if not args.require_empty else 1
 
     records = []
@@ -356,20 +368,17 @@ def cmd_status(args: argparse.Namespace) -> int:
     )
 
     if args.json:
-        print(json.dumps(report_to_json(report, top=args.top),
-                         indent=2, ensure_ascii=False))
+        print(json.dumps(report_to_json(report, top=args.top), indent=2, ensure_ascii=False))
     else:
         print(format_human_report(report, top=args.top))
 
     if args.require_empty and report.has_open():
         # Stderr-Erklaerung, damit CI-Diff lesbar bleibt.
         sys.stderr.write(
-            f"[learn] --require-empty: "
-            f"{report.by_status.get('open', 0)} open record(s) remain.\n"
+            f"[learn] --require-empty: {report.by_status.get('open', 0)} open record(s) remain.\n"
         )
         return 1
     return 0
-
 
 
 def cmd_audit(args: argparse.Namespace) -> int:
@@ -391,12 +400,10 @@ def cmd_audit(args: argparse.Namespace) -> int:
     if args.input:
         input_paths = [args.input] if os.path.exists(args.input) else []
     else:
-        input_paths = sorted(glob.glob(
-            os.path.join(log_dir, "learn-applied-*.jsonl")))
+        input_paths = sorted(glob.glob(os.path.join(log_dir, "learn-applied-*.jsonl")))
 
     if not input_paths:
-        print(f"[learn] no learn-applied-*.jsonl found "
-              f"(searched {log_dir})")
+        print(f"[learn] no learn-applied-*.jsonl found (searched {log_dir})")
         return 0
 
     records = []
@@ -411,14 +418,12 @@ def cmd_audit(args: argparse.Namespace) -> int:
     since_dt = None
     if args.since:
         try:
-            since_dt = datetime.fromisoformat(
-                str(args.since).replace("Z", "+00:00"))
+            since_dt = datetime.fromisoformat(str(args.since).replace("Z", "+00:00"))
             if since_dt.tzinfo is None:
                 since_dt = since_dt.replace(tzinfo=timezone.utc)
         except (ValueError, TypeError):
             sys.stderr.write(
-                f"[learn] --since: cannot parse ISO timestamp "
-                f"{args.since!r} -- ignored.\n"
+                f"[learn] --since: cannot parse ISO timestamp {args.since!r} -- ignored.\n"
             )
             since_dt = None
 
@@ -435,8 +440,7 @@ def cmd_audit(args: argparse.Namespace) -> int:
     )
 
     if args.json:
-        print(json.dumps(audit_report_to_json(report, top=args.top),
-                         indent=2, ensure_ascii=False))
+        print(json.dumps(audit_report_to_json(report, top=args.top), indent=2, ensure_ascii=False))
     else:
         print(format_audit_report(report, top=args.top))
 
@@ -447,162 +451,215 @@ def build_argparser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="survey learn")
     sub = p.add_subparsers(dest="action", required=True)
 
-    p_agg = sub.add_parser("aggregate",
-                           help="Aggregate matcher-telemetry misses")
-    p_agg.add_argument("--logs", type=str, default="",
-                      help="Pfad zu logs/ (default: survey/../logs)")
-    p_agg.add_argument("--min-count", type=int, default=1,
-                      help="Mindest-Frequenz (default: 1)")
-    p_agg.add_argument("--persona", type=str, default=None,
-                      help="Nur Misses dieser Persona")
-    p_agg.add_argument("--out", type=str, default="",
-                      help="Output-Pfad (default: pattern-suggestions-{date})")
+    p_agg = sub.add_parser("aggregate", help="Aggregate matcher-telemetry misses")
+    p_agg.add_argument(
+        "--logs", type=str, default="", help="Pfad zu logs/ (default: survey/../logs)"
+    )
+    p_agg.add_argument("--min-count", type=int, default=1, help="Mindest-Frequenz (default: 1)")
+    p_agg.add_argument("--persona", type=str, default=None, help="Nur Misses dieser Persona")
+    p_agg.add_argument(
+        "--out", type=str, default="", help="Output-Pfad (default: pattern-suggestions-{date})"
+    )
     # SR-57 #56: FCTC-ES Phase 2 (LLM fallback). Opt-in via --llm.
-    p_agg.add_argument("--llm", action="store_true",
-                      help="Phase-2: ruft LLM-Suggester fuer Misses, die "
-                           "die Heuristik nicht entscheidet (family=None "
-                           "oder confidence<0.20). Erfordert "
-                           "AI_GATEWAY_API_KEY.")
-    p_agg.add_argument("--llm-model", type=str, default="",
-                      help="Override fuer LLM model id "
-                           "(default: openai/gpt-5-mini)")
+    p_agg.add_argument(
+        "--llm",
+        action="store_true",
+        help="Phase-2: ruft LLM-Suggester fuer Misses, die "
+        "die Heuristik nicht entscheidet (family=None "
+        "oder confidence<0.20). Erfordert "
+        "AI_GATEWAY_API_KEY.",
+    )
+    p_agg.add_argument(
+        "--llm-model",
+        type=str,
+        default="",
+        help="Override fuer LLM model id (default: openai/gpt-5-mini)",
+    )
     p_agg.set_defaults(func=cmd_aggregate)
 
-    p_rev = sub.add_parser("review",
-                           help="Interaktive Sichtung der Vorschlaege")
-    p_rev.add_argument("--logs", type=str, default="",
-                      help="Pfad zu logs/")
-    p_rev.add_argument("--input", type=str, default="",
-                      help="Vorschlags-JSONL (default: heutiges aggregate)")
-    p_rev.add_argument("--dry-run", action="store_true",
-                      help="Nur anzeigen, nichts schreiben")
+    p_rev = sub.add_parser("review", help="Interaktive Sichtung der Vorschlaege")
+    p_rev.add_argument("--logs", type=str, default="", help="Pfad zu logs/")
+    p_rev.add_argument(
+        "--input", type=str, default="", help="Vorschlags-JSONL (default: heutiges aggregate)"
+    )
+    p_rev.add_argument("--dry-run", action="store_true", help="Nur anzeigen, nichts schreiben")
     # SR-102 #102: source-aware batch-review flags.
     p_rev.add_argument(
-        "--auto-accept-substring-above", type=float, default=-1.0,
+        "--auto-accept-substring-above",
+        type=float,
+        default=-1.0,
         metavar="CONF",
         help="Auto-accept records mit source=substring UND "
-             "confidence >= CONF (e.g. 0.9). Default: disabled.")
+        "confidence >= CONF (e.g. 0.9). Default: disabled.",
+    )
     p_rev.add_argument(
-        "--auto-reject-llm-below", type=float, default=-1.0,
+        "--auto-reject-llm-below",
+        type=float,
+        default=-1.0,
         metavar="CONF",
         help="Auto-reject records mit source=llm UND "
-             "confidence < CONF (e.g. 0.85). Default: disabled.")
+        "confidence < CONF (e.g. 0.85). Default: disabled.",
+    )
     p_rev.add_argument(
-        "--filter-source", choices=["all", "substring", "llm"],
+        "--filter-source",
+        choices=["all", "substring", "llm"],
         default="all",
-        help="Nur records dieser source verarbeiten. Default: all.")
+        help="Nur records dieser source verarbeiten. Default: all.",
+    )
     p_rev.add_argument(
-        "--non-interactive", action="store_true",
+        "--non-interactive",
+        action="store_true",
         help="Kein stdin-prompt; records ohne auto-rule-match werden "
-             "uebersprungen (status bleibt open).")
+        "uebersprungen (status bleibt open).",
+    )
     p_rev.set_defaults(func=cmd_review)
 
     # SR-58 #57: apply ──────────────────────────────────────────────────────
     p_app = sub.add_parser(
-        "apply",
-        help="Apply accepted suggestions to FIELD_PATTERNS (AST roundtrip)")
-    p_app.add_argument("inbox", type=str,
-                       help="Pfad zur accepted-Inbox JSONL "
-                            "(z.B. logs/pattern-suggestions-accepted.jsonl)")
-    p_app.add_argument("--dry-run", action="store_true",
-                       help="Diff anzeigen, NICHTS schreiben")
+        "apply", help="Apply accepted suggestions to FIELD_PATTERNS (AST roundtrip)"
+    )
+    p_app.add_argument(
+        "inbox",
+        type=str,
+        help="Pfad zur accepted-Inbox JSONL (z.B. logs/pattern-suggestions-accepted.jsonl)",
+    )
+    p_app.add_argument("--dry-run", action="store_true", help="Diff anzeigen, NICHTS schreiben")
     # SR-99: --target flag for smoke tests
-    p_app.add_argument("--target", type=str, default=None,
-                       help="Override default profile_loader.py path (smoke-test only)")
+    p_app.add_argument(
+        "--target",
+        type=str,
+        default=None,
+        help="Override default profile_loader.py path (smoke-test only)",
+    )
     grp = p_app.add_mutually_exclusive_group()
-    grp.add_argument("--approve-all", action="store_true",
-                     help="Alle Eintraege oberhalb Confidence-Gate uebernehmen")
-    grp.add_argument("--interactive", action="store_true",
-                     help="Pro Eintrag fragen [a/r/s/q] (default)")
-    p_app.add_argument("--skip-tests", action="store_true",
-                       help="DEV-FLAG: pytest-Gate ueberspringen "
-                            "(nur fuer Tests, nicht in CI)")
+    grp.add_argument(
+        "--approve-all",
+        action="store_true",
+        help="Alle Eintraege oberhalb Confidence-Gate uebernehmen",
+    )
+    grp.add_argument(
+        "--interactive", action="store_true", help="Pro Eintrag fragen [a/r/s/q] (default)"
+    )
+    p_app.add_argument(
+        "--skip-tests",
+        action="store_true",
+        help="DEV-FLAG: pytest-Gate ueberspringen (nur fuer Tests, nicht in CI)",
+    )
     p_app.set_defaults(func=cmd_apply)
 
     # SR-104 #104: read-only inbox dashboard.
     p_sts = sub.add_parser(
-        "status",
-        help="Read-only Inbox-Dashboard: counts by status/source/family")
-    p_sts.add_argument("--logs", default=None,
-                       help="Logs-Verzeichnis (default: survey-cli/logs)")
-    p_sts.add_argument("--input", default=None,
-                       help="Statt multi-file scan, eine einzelne JSONL lesen")
-    p_sts.add_argument("--filter-source",
-                       choices=["all", "substring", "llm"], default="all",
-                       help="Filter auf source field. Default: all.")
-    p_sts.add_argument("--filter-status",
-                       choices=["all", "open", "accepted", "rejected"],
-                       default="all",
-                       help="Filter auf status field. Default: all.")
-    p_sts.add_argument("--top", type=int, default=10, metavar="N",
-                       help="Limit fuer top-N family/label-Listen. Default: 10.")
-    p_sts.add_argument("--json", action="store_true",
-                       help="JSON statt human-readable Output")
-    p_sts.add_argument("--require-empty", action="store_true",
-                       help="Exit 1 wenn open-count > 0 (CI smoke-gate). "
-                            "Read-only -- modifiziert nichts.")
+        "status", help="Read-only Inbox-Dashboard: counts by status/source/family"
+    )
+    p_sts.add_argument("--logs", default=None, help="Logs-Verzeichnis (default: survey-cli/logs)")
+    p_sts.add_argument(
+        "--input", default=None, help="Statt multi-file scan, eine einzelne JSONL lesen"
+    )
+    p_sts.add_argument(
+        "--filter-source",
+        choices=["all", "substring", "llm"],
+        default="all",
+        help="Filter auf source field. Default: all.",
+    )
+    p_sts.add_argument(
+        "--filter-status",
+        choices=["all", "open", "accepted", "rejected"],
+        default="all",
+        help="Filter auf status field. Default: all.",
+    )
+    p_sts.add_argument(
+        "--top",
+        type=int,
+        default=10,
+        metavar="N",
+        help="Limit fuer top-N family/label-Listen. Default: 10.",
+    )
+    p_sts.add_argument("--json", action="store_true", help="JSON statt human-readable Output")
+    p_sts.add_argument(
+        "--require-empty",
+        action="store_true",
+        help="Exit 1 wenn open-count > 0 (CI smoke-gate). Read-only -- modifiziert nichts.",
+    )
     p_sts.set_defaults(func=cmd_status)
 
     # SR-109 #109: read-only audit-log dashboard (apply-side).
     p_aud = sub.add_parser(
-        "audit",
-        help="Read-only Audit-Dashboard: counts by decision/source/family")
-    p_aud.add_argument("--logs", default=None,
-                       help="Logs-Verzeichnis (default: survey-cli/logs)")
-    p_aud.add_argument("--input", default=None,
-                       help="Statt multi-file scan, eine einzelne JSONL lesen")
+        "audit", help="Read-only Audit-Dashboard: counts by decision/source/family"
+    )
+    p_aud.add_argument("--logs", default=None, help="Logs-Verzeichnis (default: survey-cli/logs)")
+    p_aud.add_argument(
+        "--input", default=None, help="Statt multi-file scan, eine einzelne JSONL lesen"
+    )
     p_aud.add_argument(
         "--filter-decision",
-        choices=["all", "applied", "rejected_by_gate",
-                 "rejected_by_reviewer", "rejected_by_ast"],
+        choices=["all", "applied", "rejected_by_gate", "rejected_by_reviewer", "rejected_by_ast"],
         default="all",
-        help="Filter auf decision field. Default: all.")
-    p_aud.add_argument("--filter-source",
-                       choices=["all", "substring", "llm"], default="all",
-                       help="Filter auf source field. Default: all.")
-    p_aud.add_argument("--filter-family", default=None,
-                       help="Filter auf family (exakter Match). Default: alle.")
-    p_aud.add_argument("--since", default=None, metavar="ISO",
-                       help="Nur records mit timestamp >= ISO (z.B. "
-                            "2026-05-01T00:00:00Z). Records ohne timestamp "
-                            "werden ausgeschlossen.")
-    p_aud.add_argument("--top", type=int, default=10, metavar="N",
-                       help="Limit fuer top-N family/label/model-Listen. "
-                            "Default: 10.")
-    p_aud.add_argument("--json", action="store_true",
-                       help="JSON statt human-readable Output")
+        help="Filter auf decision field. Default: all.",
+    )
+    p_aud.add_argument(
+        "--filter-source",
+        choices=["all", "substring", "llm"],
+        default="all",
+        help="Filter auf source field. Default: all.",
+    )
+    p_aud.add_argument(
+        "--filter-family", default=None, help="Filter auf family (exakter Match). Default: alle."
+    )
+    p_aud.add_argument(
+        "--since",
+        default=None,
+        metavar="ISO",
+        help="Nur records mit timestamp >= ISO (z.B. "
+        "2026-05-01T00:00:00Z). Records ohne timestamp "
+        "werden ausgeschlossen.",
+    )
+    p_aud.add_argument(
+        "--top",
+        type=int,
+        default=10,
+        metavar="N",
+        help="Limit fuer top-N family/label/model-Listen. Default: 10.",
+    )
+    p_aud.add_argument("--json", action="store_true", help="JSON statt human-readable Output")
     p_aud.set_defaults(func=cmd_audit)
 
     # SR-112 #112: per-keyword inverse-lookup (apply-side diagnostic).
     p_xpl = sub.add_parser(
-        "explain",
-        help="Read-only per-keyword inverse-lookup over audit records")
-    p_xpl.add_argument("query", type=str,
-                       help="Query string (case-insensitive substring). "
-                            "Auto-detects mode: 'role:label' -> label, "
-                            "else -> keyword. Override via --by.")
-    p_xpl.add_argument("--logs", default=None,
-                       help="Logs-Verzeichnis (default: survey-cli/logs)")
-    p_xpl.add_argument("--input", default=None,
-                       help="Statt multi-file scan, eine einzelne JSONL lesen")
+        "explain", help="Read-only per-keyword inverse-lookup over audit records"
+    )
+    p_xpl.add_argument(
+        "query",
+        type=str,
+        help="Query string (case-insensitive substring). "
+        "Auto-detects mode: 'role:label' -> label, "
+        "else -> keyword. Override via --by.",
+    )
+    p_xpl.add_argument("--logs", default=None, help="Logs-Verzeichnis (default: survey-cli/logs)")
+    p_xpl.add_argument(
+        "--input", default=None, help="Statt multi-file scan, eine einzelne JSONL lesen"
+    )
     p_xpl.add_argument(
         "--by",
         choices=["auto", "keyword", "family", "label"],
         default="auto",
-        help="Match-mode. Default: auto.")
-    p_xpl.add_argument("--limit", type=int, default=5, metavar="N",
-                       help="Max anzahl Treffer im Output. Default: 5.")
-    p_xpl.add_argument("--include-rejects", action="store_true",
-                       help="Schaltet rejected_* decision-records dazu. "
-                            "Default: applied-only.")
-    p_xpl.add_argument("--json", action="store_true",
-                       help="JSON statt human-readable Output")
+        help="Match-mode. Default: auto.",
+    )
+    p_xpl.add_argument(
+        "--limit",
+        type=int,
+        default=5,
+        metavar="N",
+        help="Max anzahl Treffer im Output. Default: 5.",
+    )
+    p_xpl.add_argument(
+        "--include-rejects",
+        action="store_true",
+        help="Schaltet rejected_* decision-records dazu. Default: applied-only.",
+    )
+    p_xpl.add_argument("--json", action="store_true", help="JSON statt human-readable Output")
     p_xpl.set_defaults(func=cmd_explain)
 
-
     return p
-
-
 
 
 def cmd_explain(args: argparse.Namespace) -> int:
@@ -622,12 +679,10 @@ def cmd_explain(args: argparse.Namespace) -> int:
     if args.input:
         input_paths = [args.input] if os.path.exists(args.input) else []
     else:
-        input_paths = sorted(glob.glob(
-            os.path.join(log_dir, "learn-applied-*.jsonl")))
+        input_paths = sorted(glob.glob(os.path.join(log_dir, "learn-applied-*.jsonl")))
 
     if not input_paths:
-        print(f"[learn] no learn-applied-*.jsonl found "
-              f"(searched {log_dir})")
+        print(f"[learn] no learn-applied-*.jsonl found (searched {log_dir})")
         return 0
 
     # Load all records, tagging each with its origin filename so the
@@ -651,6 +706,7 @@ def cmd_explain(args: argparse.Namespace) -> int:
     reject_count_excluded = 0
     if not args.include_rejects:
         from .explain import record_matches, _normalize_decision
+
         for rec in records:
             if _normalize_decision(rec) == "applied":
                 continue
@@ -666,27 +722,34 @@ def cmd_explain(args: argparse.Namespace) -> int:
     )
 
     if args.json:
-        print(json.dumps(
-            explain_report_to_json(
+        print(
+            json.dumps(
+                explain_report_to_json(
+                    explanations,
+                    query=args.query,
+                    match_mode=mode,
+                    limit=args.limit,
+                    include_rejects=args.include_rejects,
+                ),
+                indent=2,
+                ensure_ascii=False,
+            )
+        )
+    else:
+        print(
+            format_explain_report(
                 explanations,
                 query=args.query,
                 match_mode=mode,
                 limit=args.limit,
                 include_rejects=args.include_rejects,
-            ),
-            indent=2, ensure_ascii=False,
-        ))
-    else:
-        print(format_explain_report(
-            explanations,
-            query=args.query,
-            match_mode=mode,
-            limit=args.limit,
-            include_rejects=args.include_rejects,
-            reject_count_excluded=reject_count_excluded,
-        ))
+                reject_count_excluded=reject_count_excluded,
+            )
+        )
 
     return 0
+
+
 def main(argv: List[str] | None = None) -> int:
     parser = build_argparser()
     args = parser.parse_args(argv)

@@ -9,6 +9,7 @@ Features:
     - LLM integration for open-text questions
     - SR-150: Extended types (drag-drop, hotspot, conjoint, max-diff, video-ad, audio-ad)
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -30,6 +31,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Persona:
     """Survey respondent persona for consistent answers."""
+
     # Demographics
     age: int = 32
     gender: str = "male"
@@ -51,11 +53,13 @@ class Persona:
     news_sources: list[str] = field(default_factory=lambda: ["online"])
 
     # SR-150: Conjoint preference weights (price_weight + brand_weight + sum(feature_weights) = 1.0)
-    conjoint_preferences: dict[str, Any] = field(default_factory=lambda: {
-        "price_weight": 0.4,
-        "brand_weight": 0.3,
-        "feature_weights": {"quality": 0.15, "convenience": 0.15},
-    })
+    conjoint_preferences: dict[str, Any] = field(
+        default_factory=lambda: {
+            "price_weight": 0.4,
+            "brand_weight": 0.3,
+            "feature_weights": {"quality": 0.15, "convenience": 0.15},
+        }
+    )
 
     def to_dict(self) -> dict:
         """Convert persona to dictionary."""
@@ -86,6 +90,7 @@ class Persona:
 @dataclass
 class Answer:
     """Generated answer for a survey question."""
+
     question_id: str
     question_hash: str  # For consistency tracking
     value: Any
@@ -170,7 +175,7 @@ class AnswerEngine:
     def _hash_question(self, question: Question) -> str:
         """Generate consistent hash for a question."""
         # Normalize question text for hashing
-        normalized = re.sub(r'\s+', ' ', question.text.lower().strip())
+        normalized = re.sub(r"\s+", " ", question.text.lower().strip())
         return hashlib.sha256(normalized.encode()).hexdigest()[:16]
 
     def _hash_persona(self) -> str:
@@ -224,7 +229,7 @@ class AnswerEngine:
 
     def _generate_by_type(self, question: Question, question_hash: str) -> Answer:
         """Generate answer based on question type.
-        
+
         SR-150: Adds 6 new generators for extended types.
         """
         generators = {
@@ -257,7 +262,7 @@ class AnswerEngine:
 
     def _generate_drag_drop_answer(self, question: Question, question_hash: str) -> Answer:
         """SR-150: Generate drag-and-drop ranking answer.
-        
+
         Strategy: Persona-weighted ordering using deterministic seed from
         hash(persona_id + question_hash). Same persona always ranks the same way.
         """
@@ -294,7 +299,7 @@ class AnswerEngine:
 
     def _generate_hotspot_answer(self, question: Question, question_hash: str) -> Answer:
         """SR-150: Generate hotspot (image click) answer.
-        
+
         Strategy: Pick the centroid of the largest hotspot area, or center of image
         if no areas defined. Returns (x, y) coordinates.
         """
@@ -342,7 +347,7 @@ class AnswerEngine:
 
     def _generate_conjoint_answer(self, question: Question, question_hash: str) -> Answer:
         """SR-150: Generate conjoint (Sawtooth-style profile choice) answer.
-        
+
         Strategy: Score each profile card using persona's conjoint_preferences
         (price_weight, brand_weight, feature_weights). Pick highest score.
         """
@@ -378,7 +383,7 @@ class AnswerEngine:
             price_str = features.get("price", features.get("Price", ""))
             if price_str:
                 # Extract numeric price
-                price_nums = re.findall(r'[\d.]+', price_str.replace(",", ""))
+                price_nums = re.findall(r"[\d.]+", price_str.replace(",", ""))
                 if price_nums:
                     price = float(price_nums[0])
                     # Invert: lower price = higher score
@@ -416,7 +421,7 @@ class AnswerEngine:
 
     def _generate_max_diff_answer(self, question: Question, question_hash: str) -> Answer:
         """SR-150: Generate MaxDiff (best/worst scaling) answer.
-        
+
         Strategy: Rank items by persona relevance, pick rank-1 as "Most" (best)
         and rank-N as "Least" (worst). One Answer stores both selections.
         """
@@ -459,7 +464,7 @@ class AnswerEngine:
 
     def _generate_video_ad_answer(self, question: Question, question_hash: str) -> Answer:
         """SR-150: Generate video ad attention answer.
-        
+
         Strategy: Signal that video must be played. Returns action instruction
         with media_selector and recommended wait duration. BrowserDriver handles
         actual playback via play_media().
@@ -486,7 +491,7 @@ class AnswerEngine:
 
     def _generate_audio_ad_answer(self, question: Question, question_hash: str) -> Answer:
         """SR-150: Generate audio ad attention answer.
-        
+
         Strategy: Same as video but with muted playback flag. Audio is muted
         locally but plays through (some surveys check play events, not actual audio).
         """
@@ -658,7 +663,7 @@ class AnswerEngine:
 - Age: {self.persona.age}
 - Gender: {self.persona.gender}
 - Occupation: {self.persona.occupation}
-- Interests: {', '.join(self.persona.interests)}
+- Interests: {", ".join(self.persona.interests)}
 
 Answer this survey question naturally and concisely (1-2 sentences):
 {question.text}
@@ -890,17 +895,15 @@ Your response:"""
 
     def _select_income_option(self, question: Question, question_hash: str) -> Answer:
         """Select income-appropriate option."""
-        persona_range = self.INCOME_BRACKETS.get(
-            self.persona.income_bracket, (50000, 75000)
-        )
+        persona_range = self.INCOME_BRACKETS.get(self.persona.income_bracket, (50000, 75000))
         persona_mid = (persona_range[0] + persona_range[1]) / 2
 
         best_match = None
-        best_distance = float('inf')
+        best_distance = float("inf")
 
         for opt in question.options:
             # Try to extract numbers from option
-            numbers = re.findall(r'[\d,]+', opt.label.replace(',', ''))
+            numbers = re.findall(r"[\d,]+", opt.label.replace(",", ""))
             if numbers:
                 opt_mid = sum(int(n) for n in numbers) / len(numbers)
                 distance = abs(opt_mid - persona_mid)
@@ -972,7 +975,7 @@ Your response:"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.execute(
             "SELECT answer_value FROM answer_history WHERE question_hash = ? AND persona_hash = ?",
-            (question_hash, self._hash_persona())
+            (question_hash, self._hash_persona()),
         )
         row = cursor.fetchone()
         conn.close()
@@ -988,17 +991,20 @@ Your response:"""
     def _store_answer(self, question: Question, answer: Answer) -> None:
         """Store answer in history database."""
         conn = sqlite3.connect(self.db_path)
-        conn.execute("""
+        conn.execute(
+            """
             INSERT OR REPLACE INTO answer_history
             (question_hash, question_text, answer_value, persona_hash, created_at)
             VALUES (?, ?, ?, ?, ?)
-        """, (
-            answer.question_hash,
-            question.text[:500],
-            json.dumps(answer.value),
-            self._hash_persona(),
-            datetime.utcnow().isoformat(),
-        ))
+        """,
+            (
+                answer.question_hash,
+                question.text[:500],
+                json.dumps(answer.value),
+                self._hash_persona(),
+                datetime.utcnow().isoformat(),
+            ),
+        )
         conn.commit()
         conn.close()
 

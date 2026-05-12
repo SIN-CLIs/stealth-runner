@@ -66,8 +66,7 @@ def is_accessibility_enabled():
     """Check if cua-driver can read Chrome's AX-Tree."""
     try:
         result = subprocess.run(
-            ["cua-driver", "call", "list_windows"],
-            capture_output=True, text=True, timeout=10
+            ["cua-driver", "call", "list_windows"], capture_output=True, text=True, timeout=10
         )
         data = json.loads(result.stdout)
         for w in data.get("windows", []):
@@ -80,7 +79,9 @@ def is_accessibility_enabled():
                 result2 = subprocess.run(
                     ["cua-driver", "call", "get_window_state"],
                     input=json.dumps({"pid": pid, "window_id": wid}),
-                    capture_output=True, text=True, timeout=10
+                    capture_output=True,
+                    text=True,
+                    timeout=10,
                 )
                 tree = json.loads(result2.stdout)
                 children = len(tree.get("children", []))
@@ -96,7 +97,9 @@ def grant_accessibility():
     try:
         subprocess.run(
             ["tccutil", "reset", "Accessibility", "com.google.Chrome"],
-            capture_output=True, text=True, timeout=10
+            capture_output=True,
+            text=True,
+            timeout=10,
         )
         print("[ACCESS] Chrome Accessibility permission reset — restart Chrome to apply")
         return True
@@ -108,6 +111,7 @@ def grant_accessibility():
 def launch_chrome_with_accessibility(port=9223, url="https://www.heypiggy.com/?page=dashboard"):
     """DEPRECATED: Use ChromeLauncher.launch_and_verify() instead."""
     from survey.chrome import ChromeLauncher
+
     result = ChromeLauncher(port=port).launch_and_verify(url=url)
     return result.get("ok", False)
 
@@ -135,9 +139,10 @@ def ensure_accessibility(port=9223, url="https://www.heypiggy.com/?page=dashboar
     # Stattdessen NUR Bot-Chrome beenden (profile=/tmp/heypiggy-new-*)
     print("[ACCESS] Restarting Chrome to apply permission...")
     import subprocess as sp
+
     ps_out = sp.run(["ps", "aux"], capture_output=True, text=True).stdout
-    for line in ps_out.split('\n'):
-        if '--user-data-dir=/tmp/heypiggy-new-' in line:
+    for line in ps_out.split("\n"):
+        if "--user-data-dir=/tmp/heypiggy-new-" in line:
             parts = line.split()
             if len(parts) > 1:
                 try:
@@ -149,6 +154,7 @@ def ensure_accessibility(port=9223, url="https://www.heypiggy.com/?page=dashboar
     time.sleep(3)
 
     from survey.chrome import ChromeLauncher
+
     ChromeLauncher(port=port).launch_and_verify(url=url)
 
     # Wait and re-check
@@ -170,8 +176,9 @@ def ensure_accessibility(port=9223, url="https://www.heypiggy.com/?page=dashboar
 def start_cua_daemon():
     """Start cua-driver daemon if not running."""
     try:
-        result = subprocess.run(["pgrep", "-f", "cua-driver serve"],
-                               capture_output=True, text=True, timeout=5)
+        result = subprocess.run(
+            ["pgrep", "-f", "cua-driver serve"], capture_output=True, text=True, timeout=5
+        )
         if result.stdout.strip():
             return True
     except Exception:
@@ -181,7 +188,7 @@ def start_cua_daemon():
         subprocess.Popen(
             ["nohup", "cua-driver", "serve"],
             stdout=open("/tmp/cua-daemon.log", "w"),
-            stderr=subprocess.STDOUT
+            stderr=subprocess.STDOUT,
         )
         time.sleep(2)
         print("[ACCESS] cua-driver daemon started")

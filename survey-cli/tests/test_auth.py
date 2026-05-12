@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from survey.auth.cua_adapter import CuaAdapter
 from survey.auth.login_verifier import LoginVerifier
-from survey.auth.google_oauth import GoogleOAuthFlow, LoginResult
+from survey.auth.google_oauth import GoogleOAuthFlow
 
 
 class TestCuaAdapter(unittest.TestCase):
@@ -59,11 +59,20 @@ class TestCuaAdapter(unittest.TestCase):
     def test_find_bot_window_filters_by_height(self):
         """Skip windows with height < 100."""
         cua = CuaAdapter()
-        with patch.object(cua, "list_windows", return_value=[
-            {"bounds": {"height": 20}, "app_name": "Google Chrome"},
-            {"bounds": {"height": 800}, "app_name": "Google Chrome",
-             "pid": 123, "window_id": 456, "title": "HeyPiggy"},
-        ]):
+        with patch.object(
+            cua,
+            "list_windows",
+            return_value=[
+                {"bounds": {"height": 20}, "app_name": "Google Chrome"},
+                {
+                    "bounds": {"height": 800},
+                    "app_name": "Google Chrome",
+                    "pid": 123,
+                    "window_id": 456,
+                    "title": "HeyPiggy",
+                },
+            ],
+        ):
             pid, wid = cua.find_bot_window()
             self.assertEqual(pid, 123)
             self.assertEqual(wid, 456)
@@ -71,12 +80,26 @@ class TestCuaAdapter(unittest.TestCase):
     def test_find_bot_window_filters_by_keywords(self):
         """Find window matching keywords."""
         cua = CuaAdapter()
-        with patch.object(cua, "list_windows", return_value=[
-            {"bounds": {"height": 800}, "app_name": "Google Chrome",
-             "pid": 1, "window_id": 10, "title": "OAuth"},
-            {"bounds": {"height": 800}, "app_name": "Google Chrome",
-             "pid": 2, "window_id": 20, "title": "HeyPiggy Dashboard"},
-        ]):
+        with patch.object(
+            cua,
+            "list_windows",
+            return_value=[
+                {
+                    "bounds": {"height": 800},
+                    "app_name": "Google Chrome",
+                    "pid": 1,
+                    "window_id": 10,
+                    "title": "OAuth",
+                },
+                {
+                    "bounds": {"height": 800},
+                    "app_name": "Google Chrome",
+                    "pid": 2,
+                    "window_id": 20,
+                    "title": "HeyPiggy Dashboard",
+                },
+            ],
+        ):
             pid, wid = cua.find_bot_window(["heypiggy"])
             self.assertEqual(pid, 2)
             self.assertEqual(wid, 20)
@@ -89,9 +112,14 @@ class TestLoginVerifier(unittest.TestCase):
         """Title contains 'umfragen' → logged in."""
         mock_cua = MagicMock()
         mock_cua.list_windows.return_value = [
-            {"bounds": {"height": 800}, "app_name": "Google Chrome",
-             "pid": 123, "window_id": 456, "title": "HeyPiggy – Umfragen",
-             "z_index": 1},
+            {
+                "bounds": {"height": 800},
+                "app_name": "Google Chrome",
+                "pid": 123,
+                "window_id": 456,
+                "title": "HeyPiggy – Umfragen",
+                "z_index": 1,
+            },
         ]
         verifier = LoginVerifier(mock_cua)
         pid, wid, logged = verifier.check()
@@ -113,9 +141,14 @@ class TestLoginVerifier(unittest.TestCase):
         """Title has 'heypiggy' but not login keywords → check tree."""
         mock_cua = MagicMock()
         mock_cua.list_windows.return_value = [
-            {"bounds": {"height": 800}, "app_name": "Google Chrome",
-             "pid": 123, "window_id": 456, "title": "HeyPiggy – Verdienen",
-             "z_index": 1},
+            {
+                "bounds": {"height": 800},
+                "app_name": "Google Chrome",
+                "pid": 123,
+                "window_id": 456,
+                "title": "HeyPiggy – Verdienen",
+                "z_index": 1,
+            },
         ]
         mock_cua.get_tree.return_value = [
             '- [0] AXButton "Abmelden" @(0,0,0,0)',
@@ -185,10 +218,10 @@ class TestGoogleOAuthFlow(unittest.TestCase):
         """Complete successful 6-step login flow."""
         mock_cua = MagicMock()
         mock_cua.find_bot_window.side_effect = [
-            (123, 456),    # Dashboard
-            (123, 789),    # OAuth
-            (123, 790),    # Keychain
-            (123, 791),    # Final
+            (123, 456),  # Dashboard
+            (123, 789),  # OAuth
+            (123, 790),  # Keychain
+            (123, 791),  # Final
         ]
         mock_cua.get_tree.return_value = [
             '- [54] AXLink "Google Login-Symbol" @(0,0,0,0)',
@@ -203,7 +236,7 @@ class TestGoogleOAuthFlow(unittest.TestCase):
         mock_verifier = MagicMock()
         mock_verifier.check.side_effect = [
             (None, None, False),  # Initial check
-            (123, 456, True),      # Final verify
+            (123, 456, True),  # Final verify
         ]
 
         with patch.dict(os.environ, {"GOOGLE_EMAIL": "test@example.com"}):

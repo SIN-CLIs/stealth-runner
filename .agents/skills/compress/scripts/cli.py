@@ -21,6 +21,7 @@ BANNED METHODS — NIEMALS VERWENDEN:
 ❌ skylight-cli click --element-index
 """
 
+import contextlib
 import sys
 
 # Force UTF-8 on stdout/stderr before any code can print. Windows consoles
@@ -29,10 +30,8 @@ import sys
 for _stream in (sys.stdout, sys.stderr):
     reconfigure = getattr(_stream, "reconfigure", None)
     if callable(reconfigure):
-        try:
+        with contextlib.suppress(Exception):
             reconfigure(encoding="utf-8", errors="replace")
-        except Exception:
-            pass
 
 from pathlib import Path
 

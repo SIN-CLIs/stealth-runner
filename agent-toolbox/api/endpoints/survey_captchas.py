@@ -8,15 +8,20 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
+
 from ._common import (
-    CaptchaSolveRequest, CaptchaSolveResponse,
-    SolveDragPuzzleRequest, SolveDragPuzzleResponse,
-    require_survey_ready, update_command_registry,
+    CaptchaSolveRequest,
+    CaptchaSolveResponse,
+    SolveDragPuzzleRequest,
+    SolveDragPuzzleResponse,
+    require_survey_ready,
+    update_command_registry,
 )
 
 router = APIRouter(prefix="/survey", tags=["captcha"])
 
-import json, asyncio, websockets, urllib.request
+import json
+import urllib.request
 
 # ─── TOOL IMPORTS ──────────────────────────────────────────────────────────────
 from tools.tool_solve_captcha import solve as _solve_captcha
@@ -46,13 +51,18 @@ def _get_ws(port: int) -> str:
 #   - drag: delegates to tool_solve_drag_puzzle.py
 # ═══════════════════════════════════════════════════════════════════════════════
 
-@router.post("/captcha/solve", response_model=CaptchaSolveResponse, dependencies=[Depends(require_survey_ready)])
+
+@router.post(
+    "/captcha/solve",
+    response_model=CaptchaSolveResponse,
+    dependencies=[Depends(require_survey_ready)],
+)
 async def api_solve_captcha(req: CaptchaSolveRequest):
     """
     Auto-detects and solves captchas on survey pages.
-    
+
     Tool: survey-cli/tools/tool_solve_captcha.py (174 lines, frozen=True)
-    
+
     Auto-Detection Flow:
       1. CDP Runtime.evaluate → check for captcha elements (canvas, img, input[placeholder*=captcha])
       2. Classify type: slide / text / visual / drag / none
@@ -60,7 +70,7 @@ async def api_solve_captcha(req: CaptchaSolveRequest):
          - text/visual → screenshot + NVIDIA Vision OCR (meta/llama-3.2-90b-vision-instruct)
          - slide → CDP Bezier trajectory + Input.dispatchMouseEvent
          - drag → delegation to tool_solve_drag_puzzle
-    
+
     Backend: stealth-captcha/src/stealth_captcha/solver/text.py:PixtralCaptchaBackend
     API: https://integrate.api.nvidia.com/v1/chat/completions
     """
@@ -95,13 +105,18 @@ async def api_solve_captcha(req: CaptchaSolveRequest):
 #   - NOT: __ngContext__ traversal → Production Build returns Number, not Object
 # ═══════════════════════════════════════════════════════════════════════════════
 
-@router.post("/solve-drag", response_model=SolveDragPuzzleResponse, dependencies=[Depends(require_survey_ready)])
+
+@router.post(
+    "/solve-drag",
+    response_model=SolveDragPuzzleResponse,
+    dependencies=[Depends(require_survey_ready)],
+)
 async def api_solve_drag(req: SolveDragPuzzleRequest):
     """
     Solves Angular CDK drag-drop puzzles (PureSpectrum "Zahl X").
-    
+
     Tool: survey-cli/tools/tool_solve_drag_puzzle.py (147 lines, APPROACH B PRIMARY)
-    
+
     APPROACH B (verified 2026-05-10):
       1. CDP Runtime.evaluate → extract puzzle number from text ("Zahl 52")
       2. Find target image: img[alt="52"] in .cdk-drag container
@@ -111,10 +126,10 @@ async def api_solve_drag(req: SolveDragPuzzleRequest):
          - 10× mouseMoved with arc offset (realistic movement)
          - mouseReleased at drop zone center
       5. Verify: drop zone has img OR "Nächste" button enabled
-    
+
     E2E Test: Survey 49517969 (PureSpectrum) → 66% → "Zahl 28" puzzle
     → Approach B → 100% → screen-out (€0, but puzzle SOLVED ✅)
-    
+
     BANNED Methods (from purespectrum-drag-puzzle.md):
       ❌ MouseEvents dispatchEvent → CDK ignores
       ❌ pointermove/pointerup on img element → CDK listens on document.body

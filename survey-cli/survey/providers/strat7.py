@@ -23,7 +23,9 @@ BANNED METHODS — NIEMALS VERWENDEN:
 """
 
 COMPLETION_MARKERS = [
-    "umfrage beendet", "vielen dank", "gutgeschrieben",
+    "umfrage beendet",
+    "vielen dank",
+    "gutgeschrieben",
 ]
 
 COMMANDS = {
