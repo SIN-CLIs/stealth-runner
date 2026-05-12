@@ -7,7 +7,7 @@ name = "survey-agent"
 version = "1.0.0"
 description = "Production-ready automated survey completion agent with anti-detection"
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 license = "MIT"
 authors = [
     { name = "SIN-CLIs", email = "dev@sin-clis.com" }
@@ -19,7 +19,6 @@ classifiers = [
     "Intended Audience :: Developers",
     "License :: OSI Approved :: MIT License",
     "Operating System :: MacOS",
-    "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Topic :: Internet :: WWW/HTTP :: Browsers",
 ]
@@ -35,9 +34,6 @@ dependencies = [
 ]
 
 [project.optional-dependencies]
-captcha = [
-    "2captcha-python>=1.2.0",
-]
 dev = [
     "pytest>=7.4.0",
     "pytest-asyncio>=0.23.0",
@@ -58,10 +54,10 @@ packages = ["survey"]
 
 [tool.ruff]
 line-length = 100
-target-version = "py311"
+target-version = "py312"
 
 [tool.mypy]
-python_version = "3.11"
+python_version = "3.12"
 strict = true
 
 [tool.pytest.ini_options]
