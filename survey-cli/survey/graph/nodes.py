@@ -1016,3 +1016,98 @@ def human_delegate(state: SurveyState) -> SurveyState:
     result = delegate_task(survey_id=state.survey_id, provider=state.provider, reason=reason, tab_ws=state.tab_ws, iteration=state.iteration)
     state.errors.append({"node": "human_delegate", "error": f"delegated: {result.get('stdout','')[:200]}", "iteration": state.iteration, "ts": time.time()})
     return state
+
+
+# ── Issue #39: Auto-Doc + stealth-memory Integration ─────────────────────────
+# GOAL: Nach Survey-Completion in stealth-memory persistieren (learn/anti-learn)
+# FILES: issue #39, plan: _plans/39-auto-doc-memory.md
+
+def _update_stealth_memory(state: SurveyState) -> None:
+    """Persistiere Survey-Ergebnis in stealth-memory für Agent-Lernen.
+
+    Issue #39 (SR-45): Nach jeder Survey muss der Outcome geloggt werden damit
+    der Agent über Sessionen hinweg lernt. Erfolgreiches Pattern → learn.md,
+    Fehler → anti-learn.md, beides als strukturierte JSONL in den Repo.
+
+    PIPELINE:
+    1. Versuche stealth-memory.client.append_outcome() (extern)
+    2. Fallback auf lokales JSONL: logs/outcomes/{run_id}.jsonl
+    3. Best-effort — Fehler logg, brechen aber den Survey nicht ab
+
+    Args:
+        state: SurveyState mit allen Session-Infos (balance, errors, etc.)
+
+    Side-Effects:
+        - Schreibt JSONL-Entry in stealth-memory oder logs/outcomes/
+        - Logged Fehler via state.add_error()
+    """
+    import json
+    from pathlib import Path
+    from datetime import datetime
+
+    if not state.survey_id:
+        return
+
+    try:
+        # Berechne Erfolg: balance_after > balance_before
+        success = state.balance_after > state.balance_before
+        duration_ms = int((time.time() - state.session_start_time) * 1000) if hasattr(state, 'session_start_time') else 0
+
+        outcome = {
+            "ts": datetime.now().isoformat(),
+            "run_id": state.run_id or state.survey_id,
+            "survey_id": state.survey_id,
+            "provider": state.provider or "unknown",
+            "success": success,
+            "balance_before": state.balance_before,
+            "balance_after": state.balance_after,
+            "balance_earned": max(0, state.balance_after - state.balance_before),
+            "status": state.status,
+            "error": state.errors[-1].get("error", "") if state.errors else "",
+            "error_iteration": state.errors[-1].get("iteration", 0) if state.errors else 0,
+            "total_iterations": state.iteration,
+            "page_count": len(state.dom_snapshots) if hasattr(state, 'dom_snapshots') else 0,
+            "duration_ms": duration_ms,
+        }
+
+        # Try extern stealth-memory client
+        try:
+            from stealth_memory import client as smem_client
+            smem_client.append_outcome(outcome)
+            return  # Success
+        except ImportError:
+            pass  # Fall back to local JSONL
+
+        # Fallback: lokales JSONL in logs/outcomes/
+        logs_dir = Path(__file__).resolve().parent.parent / "logs" / "outcomes"
+        logs_dir.mkdir(parents=True, exist_ok=True)
+        fp = logs_dir / f"{outcome['run_id']}.jsonl"
+
+        with open(fp, "a") as f:
+            f.write(json.dumps(outcome, ensure_ascii=False) + "\n")
+
+    except Exception as e:
+        # Best-effort — log aber break nicht
+        state.add_error("_update_stealth_memory", f"{type(e).__name__}: {str(e)[:100]}")
+
+
+def detect_completion_with_memory(state: SurveyState) -> SurveyState:
+    """Detect Survey Completion UND persistiere Ergebnis in stealth-memory.
+
+    Issue #39 Integration (SR-45): Nach detect_completion, wenn der Survey
+    abgeschlossen oder gescreen-out ist, rufe _update_stealth_memory() auf.
+
+    Args:
+        state: SurveyState mit completion_detected, balance_before, balance_after
+
+    Returns:
+        State mit Memory persistiert (side-effect: JSONL-Eintrag geschrieben)
+    """
+    # Call original detect_completion logic
+    state = detect_completion(state)
+
+    # Nach Completion/Screen-out: Memory Update
+    if state.completion_detected or state.screen_out:
+        _update_stealth_memory(state)
+
+    return state
