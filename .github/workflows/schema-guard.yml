@@ -1,0 +1,76 @@
+# SCHEMA-GUARD WORKFLOW (SR-121)
+#
+# Invokes the two stdlib-only log-schema validators on every PR and on
+# push to main, capturing their JSON reports as 14-day artifacts for
+# forensics:
+#
+# - scripts/check_audit_log_schema.py   (#114, audit log: learn-applied-*.jsonl)
+# - scripts/check_inbox_log_schema.py   (#118, inbox log: pattern-suggestions-*.jsonl)
+#
+# Both validators are pure stdlib (no pip install needed), so this job
+# is fast: checkout + setup-python + raw python calls. Empty / missing
+# logs dir is treated as success (legitimate state on a fresh repo
+# checkout in CI where survey-cli/logs/ is not committed).
+#
+# AGENTS.md §13.8.4: action versions are pinned to explicit majors.
+name: schema-guard
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+jobs:
+  schema-guard:
+    runs-on: ubuntu-latest
+    steps:
+      # AGENTS.md §13.8.4 — pinned action versions (no @latest / @master).
+      - name: Checkout
+        uses: actions/checkout@v5
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      # Both validators are stdlib-only. Deliberately NO `pip install`.
+      - name: Run audit-log schema validator
+        id: audit
+        run: |
+          if [ -d survey-cli/logs ]; then
+            python scripts/check_audit_log_schema.py \
+              --logs survey-cli/logs \
+              --exit-non-zero-on-violation \
+              --json > audit-schema.json
+          else
+            echo "survey-cli/logs/ not present — skipping audit-log validator."
+            echo '{"skipped": true, "reason": "logs dir absent"}' \
+              > audit-schema.json
+          fi
+
+      - name: Run inbox-log schema validator
+        id: inbox
+        run: |
+          if [ -d survey-cli/logs ]; then
+            python scripts/check_inbox_log_schema.py \
+              --logs survey-cli/logs \
+              --exit-non-zero-on-violation \
+              --json > inbox-schema.json
+          else
+            echo "survey-cli/logs/ not present — skipping inbox-log validator."
+            echo '{"skipped": true, "reason": "logs dir absent"}' \
+              > inbox-schema.json
+          fi
+
+      # AC5: upload artifacts on `if: always()` so even failed runs leave
+      # forensic JSON reports for 14 days.
+      - name: Upload schema reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: schema-reports
+          path: |
+            audit-schema.json
+            inbox-schema.json
+          retention-days: 14
