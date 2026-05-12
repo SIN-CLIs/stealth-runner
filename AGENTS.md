@@ -6,11 +6,6 @@ content: |
 
   | Issue | Prio | Status   | Code Location / Plan                                                                 |
   |-------|------|----------|--------------------------------------------------------------------------------------|
-  | #18   | P2   | PLANNED  | `_plans/18-19-subagent-registry-parallel.md` (parallel subagent execution)            |
-  | #19   | P2   | PLANNED  | `_plans/18-19-subagent-registry-parallel.md` (subagent registry — prerequisite for #18) |
-  | #20   | P3   | PLANNED  | `_plans/20-adr-cloud-provider.md` (embed ADR-001 directly into AGENTS.md per A9)      |
-  | #30   | P3   | DEFERRED | `_plans/30-31-gitnexus-deferred.md` (GitNexus reindex — re-activate when GitNexus is in active CI use) |
-  | #31   | P3   | DEFERRED | `_plans/30-31-gitnexus-deferred.md` (GitNexus impact gate — same trigger as #30)      |
   | #34   | P0   | BLOCKED  | `_plans/34-cmd-watch-graph.md` (cmd_watch → graph; blocked by SR-39)                  |
   | #39   | P1   | PLANNED  | `_plans/39-auto-doc-memory.md` (Auto-Doc + stealth-memory)                            |
   | #43   | P2   | PLANNED  | `_plans/43-graph-compiled-promotion.md` (graph compiled promotion after 10x)          |
@@ -26,7 +21,6 @@ content: |
   | #85   | P0   | DONE     | `survey-cli/survey/cdp_actuator.py` (no_dom_change retry: 4x exp 0/200/400/800 ms)   |
   | #86   | P0   | DONE     | `survey-cli/survey/cdp_actuator.py::_wait_for_position_stable` (animation wait)      |
   | #87   | P2   | PLANNED  | `_plans/87-form-validation.md` (form validation detection — pre/post submit)         |
-  | #88   | EPIC | EPIC     | master tracking issue — 100% framework-agnostic survey completion                    |
   | #91   | -    | DONE     | repo root cleanup + AGENTS.md absorption (see CHANGELOG)                              |
   | #92   | -    | DONE     | this STATUS INDEX section                                                            |
   | #93   | P1   | DONE     | `survey-cli/survey/oopif_registry.py` (Target.setAutoAttach flatten=True; per-session AX scan in `cdp_universal._scan_session`) |
@@ -34,6 +28,12 @@ content: |
   | #95   | -    | DONE     | restore + migration of 49 hard-deleted MDs (see CHANGELOG + LEGACY RESTORE PASS)     |
   | #96   | -    | DONE     | OPERATIONAL RULES section (this section above) — distilled rule book                  |
   | #97   | -    | DONE     | this full triage pass: 13 untriaged issues assigned status + plan files (see CHANGELOG) |
+  | #18   | -    | CLOSED   | wontfix: Parallel Subagent Execution — architecture from old stack, CDP single-threaded |
+  | #19   | -    | CLOSED   | wontfix: Subagent Registry — over-engineering, trigger-conditions duplicate scanner  |
+  | #20   | -    | CLOSED   | wontfix: ADR-001 Doc — violates A4 (no external .md; AGENTS.md is single source)     |
+  | #30   | -    | CLOSED   | wontfix: GitNexus Reindex — not in active CI use                                     |
+  | #31   | -    | CLOSED   | wontfix: GitNexus Impact Gate — same as #30                                          |
+  | #88   | -    | CLOSED   | wontfix: Meta-EPIC without concrete deliverables; real work tracked in #83/#87       |
 
   ### Update Rules (read before editing this table)
   - One line per work item. Always point to a code symbol (`file::function`) OR a plan file path.
@@ -1114,7 +1114,7 @@ content: |
   |  | nohup cua-driver serve > /tmp/cua-daemon.log 2>&1 &              |     |
   |  | -> Daemon starten (überlebt bash-Sessions!)                       |     |
   |  | Ohne Daemon: keine Session-Cache -> keine Clicks!                 |     |
-  |  +──────────────────────────────────────────────────────────────────+     |
+  |  +────────────────────────────────────────────────────────────────���─+     |
   |       |                                                                   |
   |       ▼                                                                   |
   |  +──────────────────────────────────────────────────────────────────+     |
@@ -1382,7 +1382,7 @@ content: |
   | `DragDropCaptchaSolver` | `Input.dispatchMouseEvent` | ❌ NEIN (falsche Events!) |
   | `TextCaptchaSolver` | NVIDIA Vision | ✅ JA (kein Drag) |
   | `ImageSelectCaptchaSolver` | ? | ⚠️ UNGETESTET |
-  | **`AngularDragDropSolver`** | **Multi-Approach** (Playwright mouse → CDP dispatchMouseEvent → Synthetic PointerEvents → HTML5 Drag/DOM) | **🔄 TESTING — 4 Approaches** |
+  | **`AngularDragDropSolver`** | **Multi-Approach** (Playwright mouse → CDP dispatchMouseEvent → Synthetic PointerEvents → HTML5 Drag/DOM) | **���� TESTING — 4 Approaches** |
 
   **NEW SOLVER: `AngularDragDropSolver` (drag_drop_angular.py)**
   - 4 sequential approaches (A→B��C→D), stops at first success
@@ -4911,7 +4911,7 @@ auf OOPIF-Click-Element trifft).
 
   **Korrekt**: Event-Dispatch auf dem Tabellen-Element oder CUA Koordinaten-Klick.
 
-  ## ❌❌❌ Nach clickSurvey() nach neuen TABS suchen (KRITISCH!) ❌❌❌
+  ## ❌❌❌ Nach clickSurvey() nach neuen TABS suchen (KRITISCH!) ❌���❌
 
   ```python
   # ❌ FALSCH - Surveys erscheinen IN-PAGE, nicht als neuer Tab!
@@ -5654,7 +5654,7 @@ auf OOPIF-Click-Element trifft).
   6. Regex: - [N] AXTextField (E-Mail…) → set_value
   7. Regex: - [N] AXButton "Weiter" → click
   8. Passkey: macOS TouchID auto-triggers (Keychain filled)
-  9. Regex "Fortfahren" → click (Keychain selection)
+  9. Regex "Fortfahren" ��� click (Keychain selection)
   10. Regex "Weiter" → click (consent)
   11. Verify: "Abmelden" + "Umfragen" visible
   ```
@@ -8184,7 +8184,7 @@ auf OOPIF-Click-Element trifft).
 
   ### ❌ NIEMALS `pkill -f "Google Chrome"` oder `pkill -a Chrome` (2026-05-03)
   ```bash
-  # ❌ FALSCH - Tötet die PRIVATE Chrome-Sitzung des Nutzers! Absolutes Tabu!
+  # ��� FALSCH - Tötet die PRIVATE Chrome-Sitzung des Nutzers! Absolutes Tabu!
   pkill -f "Google Chrome"
   killall "Google Chrome"
   ```
@@ -13111,7 +13111,7 @@ auf OOPIF-Click-Element trifft).
   │  └──────────────────────────────────────────────────────────────────┘     │
   │       │                                                                   │
   │       ▼                                                                   │
-  │  ┌──────────────────────────────────────────────────────────────────┐     │
+  │  ┌─────���────────────────────────────────────────────────────────────┐     │
   │  │ SCHRITT 3: BATCH EXECUTE (CDP WebSocket)                         │     │
   │  │                                                                  │     │
   │  │ BatchExecutor.execute(ws_url, actions, provider)                 │     │
