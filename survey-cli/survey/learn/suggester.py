@@ -21,6 +21,7 @@ LIMITATIONEN:
 
 from __future__ import annotations
 
+import json
 import re
 from dataclasses import dataclass
 from typing import Dict, FrozenSet, List, Optional
@@ -170,3 +171,184 @@ def suggest_family(label: str, min_confidence: float = 0.20) -> SuggestedFamily:
     if best_score < min_confidence:
         return SuggestedFamily(None, best_score, [], tokens)
     return SuggestedFamily(best_family, best_score, best_matched, tokens)
+
+
+# ────────────────────────────────────────────────────────────────────────────
+# SR-57 #56: FCTC-ES Phase 2 — LLM-Suggester for misses heuristic can't handle.
+# ────────────────────────────────────────────────────────────────────────────
+#
+# Trigger contract (enforced in aggregator, NOT here):
+#   - Phase 1 ``suggest_family`` returned ``family=None`` OR
+#     ``confidence < 0.20``.
+#   - ``use_llm=True`` flag is set on the aggregator call (default False).
+#   - ``AI_GATEWAY_API_KEY`` is present in env.
+#
+# Threshold contract (enforced in apply.py):
+#   - LLM suggestions are written to JSONL with ``source: "llm"`` regardless
+#     of confidence. The downstream ``apply --approve-all`` rejects anything
+#     with ``confidence < 0.85`` for ``source == "llm"`` (vs 0.7 for
+#     substring). We let LOW-confidence LLM suggestions land in the inbox so
+#     the reviewer can see what the LLM thought — but they CANNOT auto-apply.
+#
+# Privacy:
+#   - We send the normalized label text only — NEVER the user value
+#     (already enforced by aggregator schema: ``miss_labels`` contain
+#     ``label`` + ``role``, never user-provided answers).
+
+from typing import Sequence  # noqa: E402
+
+from .llm_client import LLMResponse, call_llm  # noqa: E402
+
+
+@dataclass(frozen=True)
+class LLMSuggestion:
+    """LLM-Vorschlag fuer eine Family-Klassifikation.
+
+    Fields:
+        family:       Vorgeschlagene Family ODER None ("none of these").
+        confidence:   [0..1], wie sicher das Modell sich war.
+        reason:       Kurze Begruendung (max ~140 Zeichen) — Audit.
+        model:        Tatsaechliches Modell (z.B. "openai/gpt-5-mini").
+        prompt_hash:  sha256-prefix des Prompts — forensische Lookup.
+        error:        Falls Call fehlschlug; ``family`` ist dann None.
+    """
+
+    family: Optional[str]
+    confidence: float
+    reason: str
+    model: str
+    prompt_hash: str
+    error: Optional[str] = None
+
+
+def _build_llm_prompt(label: str, families: Sequence[str]) -> str:
+    """Erstellt den User-Prompt fuer die LLM-Klassifikation.
+
+    Stabil + deterministisch (sorted families) → stabiler prompt_hash, der
+    sich nur aendert, wenn die Familien-Menge waechst (= bewusst).
+    """
+    fam_lines = "\n".join(f"  - {f}" for f in sorted(families))
+    return (
+        f"Classify the German/English survey question label below into "
+        f"EXACTLY ONE of the listed profile families. If NONE fits, return "
+        f"family=null.\n"
+        f"\n"
+        f"Label: {label!r}\n"
+        f"\n"
+        f"Families:\n"
+        f"{fam_lines}\n"
+        f"\n"
+        f"Respond with this JSON schema ONLY (no markdown, no prose):\n"
+        f"{{\"family\": \"<one_of_above_or_null>\", "
+        f"\"confidence\": <float 0..1>, "
+        f"\"reason\": \"<<=140 chars why this family>\"}}"
+    )
+
+
+def _parse_llm_response(
+    raw: str, allowed_families: Sequence[str],
+) -> tuple[Optional[str], float, str, Optional[str]]:
+    """Parse ``raw`` JSON content → ``(family, confidence, reason, error)``.
+
+    Defensive: strippt optional markdown code-fences (manche Modelle bauen
+    die trotz response_format=json_object ein), validiert ``family in
+    allowed_families`` ODER ``family is None``, klemmt confidence auf [0,1],
+    cut reason auf 140 chars.
+    """
+    if not raw:
+        return None, 0.0, "", "empty response"
+    txt = raw.strip()
+    if txt.startswith("```"):
+        # ```json\n{...}\n```  →  {...}
+        lines = txt.splitlines()
+        if lines[0].startswith("```"):
+            lines = lines[1:]
+        if lines and lines[-1].startswith("```"):
+            lines = lines[:-1]
+        txt = "\n".join(lines).strip()
+    try:
+        obj = json.loads(txt)
+    except json.JSONDecodeError as e:
+        return None, 0.0, "", f"non-json response: {e}"
+    if not isinstance(obj, dict):
+        return None, 0.0, "", "json was not an object"
+    fam = obj.get("family")
+    if isinstance(fam, str):
+        fam = fam.strip().lower()
+        if fam in {"null", "none", ""}:
+            fam = None
+        elif fam not in allowed_families:
+            return None, 0.0, "", (
+                f"family {fam!r} not in allowed set (hallucination)")
+    elif fam is not None:
+        return None, 0.0, "", f"family is not str|null: {type(fam).__name__}"
+    try:
+        conf = float(obj.get("confidence", 0.0))
+    except (TypeError, ValueError):
+        conf = 0.0
+    conf = max(0.0, min(1.0, conf))
+    reason = str(obj.get("reason", ""))[:140]
+    return fam, conf, reason, None
+
+
+def suggest_via_llm(
+    label: str,
+    allowed_families: Sequence[str],
+    *,
+    model: Optional[str] = None,
+    timeout: float = 20.0,
+) -> LLMSuggestion:
+    """Phase-2 LLM classification — fail-soft, never raises.
+
+    Args:
+        label:            Normalized label (already lowercase, trimmed).
+        allowed_families: List of valid family names — LLM cannot return
+                          anything outside this set (post-validation).
+        model:            Override default model (openai/gpt-5-mini).
+        timeout:          Per-call timeout in seconds.
+
+    Returns:
+        LLMSuggestion. ``family is None`` either means "LLM said no match",
+        "LLM unavailable", or "LLM hallucinated invalid family" — caller
+        should check ``error`` to distinguish.
+
+    Examples:
+        >>> r = suggest_via_llm(                  # doctest: +SKIP
+        ...     "wie viele personen leben in ihrem haushalt",
+        ...     allowed_families=list(FAMILY_TOKENS.keys()),
+        ... )
+        >>> r.family                              # doctest: +SKIP
+        'household_size'
+    """
+    if not label.strip():
+        return LLMSuggestion(
+            family=None, confidence=0.0, reason="",
+            model=model or "",
+            prompt_hash="",
+            error="empty label",
+        )
+    if not allowed_families:
+        return LLMSuggestion(
+            family=None, confidence=0.0, reason="",
+            model=model or "",
+            prompt_hash="",
+            error="no allowed_families given",
+        )
+
+    prompt = _build_llm_prompt(label, allowed_families)
+    resp: LLMResponse = call_llm(prompt, model=model, timeout=timeout)
+    if resp.content is None:
+        return LLMSuggestion(
+            family=None, confidence=0.0, reason="",
+            model=resp.model, prompt_hash=resp.prompt_hash,
+            error=resp.error,
+        )
+
+    allowed_lower = [f.lower() for f in allowed_families]
+    fam, conf, reason, parse_err = _parse_llm_response(
+        resp.content, allowed_lower)
+    return LLMSuggestion(
+        family=fam, confidence=conf, reason=reason,
+        model=resp.model, prompt_hash=resp.prompt_hash,
+        error=parse_err,
+    )

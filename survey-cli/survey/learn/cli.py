@@ -53,11 +53,19 @@ def cmd_aggregate(args: argparse.Namespace) -> int:
     log_dir = args.logs or _logs_dir()
     suggestions = aggregate_misses(
         log_dir=log_dir, min_count=args.min_count, persona=args.persona,
+        # SR-57 #56: optional Phase-2 LLM-fallback.
+        use_llm=args.llm,
+        llm_model=args.llm_model or None,
     )
     out_path = args.out or default_suggestions_path(log_dir)
     write_suggestions(out_path, suggestions)
     print(f"[learn] read miss_labels from {log_dir}/matcher-telemetry-*.jsonl")
     print(f"[learn] wrote {len(suggestions)} suggestions to {out_path}")
+    if args.llm:
+        n_llm = sum(1 for s in suggestions if s.get("source") == "llm")
+        n_substr = sum(1 for s in suggestions
+                       if s.get("source") == "substring")
+        print(f"[learn] sources: substring={n_substr} llm={n_llm}")
     if not suggestions:
         print("[learn] (no misses with count >= "
               f"{args.min_count} — nothing to suggest)")
@@ -233,6 +241,15 @@ def build_argparser() -> argparse.ArgumentParser:
                       help="Nur Misses dieser Persona")
     p_agg.add_argument("--out", type=str, default="",
                       help="Output-Pfad (default: pattern-suggestions-{date})")
+    # SR-57 #56: FCTC-ES Phase 2 (LLM fallback). Opt-in via --llm.
+    p_agg.add_argument("--llm", action="store_true",
+                      help="Phase-2: ruft LLM-Suggester fuer Misses, die "
+                           "die Heuristik nicht entscheidet (family=None "
+                           "oder confidence<0.20). Erfordert "
+                           "AI_GATEWAY_API_KEY.")
+    p_agg.add_argument("--llm-model", type=str, default="",
+                      help="Override fuer LLM model id "
+                           "(default: openai/gpt-5-mini)")
     p_agg.set_defaults(func=cmd_aggregate)
 
     p_rev = sub.add_parser("review",

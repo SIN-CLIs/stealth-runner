@@ -52,6 +52,8 @@ from .suggester import (
     SuggestedFamily,
     suggest_family,
     FAMILY_TOKENS,
+    LLMSuggestion,
+    suggest_via_llm,
 )
 from .apply import (
     InboxEntry,
@@ -59,6 +61,12 @@ from .apply import (
     apply_inbox,
     apply_keyword_to_family,
     compute_diff,
+)
+from .llm_client import (
+    LLMResponse,
+    call_llm,
+    is_available as llm_is_available,
+    prompt_hash,
 )
 
 __all__ = [
@@ -74,4 +82,11 @@ __all__ = [
     "apply_inbox",
     "apply_keyword_to_family",
     "compute_diff",
+    # SR-57 #56 (FCTC-ES Phase 2)
+    "LLMSuggestion",
+    "suggest_via_llm",
+    "LLMResponse",
+    "call_llm",
+    "llm_is_available",
+    "prompt_hash",
 ]
