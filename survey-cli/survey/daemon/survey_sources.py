@@ -7,6 +7,8 @@ Supported Platforms:
     - MTurk
     - Survey Router (aggregator)
 """
+
+# ruff: noqa: E501  # CSS selectors / argparse help / log strings — wrapping changes semantics
 from __future__ import annotations
 
 import asyncio
@@ -317,7 +319,7 @@ class MTurkSource(SurveySource):
 class SurveyRouter:
     """
     Survey aggregator that selects best surveys across platforms.
-    
+
     Optimizes for highest hourly rate while respecting constraints.
     """
 
@@ -347,7 +349,7 @@ class SurveyRouter:
     ) -> list[SurveyOffer]:
         """
         Get best available surveys sorted by hourly rate.
-        
+
         Args:
             min_hourly_rate: Minimum acceptable hourly rate
             max_time_minutes: Maximum survey length

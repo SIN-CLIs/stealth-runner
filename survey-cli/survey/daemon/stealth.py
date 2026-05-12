@@ -8,9 +8,10 @@ Features:
     - Session rotation (cookies, localStorage)
     - Proxy rotation with geo-targeting
 """
+
+# ruff: noqa: E501  # CSS selectors / argparse help / log strings — wrapping changes semantics
 from __future__ import annotations
 
-import asyncio
 import hashlib
 import json
 import logging
@@ -20,7 +21,6 @@ import time
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable
 
 logger = logging.getLogger(__name__)
 
@@ -182,7 +182,7 @@ class MouseSimulator:
     ) -> list[tuple[int, int, float]]:
         """
         Generate human-like mouse path using bezier curves.
-        
+
         Returns list of (x, y, delay_ms) tuples.
         """
         if steps is None:
@@ -196,7 +196,7 @@ class MouseSimulator:
         path = []
         for i in range(steps + 1):
             t = i / steps
-            
+
             # Cubic bezier
             x = int(
                 (1-t)**3 * start[0] +
@@ -344,7 +344,7 @@ class TypingSimulator:
     def generate_keystrokes(self, text: str) -> list[dict]:
         """
         Generate realistic keystroke sequence for given text.
-        
+
         Returns list of {"key": str, "delay": float} dicts.
         """
         keystrokes = []
@@ -358,7 +358,7 @@ class TypingSimulator:
             # Occasionally introduce typo
             if random.random() < self.typo_rate and char.lower() in self.TYPO_PATTERNS:
                 typo_char = random.choice(self.TYPO_PATTERNS[char.lower()])
-                
+
                 # Type the typo
                 keystrokes.append({
                     "key": typo_char,
@@ -461,7 +461,7 @@ class SessionManager:
             return None
 
         data = {}
-        
+
         fp_path = session_path / "fingerprint.json"
         if fp_path.exists():
             with open(fp_path) as f:
@@ -563,7 +563,7 @@ class ProxyRotator:
 class StealthBrowser:
     """
     Stealth browser wrapper with anti-detection features.
-    
+
     Combines fingerprint, mouse, typing, session, and proxy management.
     """
 
@@ -608,7 +608,7 @@ class StealthBrowser:
         Object.defineProperty(navigator, 'languages', {{get: () => ['{self.fingerprint.language}']}});
         Object.defineProperty(navigator, 'hardwareConcurrency', {{get: () => {self.fingerprint.hardware_concurrency}}});
         Object.defineProperty(navigator, 'deviceMemory', {{get: () => {self.fingerprint.device_memory}}});
-        
+
         // Override WebGL
         const getParameter = WebGLRenderingContext.prototype.getParameter;
         WebGLRenderingContext.prototype.getParameter = function(parameter) {{
@@ -616,12 +616,12 @@ class StealthBrowser:
             if (parameter === 37446) return '{self.fingerprint.webgl_renderer}';
             return getParameter.call(this, parameter);
         }};
-        
+
         // Override screen
         Object.defineProperty(screen, 'width', {{get: () => {self.fingerprint.screen_width}}});
         Object.defineProperty(screen, 'height', {{get: () => {self.fingerprint.screen_height}}});
         Object.defineProperty(screen, 'colorDepth', {{get: () => {self.fingerprint.color_depth}}});
-        
+
         // Remove automation indicators
         delete window.cdc_adoQpoasnfa76pfcZLmcfl_Array;
         delete window.cdc_adoQpoasnfa76pfcZLmcfl_Promise;
