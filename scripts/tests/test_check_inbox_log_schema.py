@@ -262,7 +262,7 @@ class TestCheckLogs:
                 )
             viols, warns, recs, files = check_logs(d)
             assert files == 3
-            assert recs == 3        # only valid records counted
+            assert recs == 6        # all examined records (valid + invalid)
             assert len(viols) == 3  # 1 violation per file
 
     def test_T24_multiple_errors_in_one_record(self):
