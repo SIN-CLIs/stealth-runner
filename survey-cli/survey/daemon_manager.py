@@ -3,10 +3,10 @@ SURVEY DAEMON — Persistent survey runner with auto-recovery
 ===============================================================================
 
 Usage:
-    python -m survey.daemon run       # Start daemon (blocks)
-    python -m survey.daemon status    # Show daemon status
-    python -m survey.daemon stop      # Stop daemon
-    python -m survey.daemon restart   # Restart daemon
+    python -m survey.daemon_manager run       # Start daemon (blocks)
+    python -m survey.daemon_manager status    # Show daemon status
+    python -m survey.daemon_manager stop      # Stop daemon
+    python -m survey.daemon_manager restart   # Restart daemon
 
 Lifecycle:
     [START] → verify_chrome() → verify_login() → [LOOP]
@@ -655,4 +655,4 @@ if __name__ == "__main__":
     elif cmd == "status":
         status()
     else:
-        print("Usage: python -m survey.daemon [run|start|stop|restart|status]")
+        print("Usage: python -m survey.daemon_manager [run|start|stop|restart|status]")

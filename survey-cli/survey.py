@@ -721,7 +721,7 @@ def cmd_watch(args):
     #   → WENN nicht aktiv: cua-driver findet KEINE Elemente → Login schlägt fehl.
     # WARUM start_cua_daemon? Startet cua-driver als Daemon (falls nicht läuft).
     from survey.accessibility import ensure_accessibility
-    from survey.daemon import DaemonManager
+    from survey.daemon_manager import DaemonManager
 
     cua_mgr = DaemonManager()
     if not cua_mgr.ensure_running():
