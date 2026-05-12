@@ -7,6 +7,7 @@ Features:
     - Anti-pattern detection (avoid bot behavior)
     - Attention check handling
     - LLM integration for open-text questions
+    - SR-150: Extended types (drag-drop, hotspot, conjoint, max-diff, video-ad, audio-ad)
 """
 from __future__ import annotations
 
@@ -49,6 +50,13 @@ class Persona:
     social_media_usage: str = "daily"
     news_sources: list[str] = field(default_factory=lambda: ["online"])
 
+    # SR-150: Conjoint preference weights (price_weight + brand_weight + sum(feature_weights) = 1.0)
+    conjoint_preferences: dict[str, Any] = field(default_factory=lambda: {
+        "price_weight": 0.4,
+        "brand_weight": 0.3,
+        "feature_weights": {"quality": 0.15, "convenience": 0.15},
+    })
+
     def to_dict(self) -> dict:
         """Convert persona to dictionary."""
         return {
@@ -66,6 +74,7 @@ class Persona:
             "shopping_frequency": self.shopping_frequency,
             "social_media_usage": self.social_media_usage,
             "news_sources": self.news_sources,
+            "conjoint_preferences": self.conjoint_preferences,
         }
 
     @classmethod
@@ -90,6 +99,8 @@ class AnswerEngine:
 
     Generates consistent, believable answers based on persona
     and maintains history for cross-survey consistency.
+
+    SR-150 extended: 6 new question types supported.
     """
 
     # Attention check patterns
@@ -167,6 +178,11 @@ class AnswerEngine:
         persona_str = json.dumps(self.persona.to_dict(), sort_keys=True)
         return hashlib.sha256(persona_str.encode()).hexdigest()[:16]
 
+    def _deterministic_seed(self, question_hash: str) -> int:
+        """SR-150: Generate deterministic seed from persona + question hash."""
+        combined = f"{self._hash_persona()}:{question_hash}"
+        return int(hashlib.sha256(combined.encode()).hexdigest()[:8], 16)
+
     def generate_answer(self, question: Question) -> Answer:
         """
         Generate an answer for a survey question.
@@ -207,7 +223,10 @@ class AnswerEngine:
         return answer
 
     def _generate_by_type(self, question: Question, question_hash: str) -> Answer:
-        """Generate answer based on question type."""
+        """Generate answer based on question type.
+        
+        SR-150: Adds 6 new generators for extended types.
+        """
         generators = {
             QuestionType.RADIO: self._generate_radio_answer,
             QuestionType.CHECKBOX: self._generate_checkbox_answer,
@@ -220,10 +239,280 @@ class AnswerEngine:
             QuestionType.LIKERT: self._generate_likert_answer,
             QuestionType.NPS: self._generate_nps_answer,
             QuestionType.RANKING: self._generate_ranking_answer,
+            # SR-150: extended types
+            QuestionType.DRAG_DROP: self._generate_drag_drop_answer,
+            QuestionType.HOTSPOT: self._generate_hotspot_answer,
+            QuestionType.CONJOINT: self._generate_conjoint_answer,
+            QuestionType.MAX_DIFF: self._generate_max_diff_answer,
+            QuestionType.VIDEO_AD: self._generate_video_ad_answer,
+            QuestionType.AUDIO_AD: self._generate_audio_ad_answer,
         }
 
         generator = generators.get(question.type, self._generate_default_answer)
         return generator(question, question_hash)
+
+    # -------------------------------------------------------------------------
+    # SR-150: Extended Question Type Generators
+    # -------------------------------------------------------------------------
+
+    def _generate_drag_drop_answer(self, question: Question, question_hash: str) -> Answer:
+        """SR-150: Generate drag-and-drop ranking answer.
+        
+        Strategy: Persona-weighted ordering using deterministic seed from
+        hash(persona_id + question_hash). Same persona always ranks the same way.
+        """
+        if not question.options:
+            return self._generate_default_answer(question, question_hash)
+
+        # Use deterministic seed for consistent ordering
+        seed = self._deterministic_seed(question_hash)
+        rng = random.Random(seed)
+
+        # Score options by persona interest relevance
+        scored_options = []
+        for opt in question.options:
+            score = 1.0
+            opt_lower = opt.label.lower()
+            for interest in self.persona.interests:
+                if interest.lower() in opt_lower:
+                    score += 2.0
+            # Add small random noise for tie-breaking
+            score += rng.random() * 0.1
+            scored_options.append((opt, score))
+
+        # Sort by score descending (most relevant first)
+        scored_options.sort(key=lambda x: x[1], reverse=True)
+        ordered_values = [opt.value for opt, _ in scored_options]
+
+        return Answer(
+            question_id=question.id,
+            question_hash=question_hash,
+            value=ordered_values,
+            confidence=0.85,
+            reasoning="Persona-weighted drag-drop ranking (SR-150)",
+        )
+
+    def _generate_hotspot_answer(self, question: Question, question_hash: str) -> Answer:
+        """SR-150: Generate hotspot (image click) answer.
+        
+        Strategy: Pick the centroid of the largest hotspot area, or center of image
+        if no areas defined. Returns (x, y) coordinates.
+        """
+        seed = self._deterministic_seed(question_hash)
+        rng = random.Random(seed)
+
+        if question.hotspot_areas:
+            # Find largest area by bounding box size
+            largest_area = None
+            largest_size = 0
+            for area in question.hotspot_areas:
+                coords = area.get("coords", [])
+                if len(coords) >= 4:
+                    # Assume rectangle: x1, y1, x2, y2
+                    width = abs(coords[2] - coords[0]) if len(coords) >= 4 else 100
+                    height = abs(coords[3] - coords[1]) if len(coords) >= 4 else 100
+                    size = width * height
+                    if size > largest_size:
+                        largest_size = size
+                        largest_area = area
+
+            if largest_area:
+                coords = largest_area["coords"]
+                # Calculate centroid with slight jitter
+                x = (coords[0] + coords[2]) // 2 + rng.randint(-5, 5)
+                y = (coords[1] + coords[3]) // 2 + rng.randint(-5, 5)
+                return Answer(
+                    question_id=question.id,
+                    question_hash=question_hash,
+                    value={"x": x, "y": y, "area_label": largest_area.get("label", "")},
+                    confidence=0.8,
+                    reasoning="Largest hotspot area centroid (SR-150)",
+                )
+
+        # Fallback: click center of image area (assume 400x300 default)
+        x = 200 + rng.randint(-20, 20)
+        y = 150 + rng.randint(-20, 20)
+        return Answer(
+            question_id=question.id,
+            question_hash=question_hash,
+            value={"x": x, "y": y},
+            confidence=0.5,
+            reasoning="Default image center click (SR-150)",
+        )
+
+    def _generate_conjoint_answer(self, question: Question, question_hash: str) -> Answer:
+        """SR-150: Generate conjoint (Sawtooth-style profile choice) answer.
+        
+        Strategy: Score each profile card using persona's conjoint_preferences
+        (price_weight, brand_weight, feature_weights). Pick highest score.
+        """
+        seed = self._deterministic_seed(question_hash)
+        rng = random.Random(seed)
+
+        prefs = self.persona.conjoint_preferences
+        price_weight = prefs.get("price_weight", 0.4)
+        brand_weight = prefs.get("brand_weight", 0.3)
+        feature_weights = prefs.get("feature_weights", {})
+
+        if not question.conjoint_cards and question.options:
+            # Fallback: treat options as simple choices
+            selected_idx = rng.randint(0, len(question.options) - 1)
+            return Answer(
+                question_id=question.id,
+                question_hash=question_hash,
+                value=question.options[selected_idx].value,
+                confidence=0.7,
+                reasoning="Random conjoint selection (no card data) (SR-150)",
+            )
+
+        if not question.conjoint_cards:
+            return self._generate_default_answer(question, question_hash)
+
+        # Score each card
+        card_scores = []
+        for i, card in enumerate(question.conjoint_cards):
+            score = 0.0
+            features = card.get("features", {})
+
+            # Price scoring (lower is better for price-sensitive persona)
+            price_str = features.get("price", features.get("Price", ""))
+            if price_str:
+                # Extract numeric price
+                price_nums = re.findall(r'[\d.]+', price_str.replace(",", ""))
+                if price_nums:
+                    price = float(price_nums[0])
+                    # Invert: lower price = higher score
+                    score += price_weight * (1000 - min(price, 1000)) / 1000
+
+            # Brand scoring (match persona's preferred brands)
+            brand = features.get("brand", features.get("Brand", "")).lower()
+            for category, preferred in self.persona.brands.items():
+                if preferred.lower() in brand:
+                    score += brand_weight
+                    break
+
+            # Feature scoring
+            for feat_name, feat_weight in feature_weights.items():
+                feat_val = features.get(feat_name, "").lower()
+                # Positive keywords increase score
+                if any(kw in feat_val for kw in ["high", "premium", "fast", "good", "excellent"]):
+                    score += feat_weight
+
+            # Add small noise for tie-breaking
+            score += rng.random() * 0.05
+            card_scores.append((i, score))
+
+        # Select highest scoring card
+        card_scores.sort(key=lambda x: x[1], reverse=True)
+        best_idx = card_scores[0][0]
+
+        return Answer(
+            question_id=question.id,
+            question_hash=question_hash,
+            value={"selected_card": best_idx, "card_count": len(question.conjoint_cards)},
+            confidence=0.85,
+            reasoning="Persona-preference conjoint scoring (SR-150)",
+        )
+
+    def _generate_max_diff_answer(self, question: Question, question_hash: str) -> Answer:
+        """SR-150: Generate MaxDiff (best/worst scaling) answer.
+        
+        Strategy: Rank items by persona relevance, pick rank-1 as "Most" (best)
+        and rank-N as "Least" (worst). One Answer stores both selections.
+        """
+        if not question.options or len(question.options) < 2:
+            return self._generate_default_answer(question, question_hash)
+
+        seed = self._deterministic_seed(question_hash)
+        rng = random.Random(seed)
+
+        # Score options by persona interest relevance
+        scored_options = []
+        for opt in question.options:
+            score = 1.0
+            opt_lower = opt.label.lower()
+            for interest in self.persona.interests:
+                if interest.lower() in opt_lower:
+                    score += 3.0
+            # Small noise for deterministic tie-breaking
+            score += rng.random() * 0.1
+            scored_options.append((opt, score))
+
+        # Sort by score
+        scored_options.sort(key=lambda x: x[1], reverse=True)
+
+        best_option = scored_options[0][0]
+        worst_option = scored_options[-1][0]
+
+        return Answer(
+            question_id=question.id,
+            question_hash=question_hash,
+            value={
+                "most": best_option.value,
+                "most_label": best_option.label,
+                "least": worst_option.value,
+                "least_label": worst_option.label,
+            },
+            confidence=0.85,
+            reasoning="Persona-relevance MaxDiff selection (SR-150)",
+        )
+
+    def _generate_video_ad_answer(self, question: Question, question_hash: str) -> Answer:
+        """SR-150: Generate video ad attention answer.
+        
+        Strategy: Signal that video must be played. Returns action instruction
+        with media_selector and recommended wait duration. BrowserDriver handles
+        actual playback via play_media().
+        """
+        seed = self._deterministic_seed(question_hash)
+        rng = random.Random(seed)
+
+        # Default video duration estimate (will be overridden by actual duration in browser)
+        estimated_duration = 30.0  # seconds
+        jitter = rng.uniform(0.3, 0.8)  # post-video wait jitter
+
+        return Answer(
+            question_id=question.id,
+            question_hash=question_hash,
+            value={
+                "action": "play_video",
+                "media_selector": question.media_selector or "video",
+                "estimated_duration": estimated_duration,
+                "post_wait_jitter": jitter,
+            },
+            confidence=1.0,
+            reasoning="Video ad attention — play and wait (SR-150)",
+        )
+
+    def _generate_audio_ad_answer(self, question: Question, question_hash: str) -> Answer:
+        """SR-150: Generate audio ad attention answer.
+        
+        Strategy: Same as video but with muted playback flag. Audio is muted
+        locally but plays through (some surveys check play events, not actual audio).
+        """
+        seed = self._deterministic_seed(question_hash)
+        rng = random.Random(seed)
+
+        estimated_duration = 20.0  # Audio ads typically shorter
+        jitter = rng.uniform(0.2, 0.5)
+
+        return Answer(
+            question_id=question.id,
+            question_hash=question_hash,
+            value={
+                "action": "play_audio",
+                "media_selector": question.media_selector or "audio",
+                "estimated_duration": estimated_duration,
+                "post_wait_jitter": jitter,
+                "muted": True,  # Mute to avoid noise on host
+            },
+            confidence=1.0,
+            reasoning="Audio ad attention — muted play and wait (SR-150)",
+        )
+
+    # -------------------------------------------------------------------------
+    # Original Question Type Generators
+    # -------------------------------------------------------------------------
 
     def _generate_radio_answer(self, question: Question, question_hash: str) -> Answer:
         """Generate radio button answer."""
@@ -514,6 +803,10 @@ Your response:"""
             reasoning="Default fallback",
         )
 
+    # -------------------------------------------------------------------------
+    # Attention Check Handling
+    # -------------------------------------------------------------------------
+
     def _is_attention_check(self, question: Question) -> bool:
         """Detect if question is an attention check."""
         text_lower = question.text.lower()
@@ -559,6 +852,10 @@ Your response:"""
 
         # Last resort: random
         return self._generate_radio_answer(question, question_hash)
+
+    # -------------------------------------------------------------------------
+    # Demographic Option Selection
+    # -------------------------------------------------------------------------
 
     def _select_age_option(self, question: Question, question_hash: str) -> Answer:
         """Select age-appropriate option."""
@@ -647,6 +944,10 @@ Your response:"""
                     )
 
         return self._generate_radio_answer(question, question_hash)
+
+    # -------------------------------------------------------------------------
+    # Utility Methods
+    # -------------------------------------------------------------------------
 
     def _calculate_option_weights(self, options: list[QuestionOption]) -> list[float]:
         """Calculate selection weights (prefer middle options)."""
