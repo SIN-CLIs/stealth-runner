@@ -46,10 +46,8 @@ Module Status: NEW (SR-138, 2026-05-12)
 
 from __future__ import annotations
 
-import base64
 import json
 import logging
-import os
 import time
 from dataclasses import dataclass, field
 from datetime import datetime

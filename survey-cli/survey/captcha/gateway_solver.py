@@ -39,7 +39,6 @@ Module Status: NEW (SR-138, 2026-05-12)
 
 from __future__ import annotations
 
-import base64
 import json
 import logging
 import os
@@ -297,7 +296,7 @@ class GatewaySolver:
         # Strip markdown
         if raw.startswith("```"):
             lines = raw.split("\n")
-            lines = [l for l in lines if not l.strip().startswith("```")]
+            lines = [line for line in lines if not line.strip().startswith("```")]
             raw = "\n".join(lines)
         try:
             return json.loads(raw)

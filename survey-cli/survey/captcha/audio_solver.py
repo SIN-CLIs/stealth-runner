@@ -36,6 +36,8 @@ Module Status: NEW (SR-138, 2026-05-12)
 ================================================================================
 """
 
+# ruff: noqa: E501  # Long lines are inside NIM model prompts; wrapping changes prompt token boundaries.
+
 from __future__ import annotations
 
 import base64
