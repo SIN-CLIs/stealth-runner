@@ -6,6 +6,7 @@ Features:
     - Crash recovery with state persistence
     - Health monitoring endpoint
     - Graceful shutdown handling
+    - SR-152: Retry policy with DLQ for failed surveys
 
 Usage:
     daemon = SurveyDaemon()
@@ -27,6 +28,13 @@ from pathlib import Path
 from typing import Any
 
 from .survey_agent_graph import SurveyAgentGraph, Persona
+from ..reliability import (
+    RetryPolicy,
+    Retryability,
+    DLQ,
+    TransientError,
+    PermanentError,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -47,6 +55,7 @@ class SurveyDaemon:
     2. Runs them through the SurveyAgentGraph
     3. Tracks earnings and completion stats
     4. Handles crashes and auto-recovery
+    5. SR-152: Retries transient failures, pushes permanent failures to DLQ
     """
 
     def __init__(
@@ -64,6 +73,15 @@ class SurveyDaemon:
         self._config = self._load_config()
         self._agent: SurveyAgentGraph | None = None
         self._health_server: asyncio.Server | None = None
+
+        # SR-152: Initialize reliability primitives
+        retry_config = self._config.get("reliability", {})
+        self._retry_policy = RetryPolicy(
+            max_attempts=retry_config.get("max_attempts", 3),
+            base_delay=retry_config.get("base_delay", 1.0),
+            max_delay=retry_config.get("max_delay", 60.0),
+        )
+        self._dlq = DLQ(dlq_path=self.log_path)
 
         self._setup_logging()
         self._setup_signal_handlers()
@@ -102,6 +120,12 @@ class SurveyDaemon:
             "notifications": {
                 "enabled": False,
                 "webhook_url": "",
+            },
+            # SR-152: Reliability settings
+            "reliability": {
+                "max_attempts": 3,
+                "base_delay": 1.0,
+                "max_delay": 60.0,
             },
         }
 
@@ -156,11 +180,15 @@ class SurveyDaemon:
         async def handle_health(reader, writer):
             await reader.read(1024)
 
+            # SR-152: Include DLQ stats in health response
+            dlq_counts = self._dlq.count_by_status()
+            
             stats = self._agent.get_stats() if self._agent else {}
             response_body = json.dumps({
                 "status": "running" if self._running else "stopping",
                 "uptime_seconds": (datetime.now() - self._start_time).total_seconds(),
                 "stats": stats,
+                "dlq": dlq_counts,  # SR-152
             })
 
             response = (
@@ -196,8 +224,49 @@ class SurveyDaemon:
 
         return surveys
 
+    async def _run_single_survey(self, survey: dict) -> dict:
+        """
+        Run a single survey through the agent.
+        
+        SR-152: This method is wrapped by RetryPolicy in the main loop.
+        
+        Args:
+            survey: Survey configuration dict
+            
+        Returns:
+            Result dict with status and earnings
+            
+        Raises:
+            TransientError: For retryable failures
+            PermanentError: For non-retryable failures
+        """
+        try:
+            result = await self._agent.run(survey["url"])
+            
+            if result["status"] == "completed":
+                return result
+            elif result["status"] in ("disqualified", "quota_full"):
+                # These are expected outcomes, not errors
+                return result
+            else:
+                # Unexpected status — treat as transient
+                raise TransientError(f"Unexpected survey status: {result['status']}")
+                
+        except (TimeoutError, ConnectionError, OSError) as e:
+            # Network errors are transient
+            raise TransientError(str(e)) from e
+        except Exception as e:
+            error_str = str(e).lower()
+            # Check for permanent error indicators
+            if any(phrase in error_str for phrase in [
+                "banned", "blocked", "forbidden", "invalid", "closed"
+            ]):
+                raise PermanentError(str(e)) from e
+            # Default to transient for unknown errors
+            raise TransientError(str(e)) from e
+
     async def _run_survey_loop(self) -> None:
-        """Main survey processing loop."""
+        """Main survey processing loop with SR-152 retry + DLQ."""
         persona_config = self._config["persona"]
         persona = Persona(
             age=persona_config["age"],
@@ -237,14 +306,65 @@ class SurveyDaemon:
 
                 # Process highest priority survey
                 survey = surveys[0]
+                survey_id = survey.get("id", survey.get("url", "unknown"))
+                persona_id = persona_config.get("name", "default")
+                provider = survey.get("provider", "unknown")
+                
                 logger.info(f"Starting survey: {survey.get('url', 'unknown')}")
 
-                result = await self._agent.run(survey["url"])
-
-                if result["status"] == "completed":
-                    logger.info(f"Survey completed! Earnings: ${result.get('earnings', 0):.2f}")
-                else:
-                    logger.warning(f"Survey ended with status: {result['status']}")
+                # SR-152: Wrap survey execution in retry policy
+                attempt_count = 0
+                last_error: Exception | None = None
+                
+                def on_retry(attempt: int, error: Exception, delay: float) -> None:
+                    nonlocal attempt_count
+                    attempt_count = attempt
+                    logger.info(f"Survey retry {attempt}: {error}")
+                
+                try:
+                    result = await self._retry_policy.run(
+                        lambda: self._run_single_survey(survey),
+                        on_retry=on_retry,
+                    )
+                    
+                    if result["status"] == "completed":
+                        logger.info(f"Survey completed! Earnings: ${result.get('earnings', 0):.2f}")
+                    else:
+                        logger.info(f"Survey ended with status: {result['status']}")
+                        
+                except PermanentError as e:
+                    # SR-152: Push to DLQ on permanent failure
+                    last_error = e
+                    logger.warning(f"Permanent error, pushing to DLQ: {e}")
+                    self._dlq.push(
+                        survey_id=survey_id,
+                        persona_id=persona_id,
+                        provider=provider,
+                        url=survey.get("url", ""),
+                        error=e,
+                        attempt_count=attempt_count + 1,
+                        context={
+                            "survey_config": survey,
+                            "last_question": getattr(self._agent, "_last_question", None),
+                        },
+                    )
+                    
+                except TransientError as e:
+                    # SR-152: All retries exhausted, push to DLQ
+                    last_error = e
+                    logger.warning(f"Max retries exceeded, pushing to DLQ: {e}")
+                    self._dlq.push(
+                        survey_id=survey_id,
+                        persona_id=persona_id,
+                        provider=provider,
+                        url=survey.get("url", ""),
+                        error=e,
+                        attempt_count=self._retry_policy.max_attempts,
+                        context={
+                            "survey_config": survey,
+                            "last_question": getattr(self._agent, "_last_question", None),
+                        },
+                    )
 
                 # Respect rate limits
                 await asyncio.sleep(min_delay)
@@ -263,6 +383,7 @@ class SurveyDaemon:
         logger.info(f"Config: {self.config_path}")
         logger.info(f"State DB: {self.state_path}")
         logger.info(f"Logs: {self.log_path}")
+        logger.info(f"SR-152: Retry policy enabled (max_attempts={self._retry_policy.max_attempts})")
 
         # Start health server
         await self._start_health_server()
