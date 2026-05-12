@@ -1,0 +1,137 @@
+# Learn-Apply Smoke Test Workflow
+#
+# Purpose: End-to-end CLI smoke test for `survey learn apply` to catch:
+#   1. AST-shape changes in FIELD_PATTERNS that break the locator
+#   2. argparse subparser layout changes (--dry-run, --target, etc.)
+#   3. Subprocess gate behavior in real GHA environment
+#
+# This is a SEPARATE workflow from ci.yml (not integrated) because:
+#   - Different test class: real-CLI-smoke vs unit-tests
+#   - Faster feedback: single Python version, no matrix
+#   - Avoids conflict risk with other ci.yml PRs
+#
+# Layout note: apply.py::_resolve_paths derives log_dir from target_path
+# (target/../../logs). So the smoke fixture MUST sit in a "survey-cli/survey/"
+# style folder to make log_dir a writable sibling, not "/logs" (root).
+#
+# Audit-log schema: each non-header record has key "decision" with values
+# "applied" | "rejected_by_gate" | "rejected_by_ast" | "rejected_by_reviewer"
+# (see survey/learn/apply.py lines 606-644).
+#
+# See: AGENTS.md §13.8, Issue #99
+name: Learn-Apply Smoke
+
+on:
+  push:
+    branches:
+      - main
+      - "feat/**"
+      - "fix/**"
+  pull_request:
+
+jobs:
+  smoke:
+    runs-on: ubuntu-latest
+
+    steps:
+      # AGENTS.md §13.8.4: Action versions are brain-owned, no @latest.
+      - uses: actions/checkout@v5
+
+      - name: Set up Python 3.13
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r survey-cli/requirements.txt
+
+      # Mirror the survey-cli/survey/ layout so apply._resolve_paths
+      # derives a writable log_dir (= /tmp/smoke_root/logs).
+      - name: Prepare smoke target tree
+        run: |
+          mkdir -p /tmp/smoke_root/survey-cli/survey
+          cp survey-cli/tests/fixtures/learn_apply_smoke_profile.py \
+             /tmp/smoke_root/survey-cli/survey/profile_loader.py
+
+      # Dry-run test: verify CLI surface and diff output
+      - name: Dry-run smoke test
+        env:
+          PYTHONPATH: survey-cli
+        run: |
+          set -e
+          OUTPUT=$(python -m survey.learn apply \
+            survey-cli/tests/fixtures/learn_apply_smoke_inbox.jsonl \
+            --dry-run \
+            --skip-tests \
+            --target /tmp/smoke_root/survey-cli/survey/profile_loader.py 2>&1) || true
+
+          echo "$OUTPUT"
+
+          # Assert: accepted=1 (phone entry), rejected=2 (llm below gate + unknown family)
+          if echo "$OUTPUT" | grep -qE "accepted=1.*rejected=2|rejected=2.*accepted=1"; then
+            echo "Dry-run counts match expected: accepted=1 rejected=2"
+          else
+            echo "Dry-run counts do not match expected pattern"
+            echo "Expected: accepted=1 rejected=2"
+            exit 1
+          fi
+
+      # Apply test: verify actual file modification
+      - name: Apply smoke test
+        env:
+          PYTHONPATH: survey-cli
+        run: |
+          set -e
+
+          # Run apply with --approve-all
+          python -m survey.learn apply \
+            survey-cli/tests/fixtures/learn_apply_smoke_inbox.jsonl \
+            --approve-all \
+            --skip-tests \
+            --target /tmp/smoke_root/survey-cli/survey/profile_loader.py
+
+          TARGET=/tmp/smoke_root/survey-cli/survey/profile_loader.py
+          LOG_DIR=/tmp/smoke_root/logs
+
+          # Assert: target file was modified (contains mobilnummer)
+          if grep -q "mobilnummer" "$TARGET"; then
+            echo "Target file modified: mobilnummer keyword injected"
+          else
+            echo "Target file not modified as expected"
+            cat "$TARGET"
+            exit 1
+          fi
+
+          # Assert: audit log exists in derived log_dir
+          if ls "$LOG_DIR"/learn-applied-*.jsonl 1>/dev/null 2>&1; then
+            echo "Audit log created"
+            LOGFILE=$(ls -t "$LOG_DIR"/learn-applied-*.jsonl | head -1)
+            echo "Log file: $LOGFILE"
+            echo "--- Audit log contents ---"
+            cat "$LOGFILE"
+            echo "--- End audit log ---"
+
+            # Schema: records use "decision" field (not "status").
+            # Values: applied | rejected_by_gate | rejected_by_ast | rejected_by_reviewer
+            APPLIED_COUNT=$(grep -c "\"decision\": \"applied\"" "$LOGFILE" || true)
+            REJECTED_COUNT=$(grep -c "\"decision\": \"rejected_by_" "$LOGFILE" || true)
+
+            # Normalize empty to 0 (grep -c can output empty if file missing)
+            APPLIED_COUNT=${APPLIED_COUNT:-0}
+            REJECTED_COUNT=${REJECTED_COUNT:-0}
+
+            echo "Applied entries: $APPLIED_COUNT, Rejected entries: $REJECTED_COUNT"
+
+            if [ "$APPLIED_COUNT" -ge 1 ] && [ "$REJECTED_COUNT" -ge 2 ]; then
+              echo "Audit log contains expected record counts"
+            else
+              echo "Audit log record counts unexpected (expected applied>=1, rejected>=2)"
+              exit 1
+            fi
+          else
+            echo "No audit log created"
+            ls -la "$LOG_DIR" || echo "logs directory missing"
+            exit 1
+          fi

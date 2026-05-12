@@ -273,6 +273,7 @@ def cmd_apply(args: argparse.Namespace) -> int:
 
     result = apply_inbox(
         inbox_path=args.inbox,
+        target_path=args.target,  # SR-99: --target flag for smoke tests
         mode=mode,
         skip_tests=args.skip_tests,
     )
@@ -499,6 +500,9 @@ def build_argparser() -> argparse.ArgumentParser:
                             "(z.B. logs/pattern-suggestions-accepted.jsonl)")
     p_app.add_argument("--dry-run", action="store_true",
                        help="Diff anzeigen, NICHTS schreiben")
+    # SR-99: --target flag for smoke tests
+    p_app.add_argument("--target", type=str, default=None,
+                       help="Override default profile_loader.py path (smoke-test only)")
     grp = p_app.add_mutually_exclusive_group()
     grp.add_argument("--approve-all", action="store_true",
                      help="Alle Eintraege oberhalb Confidence-Gate uebernehmen")
