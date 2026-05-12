@@ -3608,3 +3608,77 @@ Trigger-Bedingung:
 
 Beide Modelle sind "rasend schnell" (sub-100ms inference).
 Das Repo muss so gebaut sein dass es die Modelle NICHT aufhält.
+
+---
+
+## 🆕 ISSUE #84: SPA RENDERING WAIT — MutationObserver-based DOM Stability (2026-05-12)
+
+### Problem: Premature DOM Hashes in SPAs
+
+**Alte Verhaltensweise:**
+```python
+# cdp_actuator.py (before)
+self.cdp.call("Input.dispatchMouseEvent", {...})  # Click
+time.sleep(0.30)  # ← Fixed 300ms wait (too short for SPAs)
+after_hash = _capture_dom_hash()
+```
+
+**Problem:**
+- 300ms ist oft **zu kurz** für React/Angular/Vue async rendering
+- Premature hash capture → `no_dom_change` bei laufendem Update
+- False survey failures auf langsamen SPAs
+
+### Lösung: `_wait_for_dom_stable()` — MutationObserver-based
+
+**Neue Verhaltensweise:**
+```python
+# cdp_actuator.py (after)
+self.cdp.call("Input.dispatchMouseEvent", {...})  # Click
+stabilized, dom_stable_ms = _wait_for_dom_stable(self.cdp)  # ← Intelligent wait
+after_hash = _capture_dom_hash()
+```
+
+**Wie es funktioniert:**
+1. Registriere `MutationObserver` auf `document.body`
+2. Zähle alle Mutations (childList, attributes, characterData)
+3. Wenn >500ms **keine** Mutations → DOM ist "stable"
+4. Max 5s timeout (für sehr langsame SPAs)
+5. Return: `(stabilized: bool, actual_wait_ms: float)`
+
+### Implementierung: cdp_actuator.py
+
+**Neue Funktion:**
+- `_wait_for_dom_stable(cdp) -> (bool, float)` — MutationObserver-basierte Wartefunktion
+
+**Änderungen in bestehenden Funktionen:**
+- `click()` — Nach Maus-Events, vor Post-Hash
+- `fill()` — Nach Tasteneingaben, vor Post-Hash
+- `press_key()` — Nach Tastendruck, vor Post-Hash
+
+**ActionResult erweitert:**
+```python
+@dataclass
+class ActionResult:
+    ...
+    dom_stable_ms: float = 0.0  # ← Neue Feld (Issue #84)
+```
+
+### Akzeptanzkriterien ✅
+
+- [x] `_wait_for_dom_stable()` implementiert
+- [x] Alle 3 Methoden (click, fill, press_key) nutzen neue Wartefunktion
+- [x] ActionResult.dom_stable_ms wird gefüllt
+- [ ] Test: 50+ aufeinanderfolgende Surveys on Angular/React/Vue
+- [ ] Test: Keine `no_dom_change` false positives mehr
+- [ ] Benchmark: Durchschn. dom_stable_ms < 800ms
+
+### Status: ✅ MERGED TO MAIN (2026-05-12 SHA: e5c5a30a)
+
+Commit: Implement Issue #84: SPA Rendering Wait - MutationObserver-based DOM Stability
+- 521 lines cdp_actuator.py (was 398)
+- New: _wait_for_dom_stable() function
+- New: ActionResult.dom_stable_ms field
+- Updated: click(), fill(), press_key()
+
+**Next:** Issue #85 (no_dom_change Retry Strategy)
+
