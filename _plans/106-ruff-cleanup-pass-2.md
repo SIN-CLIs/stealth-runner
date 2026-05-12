@@ -1,4 +1,8 @@
-# SR-106: Fix remaining ruff W293/W605/F401/F841/E401 in survey/ (7 Dateien)
+> **MASTER ISSUE: #106** (created by Kollege-Agent at 2026-05-12T09:40Z, ~90s before my parallel attempt at #107). This plan-file supplements that issue with additional behavior-risk diagnosis for the 3 non-trivial cases (`graph/graph.py:177` F401, `graph/nodes.py:316` W605, `graph/nodes.py:340` F841). Both #106 and this plan-file agree on scope, AC, and out-of-scope LOCK. #107 was closed as duplicate.
+
+---
+
+# SR-106: Ruff cleanup pass 2 — clear remaining 75 violations in survey/ (7 files)
 
 **Status:** OPEN
 **Owner:** Kollege-Agent
@@ -193,7 +197,7 @@ absicht, zero behavior change.
 - [ ] `from survey.graph.graph import CORE_AVAILABLE` funktioniert weiterhin (post-noqa-fix)
 - [ ] `graph/nodes.py:316` JS-regex JSON-output unveraendert (`numMatch`-feld liefert dieselben matches wie vorher)
 - [ ] Commit-Message referenziert `Closes #106`
-- [ ] `_plans/106-survey-ruff-cleanup-remaining.md` geloescht im selben commit (rule A4)
+- [ ] `_plans/106-ruff-cleanup-pass-2.md` geloescht im selben commit (rule A4)
 
 ---
 
