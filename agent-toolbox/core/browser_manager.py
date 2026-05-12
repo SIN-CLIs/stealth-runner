@@ -152,6 +152,12 @@ from pathlib import Path
 # Dict, Any: Für flexible Dictionary-Typen (health() Rückgabe).
 from typing import Optional, Dict, Any
 
+# Typ-Hinweise fuer Proxy-Unterstuetzung (SR-151)
+# TYPE_CHECKING: Import nur fuer Type-Hints (nicht zur Laufzeit).
+from typing import TYPE_CHECKING
+if TYPE_CHECKING:
+    from .network.proxy_pool import ProxyEntry
+
 # Playwright: Browser-Automation Library.
 # async_playwright: Async-Kontext-Manager für Playwright.
 # Browser: Playwright Browser-Instanz (verbunden via CDP).
@@ -234,6 +240,7 @@ class BrowserManager:
     def __init__(
         self,
         chrome_path: Optional[str] = None,
+        proxy: Optional["ProxyEntry"] = None,
         source_profile: Optional[str] = None,
         profile_name: str = "Profile 901 (Jeremy)",
         cdp_port: int = 9999,
@@ -318,6 +325,16 @@ class BrowserManager:
         # False = sichtbar (empfohlen für Debugging und CUA).
         # True = unsichtbar (schneller, weniger Ressourcen).
         self.headless = headless
+
+        # ═══════════════════════════════════════════════════════════════════════
+        # PROXY SUPPORT (SR-151)
+        # ═══════════════════════════════════════════════════════════════════════
+        
+        # proxy: Optional ProxyEntry fuer Proxy-Server Support.
+        # WARUM? Anti-Detection Layer 3 (Network). Datacenter IPs werden geblockt.
+        # Wenn gesetzt → Chrome startet mit --proxy-server Flag.
+        # Format: "http://user:pass@host:port" oder "socks5://..."
+        self.proxy: Optional["ProxyEntry"] = proxy
         
         # ═══════════════════════════════════════════════════════════════════════
         # ZUSTAND (private Attribute — beginnen mit _)
@@ -365,6 +382,34 @@ class BrowserManager:
         self._last_used: float = 0.0
     
     # ═══════════════════════════════════════════════════════════════════════════
+    # METHODE: set_proxy (SR-151)
+    # ═══════════════════════════════════════════════════════════════════════════
+    
+    def set_proxy(self, proxy: Optional["ProxyEntry"]) -> None:
+        """
+        Setzt den Proxy fuer den naechsten Browser-Start.
+        
+        WICHTIG: Dieser Proxy wird erst beim NAECHSTEN start() verwendet!
+        Wenn Chrome bereits laeuft, muss stop() + start() aufgerufen werden.
+        
+        Args:
+            proxy: ProxyEntry Objekt oder None fuer direkten Zugang.
+            
+        Example:
+            from agent_toolbox.core.network import get_proxy_pool
+            pool = get_proxy_pool()
+            proxy = pool.pick(persona={"country": "DE"})
+            manager.set_proxy(proxy)
+            await manager.stop()
+            await manager.start()  # Startet mit neuem Proxy
+        """
+        self.proxy = proxy
+        if proxy:
+            logger.info(f"Proxy gesetzt: {proxy.label} ({proxy.country})")
+        else:
+            logger.info("Proxy deaktiviert (direkter Zugang)")
+    
+        # ═══════════════════════════════════════════════════════════════════════════
     # EIGENSCHAFT (Property): is_running
     # ═══════════════════════════════════════════════════════════════════════════
     
@@ -538,6 +583,16 @@ class BrowserManager:
         # WARUM? Ermöglicht sichtbar→unsichtbar Wechsel.
         if headless is not None:
             self.headless = headless
+
+        # ═══════════════════════════════════════════════════════════════════════
+        # PROXY SUPPORT (SR-151)
+        # ═══════════════════════════════════════════════════════════════════════
+        
+        # proxy: Optional ProxyEntry fuer Proxy-Server Support.
+        # WARUM? Anti-Detection Layer 3 (Network). Datacenter IPs werden geblockt.
+        # Wenn gesetzt → Chrome startet mit --proxy-server Flag.
+        # Format: "http://user:pass@host:port" oder "socks5://..."
+        self.proxy: Optional["ProxyEntry"] = proxy
         
         # Wenn Client CDP-Port ändert → aktualisieren.
         # WARNUNG: Wenn Chrome bereits auf altem Port läuft → Konflikt!
@@ -1135,6 +1190,18 @@ class BrowserManager:
             # --lang: Sprache (für deutsche UI-Elemente).
             "--lang=de-DE",
         ]
+        
+        # ═══════════════════════════════════════════════════════════════════════
+        # PROXY SUPPORT (SR-151)
+        # ═══════════════════════════════════════════════════════════════════════
+        # Wenn Proxy gesetzt → fuege --proxy-server und --proxy-bypass-list hinzu.
+        # WARUM? Anti-Detection Layer 3: Residential Proxies verbergen Datacenter IP.
+        # WARUM --proxy-bypass-list? Localhost-Anfragen sollen NICHT ueber Proxy gehen
+        # (CDP-Verbindung, lokale APIs, etc.).
+        if self.proxy is not None:
+            args.append(f"--proxy-server={self.proxy.url}")
+            args.append("--proxy-bypass-list=localhost,127.0.0.1,<local>")
+            logger.info(f"Proxy aktiviert: {self.proxy.label} ({self.proxy.country})")
         
         # Optional: Headless-Modus.
         # WARUM --headless=new? "new" ist der moderne Headless-Modus (Chrome 109+).
