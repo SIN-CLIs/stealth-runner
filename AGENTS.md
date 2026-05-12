@@ -16,6 +16,7 @@ content: |
   | #93   | PLANNED  | `_plans/oopif-autoattach.md` (Target.setAutoAttach flatten=True for OOPIFs)          |
   | #94   | PLANNED  | `_plans/js-dialog-handler.md` (Page.javascriptDialogOpening auto-dismiss)            |
   | #95   | DONE     | full restore + migration of 49 hard-deleted MDs into the LEGACY (RESTORE PASS) section below |
+  | #96   | DONE     | OPERATIONAL RULES section directly under STATUS INDEX                                |
 
   ### Update Rules (read before editing this table)
   - One line per work item. Always point to a code symbol (`file::function`) OR a plan file path.
@@ -28,6 +29,101 @@ content: |
   - **In-tab perception:** top frame + iframes (`Page.getFrameTree`), cross-origin iframes (`--force-renderer-accessibility`), Shadow DOM open + closed (`DOM.getFlattenedDocument(pierce=True)`), custom elements, ARIA via `Accessibility.getFullAXTree`, box-model + pre/post hash diff + stable IDs across frames, MutationObserver wait (#84), 4x retry with re-scan (#85), position-stability wait (#86).
   - **Known gaps (tracked):** OOPIF events if renderer-accessibility flag fails → #93. JS dialogs (alert/confirm/prompt/beforeunload) block the page → #94.
   - **Explicitly out of scope:** macOS menu bar / Dock / OS popups / Chrome browser-UI — surveys run inside the tab, not in OS chrome.
+
+
+  ## OPERATIONAL RULES (READ FIRST — applies to every agent action)
+
+  > Distilled from today's session lessons + the historical sinrules.md Golden Rules.
+  > Last updated: 2026-05-12 (issue #96). The full 400-line verbatim sinrules.md is preserved
+  > below in the LEGACY (RESTORE PASS — #95) section for historical reference.
+  > **When this section and the LEGACY archive disagree, this section wins.**
+
+  ### Part A — Session-Hardened Rules (learned the hard way)
+
+  **A1. NEVER hard-delete documentation.** Any `.md`, `.txt`, or human-written content
+  must be **migrated verbatim into AGENTS.md** under a clearly-marked section before
+  the source file is removed. The "nothing is deleted, only migrated" rule is
+  unbreakable. Violations require a #95-style restore pass and are a Sev-1 incident.
+
+  **A2. Root MUST contain only three Markdown files.**
+  Allowed: `AGENTS.md`, `README.md`, `CHANGELOG.md`. Everything else lives inside a
+  source directory, inside `_plans/` (temporary), or is migrated into AGENTS.md.
+
+  **A3. Audit code before claiming work is done.** Issue title / body are *hints*,
+  not truth. Always grep the actual source for the relevant symbols and verify
+  behavior before marking an issue DONE. (See #84 — title said "SPA Rendering
+  Wait", but the work was already merged in PR #89 weeks before the issue closed.)
+
+  **A4. Plan-file lifecycle.** Every non-trivial issue gets a temporary file
+  `_plans/<issue>-<slug>.md` linked from the issue body. The plan file **MUST be
+  deleted in the same commit that closes the issue**. `_plans/` is expected to be
+  near-empty most of the time. See `_plans/README.md` for the convention.
+
+  **A5. STATUS INDEX is canonical.** The table at the very top of this file is the
+  source of truth for project state. **Every PR that touches status** (new issue,
+  status flip, code-location change) **MUST update the table in the same commit.**
+
+  **A6. Issue ↔ Code mapping is mandatory.** Every STATUS INDEX row points to
+  either a code symbol (`file::function`) OR a plan file. Never both empty.
+
+  **A7. GitHub API only — never clone.** All edits go through the GitHub Git Data
+  API (blobs → tree → commit → ref). This is faster, leaves no local state, and
+  produces atomic multi-file commits. Cloning is forbidden for routine work.
+
+  **A8. Atomic commits via Git Data API.** Multi-file operations (create + modify +
+  delete) MUST be a single tree+commit, never a sequence of Contents-API calls.
+  This makes operations reversible by reverting one SHA.
+
+  **A9. Documentation is inline (docstrings) + AGENTS.md only.** Never create a new
+  Markdown file outside `_plans/`. Never create a `docs/` directory. Every public
+  symbol carries a docstring. Architecture / design / decisions go into AGENTS.md.
+
+  **A10. Token-rotation discipline.** Any GitHub token surfaced in a chat is
+  considered burned and must be rotated immediately. Never persist tokens in the
+  repository, in commit messages, or in plan files.
+
+  ### Part B — Historical Golden Rules (distilled from sinrules.md R1-R13)
+
+  | # | Rule | Status today |
+  |---|------|--------------|
+  | R1 | NEMO is PRIMARY: compact snapshot → NIM decision → batch execute, 1 LLM call per page | ⚠️ DEFER TO CODE — `src/stealth_survey/` was deleted 2026-05-08; current code path lives in `survey-cli/survey/`. Conflict noted in Part C. |
+  | R2 | All interactions via `skylight-cli snapshot-compact` + `skylight-cli batch`; CDP `Runtime.evaluate` as fallback | ACTIVE |
+  | R3 | NEVER click the Apple menu bar (`AXMenuBar` at `depth < 5`); always filter `depth > 5` for browser content | ACTIVE |
+  | R4 | `cua-driver` daemon (if used) MUST be started via `nohup` and is **legacy-only** | ACTIVE |
+  | R5 | Fallback chain: NEMO → CDP WebSocket → cua-driver (legacy) → skylight-cli (legacy) → macos-ax-cli (scan only) | ACTIVE |
+  | R6 | Word-boundary label matching: use `\bWeiter\b`, not `"weiter" in label` | ACTIVE |
+  | R7 | Every flow must be dynamic. NEVER hard-code element indices or positions | ACTIVE |
+  | R8 | After every success: document in code + AGENTS.md (per A9 above) | ACTIVE |
+  | R9 | Every action runs with `verify:true`; success requires positive AX confirmation | ACTIVE — enforced by ActionResult contract |
+  | R10 | IdiotProofGuard blocks: wrong PID/WID, CDP JS dispatchEvent, `time.sleep(>=4)`, MD overwrite, 3 errors → STOP | ACTIVE |
+  | R11 | Every verified command → inline `tools/` Python with full docstring (formerly `/commands/<name>.md`, now superseded by A9) | SUPERSEDED by A9 |
+  | R12 | Every failed pattern → `BANNED:` block in this rules section or in inline code comments (formerly `/commands/banned-<name>.md`) | SUPERSEDED by A9 |
+  | R13 | Chrome kill: NEVER `pkill -f`, NEVER `killall`, NEVER hard-coded PIDs. Only main-process kill matched on `/tmp/heypiggy-bot-` profile path. Use `SessionManager.close_all()` | ACTIVE |
+
+  ### Part C — Known Contradictions (defer to current code)
+
+  | Contradiction | Source A | Source B | Current Source of Truth |
+  |---------------|----------|----------|--------------------------|
+  | NEMO module location | sinrules §3.1 says `src/stealth_survey/` is PRIMARY | sinrules §9 says `src/stealth_survey/` was INTENTIONALLY DELETED 2026-05-08 | **`survey-cli/survey/`** — verify with `gh api repos/SIN-CLIs/stealth-runner/contents/survey-cli/survey` |
+  | `/commands/<name>.md` files | sinrules R11/R12 mandates them | A9 (today) bans Markdown outside AGENTS.md / _plans/ / root-3 | **A9 wins** — bake verified commands into inline Python with docstrings |
+
+  ### Part D — Banned Patterns (consolidated)
+
+  | Pattern | Why |
+  |---------|-----|
+  | `skylight-cli click --element-index` for web content | Index unstable; use `skylight-cli batch` |
+  | `cua-driver` for new code | Legacy only; NEMO/CDP is primary |
+  | Hard-coded element indices (`element_index=35`) | UI changes |
+  | Mouse-movement / coordinate-guessing | Banned |
+  | `recovery_mode: true`, `omni_fallback: llama` | Legacy |
+  | OpenAI instead of NVIDIA NIM | Banned (project uses NIM) |
+  | Direct Chrome instead of playstealth | Banned |
+  | `webauto-nodriver` | Absolutely banned |
+  | `pkill -f`, `killall`, hard-coded PIDs | Kills user's Chrome too — see R13 |
+  | Creating new `.md` files outside `_plans/` or the 3 root files | See A9 |
+  | Cloning the repo for routine edits | See A7 |
+  | Hard-deleting MD content without migration | See A1 — Sev-1 incident |
+
 
 
   ## 🆕 ISSUE #81/#82/#83: PRODUCTION-READY CORE INTEGRATION (2026-05-11)

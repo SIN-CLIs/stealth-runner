@@ -2,6 +2,16 @@
 
 ## [Unreleased] - 2026-05-12
 
+### Added
+- **(#96) OPERATIONAL RULES section** at the top of AGENTS.md (directly after
+  STATUS INDEX). Combines 10 session-hardened rules (A1-A10), 13 distilled
+  historical Golden Rules (R1-R13), known contradictions (Part C), and a
+  consolidated banned-patterns table (Part D). This is now the agent's single
+  read-first rule book; the full 400-line legacy `sinrules.md` remains in the
+  LEGACY (RESTORE PASS — #95) archive for traceability.
+
+## [Unreleased] - 2026-05-12
+
 ### Fixed
 - **(#95) Critical restore**: recovered 49 root-level Markdown files that were
   hard-deleted in commit `2f8fdf0` without migration. Full verbatim content
