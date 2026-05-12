@@ -29,8 +29,8 @@ content: |
   | #88   | EPIC | EPIC     | master tracking issue — 100% framework-agnostic survey completion                    |
   | #91   | -    | DONE     | repo root cleanup + AGENTS.md absorption (see CHANGELOG)                              |
   | #92   | -    | DONE     | this STATUS INDEX section                                                            |
-  | #93   | P1   | PLANNED  | `_plans/oopif-autoattach.md` (Target.setAutoAttach flatten=True for OOPIFs)          |
-  | #94   | P2   | PLANNED  | `_plans/js-dialog-handler.md` (Page.javascriptDialogOpening auto-dismiss)            |
+  | #93   | P1   | DONE     | `survey-cli/survey/oopif_registry.py` (Target.setAutoAttach flatten=True; per-session AX scan in `cdp_universal._scan_session`) |
+  | #94   | P2   | DONE     | `survey-cli/survey/js_dialog_handler.py` (Page.javascriptDialogOpening auto-dismiss + JS override + actuator drain) |
   | #95   | -    | DONE     | restore + migration of 49 hard-deleted MDs (see CHANGELOG + LEGACY RESTORE PASS)     |
   | #96   | -    | DONE     | OPERATIONAL RULES section (this section above) — distilled rule book                  |
   | #97   | -    | DONE     | this full triage pass: 13 untriaged issues assigned status + plan files (see CHANGELOG) |
@@ -43,8 +43,8 @@ content: |
   - Keep this table directly under the top heading so agents see it within the first 30 lines.
 
   ### Coverage Snapshot (as of the latest audit)
-  - **In-tab perception:** top frame + iframes (`Page.getFrameTree`), cross-origin iframes (`--force-renderer-accessibility`), Shadow DOM open + closed (`DOM.getFlattenedDocument(pierce=True)`), custom elements, ARIA via `Accessibility.getFullAXTree`, box-model + pre/post hash diff + stable IDs across frames, MutationObserver wait (#84), 4x retry with re-scan (#85), position-stability wait (#86).
-  - **Known gaps (tracked):** OOPIF events if renderer-accessibility flag fails → #93. JS dialogs (alert/confirm/prompt/beforeunload) block the page → #94.
+  - **In-tab perception:** top frame + iframes (`Page.getFrameTree`), cross-origin iframes via two parallel paths — `--force-renderer-accessibility` (AX-tree fallback) AND `Target.setAutoAttach(flatten=True)` per-session AX scan (#93), Shadow DOM open + closed (`DOM.getFlattenedDocument(pierce=True)`), custom elements, ARIA via `Accessibility.getFullAXTree`, box-model + pre/post hash diff + stable IDs across frames (`sha1(frame_id + ':' + backend_node_id)` keeps OOPIF IDs collision-free), MutationObserver wait (#84), 4x retry with re-scan (#85), position-stability wait (#86), JS dialog auto-dismiss + `beforeunload` neutralisation (#94).
+  - **Known gaps (tracked):** OOPIF *click routing* (coordinate translation Top→OOPIF) is a follow-up — scan coverage is in, actuator click on OOPIF elements still uses Top-Target dispatch. Form validation detection → #87.
   - **Explicitly out of scope:** macOS menu bar / Dock / OS popups / Chrome browser-UI — surveys run inside the tab, not in OS chrome.
 
 
@@ -1385,7 +1385,7 @@ content: |
   | **`AngularDragDropSolver`** | **Multi-Approach** (Playwright mouse → CDP dispatchMouseEvent → Synthetic PointerEvents → HTML5 Drag/DOM) | **🔄 TESTING — 4 Approaches** |
 
   **NEW SOLVER: `AngularDragDropSolver` (drag_drop_angular.py)**
-  - 4 sequential approaches (A→B→C→D), stops at first success
+  - 4 sequential approaches (A→B��C→D), stops at first success
   - Approach A: Playwright `page.mouse.move/down/up()` — REAL browser-level pointer events
   - Approach B: CDP `Input.dispatchMouseEvent` — native browser engine events
   - Approach C: Synthetic `PointerEvent` with 10 intermediate steps + delays + realistic properties
@@ -4191,6 +4191,153 @@ Files changed:
 
 **Next:** Issue #87 (Form Validation Detection — Wartet auf "valid" state vor Submit) — P2
 
+
+## 🆕 ISSUE #93 + #94: CDP EVENT-CHAIN, OOPIF AUTO-ATTACH & JS-DIALOG (2026-05-12)
+
+Beide Issues in EINEM atomaren Commit (siehe REGEL A8 — Atomic Tree-Commits),
+weil sie sich die neue Event-Handler-Infrastruktur in `cdp_client.py` teilen.
+
+### Warum gemeinsam?
+
+Beide Subscriber müssen auf CDP-Events reagieren, die der bisherige Sync-Client
+**verworfen** hat:
+
+| Event                              | Wer hört zu?        | Warum es vorher fehlte |
+|------------------------------------|---------------------|-----------------------|
+| `Page.javascriptDialogOpening`     | `JsDialogHandler`   | `alert/confirm/prompt/beforeunload` blockierten Chrome bis der User klickt — Survey-Solver hing. |
+| `Target.attachedToTarget`          | `OopifRegistry`     | OOPIFs (cross-origin iframes) waren ohne `--force-renderer-accessibility` unsichtbar — ganze Captcha-Frames fehlten im Scan. |
+| `Target.detachedFromTarget`        | `OopifRegistry`     | Sonst pollen wir tote sessionIds → CDP-Errors. |
+
+Beides löst dieselbe Architektur-Frage: *"Wie liefert der synchrone CDP-Client
+Events an Subscriber, ohne eine Async-Loop einzuführen?"*
+
+### Die Architektur: Event-Handler-Chain
+
+`cdp_client.py` bekommt drei Erweiterungen:
+
+1. **`event_handler` attribute** (public, ein einziger Callback) —
+   Signatur `(method, params, session_id) -> None`. Subscriber chainen sich
+   selbst: `prev = cdp.event_handler; cdp.event_handler = my_wrapper`.
+
+2. **`_dispatch_event`** wird aus `_recv_until_id` aufgerufen, wenn eine
+   WS-Message KEIN `id`-Feld hat (Event statt Antwort). Exceptions im
+   Handler werden geschluckt — die Request-Schleife darf nie sterben.
+
+3. **`drain_events(timeout)`** — non-blocking Pull aller pending Events.
+   Wird vom Actuator vor jedem Verify-Step aufgerufen und nach
+   `Target.setAutoAttach` für initiale OOPIF-Discovery.
+
+Zusätzlich: `call(..., session_id=...)` mergt `sessionId` in die Outgoing-
+Message, damit derselbe WebSocket auch Sub-Targets adressieren kann
+(CDP-Flatten-Mode).
+
+### Issue #94 — `survey/js_dialog_handler.py`
+
+**Belt-and-Braces:**
+
+| Schicht | Mechanik | Robustheit |
+|---------|----------|------------|
+| 1 (BELT)  | `Page.addScriptToEvaluateOnNewDocument` patcht `window.alert/confirm/prompt = noop` + `addEventListener('beforeunload')` mit `preventDefault` | Greift VOR dem ersten Skript der Page — selbst wenn CDP-Events 50ms zu spät kommen, ist der Dialog nie sichtbar. |
+| 1b (BELT) | Aktuelles Document gleich nach Install per `Runtime.evaluate` patchen | Override greift auch für bereits geladene Docs. |
+| 2 (BRACES) | Event-Subscriber `Page.javascriptDialogOpening` → `Page.handleJavaScriptDialog(accept=True)` | Fängt alles, was die JS-Override umgehen könnte (z. B. native `beforeunload`-Chrome-UI). |
+
+**Policy:** Default-Policy akzeptiert ALLE Dialog-Typen mit leerem
+`promptText`. `prompt()`-Dialoge werden zusätzlich geloggt — sie deuten
+auf Surveys hin, die Free-Text erwarten (Survey-Solver muss das später
+selber lösen, ist aber nicht Scope dieses Issues).
+
+**Actuator-Integration** (in `cdp_actuator.py::ClickActuator.__init__`):
+- Handler wird einmal pro Actuator-Instanz installiert.
+- `click()` ruft `cdp.drain_events(timeout=0.1)` nach den Maus-Events und
+  VOR dem Post-Hash. So sind Dialoge weggeklickt, bevor wir DOM-Stabilität
+  prüfen — sonst hängt der Hash-Vergleich am offenen Dialog.
+- Wenn nur ein Dialog (kein DOM-Change, keine Navigation) abgeräumt
+  wurde, ist `ActionResult(success=True, reason="dialog_dismissed")`.
+
+### Issue #93 — `survey/oopif_registry.py`
+
+**Mechanik:**
+- `Target.setAutoAttach(autoAttach=True, waitForDebuggerOnStart=False, flatten=True)` —
+  Chrome attached SOFORT alle bestehenden Child-Targets UND alle künftigen.
+  `flatten=True` heißt: **EINE** WebSocket-Connection multiplext alle Sub-
+  Sessions über `sessionId`. KEIN zweiter Reconnect-Pfad nötig.
+- Auf jedes `Target.attachedToTarget` mit `targetInfo.type == "iframe"`
+  registrieren wir `OopifSession(frame_id, session_id, url)`.
+- Workers / Service-Workers werden gefiltert (kein DOM).
+- Bei `Target.detachedFromTarget` cleanen wir die Session weg.
+
+**Scanner-Integration** (`cdp_universal.py::scan`):
+- `OopifRegistry(cdp).enable()` wird VOR dem ersten AX-Tree-Call gerufen.
+- Pass 1: Top-Target wie bisher.
+- `cdp.drain_events(0.1)` — Chrome hat inzwischen `attachedToTarget` für
+  alle bestehenden OOPIFs gefeuert.
+- Pass 2: Für jede `OopifSession` aus `registry.snapshot()` rufen wir
+  `_scan_session(cdp, session_id=..., fallback_frame_id=..., fallback_frame_url=...)`
+  auf — `DOM.getFlattenedDocument`, `Accessibility.getFullAXTree`,
+  `DOM.getBoxModel` alles mit `session_id`-Parameter.
+- `CDPError` während OOPIF-Scan wird geschluckt (Frame könnte navigiert
+  worden sein) — wir liefern die anderen Sessions trotzdem aus.
+
+**Stable-ID-Schema** bleibt identisch:
+`sha1(frame_id + ":" + backend_node_id)[:16]`. Da `frame_id` als Salt
+einfließt, kollidieren backend-node-IDs aus verschiedenen Sessions NIE
+(jede Session hat ihren eigenen ID-Raum).
+
+### KOORDINATEN-WARNUNG (Limitation, dokumentiert)
+
+`DOM.getBoxModel` in einer OOPIF-Session liefert Koordinaten RELATIV zum
+**OOPIF-Viewport**, nicht zum Top-Viewport. Diese PR bringt nur die
+**Scan-Coverage**. Wer auf ein OOPIF-Element KLICKEN will, muss die
+Translation `OOPIF_local → Top_viewport` machen: Top-Frame `boundingClientRect`
+des OOPIF-Iframe-Elements + lokale Koordinate. Das wird im Actuator-
+Routing nachgezogen, sobald die ersten OOPIF-Klicks beim Survey-Solver
+auflaufen. KEIN gap-fix nötig solange wir nur scannen.
+
+### REGEL 2 (UPDATED) — Stable-ID-Salt mit frame_id
+
+`stable_id` MUSS `frame_id` als Salt verwenden, sonst kollidieren
+`backend_node_id`s zwischen Top-Target und OOPIF-Sessions. Bestehender
+Code in `cdp_universal._stable_id` macht das bereits — diese PR
+dokumentiert es als kanonische Regel.
+
+### REGEL 4 (CLARIFIED) — `--force-renderer-accessibility` ist BACKUP
+
+Vor #93 war das Chrome-Flag der EINZIGE Weg, OOPIFs zu sehen. Jetzt ist
+es ein FALLBACK: wenn `Target.setAutoAttach` aus irgendeinem Grund nicht
+greift (zu altes Chrome, exotische Konfiguration), liefert der AX-Tree
+des Top-Targets immer noch OOPIF-Nodes via dem Flag. Beide Pfade
+ergänzen sich.
+
+### Files in dieser PR
+
+- `survey-cli/survey/cdp_client.py` — Event-Chain + `session_id` Parameter
+  + `drain_events` (~120 Zeilen).
+- `survey-cli/survey/js_dialog_handler.py` — neue Datei (~390 Zeilen
+  inkl. ausführlicher Top-Docstring).
+- `survey-cli/survey/oopif_registry.py` — neue Datei (~325 Zeilen).
+- `survey-cli/survey/cdp_universal.py` — `_scan_session` Helper + OOPIF
+  Pass 2 + `session_id` durchgereicht.
+- `survey-cli/survey/cdp_actuator.py` — `JsDialogHandler` Init + Dialog-
+  Drain in `click()`.
+- `tests/test_event_handlers.py` — 9 Unit-Tests (FakeWS, alle 4 Aspekte:
+  Event-vs-Response, Exception-Swallowing, Dialog-Dismissal, OOPIF
+  Attach/Detach, Subscriber-Chaining).
+- `_plans/js-dialog-handler.md` — GELÖSCHT (REGEL A4).
+- `_plans/oopif-autoattach.md` — GELÖSCHT (REGEL A4).
+- STATUS INDEX: #93 und #94 auf DONE geflippt.
+
+### Status: ✅ MERGED TO MAIN (2026-05-12)
+
+**Verification:**
+```
+pytest tests/test_event_handlers.py    # 9 passed
+python3 -m py_compile survey-cli/survey/cdp_*.py survey-cli/survey/js_dialog_handler.py survey-cli/survey/oopif_registry.py
+```
+
+**Next:** Issue #87 (Form Validation Detection) — P2. OOPIF-Click-Coordinate-
+Translation wird als Folge-Issue bei Bedarf gefiled (wenn Survey-Solver
+auf OOPIF-Click-Element trifft).
+
   ---
 
   # MIGRATED LEGACY DOCS (single source of truth — 2026-05-12)
@@ -5197,7 +5344,7 @@ Files changed:
 
   ```javascript
   // Detection strategy (detect_framework):
-  1. Check ng-version attribute → Angular
+  1. Check ng-version attribute ��� Angular
   2. Check __reactFiber..., __reactInternalInstance → React
   3. Check __vue__, __vnode__ → Vue
   4. Check _nextjsRouter → Next.js
@@ -11928,7 +12075,7 @@ Files changed:
   ## C‑survey‑answer
   1. Frage-Typ erkennen (Heading → Options → Next-Button)
   2. Persona-Antwort via `resolve_answer()` bestimmen
-  3. `cua-driver call click` → Radio/Checkbox/Button
+  3. `cua-driver call click` �� Radio/Checkbox/Button
   4. `cua-driver call set_value` → Text/Textarea eingeben
   5. "Weiter"/"Next" klicken
 

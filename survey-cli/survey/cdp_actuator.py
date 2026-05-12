@@ -226,6 +226,7 @@ from typing import Any
 
 from .cdp_client import CDPConnection, CDPError
 from .cdp_universal import UniversalElement, scan as scan_full
+from .js_dialog_handler import JsDialogHandler
 
 
 # Wartezeit nach mousePressed bevor mouseReleased (in Sekunden).
@@ -524,6 +525,20 @@ class Actuator:
     def __init__(self, cdp: CDPConnection):
         self.cdp = cdp
         self._element_cache: dict[str, UniversalElement] = {}
+        # ── Issue #94: JS-Dialog-Auto-Dismissal ─────────────────────────
+        # Survey-Sites triggern manchmal ``alert()`` / ``confirm()`` (z. B.
+        # "Are you sure you want to leave?") oder einen vorgefertigten
+        # ``beforeunload``-Prompt. Ohne aktiven Dismiss BLOCKIERT der CDP-
+        # Aufruf danach für viele Sekunden bzw. komplett (Chrome wartet auf
+        # User-Input). Der Handler subscribet sich in die CDP-Event-Chain
+        # und ruft ``Page.handleJavaScriptDialog`` automatisch auf, sobald
+        # ``Page.javascriptDialogOpening`` reinkommt.
+        #
+        # WICHTIG: Vor JEDEM Klick rufen wir ``cdp.drain_events()`` damit
+        # nachgereichte Dialog-Events VOR dem nächsten Verify abgearbeitet
+        # werden — sonst hängt der DOM-Hash-Vergleich am offenen Dialog.
+        self._js_dialog = JsDialogHandler(cdp)
+        self._js_dialog.install()
 
     # ── Cache-Verwaltung ──────────────────────────────────────────────
 
@@ -643,15 +658,28 @@ class Actuator:
                 position_wait_ms=position_wait_ms,
             )
 
-        # 6) Issue #84: Auf SPA-DOM-Stabilität warten (MutationObserver)
+        # 6a) Issue #94: Pending JS-Dialoge ABRÄUMEN, bevor wir auf DOM-
+        # Stabilität warten. Wenn der Klick ``alert()`` / ``confirm()`` /
+        # ``beforeunload`` getriggert hat, blockiert sonst der nächste
+        # CDP-Call. ``drain_events`` ruft synchron ``self._js_dialog``s
+        # Event-Handler auf, der ``Page.handleJavaScriptDialog`` schickt.
+        self.cdp.drain_events(timeout=0.1)
+
+        # 6b) Issue #84: Auf SPA-DOM-Stabilität warten (MutationObserver)
         stabilized, dom_stable_ms = _wait_for_dom_stable(self.cdp)
 
         # 7) Post-Hash + Diff
         after_hash, after_url = _capture_dom_hash(self.cdp)
         elapsed_ms = (time.time() - t0) * 1000.0
         navigated = after_url != before_url
+        # Issue #94: Hat unser JS-Dialog-Handler seit Klick-Start (``t0``)
+        # mindestens einen Dialog weggeklickt? Wenn ja, gilt der Klick auch
+        # ohne sichtbare DOM-Mutation als erfolgreich.
+        dialogs_handled = any(
+            ev.ts >= t0 for ev in self._js_dialog.peek()
+        )
 
-        if before_hash == after_hash and not navigated:
+        if before_hash == after_hash and not navigated and not dialogs_handled:
             return ActionResult(
                 success=False,
                 reason="no_dom_change",
@@ -662,9 +690,16 @@ class Actuator:
                 position_wait_ms=position_wait_ms,
             )
 
+        # Wenn der Klick *nur* einen Dialog ausgelöst und Chrome navigiert hat
+        # (beforeunload-Bestätigung), reporten wir das als Erfolg mit reason
+        # ``dialog_dismissed`` — der Survey-Solver erkennt dann, dass die
+        # Aktion wirken konnte. Issue #94.
+        reason = "navigated" if navigated else "ok"
+        if dialogs_handled and not navigated and before_hash == after_hash:
+            reason = "dialog_dismissed"
         return ActionResult(
             success=True,
-            reason="navigated" if navigated else "ok",
+            reason=reason,
             before_hash=before_hash,
             after_hash=after_hash,
             elapsed_ms=elapsed_ms,

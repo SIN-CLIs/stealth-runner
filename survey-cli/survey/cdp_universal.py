@@ -137,6 +137,7 @@ from dataclasses import dataclass, field, asdict
 from typing import Any
 
 from .cdp_client import CDPConnection, CDPError
+from .oopif_registry import OopifRegistry
 
 
 # AX-Rollen, die als "klickbar/interaktiv" gelten.
@@ -241,12 +242,22 @@ def _ax_string(ax_node: dict[str, Any], key: str) -> str:
     return str(val) if val is not None else ""
 
 
-def _build_dom_index(cdp: CDPConnection) -> dict[int, dict[str, Any]]:
+def _build_dom_index(
+    cdp: CDPConnection, *, session_id: str | None = None,
+) -> dict[int, dict[str, Any]]:
     """Mappt backendNodeId → DOM-Node-Dict via
     ``DOM.getFlattenedDocument(pierce=True)``. Enthält ALLE Frames und
-    Shadow-Roots auf der Top-Session."""
+    Shadow-Roots auf der angegebenen Session (None = Top-Target,
+    sonst OOPIF-Session aus ``OopifRegistry`` — siehe #93).
+
+    ACHTUNG: ``backendNodeId``-Werte sind nur INNERHALB eines Targets stabil.
+    Wer Indizes aus mehreren Sessions mergen will, muss sie via ``frame_id``
+    disambiguieren — der ``_stable_id``-Helper macht genau das.
+    """
     flat = cdp.call_result(
-        "DOM.getFlattenedDocument", {"depth": -1, "pierce": True}
+        "DOM.getFlattenedDocument",
+        {"depth": -1, "pierce": True},
+        session_id=session_id,
     )
     index: dict[int, dict[str, Any]] = {}
     for n in flat.get("nodes", []):
@@ -311,6 +322,77 @@ def _build_element(
     )
 
 
+def _scan_session(
+    cdp: CDPConnection,
+    *,
+    session_id: str | None,
+    fallback_frame_id: str,
+    fallback_frame_url: str,
+    frame_id_to_url: dict[str, str],
+    elements_out: list[UniversalElement],
+) -> None:
+    """Scannt EINE Session (Top oder OOPIF) und appended Elements ``elements_out``.
+
+    Wird sowohl für das Top-Target (``session_id=None``) als auch — seit #93 —
+    für jede via ``Target.setAutoAttach(flatten=True)`` attachte OOPIF-Session
+    aufgerufen. Die OOPIF-Session hat ihren eigenen Backend-Node-Id-Raum;
+    ``_stable_id(frame_id, backend_node_id)`` disambiguiert die IDs zwischen
+    Sessions, weil ``frame_id`` als Salt einfließt (siehe REGEL 2).
+
+    Args:
+        fallback_frame_id: Für OOPIFs der Frame-Id-String des OOPIF, falls ein
+            AX-Knoten kein ``frameId`` mitliefert. Beim Top-Target leer.
+        fallback_frame_url: Fallback-URL analog.
+    """
+    cdp.call("DOM.enable", retry=False, session_id=session_id)
+    cdp.call("Accessibility.enable", retry=False, session_id=session_id)
+
+    dom_index = _build_dom_index(cdp, session_id=session_id)
+    ax_result = cdp.call_result(
+        "Accessibility.getFullAXTree", {}, session_id=session_id
+    )
+    ax_nodes = ax_result.get("nodes", [])
+
+    for ax in ax_nodes:
+        role = _ax_string(ax, "role")
+
+        # Filter: nur interaktive Rollen ODER nicht-ignored Knoten mit name.
+        if role not in INTERACTIVE_ROLES:
+            if ax.get("ignored", True):
+                continue
+            if not _ax_string(ax, "name"):
+                continue
+
+        backend_node_id = ax.get("backendDOMNodeId")
+        if not backend_node_id:
+            continue
+
+        dom_node = dom_index.get(backend_node_id)
+        frame_id = (
+            ax.get("frameId")
+            or (dom_node or {}).get("frameId")
+            or fallback_frame_id
+        )
+        frame_url = frame_id_to_url.get(
+            frame_id, fallback_frame_url or ""
+        )
+
+        bbox: dict[str, float] | None = None
+        try:
+            box = cdp.call_result(
+                "DOM.getBoxModel",
+                {"backendNodeId": backend_node_id},
+                session_id=session_id,
+            )
+            bbox = _box_to_bbox(box.get("model"))
+        except CDPError:
+            bbox = None  # Element im DOM aber nicht gerendert — wird gelistet.
+
+        el = _build_element(ax, dom_node, bbox, frame_id, frame_url)
+        if el is not None:
+            elements_out.append(el)
+
+
 def scan(cdp: CDPConnection) -> ScanResult:
     """Hauptfunktion. Liefert ALLE interaktiven Elemente eines Tabs.
 
@@ -319,13 +401,21 @@ def scan(cdp: CDPConnection) -> ScanResult:
 
     Iframes werden via pierce=True automatisch mitgescannt — kein zusätzlicher
     ``Target.attachToTarget`` nötig für same-process iframes. Cross-origin
-    OOPIFs sind im AX-Tree des Top-Targets enthalten, sofern
-    ``--force-renderer-accessibility`` als Chrome-Flag gesetzt ist
-    (siehe AGENTS.md REGEL 4).
+    OOPIFs werden seit #93 via ``Target.setAutoAttach(flatten=True)`` als
+    eigene Sub-Sessions attached und in einer zweiten Pass-Schleife gescannt
+    (siehe ``oopif_registry.py``). Der zusätzliche AX-Tree aus dem Top-Target
+    via ``--force-renderer-accessibility`` bleibt als Fallback bestehen für
+    Browser-Builds, in denen Flatten-Attach nicht greift.
     """
     cdp.call("DOM.enable", retry=False)
     cdp.call("Page.enable", retry=False)
     cdp.call("Accessibility.enable", retry=False)
+
+    # OOPIF-Auto-Attach AKTIVIEREN bevor wir den AX-Tree pullen, damit die
+    # ``Target.attachedToTarget``-Events im Drain-Schritt unten ankommen.
+    # Idempotent: mehrfaches ``setAutoAttach`` ist sicher.
+    oopif = OopifRegistry(cdp)
+    oopif.enable()
 
     # Metadaten
     meta_resp = cdp.call_result(
@@ -351,11 +441,6 @@ def scan(cdp: CDPConnection) -> ScanResult:
 
     _walk(frame_tree.get("frameTree") or {})
 
-    # DOM-Index + AX-Tree
-    dom_index = _build_dom_index(cdp)
-    ax_result = cdp.call_result("Accessibility.getFullAXTree", {})
-    ax_nodes = ax_result.get("nodes", [])
-
     # Captcha-Frame-Detection (nur URLs sammeln)
     captcha_frames = [
         {"frame_id": fid, "url": furl}
@@ -364,36 +449,41 @@ def scan(cdp: CDPConnection) -> ScanResult:
     ]
 
     elements: list[UniversalElement] = []
-    for ax in ax_nodes:
-        role = _ax_string(ax, "role")
 
-        # Filter: nur interaktive Rollen ODER nicht-ignored Knoten mit name.
-        if role not in INTERACTIVE_ROLES:
-            if ax.get("ignored", True):
-                continue
-            if not _ax_string(ax, "name"):
-                continue
+    # Pass 1: Top-Target
+    _scan_session(
+        cdp,
+        session_id=None,
+        fallback_frame_id="",
+        fallback_frame_url=meta.get("u", ""),
+        frame_id_to_url=frame_id_to_url,
+        elements_out=elements,
+    )
 
-        backend_node_id = ax.get("backendDOMNodeId")
-        if not backend_node_id:
-            continue
-
-        dom_node = dom_index.get(backend_node_id)
-        frame_id = ax.get("frameId") or (dom_node or {}).get("frameId") or ""
-        frame_url = frame_id_to_url.get(frame_id, meta.get("u", ""))
-
-        bbox: dict[str, float] | None = None
+    # Pass 2: Alle OOPIF-Sessions, die Chrome inzwischen attached hat.
+    # ``drain_events`` holt nachgereichte ``Target.attachedToTarget``-Events
+    # ab, die noch in der WS-Queue liegen (kommen oft erst NACH unseren
+    # Top-Target-Calls). Siehe AGENTS.md REGEL 2 für Stable-ID-Salt mit
+    # ``frame_id``, damit Backend-Node-Ids zwischen Sessions kollisionsfrei
+    # bleiben.
+    cdp.drain_events(timeout=0.1)
+    for sess in oopif.snapshot():
         try:
-            box = cdp.call_result(
-                "DOM.getBoxModel", {"backendNodeId": backend_node_id}
+            _scan_session(
+                cdp,
+                session_id=sess.session_id,
+                fallback_frame_id=sess.frame_id,
+                fallback_frame_url=sess.url,
+                frame_id_to_url=frame_id_to_url,
+                elements_out=elements,
             )
-            bbox = _box_to_bbox(box.get("model"))
         except CDPError:
-            bbox = None  # Element im DOM aber nicht gerendert — wird gelistet.
-
-        el = _build_element(ax, dom_node, bbox, frame_id, frame_url)
-        if el is not None:
-            elements.append(el)
+            # OOPIF kann während des Scans navigiert/detached sein. Wir lassen
+            # die Session aus und liefern die anderen aus — der Survey-Solver
+            # toleriert teilweise fehlende Elemente besser als einen Total-
+            # Crash. ``OopifRegistry`` cleant die Session beim nächsten
+            # ``detachedFromTarget``-Event auf.
+            continue
 
     return ScanResult(
         url=meta.get("u", ""),

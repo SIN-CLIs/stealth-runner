@@ -69,9 +69,26 @@ from __future__ import annotations
 
 import json
 import time
-from typing import Any
+from typing import Any, Callable
 
 import websocket
+
+
+# Signatur für die Event-Handler-Chain. Wird aufgerufen, sobald CDP ein
+# Event-Message liefert (also eine Message OHNE ``id``-Feld).
+#
+#   handler(method, params, session_id) -> None
+#
+# - ``method``:     CDP-Methoden-Name, z. B. ``"Page.javascriptDialogOpening"``
+# - ``params``:     Event-Parameter-Dict (kann leer sein, nie None)
+# - ``session_id``: ``None`` für Events vom Top-Target; gesetzt für OOPIF-
+#                   Sub-Sessions, wenn ``Target.setAutoAttach(flatten=True)``
+#                   aktiv ist (siehe ``oopif_registry.py``).
+#
+# Mehrere Subscriber chainen sich via ``prev = cdp.event_handler`` /
+# ``cdp.event_handler = my_chained_handler`` selbst. Siehe
+# ``js_dialog_handler.py`` und ``oopif_registry.py`` für Beispiele.
+EventHandler = Callable[[str, "dict[str, Any]", "str | None"], None]
 
 
 class CDPError(Exception):
@@ -107,6 +124,7 @@ class CDPConnection:
         backoff_max: float = 5.0,
         timeout: float = 15.0,
         reconnect_url_fn=None,
+        event_handler: EventHandler | None = None,
     ):
         """Initialize CDP connection.
 
@@ -117,6 +135,14 @@ class CDPConnection:
             backoff_max: Maximum backoff in seconds
             timeout: Connection timeout per attempt
             reconnect_url_fn: Callable that returns a fresh WS URL on reconnect
+            event_handler: Optional callback for CDP events (messages without
+                ``id``). Signature ``(method, params, session_id) -> None``.
+                Wird aus ``_recv_until_id`` und ``drain_events`` aufgerufen.
+                Exceptions im Handler werden geschluckt — die Request-
+                Schleife darf nie crashen. Subscriber chainen sich via
+                ``prev = cdp.event_handler`` / ``cdp.event_handler = ...``.
+                Siehe ``js_dialog_handler.py`` (#94) und ``oopif_registry.py``
+                (#93).
         """
         self.ws_url = ws_url
         self.max_retries = max_retries
@@ -127,6 +153,8 @@ class CDPConnection:
         self._ws: websocket.WebSocket | None = None
         self._id_counter = 1
         self._call_count = 0
+        # Public attribute: Subscriber dürfen es lesen und ersetzen (chaining).
+        self.event_handler: EventHandler | None = event_handler
 
     def connect(self) -> None:
         """Connect to the CDP WebSocket with retry."""
@@ -174,6 +202,7 @@ class CDPConnection:
         params: dict[str, Any] | None = None,
         *,
         retry: bool = True,
+        session_id: str | None = None,
     ) -> dict[str, Any]:
         """Send a CDP command and return the result dict.
 
@@ -181,6 +210,12 @@ class CDPConnection:
             method: CDP method name (e.g. "Runtime.evaluate")
             params: Command parameters
             retry: Whether to retry on transient failures
+            session_id: Optional CDP ``sessionId`` for multiplexed sub-targets
+                (OOPIFs unter ``Target.setAutoAttach(flatten=True)``). Wenn
+                gesetzt, wird das Feld ``sessionId`` ins Outgoing-Message
+                gemergt; die CDP-Antwort enthält dieselbe ``sessionId`` und
+                wird durch ``_recv_until_id`` korrekt zugeordnet. Wenn
+                ``None``: Top-Target.
 
         Returns:
             The full CDP response dict.
@@ -196,11 +231,14 @@ class CDPConnection:
         self._id_counter += 1
         self._call_count += 1
 
-        payload = json.dumps({
+        msg: dict[str, Any] = {
             "id": msg_id,
             "method": method,
             "params": params or {},
-        })
+        }
+        if session_id:
+            msg["sessionId"] = session_id
+        payload = json.dumps(msg)
 
         max_attempts = self.max_retries if retry else 1
         last_error = None
@@ -257,18 +295,110 @@ class CDPConnection:
         This solves the "response consumed" problem: messages for other IDs
         (events, other callers) are skipped, and the correct response is
         returned to the caller.
+
+        Events (messages WITHOUT ``id``) are dispatched to
+        ``self.event_handler`` falls dieser registriert ist. So können
+        Subscriber wie ``JsDialogHandler`` (#94) und ``OopifRegistry`` (#93)
+        auf CDP-Events reagieren, ohne dass wir den Sync-Client um eine
+        async Event-Loop erweitern müssen.
         """
         while True:
             raw = self._ws.recv()
             try:
                 data = json.loads(raw)
-                # Event messages have no 'id' field
-                if "id" in data and data["id"] == target_id:
-                    return raw
-                # Events are ignored — they'd be handled by an event loop
-                # in a more complex client, but for synchronous use we skip them
             except json.JSONDecodeError:
                 continue
+            # Antwort auf unseren Request → fertig
+            if "id" in data and data["id"] == target_id:
+                return raw
+            # Event-Message (kein "id") → an Handler dispatchen
+            if "method" in data:
+                self._dispatch_event(data)
+
+    def _dispatch_event(self, data: dict[str, Any]) -> None:
+        """Schickt eine Event-Message an den registrierten ``event_handler``.
+
+        Schluckt JEDE Exception aus dem Handler — die Request-Schleife darf
+        nie wegen eines bug-gy Subscribers crashen.
+        """
+        handler = self.event_handler
+        if handler is None:
+            return
+        try:
+            handler(
+                str(data.get("method") or ""),
+                data.get("params") or {},
+                data.get("sessionId"),
+            )
+        except Exception:
+            # Bewusst geschluckt: Event-Subscriber-Crashes dürfen nie die
+            # Sync-Request-Schleife killen. Wer Logging will, soll im
+            # eigenen Handler try/except + log machen.
+            pass
+
+    def drain_events(self, timeout: float = 0.05) -> int:
+        """Non-blocking Event-Drain: holt alle pending Events ab.
+
+        Im Sync-Client kommen Events nur als Beifang zwischen Request-Antworten
+        an. Wer aktiv Events erwarten muss (z. B. ``Target.attachedToTarget``
+        direkt nach ``setAutoAttach``, oder ``Page.javascriptDialogOpening``
+        nach einem Klick auf einen Submit-Button), ruft diese Methode auf, um
+        die WebSocket-Queue ohne Blocking abzubauen.
+
+        Args:
+            timeout: Pro-recv-Timeout in Sekunden. 0 = unverzüglicher Abbruch
+                wenn die Queue leer ist; 0.05–0.1s ist ein guter Default,
+                wenn man wartet bis Chrome geantwortet hat.
+
+        Returns:
+            Anzahl der gedrainten Events (für Tests/Debug).
+        """
+        if self._ws is None:
+            return 0
+        prev_timeout: float | None = None
+        # Nur Real-Sockets unterstützen settimeout; Tests mit Mock-Objekten
+        # nicht.
+        has_settimeout = hasattr(self._ws, "settimeout") and hasattr(
+            self._ws, "gettimeout"
+        )
+        if has_settimeout:
+            try:
+                prev_timeout = self._ws.gettimeout()
+            except Exception:
+                prev_timeout = None
+            try:
+                self._ws.settimeout(timeout)
+            except Exception:
+                pass
+        count = 0
+        try:
+            while True:
+                try:
+                    raw = self._ws.recv()
+                except Exception:
+                    # Timeout oder closed → fertig. Wir unterscheiden hier
+                    # NICHT zwischen Timeout und echtem Fehler — beides
+                    # bedeutet "keine weiteren Events grad".
+                    break
+                if not raw:
+                    break
+                try:
+                    data = json.loads(raw)
+                except json.JSONDecodeError:
+                    continue
+                if "method" in data:
+                    self._dispatch_event(data)
+                    count += 1
+                # Späte Request-Antworten (ID, aber falsche ID): ignorieren.
+                # Sollte praktisch nie vorkommen, weil _recv_until_id strikt
+                # alles vor der erwarteten ID konsumiert.
+        finally:
+            if has_settimeout and prev_timeout is not None:
+                try:
+                    self._ws.settimeout(prev_timeout)
+                except Exception:
+                    pass
+        return count
 
     def call_result(
         self,
@@ -279,6 +409,7 @@ class CDPConnection:
         """Send a CDP command and return 'result' dict directly.
 
         Shorthand for: send(method, params)["result"]
+        Akzeptiert dieselben kwargs wie ``call`` (inkl. ``session_id``).
         """
         response = self.call(method, params, **kwargs)
         return response.get("result", {})

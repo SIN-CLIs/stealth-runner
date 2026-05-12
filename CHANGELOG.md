@@ -2,6 +2,44 @@
 
 ## [Unreleased] - 2026-05-12
 
+### Added (#93 + #94 — CDP Event-Chain, OOPIF Auto-Attach, JS-Dialog)
+- `survey-cli/survey/cdp_client.py`: public `event_handler` attribute,
+  `_dispatch_event` swallowing handler exceptions, non-blocking
+  `drain_events(timeout)`, and `session_id=` parameter on `call()` for CDP
+  flatten-multiplexing.
+- `survey-cli/survey/js_dialog_handler.py` (NEW): two-layer Belt-and-Braces
+  dialog dismissal — `Page.addScriptToEvaluateOnNewDocument` JS override
+  (alert/confirm/prompt/beforeunload as no-ops) PLUS CDP event subscriber
+  for `Page.javascriptDialogOpening` → `Page.handleJavaScriptDialog`.
+- `survey-cli/survey/oopif_registry.py` (NEW): `Target.setAutoAttach(flatten=
+  True)` + `OopifSession` dataclass + `frame_to_session` map maintained from
+  `Target.attachedToTarget`/`Target.detachedFromTarget` events.
+- `survey-cli/survey/cdp_universal.py`: `_scan_session` extracted helper;
+  `scan()` now does Pass 1 (Top-Target) + `drain_events` + Pass 2 (per
+  OOPIF session). `stable_id` schema unchanged (`sha1(frame_id + ":" +
+  backend_node_id)`) → IDs stay collision-free across sessions.
+- `survey-cli/survey/cdp_actuator.py`: `ClickActuator` installs
+  `JsDialogHandler` once and calls `drain_events` after mouse events but
+  before the post-hash, so dialogs are dismissed before DOM stability is
+  measured. New result reason `dialog_dismissed`.
+- `tests/test_event_handlers.py` (NEW): 9 unit tests using a `FakeWS` —
+  covers event/response separation, handler exception swallowing, drain
+  semantics, dialog dismissal, default policy, OOPIF attach+detach, type
+  filtering (no workers), and multi-subscriber chaining.
+
+### Removed
+- `_plans/js-dialog-handler.md` (replaced by inline code + AGENTS.md §#94, A4).
+- `_plans/oopif-autoattach.md` (replaced by inline code + AGENTS.md §#93, A4).
+
+### Status Changes
+- #93 → DONE (OOPIF scan coverage via flatten-attach; click-coordinate
+  translation tracked as follow-up if needed)
+- #94 → DONE (JS dialogs auto-dismissed with two-layer redundancy)
+- AGENTS.md Coverage Snapshot updated; new deep-dive section
+  "ISSUE #93 + #94" added with full architectural rationale.
+
+## [Unreleased] - 2026-05-12
+
 ### Added (#97 — Full Issue Triage Sweep)
 - Plan files for every previously-untriaged open issue (#18, #19, #20, #30, #31,
   #34, #39, #43, #56, #57, #58, #61, #62, #80, #83). Related issues batched
