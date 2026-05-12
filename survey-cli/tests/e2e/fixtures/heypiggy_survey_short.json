@@ -1,0 +1,112 @@
+{
+  "_meta": {
+    "description": "Sanitized 5-question survey fixture for HeyPiggy (SR-139)",
+    "provider": "heypiggy",
+    "survey_id": "survey-001",
+    "captured": "2026-05-12T00:00:00Z",
+    "sanitized": true,
+    "warning": "NO REAL DATA - synthetic questions only"
+  },
+  "survey": {
+    "id": "survey-001",
+    "title": "Consumer Preferences Survey",
+    "reward": 0.80,
+    "currency": "EUR",
+    "estimated_duration_minutes": 5,
+    "question_count": 5
+  },
+  "questions": [
+    {
+      "index": 0,
+      "type": "single_choice",
+      "text": "What is your age group?",
+      "options": [
+        {"value": "18-24", "label": "18-24 years"},
+        {"value": "25-34", "label": "25-34 years"},
+        {"value": "35-44", "label": "35-44 years"},
+        {"value": "45-54", "label": "45-54 years"},
+        {"value": "55+", "label": "55 years or older"}
+      ],
+      "expected_answer": "25-34",
+      "disqualifying_options": []
+    },
+    {
+      "index": 1,
+      "type": "single_choice",
+      "text": "How often do you shop online?",
+      "options": [
+        {"value": "daily", "label": "Daily"},
+        {"value": "weekly", "label": "Weekly"},
+        {"value": "monthly", "label": "Monthly"},
+        {"value": "rarely", "label": "Rarely"},
+        {"value": "never", "label": "Never"}
+      ],
+      "expected_answer": "weekly",
+      "disqualifying_options": ["never"]
+    },
+    {
+      "index": 2,
+      "type": "multiple_choice",
+      "text": "Which product categories interest you? (Select all that apply)",
+      "options": [
+        {"value": "electronics", "label": "Electronics"},
+        {"value": "fashion", "label": "Fashion"},
+        {"value": "home", "label": "Home & Garden"},
+        {"value": "sports", "label": "Sports & Outdoors"},
+        {"value": "food", "label": "Food & Beverages"}
+      ],
+      "expected_answer": ["electronics", "fashion"],
+      "disqualifying_options": []
+    },
+    {
+      "index": 3,
+      "type": "text_input",
+      "text": "What is your favorite brand?",
+      "validation": {
+        "min_length": 2,
+        "max_length": 100
+      },
+      "expected_answer": "Example Brand",
+      "disqualifying_options": []
+    },
+    {
+      "index": 4,
+      "type": "rating_scale",
+      "text": "How satisfied are you with online shopping experiences?",
+      "scale": {
+        "min": 1,
+        "max": 5,
+        "labels": {
+          "1": "Very Dissatisfied",
+          "5": "Very Satisfied"
+        }
+      },
+      "expected_answer": 4,
+      "disqualifying_options": []
+    }
+  ],
+  "completion": {
+    "success_page": {
+      "url": "https://www.heypiggy.com/survey/survey-001/complete",
+      "body_preview": "<!DOCTYPE html><html><body><div class=\"completion-message\">Vielen Dank für Ihre Teilnahme! Thank you for completing this survey.</div><div class=\"reward-credited\">0,80 € wurden Ihrem Konto gutgeschrieben.</div></body></html>",
+      "completion_phrases": [
+        "Vielen Dank für Ihre Teilnahme",
+        "Thank you for completing this survey",
+        "wurden Ihrem Konto gutgeschrieben"
+      ]
+    },
+    "balance_after": 16.30,
+    "balance_delta": 0.80
+  },
+  "screen_out": {
+    "page": {
+      "url": "https://www.heypiggy.com/survey/survey-001/screenout",
+      "body_preview": "<!DOCTYPE html><html><body><div class=\"screenout-message\">Leider qualifizieren Sie sich nicht für diese Umfrage. Unfortunately, you do not qualify for this survey.</div></body></html>",
+      "screen_out_phrases": [
+        "qualifizieren Sie sich nicht",
+        "do not qualify",
+        "nicht für diese Umfrage"
+      ]
+    }
+  }
+}

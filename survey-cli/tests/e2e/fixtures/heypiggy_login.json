@@ -1,0 +1,72 @@
+{
+  "_meta": {
+    "description": "Sanitized login flow fixture for HeyPiggy (SR-139)",
+    "provider": "heypiggy",
+    "captured": "2026-05-12T00:00:00Z",
+    "sanitized": true,
+    "warning": "NO REAL CREDENTIALS - placeholders only"
+  },
+  "credentials": {
+    "username": "EXAMPLE_USER",
+    "password": "EXAMPLE_PASS"
+  },
+  "requests": [
+    {
+      "step": "login_page",
+      "method": "GET",
+      "url": "https://www.heypiggy.com/login",
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "text/html; charset=utf-8"
+        },
+        "body_file": null,
+        "body_preview": "<!DOCTYPE html><html><head><title>Login - HeyPiggy</title></head><body><form id=\"login-form\"><input name=\"email\" type=\"email\"/><input name=\"password\" type=\"password\"/><button type=\"submit\">Login</button></form></body></html>"
+      }
+    },
+    {
+      "step": "login_submit",
+      "method": "POST",
+      "url": "https://www.heypiggy.com/api/auth/login",
+      "request_body": {
+        "email": "EXAMPLE_USER",
+        "password": "EXAMPLE_PASS"
+      },
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "application/json",
+          "set-cookie": "session=<REDACTED-TOKEN>; Path=/; HttpOnly; Secure"
+        },
+        "body": {
+          "success": true,
+          "user": {
+            "id": 12345,
+            "email": "EXAMPLE_USER",
+            "username": "example_user",
+            "balance": 15.50,
+            "currency": "EUR"
+          },
+          "token": "<REDACTED-TOKEN>"
+        }
+      }
+    },
+    {
+      "step": "dashboard_redirect",
+      "method": "GET",
+      "url": "https://www.heypiggy.com/dashboard",
+      "response": {
+        "status": 200,
+        "headers": {
+          "content-type": "text/html; charset=utf-8"
+        },
+        "body_preview": "<!DOCTYPE html><html><head><title>Dashboard - HeyPiggy</title></head><body><div class=\"balance\">15,50 €</div><div class=\"surveys-available\"><div class=\"survey-card\" data-survey-id=\"survey-001\"><span class=\"reward\">0,80 €</span><span class=\"duration\">5 min</span></div></div></body></html>"
+      }
+    }
+  ],
+  "session": {
+    "cookie": "session=<REDACTED-TOKEN>",
+    "user_id": 12345,
+    "initial_balance": 15.50
+  }
+}
