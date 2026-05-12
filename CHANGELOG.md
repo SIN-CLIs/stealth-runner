@@ -2,6 +2,22 @@
 
 ## [Unreleased] - 2026-05-12
 
+### Added (#97 — Full Issue Triage Sweep)
+- Plan files for every previously-untriaged open issue (#18, #19, #20, #30, #31,
+  #34, #39, #43, #56, #57, #58, #61, #62, #80, #83). Related issues batched
+  where work overlaps (#18+#19, #30+#31, #61+#62).
+- STATUS INDEX in AGENTS.md now covers every open issue with prio + status +
+  plan-file or code-symbol reference. Adds Prio column.
+- Audit evidence for #82: `delqhi/sin-hermes-agent` main contains no
+  survey-solver files (verified 2026-05-12 against `git/trees/main?recursive=1`);
+  the repo is a different project (Auth Rotator + Webshop). Closing as resolved.
+
+### Status Changes
+- #82 → DONE (audited, no migration needed)
+- 13 previously-untriaged issues → labelled with prio (P0/P1/P2/P3/DEFERRED)
+
+## [Unreleased] - 2026-05-12
+
 ### Added
 - **(#96) OPERATIONAL RULES section** at the top of AGENTS.md (directly after
   STATUS INDEX). Combines 10 session-hardened rules (A1-A10), 13 distilled

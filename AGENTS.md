@@ -4,19 +4,36 @@ content: |
 
   ## STATUS INDEX (machine-readable — update on every PR)
 
-  | Issue | Status   | Code Location / Plan                                                                 |
-  |-------|----------|--------------------------------------------------------------------------------------|
-  | #84   | DONE     | `survey-cli/survey/cdp_actuator.py::_wait_for_dom_stable` (MutationObserver wait)    |
-  | #85   | DONE     | `survey-cli/survey/cdp_actuator.py` (no_dom_change retry: 4x exp 0/200/400/800 ms)   |
-  | #86   | DONE     | `survey-cli/survey/cdp_actuator.py::_wait_for_position_stable` (animation wait)      |
-  | #87   | PLANNED  | `_plans/87-form-validation.md` (Form Validation Detection — P2)                      |
-  | #88   | EPIC     | Master tracking issue — 100% framework-agnostic survey completion                    |
-  | #91   | DONE     | repo root cleanup complete; legacy MDs absorbed into the MIGRATED LEGACY DOCS section below |
-  | #92   | DONE     | this STATUS INDEX section                                                            |
-  | #93   | PLANNED  | `_plans/oopif-autoattach.md` (Target.setAutoAttach flatten=True for OOPIFs)          |
-  | #94   | PLANNED  | `_plans/js-dialog-handler.md` (Page.javascriptDialogOpening auto-dismiss)            |
-  | #95   | DONE     | full restore + migration of 49 hard-deleted MDs into the LEGACY (RESTORE PASS) section below |
-  | #96   | DONE     | OPERATIONAL RULES section directly under STATUS INDEX                                |
+  | Issue | Prio | Status   | Code Location / Plan                                                                 |
+  |-------|------|----------|--------------------------------------------------------------------------------------|
+  | #18   | P2   | PLANNED  | `_plans/18-19-subagent-registry-parallel.md` (parallel subagent execution)            |
+  | #19   | P2   | PLANNED  | `_plans/18-19-subagent-registry-parallel.md` (subagent registry — prerequisite for #18) |
+  | #20   | P3   | PLANNED  | `_plans/20-adr-cloud-provider.md` (embed ADR-001 directly into AGENTS.md per A9)      |
+  | #30   | P3   | DEFERRED | `_plans/30-31-gitnexus-deferred.md` (GitNexus reindex — re-activate when GitNexus is in active CI use) |
+  | #31   | P3   | DEFERRED | `_plans/30-31-gitnexus-deferred.md` (GitNexus impact gate — same trigger as #30)      |
+  | #34   | P0   | BLOCKED  | `_plans/34-cmd-watch-graph.md` (cmd_watch → graph; blocked by SR-39)                  |
+  | #39   | P1   | PLANNED  | `_plans/39-auto-doc-memory.md` (Auto-Doc + stealth-memory)                            |
+  | #43   | P2   | PLANNED  | `_plans/43-graph-compiled-promotion.md` (graph compiled promotion after 10x)          |
+  | #56   | P2   | PLANNED  | `_plans/56-llm-suggester.md` (FCTC-ES Phase 2 LLM-Suggester)                          |
+  | #57   | P2   | PLANNED  | `_plans/57-survey-learn-apply.md` (survey learn apply CLI w/ AST roundtrip)           |
+  | #58   | P2   | PLANNED  | `_plans/58-matcher-miss-labels.md` (persistent semantically-tagged miss_labels)       |
+  | #61   | P2   | PLANNED  | `_plans/61-62-test-style-debt.md` (style-debt: E501/E701/E702 — batched with #62)     |
+  | #62   | P2   | PLANNED  | `_plans/61-62-test-style-debt.md` (test-debt: 10 files, 37 failures — batched with #61) |
+  | #80   | P0   | IN-PROG  | `survey-cli/survey/qualification_rules.py` + `_plans/80-agent-qualification.md` (CUA-fallback wiring) |
+  | #82   | -    | DONE     | delqhi/sin-hermes-agent audited 2026-05-12: no survey-solver files in main; closing as resolved |
+  | #83   | P1   | PLANNED  | `_plans/83-error-observability.md` (multi-phase EPIC: circuit breaker, checkpoints, audit, prometheus) |
+  | #84   | P0   | DONE     | `survey-cli/survey/cdp_actuator.py::_wait_for_dom_stable` (MutationObserver wait)    |
+  | #85   | P0   | DONE     | `survey-cli/survey/cdp_actuator.py` (no_dom_change retry: 4x exp 0/200/400/800 ms)   |
+  | #86   | P0   | DONE     | `survey-cli/survey/cdp_actuator.py::_wait_for_position_stable` (animation wait)      |
+  | #87   | P2   | PLANNED  | `_plans/87-form-validation.md` (form validation detection — pre/post submit)         |
+  | #88   | EPIC | EPIC     | master tracking issue — 100% framework-agnostic survey completion                    |
+  | #91   | -    | DONE     | repo root cleanup + AGENTS.md absorption (see CHANGELOG)                              |
+  | #92   | -    | DONE     | this STATUS INDEX section                                                            |
+  | #93   | P1   | PLANNED  | `_plans/oopif-autoattach.md` (Target.setAutoAttach flatten=True for OOPIFs)          |
+  | #94   | P2   | PLANNED  | `_plans/js-dialog-handler.md` (Page.javascriptDialogOpening auto-dismiss)            |
+  | #95   | -    | DONE     | restore + migration of 49 hard-deleted MDs (see CHANGELOG + LEGACY RESTORE PASS)     |
+  | #96   | -    | DONE     | OPERATIONAL RULES section (this section above) — distilled rule book                  |
+  | #97   | -    | DONE     | this full triage pass: 13 untriaged issues assigned status + plan files (see CHANGELOG) |
 
   ### Update Rules (read before editing this table)
   - One line per work item. Always point to a code symbol (`file::function`) OR a plan file path.
