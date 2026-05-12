@@ -51,6 +51,7 @@ BANNED:
   Das Modell muss `stable_id` + `action ∈ {click, fill, wait, complete}` liefern.
 ================================================================================
 """
+# ruff: noqa: E501  (LLM prompts in f-strings - SR-62 #61)
 
 import json
 import os
@@ -95,7 +96,7 @@ def build_v2_prompt(snapshot: dict, profile: dict) -> str:
                          "slider", "menuitem", "tab", "option")
     raw_elements.sort(
         key=lambda e: (
-            INTERACTIVE_ORDER.index(e.get("role", "")) if e.get("role") in INTERACTIVE_ORDER else 99,
+            INTERACTIVE_ORDER.index(e.get("role", "")) if e.get("role") in INTERACTIVE_ORDER else 99,  # noqa: E501
             0 if not e.get("checked") else 1,
         )
     )

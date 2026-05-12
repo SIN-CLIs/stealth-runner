@@ -51,6 +51,7 @@ BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
   ❌ killall Google Chrome
   ❌ skylight-cli click --element-index
 ================================================================================"""
+# ruff: noqa: E501  (long JS/HTML payloads in multi-line strings - SR-62 #61)
 
 import json
 import time

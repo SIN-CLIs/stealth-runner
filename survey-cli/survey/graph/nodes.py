@@ -118,6 +118,7 @@ DEPENDENCIES:
   - .opencode_tool — delegate_task() → opencode CLI
 
 ================================================================================"""
+# ruff: noqa: E501  (long JS/HTML payloads in multi-line strings - SR-62 #61)
 
 from __future__ import annotations
 
@@ -149,14 +150,14 @@ def ensure_chrome(state: SurveyState) -> SurveyState:
     from ..chrome import is_chrome_alive, find_dashboard_ws, ChromeLauncher
     if is_chrome_alive(state.cdp_port):
         ws = find_dashboard_ws(state.cdp_port)
-        if ws: state.dashboard_ws = ws; state.status = "chrome_ready"; return state
-        state.add_error("ensure_chrome", f"Chrome alive no WS port {state.cdp_port}"); state.status = "error"; return state
+        if ws: state.dashboard_ws = ws; state.status = "chrome_ready"; return state  # noqa: E701,E702
+        state.add_error("ensure_chrome", f"Chrome alive no WS port {state.cdp_port}"); state.status = "error"; return state  # noqa: E501,E702
     result = ChromeLauncher(port=state.cdp_port, debug=True).launch_and_verify(url="https://www.heypiggy.com/?page=dashboard")
-    if not result.get("ok"): state.add_error("ensure_chrome", result.get("error","launch failed")); state.status = "error"; return state
+    if not result.get("ok"): state.add_error("ensure_chrome", result.get("error","launch failed")); state.status = "error"; return state  # noqa: E501,E701,E702
     time.sleep(2)
     ws = find_dashboard_ws(state.cdp_port)
-    if ws: state.dashboard_ws = ws; state.status = "chrome_ready"
-    else: state.add_error("ensure_chrome", "launched no WS"); state.status = "error"
+    if ws: state.dashboard_ws = ws; state.status = "chrome_ready"  # noqa: E701,E702
+    else: state.add_error("ensure_chrome", "launched no WS"); state.status = "error"  # noqa: E701,E702
     return state
 
 
@@ -173,21 +174,21 @@ def open_survey(state: SurveyState) -> SurveyState:
         from tools.tool_open_survey import open_survey as _open_survey_tool
     except ImportError:
         import importlib.util
-        spec = importlib.util.spec_from_file_location("tool_open_survey", "/Users/jeremy/dev/stealth-runner/survey-cli/tools/tool_open_survey.py")
-        mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod); _open_survey_tool = mod.open_survey
-    result = _open_survey_tool(survey_id=state.survey_id, pid=0, wid=0, port=state.cdp_port, wait_modal=3.0, wait_load=5.0)
+        spec = importlib.util.spec_from_file_location("tool_open_survey", "/Users/jeremy/dev/stealth-runner/survey-cli/tools/tool_open_survey.py")  # noqa: E501
+        mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod); _open_survey_tool = mod.open_survey  # noqa: E501,E702
+    result = _open_survey_tool(survey_id=state.survey_id, pid=0, wid=0, port=state.cdp_port, wait_modal=3.0, wait_load=5.0)  # noqa: E501
     if result.get("status") != "ok":
         err = result.get("reason", "Unknown")
         state.add_error("open_survey", err)
-        if "screen_out" in err.lower() or "expired" in err.lower(): state.screen_out = True; state.status = "screen_out"
-        else: state.status = "error"
+        if "screen_out" in err.lower() or "expired" in err.lower(): state.screen_out = True; state.status = "screen_out"  # noqa: E501,E701,E702
+        else: state.status = "error"  # noqa: E701
         return state
     ws_url = result.get("ws_url")
-    if not ws_url: state.add_error("open_survey", "no ws_url"); state.status = "error"; return state
-    state.tab_ws = ws_url; state.survey_url = result.get("url", "")
-    if result.get("provider"): state.provider = result.get("provider")
+    if not ws_url: state.add_error("open_survey", "no ws_url"); state.status = "error"; return state  # noqa: E701,E702
+    state.tab_ws = ws_url; state.survey_url = result.get("url", "")  # noqa: E702
+    if result.get("provider"): state.provider = result.get("provider")  # noqa: E701
     state.target_mode = "in_dashboard" if result.get("flow") == "in_page" else "new_tab"
-    state.status = "tab_open"; return state
+    state.status = "tab_open"; return state  # noqa: E702
 
 
 # ── NODE 3: inject_cookies ────────────────────────────────────────────────────
@@ -210,27 +211,27 @@ def open_survey(state: SurveyState) -> SurveyState:
 
 def inject_cookies(state: SurveyState) -> SurveyState:
     if getattr(state, "target_mode", "new_tab") == "in_dashboard":
-        state.cookies_injected = True; state.status = "cookies_injected"; return state
+        state.cookies_injected = True; state.status = "cookies_injected"; return state  # noqa: E702
     if not state.tab_ws:
-        state.add_error("inject_cookies", "tab_ws not set"); state.status = "error"; return state
+        state.add_error("inject_cookies", "tab_ws not set"); state.status = "error"; return state  # noqa: E702
     cookie_file = os.environ.get("HEYPIGGY_COOKIE_BACKUP", DEFAULT_COOKIE_BACKUP)
     try:
-        with open(cookie_file) as f: cookie_data = json.load(f)
+        with open(cookie_file) as f: cookie_data = json.load(f)  # noqa: E701
     except Exception as e:
-        state.add_error("inject_cookies", f"Load failed {cookie_file}: {e}"); state.status = "error"; return state
-    heypiggy = [{"name":c["name"],"value":c["value"],"domain":c["domain"],"path":c.get("path","/"),"expires":c.get("expires",-1),"secure":c.get("secure",False),"httpOnly":c.get("httpOnly",False)} for c in cookie_data.get("cookies",[]) if "heypiggy" in c.get("domain","").lower()]
+        state.add_error("inject_cookies", f"Load failed {cookie_file}: {e}"); state.status = "error"; return state  # noqa: E501,E702
+    heypiggy = [{"name":c["name"],"value":c["value"],"domain":c["domain"],"path":c.get("path","/"),"expires":c.get("expires",-1),"secure":c.get("secure",False),"httpOnly":c.get("httpOnly",False)} for c in cookie_data.get("cookies",[]) if "heypiggy" in c.get("domain","").lower()]  # noqa: E501
     if not heypiggy:
-        state.add_error("inject_cookies", "No heypiggy cookies"); state.status = "error"; return state
+        state.add_error("inject_cookies", "No heypiggy cookies"); state.status = "error"; return state  # noqa: E501,E702
     try:
         ws = websocket.create_connection(state.tab_ws, timeout=15)
-        ws.send(json.dumps({"id": 1, "method": "Network.setCookies", "params": {"cookies": heypiggy}}))
-        resp = json.loads(ws.recv()); ws.close()
+        ws.send(json.dumps({"id": 1, "method": "Network.setCookies", "params": {"cookies": heypiggy}}))  # noqa: E501
+        resp = json.loads(ws.recv()); ws.close()  # noqa: E702
         if resp.get("result", {}).get("success") is True:
-            state.cookies_injected = True; state.status = "cookies_injected"
+            state.cookies_injected = True; state.status = "cookies_injected"  # noqa: E702
         else:
-            state.add_error("inject_cookies", str(resp)); state.status = "error"
+            state.add_error("inject_cookies", str(resp)); state.status = "error"  # noqa: E702
     except Exception as e:
-        state.add_error("inject_cookies", str(e)[:200]); state.status = "error"
+        state.add_error("inject_cookies", str(e)[:200]); state.status = "error"  # noqa: E702
     return state
 
 
@@ -379,9 +380,9 @@ def captcha_node(state: SurveyState) -> SurveyState:
     
     # Log warum wir hier sind
     reason = []
-    if has_captcha_hint: reason.append("captcha_frames")
-    if has_drag_drop: reason.append(f"drag_drop(target={getattr(state, 'drag_drop_target', '?')})")
-    if stuck_threshold_reached: reason.append(f"no_dom_change={state.no_dom_change_count}")
+    if has_captcha_hint: reason.append("captcha_frames")  # noqa: E701
+    if has_drag_drop: reason.append(f"drag_drop(target={getattr(state, 'drag_drop_target', '?')})")  # noqa: E701
+    if stuck_threshold_reached: reason.append(f"no_dom_change={state.no_dom_change_count}")  # noqa: E701
     print(f"[captcha] triggered: {', '.join(reason)}")
 
     if not state.tab_ws:
@@ -398,7 +399,7 @@ def captcha_node(state: SurveyState) -> SurveyState:
     # Detection via CaptchaRouter. Das spart Zeit und vermeidet Race Conditions.
     # ══════════════════════════════════════════════════════════════════════════
     if has_drag_drop:
-        print(f"[captcha] FAST-PATH: drag_drop_detected=True, target={getattr(state, 'drag_drop_target', '?')}")
+        print(f"[captcha] FAST-PATH: drag_drop_detected=True, target={getattr(state, 'drag_drop_target', '?')}")  # noqa: E501
         try:
             from ..captcha_adapters import angular_drag_drop_solve
             from ..captcha_router import CaptchaDetection, CaptchaResult
@@ -412,7 +413,7 @@ def captcha_node(state: SurveyState) -> SurveyState:
                 
             state.captcha_solved_this_iteration = bool(result.solved)
             if result.solved:
-                print(f"[captcha] FAST-PATH SOLVED: angular_drag_drop elapsed={result.elapsed_ms:.0f}ms")
+                print(f"[captcha] FAST-PATH SOLVED: angular_drag_drop elapsed={result.elapsed_ms:.0f}ms")  # noqa: E501
                 state.no_dom_change_count = 0
                 state.drag_drop_detected = False  # Reset for next iteration
             else:
@@ -879,7 +880,7 @@ def execute_node(state: SurveyState) -> SurveyState:
             # vorher schon 4 interne Attempts gemacht. Effektiv eskaliert
             # CUA jetzt nach 2× "no_dom_change_after_retries" = 8 echte Klicks.
             if state.no_dom_change_count >= 2:
-                print(f"[execute] CUA-FALLBACK triggered: no_dom_change={state.no_dom_change_count}")
+                print(f"[execute] CUA-FALLBACK triggered: no_dom_change={state.no_dom_change_count}")  # noqa: E501
                 try:
                     from ..cua_fallback import cua_click_blocked_element
                     cua_result = cua_click_blocked_element(
@@ -892,7 +893,7 @@ def execute_node(state: SurveyState) -> SurveyState:
                         # CUA hat geklickt — warte auf DOM-Change
                         time.sleep(1.0)
                         # Update result
-                        state.last_action_result["reason"] = f"cua_{cua_result.get('method', 'unknown')}"
+                        state.last_action_result["reason"] = f"cua_{cua_result.get('method', 'unknown')}"  # noqa: E501
                         state.last_action_result["success"] = True
                         state.no_dom_change_count = 0
                         state.reset_failures()
@@ -912,21 +913,21 @@ def execute_node(state: SurveyState) -> SurveyState:
 # Lines:    ~23
 
 def detect_completion(state: SurveyState) -> SurveyState:
-    if not state.tab_ws: state.add_error("detect_completion", "tab_ws not set"); return state
-    from ..completion_detector import CompletionDetector; from ..execute import BatchExecutor
+    if not state.tab_ws: state.add_error("detect_completion", "tab_ws not set"); return state  # noqa: E701,E702
+    from ..completion_detector import CompletionDetector; from ..execute import BatchExecutor  # noqa: E702
     page_text = BatchExecutor.read_page_text(state.tab_ws, max_len=500)
     if CompletionDetector(cdp_port=state.cdp_port, debug=False).detect(page_text):
-        state.completion_detected = True; state.status = "completed"
+        state.completion_detected = True; state.status = "completed"  # noqa: E702
         if getattr(state,"target_mode","new_tab")=="in_dashboard" and state.dashboard_ws:
             from ..opener import SurveyOpener
-            SurveyOpener(cdp_port=state.cdp_port).navigate_back_to_dashboard(state.tab_ws or state.dashboard_ws or "")
+            SurveyOpener(cdp_port=state.cdp_port).navigate_back_to_dashboard(state.tab_ws or state.dashboard_ws or "")  # noqa: E501
         return state
     is_err, reason = BatchExecutor.detect_error_page(page_text)
     if is_err and any(s in reason.lower() for s in ["qualify","eligible","screen","limit","full"]):
-        state.screen_out = True; state.status = "screen_out"
+        state.screen_out = True; state.status = "screen_out"  # noqa: E702
         if getattr(state,"target_mode","new_tab")=="in_dashboard" and state.dashboard_ws:
             from ..opener import SurveyOpener
-            SurveyOpener(cdp_port=state.cdp_port).navigate_back_to_dashboard(state.tab_ws or state.dashboard_ws or "")
+            SurveyOpener(cdp_port=state.cdp_port).navigate_back_to_dashboard(state.tab_ws or state.dashboard_ws or "")  # noqa: E501
         return state
     return state
 
@@ -1011,10 +1012,10 @@ def read_balance_after(state: SurveyState) -> SurveyState:
 
 def human_delegate(state: SurveyState) -> SurveyState:
     last_err = state.errors[-1] if state.errors else {"error": "unknown"}
-    reason = f"3 consecutive failures at iteration {state.iteration}: {last_err.get('error','unknown')}"
-    state.delegation_reason = reason; state.status = "delegated"
-    result = delegate_task(survey_id=state.survey_id, provider=state.provider, reason=reason, tab_ws=state.tab_ws, iteration=state.iteration)
-    state.errors.append({"node": "human_delegate", "error": f"delegated: {result.get('stdout','')[:200]}", "iteration": state.iteration, "ts": time.time()})
+    reason = f"3 consecutive failures at iteration {state.iteration}: {last_err.get('error','unknown')}"  # noqa: E501
+    state.delegation_reason = reason; state.status = "delegated"  # noqa: E702
+    result = delegate_task(survey_id=state.survey_id, provider=state.provider, reason=reason, tab_ws=state.tab_ws, iteration=state.iteration)  # noqa: E501
+    state.errors.append({"node": "human_delegate", "error": f"delegated: {result.get('stdout','')[:200]}", "iteration": state.iteration, "ts": time.time()})  # noqa: E501
     return state
 
 
@@ -1051,7 +1052,7 @@ def _update_stealth_memory(state: SurveyState) -> None:
     try:
         # Berechne Erfolg: balance_after > balance_before
         success = state.balance_after > state.balance_before
-        duration_ms = int((time.time() - state.session_start_time) * 1000) if hasattr(state, 'session_start_time') else 0
+        duration_ms = int((time.time() - state.session_start_time) * 1000) if hasattr(state, 'session_start_time') else 0  # noqa: E501
 
         outcome = {
             "ts": datetime.now().isoformat(),

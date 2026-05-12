@@ -67,6 +67,7 @@ BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
   ❌ killall Google Chrome
   ❌ skylight-cli click --element-index
 ================================================================================"""
+# ruff: noqa: E501  (long JS/HTML payloads in multi-line strings - SR-62 #61)
 
 import json
 import time
@@ -674,7 +675,7 @@ def generate_snapshot(ws_url, include_semantic=True):
     ws.send(json.dumps({
         "id": 0, "method": "Runtime.evaluate",
         "params": {
-            "expression": "(function(){return JSON.stringify({url:document.location.href,title:document.title,innerText:document.body.innerText.substring(0,500)});})()"
+            "expression": "(function(){return JSON.stringify({url:document.location.href,title:document.title,innerText:document.body.innerText.substring(0,500)});})()"  # noqa: E501
         }
     }))
     r = json.loads(ws.recv())
@@ -688,7 +689,7 @@ def generate_snapshot(ws_url, include_semantic=True):
     r2 = json.loads(ws.recv())
     ws.close()
 
-    # New format (2026-05-11): {elements, modalCenter, images, dragPuzzle, captchas, progressText, cookieConsentBtn, hasShadowDOM, iframeCount}
+    # New format (2026-05-11): {elements, modalCenter, images, dragPuzzle, captchas, progressText, cookieConsentBtn, hasShadowDOM, iframeCount}  # noqa: E501
     # Legacy format: [...] (plain list, old tests) or "[]" (string)
     raw_val = r2.get("result", {}).get("result", {}).get("value", '{"elements":[]}')
     parsed = json.loads(raw_val)

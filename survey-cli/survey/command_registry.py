@@ -202,7 +202,7 @@ class CommandRegistry:
         if status == "completed" and earned > 0:
             self.record_success(key, notes=f"earned=€{earned:.2f}, steps={steps}")
         elif status in ("screen_out", "error"):
-            self.record_failure(key, error=f"{status} (earned=€{earned:.2f})", notes=f"steps={steps}")
+            self.record_failure(key, error=f"{status} (earned=€{earned:.2f})", notes=f"steps={steps}")  # noqa: E501
 
         # Also update provider-level
         prov_key = f"provider_{provider}"

@@ -54,7 +54,7 @@ class SurveyRater:
                                     "id": 0,
                                     "method": "Runtime.evaluate",
                                     "params": {
-                                        "expression": 'document.querySelector("button,.btn-blue,input[type=button]").click()'
+                                        "expression": 'document.querySelector("button,.btn-blue,input[type=button]").click()'  # noqa: E501
                                     },
                                 }
                             )

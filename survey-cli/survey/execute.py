@@ -23,6 +23,7 @@ BANNED METHODS — NIEMALS VERWENDEN:
 ❌ killall Google Chrome
 ❌ skylight-cli click --element-index
 """
+# ruff: noqa: E501  (long JS/HTML payloads in multi-line strings - SR-62 #61)
 
 import json
 import re
@@ -190,7 +191,7 @@ PROVIDER_COMMANDS = {
     "reach3insights": {
         # Reach3Insights: standard form inputs + submit buttons
         "click_next": 'document.querySelector("input[type=submit]").click()',
-        "click_element": 'document.querySelectorAll("input[type=radio],input[type=checkbox]")[{idx}].click()',
+        "click_element": 'document.querySelectorAll("input[type=radio],input[type=checkbox]")[{idx}].click()',  # noqa: E501
         "fill_text": '''(function(v){
             var ta = document.querySelector("textarea,input[type=text]");
             if(ta){
@@ -218,8 +219,8 @@ PROVIDER_COMMANDS = {
 }
 
 GENERIC_COMMANDS = {
-    "click_next": 'document.querySelector("button,.NextButton,.btn-primary,input[type=submit]").click()',
-    "click_element": 'document.querySelectorAll("input[type=radio],input[type=checkbox],button")[{idx}].click()',
+    "click_next": 'document.querySelector("button,.NextButton,.btn-primary,input[type=submit]").click()',  # noqa: E501
+    "click_element": 'document.querySelectorAll("input[type=radio],input[type=checkbox],button")[{idx}].click()',  # noqa: E501
     "fill_text": '''(function(v){
         var el=document.querySelector("textarea,input[type=text],input[type=number]");
         if(el){el.value=v;el.dispatchEvent(new Event("input",{bubbles:true}));
@@ -318,10 +319,10 @@ def detect_language_page(ws_url: str, default_lang: str = "Deutsch") -> Optional
         lang_lower = default_lang.lower()
         selected = 0
         for i, opt in enumerate(opts):
-            if opt["text"].lower().includes(lang_lower) or opt["value"].lower().includes(lang_lower):
+            if opt["text"].lower().includes(lang_lower) or opt["value"].lower().includes(lang_lower):  # noqa: E501
                 selected = i
                 break
-        return [{"action": "select", "value": opts[selected]["text"] if selected < len(opts) else default_lang,
+        return [{"action": "select", "value": opts[selected]["text"] if selected < len(opts) else default_lang,  # noqa: E501
                  "lang_page": True, "options_count": len(opts)}]
     except Exception:
         return None
@@ -342,7 +343,7 @@ class BatchExecutor:
     def __init__(self, ws_url, provider="unknown", config=None):
         self.ws_url = ws_url
         self.provider = provider
-        self.commands = get_provider_commands(provider) or PROVIDER_COMMANDS.get(provider, GENERIC_COMMANDS)
+        self.commands = get_provider_commands(provider) or PROVIDER_COMMANDS.get(provider, GENERIC_COMMANDS)  # noqa: E501
         self.config = config  # SOTA: access debug flag for logging
 
     # ── Static Helpers ──────────────────────────────────────
@@ -564,7 +565,7 @@ class BatchExecutor:
         # Find element position
         ws.send(json.dumps({
             "id": 0, "method": "Runtime.evaluate",
-            "params": {"expression": f"var els=document.querySelectorAll('{selector}');if(els[{idx}]){{var r=els[{idx}].getBoundingClientRect();return r.x+r.width/2+','+(r.y+r.height/2);}}return'0,0';"}}))
+            "params": {"expression": f"var els=document.querySelectorAll('{selector}');if(els[{idx}]){{var r=els[{idx}].getBoundingClientRect();return r.x+r.width/2+','+(r.y+r.height/2);}}return'0,0';"}}))  # noqa: E501
         r = json.loads(ws.recv())
         coords = r.get("result",{}).get("result",{}).get("value","0,0")
         x, y = map(float, coords.split(","))
@@ -788,7 +789,7 @@ class BatchExecutor:
                 if self.provider == "qualtrics" and meta:
                     m_role = meta.get("role", "")
                     m_text = meta.get("text", "")
-                    if m_role in ("radio", "radio-selected", "checkbox", "checkbox-checked") and m_text:
+                    if m_role in ("radio", "radio-selected", "checkbox", "checkbox-checked") and m_text:  # noqa: E501
                         tpl = cmd.get("click_qualtrics_label", "")
                         if tpl:
                             label = m_text.replace('"', '\\"')

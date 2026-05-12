@@ -10,6 +10,7 @@ Uses command_registry.json to:
 CRITICAL: This module uses SYNCHRONOUS websocket (not async websockets)
 to match LangGraph node execution which runs in sync context.
 """
+# ruff: noqa: E501  (long JS/HTML payloads in multi-line strings - SR-62 #61)
 
 import json
 import time
@@ -101,7 +102,7 @@ class SurveyFlowExecutor:
             elapsed = time.time() - self._last_command_time
             if elapsed < MIN_SLEEP_AFTER_INPUT:
                 sleep_time = MIN_SLEEP_AFTER_INPUT - elapsed
-                print(f"[SAFETY] Enforcing {sleep_time:.1f}s sleep after {self._last_command} before {command_id}")
+                print(f"[SAFETY] Enforcing {sleep_time:.1f}s sleep after {self._last_command} before {command_id}")  # noqa: E501
                 time.sleep(sleep_time)
 
         self._last_command = command_id
@@ -218,7 +219,7 @@ class SurveyFlowExecutor:
             self.registry.record_success("select_dropdown", f"Dropdown {select_id}[{option_index}]")
             return True
 
-        self.registry.record_failure("select_dropdown", value, f"Failed to select {select_id}[{option_index}]")
+        self.registry.record_failure("select_dropdown", value, f"Failed to select {select_id}[{option_index}]")  # noqa: E501
         return False
 
     def click_continue(self, with_sleep: bool = True, sleep_seconds: int = 2) -> bool:
@@ -323,7 +324,7 @@ class SurveyFlowExecutor:
                     results.append({"command": command_id, "success": True, "error": None})
                 else:
                     total_fail += 1
-                    results.append({"command": command_id, "success": False, "error": "Command returned False"})
+                    results.append({"command": command_id, "success": False, "error": "Command returned False"})  # noqa: E501
 
             except Exception as e:
                 total_fail += 1

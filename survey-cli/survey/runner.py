@@ -247,7 +247,7 @@ class SurveyRunner:
 
             if not survey_url:
                 # No survey URL from API — try browser-based pre-qualifier
-                get_logger().warn(f"No href from API for {survey_id} — trying browser pre-qualifier",
+                get_logger().warn(f"No href from API for {survey_id} — trying browser pre-qualifier",  # noqa: E501
                                   survey_id=survey_id)
                 preq_result = self.pre_qualifier.handle_pre_qualifier_browser(
                     survey_id, self._close_tab
@@ -341,7 +341,7 @@ class SurveyRunner:
         # 3e. Verify survey tab content (handle stuck loading / error pages)
         if tab_ws:
             page_text = BatchExecutor.read_page_text(tab_ws, 500).lower()
-            if any(s in page_text for s in ["loading", "just getting things ready", "won't be long"]):
+            if any(s in page_text for s in ["loading", "just getting things ready", "won't be long"]):  # noqa: E501
                 get_logger().warn("Stuck on loading page — skipping",
                                   survey_id=survey_id, context="tab_creation")
                 result.status = "screen_out"
@@ -460,8 +460,8 @@ class SurveyRunner:
                     dom_hash = "error"
                     page_text = ""
 
-                if dom_hash != "pending" and dom_hash != "error" and stuck_checker.is_stuck(dom_hash):
-                    result.error = f"Stuck: {stuck_checker.threshold}x same DOM hash (anti_stuck tool)"
+                if dom_hash != "pending" and dom_hash != "error" and stuck_checker.is_stuck(dom_hash):  # noqa: E501
+                    result.error = f"Stuck: {stuck_checker.threshold}x same DOM hash (anti_stuck tool)"  # noqa: E501
                     result.status = "error"
                     break
 
@@ -547,7 +547,7 @@ class SurveyRunner:
                             batch_result = executor.execute(actions, snapshot.refs)
                             time.sleep(self.config.wait_page_load)
                             actions_executed += 1
-                            # Continue to next iteration (page should advance after language selection)
+                            # Continue to next iteration (page should advance after language selection)  # noqa: E501
                             continue
                     except Exception as e:
                         get_logger().warn(
@@ -629,7 +629,7 @@ class SurveyRunner:
                         survey_id=survey_id, context="nemo_loop", iteration=iteration + 1
                     )
                     if consecutive_fails >= max_consecutive_fails:
-                        result.error = f"Circuit breaker triggered ({batch_result.total_fail} fail, {consecutive_fails} streak)"
+                        result.error = f"Circuit breaker triggered ({batch_result.total_fail} fail, {consecutive_fails} streak)"  # noqa: E501
                         result.status = "blocked"
                         break
 
@@ -702,7 +702,7 @@ class SurveyRunner:
             get_logger().balance(balance_before, balance_after, result.earned)
         except Exception:
             result.earned = 0.0
-            get_logger().warn(f"Balance after read failed — earned=0 (before was {balance_before}€)",
+            get_logger().warn(f"Balance after read failed — earned=0 (before was {balance_before}€)",  # noqa: E501
                               survey_id=survey_id, context="balance_read")
         result.elapsed_s = round(time.monotonic() - start_time, 1)
 
@@ -745,7 +745,7 @@ class SurveyRunner:
 
         total_viable = len(viable)
         total_ok = len([s for s in viable if s.get("provider") != "pre_qualifier"])
-        print(f"[LOOP] Processing up to {self.config.max_surveys} surveys from {total_viable} viable")
+        print(f"[LOOP] Processing up to {self.config.max_surveys} surveys from {total_viable} viable")  # noqa: E501
 
         started_count = 0  # Only count successfully started surveys
         failed_preq_cache = {}  # {survey_id: attempt_count} — skip if failed recently
@@ -791,7 +791,7 @@ class SurveyRunner:
             result = self.run_survey(sid, survey_url=href)
             results.append(result)
             started_count += 1
-            print(f"[LOOP]   → {result.status} | {'+' + str(result.earned) + '€' if result.earned > 0 else str(result.earned) + '€'} | {result.error[:50] if result.error else 'no error'}")
+            print(f"[LOOP]   → {result.status} | {'+' + str(result.earned) + '€' if result.earned > 0 else str(result.earned) + '€'} | {result.error[:50] if result.error else 'no error'}")  # noqa: E501
 
             if result.status == "completed":
                 print(f"  ✅ +{result.earned}€ ({result.provider}, "

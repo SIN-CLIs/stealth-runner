@@ -12,6 +12,7 @@ Architektur:
 
 Universell: Funktioniert auf JEDER Webseite. Kein Hardcoding.
 """
+# ruff: noqa: E501  (long JS/HTML payloads in multi-line strings - SR-62 #61)
 
 import json
 import os
@@ -45,7 +46,7 @@ def capture_page(ws_url: str, timeout: int = 15) -> Dict:
         # 1. URL + Title
         ws.send(json.dumps({
             "id": 1, "method": "Runtime.evaluate",
-            "params": {"expression": "JSON.stringify({url: document.location.href, title: document.title, text: document.body.innerText.substring(0, 5000)})"}
+            "params": {"expression": "JSON.stringify({url: document.location.href, title: document.title, text: document.body.innerText.substring(0, 5000)})"}  # noqa: E501
         }))
         r = json.loads(ws.recv())
         info = json.loads(r.get("result", {}).get("result", {}).get("value", "{}"))
@@ -150,14 +151,14 @@ def capture_page(ws_url: str, timeout: int = 15) -> Dict:
             "elements": elements,
         }
     except Exception as e:
-        return {"error": str(e), "url": "", "title": "", "dom_text": "", "screenshot": "", "elements": []}
+        return {"error": str(e), "url": "", "title": "", "dom_text": "", "screenshot": "", "elements": []}  # noqa: E501
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # SCHRITT 2: THINK — LLM entscheidet was zu tun ist
 # ═══════════════════════════════════════════════════════════════════════════════
 
-SYSTEM_PROMPT = """You are a web automation agent. Your task: complete surveys and forms on any website.
+SYSTEM_PROMPT = """You are a web automation agent. Your task: complete surveys and forms on any website.  # noqa: E501
 
 You receive:
 - A screenshot of the current webpage (base64 PNG)
@@ -291,7 +292,7 @@ def _heuristic_think(capture: Dict) -> Dict:
     buttons = [e for e in elements if e.get("type") == "button"]
     for b in buttons:
         btn_text = b.get("text", "").lower()
-        if any(word in btn_text for word in ["weiter", "nächste", "next", "submit", "fortfahren", "abschicken"]):
+        if any(word in btn_text for word in ["weiter", "nächste", "next", "submit", "fortfahren", "abschicken"]):  # noqa: E501
             actions.append({"type": "click", "element_id": b["id"]})
             break
 
@@ -340,7 +341,7 @@ def act(ws_url: str, actions: List[Dict], elements: List[Dict], timeout: int = 1
                         errors.append(f"Element {el_id} not found")
                         continue
                     # Match capture_page element extraction order:
-                    # 1. input[type=radio/checkbox], 2. button/submit, 3. text/email/number/tel/textarea, 4. select, 5. a[href]
+                    # 1. input[type=radio/checkbox], 2. button/submit, 3. text/email/number/tel/textarea, 4. select, 5. a[href]  # noqa: E501
                     etype = el.get('type', '')
                     stag = el.get('tag', 'input')
                     etext = el.get('text', '')
@@ -450,7 +451,7 @@ def act(ws_url: str, actions: List[Dict], elements: List[Dict], timeout: int = 1
                     ws.send(json.dumps({
                         "id": executed + 10,
                         "method": "Runtime.evaluate",
-                        "params": {"expression": f"window.scrollBy(0, {500 if direction == 'down' else -500}); 'scrolled'"}
+                        "params": {"expression": f"window.scrollBy(0, {500 if direction == 'down' else -500}); 'scrolled'"}  # noqa: E501
                     }))
                     json.loads(ws.recv())
 
@@ -488,7 +489,7 @@ def verify(ws_url: str, previous_url: str, previous_text: str, timeout: int = 10
         ws = websocket.create_connection(ws_url, timeout=timeout)
         ws.send(json.dumps({
             "id": 1, "method": "Runtime.evaluate",
-            "params": {"expression": "JSON.stringify({url: document.location.href, text: document.body.innerText.substring(0, 1000)})"}
+            "params": {"expression": "JSON.stringify({url: document.location.href, text: document.body.innerText.substring(0, 1000)})"}  # noqa: E501
         }))
         r = json.loads(ws.recv())
         info = json.loads(r.get("result", {}).get("result", {}).get("value", "{}"))
@@ -499,7 +500,7 @@ def verify(ws_url: str, previous_url: str, previous_text: str, timeout: int = 10
 
         changed = (new_url != previous_url) or (new_text != previous_text.lower()[:1000])
         is_dashboard = "abmelden" in new_text or "heypiggy" in new_url.lower()
-        is_complete = any(word in new_text for word in ["vielen dank", "thank you", "completed", "geschafft"])
+        is_complete = any(word in new_text for word in ["vielen dank", "thank you", "completed", "geschafft"])  # noqa: E501
 
         return {
             "changed": changed,
@@ -509,7 +510,7 @@ def verify(ws_url: str, previous_url: str, previous_text: str, timeout: int = 10
             "is_complete": is_complete,
         }
     except Exception as e:
-        return {"changed": False, "new_url": "", "new_text": "", "is_dashboard": False, "is_complete": False, "error": str(e)}
+        return {"changed": False, "new_url": "", "new_text": "", "is_dashboard": False, "is_complete": False, "error": str(e)}  # noqa: E501
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -558,7 +559,7 @@ def run_universal_agent(
         print(f"  Text preview: {current_text[:200]}...")
 
         # Check if already complete
-        if capture.get("dom_text", "").lower().count("vielen dank") > 0 or "abmelden" in capture.get("dom_text", "").lower():
+        if capture.get("dom_text", "").lower().count("vielen dank") > 0 or "abmelden" in capture.get("dom_text", "").lower():  # noqa: E501
             print("[DONE] Survey completed or back at dashboard!")
             return {
                 "success": True,
@@ -594,9 +595,9 @@ def run_universal_agent(
         print("[4/4] Verifying...")
         time.sleep(2)  # Wait for page transition
         check = verify(ws_url, current_url, current_text)
-        print(f"  Changed: {check['changed']}, Dashboard: {check['is_dashboard']}, Complete: {check['is_complete']}")
+        print(f"  Changed: {check['changed']}, Dashboard: {check['is_dashboard']}, Complete: {check['is_complete']}")  # noqa: E501
 
-        history.append(f"Step {step+1}: {decision.get('thought', '')[:50]}... → {result['executed']} actions")
+        history.append(f"Step {step+1}: {decision.get('thought', '')[:50]}... → {result['executed']} actions")  # noqa: E501
 
         if result.get("done") or check["is_complete"]:
             print("[DONE] Agent reports completion!")

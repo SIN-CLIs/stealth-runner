@@ -179,7 +179,7 @@ class CUAFallbackHandler:
         result = self._call_cua("click", params)
         return result is not None
     
-    def find_and_click_checkbox(self, window_id: int, pid: int, label_pattern: str = None) -> CUAClickResult:
+    def find_and_click_checkbox(self, window_id: int, pid: int, label_pattern: str = None) -> CUAClickResult:  # noqa: E501
         """Findet und klickt Checkbox im AX-Tree.
         
         1. Aktiviere Window

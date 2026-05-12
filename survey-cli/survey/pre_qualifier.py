@@ -14,6 +14,7 @@ BANNED METHODS — NIEMALS VERWENDEN:
   ❌ cua-driver click (raw index)
   ❌ Hardcoded PIDs
 """
+# ruff: noqa: E501  (long JS/HTML payloads in multi-line strings - SR-62 #61)
 
 import json
 import time

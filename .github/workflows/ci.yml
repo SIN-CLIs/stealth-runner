@@ -71,7 +71,7 @@ jobs:
       # debt-tracker issue first; AGENTS.md §13.8.1 documents the
       # contract.
       - name: Run ruff check
-        run: ruff check survey-cli/survey --select E,W,F --ignore E501,E701,E702
+        run: ruff check survey-cli/survey --select E,W,F
 
       - name: Run survey-cli tests
         env:

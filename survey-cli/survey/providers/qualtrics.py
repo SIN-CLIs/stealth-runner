@@ -22,6 +22,7 @@ BANNED METHODS — NIEMALS VERWENDEN:
 ❌ killall Google Chrome
 ❌ skylight-cli click --element-index
 """
+# ruff: noqa: E501  (long JS/HTML payloads in multi-line strings - SR-62 #61)
 
 COMPLETION_MARKERS = [
     "zurück zur website",
@@ -98,10 +99,10 @@ def get_action_for_question(question_text, profile):
     # Age
     if "alter" in q or "age" in q or "old are you" in q:
         age = profile.get("age", 32)
-        if age < 16: return {"index": 0}
-        if age < 25: return {"index": 1}
-        if age < 40: return {"index": 2}
-        if age < 60: return {"index": 3}
+        if age < 16: return {"index": 0}  # noqa: E701
+        if age < 25: return {"index": 1}  # noqa: E701
+        if age < 40: return {"index": 2}  # noqa: E701
+        if age < 60: return {"index": 3}  # noqa: E701
         return {"index": 4}
 
     # State/Bundesland
@@ -116,8 +117,8 @@ def get_action_for_question(question_text, profile):
     # Education
     if "bildung" in q or "education" in q or "schulabschluss" in q:
         edu = profile.get("education", "abitur")
-        if edu == "abitur": return {"index": 3}
-        if edu == "university": return {"index": 4}
+        if edu == "abitur": return {"index": 3}  # noqa: E701
+        if edu == "university": return {"index": 4}  # noqa: E701
         return {"index": 2}
 
     # Household income
@@ -127,9 +128,9 @@ def get_action_for_question(question_text, profile):
     # Household size
     if "personen" in q or "household" in q or "haushalt" in q:
         size = profile.get("household_size", 3)
-        if size < 2: return {"index": 0}
-        if size == 2: return {"index": 1}
-        if size == 3: return {"index": 2}
+        if size < 2: return {"index": 0}  # noqa: E701
+        if size == 2: return {"index": 1}  # noqa: E701
+        if size == 3: return {"index": 2}  # noqa: E701
         return {"index": 3}
 
     return None

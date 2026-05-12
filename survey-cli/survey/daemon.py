@@ -151,7 +151,7 @@ def get_balance(port: int = CHROME_PORT) -> Optional[float]:
                     p["webSocketDebuggerUrl"], timeout=10)
                 ws.send(json.dumps({"id": 0, "method": "Runtime.evaluate",
                     "params": {"expression": "document.body.innerText"}}))
-                r = json.loads(ws.recv()); ws.close()
+                r = json.loads(ws.recv()); ws.close()  # noqa: E702
                 text = r.get("result", {}).get("result", {}).get("value", "")
                 import re
                 m = re.search(r'([\d.,]+)\s*€', text)
@@ -174,7 +174,7 @@ def is_logged_in(port: int = CHROME_PORT) -> bool:
                     p["webSocketDebuggerUrl"], timeout=10)
                 ws.send(json.dumps({"id": 0, "method": "Runtime.evaluate",
                     "params": {"expression": "document.body.innerText"}}))
-                r = json.loads(ws.recv()); ws.close()
+                r = json.loads(ws.recv()); ws.close()  # noqa: E702
                 text = r.get("result", {}).get("result", {}).get("value", "")
                 return "Abmelden" in text
         return False

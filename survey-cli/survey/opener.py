@@ -329,7 +329,7 @@ class SurveyOpener:
         # If session is invalid, navigating won't register completion → €0
         if not is_session_valid(self.cdp_port):
             if self.debug:
-                print("[SESSION] Session invalid in _open_in_dashboard_tab — attempting recovery...")
+                print("[SESSION] Session invalid in _open_in_dashboard_tab — attempting recovery...")  # noqa: E501
             recovered = validate_session(self.cdp_port, auto_recover=True)
             if not recovered:
                 return OpenResult(

@@ -319,18 +319,18 @@ class ChromeLauncher:
 
         # Step 3: Wait for CDP endpoint
         if not self._wait_for_cdp():
-            return {"ok": False, "error": "CDP endpoint not reachable after launch", "step": "cdp_wait"}
+            return {"ok": False, "error": "CDP endpoint not reachable after launch", "step": "cdp_wait"}  # noqa: E501
 
         # Step 4: Verify flags in cmdline
         flags_ok = self._verify_flags_in_cmdline()
         if not flags_ok:
-            return {"ok": False, "error": "Required flags missing from Chrome cmdline", "step": "flag_verify",
+            return {"ok": False, "error": "Required flags missing from Chrome cmdline", "step": "flag_verify",  # noqa: E501
                     "missing": [f for f in self.REQUIRED_FLAGS if not self._flag_in_cmdline(f)]}
 
         # Step 5: Verify AX-Tree has elements
         ax_ok = self._verify_ax_tree()
         if not ax_ok:
-            return {"ok": False, "error": "AX-Tree empty after launch (accessibility not working)", "step": "ax_verify"}
+            return {"ok": False, "error": "AX-Tree empty after launch (accessibility not working)", "step": "ax_verify"}  # noqa: E501
 
         if self.debug:
             print(f"[CHROME] Verified: pid={self._pid}, port={self.port}, accessibility=ON, cdp=ON")

@@ -215,6 +215,7 @@ BANNED (siehe AGENTS.md REGEL 1)
 - KEINE Action ohne Verify
 ================================================================================
 """
+# ruff: noqa: E501  (long JS/HTML payloads in multi-line strings - SR-62 #61)
 
 from __future__ import annotations
 

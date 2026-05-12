@@ -4,6 +4,7 @@ SOTA: CDP mouse clicks for Angular v19 (JS .click() ignored).
 OCR: base64 img extraction → NVIDIA Vision API.
 Drag: __ngContext__ recursive search → dropListRef.drop().
 """
+# ruff: noqa: E501  (long JS/HTML payloads in multi-line strings - SR-62 #61)
 
 import json
 import time
@@ -68,7 +69,7 @@ def cdp_click_button(ws_url, text):
     try:
         ws = websocket.create_connection(ws_url, timeout=10)
         ws.send(json.dumps({"id":0,"method":"Runtime.evaluate",
-            "params":{"expression": "var b=document.querySelector('button');if(b){var r=b.getBoundingClientRect();return JSON.stringify({x:r.x+r.width/2,y:r.y+r.height/2});}return'{}';"}}))
+            "params":{"expression": "var b=document.querySelector('button');if(b){var r=b.getBoundingClientRect();return JSON.stringify({x:r.x+r.width/2,y:r.y+r.height/2});}return'{}';"}}))  # noqa: E501
         r = json.loads(ws.recv())
         ws.close()
         pos = json.loads(r.get("result",{}).get("result",{}).get("value","{}"))
@@ -85,8 +86,8 @@ def handle_cookie_consent(ws_url):
     try:
         ws = websocket.create_connection(ws_url, timeout=15)
         ws.send(json.dumps({"id":0,"method":"Runtime.evaluate",
-            "params":{"expression": "var b=document.querySelector('button');if(b){b.click();return'clicked';}return'none';"}}))
-        r = json.loads(ws.recv()); ws.close()
+            "params":{"expression": "var b=document.querySelector('button');if(b){b.click();return'clicked';}return'none';"}}))  # noqa: E501
+        r = json.loads(ws.recv()); ws.close()  # noqa: E702
         return {"success": "clicked" in str(r.get("result",{}).get("result",{}).get("value",""))}
     except Exception as e:
         return {"success": False, "error": str(e)[:100]}
@@ -98,8 +99,8 @@ def fill_opinion_textarea(ws_url):
     try:
         ws = websocket.create_connection(ws_url, timeout=15)
         ws.send(json.dumps({"id":0,"method":"Runtime.evaluate",
-            "params":{"expression": "var t=document.querySelector('textarea');if(t){t.value='ROBOT I enjoy sharing my opinion about this topic.';t.dispatchEvent(new Event('input',{bubbles:true}));t.dispatchEvent(new Event('change',{bubbles:true}));return'filled';}return'none';"}}))
-        json.loads(ws.recv()); ws.close()
+            "params":{"expression": "var t=document.querySelector('textarea');if(t){t.value='ROBOT I enjoy sharing my opinion about this topic.';t.dispatchEvent(new Event('input',{bubbles:true}));t.dispatchEvent(new Event('change',{bubbles:true}));return'filled';}return'none';"}}))  # noqa: E501
+        json.loads(ws.recv()); ws.close()  # noqa: E702
         return True
     except Exception:
         return False
@@ -189,7 +190,7 @@ def solve_text_captcha(ws_url, debug=False):
         resp = client.chat.completions.create(
             model=VISION_MODEL,
             messages=[{"role":"user","content":[
-                {"type":"text","text":"This is a captcha image. Read ONLY the character sequence shown in the image. "
+                {"type":"text","text":"This is a captcha image. Read ONLY the character sequence shown in the image. "  # noqa: E501
                  "Return the exact letters and numbers (uppercase) with NO spaces, NO punctuation, NO explanation. "
                  "The characters may be distorted, slanted, rotated, or have noise lines through them. "
                  "Ignore any background patterns. Examples: 'PURESPC', 'XKCD42', 'ABC123', 'r4nd0m'. "
@@ -208,7 +209,7 @@ def solve_text_captcha(ws_url, debug=False):
 
         # Validate: captcha must be 4-8 alphanumeric chars
         if len(captcha) < 3:
-            return {"success": False, "error": f"OCR too short ({len(captcha)} chars): '{captcha}'", "raw": raw}
+            return {"success": False, "error": f"OCR too short ({len(captcha)} chars): '{captcha}'", "raw": raw}  # noqa: E501
         if len(captcha) > 10:
             captcha = captcha[:10]
 
@@ -229,7 +230,7 @@ def solve_text_captcha(ws_url, debug=False):
     return 'filled:' + i.value;
 }})();
 """}}))
-        json.loads(ws2.recv()); ws2.close()
+        json.loads(ws2.recv()); ws2.close()  # noqa: E702
 
         # CDP-click submit (Nächste / Next button)
         cdp_click_button(ws_url, "Nächste")
@@ -520,7 +521,7 @@ def read_page_text(ws_url, max_len=1000):
         ws = websocket.create_connection(ws_url, timeout=10)
         ws.send(json.dumps({"id":0,"method":"Runtime.evaluate",
             "params":{"expression": f"document.body.innerText.substring(0,{max_len})"}}))
-        r = json.loads(ws.recv()); ws.close()
+        r = json.loads(ws.recv()); ws.close()  # noqa: E702
         return r.get("result",{}).get("result",{}).get("value","")
     except Exception:
         return ""
@@ -575,7 +576,7 @@ def navigate_purespectrum_shadow_dom(ws_url, max_steps=15, debug=False):
                 return {"status": "completed", "pages": step}
 
         # Check screen-out
-        if any(x in text for x in ["leider", "nicht geeignet", "disqualif", "screenout", "nicht qualifiziert"]):
+        if any(x in text for x in ["leider", "nicht geeignet", "disqualif", "screenout", "nicht qualifiziert"]):  # noqa: E501
             if debug:
                 print(f"  [SHADOW] SCREEN-OUT after {step} pages")
             return {"status": "screen_out", "pages": step}
@@ -625,7 +626,7 @@ def navigate_purespectrum_shadow_dom(ws_url, max_steps=15, debug=False):
             if btn and not btn.get("disabled"):
                 btn_text = btn.get("text", "").lower()
                 # Only click "next" or "submit" buttons, not "back" or "cancel"
-                if any(x in btn_text for x in ["nächste", "weiter", "next", "submit", "abschicken", "fertig"]):
+                if any(x in btn_text for x in ["nächste", "weiter", "next", "submit", "abschicken", "fertig"]):  # noqa: E501
                     if debug:
                         print(f"  [SHADOW] Page {step}: Clicking '{btn_text}' button...")
                     if shadow_dom_click(ws_url, selector, tag, debug=debug):
@@ -634,7 +635,7 @@ def navigate_purespectrum_shadow_dom(ws_url, max_steps=15, debug=False):
 
         if not clicked:
             if debug:
-                print(f"  [SHADOW] Page {step}: No clickable elements found — page might be complete")
+                print(f"  [SHADOW] Page {step}: No clickable elements found — page might be complete")  # noqa: E501
             # One more check for completion markers
             text = read_page_text(ws_url, 1500).lower()
             for marker in COMPLETION_MARKERS:
@@ -642,7 +643,7 @@ def navigate_purespectrum_shadow_dom(ws_url, max_steps=15, debug=False):
                     return {"status": "completed", "pages": step}
             # Try standard DOM fallback
             if not any(x in text for x in ["bitte legen", "zahl", "puzzle"]):
-                return {"status": "unknown", "pages": step, "error": "No Shadow DOM elements found and no completion markers"}
+                return {"status": "unknown", "pages": step, "error": "No Shadow DOM elements found and no completion markers"}  # noqa: E501
 
     return {"status": "max_steps", "pages": max_steps, "error": f"Reached max {max_steps} steps"}
 
@@ -650,7 +651,7 @@ def navigate_purespectrum_shadow_dom(ws_url, max_steps=15, debug=False):
 # ── Full Preflight ─────────────────────────────────────
 
 def solve_purespectrum_preflight(ws_url, debug=False):
-    """Run full PureSpectrum preflight: cookie → ROBOT → captcha → puzzle → shadow-dom navigation."""
+    """Run full PureSpectrum preflight: cookie → ROBOT → captcha → puzzle → shadow-dom navigation."""  # noqa: E501
     steps = []
 
     # 1. Cookie
@@ -697,7 +698,7 @@ def solve_purespectrum_preflight(ws_url, debug=False):
         if nav_result.get("status") == "completed":
             return {"success": True, "steps": steps, "pages": nav_result.get("pages")}
         elif nav_result.get("status") == "screen_out":
-            return {"success": True, "steps": steps, "screen_out": True, "pages": nav_result.get("pages")}
+            return {"success": True, "steps": steps, "screen_out": True, "pages": nav_result.get("pages")}  # noqa: E501
         elif nav_result.get("status") == "error":
             return {"success": False, "steps": steps, "error": nav_result.get("error")}
 
