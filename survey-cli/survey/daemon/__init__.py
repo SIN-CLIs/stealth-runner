@@ -1,15 +1,15 @@
 """
-Survey Daemon - 24/7 LangGraph Survey Agent
+Survey Daemon - Production-Ready 24/7 Survey Automation Agent
 
-Components:
+Core Components:
     - SurveyAgentGraph: LangGraph StateGraph for survey flow
-    - SurveyDaemon: macOS LaunchAgent daemon
+    - HeyPiggyConnector: HeyPiggy.com platform integration
     - SurveyParser: Universal survey parser
-    - AnswerEngine: Intelligent answer generation
+    - AnswerEngine: Intelligent persona-based answers
     - CaptchaSolver: Multi-provider captcha solving
     - StealthBrowser: Anti-detection browser automation
     - BrowserDriver: Playwright-based stealth driver
-    - CLI: OpenCode CLI integration
+    - SurveyDaemon: macOS LaunchAgent daemon
 """
 from .survey_agent_graph import SurveyAgentGraph
 from .survey_daemon import SurveyDaemon, install_launchagent, uninstall_launchagent
@@ -33,12 +33,18 @@ from .stealth import (
     ProxyConfig,
 )
 from .browser_driver import BrowserDriver, ElementInfo
+from .heypiggy import HeyPiggyConnector, HeyPiggySurvey, HeyPiggyResult, run_heypiggy_session
 from .cli import main as cli_main
 
 __all__ = [
-    # Core
+    # Core Graph
     "SurveyAgentGraph",
     "SurveyDaemon",
+    # HeyPiggy
+    "HeyPiggyConnector",
+    "HeyPiggySurvey",
+    "HeyPiggyResult",
+    "run_heypiggy_session",
     # Parsing
     "SurveyParser",
     "Question",
@@ -72,5 +78,5 @@ __all__ = [
     "cli_main",
 ]
 
-__version__ = "0.2.0"
+__version__ = "1.0.0"
 
