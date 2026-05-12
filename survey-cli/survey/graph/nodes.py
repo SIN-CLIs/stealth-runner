@@ -302,20 +302,22 @@ def snapshot_node(state: SurveyState) -> SurveyState:
     # state.drag_drop_detected speichern. captcha_node prüft dieses Flag.
     # ══════════════════════════════════════════════════════════════════════════
     try:
-        drag_check_js = '''
+        # SR-106: prefix with r''' so embedded JS regex meta \s, \d don't trip Python's
+        # invalid-escape-sequence rule (W605). Raw string passes them through unchanged to V8.
+        drag_check_js = r'''
         (function(){
             var cdkDrags = document.querySelectorAll('.cdk-drag');
             var cdkDrops = document.querySelectorAll('.cdk-drop-list, .drop-zone');
             var draggables = document.querySelectorAll('[draggable=true]');
             var bodyText = (document.body.innerText || '').toLowerCase();
-            
+
             // Text-Cues für "Zahl X" Puzzle
             var hasZahlCue = /bitte legen sie die zahl|legen sie.*zahl|drag.*number/i.test(bodyText);
-            
+
             // Extrahiere Ziel-Nummer wenn vorhanden
             var numMatch = bodyText.match(/zahl\s*(\d+)|number\s*(\d+)/i);
             var targetNumber = numMatch ? (numMatch[1] || numMatch[2]) : null;
-            
+
             return JSON.stringify({
                 cdk_drag_count: cdkDrags.length,
                 cdk_drop_count: cdkDrops.length,
@@ -330,14 +332,14 @@ def snapshot_node(state: SurveyState) -> SurveyState:
         drag_raw = drag_resp.get("result", {}).get("value", "{}")
         import json as _json
         drag_info = _json.loads(drag_raw)
-        
+
         state.drag_drop_detected = drag_info.get("is_drag_drop_puzzle", False)
         state.drag_drop_target = drag_info.get("target_number")
-        
+
         if state.drag_drop_detected:
             print(f"[scan] DRAG-DROP PUZZLE DETECTED: target={state.drag_drop_target}, "
                   f"cdk_drags={drag_info.get('cdk_drag_count')}")
-    except Exception as e:
+    except Exception:
         state.drag_drop_detected = False
         state.drag_drop_target = None
 
@@ -373,11 +375,11 @@ def captcha_node(state: SurveyState) -> SurveyState:
     has_captcha_hint = bool(state.captcha_frames)
     has_drag_drop = getattr(state, "drag_drop_detected", False)
     stuck_threshold_reached = state.no_dom_change_count >= 2
-    
+
     if not has_captcha_hint and not has_drag_drop and not stuck_threshold_reached:
         state.captcha_solved_this_iteration = False
         return state
-    
+
     # Log warum wir hier sind
     reason = []
     if has_captcha_hint: reason.append("captcha_frames")  # noqa: E701
@@ -402,15 +404,15 @@ def captcha_node(state: SurveyState) -> SurveyState:
         print(f"[captcha] FAST-PATH: drag_drop_detected=True, target={getattr(state, 'drag_drop_target', '?')}")  # noqa: E501
         try:
             from ..captcha_adapters import angular_drag_drop_solve
-            from ..captcha_router import CaptchaDetection, CaptchaResult
-            
+            from ..captcha_router import CaptchaDetection
+
             with CDPConnection(state.tab_ws, timeout=30) as cdp:
                 detection = CaptchaDetection(
                     captcha_type="angular_drag_drop",
                     dom_hint=f"target={getattr(state, 'drag_drop_target', '?')}"
                 )
                 result = angular_drag_drop_solve(cdp, detection)
-                
+
             state.captcha_solved_this_iteration = bool(result.solved)
             if result.solved:
                 print(f"[captcha] FAST-PATH SOLVED: angular_drag_drop elapsed={result.elapsed_ms:.0f}ms")  # noqa: E501
@@ -424,7 +426,7 @@ def captcha_node(state: SurveyState) -> SurveyState:
             print(f"[captcha] FAST-PATH EXCEPTION: {e}")
             state.add_error("captcha_node", f"drag_drop_fast_path: {str(e)[:200]}")
             # Fall through to normal detection below
-    
+
     # Standard-Path: CaptchaRouter.detect_and_solve()
     try:
         with CDPConnection(state.tab_ws, timeout=20) as cdp:
@@ -477,10 +479,10 @@ def decide_node(state: SurveyState) -> SurveyState:
          d) Sonst: action="wait"
       3) CUA-FALLBACK: Wenn CDP-Click fehlschlägt (no_dom_change > 2),
          nutze CUA-Driver für echte OS-Level Clicks.
-    
+
     Setzt state.decision = {action, stable_id?, value?, key?, reason}.
     nim_actions wird Backward-Compat parallel gefuellt.
-    
+
     QUALIFICATION RULES (2026-05-11):
       - NIEMALS "prefer not to say" / "möchte nicht angeben" auswählen
       - IMMER positive Antworten: "ja Kinder", "ja Haustiere", etc.
@@ -488,7 +490,7 @@ def decide_node(state: SurveyState) -> SurveyState:
       - Ziel: 100% Survey Completion Rate
     """
     from ..profile_loader import ProfileLoader
-    
+
     # ══════════════════════════════════════════════════════════════════════════
     # QUALIFICATION RULES IMPORT (2026-05-11)
     # ══════════════════════════════════════════════════════════════════════════
@@ -596,7 +598,7 @@ def decide_node(state: SurveyState) -> SurveyState:
         # WICHTIG: NIEMALS disqualifizierende Antworten auswählen!
         # Der Agent MUSS positive Antworten wählen um nicht rausgeworfen zu werden.
         # ──────────────────────────────────────────────────────────────────────
-        
+
         # Sammle alle Radio-Optionen für diese Frage
         radio_options = []
         for e in elements:
@@ -607,7 +609,7 @@ def decide_node(state: SurveyState) -> SurveyState:
             if e["role"] in ("radio", "checkbox", "switch"):
                 if not e.get("state", {}).get("checked"):
                     radio_options.append(e)
-        
+
         # Filtere disqualifizierende Antworten aus
         if radio_options and HAS_QUALIFICATION_RULES:
             safe_options = []
@@ -631,7 +633,7 @@ def decide_node(state: SurveyState) -> SurveyState:
                 radio_options = safe_options
             else:
                 print("[decide] WARNING: Alle Optionen sind potenziell disqualifizierend!")
-        
+
         # Wähle erste safe Option
         if radio_options:
             e = radio_options[0]
@@ -869,7 +871,7 @@ def execute_node(state: SurveyState) -> SurveyState:
         # (click_with_retry hat schon 4x intern probiert → jetzt CUA-Fallback fair)
         if result.reason in ("no_dom_change", "no_dom_change_after_retries"):
             state.no_dom_change_count += 1
-            
+
             # ══════════════════════════════════════════════════════════════════
             # CUA-FALLBACK: Wenn click_with_retry alle 4 internen Versuche
             # erschöpft hat ODER bei wiederholtem fill/press_key no_dom_change
@@ -888,7 +890,7 @@ def execute_node(state: SurveyState) -> SurveyState:
                         tab_ws_url=state.tab_ws
                     )
                     print(f"[execute] CUA result: {cua_result}")
-                    
+
                     if cua_result.get("success"):
                         # CUA hat geklickt — warte auf DOM-Change
                         time.sleep(1.0)

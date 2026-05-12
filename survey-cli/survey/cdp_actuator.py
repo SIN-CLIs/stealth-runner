@@ -57,7 +57,7 @@ anderes versuchen.
 ISSUE #84: SPA RENDERING WAIT (MutationObserver-based)
 ------
 Alte Verhaltensweise: ``time.sleep(0.30)`` nach Action
-Problem: 
+Problem:
   - Zu schnell → React/Angular sind noch nicht fertig, premature hash capture
   - Zu langsam → 300ms Overhead bei jeder Action
 
@@ -134,7 +134,7 @@ Neue Verhaltensweise: ``_wait_for_position_stable(cdp, backend_node_id)``
 
 INTEGRATION IN click():
   scroll → box → ``_wait_for_position_stable`` → frische box → mouse events
-  
+
   Wenn die Animation länger als 1s dauert: ActionResult(False, reason=
   "element_still_animating"). click_with_retry (Issue #85) wird dann den
   Klick mit 200ms backoff wiederholen — bis dahin ist die Animation durch.
@@ -399,7 +399,7 @@ def _wait_for_dom_stable(cdp: CDPConnection) -> tuple[bool, float]:
         stabilized = result.get("stabilized", False)
         elapsed_ms = result.get("elapsed", int((time.time() - t0) * 1000))
         return stabilized, float(elapsed_ms)
-    except CDPError as e:
+    except CDPError:
         # Bei Error trotzdem kurz warten (fallback)
         time.sleep(0.30)
         elapsed_ms = int((time.time() - t0) * 1000)

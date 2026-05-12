@@ -174,7 +174,13 @@ try:
         run_survey_with_core,
     )
     from core import (
-        bootstrap_core,
+        # SR-106: bootstrap_core is an intentional availability-probe import.
+        # It's referenced in the module docstring at the bottom as a documented
+        # capability (FS-Layout setup). The try/except ImportError surrounding
+        # this block uses successful import as the CORE_AVAILABLE flag; removing
+        # bootstrap_core would weaken that signal even though it's not directly
+        # called from this module.
+        bootstrap_core,  # noqa: F401
         BudgetExceededError,
     )
     CORE_AVAILABLE = True

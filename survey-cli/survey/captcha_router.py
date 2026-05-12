@@ -141,13 +141,13 @@ class CaptchaResult:
 
 def _check_angular_drag_puzzle(cdp: CDPConnection) -> CaptchaDetection | None:
     """PureSpectrum/Strat7: Angular CDK drag-drop mit .cdk-drag Elementen.
-    
+
     Detection-Kriterien (2026-05-11 verbessert):
     1. .cdk-drag Elemente MUESSEN existieren (nicht nur .cdk-drop-list)
     2. ODER [draggable=true] als Fallback
     3. UND Text-Cue: "zahl X" oder "number X" oder "drag" im Body
     4. Extrahiere target-Nummer aus dem Text
-    
+
     WICHTIG: Diese Detection wird VOR dem normalen Scan aufgerufen!
     Wenn sie True returned, wird der Angular-Drag-Drop-Solver aktiviert.
     """

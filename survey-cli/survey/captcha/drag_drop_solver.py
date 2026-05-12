@@ -25,8 +25,13 @@ Module Status: PRODUCTION (SR-68, 2026-05-11)
 """
 
 from __future__ import annotations
-import json, asyncio, random, websocket
+
+import asyncio
+import json
+import random
 from typing import Optional
+
+import websocket
 
 __frozen__ = True
 __version__ = "2026-05-11"
@@ -128,15 +133,15 @@ async def _click_next_button(ws_url: str) -> bool:
 
 def solve_puzzle(ws_url: str, number: Optional[str] = None) -> dict:
     """Solve PureSpectrum drag-drop puzzle via real mouse events.
-    
+
     Args:
         ws_url: CDP WebSocket URL
         number: Optional target number (auto-detect if None)
-    
+
     Returns:
         dict: {"status": "ok"|"error"|"skipped", "number": "...", "button_clicked": bool,
                "source": (x, y), "target": (x, y), "reason": "..."}
-    
+
     Module-Docs: siehe top-of-file (Operator-Workflow, Failure-Modes, etc)
     """
     puzzle_info = _detect_puzzle_dom(ws_url)
