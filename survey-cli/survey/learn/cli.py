@@ -36,6 +36,12 @@ from .review import (
     ReviewRules, ReviewSummary,
     plan_action, apply_status, format_display_line,
 )
+from .status import (
+    StatusFilters,
+    format_human_report,
+    report_to_json,
+    summarize_inbox,
+)
 from .aggregator import (
     aggregate_misses,
     default_suggestions_path,
@@ -288,6 +294,70 @@ def cmd_apply(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_status(args: argparse.Namespace) -> int:
+    """SR-104 #104: read-only inbox dashboard.
+
+    Default: scan all ``pattern-suggestions-*.jsonl`` in ``--logs`` dir,
+    aggregate counts by status/source/family, print human report.
+    With ``--json`` emit machine-readable JSON instead.
+    With ``--require-empty`` exit 1 if any open records remain (CI gate).
+
+    Strict read-only: opens files with ``"r"`` ONLY; never creates
+    accepted/rejected/audit log outputs.
+    """
+    import glob
+    log_dir = args.logs or _logs_dir()
+
+    if args.input:
+        input_paths = [args.input] if os.path.exists(args.input) else []
+    else:
+        input_paths = sorted(glob.glob(
+            os.path.join(log_dir, "pattern-suggestions-*.jsonl")))
+        # Skip accepted/rejected derived files -- nur die roh-inbox.
+        input_paths = [p for p in input_paths
+                       if not (p.endswith("-accepted.jsonl")
+                               or p.endswith("-rejected.jsonl"))]
+
+    if not input_paths:
+        print(f"[learn] no pattern-suggestions-*.jsonl found "
+              f"(searched {log_dir})")
+        return 0 if not args.require_empty else 1
+
+    records = []
+    for path in input_paths:
+        with open(path) as f:
+            for line in f:
+                line = line.strip()
+                if line:
+                    records.append(json.loads(line))
+
+    filters = StatusFilters(
+        source=args.filter_source,
+        status=args.filter_status,
+    )
+    report = summarize_inbox(
+        records,
+        filters=filters,
+        files_scanned=len(input_paths),
+    )
+
+    if args.json:
+        print(json.dumps(report_to_json(report, top=args.top),
+                         indent=2, ensure_ascii=False))
+    else:
+        print(format_human_report(report, top=args.top))
+
+    if args.require_empty and report.has_open():
+        # Stderr-Erklaerung, damit CI-Diff lesbar bleibt.
+        sys.stderr.write(
+            f"[learn] --require-empty: "
+            f"{report.by_status.get('open', 0)} open record(s) remain.\n"
+        )
+        return 1
+    return 0
+
+
+
 def build_argparser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="survey learn")
     sub = p.add_subparsers(dest="action", required=True)
@@ -360,6 +430,30 @@ def build_argparser() -> argparse.ArgumentParser:
                        help="DEV-FLAG: pytest-Gate ueberspringen "
                             "(nur fuer Tests, nicht in CI)")
     p_app.set_defaults(func=cmd_apply)
+
+    # SR-104 #104: read-only inbox dashboard.
+    p_sts = sub.add_parser(
+        "status",
+        help="Read-only Inbox-Dashboard: counts by status/source/family")
+    p_sts.add_argument("--logs", default=None,
+                       help="Logs-Verzeichnis (default: survey-cli/logs)")
+    p_sts.add_argument("--input", default=None,
+                       help="Statt multi-file scan, eine einzelne JSONL lesen")
+    p_sts.add_argument("--filter-source",
+                       choices=["all", "substring", "llm"], default="all",
+                       help="Filter auf source field. Default: all.")
+    p_sts.add_argument("--filter-status",
+                       choices=["all", "open", "accepted", "rejected"],
+                       default="all",
+                       help="Filter auf status field. Default: all.")
+    p_sts.add_argument("--top", type=int, default=10, metavar="N",
+                       help="Limit fuer top-N family/label-Listen. Default: 10.")
+    p_sts.add_argument("--json", action="store_true",
+                       help="JSON statt human-readable Output")
+    p_sts.add_argument("--require-empty", action="store_true",
+                       help="Exit 1 wenn open-count > 0 (CI smoke-gate). "
+                            "Read-only -- modifiziert nichts.")
+    p_sts.set_defaults(func=cmd_status)
 
     return p
 

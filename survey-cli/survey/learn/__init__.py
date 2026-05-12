@@ -68,6 +68,15 @@ from .llm_client import (
     is_available as llm_is_available,
     prompt_hash,
 )
+# SR-104 #104 — read-only inbox dashboard pure functions
+from .status import (
+    StatusFilters,
+    StatusReport,
+    format_human_report,
+    passes_filters,
+    report_to_json,
+    summarize_inbox,
+)
 # SR-102 #102 — source-aware batch-review pure functions
 from .review import (
     ReviewRules,
@@ -107,4 +116,11 @@ __all__ = [
     "format_display_line",
     "partition_records",
     "normalize_source",
+    # SR-104 #104
+    "StatusFilters",
+    "StatusReport",
+    "format_human_report",
+    "passes_filters",
+    "report_to_json",
+    "summarize_inbox",
 ]
