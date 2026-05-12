@@ -324,42 +324,130 @@ class CUAFallbackHandler:
 # INTEGRATION MIT LANGGRAPH
 # ═══════════════════════════════════════════════════════════════════════════════
 
-def cua_click_blocked_element(element_selector: str, tab_ws_url: str) -> dict:
-    """LangGraph-kompatible Funktion für CUA-Fallback.
-    
-    Wird aufgerufen wenn CDP-Clicks fehlschlagen.
-    
+def bring_cdp_tab_to_foreground(tab_ws_url: str, target_id: str = "") -> bool:
+    """Bringt einen CDP-Tab via WS in den Vordergrund (Issue #80).
+
+    WARUM: Vor jedem AX-basierten Fallback (CUA-Driver, CDP
+    ``Accessibility.getFullAXTree``) MUSS der Tab aktiv sein. Chrome
+    rendert den AX-Tree nur für die fokussierte Tab — Background-Tabs
+    liefern leere Bäume und der CUA-Klick fällt auf blinde Koordinaten
+    zurück (= Glücksspiel).
+
+    Wir öffnen die Connection NICHT persistent — diese Funktion wird aus
+    Pfaden aufgerufen die selbst keinen ``CDPConnection`` haben (z. B.
+    ``cua_click_blocked_element`` als Top-Level-Helper). Synchroner
+    Roundtrip, max 5s Timeout.
+
     Args:
-        element_selector: CSS-Selector des Elements (für Logging)
-        tab_ws_url: WebSocket URL des Tabs (für CDP-Koordinaten-Lookup)
-        
+        tab_ws_url: ``ws://...`` URL des Survey-Tabs.
+        target_id: optional, ermöglicht ``Target.activateTarget`` als
+            Belt-and-Braces — manche Chrome-Versionen ignorieren
+            ``Page.bringToFront`` auf Background-Tabs.
+
     Returns:
-        {"success": bool, "method": str, "details": str}
+        True wenn ``Page.bringToFront`` oder ``Target.activateTarget``
+        erfolgreich war, sonst False.
     """
+    import json as _json
+    try:
+        import websocket as _ws
+    except ImportError:
+        return False
+
+    ok = False
+    try:
+        sock = _ws.create_connection(tab_ws_url, timeout=5)
+    except Exception as e:
+        print(f"[foreground] WS connect failed: {e}")
+        return False
+
+    try:
+        # Page.bringToFront — funktioniert für Page-Targets.
+        sock.send(_json.dumps({"id": 1, "method": "Page.bringToFront",
+                               "params": {}}))
+        resp = _json.loads(sock.recv())
+        if "error" not in resp:
+            ok = True
+        else:
+            print(f"[foreground] Page.bringToFront error: {resp['error']}")
+
+        # Optional: Target.activateTarget als Belt-and-Braces.
+        if target_id:
+            sock.send(_json.dumps({"id": 2, "method": "Target.activateTarget",
+                                   "params": {"targetId": target_id}}))
+            resp2 = _json.loads(sock.recv())
+            if "error" not in resp2:
+                ok = True
+    except Exception as e:
+        print(f"[foreground] WS exchange failed: {e}")
+    finally:
+        try:
+            sock.close()
+        except Exception:
+            pass
+    return ok
+
+
+def cua_click_blocked_element(
+    element_selector: str,
+    tab_ws_url: str,
+    target_id: str = "",
+) -> dict:
+    """LangGraph-kompatible Funktion für CUA-Fallback.
+
+    Wird aufgerufen wenn CDP-Clicks fehlschlagen.
+
+    Pipeline (Issue #80):
+      1. ``Page.bringToFront`` via CDP (Tab muss aktiv sein für AX-Tree)
+      2. macOS-Window aktivieren via CUA-Driver
+      3. ``find_and_click_checkbox`` (AX-Tree → blinde Coords als Fallback)
+
+    Args:
+        element_selector: CSS-Selector / Label des Elements (Logging +
+            AX-Pattern-Match)
+        tab_ws_url: WebSocket URL des Tabs (für ``Page.bringToFront``)
+        target_id: optional, für ``Target.activateTarget`` als
+            Belt-and-Braces
+
+    Returns:
+        {"success": bool, "method": str, "details": str,
+         "foreground_ok": bool, "elapsed_ms": float}
+    """
+    # Step 1 — CDP-Level Foreground (Issue #80)
+    fg_ok = bring_cdp_tab_to_foreground(tab_ws_url, target_id=target_id)
+
     handler = CUAFallbackHandler()
-    
-    # Finde Window
+
+    # Step 2 — macOS-Window
     window = handler.find_chrome_window()
     if not window:
-        return {"success": False, "method": "failed", "details": "No Chrome window"}
-    
-    # Versuche AX-Tree Click
+        return {
+            "success": False,
+            "method": "failed",
+            "details": "No Chrome window",
+            "foreground_ok": fg_ok,
+            "elapsed_ms": 0.0,
+        }
+
+    # Step 3 — AX-Tree Click (mit blind-coords-Fallback)
     result = handler.find_and_click_checkbox(
         window["window_id"],
         window["pid"],
-        label_pattern=element_selector
+        label_pattern=element_selector,
     )
-    
+
     return {
         "success": result.success,
         "method": result.method,
         "details": result.details,
-        "elapsed_ms": result.elapsed_ms
+        "foreground_ok": fg_ok,
+        "elapsed_ms": result.elapsed_ms,
     }
 
 
 __all__ = [
     "CUAFallbackHandler",
     "CUAClickResult",
+    "bring_cdp_tab_to_foreground",
     "cua_click_blocked_element",
 ]

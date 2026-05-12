@@ -14,7 +14,7 @@ content: |
   | #58   | P2   | PLANNED  | `_plans/58-matcher-miss-labels.md` (persistent semantically-tagged miss_labels)       |
   | #61   | P2   | PLANNED  | `_plans/61-62-test-style-debt.md` (style-debt: E501/E701/E702 — batched with #62)     |
   | #62   | P2   | PLANNED  | `_plans/61-62-test-style-debt.md` (test-debt: 10 files, 37 failures — batched with #61) |
-  | #80   | P0   | IN-PROG  | `survey-cli/survey/qualification_rules.py` + `_plans/80-agent-qualification.md` (CUA-fallback wiring) |
+  | #80   | P0   | DONE     | `survey-cli/survey/qualification_rules.py::record_qualification_block` (LLM-path filter + JSONL telemetry in `decide_node`) + `survey-cli/survey/cdp_actuator.py::Actuator.bring_tab_to_foreground` + `survey-cli/survey/cua_fallback.py::bring_cdp_tab_to_foreground` (CUA pre-AX Page.bringToFront + Target.activateTarget) — see tests `test_qualification_filter.py` + `test_cua_foreground.py` (16 green) |
   | #82   | -    | DONE     | delqhi/sin-hermes-agent audited 2026-05-12: no survey-solver files in main; closing as resolved |
   | #83   | P1   | PLANNED  | `_plans/83-error-observability.md` (multi-phase EPIC: circuit breaker, checkpoints, audit, prometheus) |
   | #84   | P0   | DONE     | `survey-cli/survey/cdp_actuator.py::_wait_for_dom_stable` (MutationObserver wait)    |
@@ -4911,7 +4911,7 @@ auf OOPIF-Click-Element trifft).
 
   **Korrekt**: Event-Dispatch auf dem Tabellen-Element oder CUA Koordinaten-Klick.
 
-  ## ❌❌❌ Nach clickSurvey() nach neuen TABS suchen (KRITISCH!) ❌���❌
+  ## ❌❌❌ Nach clickSurvey() nach neuen TABS suchen (KRITISCH!) ❌�����❌
 
   ```python
   # ❌ FALSCH - Surveys erscheinen IN-PAGE, nicht als neuer Tab!
@@ -13111,7 +13111,7 @@ auf OOPIF-Click-Element trifft).
   │  └──────────────────────────────────────────────────────────────────┘     │
   │       │                                                                   │
   │       ▼                                                                   │
-  │  ┌─────���────────────────────────────────────────────────────────────┐     │
+  │  ┌──���──���────────────────────────────────────────────────────────────┐     │
   │  │ SCHRITT 3: BATCH EXECUTE (CDP WebSocket)                         │     │
   │  │                                                                  │     │
   │  │ BatchExecutor.execute(ws_url, actions, provider)                 │     │

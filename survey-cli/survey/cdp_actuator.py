@@ -555,7 +555,48 @@ class Actuator:
     def element(self, stable_id: str) -> UniversalElement | None:
         return self._element_cache.get(stable_id)
 
-    # ── Atomare Aktionen ──────────────────────────────────────────────
+    # ── Issue #80: Bring Tab to Foreground ───────────────────────────
+    def bring_tab_to_foreground(self) -> bool:
+        """Bringt den aktiven CDP-Target (Tab) in den Vordergrund.
+
+        WARUM (Issue #80): Wenn der Survey-Tab nicht im Vordergrund läuft,
+        liefert die Accessibility-Tree-Abfrage (sowohl CDP ``Accessibility.
+        getFullAXTree`` als auch macOS-AX via CUA) regelmäßig einen LEEREN
+        Baum — Chrome rendert AX nur für die aktive Tab. Vor jedem
+        AX-basierten Fallback (Consent/Captcha) MUSS daher der Tab via
+        ``Page.bringToFront`` aktiviert werden.
+
+        Zusätzlich versuchen wir ``Target.activateTarget`` wenn wir eine
+        ``targetId`` aus der CDP-Connection rausziehen können — manche
+        Chrome-Versionen ignorieren ``Page.bringToFront`` auf Background-
+        Tabs (Chrome-Bug, intermittent).
+
+        Returns:
+            True wenn mindestens einer der beiden Calls erfolgreich war.
+
+        Best effort — Fallback-Pfade dürfen NIE den Klick-Pfad brechen,
+        daher schluckt der Helper alle ``CDPError``.
+        """
+        ok = False
+        try:
+            self.cdp.call("Page.bringToFront", {})
+            ok = True
+        except CDPError as e:
+            # Page.bringToFront ist nur in Page-Targets verfügbar.
+            print(f"[foreground] Page.bringToFront failed: {e}")
+
+        # Best-Effort: Wenn wir eine targetId an der Connection finden,
+        # rufen wir auch Target.activateTarget. Schaden tut's nicht.
+        target_id = getattr(self.cdp, "target_id", "") or ""
+        if target_id:
+            try:
+                self.cdp.call(
+                    "Target.activateTarget", {"targetId": target_id}
+                )
+                ok = True
+            except CDPError as e:
+                print(f"[foreground] Target.activateTarget failed: {e}")
+        return ok
 
     def scroll_into_view(self, stable_id: str) -> ActionResult:
         """Scrollt das Element in den sichtbaren Viewport."""

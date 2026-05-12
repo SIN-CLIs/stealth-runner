@@ -139,20 +139,88 @@ ALWAYS_PREFER_PATTERNS = [
 
 def is_disqualifying_answer(answer_text: str) -> bool:
     """Prüft ob eine Antwort zur Disqualifikation führen würde.
-    
+
     Args:
         answer_text: Der Text der Antwortoption
-        
+
     Returns:
         True wenn diese Antwort NICHT gewählt werden sollte
     """
     answer_lower = answer_text.lower().strip()
-    
+
     for pattern in NEVER_SELECT_COMPILED:
         if pattern.search(answer_lower):
             return True
-    
+
     return False
+
+
+def matched_disqualifying_pattern(answer_text: str) -> Optional[str]:
+    """Wie ``is_disqualifying_answer``, gibt aber das matchende Pattern zurück.
+
+    Used by ``record_qualification_block`` so the telemetry log can attribute
+    the block to a specific regex (forensics + tuning loop, SR-80).
+    """
+    answer_lower = answer_text.lower().strip()
+    for src, pattern in zip(NEVER_SELECT_PATTERNS, NEVER_SELECT_COMPILED):
+        if pattern.search(answer_lower):
+            return src
+    return None
+
+
+def record_qualification_block(
+    *,
+    question_text: str,
+    answer_text: str,
+    matched_pattern: Optional[str] = None,
+    source: str = "decide_node",
+    survey_id: str = "",
+    provider: str = "",
+    iteration: int = 0,
+    stable_id: str = "",
+) -> None:
+    """Logge einen geblockten Disqualifikations-Klick als JSONL-Event.
+
+    ZIEL (Issue #80): JEDE durch ``is_disqualifying_answer`` verhinderte
+    Antwort muss forensisch nachvollziehbar sein. Wir schreiben in einen
+    eigenen append-only File, damit downstream-Tooling (Pattern-Tuning,
+    Persona-Audits) schnell joinen kann — separat vom allgemeinen
+    Iterations-Log.
+
+    Sink: ``survey-cli/logs/qualification-blocks-{YYYY-MM-DD}.jsonl``
+
+    Best effort — Telemetrie darf NIE einen Survey-Run brechen. Wir
+    schlucken jede I/O-Exception still (Datei full / FS read-only / etc.).
+    """
+    import json
+    import time
+    from datetime import datetime
+    from pathlib import Path
+
+    if matched_pattern is None:
+        matched_pattern = matched_disqualifying_pattern(answer_text) or ""
+
+    try:
+        logs_dir = Path(__file__).resolve().parent.parent / "logs"
+        logs_dir.mkdir(parents=True, exist_ok=True)
+        fp = logs_dir / f"qualification-blocks-{datetime.now().strftime('%Y-%m-%d')}.jsonl"
+        entry = {
+            "ts": datetime.now().isoformat(),
+            "unix_ts": time.time(),
+            "source": source,
+            "survey_id": survey_id,
+            "provider": provider,
+            "iteration": iteration,
+            "stable_id": stable_id,
+            "question_text": (question_text or "")[:200],
+            "answer_text": (answer_text or "")[:120],
+            "matched_pattern": matched_pattern,
+        }
+        with open(fp, "a") as f:
+            f.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception:
+        # NEVER let telemetry break a survey run.
+        pass
 
 
 def get_preferred_answer(question_text: str, answers: list[str]) -> Optional[int]:
@@ -228,7 +296,7 @@ def rank_answers_for_qualification(question_text: str, answers: list[str]) -> li
     return ranked
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════════════���══════
 # SPEED OPTIMIZATION — Schnelle Antwort-Strategien
 # ═══════════════════════════════════════════════════════════════════════════════
 
@@ -306,6 +374,8 @@ def get_nvidia_model_for_task(task: str) -> str:
 
 __all__ = [
     "is_disqualifying_answer",
+    "matched_disqualifying_pattern",
+    "record_qualification_block",
     "get_preferred_answer",
     "filter_safe_answers",
     "rank_answers_for_qualification",

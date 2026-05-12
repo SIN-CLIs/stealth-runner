@@ -494,6 +494,8 @@ def decide_node(state: SurveyState) -> SurveyState:
     try:
         from ..qualification_rules import (
             is_disqualifying_answer,
+            matched_disqualifying_pattern,
+            record_qualification_block,
             rank_answers_for_qualification,
             filter_safe_answers,
         )
@@ -501,6 +503,8 @@ def decide_node(state: SurveyState) -> SurveyState:
     except ImportError:
         HAS_QUALIFICATION_RULES = False
         def is_disqualifying_answer(x): return False
+        def matched_disqualifying_pattern(x): return None
+        def record_qualification_block(**kw): pass
         def rank_answers_for_qualification(q, a): return list(range(len(a)))
         def filter_safe_answers(a): return list(range(len(a)))
     try:
@@ -517,6 +521,9 @@ def decide_node(state: SurveyState) -> SurveyState:
         avoid_id = last.get("stable_id", "")
 
     decision: dict[str, Any] = {}
+
+    # ── Build stable_id → element index once (used by LLM-path filter) ───
+    by_sid = {e["stable_id"]: e for e in elements}
 
     # 1) LLM-Decide (optional)
     if get_nim and elements:
@@ -541,9 +548,42 @@ def decide_node(state: SurveyState) -> SurveyState:
                 sid = a0.get("stable_id") or ""
                 act = a0.get("action") or ""
                 if sid and act and sid != avoid_id:
-                    decision = {"action": act, "stable_id": sid,
-                                "value": a0.get("value", ""),
-                                "reason": "llm"}
+                    # ── Issue #80: LLM-Path Qualification Filter ──────────
+                    # Auch wenn das LLM eine click-Decision für ein
+                    # Radio/Checkbox/Switch zurückgibt, MUSS sie durch den
+                    # Disqualifikations-Filter laufen. Sonst kippt der Agent
+                    # bei jeder "möchte nicht angeben"-Option, die das LLM
+                    # auswählt. Heuristik allein hilft nichts wenn das LLM
+                    # die Wahl vorher trifft.
+                    rejected = False
+                    if HAS_QUALIFICATION_RULES and act == "click":
+                        el = by_sid.get(sid) or {}
+                        if el.get("role") in ("radio", "checkbox", "switch"):
+                            label = el.get("name", "") or el.get("value", "")
+                            if label and is_disqualifying_answer(label):
+                                pat = matched_disqualifying_pattern(label) or ""
+                                record_qualification_block(
+                                    question_text="",
+                                    answer_text=label,
+                                    matched_pattern=pat,
+                                    source="decide_node:llm",
+                                    survey_id=state.survey_id,
+                                    provider=state.provider,
+                                    iteration=state.iteration,
+                                    stable_id=sid,
+                                )
+                                state.add_error(
+                                    "decide_node",
+                                    f"qualif_block(llm) {sid} '{label[:40]}' "
+                                    f"pat={pat}"[:200],
+                                )
+                                print(f"[decide] BLOCKED LLM disqualifying "
+                                      f"answer: '{label[:50]}' pattern={pat}")
+                                rejected = True
+                    if not rejected:
+                        decision = {"action": act, "stable_id": sid,
+                                    "value": a0.get("value", ""),
+                                    "reason": "llm"}
                 state.nim_actions = actions
         except Exception as e:
             state.add_error("decide_node", f"nim failed: {e}"[:200])
@@ -569,10 +609,22 @@ def decide_node(state: SurveyState) -> SurveyState:
         
         # Filtere disqualifizierende Antworten aus
         if radio_options and HAS_QUALIFICATION_RULES:
-            safe_options = [
-                e for e in radio_options
-                if not is_disqualifying_answer(e.get("name", "") or e.get("value", ""))
-            ]
+            safe_options = []
+            for e in radio_options:
+                label = e.get("name", "") or e.get("value", "")
+                if not is_disqualifying_answer(label):
+                    safe_options.append(e)
+                else:
+                    # Issue #80: Telemetry für JEDEN geblockten Heuristik-Skip
+                    record_qualification_block(
+                        question_text="",
+                        answer_text=label,
+                        source="decide_node:heuristic",
+                        survey_id=state.survey_id,
+                        provider=state.provider,
+                        iteration=state.iteration,
+                        stable_id=e.get("stable_id", ""),
+                    )
             # Wenn alle Optionen "unsafe" sind, nimm trotzdem eine (besser als nichts)
             if safe_options:
                 radio_options = safe_options

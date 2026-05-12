@@ -2,7 +2,7 @@
 
 ## [Unreleased] - 2026-05-12
 
-### Added (#93 + #94 — CDP Event-Chain, OOPIF Auto-Attach, JS-Dialog)
+### Added (#93 + #94 — CDP Event-Chain, OOPIF Auto-Attach, JS-Dialog + #80 — Qualification Forensics, CUA Foreground)
 - `survey-cli/survey/cdp_client.py`: public `event_handler` attribute,
   `_dispatch_event` swallowing handler exceptions, non-blocking
   `drain_events(timeout)`, and `session_id=` parameter on `call()` for CDP
@@ -22,6 +22,35 @@
   `JsDialogHandler` once and calls `drain_events` after mouse events but
   before the post-hash, so dialogs are dismissed before DOM stability is
   measured. New result reason `dialog_dismissed`.
+- `survey-cli/survey/qualification_rules.py` (Issue #80): Two new helpers for
+  forensic agent qualification tracking:
+  - `matched_disqualifying_pattern(answer_text) → Optional[str]`: Returns the
+    regex pattern that rejected an answer (enables downstream tuning loop).
+  - `record_qualification_block(...)`: Append-only JSONL telemetry into
+    `survey-cli/logs/qualification-blocks-{YYYY-MM-DD}.jsonl`. Logs every
+    LLM- and heuristic-path qualification rejection with matched pattern,
+    question/answer text, and iteration metadata. Best-effort, swallows all
+    I/O errors to prevent telemetry from breaking survey runs.
+- `survey-cli/survey/cdp_actuator.py::Actuator.bring_tab_to_foreground()`: New
+  method for Issue #80. Calls `Page.bringToFront` + optional
+  `Target.activateTarget` (belt-and-braces for Chrome background-tab bug).
+  Chrome only renders the AX-tree for the active tab; this ensures CUA
+  fallback has a non-empty tree to work with.
+- `survey-cli/survey/cua_fallback.py` (Issue #80): Two new module-level
+  helpers:
+  - `bring_cdp_tab_to_foreground(tab_ws_url, target_id="") → bool`: WebSocket-based
+    foreground via `Page.bringToFront` before CUA AX-scan.
+  - `cua_click_blocked_element(element_selector, tab_ws_url, target_id="")`:
+    LangGraph-compatible wrapper. Step 1: CDP foreground (Issue #80) → Step 2:
+    macOS window activation → Step 3: AX-tree click with blind-coordinate
+    fallback.
+- `tests/test_qualification_filter.py` (NEW): 7 unit tests for qualification
+  telemetry in the LLM path (post-filter on LLM picks that match disqualifying
+  patterns) and heuristic path (pre-filter on safe options). Mocks logger,
+  verifies JSONL structure, matched-pattern attribution.
+- `tests/test_cua_foreground.py` (NEW): 9 integration tests for CDP-level
+  foreground (Page.bringToFront, Target.activateTarget), WS connection retry,
+  and full `cua_click_blocked_element` pipeline with mocked CUAFallbackHandler.
 - `tests/test_event_handlers.py` (NEW): 9 unit tests using a `FakeWS` —
   covers event/response separation, handler exception swallowing, drain
   semantics, dialog dismissal, default policy, OOPIF attach+detach, type
@@ -30,13 +59,15 @@
 ### Removed
 - `_plans/js-dialog-handler.md` (replaced by inline code + AGENTS.md §#94, A4).
 - `_plans/oopif-autoattach.md` (replaced by inline code + AGENTS.md §#93, A4).
+- `_plans/80-agent-qualification.md` (replaced by inline code + AGENTS.md §#80, A5).
 
 ### Status Changes
 - #93 → DONE (OOPIF scan coverage via flatten-attach; click-coordinate
   translation tracked as follow-up if needed)
 - #94 → DONE (JS dialogs auto-dismissed with two-layer redundancy)
-- AGENTS.md Coverage Snapshot updated; new deep-dive section
-  "ISSUE #93 + #94" added with full architectural rationale.
+- #80 → DONE (Qualification forensics + CUA foreground pipeline; see Issue #80
+  deep-dive in AGENTS.md)
+- AGENTS.md Coverage Snapshot updated; new deep-dive sections for #80, #93, #94.
 
 ## [Unreleased] - 2026-05-12
 
