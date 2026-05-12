@@ -15,6 +15,7 @@ _ADAPTERS = {
     "tolunastart": ("survey.providers.toluna", "TolunaAdapter"),
     "strat7": ("survey.providers.strat7", "Strat7Adapter"),
     "purespectrum": ("survey.providers.purespectrum", "PureSpectrumAdapter"),
+    "heypiggy": ("survey.providers.heypiggy", "HeyPiggyAdapter"),
 }
 
 
