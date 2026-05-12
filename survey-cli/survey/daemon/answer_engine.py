@@ -7,6 +7,7 @@ Features:
     - Anti-pattern detection (avoid bot behavior)
     - Attention check handling
     - LLM integration for open-text questions
+    - SR-152: Persona contradiction detection for identity questions
 """
 from __future__ import annotations
 
@@ -22,6 +23,7 @@ from pathlib import Path
 from typing import Any
 
 from .survey_parser import Question, QuestionType, QuestionOption
+from ..reliability import ContradictionDetector
 
 logger = logging.getLogger(__name__)
 
@@ -90,6 +92,8 @@ class AnswerEngine:
 
     Generates consistent, believable answers based on persona
     and maintains history for cross-survey consistency.
+    
+    SR-152: Uses ContradictionDetector to pin identity answers to prior values.
     """
 
     # Attention check patterns
@@ -137,6 +141,10 @@ class AnswerEngine:
 
         self._current_session_answers: dict[str, Answer] = {}
         self._init_db()
+        
+        # SR-152: Initialize contradiction detector
+        self._contradiction_detector = ContradictionDetector(db_path=self.db_path)
+        self._persona_id = self._hash_persona()
 
     def _init_db(self) -> None:
         """Initialize answer history database."""
@@ -203,6 +211,14 @@ class AnswerEngine:
 
         # Store in history
         self._store_answer(question, answer)
+        
+        # SR-152: Record identity category for contradiction detection
+        self._contradiction_detector.record_answer(
+            persona_id=self._persona_id,
+            question_text=question.text,
+            answer_value=str(answer.value),
+            question_hash=question_hash,
+        )
 
         return answer
 
@@ -558,11 +574,48 @@ Your response:"""
                 )
 
         # Last resort: random
-        return self._generate_radio_answer(question, question_hash)
+        if question.options:
+            return Answer(
+                question_id=question.id,
+                question_hash=question_hash,
+                value=random.choice(question.options).value,
+                confidence=0.5,
+                reasoning="Attention check - random fallback",
+            )
+
+        return self._generate_default_answer(question, question_hash)
 
     def _select_age_option(self, question: Question, question_hash: str) -> Answer:
-        """Select age-appropriate option."""
+        """Select age-appropriate option with SR-152 contradiction check."""
+        # SR-152: Check for pinned answer from contradiction detector
+        pinned = self._contradiction_detector.check(
+            persona_id=self._persona_id,
+            question_text=question.text,
+            options=question.options,
+        )
+        if pinned:
+            logger.info(f"SR-152: Using pinned AGE answer: {pinned.value}")
+            return Answer(
+                question_id=question.id,
+                question_hash=question_hash,
+                value=pinned.value,
+                confidence=pinned.confidence,
+                reasoning=pinned.reasoning,
+            )
+        
+        # Original logic: find matching age bracket
         for opt in question.options:
+            # Check for exact age match
+            if str(self.persona.age) in opt.label:
+                return Answer(
+                    question_id=question.id,
+                    question_hash=question_hash,
+                    value=opt.value,
+                    confidence=1.0,
+                    reasoning="Exact age match",
+                )
+
+            # Check for age bracket match
             for bracket, (min_age, max_age) in self.AGE_GROUPS.items():
                 if bracket in opt.label or bracket in opt.value:
                     if min_age <= self.persona.age <= max_age:
@@ -578,7 +631,24 @@ Your response:"""
         return self._generate_radio_answer(question, question_hash)
 
     def _select_gender_option(self, question: Question, question_hash: str) -> Answer:
-        """Select gender option."""
+        """Select gender option with SR-152 contradiction check."""
+        # SR-152: Check for pinned answer from contradiction detector
+        pinned = self._contradiction_detector.check(
+            persona_id=self._persona_id,
+            question_text=question.text,
+            options=question.options,
+        )
+        if pinned:
+            logger.info(f"SR-152: Using pinned GENDER answer: {pinned.value}")
+            return Answer(
+                question_id=question.id,
+                question_hash=question_hash,
+                value=pinned.value,
+                confidence=pinned.confidence,
+                reasoning=pinned.reasoning,
+            )
+        
+        # Original logic
         for opt in question.options:
             if self.persona.gender.lower() in opt.label.lower():
                 return Answer(
@@ -592,7 +662,24 @@ Your response:"""
         return self._generate_radio_answer(question, question_hash)
 
     def _select_income_option(self, question: Question, question_hash: str) -> Answer:
-        """Select income-appropriate option."""
+        """Select income-appropriate option with SR-152 contradiction check."""
+        # SR-152: Check for pinned answer from contradiction detector
+        pinned = self._contradiction_detector.check(
+            persona_id=self._persona_id,
+            question_text=question.text,
+            options=question.options,
+        )
+        if pinned:
+            logger.info(f"SR-152: Using pinned INCOME answer: {pinned.value}")
+            return Answer(
+                question_id=question.id,
+                question_hash=question_hash,
+                value=pinned.value,
+                confidence=pinned.confidence,
+                reasoning=pinned.reasoning,
+            )
+        
+        # Original logic
         persona_range = self.INCOME_BRACKETS.get(
             self.persona.income_bracket, (50000, 75000)
         )
@@ -623,7 +710,24 @@ Your response:"""
         return self._generate_radio_answer(question, question_hash)
 
     def _select_education_option(self, question: Question, question_hash: str) -> Answer:
-        """Select education-appropriate option."""
+        """Select education-appropriate option with SR-152 contradiction check."""
+        # SR-152: Check for pinned answer from contradiction detector
+        pinned = self._contradiction_detector.check(
+            persona_id=self._persona_id,
+            question_text=question.text,
+            options=question.options,
+        )
+        if pinned:
+            logger.info(f"SR-152: Using pinned EDUCATION answer: {pinned.value}")
+            return Answer(
+                question_id=question.id,
+                question_hash=question_hash,
+                value=pinned.value,
+                confidence=pinned.confidence,
+                reasoning=pinned.reasoning,
+            )
+        
+        # Original logic
         education_keywords = {
             "high_school": ["high school", "secondary", "ged"],
             "some_college": ["some college", "associate"],
@@ -709,7 +813,13 @@ Your response:"""
         """
         warnings = []
 
-        # Check for contradictions
-        # TODO: Implement more sophisticated consistency checks
+        # SR-152: Use contradiction detector for validation
+        scan_results = self._contradiction_detector.scan(self._persona_id)
+        for category, contradiction in scan_results.items():
+            if contradiction.is_contradicted:
+                warnings.append(
+                    f"SR-152: {category} has {len(contradiction.answers)} different answers "
+                    f"(most frequent: {contradiction.most_frequent})"
+                )
 
         return warnings
