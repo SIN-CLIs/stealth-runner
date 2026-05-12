@@ -246,8 +246,7 @@ def format_human_report(report: StatusReport, top: int = 10) -> str:
     lines: List[str] = []
 
     lines.append(
-        f"[learn] inbox summary  ({report.files_scanned} file(s), "
-        f"{report.total_records} record(s))"
+        f"[learn] inbox summary  ({report.files_scanned} file(s), {report.total_records} record(s))"
     )
 
     if report.by_status:
@@ -257,16 +256,14 @@ def format_human_report(report: StatusReport, top: int = 10) -> str:
         for status in ("open", "accepted", "rejected", "skipped"):
             n = report.by_status.get(status, 0)
             if n > 0:
-                lines.append(
-                    f"  {status:<10} {n:>4}   {_percent(n, total)}")
+                lines.append(f"  {status:<10} {n:>4}   {_percent(n, total)}")
 
     if report.by_source_open:
         lines.append("")
         lines.append("By source (open records only):")
         open_total = sum(report.by_source_open.values())
         for source, n in report.by_source_open.most_common():
-            lines.append(
-                f"  {source:<10} {n:>4}   {_percent(n, open_total)}")
+            lines.append(f"  {source:<10} {n:>4}   {_percent(n, open_total)}")
 
     if report.families_open:
         lines.append("")
@@ -304,8 +301,7 @@ def report_to_json(report: StatusReport, top: int = 10) -> dict:
         "by_status": dict(report.by_status),
         "by_source_open": dict(report.by_source_open),
         "top_families_open": [
-            {"family": fam, "count": n}
-            for fam, n in report.families_open.most_common(top)
+            {"family": fam, "count": n} for fam, n in report.families_open.most_common(top)
         ],
         "top_labels_open": [
             {"role": role, "label": label, "count": n}

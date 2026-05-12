@@ -9,7 +9,8 @@ BANNED: ❌ provider hardcode | ❌ playstealth | ❌ webauto-nodriver | ❌ har
 """
 
 from __future__ import annotations
-import json, websocket
+import json
+import websocket
 from typing import Optional
 
 __frozen__ = True
@@ -37,7 +38,8 @@ def _detect_type(ws_url: str) -> str:
     try:
         ws = websocket.create_connection(ws_url, timeout=10)
         ws.send(json.dumps({"id": 0, "method": "Runtime.evaluate", "params": {"expression": js}}))
-        r = json.loads(ws.recv()); ws.close()
+        r = json.loads(ws.recv())
+        ws.close()
         return r.get("result", {}).get("result", {}).get("value", "unknown")
     except Exception:
         return "unknown"
@@ -62,7 +64,8 @@ def _get_options(ws_url: str) -> dict:
     try:
         ws = websocket.create_connection(ws_url, timeout=10)
         ws.send(json.dumps({"id": 0, "method": "Runtime.evaluate", "params": {"expression": js}}))
-        r = json.loads(ws.recv()); ws.close()
+        r = json.loads(ws.recv())
+        ws.close()
         return r.get("result", {}).get("result", {}).get("value", {})
     except Exception:
         return {}
@@ -71,21 +74,25 @@ def _get_options(ws_url: str) -> dict:
 def _match(q: str, options: list, profile: dict) -> int:
     """Map question text to best option index."""
     ql = q.lower()
-    if any(k in ql for k in ['geschlecht', 'gender', 'männlich']):
-        g = profile.get('gender', 'male')
+    if any(k in ql for k in ["geschlecht", "gender", "männlich"]):
+        g = profile.get("gender", "male")
         for i, o in enumerate(options):
-            if g == 'male' and 'männ' in o.get('label','').lower(): return i
-            if g == 'female' and 'weib' in o.get('label','').lower(): return i
-    if any(k in ql for k in ['alter', 'age', 'jahre']):
-        age = profile.get('age', 32)
-        brackets = [(16,25,'16','25'),(26,39,'26','39'),(40,55,'40','55')]
+            if g == "male" and "männ" in o.get("label", "").lower():
+                return i
+            if g == "female" and "weib" in o.get("label", "").lower():
+                return i
+    if any(k in ql for k in ["alter", "age", "jahre"]):
+        age = profile.get("age", 32)
+        brackets = [(16, 25, "16", "25"), (26, 39, "26", "39"), (40, 55, "40", "55")]
         for bi, (lo, hi, a1, a2) in enumerate(brackets):
             if lo <= age <= hi:
                 for i, o in enumerate(options):
-                    if a1 in o.get('label','') and a2 in o.get('label',''): return i
+                    if a1 in o.get("label", "") and a2 in o.get("label", ""):
+                        return i
         return 0
     for i, o in enumerate(options):
-        if o.get('label','').strip(): return i
+        if o.get("label", "").strip():
+            return i
     return 0
 
 
@@ -95,7 +102,9 @@ def _build_js(qtype: str, opts: dict, profile: dict) -> str:
 
     # Radio: sort by Y, click matched
     if qtype == "radio":
-        idx = min(_match(opts.get('q',''), opts.get('radios',[]), p), len(opts.get('radios',[]))-1)
+        idx = min(
+            _match(opts.get("q", ""), opts.get("radios", []), p), len(opts.get("radios", [])) - 1
+        )
         return f"var rs=Array.from(document.querySelectorAll('input[type=radio]')).sort(function(a,b){{return a.getBoundingClientRect().top-b.getBoundingClientRect().top}});if(rs[{idx}])rs[{idx}].click();"
 
     # Multi-select: first 3 checkboxes
@@ -104,13 +113,18 @@ def _build_js(qtype: str, opts: dict, profile: dict) -> str:
 
     # Text/Textarea
     if qtype in ("text", "textarea"):
-        q = opts.get('q','').lower()
-        if any(k in q for k in ['plz','postleitzahl','zip']): ans = p.get('zip','10785')
-        elif any(k in q for k in ['stadt','city']): ans = p.get('city','Berlin')
-        elif any(k in q for k in ['straße','street']): ans = p.get('street','Kurfürstenstraße 124')
-        elif any(k in q for k in ['e-mail','email']): ans = 'jeremy@test.de'
-        else: ans = p.get('city','Berlin')
-        sel = 'textarea' if qtype == 'textarea' else 'input[type=text]'
+        q = opts.get("q", "").lower()
+        if any(k in q for k in ["plz", "postleitzahl", "zip"]):
+            ans = p.get("zip", "10785")
+        elif any(k in q for k in ["stadt", "city"]):
+            ans = p.get("city", "Berlin")
+        elif any(k in q for k in ["straße", "street"]):
+            ans = p.get("street", "Kurfürstenstraße 124")
+        elif any(k in q for k in ["e-mail", "email"]):
+            ans = "jeremy@test.de"
+        else:
+            ans = p.get("city", "Berlin")
+        sel = "textarea" if qtype == "textarea" else "input[type=text]"
         return f"var el=document.querySelector('{sel}');if(el){{var s=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value');if(s&&s.set){{s.set.call(el,'{ans}');}}else{{el.value='{ans}';}}el.dispatchEvent(new Event('input',{{bubbles:true}}));el.dispatchEvent(new Event('change',{{bubbles:true}}));}}"
 
     # Select: pick 2nd option
@@ -119,7 +133,7 @@ def _build_js(qtype: str, opts: dict, profile: dict) -> str:
 
     # NPS: click 7
     if qtype == "nps":
-        nps_ans = p.get('nps_answer', 7)
+        nps_ans = p.get("nps_answer", 7)
         return f"var btns=Array.from(document.querySelectorAll('button')).filter(function(b){{return/^\\s*\\d+\\s*$/.test((b.innerText||'').trim());}});var t=btns.find(function(b){{return parseInt((b.innerText||'').trim())=={nps_ans};}});if(t)t.click();"
 
     return ""
@@ -147,8 +161,10 @@ def _click_next() -> str:
 def _registry(ok: bool, details: dict):
     try:
         from survey.command_registry import CommandRegistry
+
         CommandRegistry().record_command("universal_answer", ok, details)
-    except Exception: pass
+    except Exception:
+        pass
 
 
 def answer(ws_url: str, profile: Optional[dict] = None) -> dict:
@@ -167,12 +183,15 @@ def answer(ws_url: str, profile: Optional[dict] = None) -> dict:
     """
     try:
         from survey.command_registry import CommandRegistry
+
         CommandRegistry().validate_command("universal_answer")
-    except Exception: pass
+    except Exception:
+        pass
 
     if not profile:
         try:
             from survey.profile_loader import ProfileLoader
+
             profile = ProfileLoader.load_profile()
         except Exception:
             profile = {"gender": "male", "gender_label": "Männlich", "age": 32, "city": "Berlin"}
@@ -180,6 +199,7 @@ def answer(ws_url: str, profile: Optional[dict] = None) -> dict:
     if "age" not in profile:
         try:
             from datetime import date
+
             dob = profile.get("date_of_birth", "1993-11-13").split("-")
             profile["age"] = date.today().year - int(dob[0])
         except Exception:
@@ -188,7 +208,7 @@ def answer(ws_url: str, profile: Optional[dict] = None) -> dict:
     qtype = _detect_type(ws_url)
     if qtype == "unknown":
         opts = _get_options(ws_url)
-        if not opts.get('hasText') and not opts.get('radios') and not opts.get('cbs'):
+        if not opts.get("hasText") and not opts.get("radios") and not opts.get("cbs"):
             _registry(True, {"reason": "no_elements"})
             return {"status": "skipped", "type": "unknown", "reason": "no_interactive_elements"}
 
@@ -201,9 +221,23 @@ def answer(ws_url: str, profile: Optional[dict] = None) -> dict:
     js = "(function(){" + _build_js(qtype, opts, profile) + _click_next() + "})()"
     try:
         ws = websocket.create_connection(ws_url, timeout=15)
-        ws.send(json.dumps({"id": 0, "method": "Runtime.evaluate", "params": {"expression": js, "awaitPromise": True}}))
-        _ = json.loads(ws.recv()); ws.close()
-        result = {"status": "ok", "type": qtype, "answered": True, "question": opts.get("q","")[:100]}
+        ws.send(
+            json.dumps(
+                {
+                    "id": 0,
+                    "method": "Runtime.evaluate",
+                    "params": {"expression": js, "awaitPromise": True},
+                }
+            )
+        )
+        _ = json.loads(ws.recv())
+        ws.close()
+        result = {
+            "status": "ok",
+            "type": qtype,
+            "answered": True,
+            "question": opts.get("q", "")[:100],
+        }
         _registry(True, result)
         return result
     except Exception as e:
@@ -213,5 +247,8 @@ def answer(ws_url: str, profile: Optional[dict] = None) -> dict:
 
 if __name__ == "__main__":
     import sys
-    if len(sys.argv) < 2: print("Usage: tool_universal_answer.py <ws_url>")
-    else: print(json.dumps(answer(sys.argv[1]), indent=2))
+
+    if len(sys.argv) < 2:
+        print("Usage: tool_universal_answer.py <ws_url>")
+    else:
+        print(json.dumps(answer(sys.argv[1]), indent=2))

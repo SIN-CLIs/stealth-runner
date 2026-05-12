@@ -23,12 +23,9 @@ from __future__ import annotations
 import json
 from typing import Any
 
-import pytest
-
 from survey.cdp_client import CDPConnection
 from survey.js_dialog_handler import JsDialogHandler, default_policy
 from survey.oopif_registry import OopifRegistry
-
 
 # ── Fake WebSocket ─────────────────────────────────────────────────────────
 
@@ -229,9 +226,7 @@ def test_dialog_handler_chains_with_existing_subscriber() -> None:
             }
         )
     )
-    ws.incoming.append(
-        json.dumps({"method": "Page.loadEventFired", "params": {}})
-    )
+    ws.incoming.append(json.dumps({"method": "Page.loadEventFired", "params": {}}))
     cdp.drain_events(timeout=0.0)
 
     # Dialog wurde von uns gehandled

@@ -102,7 +102,7 @@ BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
   ❌ skylight-cli click --element-index
 ================================================================================"""
 
-import json       # CDP Nachrichten (de)serialisierung
+import json  # CDP Nachrichten (de)serialisierung
 import websocket  # CDP WebSocket Verbindung
 from typing import Dict, Any, Optional
 
@@ -115,10 +115,10 @@ def fill(
     value: str,
     idx: Optional[int] = None,
     selector: Optional[str] = None,
-    timeout: int = 10
+    timeout: int = 10,
 ) -> Dict[str, Any]:
     """Füllt Input-Feld mit Validierung und Auto-Retry.
-    
+
     ARGS:
         ws_url (str): CDP WebSocket URL
         value (str): Wert zum Einfügen (z.B. "25", "Berlin", "email@domain.com")
@@ -127,7 +127,7 @@ def fill(
         selector (str): CSS Selector zum direkten Finden des Elements
                         → Bevorzugt wenn eindeutig (z.B. "#age", "[name='zip']")
         timeout (int): WebSocket Timeout in Sekunden
-        
+
     RETURNS:
         dict:
           {"success": True, "value": "25"}
@@ -142,7 +142,7 @@ def fill(
             → Element nicht im DOM
           {"success": False, "error": "No result"}
             → Kein Ergebnis von CDP
-            
+
     ALGORITHMUS:
       1. Prüfen: idx ODER selector angegeben? → NEIN: Fehler
       2. JavaScript IIFE erstellen:
@@ -169,11 +169,11 @@ def fill(
            → CDP Runtime.evaluate erneut
            → Ergebnis zurückgeben
       5. WebSocket schliessen
-      
+
     WARUM value = '' vor value = VALUE?
       Ohne Clear: value = "25" auf "3" → "325" statt "25".
       → Append statt Replace.
-      
+
     WARUM dispatchEvent(input, change, blur, keyup)?
       Frameworks validieren nicht bei direkter value-Zuweisung.
       - input → onInput (React controlled components)
@@ -181,35 +181,35 @@ def fill(
       - blur → onBlur (final validation)
       - keyup → onKeyUp (Debounced validation)
       → Alle 4 Events = maximale Kompatibilität.
-      
+
     WARUM {bubbles: true}?
       Events müssen bubblen damit Framework-Listener sie fangen.
       → Ohne bubbles: Event wird nur auf Element gefeuert, nicht
         auf Parent-Container (wo Frameworks oft lauschen).
-        
+
     WARUM Regex "muss .* wie (\d+)"?
       Deutsche Validierungsmeldungen enthalten oft Zahlen-Vorschlaege:
       "Bitte geben Sie eine Zahl zwischen 18 und 65 ein"
       → Regex matcht "65" als Hint → retry mit "65"
-      
+
     WARUM returnByValue: True?
       Wir wollen das Ergebnis-Dictionary direkt, nicht als RemoteObject.
-      
+
     WARUM json.dumps(value) fuer JS?
       value kann Sonderzeichen enthalten (Quotes, Zeilenumbrueche).
       json.dumps() escapt korrekt: " → \", \n → \n, etc.
       → Keine JS-Injection durch User-Werte.
-      
+
     RACE CONDITION:
       Element kann zwischen evaluate und Event-Dispatch verschwinden
       (z.B. Animation, Lazy-Loading). → Exception catched, Fehler.
-      
+
     EXCEPTION HANDLING:
       WebSocket-Fehler (Verbindung tot, Timeout) → catched, Fehler.
     """
     # Wert fuer JS escapen (JSON-Serialisierung verhindert Injection)
     value_json = json.dumps(value)
-    
+
     # Schritt 1: Element-Selektor bestimmen
     if idx is not None:
         # METHODE: by_index
@@ -225,7 +225,7 @@ def fill(
     else:
         # KEINE Methode angegeben
         return {"success": False, "error": "idx oder selector required"}
-    
+
     # JavaScript: Füllen + Validierung + Hint-Extraktion
     js = """
     (function() {
@@ -265,43 +265,57 @@ def fill(
         return {success: true, value: el.value};
     })();
     """ % (fill_sel, value_json)
-    
+
     try:
         # Schritt 2: CDP Verbindung aufbauen
         ws = websocket.create_connection(ws_url, timeout=timeout)
-        
+
         # Schritt 3: Runtime.evaluate ausführen
-        ws.send(json.dumps({"id": 1, "method": "Runtime.evaluate",
-            "params": {"expression": js, "returnByValue": True}}))
+        ws.send(
+            json.dumps(
+                {
+                    "id": 1,
+                    "method": "Runtime.evaluate",
+                    "params": {"expression": js, "returnByValue": True},
+                }
+            )
+        )
         resp = json.loads(ws.recv())
-        
+
         # Ergebnis extrahieren
         result = resp.get("result", {}).get("result", {}).get("value", {})
-        
+
         # Schritt 4: Retry mit Hint wenn Validation fehlgeschlagen
         if result.get("error") == "validation" and result.get("hint"):
             hint = result["hint"]
             hint_json = json.dumps(hint)  # Escapen fuer JS
-            
+
             # Neues JS: value = hint statt original value
             retry_js = js.replace(value_json, hint_json)
-            
+
             # Retry ausführen
-            ws.send(json.dumps({"id": 2, "method": "Runtime.evaluate",
-                "params": {"expression": retry_js, "returnByValue": True}}))
+            ws.send(
+                json.dumps(
+                    {
+                        "id": 2,
+                        "method": "Runtime.evaluate",
+                        "params": {"expression": retry_js, "returnByValue": True},
+                    }
+                )
+            )
             retry_resp = json.loads(ws.recv())
             retry_result = retry_resp.get("result", {}).get("result", {}).get("value", {})
-            
+
             if retry_result.get("success"):
                 # Retry erfolgreich!
                 ws.close()
                 return {"success": True, "value": hint, "method": "hint_retry"}
             # Retry fehlgeschlagen → Original-Fehler zurückgeben
-        
+
         # Schritt 5: WebSocket schliessen, Ergebnis zurückgeben
         ws.close()
         return result if result else {"success": False, "error": "No result"}
-        
+
     except Exception as e:
         # Exception-Handling: WebSocket-Leaks verhindern
         return {"success": False, "error": str(e)}
@@ -312,18 +326,19 @@ def fill(
 # ═════════════════════════════════════════════════════════════════════════════
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) < 4:
         print("Usage: python tool_fill_input.py <ws_url> <idx|--selector=X> <value>")
         sys.exit(1)
-        
+
     ws_url = sys.argv[1]
     value = sys.argv[3]  # Wert ist letztes Argument
-    
+
     if sys.argv[2].startswith("--selector="):
         # Selector-Modus: --selector=#age
         r = fill(ws_url, value, selector=sys.argv[2].split("=", 1)[1])
     else:
         # Index-Modus: 0
         r = fill(ws_url, value, idx=int(sys.argv[2]))
-        
+
     print(json.dumps(r, indent=2))

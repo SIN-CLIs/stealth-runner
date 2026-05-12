@@ -93,6 +93,7 @@ class CompactSnapshot:
     - Cookie consent banner detection
     - Provider-specific selectors (Qualtrics, Toluna, PureSpectrum)
     """
+
     refs: Dict[str, Dict] = field(default_factory=dict)
     semantic: Dict[str, Any] = field(default_factory=dict)
     images: List[Dict] = field(default_factory=list)  # [{type, alt, src, index, isCaptcha}]
@@ -132,7 +133,7 @@ class CompactSnapshot:
 # - Provider-specific selectors (Qualtrics, Toluna, PureSpectrum)
 # - Iframe content extraction
 # - Sort by Y-position (questions before answers)
-ELEMENT_EXTRACTOR_JS = r'''
+ELEMENT_EXTRACTOR_JS = r"""
 (function(){
     var out = [];
     var seen = new Set();
@@ -654,10 +655,11 @@ ELEMENT_EXTRACTOR_JS = r'''
         iframeCount: iframes.length,
     });
 })()
-'''
+"""
 
 
 # ── Generator ──────────────────────────────────────────
+
 
 def generate_snapshot(ws_url, include_semantic=True):
     """Generate compact snapshot from CDP WebSocket URL.
@@ -672,20 +674,26 @@ def generate_snapshot(ws_url, include_semantic=True):
     ws = websocket.create_connection(ws_url, timeout=15)
 
     # Get page metadata
-    ws.send(json.dumps({
-        "id": 0, "method": "Runtime.evaluate",
-        "params": {
-            "expression": "(function(){return JSON.stringify({url:document.location.href,title:document.title,innerText:document.body.innerText.substring(0,500)});})()"  # noqa: E501
-        }
-    }))
+    ws.send(
+        json.dumps(
+            {
+                "id": 0,
+                "method": "Runtime.evaluate",
+                "params": {
+                    "expression": "(function(){return JSON.stringify({url:document.location.href,title:document.title,innerText:document.body.innerText.substring(0,500)});})()"  # noqa: E501
+                },
+            }
+        )
+    )
     r = json.loads(ws.recv())
     meta = json.loads(r.get("result", {}).get("result", {}).get("value", "{}"))
 
     # Extract elements
-    ws.send(json.dumps({
-        "id": 1, "method": "Runtime.evaluate",
-        "params": {"expression": ELEMENT_EXTRACTOR_JS}
-    }))
+    ws.send(
+        json.dumps(
+            {"id": 1, "method": "Runtime.evaluate", "params": {"expression": ELEMENT_EXTRACTOR_JS}}
+        )
+    )
     r2 = json.loads(ws.recv())
     ws.close()
 
@@ -753,7 +761,8 @@ def generate_snapshot(ws_url, include_semantic=True):
         semantic["questions"] = _detect_questions(raw_elements)
         semantic["progress"] = progress_text or _detect_progress(raw_elements)
         semantic["buttons"] = [
-            e.get("text") for e in raw_elements
+            e.get("text")
+            for e in raw_elements
             if e.get("role") in ("button", "button-primary", "button-secondary") and e.get("text")
         ][:10]
         semantic["in_page_modal"] = modal_center is not None
@@ -790,6 +799,7 @@ def generate_snapshot(ws_url, include_semantic=True):
 
 # ── Helpers ────────────────────────────────────────────
 
+
 def _detect_questions(elements):
     """Extract question texts."""
     questions = []
@@ -823,19 +833,37 @@ def detect_completion(text):
     # ✅ SURVEY COMPLETED — all providers
     completion_markers = [
         # German
-        "zurück zur website", "zurück zur umfrage", "gutgeschrieben",
-        "guthaben wurde", "vielen dank", "danke für", "umfrage beendet",
-        "abgeschlossen", "erfolgreich", "ausgefüllt",
+        "zurück zur website",
+        "zurück zur umfrage",
+        "gutgeschrieben",
+        "guthaben wurde",
+        "vielen dank",
+        "danke für",
+        "umfrage beendet",
+        "abgeschlossen",
+        "erfolgreich",
+        "ausgefüllt",
         # English (Qualtrics, Toluna, Cint, PureSpectrum, Samplicio)
-        "thank you for completing", "thank you for your",
-        "survey complete", "completed the survey", "successfully submitted",
-        "your response has been recorded", "you have completed",
-        "points have been credited", "points credited", "reward credited",
-        "thank you for participating", "thanks for completing",
-        "your submission", "submitted successfully",
-        "finished", "complete!", "completed!",
+        "thank you for completing",
+        "thank you for your",
+        "survey complete",
+        "completed the survey",
+        "successfully submitted",
+        "your response has been recorded",
+        "you have completed",
+        "points have been credited",
+        "points credited",
+        "reward credited",
+        "thank you for participating",
+        "thanks for completing",
+        "your submission",
+        "submitted successfully",
+        "finished",
+        "complete!",
+        "completed!",
         # Progress/checking
-        "finished checking", "survey has ended",
+        "finished checking",
+        "survey has ended",
     ]
     for m in completion_markers:
         if m in text_lower:
@@ -858,10 +886,16 @@ def detect_progress(text: str) -> Tuple[bool, str]:
 
     # Check for error pages first
     error_markers = [
-        "screen out", "you do not qualify", "not eligible",
-        "no app id was specified", "unable to start survey",
-        "survey has ended", "survey closed", "link expired",
-        "leider ist ein fehler", "error occurred",
+        "screen out",
+        "you do not qualify",
+        "not eligible",
+        "no app id was specified",
+        "unable to start survey",
+        "survey has ended",
+        "survey closed",
+        "link expired",
+        "leider ist ein fehler",
+        "error occurred",
         "thank you for your interest",
     ]
     for m in error_markers:
@@ -869,15 +903,27 @@ def detect_progress(text: str) -> Tuple[bool, str]:
             return False, "error_page"
 
     # Loading indicators
-    loading_markers = ["loading", "just getting things ready", "won't be long",
-                       "bitte warten", "wird geladen", "please wait"]
+    loading_markers = [
+        "loading",
+        "just getting things ready",
+        "won't be long",
+        "bitte warten",
+        "wird geladen",
+        "please wait",
+    ]
     for m in loading_markers:
         if m in text_lower:
             return False, "loading"
 
     # Captcha
-    captcha_markers = ["captcha", "ich bin kein roboter", "i am not a robot",
-                       "not a robot", "human check", "human verification"]
+    captcha_markers = [
+        "captcha",
+        "ich bin kein roboter",
+        "i am not a robot",
+        "not a robot",
+        "human check",
+        "human verification",
+    ]
     for m in captcha_markers:
         if m in text_lower:
             return False, "captcha"
@@ -895,10 +941,23 @@ def detect_progress(text: str) -> Tuple[bool, str]:
 
     # Question indicators (page advanced)
     question_markers = [
-        "wie", "was", "wann", "warum",  # German question words
-        "how often", "how many", "do you", "would you", "please select",
-        "bitte auswählen", "stimmen sie zu", "meinungen",
-        "radio", "checkbox", "submit", "next", "weiter",
+        "wie",
+        "was",
+        "wann",
+        "warum",  # German question words
+        "how often",
+        "how many",
+        "do you",
+        "would you",
+        "please select",
+        "bitte auswählen",
+        "stimmen sie zu",
+        "meinungen",
+        "radio",
+        "checkbox",
+        "submit",
+        "next",
+        "weiter",
     ]
     question_count = sum(1 for m in question_markers if m in text_lower)
     if question_count >= 2:

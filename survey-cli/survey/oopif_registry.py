@@ -121,9 +121,9 @@ class OopifSession:
     den ``Target.attachedToTarget``-Payload, normalisiert auf Strings.
     """
 
-    frame_id: str    # == ``targetInfo.targetId`` für OOPIFs in flatten-Mode
+    frame_id: str  # == ``targetInfo.targetId`` für OOPIFs in flatten-Mode
     session_id: str  # CDP ``sessionId`` für Multiplexing über DIESELBE WS
-    url: str         # Letzte bekannte URL des OOPIF-Targets
+    url: str  # Letzte bekannte URL des OOPIF-Targets
 
 
 class OopifRegistry:

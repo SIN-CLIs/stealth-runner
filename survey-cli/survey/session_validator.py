@@ -61,6 +61,7 @@ LOGGED_OUT_MARKERS = ["anmelden", "einloggen", "login", "sign in"]
 
 # ── Core Validation ──────────────────────────────────────────────────────────
 
+
 def validate_session(
     port: int = 9999,
     cookie_backup: str = DEFAULT_COOKIE_BACKUP,
@@ -153,14 +154,18 @@ def get_session_status(port: int = 9999) -> Dict[str, Any]:
     if dashboard_ws and websocket:
         try:
             ws = websocket.create_connection(dashboard_ws, timeout=8)
-            ws.send(json.dumps({
-                "id": 0,
-                "method": "Runtime.evaluate",
-                "params": {
-                    "expression": "document.body.innerText.slice(0, 200)",
-                    "returnByValue": True,
-                },
-            }))
+            ws.send(
+                json.dumps(
+                    {
+                        "id": 0,
+                        "method": "Runtime.evaluate",
+                        "params": {
+                            "expression": "document.body.innerText.slice(0, 200)",
+                            "returnByValue": True,
+                        },
+                    }
+                )
+            )
             r = json.loads(ws.recv())
             ws.close()
             result["page_text_preview"] = r.get("result", {}).get("result", {}).get("value", "")
@@ -171,6 +176,7 @@ def get_session_status(port: int = 9999) -> Dict[str, Any]:
 
 
 # ── Internal Helpers ─────────────────────────────────────────────────────────
+
 
 def _check_session_state(port: int) -> tuple[bool, str]:
     """Check if dashboard shows 'Abmelden' (logged in) or 'Anmelden' (not).
@@ -198,14 +204,18 @@ def _check_session_state(port: int) -> tuple[bool, str]:
 
             # Read page text
             ws = websocket.create_connection(ws_url, timeout=10)
-            ws.send(json.dumps({
-                "id": 0,
-                "method": "Runtime.evaluate",
-                "params": {
-                    "expression": "document.body.innerText",
-                    "returnByValue": True,
-                },
-            }))
+            ws.send(
+                json.dumps(
+                    {
+                        "id": 0,
+                        "method": "Runtime.evaluate",
+                        "params": {
+                            "expression": "document.body.innerText",
+                            "returnByValue": True,
+                        },
+                    }
+                )
+            )
             r = json.loads(ws.recv())
             ws.close()
 
@@ -264,21 +274,29 @@ def _reinject_cookies(dashboard_ws: str, cookie_backup: str) -> bool:
 
         # Inject cookies via CDP Network.setCookies
         ws = websocket.create_connection(dashboard_ws, timeout=15)
-        ws.send(json.dumps({
-            "id": 1,
-            "method": "Network.setCookies",
-            "params": {"cookies": heypiggy_cookies},
-        }))
+        ws.send(
+            json.dumps(
+                {
+                    "id": 1,
+                    "method": "Network.setCookies",
+                    "params": {"cookies": heypiggy_cookies},
+                }
+            )
+        )
         json.loads(ws.recv())
         ws.close()
 
         # Navigate to dashboard to refresh session
         ws2 = websocket.create_connection(dashboard_ws, timeout=15)
-        ws2.send(json.dumps({
-            "id": 2,
-            "method": "Page.navigate",
-            "params": {"url": "https://www.heypiggy.com/?page=dashboard"},
-        }))
+        ws2.send(
+            json.dumps(
+                {
+                    "id": 2,
+                    "method": "Page.navigate",
+                    "params": {"url": "https://www.heypiggy.com/?page=dashboard"},
+                }
+            )
+        )
         json.loads(ws2.recv())
         ws2.close()
 

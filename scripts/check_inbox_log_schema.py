@@ -72,7 +72,7 @@ import glob
 import json
 import os
 import sys
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 __all__ = [
     "validate_record",
@@ -94,26 +94,24 @@ VALID_SOURCES = {"substring", "llm", "manual"}
 
 
 def validate_record(
-    record: Dict[str, Any],
+    record: dict[str, Any],
     file_path: str,
     line_num: int,
-) -> Tuple[Optional[Dict[str, Any]], Optional[Dict[str, Any]]]:
+) -> tuple[dict[str, Any] | None, dict[str, Any] | None]:
     """Validate one inbox record against the InboxEntry schema spec.
 
     Returns (violation, warning) — each is None if not applicable.
     violation : dict with keys file, line, record, errors
     warning   : dict with keys file, line, record, message
     """
-    errors: List[str] = []
-    warning: Optional[Dict[str, Any]] = None
+    errors: list[str] = []
+    warning: dict[str, Any] | None = None
 
     # ── Required: role ────────────────────────────────────────────────────────
     if "role" not in record:
         errors.append("missing required field 'role'")
     elif not isinstance(record["role"], str):
-        errors.append(
-            f"'role' must be str, got {type(record['role']).__name__}"
-        )
+        errors.append(f"'role' must be str, got {type(record['role']).__name__}")
     elif not record["role"].strip():
         errors.append("'role' must be non-empty")
 
@@ -122,8 +120,7 @@ def validate_record(
         errors.append("missing required field 'normalized_label'")
     elif not isinstance(record["normalized_label"], str):
         errors.append(
-            "'normalized_label' must be str, "
-            f"got {type(record['normalized_label']).__name__}"
+            f"'normalized_label' must be str, got {type(record['normalized_label']).__name__}"
         )
     elif not record["normalized_label"].strip():
         errors.append("'normalized_label' must be non-empty")
@@ -131,45 +128,31 @@ def validate_record(
     # ── Required: confidence ─────────────────────────────────────────────────
     if "confidence" not in record:
         errors.append("missing required field 'confidence'")
-    elif not isinstance(record["confidence"], (int, float)):
-        errors.append(
-            "'confidence' must be numeric, "
-            f"got {type(record['confidence']).__name__}"
-        )
+    elif not isinstance(record["confidence"], int | float):
+        errors.append(f"'confidence' must be numeric, got {type(record['confidence']).__name__}")
     elif not (0.0 <= record["confidence"] <= 1.0):
-        errors.append(
-            f"'confidence' must be in [0.0, 1.0], got {record['confidence']}"
-        )
+        errors.append(f"'confidence' must be in [0.0, 1.0], got {record['confidence']}")
 
     # ── Required: source ─────────────────────────────────────────────────────
     source = record.get("source")
     if "source" not in record:
         errors.append("missing required field 'source'")
     elif not isinstance(source, str):
-        errors.append(
-            f"'source' must be str, got {type(source).__name__}"
-        )
+        errors.append(f"'source' must be str, got {type(source).__name__}")
     elif source not in VALID_SOURCES:
-        errors.append(
-            f"'source' must be one of {sorted(VALID_SOURCES)}, got '{source}'"
-        )
+        errors.append(f"'source' must be one of {sorted(VALID_SOURCES)}, got '{source}'")
 
     # ── Optional: suggested_family ───────────────────────────────────────────
     if "suggested_family" in record:
         v = record["suggested_family"]
-        if not isinstance(v, (str, type(None))):
-            errors.append(
-                "'suggested_family' must be str or null, "
-                f"got {type(v).__name__}"
-            )
+        if not isinstance(v, str | type(None)):
+            errors.append(f"'suggested_family' must be str or null, got {type(v).__name__}")
 
     # ── Optional: count ───────────────────────────────────────────────────────
     if "count" in record:
         v = record["count"]
         if not isinstance(v, int):
-            errors.append(
-                f"'count' must be int, got {type(v).__name__}"
-            )
+            errors.append(f"'count' must be int, got {type(v).__name__}")
         elif v < 0:
             errors.append(f"'count' must be >= 0, got {v}")
 
@@ -177,63 +160,41 @@ def validate_record(
     if "sample_labels" in record:
         v = record["sample_labels"]
         if not isinstance(v, list):
-            errors.append(
-                f"'sample_labels' must be list, got {type(v).__name__}"
-            )
+            errors.append(f"'sample_labels' must be list, got {type(v).__name__}")
         else:
             for i, item in enumerate(v):
                 if not isinstance(item, str):
-                    errors.append(
-                        f"'sample_labels[{i}]' must be str, "
-                        f"got {type(item).__name__}"
-                    )
+                    errors.append(f"'sample_labels[{i}]' must be str, got {type(item).__name__}")
 
     # ── Optional: matched_tokens ──────────────────────────────────────────────
     if "matched_tokens" in record:
         v = record["matched_tokens"]
         if not isinstance(v, list):
-            errors.append(
-                f"'matched_tokens' must be list, got {type(v).__name__}"
-            )
+            errors.append(f"'matched_tokens' must be list, got {type(v).__name__}")
         else:
             for i, item in enumerate(v):
                 if not isinstance(item, str):
-                    errors.append(
-                        f"'matched_tokens[{i}]' must be str, "
-                        f"got {type(item).__name__}"
-                    )
+                    errors.append(f"'matched_tokens[{i}]' must be str, got {type(item).__name__}")
 
     # ── Optional: model ───────────────────────────────────────────────────────
     if "model" in record:
         v = record["model"]
-        if not isinstance(v, (str, type(None))):
-            errors.append(
-                f"'model' must be str or null, got {type(v).__name__}"
-            )
+        if not isinstance(v, str | type(None)):
+            errors.append(f"'model' must be str or null, got {type(v).__name__}")
 
     # ── Optional: prompt_hash ─────────────────────────────────────────────────
     if "prompt_hash" in record:
         v = record["prompt_hash"]
-        if not isinstance(v, (str, type(None))):
-            errors.append(
-                f"'prompt_hash' must be str or null, got {type(v).__name__}"
-            )
+        if not isinstance(v, str | type(None)):
+            errors.append(f"'prompt_hash' must be str or null, got {type(v).__name__}")
 
     # ── Cross-field warning: llm without model ────────────────────────────────
-    if (
-        isinstance(source, str)
-        and source == "llm"
-        and record.get("model") is None
-        and not errors
-    ):
+    if isinstance(source, str) and source == "llm" and record.get("model") is None and not errors:
         warning = {
             "file": file_path,
             "line": line_num,
             "record": record,
-            "message": (
-                "llm-source record missing model field — "
-                "pre-SR-57 legacy? (#56)"
-            ),
+            "message": ("llm-source record missing model field — pre-SR-57 legacy? (#56)"),
         }
 
     violation = (
@@ -251,7 +212,7 @@ def validate_record(
 
 def iter_records(
     file_path: str,
-) -> Tuple[Optional[Dict[str, Any]], int, Optional[str]]:
+) -> tuple[dict[str, Any] | None, int, str | None]:
     """Yield (record_or_None, line_num, parse_error_or_None) for each line."""
     try:
         with open(file_path) as fh:
@@ -269,24 +230,22 @@ def iter_records(
 
 def check_logs(
     logs_dir: str,
-) -> Tuple[List[Dict], List[Dict], int, int]:
+) -> tuple[list[dict], list[dict], int, int]:
     """Scan all pattern-suggestions-*.jsonl files in logs_dir.
 
     Returns (violations, warnings, total_records, total_files).
     """
-    violations: List[Dict] = []
-    warnings:   List[Dict] = []
+    violations: list[dict] = []
+    warnings: list[dict] = []
     total_records = 0
-    total_files   = 0
+    total_files = 0
 
     pattern = os.path.join(logs_dir, INPUT_GLOB)
     for file_path in sorted(glob.glob(pattern)):
         total_files += 1
         for record, line_num, parse_err in iter_records(file_path):
             if parse_err is not None:
-                violations.append(
-                    {"file": file_path, "line": line_num, "error": parse_err}
-                )
+                violations.append({"file": file_path, "line": line_num, "error": parse_err})
                 continue
             total_records += 1
             viol, warn = validate_record(record, file_path, line_num)
@@ -302,19 +261,16 @@ def check_logs(
 
 
 def format_human(
-    violations: List[Dict],
-    warnings: List[Dict],
+    violations: list[dict],
+    warnings: list[dict],
     total_records: int,
     total_files: int,
 ) -> str:
     """Return a human-readable validation report."""
-    lines: List[str] = []
+    lines: list[str] = []
 
     if not violations and not warnings:
-        lines.append(
-            f"OK  {total_records} record(s) across "
-            f"{total_files} file(s) are valid."
-        )
+        lines.append(f"OK  {total_records} record(s) across {total_files} file(s) are valid.")
         return "\n".join(lines)
 
     header = (
@@ -344,8 +300,8 @@ def format_human(
 
 
 def format_json_output(
-    violations: List[Dict],
-    warnings: List[Dict],
+    violations: list[dict],
+    warnings: list[dict],
     total_records: int,
     total_files: int,
 ) -> str:
@@ -367,10 +323,7 @@ def format_json_output(
 
 def main() -> int:
     parser = argparse.ArgumentParser(
-        description=(
-            "Validate inbox suggestion-log schema "
-            "(pattern-suggestions-*.jsonl records)."
-        )
+        description=("Validate inbox suggestion-log schema (pattern-suggestions-*.jsonl records).")
     )
     parser.add_argument(
         "--logs",
@@ -404,20 +357,12 @@ def main() -> int:
 
     if not args.quiet:
         if args.json:
-            print(
-                format_json_output(
-                    violations, warnings, total_records, total_files
-                )
-            )
+            print(format_json_output(violations, warnings, total_records, total_files))
         else:
-            print(
-                format_human(
-                    violations, warnings, total_records, total_files
-                )
-            )
+            print(format_human(violations, warnings, total_records, total_files))
 
     has_violations = len(violations) > 0
-    has_warnings   = len(warnings) > 0
+    has_warnings = len(warnings) > 0
 
     if args.exit_non_zero_on_violation and has_violations:
         return 1

@@ -105,9 +105,7 @@ class TestHeyPiggyScreenOutDetection(unittest.TestCase):
 
     def test_survey_no_longer_available(self):
         """'this survey is no longer available' -> screen_out."""
-        state = detect_provider_completion(
-            "heypiggy", "This survey is no longer available."
-        )
+        state = detect_provider_completion("heypiggy", "This survey is no longer available.")
         self.assertEqual(state.status, "screen_out")
 
     def test_umfrage_geschlossen(self):

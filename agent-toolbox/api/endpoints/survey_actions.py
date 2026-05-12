@@ -8,36 +8,47 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
+
 from ._common import (
-    ClickRequest, ClickResponse,
-    FindRequest, FindResponse,
-    VerifyRequest, VerifyResponse,
-    ClickAngularRequest, ClickAngularResponse,
-    FillInputRequest, FillInputResponse,
-    FindTabRequest, FindTabResponse,
-    CloseModalsRequest, CloseModalsResponse,
-    require_survey_ready, update_command_registry,
+    ClickAngularRequest,
+    ClickAngularResponse,
+    ClickRequest,
+    ClickResponse,
+    CloseModalsRequest,
+    CloseModalsResponse,
+    FillInputRequest,
+    FillInputResponse,
+    FindRequest,
+    FindResponse,
+    FindTabRequest,
+    FindTabResponse,
+    VerifyRequest,
+    VerifyResponse,
+    require_survey_ready,
+    update_command_registry,
 )
 
 router = APIRouter(prefix="/survey", tags=["survey-actions"])
 
-import json, asyncio, websockets, urllib.request
+import asyncio
+import json
+import urllib.request
+
+import websockets
+from tools.tool_close_modals import close_modals as _close_modals
 
 # ─── TOOL IMPORTS ──────────────────────────────────────────────────────────────
-from tools.tool_click import click as _cua_click
-from tools.tool_find_element import find_element as _find_element
-from tools.tool_verify_state import verify_element_state as _verify_state
-from tools.tool_click_angular import click as _click_angular
-from tools.tool_fill_input import fill as _cdp_fill
 from tools.tool_find_new_tab import find_new_tab as _find_new_tab
-from tools.tool_close_modals import close_modals as _close_modals
 
 
 async def _ws_evaluate(ws_url: str, expression: str) -> str:
     """Execute JS via CDP WebSocket and return result value."""
     async with websockets.connect(ws_url) as ws:
-        await ws.send(json.dumps({"id": 1, "method": "Runtime.evaluate",
-                                  "params": {"expression": expression}}))
+        await ws.send(
+            json.dumps(
+                {"id": 1, "method": "Runtime.evaluate", "params": {"expression": expression}}
+            )
+        )
         resp = await asyncio.wait_for(ws.recv(), timeout=5)
         return json.loads(resp).get("result", {}).get("result", {}).get("value", "")
 
@@ -60,6 +71,7 @@ def _get_ws(port: int, pattern: str = "heypiggy") -> str:
 # Tool: survey-cli/tools/tool_click.py
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @router.post("/click", response_model=ClickResponse, dependencies=[Depends(require_survey_ready)])
 async def api_click(req: ClickRequest):
     """Click element by CSS selector via CDP WebSocket."""
@@ -67,11 +79,11 @@ async def api_click(req: ClickRequest):
         ws = req.ws_url or _get_ws(req.cdp_port)
         if not ws:
             return ClickResponse(status="error", reason="No tab found")
-        
+
         safe_sel = req.selector.replace("\\", "\\\\").replace("'", "\\'")
         js = f"(function(){{var el=document.querySelector('{safe_sel}');if(el){{el.click();return 'OK:'+el.tagName;}}return 'NIX';}})()"
         result = await _ws_evaluate(ws, js)
-        
+
         clicked = result.startswith("OK:")
         update_command_registry("click_element", clicked, {"selector": req.selector})
         return ClickResponse(
@@ -90,6 +102,7 @@ async def api_click(req: ClickRequest):
 # Tool: survey-cli/tools/tool_find_element.py
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @router.post("/find", response_model=FindResponse, dependencies=[Depends(require_survey_ready)])
 async def api_find(req: FindRequest):
     """Find all elements matching CSS selector."""
@@ -97,12 +110,12 @@ async def api_find(req: FindRequest):
         ws = req.ws_url or _get_ws(req.cdp_port)
         if not ws:
             return FindResponse(status="error", reason="No tab found")
-        
+
         escaped = req.selector.replace("'", "\\'")
         js = f"(function(){{var els=document.querySelectorAll('{escaped}');return JSON.stringify({{count:els.length,items:[].slice.call(els).map(function(e,{{return {{tag:e.tagName,text:(e.innerText||e.textContent||'').trim().substring(0,50),type:e.type,role:e.getAttribute('role')||''}}}}))}});}})()"
         result = await _ws_evaluate(ws, js)
         data = json.loads(result) if result and result != "NIX" else {"count": 0, "items": []}
-        
+
         update_command_registry("find_elements", True, {"count": data.get("count", 0)})
         return FindResponse(
             status="ok",
@@ -120,6 +133,7 @@ async def api_find(req: FindRequest):
 # Tool: survey-cli/tools/tool_verify_state.py
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 @router.post("/verify", response_model=VerifyResponse, dependencies=[Depends(require_survey_ready)])
 async def api_verify(req: VerifyRequest):
     """Verify element exists and has expected state."""
@@ -127,18 +141,18 @@ async def api_verify(req: VerifyRequest):
         ws = req.ws_url or _get_ws(req.cdp_port)
         if not ws:
             return VerifyResponse(status="error", reason="No tab found")
-        
+
         escaped = req.selector.replace("'", "\\'")
         js = f"(function(){{var el=document.querySelector('{escaped}');if(!el)return JSON.stringify({{found:false}});var checked=el.checked||false;var disabled=el.disabled||false;var value=el.value||'';var text=(el.innerText||el.textContent||'').trim().substring(0,50);return JSON.stringify({{found:true,checked,disabled,value,text}});}})()"
         result = await _ws_evaluate(ws, js)
         data = json.loads(result) if result else {"found": False}
-        
+
         state_ok = data.get("found", False)
         if req.expected_state == "checked":
             state_ok = state_ok and data.get("checked", False)
         elif req.expected_state == "enabled":
             state_ok = state_ok and not data.get("disabled", True)
-        
+
         update_command_registry("verify_state", state_ok, data)
         return VerifyResponse(
             status="ok",
@@ -155,18 +169,23 @@ async def api_verify(req: VerifyRequest):
 # Tool: survey-cli/tools/tool_click_angular.py
 # ═══════════════════════════════════════════════════════════════════════════════
 
-@router.post("/click-angular", response_model=ClickAngularResponse, dependencies=[Depends(require_survey_ready)])
+
+@router.post(
+    "/click-angular",
+    response_model=ClickAngularResponse,
+    dependencies=[Depends(require_survey_ready)],
+)
 async def api_click_angular(req: ClickAngularRequest):
     """Click element in Angular apps via click() + dispatchEvent."""
     try:
         ws = req.ws_url or _get_ws(req.cdp_port)
         if not ws:
             return ClickAngularResponse(status="error", reason="No tab found")
-        
+
         escaped = req.selector.replace("'", "\\'")
         js = f"(function(){{var el=document.querySelector('{escaped}');if(el){{el.click();el.dispatchEvent(new Event('change',{{bubbles:true}}));return 'OK';}}return 'NIX';}})()"
         result = await _ws_evaluate(ws, js)
-        
+
         clicked = result == "OK"
         update_command_registry("click_angular", clicked, {"selector": req.selector})
         return ClickAngularResponse(status="ok" if clicked else "error", clicked=clicked)
@@ -180,19 +199,22 @@ async def api_click_angular(req: ClickAngularRequest):
 # Tool: survey-cli/tools/tool_fill_input.py
 # ═══════════════════════════════════════════════════════════════════════════════
 
-@router.post("/fill-input", response_model=FillInputResponse, dependencies=[Depends(require_survey_ready)])
+
+@router.post(
+    "/fill-input", response_model=FillInputResponse, dependencies=[Depends(require_survey_ready)]
+)
 async def api_fill_input(req: FillInputRequest):
     """Fill text input using CDP NativeInputValueSetter (bypasses React/Angular)."""
     try:
         ws = req.ws_url or _get_ws(req.cdp_port)
         if not ws:
             return FillInputResponse(status="error", reason="No tab found")
-        
+
         escaped_sel = req.selector.replace("'", "\\'")
         escaped_val = req.value.replace("\\", "\\\\").replace("'", "\\'")
         js = f"(function(){{var el=document.querySelector('{escaped_sel}');if(!el)return 'NIX';el.focus();el.value='{escaped_val}';el.dispatchEvent(new Event('input',{{bubbles:true}}));el.dispatchEvent(new Event('change',{{bubbles:true}}));return 'OK:'+el.value;}})()"
         result = await _ws_evaluate(ws, js)
-        
+
         filled = result.startswith("OK:")
         update_command_registry("fill_input", filled, {"selector": req.selector})
         return FillInputResponse(status="ok" if filled else "error", filled=filled)
@@ -206,7 +228,10 @@ async def api_fill_input(req: FillInputRequest):
 # Tool: survey-cli/tools/tool_find_new_tab.py
 # ═══════════════════════════════════════════════════════════════════════════════
 
-@router.post("/find-tab", response_model=FindTabResponse, dependencies=[Depends(require_survey_ready)])
+
+@router.post(
+    "/find-tab", response_model=FindTabResponse, dependencies=[Depends(require_survey_ready)]
+)
 async def api_find_tab(req: FindTabRequest):
     """Find tab matching URL pattern."""
     try:
@@ -229,7 +254,12 @@ async def api_find_tab(req: FindTabRequest):
 # Tool: survey-cli/tools/tool_close_modals.py
 # ═══════════════════════════════════════════════════════════════════════════════
 
-@router.post("/close-modals", response_model=CloseModalsResponse, dependencies=[Depends(require_survey_ready)])
+
+@router.post(
+    "/close-modals",
+    response_model=CloseModalsResponse,
+    dependencies=[Depends(require_survey_ready)],
+)
 async def api_close_modals(req: CloseModalsRequest):
     """Close all visible modals, overlays, and popups."""
     try:

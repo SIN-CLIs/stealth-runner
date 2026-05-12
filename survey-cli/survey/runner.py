@@ -113,8 +113,9 @@ from .observability import get_logger
 from .observability.metrics import SurveyMetrics
 from .scanner import scan_dashboard, read_balance_with_backoff
 from .session_validator import validate_session, is_session_valid
+
 # Frozen tools — atomar, __frozen__=True, NICHT aendern
-from tools import (AntiStuck as tool_AntiStuck)
+from tools import AntiStuck as tool_AntiStuck
 
 
 @dataclass
@@ -141,9 +142,7 @@ class RunnerConfig:
     auto_rate: bool = True
     rate_url: str = "https://www.heypiggy.com/?page=dashboard"
     balance_target: float = 5.0
-    skip_providers: List[str] = field(default_factory=lambda: [
-        "surveyrouter", "gfk"
-    ])
+    skip_providers: List[str] = field(default_factory=lambda: ["surveyrouter", "gfk"])
     debug: bool = False
 
 
@@ -156,9 +155,7 @@ class SurveyRunner:
         self.profile = ProfileLoader.load_profile(os.path.dirname(__file__))
         self.learnings: List[str] = []
         self.history: List[Dict] = []
-        self.opener = SurveyOpener(
-            cdp_port=self.config.cdp_port, debug=self.config.debug
-        )
+        self.opener = SurveyOpener(cdp_port=self.config.cdp_port, debug=self.config.debug)
         self.completion_detector = CompletionDetector(
             cdp_port=self.config.cdp_port, debug=self.config.debug
         )
@@ -169,14 +166,11 @@ class SurveyRunner:
             cdp_port=self.config.cdp_port, debug=self.config.debug
         )
         self.cash_out = CashOutTrigger(debug=self.config.debug)
-        self.survey_rater = SurveyRater(
-            cdp_port=self.config.cdp_port, debug=self.config.debug
-        )
+        self.survey_rater = SurveyRater(cdp_port=self.config.cdp_port, debug=self.config.debug)
         get_logger(verbose=self.config.debug)
         self.metrics = SurveyMetrics()
 
-    def run_survey(self, survey_id: str,
-                   survey_url: Optional[str] = None) -> SurveyResult:
+    def run_survey(self, survey_id: str, survey_url: Optional[str] = None) -> SurveyResult:
         """Run a single survey from ID to completion.
 
         Args:
@@ -213,17 +207,24 @@ class SurveyRunner:
             if p.get("url") and "dashboard" not in p.get("url", "").lower():
                 try:
                     import websocket as ws_lib
+
                     w = ws_lib.create_connection(p["webSocketDebuggerUrl"], timeout=8)
-                    w.send(json.dumps({"id":1,"method":"Target.closeTarget",
-                                       "params":{"targetId": p["id"]}}))
+                    w.send(
+                        json.dumps(
+                            {
+                                "id": 1,
+                                "method": "Target.closeTarget",
+                                "params": {"targetId": p["id"]},
+                            }
+                        )
+                    )
                     json.loads(w.recv())
                     w.close()
                 except Exception:
                     pass
         tabs_after = len(chrome.find_bot_tabs(self.config.cdp_port))
         if tabs_before != tabs_after:
-            get_logger().cleanup(tabs_before, tabs_after,
-                                 zombie_tabs=tabs_before - tabs_after)
+            get_logger().cleanup(tabs_before, tabs_after, zombie_tabs=tabs_before - tabs_after)
 
         # 1. Get survey URL (skip CPX API for in-page modal)
         provider = None  # Will be set below
@@ -247,8 +248,10 @@ class SurveyRunner:
 
             if not survey_url:
                 # No survey URL from API — try browser-based pre-qualifier
-                get_logger().warn(f"No href from API for {survey_id} — trying browser pre-qualifier",  # noqa: E501
-                                  survey_id=survey_id)
+                get_logger().warn(
+                    f"No href from API for {survey_id} — trying browser pre-qualifier",  # noqa: E501
+                    survey_id=survey_id,
+                )
                 preq_result = self.pre_qualifier.handle_pre_qualifier_browser(
                     survey_id, self._close_tab
                 )
@@ -277,11 +280,13 @@ class SurveyRunner:
         if provider == "unknown":
             provider = "generic"
             result.provider = "generic"
-            get_logger().warn("Unknown provider — using generic fallback commands",
-                              survey_id=survey_id)
+            get_logger().warn(
+                "Unknown provider — using generic fallback commands", survey_id=survey_id
+            )
         elif provider == "in_page_modal":
-            get_logger().info("In-page modal survey — clicking card on dashboard",
-                              survey_id=survey_id)
+            get_logger().info(
+                "In-page modal survey — clicking card on dashboard", survey_id=survey_id
+            )
 
         # 2. Read balance BEFORE opening survey tab (dashboard WS still valid)
         try:
@@ -319,7 +324,7 @@ class SurveyRunner:
         except Exception:
             pass
 
-# 3c. Click survey card via DOM (reliable, has session cookies)
+        # 3c. Click survey card via DOM (reliable, has session cookies)
         # NOTE: survey_id from API may not match DOM onclick IDs.
         # _click_survey_card finds the card element and clicks it directly.
         # Returns (ws_url, tab_id) — tab_id is set for new-tab flow.
@@ -336,29 +341,46 @@ class SurveyRunner:
             is_in_page = False  # Survey opened in new tab
             get_logger().tab_switch(tab_id, reason="survey_new_tab")
         else:
-            is_in_page = True   # In-page modal (survey within dashboard)
+            is_in_page = True  # In-page modal (survey within dashboard)
 
         # 3e. Verify survey tab content (handle stuck loading / error pages)
         if tab_ws:
             page_text = BatchExecutor.read_page_text(tab_ws, 500).lower()
-            if any(s in page_text for s in ["loading", "just getting things ready", "won't be long"]):  # noqa: E501
-                get_logger().warn("Stuck on loading page — skipping",
-                                  survey_id=survey_id, context="tab_creation")
+            if any(
+                s in page_text for s in ["loading", "just getting things ready", "won't be long"]
+            ):  # noqa: E501
+                get_logger().warn(
+                    "Stuck on loading page — skipping", survey_id=survey_id, context="tab_creation"
+                )
                 result.status = "screen_out"
                 result.error = "Survey stuck on loading page"
                 log_earnings(survey_id, "unknown", 0, "screen_out", 0)
                 return result
 
             # Detect ALL expired survey error pages (case-insensitive)
-            if any(s in page_text for s in [
-                "no app id", "survey not available", "error - unable to start survey",
-                "survey closed", "link has expired", "survey has ended",
-                "leider ist ein fehler aufgetreten", "error occurred",
-                "this survey is no longer available", "survey unavailable",
-                "sie werden umgeleitet", "redirect", "no survey available",
-            ]):
-                get_logger().warn("Survey URL expired or error page — skipping",
-                                  survey_id=survey_id, context="tab_creation")
+            if any(
+                s in page_text
+                for s in [
+                    "no app id",
+                    "survey not available",
+                    "error - unable to start survey",
+                    "survey closed",
+                    "link has expired",
+                    "survey has ended",
+                    "leider ist ein fehler aufgetreten",
+                    "error occurred",
+                    "this survey is no longer available",
+                    "survey unavailable",
+                    "sie werden umgeleitet",
+                    "redirect",
+                    "no survey available",
+                ]
+            ):
+                get_logger().warn(
+                    "Survey URL expired or error page — skipping",
+                    survey_id=survey_id,
+                    context="tab_creation",
+                )
                 result.status = "screen_out"
                 result.error = "Survey URL expired/error page"
                 log_earnings(survey_id, "unknown", 0, "screen_out", 0)
@@ -369,10 +391,18 @@ class SurveyRunner:
         if not is_in_page:  # Only get URL for new-tab flow (in-page uses dashboard)
             try:
                 ws_check = websocket.create_connection(tab_ws, timeout=5)
-                ws_check.send(json.dumps({
-                    "id": 0, "method": "Runtime.evaluate",
-                    "params": {"expression": "document.location.href", "returnByValue": True},
-                }))
+                ws_check.send(
+                    json.dumps(
+                        {
+                            "id": 0,
+                            "method": "Runtime.evaluate",
+                            "params": {
+                                "expression": "document.location.href",
+                                "returnByValue": True,
+                            },
+                        }
+                    )
+                )
                 r = json.loads(ws_check.recv())
                 actual_url = r.get("result", {}).get("result", {}).get("value", "")
                 ws_check.close()
@@ -390,8 +420,11 @@ class SurveyRunner:
             if real_provider != provider and real_provider != "unknown":
                 result.provider = real_provider
                 provider = real_provider
-                get_logger().info(f"Real provider: {provider} ({actual_url[:60]})",
-                                  survey_id=survey_id, provider=provider)
+                get_logger().info(
+                    f"Real provider: {provider} ({actual_url[:60]})",
+                    survey_id=survey_id,
+                    provider=provider,
+                )
 
         # 4. Handle PureSpectrum captcha preflight (if applicable)
         if provider == "purespectrum" and tab_ws:
@@ -399,8 +432,14 @@ class SurveyRunner:
             if not captcha_result.get("success"):
                 result.status = "blocked"
                 result.error = f"PureSpectrum captcha: {captcha_result.get('error', 'unknown')}"
-                log_earnings(survey_id, provider, 0, "blocked", 0,
-                            {"captcha_error": captcha_result.get("error")})
+                log_earnings(
+                    survey_id,
+                    provider,
+                    0,
+                    "blocked",
+                    0,
+                    {"captcha_error": captcha_result.get("error")},
+                )
                 self._close_tab(tab_id)
                 return result
             # Captcha solved, wait for page transition
@@ -460,15 +499,22 @@ class SurveyRunner:
                     dom_hash = "error"
                     page_text = ""
 
-                if dom_hash != "pending" and dom_hash != "error" and stuck_checker.is_stuck(dom_hash):  # noqa: E501
-                    result.error = f"Stuck: {stuck_checker.threshold}x same DOM hash (anti_stuck tool)"  # noqa: E501
+                if (
+                    dom_hash != "pending"
+                    and dom_hash != "error"
+                    and stuck_checker.is_stuck(dom_hash)
+                ):  # noqa: E501
+                    result.error = (
+                        f"Stuck: {stuck_checker.threshold}x same DOM hash (anti_stuck tool)"  # noqa: E501
+                    )
                     result.status = "error"
                     break
 
                 # 5d. SOTA Safety: Max actions limit
                 # Estimate actions from snapshot element count (radio buttons, text fields, buttons)
                 estimated_actions = sum(
-                    1 for info in snapshot.refs.values()
+                    1
+                    for info in snapshot.refs.values()
                     if info.get("role") in ("radio", "checkbox", "textbox", "button")
                 )
                 # Always add 1 for the submit/next button
@@ -481,13 +527,17 @@ class SurveyRunner:
                 # 5f. SOTA Error detection: Check for screen-out/error page
                 is_error, error_reason = BatchExecutor.detect_error_page(page_text)
                 if is_error:
-                    get_logger().warn(f"Error page detected: {error_reason}",
-                                      survey_id=survey_id, context="nemo_loop")
+                    get_logger().warn(
+                        f"Error page detected: {error_reason}",
+                        survey_id=survey_id,
+                        context="nemo_loop",
+                    )
                     result.status = "screen_out"
                     result.error = error_reason
                     self._close_tab(tab_id)
-                    log_earnings(survey_id, provider, 0, "screen_out", 0,
-                                {"error_reason": error_reason})
+                    log_earnings(
+                        survey_id, provider, 0, "screen_out", 0, {"error_reason": error_reason}
+                    )
                     return result
 
                 # 5g. Empty snapshot: page not loaded — skip iteration
@@ -539,7 +589,9 @@ class SurveyRunner:
                         if lang_actions:
                             get_logger().info(
                                 f"Language page detected: {len(lang_actions)} actions",
-                                survey_id=survey_id, context="nemo_loop", iteration=iteration + 1
+                                survey_id=survey_id,
+                                context="nemo_loop",
+                                iteration=iteration + 1,
                             )
                             actions = lang_actions
                             # Skip NIM for language page (no NIM call)
@@ -552,7 +604,9 @@ class SurveyRunner:
                     except Exception as e:
                         get_logger().warn(
                             f"Language detection failed: {e}",
-                            survey_id=survey_id, context="nemo_loop", iteration=iteration + 1
+                            survey_id=survey_id,
+                            context="nemo_loop",
+                            iteration=iteration + 1,
                         )
                         # Fall through to normal NIM decision
                 else:
@@ -561,8 +615,7 @@ class SurveyRunner:
                 # 5i. NIM decision (with retry on empty actions)
                 if self.nim and self.config.use_nim:
                     decision = self.nim.decide(
-                        snapshot.to_dict(), self.profile,
-                        self.learnings, self.history
+                        snapshot.to_dict(), self.profile, self.learnings, self.history
                     )
                     actions = decision.get("actions", [])
                     nim_calls += 1
@@ -572,8 +625,9 @@ class SurveyRunner:
                     # Retry NIM once if actions empty (first call might miss content)
                     if not actions and iteration < 3:
                         time.sleep(1)
-                        decision = self.nim.decide(snapshot.to_dict(), self.profile,
-                                                  self.learnings, self.history)
+                        decision = self.nim.decide(
+                            snapshot.to_dict(), self.profile, self.learnings, self.history
+                        )
                         actions = decision.get("actions", [])
                 else:
                     actions = ActionSelector.select_actions(snapshot)
@@ -585,9 +639,12 @@ class SurveyRunner:
 
                 # 5k. Log decision
                 log_decision(
-                    len(snapshot.refs), actions, nim_calls,
+                    len(snapshot.refs),
+                    actions,
+                    nim_calls,
                     decision.get("elapsed_ms", 0) if self.nim else 0,
-                    survey_id, provider
+                    survey_id,
+                    provider,
                 )
 
                 # 5l. Execute batch with circuit breaker
@@ -603,7 +660,9 @@ class SurveyRunner:
                     if val_err:
                         get_logger().warn(
                             f"Validation error: {val_err.get('kind')} → hint={val_err.get('hint')}",
-                            survey_id=survey_id, context="nemo_loop", iteration=iteration + 1
+                            survey_id=survey_id,
+                            context="nemo_loop",
+                            iteration=iteration + 1,
                         )
                         retry_actions = []
                         for a in actions:
@@ -626,7 +685,9 @@ class SurveyRunner:
                     consecutive_fails += 2
                     get_logger().warn(
                         f"Circuit breaker: {batch_result.total_fail} fails",
-                        survey_id=survey_id, context="nemo_loop", iteration=iteration + 1
+                        survey_id=survey_id,
+                        context="nemo_loop",
+                        iteration=iteration + 1,
                     )
                     if consecutive_fails >= max_consecutive_fails:
                         result.error = f"Circuit breaker triggered ({batch_result.total_fail} fail, {consecutive_fails} streak)"  # noqa: E501
@@ -637,17 +698,20 @@ class SurveyRunner:
                 time.sleep(self.config.wait_after_action)
 
                 # 5n. Record history
-                self.history.append({
-                    "iteration": iteration,
-                    "actions": len(actions),
-                    "success": batch_result.total_success,
-                    "fail": batch_result.total_fail,
-                    "dom_hash": dom_hash,
-                })
+                self.history.append(
+                    {
+                        "iteration": iteration,
+                        "actions": len(actions),
+                        "success": batch_result.total_success,
+                        "fail": batch_result.total_fail,
+                        "dom_hash": dom_hash,
+                    }
+                )
 
             except Exception as e:
-                get_logger().error(str(e), context="nemo_loop", survey_id=survey_id,
-                                   iteration=iteration + 1)
+                get_logger().error(
+                    str(e), context="nemo_loop", survey_id=survey_id, iteration=iteration + 1
+                )
                 consecutive_fails += 1
                 if consecutive_fails >= max_consecutive_fails:
                     result.error = f"Circuit breaker: {str(e)[:100]}"
@@ -655,8 +719,7 @@ class SurveyRunner:
                     break
                 result.error = str(e)[:200]
                 result.status = "error"
-                log_error("run_survey", e, survey_id, provider,
-                          {"iteration": iteration})
+                log_error("run_survey", e, survey_id, provider, {"iteration": iteration})
                 # Continue loop but increment fail counter
                 time.sleep(1)
 
@@ -684,9 +747,7 @@ class SurveyRunner:
                     # After survey completes in new tab, balance DOM hasn't updated.
                     # Page.reload forces fresh page load → balance DOM updates.
                     ws_reload = websocket.create_connection(dash_ws, timeout=5)
-                    ws_reload.send(json.dumps({
-                        "id": 1, "method": "Page.reload"
-                    }))
+                    ws_reload.send(json.dumps({"id": 1, "method": "Page.reload"}))
                     try:
                         ws_reload.recv()
                     except Exception:
@@ -696,19 +757,26 @@ class SurveyRunner:
                         print("[BALANCE] Dashboard tab reloaded — waiting for DOM update")
             time.sleep(4)  # Wait for reload + DOM update
             balance_after = read_balance_with_backoff(self.config.cdp_port)
-            result.earned = self.balance_tracker.calculate_earned(
-                balance_before, balance_after
-            )
+            result.earned = self.balance_tracker.calculate_earned(balance_before, balance_after)
             get_logger().balance(balance_before, balance_after, result.earned)
         except Exception:
             result.earned = 0.0
-            get_logger().warn(f"Balance after read failed — earned=0 (before was {balance_before}€)",  # noqa: E501
-                              survey_id=survey_id, context="balance_read")
+            get_logger().warn(
+                f"Balance after read failed — earned=0 (before was {balance_before}€)",  # noqa: E501
+                survey_id=survey_id,
+                context="balance_read",
+            )
         result.elapsed_s = round(time.monotonic() - start_time, 1)
 
         # 9. Log earnings + survey end
-        log_earnings(survey_id, provider, result.earned, result.status,
-                     result.elapsed_s, {"iterations": result.iterations})
+        log_earnings(
+            survey_id,
+            provider,
+            result.earned,
+            result.status,
+            result.elapsed_s,
+            {"iterations": result.iterations},
+        )
         get_logger().survey_end(result.status, result.earned, result.elapsed_s, result.error)
 
         return result
@@ -735,8 +803,7 @@ class SurveyRunner:
 
         # Scan dashboard
         viable = scan_dashboard(
-            port=self.config.cdp_port,
-            skip_providers=self.config.skip_providers
+            port=self.config.cdp_port, skip_providers=self.config.skip_providers
         )
 
         if not viable:
@@ -745,7 +812,9 @@ class SurveyRunner:
 
         total_viable = len(viable)
         total_ok = len([s for s in viable if s.get("provider") != "pre_qualifier"])
-        print(f"[LOOP] Processing up to {self.config.max_surveys} surveys from {total_viable} viable")  # noqa: E501
+        print(
+            f"[LOOP] Processing up to {self.config.max_surveys} surveys from {total_viable} viable"
+        )  # noqa: E501
 
         started_count = 0  # Only count successfully started surveys
         failed_preq_cache = {}  # {survey_id: attempt_count} — skip if failed recently
@@ -791,11 +860,12 @@ class SurveyRunner:
             result = self.run_survey(sid, survey_url=href)
             results.append(result)
             started_count += 1
-            print(f"[LOOP]   → {result.status} | {'+' + str(result.earned) + '€' if result.earned > 0 else str(result.earned) + '€'} | {result.error[:50] if result.error else 'no error'}")  # noqa: E501
+            print(
+                f"[LOOP]   → {result.status} | {'+' + str(result.earned) + '€' if result.earned > 0 else str(result.earned) + '€'} | {result.error[:50] if result.error else 'no error'}"
+            )  # noqa: E501
 
             if result.status == "completed":
-                print(f"  ✅ +{result.earned}€ ({result.provider}, "
-                      f"{result.elapsed_s}s)")
+                print(f"  ✅ +{result.earned}€ ({result.provider}, {result.elapsed_s}s)")
             elif result.status == "blocked":
                 print(f"  ⛔ Blocked: {result.error}")
             else:
@@ -814,16 +884,20 @@ class SurveyRunner:
             screen_out=screen_out,
         )
         self.metrics.loop_completed()
-        print(f"\n{'='*50}")
+        print(f"\n{'=' * 50}")
         print(f"  LOOP COMPLETE: {complete}/{len(results)} surveys")
         print(f"  +{total}€ earned")
-        print(f"{'='*50}\n")
+        print(f"{'=' * 50}\n")
 
-        log_session("loop", "ok", {
-            "surveys_run": len(results),
-            "completed": complete,
-            "earned": total,
-        })
+        log_session(
+            "loop",
+            "ok",
+            {
+                "surveys_run": len(results),
+                "completed": complete,
+                "earned": total,
+            },
+        )
 
         return results
 
@@ -866,8 +940,11 @@ class SurveyRunner:
         Delegates to SurveyOpener so tab lifecycle logic lives in one place.
         """
         target = SurveyTarget(
-            survey_id="", provider="", ws_url="",
-            tab_id=tab_id, mode="new_tab",
+            survey_id="",
+            provider="",
+            ws_url="",
+            tab_id=tab_id,
+            mode="new_tab",
         )
         self.opener.close(target)
 
@@ -877,14 +954,18 @@ class SurveyRunner:
         Delegates to SurveyOpener so tab lifecycle logic lives in one place.
         """
         target = SurveyTarget(
-            survey_id="", provider="", ws_url="",
-            tab_id=tab_id, mode="new_tab",
+            survey_id="",
+            provider="",
+            ws_url="",
+            tab_id=tab_id,
+            mode="new_tab",
         )
         return self.opener.refresh_ws(target)
 
     def _detect_provider(self, url):
         """Detect provider from URL."""
         from .scanner import detect_provider
+
         return detect_provider(url)
 
     def _handle_pre_qualifier_browser(self, survey_id):
@@ -892,9 +973,7 @@ class SurveyRunner:
 
         Delegates to PreQualifierHandler so pre-qualifier logic lives in one place.
         """
-        return self.pre_qualifier.handle_pre_qualifier_browser(
-            survey_id, self._close_tab
-        )
+        return self.pre_qualifier.handle_pre_qualifier_browser(survey_id, self._close_tab)
 
     def _trigger_cash_out(self):
         """Navigate to cash-out page when balance target is reached.
@@ -961,8 +1040,9 @@ class SurveyRunner:
             get_logger().warn("Session invalid before survey — attempting recovery...")
             recovered = validate_session(self.config.cdp_port, auto_recover=True)
             if not recovered:
-                get_logger().error("Session recovery failed — skipping survey",
-                                   context="_pre_survey_cleanup")
+                get_logger().error(
+                    "Session recovery failed — skipping survey", context="_pre_survey_cleanup"
+                )
                 return 0
 
         return self.opener._pre_survey_cleanup(tab_ws)
@@ -970,6 +1050,7 @@ class SurveyRunner:
     def _handle_purespectrum_preflight(self, tab_ws, survey_id):
         """Handle PureSpectrum pre-survey flow: cookie + ROBOT + captcha + puzzle."""
         from survey.providers.purespectrum import solve_purespectrum_preflight
+
         return solve_purespectrum_preflight(tab_ws, debug=self.config.debug)
 
     def _rate_survey(self):
@@ -984,6 +1065,4 @@ class SurveyRunner:
 
         Delegates to PreQualifierHandler so pre-qualifier logic lives in one place.
         """
-        return self.pre_qualifier.handle_pre_qualifier_api(
-            survey_id, survey_details, self.profile
-        )
+        return self.pre_qualifier.handle_pre_qualifier_api(survey_id, survey_details, self.profile)

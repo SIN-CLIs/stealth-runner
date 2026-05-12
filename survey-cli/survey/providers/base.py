@@ -26,20 +26,24 @@ class ProviderAdapter:
     url_patterns: List[str] = field(default_factory=list)
     commands: Dict[str, str] = field(default_factory=dict)
     completion_markers: List[str] = field(default_factory=list)
-    screen_out_markers: List[str] = field(default_factory=lambda: [
-        "screen out",
-        "you do not qualify",
-        "you are not eligible",
-        "leider passen sie nicht",
-        "nicht für diese umfrage qualifiziert",
-        "thank you for your interest",
-    ])
-    blocked_markers: List[str] = field(default_factory=lambda: [
-        "captcha",
-        "not a robot",
-        "human verification",
-        "access denied",
-    ])
+    screen_out_markers: List[str] = field(
+        default_factory=lambda: [
+            "screen out",
+            "you do not qualify",
+            "you are not eligible",
+            "leider passen sie nicht",
+            "nicht für diese umfrage qualifiziert",
+            "thank you for your interest",
+        ]
+    )
+    blocked_markers: List[str] = field(
+        default_factory=lambda: [
+            "captcha",
+            "not a robot",
+            "human verification",
+            "access denied",
+        ]
+    )
 
     def matches(self, url: str = "", text: str = "") -> bool:
         """Return True if this adapter owns the URL or page text."""

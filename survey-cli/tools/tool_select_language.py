@@ -52,7 +52,7 @@ BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
   ❌ skylight-cli click --element-index
 ================================================================================"""
 
-import json       # CDP Nachrichten (de)serialisierung
+import json  # CDP Nachrichten (de)serialisierung
 import websocket  # CDP WebSocket Verbindung
 from typing import Dict, Any
 
@@ -62,13 +62,13 @@ __frozen__ = True  # 🔒 NICHT AENDERN! Getestet mit Qualtrics Language Page.
 
 def select_language(ws_url: str, language: str = "Deutsch", timeout: int = 10) -> Dict[str, Any]:
     """Wählt Sprache auf Language-Selection-Seite.
-    
+
     ARGS:
         ws_url (str): CDP WebSocket URL
         language (str): Gewünschte Sprache (default: "Deutsch")
                         → Case-insensitive: "deutsch", "DEUTSCH", "Deutsch" = gleich
         timeout (int): WebSocket Timeout in Sekunden
-        
+
     RETURNS:
         dict:
           {"success": true, "method": "select", "value": "Deutsch"}
@@ -79,7 +79,7 @@ def select_language(ws_url: str, language: str = "Deutsch", timeout: int = 10) -
             → Sprache via Text-Matching (Fallback)
           {"success": false, "error": "Language not found: deutsch"}
             → Sprache nicht gefunden
-            
+
     ALGORITHMUS:
       1. JavaScript IIFE erstellen (case-insensitive):
       2. METHODE 1: <select> Dropdown
@@ -100,43 +100,44 @@ def select_language(ws_url: str, language: str = "Deutsch", timeout: int = 10) -
          - el.click()
          → return {success: true, method: 'text_match', value: t}
       5. KEIN Match → return {success: false, error: "Language not found: " + lang}
-      
+
     WARUM 3 Methoden?
       Qualtrics nutzt verschiedene Sprachseiten-Implementierungen:
       - Alte: <select> Dropdown
       - Neue: Radio-Buttons (.LabelWrapper)
       - Spezial: Custom HTML (Text-Match)
       → Alle 3 abdecken = maximale Kompatibilität.
-      
+
     WARUM toLowerCase()?
       "Deutsch" = "deutsch" = "DEUTSCH". Case-insensitive = tolerant.
-      
+
     WARUM includes() statt ===?
       "Deutsch (German)" matched "deutsch" (includes).
       → Variationen abdecken (z.B. Sprach-Codes: "Deutsch [DE]").
-      
+
     WARUM dispatchEvent('change') bei Select?
       Browser aktualisiert selectedIndex, ABER Frameworks (Angular/React)
       lauschen auf 'change' Event. Ohne dispatch = keine Framework-Update.
-      
+
     WARUM doppelter click bei Radio?
       1. Container.click() → UI-Update (Label aktiviert)
       2. input.click() → Event-Feuerung (Framework-Listener)
       → Einzelner click auf Container reicht oft nicht fuer Frameworks.
-      
+
     WARUM children.length === 0 bei Text-Match?
       Blatt-Elemente = reiner Text (keine verschachtelten Elemente).
       → Verhindert, dass Container-Text (der Kinder-Text enthaelt)
         doppelt matched wird.
-      
+
     WARUM substring(0, 80) fuer Text?
       Max 80 Zeichen pro Element (Platz sparen in Snapshot).
     """
     # Case-insensitive: alles zu lowercase
     lang_lower = language.lower()
-    
+
     # JavaScript: 3 Methoden (Select, Radio, Text-Match)
-    js = """
+    js = (
+        """
     (function() {
         var lang = '%s';
         
@@ -201,18 +202,27 @@ def select_language(ws_url: str, language: str = "Deutsch", timeout: int = 10) -
         // KEIN Match gefunden
         return {success: false, error: 'Language not found: ' + lang};
     })();
-    """ % lang_lower  # lang_lower in JS einfügen
-    
+    """
+        % lang_lower
+    )  # lang_lower in JS einfügen
+
     try:
         ws = websocket.create_connection(ws_url, timeout=timeout)
-        ws.send(json.dumps({"id": 1, "method": "Runtime.evaluate",
-            "params": {"expression": js, "returnByValue": True}}))
+        ws.send(
+            json.dumps(
+                {
+                    "id": 1,
+                    "method": "Runtime.evaluate",
+                    "params": {"expression": js, "returnByValue": True},
+                }
+            )
+        )
         resp = json.loads(ws.recv())
         ws.close()
-        
+
         result = resp.get("result", {}).get("result", {}).get("value", {})
         return result if result else {"success": False, "error": "No result"}
-        
+
     except Exception as e:
         return {"success": False, "error": str(e)}
 
@@ -222,13 +232,14 @@ def select_language(ws_url: str, language: str = "Deutsch", timeout: int = 10) -
 # ═════════════════════════════════════════════════════════════════════════════
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) < 2:
         print("Usage: python tool_select_language.py <ws_url> [language]")
         sys.exit(1)
-        
+
     ws_url = sys.argv[1]
     # Optional: Sprache als 2. Argument (default: "Deutsch")
     lang = sys.argv[2] if len(sys.argv) > 2 else "Deutsch"
-    
+
     r = select_language(ws_url, lang)
     print(json.dumps(r, indent=2))

@@ -13,7 +13,6 @@ Wire-up: .pre-commit-config.yaml + CI Step in .github/workflows/ci.yml (§13.8.4
 
 import subprocess
 import sys
-import os
 from pathlib import Path
 
 
@@ -21,8 +20,7 @@ def get_tree_submodules() -> list[str]:
     """Get all submodule entries from git ls-tree (160000 mode = gitlink)."""
     try:
         result = subprocess.run(
-            ["git", "ls-tree", "HEAD"],
-            capture_output=True, text=True, check=True
+            ["git", "ls-tree", "HEAD"], capture_output=True, text=True, check=True
         )
         submodules = []
         for line in result.stdout.strip().split("\n"):
@@ -50,7 +48,8 @@ def get_submodule_url(name: str) -> str | None:
     try:
         result = subprocess.run(
             ["git", "config", "-f", ".gitmodules", f"submodule.{name}.url"],
-            capture_output=True, text=True
+            capture_output=True,
+            text=True,
         )
         if result.returncode == 0:
             return result.stdout.strip()
@@ -75,11 +74,14 @@ def main():
     if not gitmodules_exists:
         print(
             f"[✗] FAIL: {len(tree_submodules)} submodule(s) in git tree but .gitmodules missing:",
-            file=sys.stderr
+            file=sys.stderr,
         )
         for name in tree_submodules:
             print(f"    - {name}", file=sys.stderr)
-        print("\nFix: Either remove submodules (git rm --cached) or create .gitmodules", file=sys.stderr)
+        print(
+            "\nFix: Either remove submodules (git rm --cached) or create .gitmodules",
+            file=sys.stderr,
+        )
         return 1
 
     # Validate each submodule has a URL in .gitmodules
@@ -91,10 +93,7 @@ def main():
             print(f"[✗] Submodule '{name}' has no URL in .gitmodules", file=sys.stderr)
 
     if failed:
-        print(
-            f"\n[✗] FAIL: {len(failed)} submodule(s) missing URL configuration",
-            file=sys.stderr
-        )
+        print(f"\n[✗] FAIL: {len(failed)} submodule(s) missing URL configuration", file=sys.stderr)
         return 1
 
     print(f"[✓] All {len(tree_submodules)} submodule(s) properly configured")

@@ -33,59 +33,157 @@ from typing import Dict, FrozenSet, List, Optional
 # Familie ein neues Sprach-Synonym bekommt, auch hier eintragen.
 FAMILY_TOKENS: Dict[str, FrozenSet[str]] = {
     "email": frozenset({"email", "mail", "e", "mailadresse", "address"}),
-    "phone": frozenset({
-        "phone", "telefon", "tel", "handy", "mobil", "mobile",
-        "mobilnummer", "cell", "nummer", "number",
-    }),
-    "birth_year": frozenset({
-        "birth", "year", "born", "geburtsjahr", "jahrgang", "jahr",
-        "geboren", "geburt", "of",
-    }),
-    "postal_code": frozenset({
-        "plz", "postleitzahl", "zip", "code", "postal", "postcode",
-    }),
-    "hh_income": frozenset({
-        "haushaltseinkommen", "household", "income", "familieneinkommen",
-        "haushalt", "einkommen",
-    }),
-    "income": frozenset({
-        "einkommen", "gehalt", "salary", "personal", "netto",
-        "income", "nettoeinkommen",
-    }),
-    "first_name": frozenset({
-        "vorname", "first", "name", "given", "forename",
-    }),
-    "last_name": frozenset({
-        "nachname", "last", "name", "surname", "family", "familyname",
-    }),
-    "street": frozenset({
-        "strasse", "straße", "street", "adresse", "address", "line",
-        "anschrift",
-    }),
+    "phone": frozenset(
+        {
+            "phone",
+            "telefon",
+            "tel",
+            "handy",
+            "mobil",
+            "mobile",
+            "mobilnummer",
+            "cell",
+            "nummer",
+            "number",
+        }
+    ),
+    "birth_year": frozenset(
+        {
+            "birth",
+            "year",
+            "born",
+            "geburtsjahr",
+            "jahrgang",
+            "jahr",
+            "geboren",
+            "geburt",
+            "of",
+        }
+    ),
+    "postal_code": frozenset(
+        {
+            "plz",
+            "postleitzahl",
+            "zip",
+            "code",
+            "postal",
+            "postcode",
+        }
+    ),
+    "hh_income": frozenset(
+        {
+            "haushaltseinkommen",
+            "household",
+            "income",
+            "familieneinkommen",
+            "haushalt",
+            "einkommen",
+        }
+    ),
+    "income": frozenset(
+        {
+            "einkommen",
+            "gehalt",
+            "salary",
+            "personal",
+            "netto",
+            "income",
+            "nettoeinkommen",
+        }
+    ),
+    "first_name": frozenset(
+        {
+            "vorname",
+            "first",
+            "name",
+            "given",
+            "forename",
+        }
+    ),
+    "last_name": frozenset(
+        {
+            "nachname",
+            "last",
+            "name",
+            "surname",
+            "family",
+            "familyname",
+        }
+    ),
+    "street": frozenset(
+        {
+            "strasse",
+            "straße",
+            "street",
+            "adresse",
+            "address",
+            "line",
+            "anschrift",
+        }
+    ),
     "city": frozenset({"stadt", "wohnort", "ort", "city", "town"}),
-    "country": frozenset({
-        "land", "country", "nation", "residence", "wohnsitzland",
-        "herkunftsland",
-    }),
-    "state_region": frozenset({
-        "bundesland", "region", "state", "province", "kanton",
-    }),
-    "household_size": frozenset({
-        "haushaltsgroesse", "haushaltsgröße", "personen", "haushalt",
-        "household", "size", "people", "wie", "viele",
-    }),
+    "country": frozenset(
+        {
+            "land",
+            "country",
+            "nation",
+            "residence",
+            "wohnsitzland",
+            "herkunftsland",
+        }
+    ),
+    "state_region": frozenset(
+        {
+            "bundesland",
+            "region",
+            "state",
+            "province",
+            "kanton",
+        }
+    ),
+    "household_size": frozenset(
+        {
+            "haushaltsgroesse",
+            "haushaltsgröße",
+            "personen",
+            "haushalt",
+            "household",
+            "size",
+            "people",
+            "wie",
+            "viele",
+        }
+    ),
     "age": frozenset({"alter", "age", "wie", "alt", "ihr", "your"}),
-    "job_title": frozenset({
-        "beruf", "job", "title", "taetigkeit", "tätigkeit", "occupation",
-        "profession", "position",
-    }),
-    "industry": frozenset({
-        "branche", "industry", "sector", "wirtschaftszweig",
-    }),
-    "nationality": frozenset({
-        "nationalitaet", "nationalität", "nationality",
-        "staatsangehoerigkeit", "staatsangehörigkeit",
-    }),
+    "job_title": frozenset(
+        {
+            "beruf",
+            "job",
+            "title",
+            "taetigkeit",
+            "tätigkeit",
+            "occupation",
+            "profession",
+            "position",
+        }
+    ),
+    "industry": frozenset(
+        {
+            "branche",
+            "industry",
+            "sector",
+            "wirtschaftszweig",
+        }
+    ),
+    "nationality": frozenset(
+        {
+            "nationalitaet",
+            "nationalität",
+            "nationality",
+            "staatsangehoerigkeit",
+            "staatsangehörigkeit",
+        }
+    ),
     "language": frozenset({"muttersprache", "sprache", "language"}),
     "gender": frozenset({"geschlecht", "gender", "sex"}),
     "full_name": frozenset({"name", "full", "vollstaendiger", "vollständiger"}),
@@ -239,14 +337,15 @@ def _build_llm_prompt(label: str, families: Sequence[str]) -> str:
         f"{fam_lines}\n"
         f"\n"
         f"Respond with this JSON schema ONLY (no markdown, no prose):\n"
-        f"{{\"family\": \"<one_of_above_or_null>\", "
-        f"\"confidence\": <float 0..1>, "
-        f"\"reason\": \"<<=140 chars why this family>\"}}"
+        f'{{"family": "<one_of_above_or_null>", '
+        f'"confidence": <float 0..1>, '
+        f'"reason": "<<=140 chars why this family>"}}'
     )
 
 
 def _parse_llm_response(
-    raw: str, allowed_families: Sequence[str],
+    raw: str,
+    allowed_families: Sequence[str],
 ) -> tuple[Optional[str], float, str, Optional[str]]:
     """Parse ``raw`` JSON content → ``(family, confidence, reason, error)``.
 
@@ -278,8 +377,7 @@ def _parse_llm_response(
         if fam in {"null", "none", ""}:
             fam = None
         elif fam not in allowed_families:
-            return None, 0.0, "", (
-                f"family {fam!r} not in allowed set (hallucination)")
+            return None, 0.0, "", (f"family {fam!r} not in allowed set (hallucination)")
     elif fam is not None:
         return None, 0.0, "", f"family is not str|null: {type(fam).__name__}"
     try:
@@ -322,14 +420,18 @@ def suggest_via_llm(
     """
     if not label.strip():
         return LLMSuggestion(
-            family=None, confidence=0.0, reason="",
+            family=None,
+            confidence=0.0,
+            reason="",
             model=model or "",
             prompt_hash="",
             error="empty label",
         )
     if not allowed_families:
         return LLMSuggestion(
-            family=None, confidence=0.0, reason="",
+            family=None,
+            confidence=0.0,
+            reason="",
             model=model or "",
             prompt_hash="",
             error="no allowed_families given",
@@ -339,16 +441,21 @@ def suggest_via_llm(
     resp: LLMResponse = call_llm(prompt, model=model, timeout=timeout)
     if resp.content is None:
         return LLMSuggestion(
-            family=None, confidence=0.0, reason="",
-            model=resp.model, prompt_hash=resp.prompt_hash,
+            family=None,
+            confidence=0.0,
+            reason="",
+            model=resp.model,
+            prompt_hash=resp.prompt_hash,
             error=resp.error,
         )
 
     allowed_lower = [f.lower() for f in allowed_families]
-    fam, conf, reason, parse_err = _parse_llm_response(
-        resp.content, allowed_lower)
+    fam, conf, reason, parse_err = _parse_llm_response(resp.content, allowed_lower)
     return LLMSuggestion(
-        family=fam, confidence=conf, reason=reason,
-        model=resp.model, prompt_hash=resp.prompt_hash,
+        family=fam,
+        confidence=conf,
+        reason=reason,
+        model=resp.model,
+        prompt_hash=resp.prompt_hash,
         error=parse_err,
     )

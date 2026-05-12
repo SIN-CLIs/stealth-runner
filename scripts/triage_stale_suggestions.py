@@ -59,8 +59,9 @@ import glob
 import json
 import os
 import sys
-from datetime import datetime, timezone
-from typing import Any, Dict, Iterable, List, Optional, Tuple
+from collections.abc import Iterable
+from datetime import UTC, datetime
+from typing import Any
 
 # Public helpers (also imported by tests).
 __all__ = [
@@ -86,7 +87,7 @@ SKIP_SUFFIXES = ("-accepted.jsonl", "-rejected.jsonl")
 # -- Pure helpers ------------------------------------------------------------
 
 
-def parse_first_seen(value: Any) -> Optional[datetime]:
+def parse_first_seen(value: Any) -> datetime | None:
     """Parse an ISO8601-ish timestamp into a tz-aware UTC datetime.
 
     Returns None if value is missing, None, empty, or unparseable. We accept
@@ -106,14 +107,11 @@ def parse_first_seen(value: Any) -> Optional[datetime]:
     except ValueError:
         return None
     # Naive datetimes are assumed UTC (logs are produced server-side UTC).
-    if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    else:
-        dt = dt.astimezone(timezone.utc)
+    dt = dt.replace(tzinfo=UTC) if dt.tzinfo is None else dt.astimezone(UTC)
     return dt
 
 
-def _normalize(record: Dict[str, Any]) -> Dict[str, Any]:
+def _normalize(record: dict[str, Any]) -> dict[str, Any]:
     """Apply defensive defaults consistent with `survey/learn/status.py`."""
     out = dict(record)
     if not out.get("status"):
@@ -124,10 +122,10 @@ def _normalize(record: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def is_stale(
-    record: Dict[str, Any],
+    record: dict[str, Any],
     now: datetime,
     age_days: int,
-) -> Tuple[bool, Optional[int]]:
+) -> tuple[bool, int | None]:
     """Decide whether a (normalized) record is stale.
 
     Returns (stale, age_days_int_or_None). A record is stale iff:
@@ -147,7 +145,7 @@ def is_stale(
     return (age > age_days, age)
 
 
-def iter_records(logs_dir: str) -> Iterable[Tuple[str, Dict[str, Any]]]:
+def iter_records(logs_dir: str) -> Iterable[tuple[str, dict[str, Any]]]:
     """Yield (filepath, record) for every JSONL line in the inbox glob.
 
     Skips output-sink files (`*-accepted.jsonl`, `*-rejected.jsonl`).
@@ -159,7 +157,7 @@ def iter_records(logs_dir: str) -> Iterable[Tuple[str, Dict[str, Any]]]:
         if any(path.endswith(suf) for suf in SKIP_SUFFIXES):
             continue
         try:
-            with open(path, "r", encoding="utf-8") as fh:
+            with open(path, encoding="utf-8") as fh:
                 for line in fh:
                     line = line.strip()
                     if not line:
@@ -183,8 +181,8 @@ def triage(
     logs_dir: str,
     age_days: int,
     filter_source: str,
-    now: Optional[datetime] = None,
-) -> Dict[str, Any]:
+    now: datetime | None = None,
+) -> dict[str, Any]:
     """Run a triage pass and return a JSON-serializable summary dict.
 
     Args:
@@ -194,11 +192,11 @@ def triage(
         now: injected for deterministic tests. Defaults to datetime.now(UTC).
     """
     if now is None:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
 
     files_scanned: set = set()
     total_open = 0
-    stale_records: List[Dict[str, Any]] = []
+    stale_records: list[dict[str, Any]] = []
 
     for path, raw in iter_records(logs_dir):
         files_scanned.add(path)
@@ -214,23 +212,22 @@ def triage(
 
         stale, age = is_stale(rec, now=now, age_days=age_days)
         if stale:
-            stale_records.append({
-                "age_days": age,
-                "source": rec.get("source"),
-                "family": rec.get("suggested_family") or "<NEW>",
-                "role": rec.get("role", "?"),
-                "label": rec.get("normalized_label", ""),
-                "count": rec.get("count", 0),
-                "first_seen": rec.get("first_seen"),
-            })
+            stale_records.append(
+                {
+                    "age_days": age,
+                    "source": rec.get("source"),
+                    "family": rec.get("suggested_family") or "<NEW>",
+                    "role": rec.get("role", "?"),
+                    "label": rec.get("normalized_label", ""),
+                    "count": rec.get("count", 0),
+                    "first_seen": rec.get("first_seen"),
+                }
+            )
 
     stale_records.sort(key=lambda r: r["age_days"] or 0, reverse=True)
 
     stale_count = len(stale_records)
-    if total_open > 0:
-        stale_percent = round((stale_count / total_open) * 100.0, 1)
-    else:
-        stale_percent = 0.0
+    stale_percent = round(stale_count / total_open * 100.0, 1) if total_open > 0 else 0.0
     oldest = stale_records[0]["age_days"] if stale_records else None
 
     return {
@@ -249,27 +246,20 @@ def triage(
 # -- Formatters --------------------------------------------------------------
 
 
-def format_human(summary: Dict[str, Any]) -> str:
+def format_human(summary: dict[str, Any]) -> str:
     """Render the human-readable report (single string, newline-separated)."""
-    lines: List[str] = []
-    lines.append(
-        f"[triage] scanning {summary['logs_dir']}/{INPUT_GLOB}"
-    )
+    lines: list[str] = []
+    lines.append(f"[triage] scanning {summary['logs_dir']}/{INPUT_GLOB}")
     lines.append(
         f"[triage] threshold: {summary['threshold_days']} days, "
         f"source filter: {summary['filter_source']}"
     )
     lines.append("")
     if summary["stale_count"] == 0:
-        lines.append(
-            f"No stale open records "
-            f"(total open scanned: {summary['total_open']})."
-        )
+        lines.append(f"No stale open records (total open scanned: {summary['total_open']}).")
         return "\n".join(lines)
 
-    lines.append(
-        f"Stale open records (older than {summary['threshold_days']} days):"
-    )
+    lines.append(f"Stale open records (older than {summary['threshold_days']} days):")
     for r in summary["stale_records"]:
         label = (r["label"] or "")[:40]
         lines.append(
@@ -290,7 +280,7 @@ def format_human(summary: Dict[str, Any]) -> str:
     return "\n".join(lines)
 
 
-def format_json(summary: Dict[str, Any]) -> str:
+def format_json(summary: dict[str, Any]) -> str:
     """Render summary as 2-space-indented JSON."""
     return json.dumps(summary, indent=2, ensure_ascii=False, sort_keys=True)
 
@@ -336,7 +326,7 @@ def _build_argparser() -> argparse.ArgumentParser:
     return p
 
 
-def main(argv: Optional[List[str]] = None) -> int:
+def main(argv: list[str] | None = None) -> int:
     args = _build_argparser().parse_args(argv)
     summary = triage(
         logs_dir=args.logs,

@@ -85,13 +85,19 @@ HEARTBEAT_INTERVAL = 30  # seconds
 # STATE MANAGEMENT
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 def load_state() -> Dict:
     try:
         with open(DAEMON_STATE_FILE) as f:
             return json.load(f)
     except Exception:
-        return {"started_at": None, "surveys_completed": 0,
-                "balance": 0.0, "last_error": None, "running": False}
+        return {
+            "started_at": None,
+            "surveys_completed": 0,
+            "balance": 0.0,
+            "last_error": None,
+            "running": False,
+        }
 
 
 def save_state(state: Dict) -> None:
@@ -103,12 +109,9 @@ def save_state(state: Dict) -> None:
 # LOGGING
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 def log(event: str, data: Optional[Dict] = None) -> None:
-    entry = {
-        "ts": datetime.now().isoformat(),
-        "event": event,
-        "data": data or {}
-    }
+    entry = {"ts": datetime.now().isoformat(), "event": event, "data": data or {}}
     log_file = LOG_DIR / f"{datetime.now():%Y-%m-%d}.jsonl"
     with open(log_file, "a") as f:
         f.write(json.dumps(entry) + "\n")
@@ -118,6 +121,7 @@ def log(event: str, data: Optional[Dict] = None) -> None:
 # ═══════════════════════════════════════════════════════════════════════════
 # CHROME LIFECYCLE
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 def is_chrome_alive(port: int = CHROME_PORT) -> bool:
     try:
@@ -129,8 +133,9 @@ def is_chrome_alive(port: int = CHROME_PORT) -> bool:
 
 def find_dashboard_pid(port: int = CHROME_PORT) -> Optional[int]:
     try:
-        pages = json.loads(urllib.request.urlopen(
-            f"http://127.0.0.1:{port}/json", timeout=3).read())
+        pages = json.loads(
+            urllib.request.urlopen(f"http://127.0.0.1:{port}/json", timeout=3).read()
+        )
         for p in pages:
             if "dashboard" in p.get("url", "").lower():
                 return p.get("id")  # CDP targetId (not OS PID)
@@ -143,18 +148,28 @@ def get_balance(port: int = CHROME_PORT) -> Optional[float]:
     """CDP: Get balance from dashboard body text."""
     try:
         import websocket
-        pages = json.loads(urllib.request.urlopen(
-            f"http://127.0.0.1:{port}/json", timeout=3).read())
+
+        pages = json.loads(
+            urllib.request.urlopen(f"http://127.0.0.1:{port}/json", timeout=3).read()
+        )
         for p in pages:
             if "dashboard" in p.get("url", "").lower():
-                ws = websocket.create_connection(
-                    p["webSocketDebuggerUrl"], timeout=10)
-                ws.send(json.dumps({"id": 0, "method": "Runtime.evaluate",
-                    "params": {"expression": "document.body.innerText"}}))
-                r = json.loads(ws.recv()); ws.close()  # noqa: E702
+                ws = websocket.create_connection(p["webSocketDebuggerUrl"], timeout=10)
+                ws.send(
+                    json.dumps(
+                        {
+                            "id": 0,
+                            "method": "Runtime.evaluate",
+                            "params": {"expression": "document.body.innerText"},
+                        }
+                    )
+                )
+                r = json.loads(ws.recv())
+                ws.close()  # noqa: E702
                 text = r.get("result", {}).get("result", {}).get("value", "")
                 import re
-                m = re.search(r'([\d.,]+)\s*€', text)
+
+                m = re.search(r"([\d.,]+)\s*€", text)
                 if m:
                     return float(m.group(1).replace(",", "."))
         return None
@@ -166,15 +181,24 @@ def is_logged_in(port: int = CHROME_PORT) -> bool:
     """CDP: Check if dashboard shows 'Abmelden' (logged in) or 'Anmelden' (not)."""
     try:
         import websocket
-        pages = json.loads(urllib.request.urlopen(
-            f"http://127.0.0.1:{port}/json", timeout=3).read())
+
+        pages = json.loads(
+            urllib.request.urlopen(f"http://127.0.0.1:{port}/json", timeout=3).read()
+        )
         for p in pages:
             if "dashboard" in p.get("url", "").lower():
-                ws = websocket.create_connection(
-                    p["webSocketDebuggerUrl"], timeout=10)
-                ws.send(json.dumps({"id": 0, "method": "Runtime.evaluate",
-                    "params": {"expression": "document.body.innerText"}}))
-                r = json.loads(ws.recv()); ws.close()  # noqa: E702
+                ws = websocket.create_connection(p["webSocketDebuggerUrl"], timeout=10)
+                ws.send(
+                    json.dumps(
+                        {
+                            "id": 0,
+                            "method": "Runtime.evaluate",
+                            "params": {"expression": "document.body.innerText"},
+                        }
+                    )
+                )
+                r = json.loads(ws.recv())
+                ws.close()  # noqa: E702
                 text = r.get("result", {}).get("result", {}).get("value", "")
                 return "Abmelden" in text
         return False
@@ -185,6 +209,7 @@ def is_logged_in(port: int = CHROME_PORT) -> bool:
 def launch_chrome(url: str = HEYPIGGY_URL, port: int = CHROME_PORT) -> bool:
     """DEPRECATED: Use ChromeLauncher.launch_and_verify() instead."""
     from survey.chrome import ChromeLauncher
+
     result = ChromeLauncher(port=port).launch_and_verify(url=url)
     return result.get("ok", False)
 
@@ -192,6 +217,7 @@ def launch_chrome(url: str = HEYPIGGY_URL, port: int = CHROME_PORT) -> bool:
 # ═══════════════════════════════════════════════════════════════════════════
 # LOGIN
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 def ensure_login(port: int = CHROME_PORT) -> bool:
     """Check + auto-login if needed. Returns True if logged in."""
@@ -204,10 +230,12 @@ def ensure_login(port: int = CHROME_PORT) -> bool:
         # (daemon.py läuft aus survey-cli/survey/, cli/modules ist auf stealth-runner/)
         import sys
         from pathlib import Path
+
         _root = str(Path(__file__).parent.parent.parent)
         if _root not in sys.path:
             sys.path.insert(0, _root)
         from cli.modules.auto_google_login import execute as google_login
+
         result = google_login()
         logged_in = result.get("status") == "ok"
         if logged_in:
@@ -269,15 +297,21 @@ class DaemonManager:
     def _save_state(self):
         STEALTH_DIR.mkdir(exist_ok=True)
         with open(CUA_DAEMON_STATE_FILE, "w") as f:
-            json.dump({"state": self.state,
-                       "consecutive_failures": self._consecutive_failures,
-                       "updated_at": datetime.now().isoformat()}, f, indent=2)
+            json.dump(
+                {
+                    "state": self.state,
+                    "consecutive_failures": self._consecutive_failures,
+                    "updated_at": datetime.now().isoformat(),
+                },
+                f,
+                indent=2,
+            )
 
     def _is_process_alive(self) -> bool:
         try:
             result = subprocess.run(
-                ["pgrep", "-f", "cua-driver serve"],
-                capture_output=True, text=True, timeout=5)
+                ["pgrep", "-f", "cua-driver serve"], capture_output=True, text=True, timeout=5
+            )
             return result.returncode == 0 and bool(result.stdout.strip())
         except Exception:
             return False
@@ -345,44 +379,64 @@ class DaemonManager:
         if not self._is_process_alive():
             self.state = self.STATE_FAILED
             self._save_state()
-            return {"healthy": False, "state": self.STATE_FAILED,
-                    "reason": "process_not_found"}
+            return {"healthy": False, "state": self.STATE_FAILED, "reason": "process_not_found"}
 
         try:
             result = subprocess.run(
                 ["cua-driver", "call", "list_windows"],
-                capture_output=True, text=True, timeout=CUA_DAEMON_HEALTH_TIMEOUT)
+                capture_output=True,
+                text=True,
+                timeout=CUA_DAEMON_HEALTH_TIMEOUT,
+            )
             if result.returncode != 0:
                 self.state = self.STATE_DEGRADED
                 self._save_state()
-                return {"healthy": False, "state": self.STATE_DEGRADED,
-                        "reason": f"exit_code={result.returncode}"}
+                return {
+                    "healthy": False,
+                    "state": self.STATE_DEGRADED,
+                    "reason": f"exit_code={result.returncode}",
+                }
             data = json.loads(result.stdout)
             if not data.get("windows"):
                 self.state = self.STATE_DEGRADED
                 self._save_state()
-                return {"healthy": False, "state": self.STATE_DEGRADED,
-                        "reason": "no_windows_returned"}
+                return {
+                    "healthy": False,
+                    "state": self.STATE_DEGRADED,
+                    "reason": "no_windows_returned",
+                }
             self.state = self.STATE_HEALTHY
             self._consecutive_failures = 0
             self._save_state()
-            return {"healthy": True, "state": self.STATE_HEALTHY,
-                    "windows_count": len(data["windows"])}
+            return {
+                "healthy": True,
+                "state": self.STATE_HEALTHY,
+                "windows_count": len(data["windows"]),
+            }
         except subprocess.TimeoutExpired:
             self.state = self.STATE_DEGRADED
             self._save_state()
-            return {"healthy": False, "state": self.STATE_DEGRADED,
-                    "reason": "health_check_timeout"}
+            return {
+                "healthy": False,
+                "state": self.STATE_DEGRADED,
+                "reason": "health_check_timeout",
+            }
         except json.JSONDecodeError:
             self.state = self.STATE_DEGRADED
             self._save_state()
-            return {"healthy": False, "state": self.STATE_DEGRADED,
-                    "reason": "invalid_json_response"}
+            return {
+                "healthy": False,
+                "state": self.STATE_DEGRADED,
+                "reason": "invalid_json_response",
+            }
         except Exception as e:
             self.state = self.STATE_FAILED
             self._save_state()
-            return {"healthy": False, "state": self.STATE_FAILED,
-                    "reason": f"exception: {str(e)[:100]}"}
+            return {
+                "healthy": False,
+                "state": self.STATE_FAILED,
+                "reason": f"exception: {str(e)[:100]}",
+            }
 
     def ensure_running(self) -> bool:
         health = self.health_check()
@@ -390,16 +444,21 @@ class DaemonManager:
             return True
 
         self._consecutive_failures += 1
-        log("cua_daemon", {"msg": "Not healthy — restarting",
-                           "state": health.get("state"),
-                           "reason": health.get("reason"),
-                           "failures": self._consecutive_failures})
+        log(
+            "cua_daemon",
+            {
+                "msg": "Not healthy — restarting",
+                "state": health.get("state"),
+                "reason": health.get("reason"),
+                "failures": self._consecutive_failures,
+            },
+        )
 
         now = time.time()
         if now - self._last_restart_time < 10:
             time.sleep(5)
 
-        backoff = min(2 ** self._consecutive_failures, CUA_DAEMON_MAX_RESTART_INTERVAL)
+        backoff = min(2**self._consecutive_failures, CUA_DAEMON_MAX_RESTART_INTERVAL)
         time.sleep(min(backoff, 30))
 
         self.stop()
@@ -423,6 +482,7 @@ class DaemonManager:
 # SURVEY RUN
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 def run_survey_batch(max_surveys: int = 3, port: int = CHROME_PORT) -> Dict:
     """Run up to max_surveys surveys. Returns summary."""
     from survey.runner import run_survey, detect_available_surveys
@@ -435,7 +495,7 @@ def run_survey_batch(max_surveys: int = 3, port: int = CHROME_PORT) -> Dict:
         return {"status": "ok", "surveys": [], "message": "No surveys available"}
 
     for i, survey_id in enumerate(available[:max_surveys]):
-        log("survey_start", {"survey_id": survey_id, "index": i+1})
+        log("survey_start", {"survey_id": survey_id, "index": i + 1})
         try:
             result = run_survey(survey_id, port=port)
             results.append(result)
@@ -451,6 +511,7 @@ def run_survey_batch(max_surveys: int = 3, port: int = CHROME_PORT) -> Dict:
 # HEARTBEAT + RECOVERY
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 class DaemonProcess:
     def __init__(self):
         self.running = False
@@ -464,8 +525,8 @@ class DaemonProcess:
             print("[DAEMON] Chrome dead — relaunching via ChromeLauncher...")
             log("chrome_relaunch")
             from survey.chrome import ChromeLauncher
-            result = ChromeLauncher(port=CHROME_PORT).launch_and_verify(
-                url=HEYPIGGY_URL)
+
+            result = ChromeLauncher(port=CHROME_PORT).launch_and_verify(url=HEYPIGGY_URL)
             return result.get("ok", False)
         return True
 
@@ -551,10 +612,10 @@ class DaemonProcess:
                 save_state(state)
 
                 # Sleep before next batch
-                log("batch_complete", {
-                    "surveys_run": len(surveys),
-                    "total_completed": self.surveys_completed
-                })
+                log(
+                    "batch_complete",
+                    {"surveys_run": len(surveys), "total_completed": self.surveys_completed},
+                )
                 time.sleep(300)  # 5 min between batches
 
             except Exception as e:
@@ -563,8 +624,13 @@ class DaemonProcess:
                 time.sleep(30)
 
         self.running = False
-        save_state({"running": False, "stopped_at": datetime.now().isoformat(),
-                    "surveys_completed": self.surveys_completed})
+        save_state(
+            {
+                "running": False,
+                "stopped_at": datetime.now().isoformat(),
+                "surveys_completed": self.surveys_completed,
+            }
+        )
         log("daemon_stopped", {"surveys_completed": self.surveys_completed})
 
     def stop(self) -> None:
@@ -577,6 +643,7 @@ class DaemonProcess:
 # ═══════════════════════════════════════════════════════════════════════════
 # CLI
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 def status() -> None:
     state = load_state()

@@ -83,22 +83,39 @@ BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
   ❌ killall Google Chrome
   ❌ skylight-cli click --element-index
 ================================================================================"""
+
 from __future__ import annotations
 
 import sys
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
 DEV_ROOT = Path("/Users/jeremy/dev")
 
 # --- Generic Templates (identisch für ALLE Repos) ---
 
 REPO_LIST = [
-    "playstealth-cli", "cua-touch", "macos-ax-cli", "screen-follow", "unmask-cli",
-    "stealth-captcha", "secret-manager-cli", "stealth-memory", "stealth-skills",
-    "stealth-guardian", "stealth-axiom", "stealth-core", "stealth-dynamic",
-    "stealth-session", "stealth-sota", "stealth-config", "stealth-cache",
-    "stealth-compressor", "stealth-optimizer", "stealth-batch", "stealth-cost",
+    "playstealth-cli",
+    "cua-touch",
+    "macos-ax-cli",
+    "screen-follow",
+    "unmask-cli",
+    "stealth-captcha",
+    "secret-manager-cli",
+    "stealth-memory",
+    "stealth-skills",
+    "stealth-guardian",
+    "stealth-axiom",
+    "stealth-core",
+    "stealth-dynamic",
+    "stealth-session",
+    "stealth-sota",
+    "stealth-config",
+    "stealth-cache",
+    "stealth-compressor",
+    "stealth-optimizer",
+    "stealth-batch",
+    "stealth-cost",
     "stealth-lora",
 ]
 
@@ -129,17 +146,28 @@ REPO_DESC = {
 }
 
 REPO_LAYER = {
-    "playstealth-cli": "🎭 HIDE", "cua-touch": "🖱️ ACT",
-    "macos-ax-cli": "🔍 SCAN", "screen-follow": "📹 VERIFY",
-    "unmask-cli": "👁️ SENSE", "stealth-captcha": "🔒 CAPTCHA",
-    "secret-manager-cli": "🔑 SECRETS", "stealth-memory": "🧠 Memory",
-    "stealth-skills": "🧩 SKILLS", "stealth-guardian": "🛡️ Guardian",
-    "stealth-axiom": "🧭 Router", "stealth-core": "⚙️ Core",
-    "stealth-dynamic": "🎭 Dynamic", "stealth-session": "💾 Session",
-    "stealth-sota": "💰 SOTA", "stealth-config": "⚙️ Config",
-    "stealth-cache": "💰 Cache", "stealth-compressor": "💰 Compress",
-    "stealth-optimizer": "💰 Optimize", "stealth-batch": "💰 Batch",
-    "stealth-cost": "💰 Cost", "stealth-lora": "💰 LoRA",
+    "playstealth-cli": "🎭 HIDE",
+    "cua-touch": "🖱️ ACT",
+    "macos-ax-cli": "🔍 SCAN",
+    "screen-follow": "📹 VERIFY",
+    "unmask-cli": "👁️ SENSE",
+    "stealth-captcha": "🔒 CAPTCHA",
+    "secret-manager-cli": "🔑 SECRETS",
+    "stealth-memory": "🧠 Memory",
+    "stealth-skills": "🧩 SKILLS",
+    "stealth-guardian": "🛡️ Guardian",
+    "stealth-axiom": "🧭 Router",
+    "stealth-core": "⚙️ Core",
+    "stealth-dynamic": "🎭 Dynamic",
+    "stealth-session": "💾 Session",
+    "stealth-sota": "💰 SOTA",
+    "stealth-config": "⚙️ Config",
+    "stealth-cache": "💰 Cache",
+    "stealth-compressor": "💰 Compress",
+    "stealth-optimizer": "💰 Optimize",
+    "stealth-batch": "💰 Batch",
+    "stealth-cost": "💰 Cost",
+    "stealth-lora": "💰 LoRA",
 }
 
 TODAY = datetime.now().strftime("%Y-%m-%d")
@@ -361,7 +389,7 @@ def make_goal(repo: str) -> str:
 - Code mit W-Fragen-Kommentaren dokumentieren
 - Jeder Command in Registry auffindbar
 
-**Layer**: {REPO_LAYER.get(repo, '?')}
+**Layer**: {REPO_LAYER.get(repo, "?")}
 **Letztes Update**: {TODAY}
 """
 
@@ -439,8 +467,8 @@ def make_agents(repo: str) -> str:
 
 ## Repo-Info
 
-- **Layer**: {REPO_LAYER.get(repo, '?')}
-- **Beschreibung**: {REPO_DESC.get(repo, '?')}
+- **Layer**: {REPO_LAYER.get(repo, "?")}
+- **Beschreibung**: {REPO_DESC.get(repo, "?")}
 - **Pflicht-Doku**: sinrules.md, brain.md, fix.md, successful.md, learn.md, anti-learn.md, banned.md, history.md, registry.md, issues.md, changelog.md, goal.md, roadmap.md
 
 **Letztes Update**: {TODAY}
@@ -474,8 +502,8 @@ def make_brain(repo: str) -> str:
 
 ## Repo-Architektur
 
-- **Layer**: {REPO_LAYER.get(repo, '?')}
-- **Beschreibung**: {REPO_DESC.get(repo, '?')}
+- **Layer**: {REPO_LAYER.get(repo, "?")}
+- **Beschreibung**: {REPO_DESC.get(repo, "?")}
 - **Technologie**: (Dokumentation folgt)
 
 ## Stealth Suite Integration
@@ -749,10 +777,11 @@ def make_readme(repo: str) -> str:
 
 > **← [README.md](README.md) — GitHub-README (Großbuchstaben für GitHub-Kompatibilität)**
 
-{REPO_LAYER.get(repo, '?')} Layer: {REPO_DESC.get(repo, '?')}
+{REPO_LAYER.get(repo, "?")} Layer: {REPO_DESC.get(repo, "?")}
 
 **Doc-Health**: `python3 /Users/jeremy/dev/stealth-runner/scripts/check_doc_health.py --repo {repo}`
 """
+
 
 def make_architecture(repo: str) -> str:
     """
@@ -778,13 +807,14 @@ def make_architecture(repo: str) -> str:
 > **← [brain.md](brain.md) für detaillierte Architektur**
 
 ## Layer
-{REPO_LAYER.get(repo, '?')}
+{REPO_LAYER.get(repo, "?")}
 
 ## Beschreibung
-{REPO_DESC.get(repo, '?')}
+{REPO_DESC.get(repo, "?")}
 
 **Letztes Update**: {TODAY}
 """
+
 
 def make_api(repo: str) -> str:
     """
@@ -805,6 +835,8 @@ def make_api(repo: str) -> str:
     ================================================================================
     """
     return f"""# api.md — API Dokumentation ({repo})\n\n> **← [brain.md](brain.md) für Architektur\n\nDokumentation folgt.\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_usage(repo: str) -> str:
     """
     ================================================================================
@@ -824,6 +856,8 @@ def make_usage(repo: str) -> str:
     ================================================================================
     """
     return f"""# usage.md — Nutzung ({repo})\n\nDokumentation folgt.\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_testing(repo: str) -> str:
     """
     ================================================================================
@@ -843,6 +877,8 @@ def make_testing(repo: str) -> str:
     ================================================================================
     """
     return f"""# testing.md — Tests ({repo})\n\nDokumentation folgt.\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_benchmarks(repo: str) -> str:
     """
     ================================================================================
@@ -862,6 +898,8 @@ def make_benchmarks(repo: str) -> str:
     ================================================================================
     """
     return f"""# benchmarks.md — Benchmarks ({repo})\n\nDokumentation folgt.\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_plan(repo: str) -> str:
     """
     ================================================================================
@@ -881,6 +919,8 @@ def make_plan(repo: str) -> str:
     ================================================================================
     """
     return f"""# plan.md — Umsetzungsplan ({repo})\n\nDokumentation folgt.\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_faq(repo: str) -> str:
     """
     ================================================================================
@@ -900,6 +940,8 @@ def make_faq(repo: str) -> str:
     ================================================================================
     """
     return f"""# faq.md — FAQ ({repo})\n\nDokumentation folgt.\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_security(repo: str) -> str:
     """
     ================================================================================
@@ -920,6 +962,8 @@ def make_security(repo: str) -> str:
     ================================================================================
     """
     return f"""# security.md — Sicherheit ({repo})\n\n> **← [SECURITY.md](SECURITY.md) — GitHub-SECURITY (Großbuchstaben)\n\n- NIE Secrets in Code speichern\n- NIE `pkill -f "heypiggy-bot"`\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_contributing(repo: str) -> str:
     """
     ================================================================================
@@ -940,6 +984,8 @@ def make_contributing(repo: str) -> str:
     ================================================================================
     """
     return f"""# contributing.md — Beitragen ({repo})\n\n> **← [CONTRIBUTING.md](CONTRIBUTING.md) — GitHub-CONTRIBUTING (Großbuchstaben)\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_troubleshooting(repo: str) -> str:
     """
     ================================================================================
@@ -959,6 +1005,8 @@ def make_troubleshooting(repo: str) -> str:
     ================================================================================
     """
     return f"""# troubleshooting.md — Troubleshooting ({repo})\n\nDokumentation folgt.\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_support(repo: str) -> str:
     """
     ================================================================================
@@ -978,6 +1026,8 @@ def make_support(repo: str) -> str:
     ================================================================================
     """
     return f"""# support.md — Support ({repo})\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_design(repo: str) -> str:
     """
     ================================================================================
@@ -997,6 +1047,8 @@ def make_design(repo: str) -> str:
     ================================================================================
     """
     return f"""# design.md — Design ({repo})\n\nDokumentation folgt.\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_commands(repo: str) -> str:
     """
     ================================================================================
@@ -1016,6 +1068,8 @@ def make_commands(repo: str) -> str:
     ================================================================================
     """
     return f"""# commands.md — Command Index ({repo})\n\n> **→ [registry.md](registry.md) für Master-Registry\n\nDokumentation folgt.\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_registry_perception(repo: str) -> str:
     """
     ================================================================================
@@ -1036,6 +1090,8 @@ def make_registry_perception(repo: str) -> str:
     ================================================================================
     """
     return f"""# registry-perception.md — Perception ({repo})\n\n> **→ [stealth-runner/registry-perception.md](https://github.com/OpenSIN-AI/stealth-runner/blob/main/registry-perception.md)**\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_registry_actuation(repo: str) -> str:
     """
     ================================================================================
@@ -1056,6 +1112,8 @@ def make_registry_actuation(repo: str) -> str:
     ================================================================================
     """
     return f"""# registry-actuation.md — Actuation ({repo})\n\n> **→ [stealth-runner/registry-actuation.md](https://github.com/OpenSIN-AI/stealth-runner/blob/main/registry-actuation.md)**\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_registry_graphify(repo: str) -> str:
     """
     ================================================================================
@@ -1075,6 +1133,8 @@ def make_registry_graphify(repo: str) -> str:
     ================================================================================
     """
     return f"""# registry-graphify.md — Graphify ({repo})\n\n> **→ [stealth-runner/registry-graphify.md](https://github.com/OpenSIN-AI/stealth-runner/blob/main/registry-graphify.md)**\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_registry_skills(repo: str) -> str:
     """
     ================================================================================
@@ -1094,6 +1154,8 @@ def make_registry_skills(repo: str) -> str:
     ================================================================================
     """
     return f"""# registry-skills.md — Skills ({repo})\n\n> **→ [stealth-runner/registry-skills.md](https://github.com/OpenSIN-AI/stealth-runner/blob/main/registry-skills.md)**\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_registry_credentials(repo: str) -> str:
     """
     ================================================================================
@@ -1113,6 +1175,8 @@ def make_registry_credentials(repo: str) -> str:
     ================================================================================
     """
     return f"""# registry-credentials.md — Credentials ({repo})\n\n> **→ [stealth-runner/registry-credentials.md](https://github.com/OpenSIN-AI/stealth-runner/blob/main/registry-credentials.md)**\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_graphify(repo: str) -> str:
     """
     ================================================================================
@@ -1132,6 +1196,8 @@ def make_graphify(repo: str) -> str:
     ================================================================================
     """
     return f"""# graphify.md — Graphify ({repo})\n\n> **→ [stealth-runner/graphify.md](https://github.com/OpenSIN-AI/stealth-runner/blob/main/graphify.md)**\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_graph_report(repo: str) -> str:
     """
     ================================================================================
@@ -1151,6 +1217,8 @@ def make_graph_report(repo: str) -> str:
     ================================================================================
     """
     return f"""# graph-report.md — Graph Report ({repo})\n\n> **→ [stealth-runner/graph-report.md](https://github.com/OpenSIN-AI/stealth-runner/blob/main/graph-report.md)**\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_infisical(repo: str) -> str:
     """
     ================================================================================
@@ -1170,6 +1238,8 @@ def make_infisical(repo: str) -> str:
     ================================================================================
     """
     return f"""# infisical.md — Infisical ({repo})\n\n> **→ [stealth-runner/infisical.md](https://github.com/OpenSIN-AI/stealth-runner/blob/main/infisical.md)**\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_tool_registry(repo: str) -> str:
     """
     ================================================================================
@@ -1189,6 +1259,8 @@ def make_tool_registry(repo: str) -> str:
     ================================================================================
     """
     return f"""# tool-registry.md — Tool Registry ({repo})\n\n> **→ [stealth-runner/tool-registry.md](https://github.com/OpenSIN-AI/stealth-runner/blob/main/tool-registry.md)**\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_tool_manifest(repo: str) -> str:
     """
     ================================================================================
@@ -1208,6 +1280,8 @@ def make_tool_manifest(repo: str) -> str:
     ================================================================================
     """
     return f"""# tool-manifest.md — Tool Manifest ({repo})\n\n> **→ [stealth-runner/tool-manifest.md](https://github.com/OpenSIN-AI/stealth-runner/blob/main/tool-manifest.md)**\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_opencode(repo: str) -> str:
     """
     ================================================================================
@@ -1227,6 +1301,8 @@ def make_opencode(repo: str) -> str:
     ================================================================================
     """
     return f"""# opencode.md — OpenCode ({repo})\n\n> **→ [stealth-runner/opencode.md](https://github.com/OpenSIN-AI/stealth-runner/blob/main/opencode.md)**\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_state(repo: str) -> str:
     """
     ================================================================================
@@ -1246,6 +1322,8 @@ def make_state(repo: str) -> str:
     ================================================================================
     """
     return f"""# state.md — Zustand ({repo})\n\nDokumentation folgt.\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_registry_google(repo: str) -> str:
     """
     ================================================================================
@@ -1265,6 +1343,8 @@ def make_registry_google(repo: str) -> str:
     ================================================================================
     """
     return f"""# registry-google.md — Google ({repo})\n\n> **→ [stealth-runner/registry-google.md](https://github.com/OpenSIN-AI/stealth-runner/blob/main/registry-google.md)**\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_registry_surveys(repo: str) -> str:
     """
     ================================================================================
@@ -1284,6 +1364,8 @@ def make_registry_surveys(repo: str) -> str:
     ================================================================================
     """
     return f"""# registry-surveys.md — Surveys ({repo})\n\n> **→ [stealth-runner/registry-surveys.md](https://github.com/OpenSIN-AI/stealth-runner/blob/main/registry-surveys.md)**\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_registry_macos(repo: str) -> str:
     """
     ================================================================================
@@ -1304,6 +1386,8 @@ def make_registry_macos(repo: str) -> str:
     ================================================================================
     """
     return f"""# registry-macos.md — macOS ({repo})\n\n> **→ [stealth-runner/registry-macos.md](https://github.com/OpenSIN-AI/stealth-runner/blob/main/registry-macos.md)**\n\n**Letztes Update**: {TODAY}\n"""
+
+
 def make_graph_json(repo: str) -> str:
     """
     ================================================================================
@@ -1322,7 +1406,9 @@ def make_graph_json(repo: str) -> str:
       - Keine (pure function)
     ================================================================================
     """
-    return '{}'
+    return "{}"
+
+
 def make_manifest_json(repo: str) -> str:
     """
     ================================================================================
@@ -1341,7 +1427,9 @@ def make_manifest_json(repo: str) -> str:
       - Keine (pure function)
     ================================================================================
     """
-    return '{}'
+    return "{}"
+
+
 def make_opencode_json(repo: str) -> str:
     """
     ================================================================================
@@ -1450,13 +1538,16 @@ def generate_repo(repo_name: str, dry_run: bool = False) -> tuple[int, int]:
     if not repo_path.is_dir():
         # Try find
         import subprocess
+
         result = subprocess.run(
             ["find", str(DEV_ROOT), "-maxdepth", "3", "-name", repo_name, "-type", "d"],
-            capture_output=True, text=True, timeout=5
+            capture_output=True,
+            text=True,
+            timeout=5,
         )
-        for line in result.stdout.strip().split('\n'):
+        for line in result.stdout.strip().split("\n"):
             p = Path(line)
-            if p.is_dir() and '.git' not in str(p):
+            if p.is_dir() and ".git" not in str(p):
                 repo_path = p
                 break
         else:

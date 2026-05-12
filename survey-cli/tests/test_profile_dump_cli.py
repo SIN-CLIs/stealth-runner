@@ -39,7 +39,6 @@ from survey.profile_loader import ProfileLoader
 
 
 class TestCounterCorrectness(unittest.TestCase):
-
     def setUp(self):
         ProfileLoader.reset_telemetry()
         self.profile = ProfileLoader.load_profile(profile_name="jeremy_schulze")
@@ -62,20 +61,16 @@ class TestCounterCorrectness(unittest.TestCase):
         self.assertGreaterEqual(bucket["match_hits"], 5)
         self.assertGreaterEqual(bucket["match_misses"], 3)
         per = bucket["per_key_hits"]
-        for key in ("city", "postal_code", "email", "first_name",
-                    "birth_year"):
-            self.assertGreaterEqual(per.get(key, 0), 1,
-                                    f"per_key_hits missing {key}: {per}")
+        for key in ("city", "postal_code", "email", "first_name", "birth_year"):
+            self.assertGreaterEqual(per.get(key, 0), 1, f"per_key_hits missing {key}: {per}")
 
 
 class TestResetTelemetry(unittest.TestCase):
-
     def test_reset_clears(self):
         profile = ProfileLoader.load_profile(profile_name="jeremy_schulze")
         profile["_loader_name"] = "jeremy_schulze"
         ProfileLoader.match_field("textbox", "Stadt", profile)
-        self.assertGreater(
-            ProfileLoader.telemetry()["jeremy_schulze"]["match_hits"], 0)
+        self.assertGreater(ProfileLoader.telemetry()["jeremy_schulze"]["match_hits"], 0)
         ProfileLoader.reset_telemetry()
         self.assertEqual(ProfileLoader.telemetry(), {})
 
@@ -101,9 +96,13 @@ class TestJsonlOutput(unittest.TestCase):
             out_path = os.path.join(td, "telem.jsonl")
             with open(out_path, "w") as f:
                 for persona, bucket in ProfileLoader.telemetry().items():
-                    f.write(json.dumps(
-                        {"persona": persona, **bucket}, ensure_ascii=False,
-                    ) + "\n")
+                    f.write(
+                        json.dumps(
+                            {"persona": persona, **bucket},
+                            ensure_ascii=False,
+                        )
+                        + "\n"
+                    )
 
             with open(out_path) as f:
                 lines = [ln for ln in f.read().splitlines() if ln.strip()]

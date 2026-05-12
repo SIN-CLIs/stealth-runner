@@ -25,6 +25,4 @@ BANNED METHODS — NIEMALS VERWENDEN:
 
 # daemon submodule — auto-discovered by package loader
 
-
-
 __all__ = ["daemon"]

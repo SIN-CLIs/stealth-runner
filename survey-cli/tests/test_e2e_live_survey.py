@@ -111,30 +111,20 @@ def test_tier3_real_heypiggy(tier3_config: Tier3Config):
 
     if final.status == "completed":
         # Balance should increase
-        assert final.balance_after > final.balance_before, (
-            "Balance should increase on completion"
-        )
+        assert final.balance_after > final.balance_before, "Balance should increase on completion"
 
         # Check no disqualifying answers were selected
         disqualifying = [
-            e
-            for e in getattr(final, "errors", [])
-            if "disqualifying_answer" in str(e)
+            e for e in getattr(final, "errors", []) if "disqualifying_answer" in str(e)
         ]
-        assert not disqualifying, (
-            f"No disqualifying answers should be selected: {disqualifying}"
-        )
+        assert not disqualifying, f"No disqualifying answers should be selected: {disqualifying}"
 
     # 5) No screenshots on success
-    screenshot_dir = os.environ.get(
-        "SCREENSHOT_DIR", os.path.expanduser("~/.stealth/screenshots")
-    )
+    screenshot_dir = os.environ.get("SCREENSHOT_DIR", os.path.expanduser("~/.stealth/screenshots"))
     if os.path.exists(screenshot_dir):
         files = os.listdir(screenshot_dir)
         for f in files:
-            assert "e2e-tier3-live" not in f, (
-                f"No failures expected, but screenshot found: {f}"
-            )
+            assert "e2e-tier3-live" not in f, f"No failures expected, but screenshot found: {f}"
 
 
 @pytest.mark.skip(reason="Tier 3 — manual observability test")

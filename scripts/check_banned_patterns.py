@@ -73,32 +73,41 @@ import io
 import re
 import sys
 import tokenize
+from collections.abc import Iterable
 from pathlib import Path
-from typing import Iterable
 
 # Each entry: (compiled-regex, human-readable reason).
 # Patterns are matched against the MASKED source (strings + comments
 # blanked out). NEVER add a pattern that depends on string-content;
 # such a pattern would be silently ignored by the masker.
 BANNED_PATTERNS: list[tuple[re.Pattern[str], str]] = [
-    (re.compile(r'pkill\s+-f\s+["\']*Google Chrome'),
-     "pkill -f 'Google Chrome' kills USER Chrome"),
-    (re.compile(r'killall\s+Google Chrome'),
-     "killall Google Chrome kills ALL Chrome instances"),
-    (re.compile(r'os\.kill\([^,]+,\s*9\)\s*(?!#.*SIGKILL.*fallback)'),
-     "os.kill(pid, 9) blocks graceful shutdown - use SIGTERM first"),
-    (re.compile(r'--remote-allow-origins=\*(?!")'),
-     "--remote-allow-origins=* without quotes breaks in zsh"),
-    (re.compile(r'/tmp/heypiggy-bot\b(?!-)'),
-     "/tmp/heypiggy-bot (fixed profile) corrupts after restart"),
-    (re.compile(r'playstealth\s+launch'),
-     "playstealth launch does NOT set --force-renderer-accessibility"),
-    (re.compile(r'webauto-nodriver'),
-     "webauto-nodriver is ABSOLUT BANNED"),
-    (re.compile(r'skylight-cli\s+click.*--element-index'),
-     "skylight-cli click --element-index is unstable"),
-    (re.compile(r'subprocess\.Popen.*Chrome.*(?!remote-allow-origins=\\"\*\\")'),
-     'Chrome MUST be launched with --remote-allow-origins="*" (with quotes!)'),
+    (re.compile(r'pkill\s+-f\s+["\']*Google Chrome'), "pkill -f 'Google Chrome' kills USER Chrome"),
+    (re.compile(r"killall\s+Google Chrome"), "killall Google Chrome kills ALL Chrome instances"),
+    (
+        re.compile(r"os\.kill\([^,]+,\s*9\)\s*(?!#.*SIGKILL.*fallback)"),
+        "os.kill(pid, 9) blocks graceful shutdown - use SIGTERM first",
+    ),
+    (
+        re.compile(r'--remote-allow-origins=\*(?!")'),
+        "--remote-allow-origins=* without quotes breaks in zsh",
+    ),
+    (
+        re.compile(r"/tmp/heypiggy-bot\b(?!-)"),
+        "/tmp/heypiggy-bot (fixed profile) corrupts after restart",
+    ),
+    (
+        re.compile(r"playstealth\s+launch"),
+        "playstealth launch does NOT set --force-renderer-accessibility",
+    ),
+    (re.compile(r"webauto-nodriver"), "webauto-nodriver is ABSOLUT BANNED"),
+    (
+        re.compile(r"skylight-cli\s+click.*--element-index"),
+        "skylight-cli click --element-index is unstable",
+    ),
+    (
+        re.compile(r'subprocess\.Popen.*Chrome.*(?!remote-allow-origins=\\"\*\\")'),
+        'Chrome MUST be launched with --remote-allow-origins="*" (with quotes!)',
+    ),
 ]
 
 ROOT = Path(__file__).resolve().parent.parent
@@ -136,10 +145,16 @@ def _mask_strings_and_comments(source: str) -> str:
             # Multi-line string/comment: blank the tail of start line,
             # entire middle lines, and head of end line.
             head = lines[start_row - 1]
-            lines[start_row - 1] = head[:start_col] + " " * (len(head) - start_col - (1 if head.endswith("\n") else 0)) + ("\n" if head.endswith("\n") else "")
+            lines[start_row - 1] = (
+                head[:start_col]
+                + " " * (len(head) - start_col - (1 if head.endswith("\n") else 0))
+                + ("\n" if head.endswith("\n") else "")
+            )
             for r in range(start_row, end_row - 1):
                 # full middle line; preserve trailing newline
-                lines[r] = (" " * (len(lines[r]) - (1 if lines[r].endswith("\n") else 0))) + ("\n" if lines[r].endswith("\n") else "")
+                lines[r] = (" " * (len(lines[r]) - (1 if lines[r].endswith("\n") else 0))) + (
+                    "\n" if lines[r].endswith("\n") else ""
+                )
             tail = lines[end_row - 1]
             lines[end_row - 1] = (" " * end_col) + tail[end_col:]
 

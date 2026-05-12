@@ -82,11 +82,13 @@ class RuntimeHealth:
         """Check if Chrome is running on CDP port."""
         try:
             import urllib.request
+
             url = f"http://localhost:{self.cdp_port}/json"
             with urllib.request.urlopen(url, timeout=3) as resp:
                 tabs = json.loads(resp.read())
                 bot_tabs = [
-                    t for t in tabs
+                    t
+                    for t in tabs
                     if "/tmp/heypiggy" in t.get("webSocketDebuggerUrl", "")
                     or "heypiggy" in t.get("title", "").lower()
                 ]
@@ -156,6 +158,7 @@ def check_and_alert() -> Optional[Dict[str, Any]]:
     snapshot = health.to_dict()
     if not snapshot["healthy"]:
         import sys
+
         for issue in snapshot["issues"]:
             print(f"[HEALTH] ⚠️  {issue}", file=sys.stderr, flush=True)
     return snapshot

@@ -27,7 +27,10 @@ if _ROOT not in sys.path:
     sys.path.insert(0, _ROOT)
 
 from survey.learn import (  # noqa: E402
-    suggest_family, aggregate_misses, write_suggestions, normalize_label,
+    suggest_family,
+    aggregate_misses,
+    write_suggestions,
+    normalize_label,
 )
 from survey.learn import cli as learn_cli  # noqa: E402
 
@@ -65,19 +68,16 @@ class SuggesterTest(unittest.TestCase):
 
 
 class NormalizeLabelTest(unittest.TestCase):
-
     def test_strip_required_marker(self) -> None:
         self.assertEqual(normalize_label("  Postleitzahl *  "), "postleitzahl")
         self.assertEqual(normalize_label("PLZ (Pflicht)"), "plz")
         self.assertEqual(normalize_label("Vorname (required)"), "vorname")
 
     def test_multi_whitespace(self) -> None:
-        self.assertEqual(normalize_label("Erste\t\tStrasse"),
-                         "erste strasse")
+        self.assertEqual(normalize_label("Erste\t\tStrasse"), "erste strasse")
 
 
 class AggregatorTest(unittest.TestCase):
-
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
         self.log_dir = self.tmp.name
@@ -119,10 +119,8 @@ class AggregatorTest(unittest.TestCase):
         self.assertEqual(sug[0]["normalized_label"], "faxnummer")
 
     def test_persona_filter(self) -> None:
-        sug_match = aggregate_misses(self.log_dir, min_count=1,
-                                     persona="jeremy_schulze")
-        sug_none = aggregate_misses(self.log_dir, min_count=1,
-                                    persona="does_not_exist")
+        sug_match = aggregate_misses(self.log_dir, min_count=1, persona="jeremy_schulze")
+        sug_none = aggregate_misses(self.log_dir, min_count=1, persona="does_not_exist")
         self.assertGreater(len(sug_match), 0)
         self.assertEqual(len(sug_none), 0)
 
@@ -137,19 +135,23 @@ class AggregatorTest(unittest.TestCase):
 
 
 class CLITest(unittest.TestCase):
-
     def setUp(self) -> None:
         self.tmp = tempfile.TemporaryDirectory()
         self.log_dir = self.tmp.name
         path = os.path.join(self.log_dir, "matcher-telemetry-cli.jsonl")
         with open(path, "w") as f:
-            f.write(json.dumps({
-                "persona": "jeremy_schulze",
-                "miss_labels": [
-                    {"role": "textbox", "label": "Faxnummer"},
-                    {"role": "textbox", "label": "Faxnummer"},
-                ],
-            }) + "\n")
+            f.write(
+                json.dumps(
+                    {
+                        "persona": "jeremy_schulze",
+                        "miss_labels": [
+                            {"role": "textbox", "label": "Faxnummer"},
+                            {"role": "textbox", "label": "Faxnummer"},
+                        ],
+                    }
+                )
+                + "\n"
+            )
 
     def tearDown(self) -> None:
         self.tmp.cleanup()
@@ -158,12 +160,17 @@ class CLITest(unittest.TestCase):
         out_path = os.path.join(self.log_dir, "suggestions.jsonl")
         buf = io.StringIO()
         with redirect_stdout(buf):
-            rc = learn_cli.main([
-                "aggregate",
-                "--logs", self.log_dir,
-                "--out", out_path,
-                "--min-count", "1",
-            ])
+            rc = learn_cli.main(
+                [
+                    "aggregate",
+                    "--logs",
+                    self.log_dir,
+                    "--out",
+                    out_path,
+                    "--min-count",
+                    "1",
+                ]
+            )
         self.assertEqual(rc, 0)
         self.assertIn("wrote", buf.getvalue())
         self.assertTrue(os.path.exists(out_path))
@@ -173,26 +180,35 @@ class CLITest(unittest.TestCase):
 
     def test_cmd_review_dry_run(self) -> None:
         out_path = os.path.join(self.log_dir, "suggestions.jsonl")
-        learn_cli.main([
-            "aggregate",
-            "--logs", self.log_dir,
-            "--out", out_path,
-            "--min-count", "1",
-        ])
+        learn_cli.main(
+            [
+                "aggregate",
+                "--logs",
+                self.log_dir,
+                "--out",
+                out_path,
+                "--min-count",
+                "1",
+            ]
+        )
         buf = io.StringIO()
         with redirect_stdout(buf):
-            rc = learn_cli.main([
-                "review",
-                "--logs", self.log_dir,
-                "--input", out_path,
-                "--dry-run",
-            ])
+            rc = learn_cli.main(
+                [
+                    "review",
+                    "--logs",
+                    self.log_dir,
+                    "--input",
+                    out_path,
+                    "--dry-run",
+                ]
+            )
         self.assertEqual(rc, 0)
         self.assertIn("review done", buf.getvalue())
         # dry-run schreibt KEINE accepted/rejected Files
-        self.assertFalse(os.path.exists(
-            os.path.join(self.log_dir, "pattern-suggestions-accepted.jsonl")
-        ))
+        self.assertFalse(
+            os.path.exists(os.path.join(self.log_dir, "pattern-suggestions-accepted.jsonl"))
+        )
 
 
 if __name__ == "__main__":

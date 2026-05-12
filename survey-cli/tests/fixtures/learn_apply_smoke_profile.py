@@ -24,10 +24,12 @@ class ProfileLoader:
     FIELD_PATTERNS: List[Tuple[str, "re.Pattern[str]"]] = [
         # Email — single pattern for smoke.
         ("email", re.compile(r"(e[\s\-]?mail|mailadresse)", re.I)),
-
         # Phone — the smoke test injects "|mobilnummer" here.
-        ("phone", re.compile(
-            r"(telefon|handy|phone)",
-            re.I,
-        )),
+        (
+            "phone",
+            re.compile(
+                r"(telefon|handy|phone)",
+                re.I,
+            ),
+        ),
     ]

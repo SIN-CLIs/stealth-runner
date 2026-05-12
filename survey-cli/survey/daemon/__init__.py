@@ -11,6 +11,7 @@ Core Components:
     - BrowserDriver: Playwright-based stealth driver
     - SurveyDaemon: macOS LaunchAgent daemon
 """
+
 from .survey_agent_graph import SurveyAgentGraph
 from .survey_daemon import SurveyDaemon, install_launchagent, uninstall_launchagent
 from .survey_parser import SurveyParser, Question, QuestionType, ParsedSurvey
@@ -79,4 +80,3 @@ __all__ = [
 ]
 
 __version__ = "1.0.0"
-

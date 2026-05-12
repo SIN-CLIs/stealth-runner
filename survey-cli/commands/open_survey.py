@@ -36,7 +36,11 @@ NUTZT:
 - CDP WS: Page.navigate (Navigieren nach Cookie-Injection)
 """
 
-import asyncio, json, subprocess, os, sys
+import asyncio
+import json
+import subprocess
+import os
+import sys
 from urllib.parse import urlparse, parse_qs, urlunparse
 
 CHROME_PORT = 9999
@@ -59,7 +63,8 @@ def load_heypiggy_cookies():
         }
         for c in data.get("cookies", [])
         if "heypiggy" in c.get("domain", "").lower()
-        and c.get("value") and c.get("value") != "deleted"
+        and c.get("value")
+        and c.get("value") != "deleted"
     ]
 
 
@@ -81,7 +86,11 @@ async def _recv_target(ws, target_id, timeout=15):
 
 async def _eval_js(ws, msg_id, expression, timeout=20):
     """Evaluiere JS auf WebSocket und returne result.value."""
-    await ws.send(json.dumps({"id": msg_id, "method": "Runtime.evaluate", "params": {"expression": expression}}))
+    await ws.send(
+        json.dumps(
+            {"id": msg_id, "method": "Runtime.evaluate", "params": {"expression": expression}}
+        )
+    )
     msg = await _recv_target(ws, msg_id, timeout)
     if msg:
         return msg.get("result", {}).get("result", {}).get("value", None)
@@ -103,6 +112,7 @@ async def get_survey_url(dashboard_ws: str) -> dict:
         }
     """
     import websockets
+
     async with websockets.connect(dashboard_ws) as ws:
         # Runtime.enable noetig fuer JS click handlers
         await ws.send(json.dumps({"id": 1, "method": "Runtime.enable"}))
@@ -120,7 +130,10 @@ async def get_survey_url(dashboard_ws: str) -> dict:
         print(f"    [MODAL] Open: {modal_open}")
 
         if not modal_open:
-            return {"status": "error", "reason": "Modal nicht offen — find_survey muss zuerst clickSurvey ausfuehren"}
+            return {
+                "status": "error",
+                "reason": "Modal nicht offen — find_survey muss zuerst clickSurvey ausfuehren",
+            }
 
         # Lese last_link + subids
         last_link = await _eval_js(ws, 5, "window.last_link", 10)
@@ -136,13 +149,30 @@ async def get_survey_url(dashboard_ws: str) -> dict:
         qs["subid_2"] = [subid_cpx]
         qs["subid_1"] = [subid_cpx1]
         new_query = "&".join(f"{k}={v[0]}" for k, v in qs.items())
-        survey_url = urlunparse((parsed.scheme, parsed.netloc, parsed.path, parsed.params, new_query, parsed.fragment))
+        survey_url = urlunparse(
+            (parsed.scheme, parsed.netloc, parsed.path, parsed.params, new_query, parsed.fragment)
+        )
 
         # Provider erkennen (URL-basiert)
         provider = "unknown"
-        for p in ["purespectrum", "cint", "toluna", "qualtrics", "samplicio", "ipsos", "nfield", "samplicious", "potloc", "samplicio.us", "click.cpx", "screener.purespectrum"]:
+        for p in [
+            "purespectrum",
+            "cint",
+            "toluna",
+            "qualtrics",
+            "samplicio",
+            "ipsos",
+            "nfield",
+            "samplicious",
+            "potloc",
+            "samplicio.us",
+            "click.cpx",
+            "screener.purespectrum",
+        ]:
             if p in survey_url.lower():
-                provider = p.replace(".us", "").replace(".cpx", "").replace("screener.", "").split(".")[0]
+                provider = (
+                    p.replace(".us", "").replace(".cpx", "").replace("screener.", "").split(".")[0]
+                )
                 break
 
         print(f"    [URL] last_link: {last_link[:60]}...")
@@ -163,6 +193,7 @@ async def get_survey_url(dashboard_ws: str) -> dict:
 async def click_start_button(dashboard_ws: str) -> dict:
     """Klicke 'Umfrage starten' Button im Modal (schliesst Modal)."""
     import websockets
+
     async with websockets.connect(dashboard_ws) as ws:
         await ws.send(json.dumps({"id": 1, "method": "Runtime.enable"}))
         await asyncio.sleep(0.5)
@@ -172,7 +203,10 @@ async def click_start_button(dashboard_ws: str) -> dict:
             except:
                 break
 
-        result = await _eval_js(ws, 2, """
+        result = await _eval_js(
+            ws,
+            2,
+            """
 (function() {
     var btns = [...document.querySelectorAll('button')];
     var btn = btns.find(function(b) {
@@ -181,7 +215,9 @@ async def click_start_button(dashboard_ws: str) -> dict:
     if (btn) { btn.click(); return 'CLICKED'; }
     return 'NOT_FOUND';
 })()
-""", 10)
+""",
+            10,
+        )
 
         await asyncio.sleep(2)
         return {"status": "ok" if result == "CLICKED" else "error", "result": result}
@@ -203,7 +239,9 @@ async def create_survey_tab(survey_url: str) -> dict:
     try:
         result = subprocess.run(
             ["curl", "-s", "-X", "PUT", f"http://127.0.0.1:{CHROME_PORT}/json/new?{survey_url}"],
-            capture_output=True, text=True, timeout=30
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
         target = json.loads(result.stdout)
         tab_ws = target.get("webSocketDebuggerUrl", "")
@@ -234,25 +272,39 @@ async def inject_cookies_and_navigate(tab_ws: str, survey_url: str, cookies: lis
         }
     """
     import websockets
+
     async with websockets.connect(tab_ws) as ws:
         # KEINE Runtime.enable / Network.enable hier!
         # Nur inject cookies, dann navigate
 
         # Inject 7 HeyPiggy Cookies
-        await ws.send(json.dumps({"id": 1, "method": "Network.setCookies", "params": {"cookies": cookies}}))
+        await ws.send(
+            json.dumps({"id": 1, "method": "Network.setCookies", "params": {"cookies": cookies}})
+        )
         msg = await _recv_target(ws, 1, 10)
         print(f"    [COOKIES] Injected: {len(cookies)}, result={msg}")
 
         await asyncio.sleep(2)
 
         # Navigate to survey URL
-        await ws.send(json.dumps({"id": 2, "method": "Page.navigate", "params": {"url": survey_url}}))
+        await ws.send(
+            json.dumps({"id": 2, "method": "Page.navigate", "params": {"url": survey_url}})
+        )
         await asyncio.sleep(10)
 
         # Get body text (collect messages 15s)
         body = None
-        await ws.send(json.dumps({"id": 3, "method": "Runtime.evaluate",
-                                  "params": {"expression": "document.body ? document.body.innerText.substring(0, 500) : 'NO_BODY'"}}))
+        await ws.send(
+            json.dumps(
+                {
+                    "id": 3,
+                    "method": "Runtime.evaluate",
+                    "params": {
+                        "expression": "document.body ? document.body.innerText.substring(0, 500) : 'NO_BODY'"
+                    },
+                }
+            )
+        )
         for _ in range(50):
             try:
                 msg = json.loads(await asyncio.wait_for(ws.recv(), timeout=5))
@@ -264,8 +316,15 @@ async def inject_cookies_and_navigate(tab_ws: str, survey_url: str, cookies: lis
 
         # Get URL
         url = None
-        await ws.send(json.dumps({"id": 4, "method": "Runtime.evaluate",
-                                  "params": {"expression": "window.location.href"}}))
+        await ws.send(
+            json.dumps(
+                {
+                    "id": 4,
+                    "method": "Runtime.evaluate",
+                    "params": {"expression": "window.location.href"},
+                }
+            )
+        )
         for _ in range(30):
             try:
                 msg = json.loads(await asyncio.wait_for(ws.recv(), timeout=5))
@@ -302,9 +361,9 @@ async def open_survey(dashboard_ws: str) -> dict:
             "completion": bool,      # Survey komplett?
         }
     """
-    print(f"\n{'='*50}")
-    print(f"  OPEN SURVEY")
-    print(f"{'='*50}")
+    print(f"\n{'=' * 50}")
+    print("  OPEN SURVEY")
+    print(f"{'=' * 50}")
 
     # 1. Get survey URL + subids
     url_info = await get_survey_url(dashboard_ws)
@@ -334,8 +393,13 @@ async def open_survey(dashboard_ws: str) -> dict:
 
     # 6. Detect screen-out / completion
     body_lower = (nav_info.get("body") or "").lower()
-    screen_out = any(kw in body_lower for kw in ["umfrage passt nicht", "leider", "nicht geeignet", "vorzeitig beendet"])
-    completion = any(kw in body_lower for kw in ["vielen dank", "thank you", "abgeschlossen", "fertig"])
+    screen_out = any(
+        kw in body_lower
+        for kw in ["umfrage passt nicht", "leider", "nicht geeignet", "vorzeitig beendet"]
+    )
+    completion = any(
+        kw in body_lower for kw in ["vielen dank", "thank you", "abgeschlossen", "fertig"]
+    )
 
     print(f"    [DETECT] screen_out={screen_out}, completion={completion}")
 
@@ -366,9 +430,9 @@ if __name__ == "__main__":
 
     result = asyncio.run(open_survey(check["tab_ws"]))
 
-    print(f"\n{'='*50}")
+    print(f"\n{'=' * 50}")
     if result["status"] == "ok":
-        print(f"  Status: OK ✓")
+        print("  Status: OK ✓")
         print(f"  Provider: {result.get('provider')}")
         print(f"  Tab WS: {result.get('tab_ws', '')[:60]}...")
         print(f"  URL: {result.get('url', '')[:80]}")
@@ -376,6 +440,6 @@ if __name__ == "__main__":
         print(f"  Screen-out: {result.get('screen_out')}")
         print(f"  Completion: {result.get('completion')}")
     else:
-        print(f"  Status: ERROR")
+        print("  Status: ERROR")
         print(f"  Reason: {result.get('reason')}")
-    print(f"{'='*50}")
+    print(f"{'=' * 50}")

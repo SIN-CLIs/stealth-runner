@@ -1,6 +1,6 @@
 """Tests fuer core/error_handler.py — ErrorContext, ErrorHandler, ErrorSeverity."""
-import pytest
-from core.error_handler import ErrorHandler, ErrorContext, ErrorSeverity
+
+from core.error_handler import ErrorContext, ErrorHandler, ErrorSeverity
 
 
 class TestErrorContext:

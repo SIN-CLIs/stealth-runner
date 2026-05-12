@@ -20,7 +20,6 @@ from __future__ import annotations
 import json
 import sys
 from pathlib import Path
-from typing import Any
 from unittest import mock
 
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -43,6 +42,7 @@ class _FakeCDP:
         self.calls.append((method, params))
         if method in self.fail_methods:
             from survey.cdp_client import CDPError
+
             raise CDPError(f"mocked failure: {method}")
         return {}
 
@@ -136,10 +136,13 @@ def test_standalone_foreground_sends_bringtofront():
     from survey import cua_fallback
 
     fake = _FakeWS(replies=[{"id": 1, "result": {}}])
-    with mock.patch.object(cua_fallback, "__name__", cua_fallback.__name__), \
-            mock.patch.dict(sys.modules, {"websocket": mock.MagicMock(
-                create_connection=mock.MagicMock(return_value=fake)
-            )}):
+    with (
+        mock.patch.object(cua_fallback, "__name__", cua_fallback.__name__),
+        mock.patch.dict(
+            sys.modules,
+            {"websocket": mock.MagicMock(create_connection=mock.MagicMock(return_value=fake))},
+        ),
+    ):
         ok = cua_fallback.bring_cdp_tab_to_foreground(
             "ws://127.0.0.1:9999/devtools/page/abc",
         )
@@ -153,13 +156,16 @@ def test_standalone_foreground_with_target_id_sends_activate_target():
     """Mit target_id wird AUCH Target.activateTarget gesendet."""
     from survey import cua_fallback
 
-    fake = _FakeWS(replies=[
-        {"id": 1, "result": {}},
-        {"id": 2, "result": {}},
-    ])
-    with mock.patch.dict(sys.modules, {"websocket": mock.MagicMock(
-            create_connection=mock.MagicMock(return_value=fake)
-    )}):
+    fake = _FakeWS(
+        replies=[
+            {"id": 1, "result": {}},
+            {"id": 2, "result": {}},
+        ]
+    )
+    with mock.patch.dict(
+        sys.modules,
+        {"websocket": mock.MagicMock(create_connection=mock.MagicMock(return_value=fake))},
+    ):
         ok = cua_fallback.bring_cdp_tab_to_foreground(
             "ws://127.0.0.1:9999/devtools/page/abc",
             target_id="TARGET-XYZ",
@@ -181,9 +187,10 @@ def test_standalone_foreground_swallows_ws_errors():
     def boom(*a, **kw):
         raise OSError("connection refused")
 
-    with mock.patch.dict(sys.modules, {"websocket": mock.MagicMock(
-            create_connection=mock.MagicMock(side_effect=boom)
-    )}):
+    with mock.patch.dict(
+        sys.modules,
+        {"websocket": mock.MagicMock(create_connection=mock.MagicMock(side_effect=boom))},
+    ):
         ok = cua_fallback.bring_cdp_tab_to_foreground(
             "ws://127.0.0.1:9999/devtools/page/abc",
         )
@@ -194,12 +201,15 @@ def test_standalone_foreground_handles_cdp_error_response():
     """CDP antwortet mit error-Feld → wir loggen, returnt False."""
     from survey import cua_fallback
 
-    fake = _FakeWS(replies=[
-        {"id": 1, "error": {"code": -32000, "message": "Page domain not enabled"}},
-    ])
-    with mock.patch.dict(sys.modules, {"websocket": mock.MagicMock(
-            create_connection=mock.MagicMock(return_value=fake)
-    )}):
+    fake = _FakeWS(
+        replies=[
+            {"id": 1, "error": {"code": -32000, "message": "Page domain not enabled"}},
+        ]
+    )
+    with mock.patch.dict(
+        sys.modules,
+        {"websocket": mock.MagicMock(create_connection=mock.MagicMock(return_value=fake))},
+    ):
         ok = cua_fallback.bring_cdp_tab_to_foreground(
             "ws://127.0.0.1:9999/devtools/page/abc",
         )

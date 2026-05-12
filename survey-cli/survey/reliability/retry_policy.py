@@ -7,6 +7,7 @@ Improvements over SR-152:
     - Per-key circuit breaker (closed -> open -> half-open)
     - Typed HTTP exceptions instead of string-matching
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -25,6 +26,7 @@ T = TypeVar("T")
 
 class Retryability(str, Enum):
     """Classification of error retryability."""
+
     TRANSIENT = "transient"
     PERMANENT = "permanent"
     FATAL = "fatal"
@@ -34,23 +36,28 @@ class Retryability(str, Enum):
 # Typed exceptions — replace string matching
 # =============================================================================
 
+
 class TransientError(Exception):
     """Retryable error."""
+
     pass
 
 
 class PermanentError(Exception):
     """Non-retryable error, push to DLQ."""
+
     pass
 
 
 class FatalError(Exception):
     """Halt-immediately error."""
+
     pass
 
 
 class HttpError(Exception):
     """HTTP error with typed status code."""
+
     def __init__(self, status: int, message: str = ""):
         self.status = status
         super().__init__(f"HTTP {status}: {message}" if message else f"HTTP {status}")
@@ -58,17 +65,20 @@ class HttpError(Exception):
 
 class TimeBudgetExceeded(Exception):
     """Total retry time budget exhausted."""
+
     pass
 
 
 class CircuitOpenError(Exception):
     """Circuit breaker is open, refusing call."""
+
     pass
 
 
 # =============================================================================
 # Classification
 # =============================================================================
+
 
 def default_classify(error: Exception) -> Retryability:
     """
@@ -106,8 +116,14 @@ def default_classify(error: Exception) -> Retryability:
     # String-matching fallback for legacy/untyped errors
     error_str = str(error).lower()
     permanent_phrases = (
-        "account banned", "ip blocked", "access denied", "forbidden",
-        "not authorized", "invalid credentials", "survey closed", "quota exceeded",
+        "account banned",
+        "ip blocked",
+        "access denied",
+        "forbidden",
+        "not authorized",
+        "invalid credentials",
+        "survey closed",
+        "quota exceeded",
     )
     if any(p in error_str for p in permanent_phrases):
         return Retryability.PERMANENT
@@ -120,15 +136,17 @@ def default_classify(error: Exception) -> Retryability:
 # Circuit Breaker
 # =============================================================================
 
+
 class CircuitState(str, Enum):
-    CLOSED = "closed"      # Normal operation
-    OPEN = "open"          # Refusing calls
+    CLOSED = "closed"  # Normal operation
+    OPEN = "open"  # Refusing calls
     HALF_OPEN = "half_open"  # Probing for recovery
 
 
 @dataclass
 class CircuitStats:
     """Per-key circuit breaker state."""
+
     state: CircuitState = CircuitState.CLOSED
     consecutive_failures: int = 0
     opened_at: float = 0.0
@@ -172,15 +190,11 @@ class CircuitBreaker:
                 logger.info(f"Circuit '{key}' transitioning to HALF_OPEN")
             else:
                 remaining = self.cooldown_seconds - elapsed
-                raise CircuitOpenError(
-                    f"Circuit '{key}' open, retry in {remaining:.1f}s"
-                )
+                raise CircuitOpenError(f"Circuit '{key}' open, retry in {remaining:.1f}s")
 
         if stats.state == CircuitState.HALF_OPEN:
             if stats.half_open_probes >= self.half_open_max_probes:
-                raise CircuitOpenError(
-                    f"Circuit '{key}' half-open, probe limit reached"
-                )
+                raise CircuitOpenError(f"Circuit '{key}' half-open, probe limit reached")
             stats.half_open_probes += 1
 
     def record_success(self, key: str) -> None:
@@ -205,9 +219,7 @@ class CircuitBreaker:
         elif stats.consecutive_failures >= self.failure_threshold:
             stats.state = CircuitState.OPEN
             stats.opened_at = time.monotonic()
-            logger.warning(
-                f"Circuit '{key}' opening after {stats.consecutive_failures} failures"
-            )
+            logger.warning(f"Circuit '{key}' opening after {stats.consecutive_failures} failures")
 
     def get_state(self, key: str) -> CircuitState:
         """Get current circuit state for a key."""
@@ -217,6 +229,7 @@ class CircuitBreaker:
 # =============================================================================
 # Retry Policy
 # =============================================================================
+
 
 class RetryPolicy:
     """
@@ -262,7 +275,7 @@ class RetryPolicy:
         Reduces thundering herd vs additive jitter when many clients retry
         concurrently. See: aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter/
         """
-        capped = min(self.base_delay * (2 ** attempt), self.max_delay)
+        capped = min(self.base_delay * (2**attempt), self.max_delay)
         return random.uniform(0, capped)
 
     async def run(
@@ -353,9 +366,11 @@ class RetryPolicy:
 # Retry Context (unchanged from v1, kept for backward compat)
 # =============================================================================
 
+
 @dataclass
 class RetryContext:
     """Tracks retry state across operations."""
+
     policy: RetryPolicy
     attempt_count: int = 0
     errors: list[tuple[int, Exception, Retryability]] = field(default_factory=list)

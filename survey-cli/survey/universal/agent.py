@@ -25,6 +25,7 @@ import websocket
 # SCHRITT 1: CAPTURE — Seite sehen wie ein Mensch
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 def capture_page(ws_url: str, timeout: int = 15) -> Dict:
     """Extrahiere Screenshot + DOM Text von einer Seite via CDP.
 
@@ -44,17 +45,28 @@ def capture_page(ws_url: str, timeout: int = 15) -> Dict:
         ws = websocket.create_connection(ws_url, timeout=timeout)
 
         # 1. URL + Title
-        ws.send(json.dumps({
-            "id": 1, "method": "Runtime.evaluate",
-            "params": {"expression": "JSON.stringify({url: document.location.href, title: document.title, text: document.body.innerText.substring(0, 5000)})"}  # noqa: E501
-        }))
+        ws.send(
+            json.dumps(
+                {
+                    "id": 1,
+                    "method": "Runtime.evaluate",
+                    "params": {
+                        "expression": "JSON.stringify({url: document.location.href, title: document.title, text: document.body.innerText.substring(0, 5000)})"
+                    },  # noqa: E501
+                }
+            )
+        )
         r = json.loads(ws.recv())
         info = json.loads(r.get("result", {}).get("result", {}).get("value", "{}"))
 
         # 2. Interaktive Elemente extrahieren (mit IDs für LLM)
-        ws.send(json.dumps({
-            "id": 2, "method": "Runtime.evaluate",
-            "params": {"expression": """
+        ws.send(
+            json.dumps(
+                {
+                    "id": 2,
+                    "method": "Runtime.evaluate",
+                    "params": {
+                        "expression": """
 (function() {
     var elements = [];
     var counter = 0;
@@ -128,16 +140,24 @@ def capture_page(ws_url: str, timeout: int = 15) -> Dict:
 
     return JSON.stringify(elements);
 })()
-"""}
-        }))
+"""
+                    },
+                }
+            )
+        )
         r = json.loads(ws.recv())
         elements = json.loads(r.get("result", {}).get("result", {}).get("value", "[]"))
 
         # 3. Screenshot
-        ws.send(json.dumps({
-            "id": 3, "method": "Page.captureScreenshot",
-            "params": {"format": "png", "quality": 80}
-        }))
+        ws.send(
+            json.dumps(
+                {
+                    "id": 3,
+                    "method": "Page.captureScreenshot",
+                    "params": {"format": "png", "quality": 80},
+                }
+            )
+        )
         r = json.loads(ws.recv())
         screenshot = r.get("result", {}).get("data", "")
 
@@ -151,7 +171,14 @@ def capture_page(ws_url: str, timeout: int = 15) -> Dict:
             "elements": elements,
         }
     except Exception as e:
-        return {"error": str(e), "url": "", "title": "", "dom_text": "", "screenshot": "", "elements": []}  # noqa: E501
+        return {
+            "error": str(e),
+            "url": "",
+            "title": "",
+            "dom_text": "",
+            "screenshot": "",
+            "elements": [],
+        }  # noqa: E501
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -209,14 +236,14 @@ def think(capture: Dict, api_key: Optional[str] = None) -> Dict:
         return _heuristic_think(capture)
 
     # Build message — TEXT ONLY for reliability (Vision sometimes breaks Nemotron)
-    page_info = f"""URL: {capture['url']}
-Title: {capture['title']}
+    page_info = f"""URL: {capture["url"]}
+Title: {capture["title"]}
 
 Page text (first 3000 chars):
-{capture['dom_text'][:3000]}
+{capture["dom_text"][:3000]}
 
 Interactive elements (first 30):
-{json.dumps(capture['elements'][:30], indent=2, ensure_ascii=False)}
+{json.dumps(capture["elements"][:30], indent=2, ensure_ascii=False)}
 """
 
     # Add screenshot mention if available (but don't send actual image — Text-only is more reliable)
@@ -230,14 +257,17 @@ Interactive elements (first 30):
 
     try:
         import urllib.request
+
         req = urllib.request.Request(
             "https://integrate.api.nvidia.com/v1/chat/completions",
-            data=json.dumps({
-                "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
-                "messages": messages,
-                "temperature": 0.3,
-                "max_tokens": 1024,
-            }).encode(),
+            data=json.dumps(
+                {
+                    "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+                    "messages": messages,
+                    "temperature": 0.3,
+                    "max_tokens": 1024,
+                }
+            ).encode(),
             headers={
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
@@ -292,7 +322,10 @@ def _heuristic_think(capture: Dict) -> Dict:
     buttons = [e for e in elements if e.get("type") == "button"]
     for b in buttons:
         btn_text = b.get("text", "").lower()
-        if any(word in btn_text for word in ["weiter", "nächste", "next", "submit", "fortfahren", "abschicken"]):  # noqa: E501
+        if any(
+            word in btn_text
+            for word in ["weiter", "nächste", "next", "submit", "fortfahren", "abschicken"]
+        ):  # noqa: E501
             actions.append({"type": "click", "element_id": b["id"]})
             break
 
@@ -309,6 +342,7 @@ def _heuristic_think(capture: Dict) -> Dict:
 # ═══════════════════════════════════════════════════════════════════════════════
 # SCHRITT 3: ACT — Aktionen via CDP ausführen
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 def act(ws_url: str, actions: List[Dict], elements: List[Dict], timeout: int = 15) -> Dict:
     """Führe eine Liste von Aktionen auf einer Seite via CDP aus.
@@ -342,27 +376,30 @@ def act(ws_url: str, actions: List[Dict], elements: List[Dict], timeout: int = 1
                         continue
                     # Match capture_page element extraction order:
                     # 1. input[type=radio/checkbox], 2. button/submit, 3. text/email/number/tel/textarea, 4. select, 5. a[href]  # noqa: E501
-                    etype = el.get('type', '')
-                    stag = el.get('tag', 'input')
-                    etext = el.get('text', '')
+                    etype = el.get("type", "")
+                    stag = el.get("tag", "input")
+                    etext = el.get("text", "")
 
-                    if etype in ('radio', 'checkbox'):
-                        sel = f'input[type={etype}]'
-                    elif stag == 'button':
-                        sel = 'button, input[type=submit], [role=button]'
-                    elif etype in ('text', 'email', 'number', 'tel'):
-                        sel = f'input[type={etype}], textarea'
-                    elif etype == 'select':
-                        sel = 'select'
-                    elif stag == 'a':
-                        sel = 'a[href], [role=link]'
+                    if etype in ("radio", "checkbox"):
+                        sel = f"input[type={etype}]"
+                    elif stag == "button":
+                        sel = "button, input[type=submit], [role=button]"
+                    elif etype in ("text", "email", "number", "tel"):
+                        sel = f"input[type={etype}], textarea"
+                    elif etype == "select":
+                        sel = "select"
+                    elif stag == "a":
+                        sel = "a[href], [role=link]"
                     else:
-                        sel = '*'
+                        sel = "*"
 
-                    ws.send(json.dumps({
-                        "id": executed + 10,
-                        "method": "Runtime.evaluate",
-                        "params": {"expression": f"""
+                    ws.send(
+                        json.dumps(
+                            {
+                                "id": executed + 10,
+                                "method": "Runtime.evaluate",
+                                "params": {
+                                    "expression": f"""
 (function() {{
     // Find element by type and text match (robust against DOM changes)
     var candidates = document.querySelectorAll('{sel}');
@@ -384,8 +421,11 @@ def act(ws_url: str, actions: List[Dict], elements: List[Dict], timeout: int = 1
     }}
     return 'not_found';
 }})()
-"""}
-                    }))
+"""
+                                },
+                            }
+                        )
+                    )
                     r = json.loads(ws.recv())
                     if r.get("result", {}).get("result", {}).get("value") != "clicked":
                         # Fallback: try to find by text content
@@ -395,11 +435,14 @@ def act(ws_url: str, actions: List[Dict], elements: List[Dict], timeout: int = 1
                     el_id = action.get("element_id")
                     value = action.get("value", "")
                     el = element_map.get(el_id)
-                    etext = el.get('text', '') if el else ''
-                    ws.send(json.dumps({
-                        "id": executed + 10,
-                        "method": "Runtime.evaluate",
-                        "params": {"expression": f"""
+                    etext = el.get("text", "") if el else ""
+                    ws.send(
+                        json.dumps(
+                            {
+                                "id": executed + 10,
+                                "method": "Runtime.evaluate",
+                                "params": {
+                                    "expression": f"""
 (function() {{
     var allInputs = document.querySelectorAll('input[type=text], input[type=email], input[type=number], input[type=tel], textarea');
     for (var i = 0; i < allInputs.length; i++) {{
@@ -421,17 +464,23 @@ def act(ws_url: str, actions: List[Dict], elements: List[Dict], timeout: int = 1
     }}
     return 'not_found';
 }})()
-"""}
-                    }))
+"""
+                                },
+                            }
+                        )
+                    )
                     json.loads(ws.recv())
 
                 elif atype == "select":
                     el_id = action.get("element_id")
                     value = action.get("value", "")
-                    ws.send(json.dumps({
-                        "id": executed + 10,
-                        "method": "Runtime.evaluate",
-                        "params": {"expression": f"""
+                    ws.send(
+                        json.dumps(
+                            {
+                                "id": executed + 10,
+                                "method": "Runtime.evaluate",
+                                "params": {
+                                    "expression": f"""
 (function() {{
     var selects = document.querySelectorAll('select');
     var target = selects[{el_id}];
@@ -442,17 +491,26 @@ def act(ws_url: str, actions: List[Dict], elements: List[Dict], timeout: int = 1
     }}
     return 'not_found';
 }})()
-"""}
-                    }))
+"""
+                                },
+                            }
+                        )
+                    )
                     json.loads(ws.recv())
 
                 elif atype == "scroll":
                     direction = action.get("direction", "down")
-                    ws.send(json.dumps({
-                        "id": executed + 10,
-                        "method": "Runtime.evaluate",
-                        "params": {"expression": f"window.scrollBy(0, {500 if direction == 'down' else -500}); 'scrolled'"}  # noqa: E501
-                    }))
+                    ws.send(
+                        json.dumps(
+                            {
+                                "id": executed + 10,
+                                "method": "Runtime.evaluate",
+                                "params": {
+                                    "expression": f"window.scrollBy(0, {500 if direction == 'down' else -500}); 'scrolled'"
+                                },  # noqa: E501
+                            }
+                        )
+                    )
                     json.loads(ws.recv())
 
                 elif atype == "wait":
@@ -479,6 +537,7 @@ def act(ws_url: str, actions: List[Dict], elements: List[Dict], timeout: int = 1
 # SCHRITT 4: VERIFY — Prüfe ob Aktion erfolgreich war
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 def verify(ws_url: str, previous_url: str, previous_text: str, timeout: int = 10) -> Dict:
     """Prüfe ob sich die Seite nach einer Aktion verändert hat.
 
@@ -487,10 +546,17 @@ def verify(ws_url: str, previous_url: str, previous_text: str, timeout: int = 10
     """
     try:
         ws = websocket.create_connection(ws_url, timeout=timeout)
-        ws.send(json.dumps({
-            "id": 1, "method": "Runtime.evaluate",
-            "params": {"expression": "JSON.stringify({url: document.location.href, text: document.body.innerText.substring(0, 1000)})"}  # noqa: E501
-        }))
+        ws.send(
+            json.dumps(
+                {
+                    "id": 1,
+                    "method": "Runtime.evaluate",
+                    "params": {
+                        "expression": "JSON.stringify({url: document.location.href, text: document.body.innerText.substring(0, 1000)})"
+                    },  # noqa: E501
+                }
+            )
+        )
         r = json.loads(ws.recv())
         info = json.loads(r.get("result", {}).get("result", {}).get("value", "{}"))
         ws.close()
@@ -500,7 +566,9 @@ def verify(ws_url: str, previous_url: str, previous_text: str, timeout: int = 10
 
         changed = (new_url != previous_url) or (new_text != previous_text.lower()[:1000])
         is_dashboard = "abmelden" in new_text or "heypiggy" in new_url.lower()
-        is_complete = any(word in new_text for word in ["vielen dank", "thank you", "completed", "geschafft"])  # noqa: E501
+        is_complete = any(
+            word in new_text for word in ["vielen dank", "thank you", "completed", "geschafft"]
+        )  # noqa: E501
 
         return {
             "changed": changed,
@@ -510,12 +578,20 @@ def verify(ws_url: str, previous_url: str, previous_text: str, timeout: int = 10
             "is_complete": is_complete,
         }
     except Exception as e:
-        return {"changed": False, "new_url": "", "new_text": "", "is_dashboard": False, "is_complete": False, "error": str(e)}  # noqa: E501
+        return {
+            "changed": False,
+            "new_url": "",
+            "new_text": "",
+            "is_dashboard": False,
+            "is_complete": False,
+            "error": str(e),
+        }  # noqa: E501
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # HAUPTLOOP: Capture → Think → Act → Verify → Repeat
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 def run_universal_agent(
     ws_url: str,
@@ -539,15 +615,15 @@ def run_universal_agent(
     current_text = ""
 
     for step in range(max_steps):
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"STEP {step + 1}/{max_steps}")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
 
         # 1. CAPTURE
         print("[1/4] Capturing page...")
         capture = capture_page(ws_url)
         if "error" in capture:
-            history.append(f"Step {step+1}: Capture failed: {capture['error']}")
+            history.append(f"Step {step + 1}: Capture failed: {capture['error']}")
             print(f"  ERROR: {capture['error']}")
             continue
 
@@ -559,7 +635,10 @@ def run_universal_agent(
         print(f"  Text preview: {current_text[:200]}...")
 
         # Check if already complete
-        if capture.get("dom_text", "").lower().count("vielen dank") > 0 or "abmelden" in capture.get("dom_text", "").lower():  # noqa: E501
+        if (
+            capture.get("dom_text", "").lower().count("vielen dank") > 0
+            or "abmelden" in capture.get("dom_text", "").lower()
+        ):  # noqa: E501
             print("[DONE] Survey completed or back at dashboard!")
             return {
                 "success": True,
@@ -581,7 +660,7 @@ def run_universal_agent(
         print("[3/4] Acting...")
         actions = decision.get("actions", [])
         if not actions:
-            history.append(f"Step {step+1}: No actions from LLM")
+            history.append(f"Step {step + 1}: No actions from LLM")
             print("  WARNING: No actions, scrolling down")
             actions = [{"type": "scroll", "direction": "down"}]
 
@@ -595,9 +674,13 @@ def run_universal_agent(
         print("[4/4] Verifying...")
         time.sleep(2)  # Wait for page transition
         check = verify(ws_url, current_url, current_text)
-        print(f"  Changed: {check['changed']}, Dashboard: {check['is_dashboard']}, Complete: {check['is_complete']}")  # noqa: E501
+        print(
+            f"  Changed: {check['changed']}, Dashboard: {check['is_dashboard']}, Complete: {check['is_complete']}"
+        )  # noqa: E501
 
-        history.append(f"Step {step+1}: {decision.get('thought', '')[:50]}... → {result['executed']} actions")  # noqa: E501
+        history.append(
+            f"Step {step + 1}: {decision.get('thought', '')[:50]}... → {result['executed']} actions"
+        )  # noqa: E501
 
         if result.get("done") or check["is_complete"]:
             print("[DONE] Agent reports completion!")

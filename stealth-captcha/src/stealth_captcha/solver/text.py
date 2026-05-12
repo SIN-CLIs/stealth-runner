@@ -63,17 +63,10 @@ class TextCaptchaSolver(BaseSolver):
 
     backend: VisionOCRBackend
     image_selector: str = (
-        "img.captcha-image, img.gc-text-captcha, "
-        ".captcha-image img, [data-captcha='text'] img"
+        "img.captcha-image, img.gc-text-captcha, .captcha-image img, [data-captcha='text'] img"
     )
-    input_selector: str = (
-        "input[name='captcha'], input.captcha-input, "
-        "input[data-captcha='input']"
-    )
-    submit_selector: str = (
-        "button[type='submit'], .captcha-submit, "
-        "button[data-captcha='submit']"
-    )
+    input_selector: str = "input[name='captcha'], input.captcha-input, input[data-captcha='input']"
+    submit_selector: str = "button[type='submit'], .captcha-submit, button[data-captcha='submit']"
 
     async def solve(self, session: CDPSession) -> SolveResult:
         """Run the OCR pipeline: screenshot → transcribe → type → submit."""
@@ -249,9 +242,7 @@ class PixtralLargeOCR:
                         {"type": "text", "text": prompt},
                         {
                             "type": "image_url",
-                            "image_url": {
-                                "url": f"data:image/png;base64,{image_png_base64}"
-                            },
+                            "image_url": {"url": f"data:image/png;base64,{image_png_base64}"},
                         },
                     ],
                 }
@@ -284,9 +275,7 @@ class PixtralLargeOCR:
             return ""
 
         if isinstance(content, list):
-            parts = [
-                p.get("text", "") for p in content if isinstance(p, dict)
-            ]
+            parts = [p.get("text", "") for p in content if isinstance(p, dict)]
             content = "".join(parts)
 
         return str(content).strip()

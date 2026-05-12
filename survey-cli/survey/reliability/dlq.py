@@ -8,6 +8,7 @@ Improvements over SR-152:
     - Claim mechanism for distributed replay safety
     - Idempotency keys to prevent double-replay
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -19,7 +20,7 @@ import os
 import time
 import urllib.error
 import urllib.request
-from dataclasses import asdict, dataclass, field
+from dataclasses import asdict, dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any
@@ -30,6 +31,7 @@ logger = logging.getLogger(__name__)
 # Optional fcntl (POSIX only). On Windows we degrade gracefully.
 try:
     import fcntl
+
     HAS_FCNTL = True
 except ImportError:
     HAS_FCNTL = False
@@ -43,6 +45,7 @@ CLAIM_TTL_SECONDS = 300  # 5 minutes
 # =============================================================================
 # File locking helper
 # =============================================================================
+
 
 @contextlib.contextmanager
 def file_lock(path: Path, exclusive: bool = True):
@@ -95,9 +98,11 @@ def file_lock(path: Path, exclusive: bool = True):
 # Records
 # =============================================================================
 
+
 @dataclass
 class DLQRecord:
     """A single DLQ entry."""
+
     id: str
     ts: str
     survey_id: str
@@ -127,6 +132,7 @@ class DLQRecord:
 # =============================================================================
 # Webhook (async + retry)
 # =============================================================================
+
 
 async def _deliver_webhook(
     webhook_url: str,
@@ -167,7 +173,8 @@ async def _deliver_webhook(
         # Backoff before retry (full jitter)
         if attempt + 1 < max_retries:
             import random
-            delay = random.uniform(0, min(2 ** attempt, 8))
+
+            delay = random.uniform(0, min(2**attempt, 8))
             await asyncio.sleep(delay)
 
     logger.error(f"Webhook delivery failed after {max_retries} attempts")
@@ -196,6 +203,7 @@ def _fire_webhook_background(webhook_url: str, payload: dict[str, Any]) -> None:
 # =============================================================================
 # DLQ
 # =============================================================================
+
 
 class DLQ:
     """
@@ -233,6 +241,7 @@ class DLQ:
     ) -> str:
         """Stable key for deduplication."""
         import hashlib
+
         h = hashlib.sha256(f"{survey_id}|{persona_id}|{url}".encode()).hexdigest()
         return f"idmp-{h[:16]}"
 
@@ -327,9 +336,9 @@ class DLQ:
         # Skip records currently claimed by another worker (TTL valid)
         now = time.time()
         pending = [
-            r for r in records
-            if r.status == "pending"
-            and (not r.claim_owner or r.claim_expires_at < now)
+            r
+            for r in records
+            if r.status == "pending" and (not r.claim_owner or r.claim_expires_at < now)
         ]
         return pending[:limit]
 
@@ -465,9 +474,7 @@ class DLQ:
 
         new_attempts = record.replay_attempts + 1
         if new_attempts >= self.max_replay_attempts:
-            logger.warning(
-                f"DLQ {dlq_id} exhausted {new_attempts} replay attempts — escalating"
-            )
+            logger.warning(f"DLQ {dlq_id} exhausted {new_attempts} replay attempts — escalating")
             return self._update_record(
                 dlq_id,
                 {

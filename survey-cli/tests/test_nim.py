@@ -55,12 +55,21 @@ from survey.nim import (
 
 V2_SNAPSHOT = {
     "elements": [
-        {"stable_id": "el_001", "role": "radio", "name": "Maennlich",
-         "value": "", "checked": False},
-        {"stable_id": "el_002", "role": "radio", "name": "Weiblich",
-         "value": "", "checked": False},
-        {"stable_id": "btn_next", "role": "button", "name": "Weiter",
-         "value": "", "checked": False},
+        {
+            "stable_id": "el_001",
+            "role": "radio",
+            "name": "Maennlich",
+            "value": "",
+            "checked": False,
+        },
+        {"stable_id": "el_002", "role": "radio", "name": "Weiblich", "value": "", "checked": False},
+        {
+            "stable_id": "btn_next",
+            "role": "button",
+            "name": "Weiter",
+            "value": "",
+            "checked": False,
+        },
     ],
     "avoid_stable_id": "",
     "no_dom_change_count": 0,
@@ -95,6 +104,7 @@ def _make_chat_response(content, total_tokens=150):
 # decide() — Happy Path mit gemocktem OpenAI
 # =============================================================================
 
+
 class TestDecideReturnsActionsFromApi(unittest.TestCase):
     """API liefert v2-JSON → decide() reicht die Actions durch."""
 
@@ -109,9 +119,12 @@ class TestDecideReturnsActionsFromApi(unittest.TestCase):
         client = NIMClient(api_key="nvapi-test-key")
         result = client.decide(snapshot=V2_SNAPSHOT, profile=SAMPLE_PROFILE)
 
-        self.assertEqual(result["actions"], [
-            {"stable_id": "el_001", "action": "click"},
-        ])
+        self.assertEqual(
+            result["actions"],
+            [
+                {"stable_id": "el_001", "action": "click"},
+            ],
+        )
 
 
 class TestDecideRefNormalisedToStableId(unittest.TestCase):
@@ -129,9 +142,12 @@ class TestDecideRefNormalisedToStableId(unittest.TestCase):
         client = NIMClient(api_key="nvapi-test-key")
         result = client.decide(snapshot=V2_SNAPSHOT, profile=SAMPLE_PROFILE)
 
-        self.assertEqual(result["actions"], [
-            {"stable_id": "@e0", "action": "click"},
-        ])
+        self.assertEqual(
+            result["actions"],
+            [
+                {"stable_id": "@e0", "action": "click"},
+            ],
+        )
 
 
 class TestDecideFillWithValue(unittest.TestCase):
@@ -148,9 +164,12 @@ class TestDecideFillWithValue(unittest.TestCase):
         client = NIMClient(api_key="nvapi-test-key")
         result = client.decide(snapshot=V2_SNAPSHOT, profile=SAMPLE_PROFILE)
 
-        self.assertEqual(result["actions"], [
-            {"stable_id": "el_007", "action": "fill", "value": "Berlin"},
-        ])
+        self.assertEqual(
+            result["actions"],
+            [
+                {"stable_id": "el_007", "action": "fill", "value": "Berlin"},
+            ],
+        )
 
 
 class TestDecideRecordsTokens(unittest.TestCase):
@@ -226,6 +245,7 @@ class TestDecideRecordsElapsedMs(unittest.TestCase):
 # =============================================================================
 # decide() — API-Parameter
 # =============================================================================
+
 
 class TestDecidePassesMaxTokens(unittest.TestCase):
     """Der Client muss MAX_TOKENS an die API durchreichen."""
@@ -303,6 +323,7 @@ class TestDecidePassesDefaultModel(unittest.TestCase):
 # =============================================================================
 # decide() — Fallback-Kontrakte
 # =============================================================================
+
 
 class TestDecideNoApiKeyAutoPilotModel(unittest.TestCase):
     """Ohne API-Key liefert decide() ``model="auto_pilot"``."""
@@ -395,7 +416,8 @@ class TestDecideEmptyContentReturnsWait(unittest.TestCase):
     def test_wait_action_when_content_empty(self, MockOpenAI):
         mock_client = MagicMock()
         mock_client.chat.completions.create.return_value = _make_chat_response(
-            "", total_tokens=10,
+            "",
+            total_tokens=10,
         )
         MockOpenAI.return_value = mock_client
 
@@ -409,6 +431,7 @@ class TestDecideEmptyContentReturnsWait(unittest.TestCase):
 # Circuit-Breaker
 # =============================================================================
 
+
 class TestCircuitBreakerOpensAfterThreshold(unittest.TestCase):
     """Drei Folgefehler oeffnen den Breaker → naechster decide() ist
     sofort Fallback (ohne API-Call)."""
@@ -419,8 +442,11 @@ class TestCircuitBreakerOpensAfterThreshold(unittest.TestCase):
         # Wir patchen den Authentication-Pfad: ein einziger AuthError
         # triggert _record_failure einmal pro decide(), kein Retry.
         from openai import AuthenticationError
+
         mock_client.chat.completions.create.side_effect = AuthenticationError(
-            "bad key", response=MagicMock(), body=None,
+            "bad key",
+            response=MagicMock(),
+            body=None,
         )
         MockOpenAI.return_value = mock_client
 
@@ -472,6 +498,7 @@ class TestCircuitBreakerSuccessResetsCounter(unittest.TestCase):
 # NIMClient.available property
 # =============================================================================
 
+
 class TestAvailableTrueWithKey(unittest.TestCase):
     def test_available_when_api_key_set(self):
         client = NIMClient(api_key="nvapi-test-key")
@@ -489,8 +516,8 @@ class TestAvailableFalseWithoutKey(unittest.TestCase):
 # get_nim() Singleton
 # =============================================================================
 
-class TestGetNimSingleton(unittest.TestCase):
 
+class TestGetNimSingleton(unittest.TestCase):
     def setUp(self):
         nim_module._default_client = None
 
@@ -503,6 +530,7 @@ class TestGetNimSingleton(unittest.TestCase):
 # =============================================================================
 # build_survey_prompt — Dispatcher zwischen v2 und Legacy
 # =============================================================================
+
 
 class TestPromptDispatcherV2WhenElements(unittest.TestCase):
     """Snapshot enthaelt ``elements`` → v2-Prompt (mit stable_id-Hinweis)."""
@@ -525,6 +553,7 @@ class TestPromptDispatcherLegacyWhenRefs(unittest.TestCase):
 # =============================================================================
 # build_v2_prompt — Inhalt
 # =============================================================================
+
 
 class TestV2PromptIncludesStableIds(unittest.TestCase):
     def test_includes_stable_id_values(self):
@@ -586,8 +615,13 @@ class TestV2PromptTruncatesElementsTo30(unittest.TestCase):
 
     def test_at_most_30_elements_in_prompt(self):
         elements = [
-            {"stable_id": f"el_{i:03d}", "role": "radio",
-             "name": f"Option {i}", "value": "", "checked": False}
+            {
+                "stable_id": f"el_{i:03d}",
+                "role": "radio",
+                "name": f"Option {i}",
+                "value": "",
+                "checked": False,
+            }
             for i in range(50)
         ]
         snapshot = dict(V2_SNAPSHOT, elements=elements)
@@ -601,6 +635,7 @@ class TestV2PromptTruncatesElementsTo30(unittest.TestCase):
 # =============================================================================
 # build_legacy_prompt — Backward-Compat
 # =============================================================================
+
 
 class TestLegacyPromptIncludesRefs(unittest.TestCase):
     def test_includes_refs(self):
@@ -624,6 +659,7 @@ class TestLegacyPromptIncludesQuestions(unittest.TestCase):
 # =============================================================================
 # build_survey_prompt — Optional-Args (learnings/history)
 # =============================================================================
+
 
 class TestBuildSurveyPromptAcceptsLearnings(unittest.TestCase):
     def test_does_not_crash_with_learnings(self):

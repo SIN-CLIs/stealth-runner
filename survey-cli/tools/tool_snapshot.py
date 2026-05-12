@@ -89,8 +89,8 @@ BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
   ❌ skylight-cli click --element-index
 ================================================================================"""
 
-import json       # CDP Nachrichten (de)serialisierung
-import hashlib    # DOM-Hash fuer Anti-Stuck-Erkennung
+import json  # CDP Nachrichten (de)serialisierung
+import hashlib  # DOM-Hash fuer Anti-Stuck-Erkennung
 import websocket  # CDP WebSocket Verbindung
 from typing import Dict, Any, List, Optional
 
@@ -259,11 +259,11 @@ EXTRACTOR_JS = """
 # ═════════════════════════════════════════════════════════════════════════════
 def snapshot(ws_url: str, timeout: int = 15) -> Dict[str, Any]:
     """Erstellt Snapshot aller interaktiven Elemente.
-    
+
     ARGS:
         ws_url (str): CDP WebSocket URL
         timeout (int): WebSocket Timeout in Sekunden (default: 15)
-        
+
     RETURNS:
         dict:
           {
@@ -283,40 +283,47 @@ def snapshot(ws_url: str, timeout: int = 15) -> Dict[str, Any]:
             "title": "Survey Title",  // Seiten-Titel
             "hash": "a1b2c3d4"       // MD5-Hash von bodyText (Anti-Stuck)
           }
-          
+
     WARUM 15s Timeout?
       CDP-Verbindung kann langsam sein (erster Connect, Auth).
       - 5s: Zu kurz fuer langsame Verbindungen
       - 30s: Zu lang, blockiert Agent-Loop
       - 15s: sweet spot
-      
+
     WARUM hash aus bodyText?
       Anti-Stuck-Erkennung: Wenn 2 Snapshots denselben Hash haben,
       hat sich die Seite nicht geaendert → Aktion hatte keinen Effekt.
       → Hash-Vergleich ist schneller als kompletter DOM-Vergleich.
-      
+
     RACE CONDITION:
       Seite kann sich aendern WAEHREND snapshot().
       → Elemente koennen veraltet sein. → Aufrufer muss validieren.
     """
     try:
         ws = websocket.create_connection(ws_url, timeout=timeout)
-        ws.send(json.dumps({"id": 1, "method": "Runtime.evaluate",
-            "params": {"expression": EXTRACTOR_JS, "returnByValue": True}}))
+        ws.send(
+            json.dumps(
+                {
+                    "id": 1,
+                    "method": "Runtime.evaluate",
+                    "params": {"expression": EXTRACTOR_JS, "returnByValue": True},
+                }
+            )
+        )
         resp = json.loads(ws.recv())
         ws.close()
-        
+
         data = resp.get("result", {}).get("result", {}).get("value", {})
         body_text = data.get("bodyText", "")
-        
+
         # Anti-Stuck Hash: MD5 von bodyText, gekuerzt auf 12 Zeichen
         dom_hash = hashlib.md5(body_text.encode()).hexdigest()[:12]
-        
+
         return {
             "elements": data.get("elements", []),
             "url": data.get("url", ""),
             "title": data.get("title", ""),
-            "hash": dom_hash
+            "hash": dom_hash,
         }
     except Exception as e:
         return {"elements": [], "url": "", "title": "", "hash": "error", "error": str(e)}
@@ -327,18 +334,18 @@ def snapshot(ws_url: str, timeout: int = 15) -> Dict[str, Any]:
 # ═════════════════════════════════════════════════════════════════════════════
 def find_submit(elements: List[Dict]) -> Optional[Dict]:
     """Findet Submit-Button in Element-Liste.
-    
+
     ARGS:
         elements: Liste von Element-Dictionaries (aus snapshot())
-        
+
     RETURNS:
         dict oder None: Erstes Submit-Element oder None
-        
+
     WARUM erstes Submit?
       Submit-Buttons sind am wichtigsten (Survey fortfuehren).
       Sortierung in EXTRACTOR_JS legt sie ans Ende (oder Anfang, je nach Logik).
       → Erstes = wahrscheinlich "Weiter" oder "Submit".
-      
+
     WARUM "submit" statt "button"?
       "submit" ist spezifischer. Ein "button" koennte irgendein Button sein
       ("Zurueck", "Abbrechen"), aber "submit" = Hauptaktion.
@@ -354,24 +361,24 @@ def find_submit(elements: List[Dict]) -> Optional[Dict]:
 # ═════════════════════════════════════════════════════════════════════════════
 def find_unfilled(elements: List[Dict]) -> List[Dict]:
     """Findet alle ungefuellten Input-Felder.
-    
+
     ARGS:
         elements: Liste von Element-Dictionaries (aus snapshot())
-        
+
     RETURNS:
         list: Nur Elemente die Nutzer-Eingabe benoetigen
-        
+
     WARUM diese Typen?
       input: Textfelder (Name, Email, etc.)
       textarea: Freitext-Felder
       radio: Radio-Buttons (eine Auswahl)
       checkbox: Checkboxen (mehrere Auswahl)
       → Alles was vom Nutzer beantwortet werden muss.
-      
+
     WARUM nicht "select"?
       Selects haben oft Default-Werte (erste Option ausgewaehlt).
       → Nicht immer "unfilled". → Aufrufer prueft separat.
-      
+
     WARUM nicht "submit"?
       Submit-Buttons sind keine Eingabefelder.
     """
@@ -383,13 +390,14 @@ def find_unfilled(elements: List[Dict]) -> List[Dict]:
 # ═════════════════════════════════════════════════════════════════════════════
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) < 2:
         print("Usage: python tool_snapshot.py <ws_url>")
         sys.exit(1)
-        
+
     data = snapshot(sys.argv[1])
-    print("URL: " + data['url'])
-    print("Hash: " + data['hash'])
-    print("Elements (" + str(len(data['elements'])) + "):")
+    print("URL: " + data["url"])
+    print("Hash: " + data["hash"])
+    print("Elements (" + str(len(data["elements"])) + "):")
     for el in data["elements"]:
-        print("  [{0}] {1}: {2}".format(el['idx'], el['type'], el['text'][:40]))
+        print("  [{0}] {1}: {2}".format(el["idx"], el["type"], el["text"][:40]))

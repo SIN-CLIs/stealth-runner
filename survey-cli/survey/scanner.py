@@ -99,7 +99,7 @@ def detect_provider(url):
 PROVIDER_TRUST_SCORES = {
     "qualtrics": 0.9,
     "tolunastart": 0.8,
-    "cint": 0.7,       # blocked by Cloudflare — use with caution
+    "cint": 0.7,  # blocked by Cloudflare — use with caution
     "nfield": 0.7,
     "tivian": 0.7,
     "ipsos": 0.6,
@@ -111,7 +111,7 @@ PROVIDER_TRUST_SCORES = {
     "reach3insights": 0.5,
     "samplicio": 0.4,  # blocked by Cloudflare — use with caution
     "purespectrum": 0.3,  # works but screen-out rate high
-    "internal": 0.2,   # surveyrouter.com — real provider unknown until survey opens
+    "internal": 0.2,  # surveyrouter.com — real provider unknown until survey opens
     "pre_qualifier": 0.1,
     "unknown": 0.1,
 }
@@ -124,6 +124,7 @@ def get_trust_score(provider: str) -> float:
 
 # ── Survey ID Extraction ───────────────────────────────
 
+
 def extract_ids_from_dashboard(ws_url):
     """Extract survey IDs from dashboard via CDP.
 
@@ -132,10 +133,13 @@ def extract_ids_from_dashboard(ws_url):
     """
     try:
         ws = websocket.create_connection(ws_url, timeout=15)
-        ws.send(json.dumps({
-            "id": 0, "method": "Runtime.evaluate",
-            "params": {
-                "expression": '''
+        ws.send(
+            json.dumps(
+                {
+                    "id": 0,
+                    "method": "Runtime.evaluate",
+                    "params": {
+                        "expression": """
 (function() {
     var out = [];
     document.querySelectorAll("[onclick*=clickSurvey]").forEach(function(el) {
@@ -144,9 +148,11 @@ def extract_ids_from_dashboard(ws_url):
     });
     return out.join("|");
 })()
-'''
-            }
-        }))
+"""
+                    },
+                }
+            )
+        )
         r = json.loads(ws.recv())
         ws.close()
         ids_str = r.get("result", {}).get("result", {}).get("value", "")
@@ -159,6 +165,7 @@ def extract_ids_from_dashboard(ws_url):
 
 
 # ── Survey Filtering ───────────────────────────────────
+
 
 def filter_surveys(survey_ids, skip_providers=None, max_ids=15, port=9223):
     """Filter surveys via CPX API.
@@ -176,14 +183,15 @@ def filter_surveys(survey_ids, skip_providers=None, max_ids=15, port=9223):
         skip_providers = ["surveyrouter"]
 
     from .chrome import get_details_url
+
     details_url = get_details_url(port)
 
     results = []
     for sid in survey_ids[:max_ids]:
         try:
-            resp = json.loads(urllib.request.urlopen(
-                details_url + "&survey_id=" + sid, timeout=8
-            ).read())
+            resp = json.loads(
+                urllib.request.urlopen(details_url + "&survey_id=" + sid, timeout=8).read()
+            )
 
             entry = {
                 "id": sid,
@@ -205,18 +213,16 @@ def filter_surveys(survey_ids, skip_providers=None, max_ids=15, port=9223):
             results.append(entry)
 
         except Exception as e:
-            results.append({
-                "id": sid, "type": "error", "error": str(e)[:60]
-            })
+            results.append({"id": sid, "type": "error", "error": str(e)[:60]})
 
     return results
 
 
 def print_survey_table(results):
     """Pretty-print filtered survey results."""
-    print(f"\n{'─'*80}")
+    print(f"\n{'─' * 80}")
     print(f"  {'ID':12s} {'Type':10s} {'Provider':16s} {'Trust':6s} {'URL'}")
-    print(f"{'─'*80}")
+    print(f"{'─' * 80}")
 
     okay_count = 0
     for r in results:
@@ -232,7 +238,7 @@ def print_survey_table(results):
         if r.get("type") == "okay":
             okay_count += 1
 
-    print(f"{'─'*80}")
+    print(f"{'─' * 80}")
     print(f"  Total: {len(results)} | OK: {okay_count} | Filtered: {len(results) - okay_count}")
     print()
 
@@ -256,9 +262,13 @@ def scan_dashboard_dom(port=9223):
         if not ws_url:
             return []
         ws = websocket.create_connection(ws_url, timeout=10)
-        ws.send(json.dumps({
-            "id": 1, "method": "Runtime.evaluate",
-            "params": {"expression": '''
+        ws.send(
+            json.dumps(
+                {
+                    "id": 1,
+                    "method": "Runtime.evaluate",
+                    "params": {
+                        "expression": """
 JSON.stringify(
     Array.from(document.querySelectorAll("[onclick*=clickSurvey]")).map(el => {
         var onclick = el.getAttribute("onclick");
@@ -269,8 +279,12 @@ JSON.stringify(
         return {id: id, reward: parseFloat(reward), duration: parseInt(duration)};
     })
 )
-''', "returnByValue": True}
-        }))
+""",
+                        "returnByValue": True,
+                    },
+                }
+            )
+        )
         r = json.loads(ws.recv())
         ws.close()
         cards = json.loads(r.get("result", {}).get("result", {}).get("value", "[]"))
@@ -310,16 +324,20 @@ def scan_dashboard(port=9223, skip_providers=None):
 
 # ── Page Content Extraction ────────────────────────────
 
+
 def read_page_text(ws_url, max_len=500):
     """Read page innerText via CDP."""
     try:
         ws = websocket.create_connection(ws_url, timeout=10)
-        ws.send(json.dumps({
-            "id": 0, "method": "Runtime.evaluate",
-            "params": {
-                "expression": f"document.body.innerText.substring(0, {max_len})"
-            }
-        }))
+        ws.send(
+            json.dumps(
+                {
+                    "id": 0,
+                    "method": "Runtime.evaluate",
+                    "params": {"expression": f"document.body.innerText.substring(0, {max_len})"},
+                }
+            )
+        )
         r = json.loads(ws.recv())
         ws.close()
         return r.get("result", {}).get("result", {}).get("value", "")
@@ -339,10 +357,13 @@ def read_balance(port=9223):
 
     try:
         ws = websocket.create_connection(ws_url, timeout=10)
-        ws.send(json.dumps({
-            "id": 0, "method": "Runtime.evaluate",
-            "params": {
-                "expression": '''
+        ws.send(
+            json.dumps(
+                {
+                    "id": 0,
+                    "method": "Runtime.evaluate",
+                    "params": {
+                        "expression": """
 (function() {
     // Try specific balance elements first
     var el = document.querySelector('.balance, .my-balance, .credit, [class*=balance], [class*=credit]');
@@ -384,9 +405,11 @@ def read_balance(port=9223):
     }
     return "0";
 })()
-'''
-            }
-        }))
+"""
+                    },
+                }
+            )
+        )
         r = json.loads(ws.recv())
         ws.close()
         val = r.get("result", {}).get("result", {}).get("value", "0")

@@ -50,6 +50,7 @@ class SolveOutcome(Enum):
           # Weiter mit Survey
     ================================================================================
     """
+
     SUCCESS = "success"
     FAILURE = "failure"
     UNKNOWN = "unknown"

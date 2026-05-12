@@ -402,9 +402,7 @@ class TestEndToEndMockedFlow(unittest.TestCase):
 
         # 4. Answer 5 questions
         for q in self.survey_fixture["questions"]:
-            state.answers.append(
-                {"question_index": q["index"], "answer": q["expected_answer"]}
-            )
+            state.answers.append({"question_index": q["index"], "answer": q["expected_answer"]})
         self.assertEqual(len(state.answers), 5)
 
         # 5. Completion detection

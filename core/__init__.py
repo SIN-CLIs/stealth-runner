@@ -90,13 +90,13 @@ log = logging.getLogger("core")
 # damit Tests reset_singletons() rufen koennen ohne Modul-Reload.
 
 _lock = threading.Lock()
-_config: Optional[Config] = None
-_error_handler: Optional[ErrorHandler] = None
-_vault: Optional[CredentialVault] = None
-_audit_log: Optional[AuditLogger] = None
-_security_manager: Optional[SecurityManager] = None
-_analytics: Optional[AnalyticsCollector] = None
-_state_manager: Optional[StateManager] = None
+_config: Config | None = None
+_error_handler: ErrorHandler | None = None
+_vault: CredentialVault | None = None
+_audit_log: AuditLogger | None = None
+_security_manager: SecurityManager | None = None
+_analytics: AnalyticsCollector | None = None
+_state_manager: StateManager | None = None
 
 
 def get_config() -> Config:
@@ -206,8 +206,7 @@ async def bootstrap_core() -> Config:
             log.error("core.config.invalid: %s", err)
         if cfg.environment in (Environment.PRODUCTION, Environment.STAGING):
             raise RuntimeError(
-                f"core.config.validation_failed ({len(errors)} errors): "
-                + "; ".join(errors)
+                f"core.config.validation_failed ({len(errors)} errors): " + "; ".join(errors)
             )
         log.warning(
             "core.config.dev_mode: %d config warnings ignored (non-prod)",

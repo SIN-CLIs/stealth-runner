@@ -48,12 +48,15 @@ CDP_PORT = 9999
 # CDP HELPERS
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 def _get_state(pid: int, wid: int) -> str:
     try:
         result = subprocess.run(
             [CUA_BIN, "call", "get_window_state"],
             input=json.dumps({"pid": pid, "window_id": wid}),
-            capture_output=True, text=True, timeout=30,
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
         if result.returncode != 0:
             return ""
@@ -65,8 +68,7 @@ def _get_state(pid: int, wid: int) -> str:
 
 def _get_cdp_pages(port: int = CDP_PORT):
     try:
-        return json.loads(urllib.request.urlopen(
-            f"http://127.0.0.1:{port}/json", timeout=3).read())
+        return json.loads(urllib.request.urlopen(f"http://127.0.0.1:{port}/json", timeout=3).read())
     except Exception:
         return []
 
@@ -74,6 +76,7 @@ def _get_cdp_pages(port: int = CDP_PORT):
 # ═══════════════════════════════════════════════════════════════════════════
 # ELEMENT STATE VERIFICATION
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 def verify_element_state(
     pid: int,
@@ -92,7 +95,7 @@ def verify_element_state(
     if not markdown:
         return {"status": "error", "found": False, "reason": "AX-Tree empty"}
 
-    pattern = re.compile(rf'- \[{element_index}\]\s+(\w+)(?:\s*\(([^)]*)\))?')
+    pattern = re.compile(rf"- \[{element_index}\]\s+(\w+)(?:\s*\(([^)]*)\))?")
     match = pattern.search(markdown)
     if not match:
         return {
@@ -132,6 +135,7 @@ def verify_element_state(
 # ═══════════════════════════════════════════════════════════════════════════
 # PAGE VERIFICATION
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 def verify_page(
     pid: int,
@@ -182,7 +186,7 @@ def verify_page(
         role_counts = {}
         if role_count:
             for role, min_count in role_count.items():
-                pattern = re.compile(rf'- \[\d+\]\s+{re.escape(role)}')
+                pattern = re.compile(rf"- \[\d+\]\s+{re.escape(role)}")
                 actual = len(pattern.findall(markdown))
                 role_counts[role] = actual
                 if actual < min_count:
@@ -232,6 +236,7 @@ def verify_page(
 # CONVENIENCE: Common survey verifications
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 def verify_logged_in(
     pid: int,
     wid: int,
@@ -239,7 +244,8 @@ def verify_logged_in(
 ) -> Dict:
     """Verify heypiggy dashboard shows logged-in state."""
     return verify_page(
-        pid, wid,
+        pid,
+        wid,
         text_contains="Abmelden",
         text_contains_2="Umfragen",  # Not supported yet, use custom
         timeout=timeout,
@@ -253,7 +259,8 @@ def verify_survey_loaded(
 ) -> Dict:
     """Verify survey page loaded (has questions/radio buttons)."""
     return verify_page(
-        pid, wid,
+        pid,
+        wid,
         role_count={"AXRadioButton": 1, "AXStaticText": 3},
         timeout=timeout,
     )
@@ -266,7 +273,8 @@ def verify_survey_complete(
 ) -> Dict:
     """Verify survey completion page (Vielen Dank, etc.)."""
     return verify_page(
-        pid, wid,
+        pid,
+        wid,
         text_contains="Vielen Dank",
         timeout=timeout,
     )
@@ -286,10 +294,10 @@ if __name__ == "__main__":
 - [43] AXRadioButton ("Mannlich")
 """
     # Manually test parsing logic
-    pattern = re.compile(r'- \[(\d+)\]\s+(\w+)(?:\s*\(([^)]*)\))?')
+    pattern = re.compile(r"- \[(\d+)\]\s+(\w+)(?:\s*\(([^)]*)\))?")
     matches = pattern.findall(test_md)
     assert len(matches) == 2
-    assert matches[0] == ('42', 'AXButton', '"Weiter"')
-    assert matches[1] == ('43', 'AXRadioButton', '"Mannlich"')
+    assert matches[0] == ("42", "AXButton", '"Weiter"')
+    assert matches[1] == ("43", "AXRadioButton", '"Mannlich"')
 
     print("All tests passed")

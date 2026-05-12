@@ -106,7 +106,6 @@ def _rejected(
 
 
 class TestSummarizeAudit(unittest.TestCase):
-
     def test_empty_input_zero_counts(self):
         report = summarize_audit([])
         self.assertEqual(report.total_records, 0)
@@ -171,7 +170,7 @@ class TestSummarizeAudit(unittest.TestCase):
             _applied(model="openai/gpt-5-mini"),
             _applied(model="anthropic/claude-opus-4.6"),
             _applied(model=None),  # substring records have model=None
-            _applied(model=""),    # empty string is also no-model
+            _applied(model=""),  # empty string is also no-model
         ]
         report = summarize_audit(recs)
         self.assertEqual(report.by_model["openai/gpt-5-mini"], 2)
@@ -197,21 +196,17 @@ class TestSummarizeAudit(unittest.TestCase):
 
 
 class TestNormalizers(unittest.TestCase):
-
     def test_normalize_decision_default_applied_when_missing(self):
         # Defensive default; apply.py always writes decision in practice
         self.assertEqual(_normalize_decision({}), "applied")
-        self.assertEqual(_normalize_decision({"decision": "applied"}),
-                         "applied")
-        self.assertEqual(_normalize_decision({"decision": "rejected_by_gate"}),
-                         "rejected_by_gate")
+        self.assertEqual(_normalize_decision({"decision": "applied"}), "applied")
+        self.assertEqual(_normalize_decision({"decision": "rejected_by_gate"}), "rejected_by_gate")
 
     def test_normalize_source_falls_back_to_entry_then_substring(self):
         # Top-level wins
         self.assertEqual(_normalize_source({"source": "llm"}), "llm")
         # Falls back to entry.source for rejects
-        self.assertEqual(_normalize_source(
-            {"entry": {"source": "llm"}}), "llm")
+        self.assertEqual(_normalize_source({"entry": {"source": "llm"}}), "llm")
         # Default substring when source is missing everywhere
         self.assertEqual(_normalize_source({}), "substring")
         self.assertEqual(_normalize_source({"entry": {}}), "substring")
@@ -243,16 +238,16 @@ class TestNormalizers(unittest.TestCase):
 
     def test_extract_timestamp_priority_chain(self):
         # 1) top-level timestamp wins
-        rec = {"timestamp": "2026-05-10T12:00:00+00:00",
-               "entry": {"first_seen": "2026-04-01T00:00:00+00:00"}}
+        rec = {
+            "timestamp": "2026-05-10T12:00:00+00:00",
+            "entry": {"first_seen": "2026-04-01T00:00:00+00:00"},
+        }
         dt = _extract_timestamp(rec)
-        self.assertEqual(dt, datetime(2026, 5, 10, 12, 0,
-                                      tzinfo=timezone.utc))
+        self.assertEqual(dt, datetime(2026, 5, 10, 12, 0, tzinfo=timezone.utc))
         # 2) Falls back to entry.first_seen
         rec2 = {"entry": {"first_seen": "2026-04-01T00:00:00+00:00"}}
         dt2 = _extract_timestamp(rec2)
-        self.assertEqual(dt2, datetime(2026, 4, 1, 0, 0,
-                                       tzinfo=timezone.utc))
+        self.assertEqual(dt2, datetime(2026, 4, 1, 0, 0, tzinfo=timezone.utc))
         # 3) Naive datetime gets utc-attached
         rec3 = {"timestamp": "2026-05-10T12:00:00"}
         dt3 = _extract_timestamp(rec3)
@@ -269,7 +264,6 @@ class TestNormalizers(unittest.TestCase):
 
 
 class TestFilters(unittest.TestCase):
-
     def test_filter_decision_excludes_other_decisions(self):
         f = AuditFilters(decision="applied")
         self.assertTrue(passes_filters(_applied(), f))
@@ -287,36 +281,27 @@ class TestFilters(unittest.TestCase):
         self.assertTrue(passes_filters(_applied(family="phone"), f))
         self.assertFalse(passes_filters(_applied(family="income"), f))
         # Reject with entry.suggested_family=phone -> included
-        self.assertTrue(passes_filters(
-            _rejected(suggested_family="phone"), f))
+        self.assertTrue(passes_filters(_rejected(suggested_family="phone"), f))
 
     def test_filter_since_excludes_older_and_missing(self):
-        f = AuditFilters(
-            since=datetime(2026, 5, 5, tzinfo=timezone.utc))
-        self.assertTrue(passes_filters(
-            _applied(timestamp="2026-05-10T00:00:00+00:00"), f))
-        self.assertFalse(passes_filters(
-            _applied(timestamp="2026-05-01T00:00:00+00:00"), f))
+        f = AuditFilters(since=datetime(2026, 5, 5, tzinfo=timezone.utc))
+        self.assertTrue(passes_filters(_applied(timestamp="2026-05-10T00:00:00+00:00"), f))
+        self.assertFalse(passes_filters(_applied(timestamp="2026-05-01T00:00:00+00:00"), f))
         # Records with NO timestamp anywhere are excluded
-        no_ts = {"decision": "applied", "family": "x", "keyword": "y",
-                 "source": "substring"}
+        no_ts = {"decision": "applied", "family": "x", "keyword": "y", "source": "substring"}
         self.assertFalse(passes_filters(no_ts, f))
 
     def test_filters_compose_with_AND(self):
         f = AuditFilters(decision="applied", source="llm")
-        self.assertTrue(passes_filters(
-            _applied(source="llm"), f))
-        self.assertFalse(passes_filters(
-            _applied(source="substring"), f))
-        self.assertFalse(passes_filters(
-            _rejected(source="llm"), f))
+        self.assertTrue(passes_filters(_applied(source="llm"), f))
+        self.assertFalse(passes_filters(_applied(source="substring"), f))
+        self.assertFalse(passes_filters(_rejected(source="llm"), f))
 
 
 # -- Formatters --------------------------------------------------------------
 
 
 class TestFormatters(unittest.TestCase):
-
     def test_format_human_report_empty(self):
         out = format_human_report(AuditReport())
         # Header always present
@@ -330,8 +315,9 @@ class TestFormatters(unittest.TestCase):
     def test_format_human_report_full(self):
         recs = [
             _applied(family="phone", keyword="telefonnummer", source="substring"),
-            _applied(family="phone", keyword="mobilnummer", source="llm",
-                     model="openai/gpt-5-mini"),
+            _applied(
+                family="phone", keyword="mobilnummer", source="llm", model="openai/gpt-5-mini"
+            ),
             _rejected(decision="rejected_by_gate"),
         ]
         report = summarize_audit(recs, files_scanned=1)
@@ -383,6 +369,7 @@ class _AuditFixture:
 
     def cleanup(self):
         import shutil
+
         shutil.rmtree(self.td, ignore_errors=True)
 
     def file(self, name: str) -> str:
@@ -392,25 +379,28 @@ class _AuditFixture:
 def _run_audit(fx, *args):
     buf_out = io.StringIO()
     buf_err = io.StringIO()
-    with mock.patch.object(sys, "stdout", buf_out), \
-         mock.patch.object(sys, "stderr", buf_err):
-        rc = cli_mod.main([
-            "audit",
-            "--logs", fx.logs,
-            *args,
-        ])
+    with mock.patch.object(sys, "stdout", buf_out), mock.patch.object(sys, "stderr", buf_err):
+        rc = cli_mod.main(
+            [
+                "audit",
+                "--logs",
+                fx.logs,
+                *args,
+            ]
+        )
     return rc, buf_out.getvalue(), buf_err.getvalue()
 
 
 class TestCmdAudit(unittest.TestCase):
-
     def test_multi_file_scan_finds_all_learn_applied(self):
-        fx = _AuditFixture({
-            "learn-applied-20260501T120000Z.jsonl": [_applied(family="a")],
-            "learn-applied-20260502T120000Z.jsonl": [_applied(family="b")],
-            # Status files in same dir should be ignored
-            "pattern-suggestions-20260501.jsonl": [{"role": "x"}],
-        })
+        fx = _AuditFixture(
+            {
+                "learn-applied-20260501T120000Z.jsonl": [_applied(family="a")],
+                "learn-applied-20260502T120000Z.jsonl": [_applied(family="b")],
+                # Status files in same dir should be ignored
+                "pattern-suggestions-20260501.jsonl": [{"role": "x"}],
+            }
+        )
         try:
             rc, out, _ = _run_audit(fx)
             self.assertEqual(rc, 0)
@@ -420,10 +410,12 @@ class TestCmdAudit(unittest.TestCase):
             fx.cleanup()
 
     def test_single_input_overrides_multi_scan(self):
-        fx = _AuditFixture({
-            "learn-applied-20260501T120000Z.jsonl": [_applied(family="a")],
-            "learn-applied-20260502T120000Z.jsonl": [_applied(family="b")],
-        })
+        fx = _AuditFixture(
+            {
+                "learn-applied-20260501T120000Z.jsonl": [_applied(family="a")],
+                "learn-applied-20260502T120000Z.jsonl": [_applied(family="b")],
+            }
+        )
         try:
             single = fx.file("learn-applied-20260501T120000Z.jsonl")
             rc, out, _ = _run_audit(fx, "--input", single)
@@ -443,12 +435,14 @@ class TestCmdAudit(unittest.TestCase):
             fx.cleanup()
 
     def test_json_flag_emits_parseable_json(self):
-        fx = _AuditFixture({
-            "learn-applied-20260501T120000Z.jsonl": [
-                _applied(),
-                _rejected(),
-            ],
-        })
+        fx = _AuditFixture(
+            {
+                "learn-applied-20260501T120000Z.jsonl": [
+                    _applied(),
+                    _rejected(),
+                ],
+            }
+        )
         try:
             rc, out, _ = _run_audit(fx, "--json")
             self.assertEqual(rc, 0)
@@ -461,17 +455,17 @@ class TestCmdAudit(unittest.TestCase):
             fx.cleanup()
 
     def test_filter_decision_applied_excludes_rejects(self):
-        fx = _AuditFixture({
-            "learn-applied-x.jsonl": [
-                _applied(),
-                _rejected(decision="rejected_by_gate"),
-                _rejected(decision="rejected_by_ast"),
-            ],
-        })
+        fx = _AuditFixture(
+            {
+                "learn-applied-x.jsonl": [
+                    _applied(),
+                    _rejected(decision="rejected_by_gate"),
+                    _rejected(decision="rejected_by_ast"),
+                ],
+            }
+        )
         try:
-            rc, out, _ = _run_audit(fx,
-                                    "--filter-decision", "applied",
-                                    "--json")
+            rc, out, _ = _run_audit(fx, "--filter-decision", "applied", "--json")
             self.assertEqual(rc, 0)
             doc = json.loads(out)
             self.assertEqual(doc["total_records"], 1)
@@ -481,18 +475,17 @@ class TestCmdAudit(unittest.TestCase):
             fx.cleanup()
 
     def test_filter_source_llm_excludes_substring(self):
-        fx = _AuditFixture({
-            "learn-applied-x.jsonl": [
-                _applied(source="substring"),
-                _applied(source="llm",
-                         model="openai/gpt-5-mini"),
-                _applied(source="llm"),
-            ],
-        })
+        fx = _AuditFixture(
+            {
+                "learn-applied-x.jsonl": [
+                    _applied(source="substring"),
+                    _applied(source="llm", model="openai/gpt-5-mini"),
+                    _applied(source="llm"),
+                ],
+            }
+        )
         try:
-            rc, out, _ = _run_audit(fx,
-                                    "--filter-source", "llm",
-                                    "--json")
+            rc, out, _ = _run_audit(fx, "--filter-source", "llm", "--json")
             self.assertEqual(rc, 0)
             doc = json.loads(out)
             self.assertEqual(doc["total_records"], 2)
@@ -502,17 +495,17 @@ class TestCmdAudit(unittest.TestCase):
             fx.cleanup()
 
     def test_filter_family_excludes_other_families(self):
-        fx = _AuditFixture({
-            "learn-applied-x.jsonl": [
-                _applied(family="phone"),
-                _applied(family="phone"),
-                _applied(family="income"),
-            ],
-        })
+        fx = _AuditFixture(
+            {
+                "learn-applied-x.jsonl": [
+                    _applied(family="phone"),
+                    _applied(family="phone"),
+                    _applied(family="income"),
+                ],
+            }
+        )
         try:
-            rc, out, _ = _run_audit(fx,
-                                    "--filter-family", "phone",
-                                    "--json")
+            rc, out, _ = _run_audit(fx, "--filter-family", "phone", "--json")
             self.assertEqual(rc, 0)
             doc = json.loads(out)
             self.assertEqual(doc["total_records"], 2)
@@ -522,19 +515,23 @@ class TestCmdAudit(unittest.TestCase):
             fx.cleanup()
 
     def test_since_filter_excludes_older_and_unparseable(self):
-        fx = _AuditFixture({
-            "learn-applied-x.jsonl": [
-                _applied(timestamp="2026-05-10T12:00:00+00:00"),
-                _applied(timestamp="2026-04-01T00:00:00+00:00"),
-                # record without timestamp -> excluded by --since
-                {"decision": "applied", "family": "no_ts",
-                 "keyword": "x", "source": "substring"},
-            ],
-        })
+        fx = _AuditFixture(
+            {
+                "learn-applied-x.jsonl": [
+                    _applied(timestamp="2026-05-10T12:00:00+00:00"),
+                    _applied(timestamp="2026-04-01T00:00:00+00:00"),
+                    # record without timestamp -> excluded by --since
+                    {
+                        "decision": "applied",
+                        "family": "no_ts",
+                        "keyword": "x",
+                        "source": "substring",
+                    },
+                ],
+            }
+        )
         try:
-            rc, out, _ = _run_audit(fx,
-                                    "--since", "2026-05-01T00:00:00Z",
-                                    "--json")
+            rc, out, _ = _run_audit(fx, "--since", "2026-05-01T00:00:00Z", "--json")
             self.assertEqual(rc, 0)
             doc = json.loads(out)
             self.assertEqual(doc["total_records"], 1)
@@ -542,12 +539,13 @@ class TestCmdAudit(unittest.TestCase):
             fx.cleanup()
 
     def test_top_n_limits_lists(self):
-        fx = _AuditFixture({
-            "learn-applied-x.jsonl": [
-                _applied(family=f"fam_{i}", keyword=f"k_{i}")
-                for i in range(8)
-            ],
-        })
+        fx = _AuditFixture(
+            {
+                "learn-applied-x.jsonl": [
+                    _applied(family=f"fam_{i}", keyword=f"k_{i}") for i in range(8)
+                ],
+            }
+        )
         try:
             rc, out, _ = _run_audit(fx, "--top", "3", "--json")
             self.assertEqual(rc, 0)
@@ -559,9 +557,11 @@ class TestCmdAudit(unittest.TestCase):
             fx.cleanup()
 
     def test_unparseable_since_falls_back_to_no_filter(self):
-        fx = _AuditFixture({
-            "learn-applied-x.jsonl": [_applied(), _applied()],
-        })
+        fx = _AuditFixture(
+            {
+                "learn-applied-x.jsonl": [_applied(), _applied()],
+            }
+        )
         try:
             rc, out, err = _run_audit(fx, "--since", "not-a-date", "--json")
             self.assertEqual(rc, 0)
@@ -580,9 +580,11 @@ class TestReadOnlyAudit(unittest.TestCase):
     """audit command MUST NOT write any files."""
 
     def test_audit_never_opens_files_for_writing(self):
-        fx = _AuditFixture({
-            "learn-applied-x.jsonl": [_applied()],
-        })
+        fx = _AuditFixture(
+            {
+                "learn-applied-x.jsonl": [_applied()],
+            }
+        )
         try:
             real_open = open
             write_modes = []
@@ -596,10 +598,7 @@ class TestReadOnlyAudit(unittest.TestCase):
                 rc, _, _ = _run_audit(fx)
 
             self.assertEqual(rc, 0)
-            self.assertEqual(
-                write_modes, [],
-                f"audit leaked write opens: {write_modes}"
-            )
+            self.assertEqual(write_modes, [], f"audit leaked write opens: {write_modes}")
             # No new files appeared
             files_after = set(os.listdir(fx.logs))
             self.assertEqual(files_after, {"learn-applied-x.jsonl"})

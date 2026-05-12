@@ -73,7 +73,7 @@ import json
 import os
 import re
 import sys
-from collections import Counter, defaultdict
+from collections import Counter
 from typing import Any, Dict, List, Optional, Tuple
 from unittest import mock
 
@@ -108,30 +108,31 @@ ALLOWED_FAMILIES = sorted(FAMILY_TOKENS.keys())
 # measurement — purpose is to validate pipeline wiring AND demonstrate that an
 # LLM-style classifier CAN beat the heuristic on phrasing variants.
 _MOCK_HINTS: Dict[str, List[str]] = {
-    "email":          ["email", "e-mail", "mail-adresse", "mailadresse"],
-    "phone":          ["phone", "telefon", "handy", "mobil", "nummer", "tel"],
-    "birth_year":     ["geburtsjahr", "year of birth", "jahrgang", "born in"],
-    "postal_code":    ["plz", "postleitzahl", "zip", "postal"],
-    "hh_income":      ["haushaltseinkommen", "household income",
-                       "familieneinkommen"],
-    "income":         ["nettoeinkommen", "salary", "gehalt",
-                       "personal income", "monthly salary"],
-    "first_name":     ["vorname", "first name", "given name"],
-    "last_name":      ["nachname", "surname", "last name", "family name"],
-    "street":         ["strasse", "straße", "street", "anschrift"],
-    "city":           ["stadt", "wohnort", "city", "town"],
-    "country":        ["land", "country", "nation", "in welchem land"],
-    "state_region":   ["bundesland", "state", "province", "kanton"],
-    "household_size": ["personen", "wie viele personen",
-                       "household size", "people in your household"],
-    "age":            ["wie alt", "your age", "ihr alter"],
-    "job_title":      ["beruf", "job title", "berufsbezeichnung"],
-    "industry":       ["branche", "industry", "wirtschaftszweig"],
-    "nationality":    ["staatsangeh", "nationality", "nationalit"],
-    "language":       ["muttersprache", "native language", "sprache"],
-    "gender":         ["geschlecht", "gender", "sex"],
-    "full_name":      ["vollstaendiger name", "vollständiger name",
-                       "full name"],
+    "email": ["email", "e-mail", "mail-adresse", "mailadresse"],
+    "phone": ["phone", "telefon", "handy", "mobil", "nummer", "tel"],
+    "birth_year": ["geburtsjahr", "year of birth", "jahrgang", "born in"],
+    "postal_code": ["plz", "postleitzahl", "zip", "postal"],
+    "hh_income": ["haushaltseinkommen", "household income", "familieneinkommen"],
+    "income": ["nettoeinkommen", "salary", "gehalt", "personal income", "monthly salary"],
+    "first_name": ["vorname", "first name", "given name"],
+    "last_name": ["nachname", "surname", "last name", "family name"],
+    "street": ["strasse", "straße", "street", "anschrift"],
+    "city": ["stadt", "wohnort", "city", "town"],
+    "country": ["land", "country", "nation", "in welchem land"],
+    "state_region": ["bundesland", "state", "province", "kanton"],
+    "household_size": [
+        "personen",
+        "wie viele personen",
+        "household size",
+        "people in your household",
+    ],
+    "age": ["wie alt", "your age", "ihr alter"],
+    "job_title": ["beruf", "job title", "berufsbezeichnung"],
+    "industry": ["branche", "industry", "wirtschaftszweig"],
+    "nationality": ["staatsangeh", "nationality", "nationalit"],
+    "language": ["muttersprache", "native language", "sprache"],
+    "gender": ["geschlecht", "gender", "sex"],
+    "full_name": ["vollstaendiger name", "vollständiger name", "full name"],
 }
 
 
@@ -175,15 +176,21 @@ def _mock_call_llm(
     chosen_family = best_family
 
     if chosen_family is None:
-        content = json.dumps({
-            "family": None, "confidence": 0.0, "reason": "mock no-match",
-        })
+        content = json.dumps(
+            {
+                "family": None,
+                "confidence": 0.0,
+                "reason": "mock no-match",
+            }
+        )
     else:
-        content = json.dumps({
-            "family": chosen_family,
-            "confidence": 0.9,
-            "reason": "mock substring-hint match",
-        })
+        content = json.dumps(
+            {
+                "family": chosen_family,
+                "confidence": 0.9,
+                "reason": "mock substring-hint match",
+            }
+        )
 
     return LLMResponse(
         content=content,
@@ -211,8 +218,7 @@ def load_golden(path: str) -> List[Dict[str, Any]]:
             try:
                 rec = json.loads(line)
             except json.JSONDecodeError as e:
-                raise json.JSONDecodeError(
-                    f"{path}:{line_num}: {e.msg}", e.doc, e.pos)
+                raise json.JSONDecodeError(f"{path}:{line_num}: {e.msg}", e.doc, e.pos)
             records.append(rec)
     return records
 
@@ -224,20 +230,17 @@ def validate_golden(records: List[Dict[str, Any]]) -> List[str]:
     for i, rec in enumerate(records):
         missing = REQUIRED - set(rec.keys())
         if missing:
-            errors.append(
-                f"record[{i}] missing fields: {sorted(missing)}")
+            errors.append(f"record[{i}] missing fields: {sorted(missing)}")
             continue
         if not isinstance(rec["label"], str) or not rec["label"].strip():
             errors.append(f"record[{i}] label must be non-empty str")
         if rec["expected_family"] is not None:
             if rec["expected_family"] not in FAMILY_TOKENS:
                 errors.append(
-                    f"record[{i}] expected_family "
-                    f"{rec['expected_family']!r} not in FAMILY_TOKENS"
+                    f"record[{i}] expected_family {rec['expected_family']!r} not in FAMILY_TOKENS"
                 )
         if rec.get("lang") not in {"de", "en"}:
-            errors.append(
-                f"record[{i}] lang must be 'de' or 'en', got {rec.get('lang')!r}")
+            errors.append(f"record[{i}] lang must be 'de' or 'en', got {rec.get('lang')!r}")
     return errors
 
 
@@ -251,14 +254,17 @@ def _phase1_prediction(label: str) -> Tuple[Optional[str], float]:
 
 
 def _phase2_prediction(
-    label: str, *, use_mock: bool,
+    label: str,
+    *,
+    use_mock: bool,
 ) -> Tuple[Optional[str], float, Optional[str]]:
     """Phase 2: LLM suggest_via_llm. Returns (family, confidence, error_or_None).
 
     Caller must wrap in mock-patch context if use_mock=True.
     """
     r: LLMSuggestion = suggest_via_llm(
-        label, allowed_families=ALLOWED_FAMILIES,
+        label,
+        allowed_families=ALLOWED_FAMILIES,
     )
     return r.family, r.confidence, r.error
 
@@ -283,7 +289,7 @@ def evaluate(
         expected = rec["expected_family"]
 
         p1_fam, p1_conf = _phase1_prediction(label)
-        p1_correct = (p1_fam == expected)
+        p1_correct = p1_fam == expected
         if not p1_correct:
             confusion_p1[(str(expected), str(p1_fam))] += 1
 
@@ -300,21 +306,19 @@ def evaluate(
 
     if phase == 2:
         ctx = (
-            mock.patch("survey.learn.suggester.call_llm",
-                       side_effect=_mock_call_llm)
-            if use_mock else _NullCM()
+            mock.patch("survey.learn.suggester.call_llm", side_effect=_mock_call_llm)
+            if use_mock
+            else _NullCM()
         )
         with ctx:
             for item, rec in zip(items, records):
-                p2_fam, p2_conf, p2_err = _phase2_prediction(
-                    rec["label"], use_mock=use_mock)
+                p2_fam, p2_conf, p2_err = _phase2_prediction(rec["label"], use_mock=use_mock)
                 item["p2_pred"] = p2_fam
                 item["p2_conf"] = round(p2_conf, 4)
-                item["p2_correct"] = (p2_fam == rec["expected_family"])
+                item["p2_correct"] = p2_fam == rec["expected_family"]
                 item["p2_error"] = p2_err
                 if not item["p2_correct"]:
-                    confusion_p2[(
-                        str(rec["expected_family"]), str(p2_fam))] += 1
+                    confusion_p2[(str(rec["expected_family"]), str(p2_fam))] += 1
 
     return _build_report(items, confusion_p1, confusion_p2, phase, use_mock)
 
@@ -342,25 +346,23 @@ def _per_family_stats(items: List[Dict[str, Any]], phase: int) -> Dict[str, Dict
     stats: Dict[str, Dict[str, Any]] = {}
     for fam in fams:
         tp = sum(
-            1 for it in items
-            if str(it["expected"]) == fam
-            and str(it[f"p{phase}_pred"]) == fam)
+            1 for it in items if str(it["expected"]) == fam and str(it[f"p{phase}_pred"]) == fam
+        )
         fp = sum(
-            1 for it in items
-            if str(it["expected"]) != fam
-            and str(it[f"p{phase}_pred"]) == fam)
+            1 for it in items if str(it["expected"]) != fam and str(it[f"p{phase}_pred"]) == fam
+        )
         fn = sum(
-            1 for it in items
-            if str(it["expected"]) == fam
-            and str(it[f"p{phase}_pred"]) != fam)
+            1 for it in items if str(it["expected"]) == fam and str(it[f"p{phase}_pred"]) != fam
+        )
         n = tp + fn
         precision = tp / (tp + fp) if (tp + fp) else 0.0
         recall = tp / (tp + fn) if (tp + fn) else 0.0
-        f1 = (2 * precision * recall / (precision + recall)
-              if (precision + recall) else 0.0)
+        f1 = 2 * precision * recall / (precision + recall) if (precision + recall) else 0.0
         stats[str(fam)] = {
             "n": n,
-            "tp": tp, "fp": fp, "fn": fn,
+            "tp": tp,
+            "fp": fp,
+            "fn": fn,
             "precision": round(precision, 4),
             "recall": round(recall, 4),
             "f1": round(f1, 4),
@@ -389,8 +391,7 @@ def _build_report(
         "phase1_accuracy": round(p1_acc, 4),
         "phase1_per_family": _per_family_stats(items, 1),
         "phase1_confusion_top5": [
-            {"expected": e, "actual": a, "count": c}
-            for (e, a), c in confusion_p1.most_common(5)
+            {"expected": e, "actual": a, "count": c} for (e, a), c in confusion_p1.most_common(5)
         ],
     }
 
@@ -402,8 +403,7 @@ def _build_report(
         report["phase2_lift"] = round(p2_acc - p1_acc, 4)
         report["phase2_per_family"] = _per_family_stats(items, 2)
         report["phase2_confusion_top5"] = [
-            {"expected": e, "actual": a, "count": c}
-            for (e, a), c in confusion_p2.most_common(5)
+            {"expected": e, "actual": a, "count": c} for (e, a), c in confusion_p2.most_common(5)
         ]
 
     report["items"] = items
@@ -430,14 +430,15 @@ def format_summary(report: Dict[str, Any]) -> str:
     if report["phase"] == 2:
         lines.append(
             f"  phase2_accuracy: {report['phase2_accuracy']:.3f}  "
-            f"({report['phase2_correct']}/{report['total']})")
+            f"({report['phase2_correct']}/{report['total']})"
+        )
         lines.append(f"  phase2_lift:     {report['phase2_lift']:+.3f}")
     if report["phase1_confusion_top5"]:
         lines.append("  phase1 confusion (top5):")
         for c in report["phase1_confusion_top5"]:
             lines.append(
-                f"    expected={c['expected']:<14} "
-                f"actual={c['actual']:<14} n={c['count']}")
+                f"    expected={c['expected']:<14} actual={c['actual']:<14} n={c['count']}"
+            )
     return "\n".join(lines)
 
 
@@ -448,26 +449,28 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     p = argparse.ArgumentParser(
         description="SR-101 FCTC-ES Suggester Eval-Harness.",
     )
-    p.add_argument("--phase", type=int, choices=[1, 2], default=1,
-                   help="Eval phase (1=heuristic only, 2=LLM)")
+    p.add_argument(
+        "--phase", type=int, choices=[1, 2], default=1, help="Eval phase (1=heuristic only, 2=LLM)"
+    )
     grp = p.add_mutually_exclusive_group()
-    grp.add_argument("--mock", action="store_true",
-                     help="Phase-2: use deterministic mock LLM (no API key)")
-    grp.add_argument("--live", action="store_true",
-                     help="Phase-2: real API call (costs money)")
-    p.add_argument("--golden", default=DEFAULT_GOLDEN,
-                   help="Path to golden-set JSONL")
-    p.add_argument("--report", default=DEFAULT_REPORT,
-                   help="Path to write JSON report to")
-    p.add_argument("--min-phase1-accuracy",
-                   type=float, default=DEFAULT_MIN_PHASE1_ACCURACY,
-                   help="Threshold gate for Phase-1 accuracy")
-    p.add_argument("--exit-non-zero-on-threshold-miss",
-                   action="store_true",
-                   help="Exit 1 if phase1_accuracy below threshold "
-                        "(CI/cron gate mode)")
-    p.add_argument("--quiet", action="store_true",
-                   help="Suppress stdout summary")
+    grp.add_argument(
+        "--mock", action="store_true", help="Phase-2: use deterministic mock LLM (no API key)"
+    )
+    grp.add_argument("--live", action="store_true", help="Phase-2: real API call (costs money)")
+    p.add_argument("--golden", default=DEFAULT_GOLDEN, help="Path to golden-set JSONL")
+    p.add_argument("--report", default=DEFAULT_REPORT, help="Path to write JSON report to")
+    p.add_argument(
+        "--min-phase1-accuracy",
+        type=float,
+        default=DEFAULT_MIN_PHASE1_ACCURACY,
+        help="Threshold gate for Phase-1 accuracy",
+    )
+    p.add_argument(
+        "--exit-non-zero-on-threshold-miss",
+        action="store_true",
+        help="Exit 1 if phase1_accuracy below threshold (CI/cron gate mode)",
+    )
+    p.add_argument("--quiet", action="store_true", help="Suppress stdout summary")
     return p.parse_args(argv)
 
 
@@ -476,8 +479,7 @@ def main(argv: Optional[List[str]] = None) -> int:
 
     # Phase 2 requires explicit mode choice
     if args.phase == 2 and not (args.mock or args.live):
-        print("ERROR: --phase 2 requires either --mock or --live",
-              file=sys.stderr)
+        print("ERROR: --phase 2 requires either --mock or --live", file=sys.stderr)
         return 2
 
     # Load + validate golden set

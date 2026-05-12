@@ -9,17 +9,26 @@
 from __future__ import annotations
 
 from fastapi import APIRouter, Depends
+
 from ._common import (
-    SnapshotRequest, SnapshotResponse,
-    CompletionRequest, CompletionResponse,
-    UniversalAnswerRequest, UniversalAnswerResponse,
-    require_survey_ready, update_command_registry,
+    CompletionRequest,
+    CompletionResponse,
+    SnapshotRequest,
+    SnapshotResponse,
+    UniversalAnswerRequest,
+    UniversalAnswerResponse,
+    require_survey_ready,
+    update_command_registry,
 )
 
 router = APIRouter(prefix="/survey", tags=["survey-answer"])
 
-import json, asyncio, websockets, urllib.request, hashlib
+import asyncio
+import hashlib
+import json
+import urllib.request
 
+import websockets
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # POST /survey/snapshot — 100% element capture via ELEMENT_EXTRACTOR_JS
@@ -27,7 +36,7 @@ import json, asyncio, websockets, urllib.request, hashlib
 # Features: Shadow DOM traversal, Angular CDK drag-drop, visual captcha, iframes
 # ═══════════════════════════════════════════════════════════════════════════════
 
-EXTRACTOR_JS = '''
+EXTRACTOR_JS = """
 (function(){
     var out=[], seen=new Set(), images=[], dragPuzzle=null, captchas=[];
     var scanRoot = (function(){
@@ -104,23 +113,28 @@ EXTRACTOR_JS = '''
     var txt=document.body.innerText.substring(0,200);
     return {elements:out,images,captchas,dragPuzzle,count:out.length,text_preview:txt};
 })()
-'''
+"""
 
 
 async def _ws_snapshot(ws_url: str) -> dict:
     """Execute ELEMENT_EXTRACTOR_JS via WebSocket."""
     async with websockets.connect(ws_url) as ws:
-        await ws.send(json.dumps({"id": 1, "method": "Runtime.evaluate",
-                                  "params": {"expression": EXTRACTOR_JS}}))
+        await ws.send(
+            json.dumps(
+                {"id": 1, "method": "Runtime.evaluate", "params": {"expression": EXTRACTOR_JS}}
+            )
+        )
         resp = await asyncio.wait_for(ws.recv(), timeout=10)
         return json.loads(resp).get("result", {}).get("result", {}).get("value", {})
 
 
-@router.post("/snapshot", response_model=SnapshotResponse, dependencies=[Depends(require_survey_ready)])
+@router.post(
+    "/snapshot", response_model=SnapshotResponse, dependencies=[Depends(require_survey_ready)]
+)
 async def api_snapshot(req: SnapshotRequest):
     """
     Captures ALL elements on the current page at 100% coverage.
-    
+
     100% Element Capture (ELEMENT_EXTRACTOR_JS):
       ✓ All form elements (input, button, select, textarea)
       ✓ Shadow DOM traversal (depth≤5, Angular apps)
@@ -132,7 +146,7 @@ async def api_snapshot(req: SnapshotRequest):
       ✓ Modal detection via viewport-center proximity
       ✓ Cookie consent banner (.cky-btn-accept)
       ✓ Sort by Y-position (questions before answers)
-    
+
     Uses CDP WebSocket Runtime.evaluate (PRIMARY, NOT cua-driver!)
     """
     ws = req.ws_url
@@ -143,19 +157,20 @@ async def api_snapshot(req: SnapshotRequest):
             if p.get("type") == "page" and not p.get("url", "").startswith("chrome-extension"):
                 ws = p.get("webSocketDebuggerUrl", "")
                 break
-    
+
     if not ws:
         return SnapshotResponse(status="error", reason="No tab found")
-    
+
     try:
         data = await _ws_snapshot(ws)
         body_preview = data.get("text_preview", "")[:200]
         elem_count = data.get("count", 0)
         elements = data.get("elements", [])
         hash_str = hashlib.md5(json.dumps(elements, sort_keys=True).encode()).hexdigest()[:12]
-        
-        update_command_registry("snapshot_page", True,
-                                {"pages_processed": 1, "elements_captured": elem_count})
+
+        update_command_registry(
+            "snapshot_page", True, {"pages_processed": 1, "elements_captured": elem_count}
+        )
         return SnapshotResponse(
             status="ok",
             url="",
@@ -176,7 +191,10 @@ async def api_snapshot(req: SnapshotRequest):
 # Screen-out keywords: "keine passende", "nicht qualifiziert", "screen out"
 # ═══════════════════════════════════════════════════════════════════════════════
 
-@router.post("/completion", response_model=CompletionResponse, dependencies=[Depends(require_survey_ready)])
+
+@router.post(
+    "/completion", response_model=CompletionResponse, dependencies=[Depends(require_survey_ready)]
+)
 async def api_completion(req: CompletionRequest):
     """Detects if survey is completed, screen-out, or still running."""
     ws = req.ws_url
@@ -187,22 +205,42 @@ async def api_completion(req: CompletionRequest):
             if p.get("type") == "page" and "heypiggy" in p.get("url", ""):
                 ws = p.get("webSocketDebuggerUrl", "")
                 break
-    
+
     if not ws:
         return CompletionResponse(status="error", reason="No tab found")
-    
+
     try:
         async with websockets.connect(ws) as w:
-            await w.send(json.dumps({"id": 1, "method": "Runtime.evaluate",
-                                    "params": {"expression": "document.body.innerText"}}))
+            await w.send(
+                json.dumps(
+                    {
+                        "id": 1,
+                        "method": "Runtime.evaluate",
+                        "params": {"expression": "document.body.innerText"},
+                    }
+                )
+            )
             resp = await asyncio.wait_for(w.recv(), timeout=5)
             text = json.loads(resp).get("result", {}).get("result", {}).get("value", "").lower()
-        
-        completed = any(k in text for k in ["vielen dank", "abgeschlossen", "fertig", "completed", "thank you", "danke"])
-        screen_out = any(k in text for k in ["keine passende umfrage", "nicht qualifiziert", "screen out", "no matching", "keine umfragen"])
-        
-        update_command_registry("detect_completion", True,
-                                {"completed": completed, "screen_out": screen_out})
+
+        completed = any(
+            k in text
+            for k in ["vielen dank", "abgeschlossen", "fertig", "completed", "thank you", "danke"]
+        )
+        screen_out = any(
+            k in text
+            for k in [
+                "keine passende umfrage",
+                "nicht qualifiziert",
+                "screen out",
+                "no matching",
+                "keine umfragen",
+            ]
+        )
+
+        update_command_registry(
+            "detect_completion", True, {"completed": completed, "screen_out": screen_out}
+        )
         return CompletionResponse(
             status="ok",
             completed=completed,
@@ -221,17 +259,20 @@ async def api_completion(req: CompletionRequest):
 # Provider-agnostic: detects question type from DOM, not from provider name!
 # ═══════════════════════════════════════════════════════════════════════════════
 
-@router.post("/answer", response_model=UniversalAnswerResponse, dependencies=[Depends(require_survey_ready)])
+
+@router.post(
+    "/answer", response_model=UniversalAnswerResponse, dependencies=[Depends(require_survey_ready)]
+)
 async def api_universal_answer(req: UniversalAnswerRequest):
     """
     Universeller Survey-Answerer — DOM-basiert, NICHT provider-hardcoded.
-    
+
     Verified patterns (commands/surveys/survey-answer-patterns.md):
       ✓ Radio: document.querySelectorAll("input[type=radio]")[0].click()
       ✓ Checkbox: document.querySelectorAll("input[type=checkbox]")[0].click()
       ✓ Text: textarea.value=... + dispatchEvent(input+change)
       ✓ Submit: "Weiter"/"Next"/"Submit" button click
-    
+
     Provider-agnostic: erkennt question_type aus DOM Struktur:
       - "radio" → single choice
       - "checkbox" → multi choice
@@ -239,7 +280,7 @@ async def api_universal_answer(req: UniversalAnswerRequest):
       - "textarea" → long text
       - "select" → dropdown
       - "nps" → 0-10 scale
-    
+
     Profile-based answer mapping (tool_universal_answer.py):
       - Lädt Persona-Daten aus survey-cli/profiles/
       - Mappt Antworten basierend auf demographic profile
@@ -247,6 +288,7 @@ async def api_universal_answer(req: UniversalAnswerRequest):
     """
     try:
         from tools.tool_universal_answer import answer as _universal_answer
+
         result = _universal_answer(
             ws_url=req.ws_url,
             cdp_port=req.cdp_port,

@@ -208,115 +208,152 @@ class ProfileLoader:
     FIELD_PATTERNS: List[Tuple[str, "re.Pattern[str]"]] = [
         # Email — sehr spezifisches Pattern, ganz nach oben.
         ("email", re.compile(r"(e[\s\-]?mail|mailadresse|email\s*address)", re.I)),
-
         # Phone — vor city/street, damit "Telefon-Nummer in Berlin" nicht
         # in city laufen kann.
-        ("phone", re.compile(
-            r"(telefon|tel\.?\s*(nr|nummer)?|handy|mobil(?:nummer)?|"
-            r"phone(?:\s*number)?|mobile|cell)",
-            re.I,
-        )),
-
+        (
+            "phone",
+            re.compile(
+                r"(telefon|tel\.?\s*(nr|nummer)?|handy|mobil(?:nummer)?|"
+                r"phone(?:\s*number)?|mobile|cell)",
+                re.I,
+            ),
+        ),
         # Birth year — vor age.
         # ``year ... born`` deckt Phrasen wie "What year were you born?",
         # "In welchem Jahr wurden Sie geboren?". Wir matchen "year"/"jahr"
         # + bis zu 40 Zeichen + "born"/"geboren"/"geburt". Lazy (.{0,40}?)
         # damit es nicht ueber mehrere Klauseln greift.
-        ("birth_year", re.compile(
-            r"(geburtsjahr|jahrgang|year\s*of\s*birth|birth\s*year|"
-            r"\byear\b.{0,40}?\bborn\b|"
-            r"\bjahr\b.{0,40}?\b(geboren|geburt)\b)",
-            re.I,
-        )),
-
+        (
+            "birth_year",
+            re.compile(
+                r"(geburtsjahr|jahrgang|year\s*of\s*birth|birth\s*year|"
+                r"\byear\b.{0,40}?\bborn\b|"
+                r"\bjahr\b.{0,40}?\b(geboren|geburt)\b)",
+                re.I,
+            ),
+        ),
         # Postal code — vor city.
-        ("postal_code", re.compile(
-            r"(\bplz\b|postleitzahl|\bzip(?:\s*code)?\b|postal\s*code|postcode)",
-            re.I,
-        )),
-
+        (
+            "postal_code",
+            re.compile(
+                r"(\bplz\b|postleitzahl|\bzip(?:\s*code)?\b|postal\s*code|postcode)",
+                re.I,
+            ),
+        ),
         # Household income — vor income.
-        ("hh_income", re.compile(
-            r"(haushaltseinkommen|household\s*income|familieneinkommen)",
-            re.I,
-        )),
-
+        (
+            "hh_income",
+            re.compile(
+                r"(haushaltseinkommen|household\s*income|familieneinkommen)",
+                re.I,
+            ),
+        ),
         # Personal income.
-        ("income", re.compile(
-            r"(einkommen|gehalt|salary|personal\s*income|netto(?:einkommen)?)",
-            re.I,
-        )),
-
+        (
+            "income",
+            re.compile(
+                r"(einkommen|gehalt|salary|personal\s*income|netto(?:einkommen)?)",
+                re.I,
+            ),
+        ),
         # First/last name — vor full_name "name".
-        ("first_name", re.compile(
-            r"(vorname|first\s*name|given\s*name|forename)", re.I,
-        )),
-        ("last_name", re.compile(
-            r"(nachname|last\s*name|surname|family\s*name|familyname)", re.I,
-        )),
-
+        (
+            "first_name",
+            re.compile(
+                r"(vorname|first\s*name|given\s*name|forename)",
+                re.I,
+            ),
+        ),
+        (
+            "last_name",
+            re.compile(
+                r"(nachname|last\s*name|surname|family\s*name|familyname)",
+                re.I,
+            ),
+        ),
         # Street/address.
-        ("street", re.compile(
-            r"(stra(?:ss|ß)e|street|adresse|address(?:\s*line)?)", re.I,
-        )),
-
+        (
+            "street",
+            re.compile(
+                r"(stra(?:ss|ß)e|street|adresse|address(?:\s*line)?)",
+                re.I,
+            ),
+        ),
         # City — auch "Wohnort" / "Ort".
         ("city", re.compile(r"(stadt|wohnort|\bort\b|\bcity\b|\btown\b)", re.I)),
-
         # Country — vor state_region, sonst frisst "\bland\b" das "Deutschland".
         # Spezifisch: "land" alleine wuerde sowohl "Bundesland" als auch
         # "Land/Country" matchen — deshalb MUSS country zuerst geprueft werden,
         # state_region matcht "\bland\b" nur als state.
-        ("country", re.compile(
-            r"(\bland\b|country|nation\s*of\s*residence|wohnsitzland|herkunftsland|"
-            r"in\s*welchem\s*land)",
-            re.I,
-        )),
-
+        (
+            "country",
+            re.compile(
+                r"(\bland\b|country|nation\s*of\s*residence|wohnsitzland|herkunftsland|"
+                r"in\s*welchem\s*land)",
+                re.I,
+            ),
+        ),
         # State / region.  ``\bland\b`` bewusst NICHT mehr — siehe country oben.
-        ("state_region", re.compile(
-            r"(bundesland|\bregion\b|\bstate\b|province)", re.I,
-        )),
-
+        (
+            "state_region",
+            re.compile(
+                r"(bundesland|\bregion\b|\bstate\b|province)",
+                re.I,
+            ),
+        ),
         # Household size.
-        ("household_size", re.compile(
-            r"(haushaltsgr(?:ö|oe)sse|haushaltsgröße|personen\s*im\s*haushalt|"
-            r"household\s*size|people\s*in\s*household|wie\s*viele\s*personen)",
-            re.I,
-        )),
-
+        (
+            "household_size",
+            re.compile(
+                r"(haushaltsgr(?:ö|oe)sse|haushaltsgröße|personen\s*im\s*haushalt|"
+                r"household\s*size|people\s*in\s*household|wie\s*viele\s*personen)",
+                re.I,
+            ),
+        ),
         # Age — nach birth_year.
-        ("age", re.compile(
-            r"(\balter\b|\bage\b|wie\s*alt|your\s*age|ihr\s*alter)", re.I,
-        )),
-
+        (
+            "age",
+            re.compile(
+                r"(\balter\b|\bage\b|wie\s*alt|your\s*age|ihr\s*alter)",
+                re.I,
+            ),
+        ),
         # Job / profession.
-        ("job_title", re.compile(
-            r"(\bberuf\b|job\s*title|t(?:ä|ae)tigkeit|occupation|profession|position)",
-            re.I,
-        )),
-
+        (
+            "job_title",
+            re.compile(
+                r"(\bberuf\b|job\s*title|t(?:ä|ae)tigkeit|occupation|profession|position)",
+                re.I,
+            ),
+        ),
         # Industry / branche.
-        ("industry", re.compile(
-            r"(\bbranche\b|industry|sector|wirtschaftszweig)", re.I,
-        )),
-
+        (
+            "industry",
+            re.compile(
+                r"(\bbranche\b|industry|sector|wirtschaftszweig)",
+                re.I,
+            ),
+        ),
         # Nationality.
-        ("nationality", re.compile(
-            r"(nationalit(?:ä|ae)t|nationality|staatsangeh(?:ö|oe)rigkeit)",
-            re.I,
-        )),
-
+        (
+            "nationality",
+            re.compile(
+                r"(nationalit(?:ä|ae)t|nationality|staatsangeh(?:ö|oe)rigkeit)",
+                re.I,
+            ),
+        ),
         # Language.
         ("language", re.compile(r"(muttersprache|sprache|language)", re.I)),
-
         # Gender — Texteingaben sind selten, aber falls doch.
         ("gender", re.compile(r"(geschlecht|\bgender\b|\bsex\b)", re.I)),
-
         # Full name — nach first_name/last_name.
-        ("full_name", re.compile(
-            r"(\bname\b|full\s*name|vollst(?:ä|ae)ndiger\s*name)", re.I,
-        )),
+        (
+            "full_name",
+            re.compile(
+                r"(\bname\b|full\s*name|vollst(?:ä|ae)ndiger\s*name)",
+                re.I,
+            ),
+        ),
     ]
 
     # Welche logischen Schluessel sind sinnvolle Treffer fuer ``role=spinbutton``?
@@ -330,36 +367,36 @@ class ProfileLoader:
     # mess to strip; this list is the curated, parseable form.
     _CANDIDATE_HINTS: List[Tuple[str, Tuple[str, ...]]] = [
         ("email", ("email", "e-mail", "mail", "mailadresse")),
-        ("phone", ("telefon", "telephone", "phone", "handy", "mobil",
-                   "cell", "mobile")),
-        ("birth_year", ("geburtsjahr", "jahrgang", "birthyear", "birth year",
-                        "born", "geboren")),
+        ("phone", ("telefon", "telephone", "phone", "handy", "mobil", "cell", "mobile")),
+        ("birth_year", ("geburtsjahr", "jahrgang", "birthyear", "birth year", "born", "geboren")),
         ("age", ("alter", "age", "wie alt")),
         ("postal_code", ("plz", "postleitzahl", "zip", "postal", "postcode")),
-        ("hh_income", ("haushaltseinkommen", "familieneinkommen",
-                       "household income")),
+        ("hh_income", ("haushaltseinkommen", "familieneinkommen", "household income")),
         ("income", ("einkommen", "gehalt", "salary", "income", "netto")),
         ("first_name", ("vorname", "first name", "given name", "forename")),
-        ("last_name", ("nachname", "last name", "surname", "family name",
-                       "familyname")),
+        ("last_name", ("nachname", "last name", "surname", "family name", "familyname")),
         ("street", ("strasse", "straße", "street", "adresse", "address")),
         ("city", ("stadt", "wohnort", "ort", "city", "town")),
-        ("country", ("land", "country", "nation", "wohnsitzland",
-                     "herkunftsland")),
+        ("country", ("land", "country", "nation", "wohnsitzland", "herkunftsland")),
         ("state_region", ("bundesland", "region", "state", "province")),
-        ("household_size", ("haushalt", "household size",
-                            "personen im haushalt")),
-        ("job_title", ("beruf", "job title", "occupation", "taetigkeit",
-                       "tätigkeit")),
+        ("household_size", ("haushalt", "household size", "personen im haushalt")),
+        ("job_title", ("beruf", "job title", "occupation", "taetigkeit", "tätigkeit")),
         ("industry", ("branche", "industry", "sector")),
         ("gender", ("geschlecht", "gender", "sex")),
-        ("nationality", ("nationalitaet", "nationalität", "nationality",
-                         "staatsangehoerigkeit", "staatsangehörigkeit")),
+        (
+            "nationality",
+            (
+                "nationalitaet",
+                "nationalität",
+                "nationality",
+                "staatsangehoerigkeit",
+                "staatsangehörigkeit",
+            ),
+        ),
         ("language", ("sprache", "language")),
     ]
 
-    _NUMERIC_KEYS = {"age", "household_size", "birth_year", "postal_code",
-                     "income", "hh_income"}
+    _NUMERIC_KEYS = {"age", "household_size", "birth_year", "postal_code", "income", "hh_income"}
 
     # ────────────────────────────────────────────────────────────────────────
     # Loader
@@ -394,11 +431,9 @@ class ProfileLoader:
         filename = f"{profile_name}.json"
         paths = [
             os.path.join(module_dir, "profiles", filename),
-            os.path.join(os.path.dirname(module_dir), "config", "profiles",
-                         filename),
+            os.path.join(os.path.dirname(module_dir), "config", "profiles", filename),
             # Standard-Location relativ zur survey/-Quelle.
-            os.path.join(os.path.dirname(os.path.abspath(__file__)),
-                         "profiles", filename),
+            os.path.join(os.path.dirname(os.path.abspath(__file__)), "profiles", filename),
         ]
 
         profile = None
@@ -411,8 +446,7 @@ class ProfileLoader:
                     loaded_from = path
                     break
                 except Exception as exc:
-                    _LOG.warning("profile_loader: bad json at %s (%s)",
-                                 path, exc)
+                    _LOG.warning("profile_loader: bad json at %s (%s)", path, exc)
 
         if not profile:
             profile = dict(cls.DEFAULT_PROFILE)
@@ -427,8 +461,8 @@ class ProfileLoader:
                 dob = profile["date_of_birth"]
                 born = date.fromisoformat(dob)
                 today = date.today()
-                profile["age"] = today.year - born.year - (
-                    (today.month, today.day) < (born.month, born.day)
+                profile["age"] = (
+                    today.year - born.year - ((today.month, today.day) < (born.month, born.day))
                 )
             except (ValueError, TypeError):
                 profile["age"] = 32
@@ -440,17 +474,22 @@ class ProfileLoader:
                 "profile_loader: persona %r missing required keys: %s "
                 "(loaded from %s) — Heuristik 2b wird haeufiger LLM-Fallback "
                 "triggern. Fix: profiles/%s.json um diese Keys ergaenzen.",
-                profile_name, sorted(missing), loaded_from or "<default>",
+                profile_name,
+                sorted(missing),
+                loaded_from or "<default>",
                 profile_name,
             )
 
         # Telemetrie initialisieren
-        cls._telemetry.setdefault(profile_name, {
-            "loads": 0,
-            "match_hits": 0,
-            "match_misses": 0,
-            "missing_required_count": len(missing),
-        })
+        cls._telemetry.setdefault(
+            profile_name,
+            {
+                "loads": 0,
+                "match_hits": 0,
+                "match_misses": 0,
+                "missing_required_count": len(missing),
+            },
+        )
         cls._telemetry[profile_name]["loads"] += 1
         cls._telemetry[profile_name]["missing_required_count"] = len(missing)
         cls._telemetry[profile_name]["loaded_from"] = loaded_from or "<default>"
@@ -550,12 +589,10 @@ class ProfileLoader:
             if value is None or value == "":
                 # Match, aber Profile hat den Wert nicht → naechstes Pattern
                 continue
-            cls._record_match(profile, hit=True, logical_key=logical_key,
-                              role=role, label=label)
+            cls._record_match(profile, hit=True, logical_key=logical_key, role=role, label=label)
             return str(value)
 
-        cls._record_match(profile, hit=False, logical_key=None,
-                          role=role, label=label)
+        cls._record_match(profile, hit=False, logical_key=None, role=role, label=label)
         return None
 
     @classmethod
@@ -610,10 +647,15 @@ class ProfileLoader:
         Long-Running-Runs den Speicher nicht sprengen.
         """
         ident = profile.get("_loader_name") or profile.get("name") or "anonymous"
-        bucket = cls._telemetry.setdefault(ident, {
-            "loads": 0, "match_hits": 0, "match_misses": 0,
-            "missing_required_count": 0,
-        })
+        bucket = cls._telemetry.setdefault(
+            ident,
+            {
+                "loads": 0,
+                "match_hits": 0,
+                "match_misses": 0,
+                "missing_required_count": 0,
+            },
+        )
         if hit:
             bucket["match_hits"] = bucket.get("match_hits", 0) + 1
             if logical_key:
@@ -622,9 +664,7 @@ class ProfileLoader:
         else:
             bucket["match_misses"] = bucket.get("match_misses", 0) + 1
             if label:
-                miss_labels: List[Dict[str, Any]] = bucket.setdefault(
-                    "miss_labels", []
-                )
+                miss_labels: List[Dict[str, Any]] = bucket.setdefault("miss_labels", [])
                 if len(miss_labels) < 500:
                     # SR-59 #58: rich, semantically-tagged miss record.
                     # PRIVACY INVARIANT: ``user_value_provided`` is a boolean
@@ -634,24 +674,23 @@ class ProfileLoader:
                     # deduplicate identical labels across reruns.
                     label_trunc = label[:200]
                     page_url = profile.get("_page_url")
-                    miss_labels.append({
-                        # Backward-compat fields (consumed by aggregator <#58):
-                        "role": role,
-                        "label": label_trunc,
-                        # SR-59 #58 enrichment:
-                        "ts": datetime.now(timezone.utc).isoformat(
-                            timespec="seconds"),
-                        "question_text": label_trunc,
-                        "page_url": page_url if isinstance(page_url, str)
-                                    else None,
-                        "snapshot_hash": hashlib.sha1(
-                            label_trunc.encode("utf-8"),
-                            usedforsecurity=False,
-                        ).hexdigest()[:12],
-                        "candidate_keys": cls._guess_candidate_keys(
-                            label_trunc),
-                        "user_value_provided": False,
-                    })
+                    miss_labels.append(
+                        {
+                            # Backward-compat fields (consumed by aggregator <#58):
+                            "role": role,
+                            "label": label_trunc,
+                            # SR-59 #58 enrichment:
+                            "ts": datetime.now(timezone.utc).isoformat(timespec="seconds"),
+                            "question_text": label_trunc,
+                            "page_url": page_url if isinstance(page_url, str) else None,
+                            "snapshot_hash": hashlib.sha1(
+                                label_trunc.encode("utf-8"),
+                                usedforsecurity=False,
+                            ).hexdigest()[:12],
+                            "candidate_keys": cls._guess_candidate_keys(label_trunc),
+                            "user_value_provided": False,
+                        }
+                    )
 
     # ────────────────────────────────────────────────────────────────────────
     # Resolver — mappt logical_key → konkreter Profil-Wert
@@ -713,8 +752,7 @@ class ProfileLoader:
 
         if logical_key == "full_name":
             return profile.get("name") or (
-                f"{profile.get('first_name','')} {profile.get('last_name','')}".strip()
-                or None
+                f"{profile.get('first_name', '')} {profile.get('last_name', '')}".strip() or None
             )
 
         if logical_key == "phone":

@@ -58,6 +58,7 @@ logger = logging.getLogger("fallback_chain")
 
 # ── EXCEPTION ──────────────────────────────────────────────────────────────
 
+
 class CaptchaUnsolvedError(Exception):
     """Raised wenn alle Fallback-Schritte fehlgeschlagen sind.
 
@@ -79,9 +80,11 @@ class CaptchaUnsolvedError(Exception):
 
 # ── RESULT DATACLASS ───────────────────────────────────────────────────────
 
+
 @dataclass
 class CaptchaResult:
     """Ergebnis eines Captcha-Lösungsversuchs."""
+
     solved: bool
     captcha_type: str = ""
     token: str = ""
@@ -93,6 +96,7 @@ class CaptchaResult:
 @dataclass
 class StepResult:
     """Ergebnis eines einzelnen Chain-Schritts."""
+
     solver: str
     outcome: str  # "success", "failed", "skipped"
     error: str = ""
@@ -101,11 +105,13 @@ class StepResult:
 
 # ── SOLVER IMPORTS ─────────────────────────────────────────────────────────
 
+
 def _get_nim_primary_solver():
     """Import existierender NIM Primary Solver (Nemotron-3-Nano-Omni)."""
     try:
         # Der existierende Solver in captcha_adapters oder drag_drop_solver
         from .drag_drop_solver import solve_puzzle
+
         return solve_puzzle
     except ImportError:
         pass
@@ -113,6 +119,7 @@ def _get_nim_primary_solver():
     # Fallback: Versuch über captcha_adapters
     try:
         from ..captcha_adapters import get_adapter
+
         return get_adapter("angular_drag_drop")
     except ImportError:
         pass
@@ -124,6 +131,7 @@ def _get_nim_secondary_solver():
     """Import NIM Secondary Solver (Qwen2.5-VL-72B)."""
     try:
         from .nim_secondary_solver import solve
+
         return solve
     except ImportError as e:
         logger.warning("nim_secondary_solver import failed: %s", e)
@@ -134,6 +142,7 @@ def _get_gateway_solver():
     """Import Vercel AI Gateway Solver."""
     try:
         from .gateway_solver import solve
+
         return solve
     except ImportError as e:
         logger.warning("gateway_solver import failed: %s", e)
@@ -144,6 +153,7 @@ def _get_audio_solver():
     """Import Audio Solver (Parakeet ASR)."""
     try:
         from .audio_solver import solve
+
         return solve
     except ImportError as e:
         logger.warning("audio_solver import failed: %s", e)
@@ -151,6 +161,7 @@ def _get_audio_solver():
 
 
 # ── LOGGING ────────────────────────────────────────────────────────────────
+
 
 def _ensure_logs_dir() -> Path:
     """Stelle sicher dass logs/ Verzeichnis existiert."""
@@ -212,6 +223,7 @@ def _log_human_handoff(
 
 
 # ── FALLBACK CHAIN ─────────────────────────────────────────────────────────
+
 
 class FallbackChain:
     """Orchestriert die 5-stufige Captcha-Fallback-Chain.
@@ -328,28 +340,33 @@ class FallbackChain:
 
         logger.info(
             "Starting fallback chain for '%s' captcha (page: %s)",
-            ctype, page_url[:60] if page_url else "unknown"
+            ctype,
+            page_url[:60] if page_url else "unknown",
         )
 
         # Durchlaufe alle Solver
         for name, solver in self._solvers:
             # Spezialfall: Audio-Solver nur für reCAPTCHA/hCaptcha
             if name == "audio" and ctype not in ("recaptcha", "hcaptcha"):
-                step_trace.append({
-                    "solver": name,
-                    "outcome": "skipped",
-                    "error": "audio_not_applicable",
-                    "elapsed_ms": 0,
-                })
+                step_trace.append(
+                    {
+                        "solver": name,
+                        "outcome": "skipped",
+                        "error": "audio_not_applicable",
+                        "elapsed_ms": 0,
+                    }
+                )
                 continue
 
             result, step_result = self._try_solver(name, solver, cdp, detection)
-            step_trace.append({
-                "solver": step_result.solver,
-                "outcome": step_result.outcome,
-                "error": step_result.error,
-                "elapsed_ms": step_result.elapsed_ms,
-            })
+            step_trace.append(
+                {
+                    "solver": step_result.solver,
+                    "outcome": step_result.outcome,
+                    "error": step_result.error,
+                    "elapsed_ms": step_result.elapsed_ms,
+                }
+            )
 
             # Short-circuit on success
             if result is not None:
@@ -371,16 +388,19 @@ class FallbackChain:
         # Step 5: Human Handoff
         logger.warning(
             "All %d solvers failed for '%s' captcha — logging for human handoff",
-            len(self._solvers), ctype
+            len(self._solvers),
+            ctype,
         )
         log_path = _log_human_handoff(cdp, detection, page_url, step_trace)
-        step_trace.append({
-            "solver": "human_handoff",
-            "outcome": "logged",
-            "error": "",
-            "elapsed_ms": 0,
-            "log_path": log_path,
-        })
+        step_trace.append(
+            {
+                "solver": "human_handoff",
+                "outcome": "logged",
+                "error": "",
+                "elapsed_ms": 0,
+                "log_path": log_path,
+            }
+        )
 
         # Raise exception
         raise CaptchaUnsolvedError(

@@ -36,9 +36,9 @@ from __future__ import annotations
 
 import logging
 import time
+from collections.abc import Iterator
 from contextlib import contextmanager
 from dataclasses import dataclass, field
-from typing import Iterator, Optional
 
 log = logging.getLogger("core.budget")
 
@@ -52,8 +52,7 @@ class BudgetExceededError(RuntimeError):
 
     def __init__(self, run_id: str, node: str, elapsed: float, limit: float):
         super().__init__(
-            f"budget.exceeded run_id={run_id} node={node} "
-            f"elapsed={elapsed:.2f}s limit={limit:.2f}s"
+            f"budget.exceeded run_id={run_id} node={node} elapsed={elapsed:.2f}s limit={limit:.2f}s"
         )
         self.run_id = run_id
         self.node = node
@@ -64,10 +63,11 @@ class BudgetExceededError(RuntimeError):
 @dataclass
 class StepTiming:
     """Eine einzelne Step-Messung innerhalb einer Survey."""
+
     name: str
     start: float
-    end: Optional[float] = None
-    duration: Optional[float] = None
+    end: float | None = None
+    duration: float | None = None
     exceeded: bool = False  # True wenn dieser Step das Budget ueberschritten hat
 
 
@@ -84,6 +84,7 @@ class SurveyBudget:
                 answer = await llm.generate(...)
             return {"answer": answer}
     """
+
     run_id: str
     max_seconds: float = 120.0
     # interne Felder — NICHT von aussen anfassen
@@ -126,11 +127,11 @@ class SurveyBudget:
             elapsed = self.elapsed
             log.error(
                 "budget.guard.exceeded run_id=%s node=%s elapsed=%.2fs",
-                self.run_id, node_name, elapsed,
+                self.run_id,
+                node_name,
+                elapsed,
             )
-            raise BudgetExceededError(
-                self.run_id, node_name, elapsed, self.max_seconds
-            )
+            raise BudgetExceededError(self.run_id, node_name, elapsed, self.max_seconds)
 
     # ── Timing ────────────────────────────────────────────────────────────
 
@@ -152,12 +153,15 @@ class SurveyBudget:
             step.exceeded = self.is_exceeded
             log.debug(
                 "budget.span run_id=%s step=%s duration=%.3fs remaining=%.2fs",
-                self.run_id, name, step.duration, self.remaining,
+                self.run_id,
+                name,
+                step.duration,
+                self.remaining,
             )
 
     # ── Sub-Budgets ───────────────────────────────────────────────────────
 
-    def subbudget(self, percent: float, suffix: str = "sub") -> "SurveyBudget":
+    def subbudget(self, percent: float, suffix: str = "sub") -> SurveyBudget:
         """Erzeugt ein Sub-Budget mit `percent` (0..1) des Restbudgets.
 
         Use-Case: parallele Captcha-Solver-Versuche mit je 30 % des Rests.

@@ -60,8 +60,7 @@ import os
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
-
+from typing import Any
 
 # ── ENVIRONMENT-DETECTION ──────────────────────────────────────────────────────
 
@@ -78,13 +77,14 @@ class Environment(Enum):
     Warum nicht NODE_ENV? Wir sind in Python — ENV ist die etablierte
     Konvention fuer Python-Apps (12-factor).
     """
+
     DEVELOPMENT = "development"
     STAGING = "staging"
     PRODUCTION = "production"
     DOCKER = "docker"
 
     @classmethod
-    def detect(cls) -> "Environment":
+    def detect(cls) -> Environment:
         if os.environ.get("IS_DOCKER") == "1":
             return cls.DOCKER
         env_val = os.environ.get("ENV", "").lower()
@@ -114,6 +114,7 @@ class ChromeConfig:
 
     NICHT VERAENDERN ohne AGENTS.md zu updaten.
     """
+
     port: int = 9999
     host: str = "127.0.0.1"
     user_data_dir: str = field(
@@ -139,7 +140,7 @@ class ChromeConfig:
         return f"http://{self.host}:{self.port}"
 
     @classmethod
-    def from_env(cls) -> "ChromeConfig":
+    def from_env(cls) -> ChromeConfig:
         """Liest CHROME_* env vars. Production-ready: alle Defaults bleiben
         konstant, env vars sind reine Overrides.
 
@@ -163,7 +164,7 @@ class ChromeConfig:
         )
 
     @classmethod
-    def for_docker(cls) -> "ChromeConfig":
+    def for_docker(cls) -> ChromeConfig:
         """Docker-Defaults: anderer Pfad, kein macOS-Chrome."""
         return cls(
             port=9222,
@@ -184,6 +185,7 @@ class SupabaseConfig:
     mehrere Worker parallel laufen sollen oder Audit-Logs zentral
     persistiert werden, ist Supabase Pflicht.
     """
+
     url: str = ""
     anon_key: str = ""
     audit_table: str = "stealth_audit_log"
@@ -191,7 +193,7 @@ class SupabaseConfig:
     pipeline_state_table: str = "stealth_pipeline_state"
 
     @classmethod
-    def from_env(cls) -> "SupabaseConfig":
+    def from_env(cls) -> SupabaseConfig:
         return cls(
             url=os.environ.get("SUPABASE_URL", ""),
             anon_key=os.environ.get("SUPABASE_ANON_KEY", ""),
@@ -214,13 +216,14 @@ class SecurityConfig:
                     Generation: python -c "from cryptography.fernet import
                     Fernet; print(Fernet.generate_key().decode())"
     """
+
     encryption_key: str = ""
     max_login_attempts: int = 3
     session_timeout: int = 3600
     audit_retention_days: int = 90
 
     @classmethod
-    def from_env(cls) -> "SecurityConfig":
+    def from_env(cls) -> SecurityConfig:
         return cls(encryption_key=os.environ.get("ENCRYPTION_KEY", ""))
 
 
@@ -237,6 +240,7 @@ class RetryConfig:
       max_delay=15.0  : Hartes Cap — 15s ist viel fuer eine 120s-Survey!
       jitter=True     : Random 0.5–1.5× Multiplikator gegen Thundering Herd
     """
+
     max_retries: int = 3
     base_delay: float = 1.0
     max_delay: float = 15.0
@@ -260,12 +264,13 @@ class CaptchaConfig:
                         2captcha-Realistic; laenger waere innerhalb des
                         120s Survey-Budgets nicht mehr leistbar.
     """
+
     twocaptcha_api_key: str = ""
     capsolver_api_key: str = ""
     max_solve_seconds: int = 60
 
     @classmethod
-    def from_env(cls) -> "CaptchaConfig":
+    def from_env(cls) -> CaptchaConfig:
         return cls(
             twocaptcha_api_key=os.environ.get("TWOCAPTCHA_API_KEY", ""),
             capsolver_api_key=os.environ.get("CAPSOLVER_API_KEY", ""),
@@ -284,8 +289,10 @@ class CaptchaConfig:
         recorden gern repr(config) bei Errors — ohne diese Redaction landet
         der Key dann im Sentry-Issue.
         """
+
         def _mask(s: str) -> str:
-            return f"<unset>" if not s else f"...{s[-4:]}"
+            return "<unset>" if not s else f"...{s[-4:]}"
+
         return (
             f"CaptchaConfig("
             f"twocaptcha_api_key={_mask(self.twocaptcha_api_key)}, "
@@ -314,6 +321,7 @@ class SurveyBudgetConfig:
     soft_kill_at_pct=0.85   : Bei 85 % (102s) signalisieren — kein Captcha mehr
     hard_kill_at_pct=1.0    : Bei 100 % (120s) → state.status="error"
     """
+
     max_seconds: float = 120.0
     max_iterations: int = 15
     iteration_warn_after: int = 10
@@ -321,7 +329,7 @@ class SurveyBudgetConfig:
     hard_kill_at_pct: float = 1.0
 
     @classmethod
-    def from_env(cls) -> "SurveyBudgetConfig":
+    def from_env(cls) -> SurveyBudgetConfig:
         return cls(
             max_seconds=float(os.environ.get("SURVEY_MAX_SECONDS", "120")),
             max_iterations=int(os.environ.get("SURVEY_MAX_ITERATIONS", "15")),
@@ -353,6 +361,7 @@ class Config:
       ok, errors = cfg.validate()
       if not ok:  raise SystemExit(f"Config invalid: {errors}")
     """
+
     environment: Environment = field(default_factory=Environment.detect)
     chrome: ChromeConfig = field(default_factory=ChromeConfig.from_env)
     supabase: SupabaseConfig = field(default_factory=SupabaseConfig.from_env)
@@ -364,9 +373,7 @@ class Config:
     # ── Runtime-Pfade ────────────────────────────────────────────────────────
     # Werden NACH __post_init__ angelegt (mkdir) — kein Fehler wenn schon da.
     tmp_dir: Path = field(default_factory=lambda: Path("/tmp"))
-    log_dir: Path = field(
-        default_factory=lambda: Path(os.path.expanduser("~/.stealth/logs"))
-    )
+    log_dir: Path = field(default_factory=lambda: Path(os.path.expanduser("~/.stealth/logs")))
     screenshot_dir: Path = field(
         default_factory=lambda: Path(os.path.expanduser("~/.stealth/screenshots"))
     )
@@ -397,7 +404,7 @@ class Config:
     # ── Factory ──────────────────────────────────────────────────────────────
 
     @classmethod
-    def load(cls, env: Optional[Environment] = None) -> "Config":
+    def load(cls, env: Environment | None = None) -> Config:
         return cls(environment=env or Environment.detect())
 
     # ── Serialisierung (OHNE Secrets!) ───────────────────────────────────────
@@ -468,8 +475,6 @@ class Config:
         # 15 Iterations × ~8s avg = 120s — passt. Bei weniger Iterations
         # bleibt Reserve fuer langsame Seiten.
         if self.budget.max_seconds < 30:
-            errors.append(
-                "budget.max_seconds < 30 — too tight, surveys won't complete"
-            )
+            errors.append("budget.max_seconds < 30 — too tight, surveys won't complete")
 
         return len(errors) == 0, errors

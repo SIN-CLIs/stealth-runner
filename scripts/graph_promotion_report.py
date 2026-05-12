@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 SR-123 graph_promotion_report.py
 
@@ -50,7 +49,7 @@ import json
 import statistics
 import sys
 from collections import Counter, defaultdict
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -89,8 +88,8 @@ def parse_record_timestamp(raw: str) -> datetime | None:
     except ValueError:
         return None
     if dt.tzinfo is None:
-        dt = dt.replace(tzinfo=timezone.utc)
-    return dt.astimezone(timezone.utc)
+        dt = dt.replace(tzinfo=UTC)
+    return dt.astimezone(UTC)
 
 
 def parse_snapshot_timestamp(raw: str) -> datetime | None:
@@ -101,7 +100,7 @@ def parse_snapshot_timestamp(raw: str) -> datetime | None:
         dt = datetime.strptime(raw, SNAPSHOT_TS_FMT)
     except (ValueError, TypeError):
         return None
-    return dt.replace(tzinfo=timezone.utc)
+    return dt.replace(tzinfo=UTC)
 
 
 def iter_records(log_path: Path) -> list[dict[str, Any]]:
@@ -162,10 +161,7 @@ def compute_intervals_seconds(records: list[dict[str, Any]]) -> list[float]:
     if len(timestamps) < 2:
         return []
     timestamps.sort()
-    return [
-        (timestamps[i] - timestamps[i - 1]).total_seconds()
-        for i in range(1, len(timestamps))
-    ]
+    return [(timestamps[i] - timestamps[i - 1]).total_seconds() for i in range(1, len(timestamps))]
 
 
 def week_bucket(dt: datetime) -> str:
@@ -206,9 +202,7 @@ def aggregate(records: list[dict[str, Any]], now: datetime) -> dict[str, Any]:
     week_counts: dict[str, int] = defaultdict(int)
     for dt, _ in outer_dts:
         week_counts[week_bucket(dt)] += 1
-    week_hist = [
-        {"week": w, "count": week_counts[w]} for w in sorted(week_counts)
-    ]
+    week_hist = [{"week": w, "count": week_counts[w]} for w in sorted(week_counts)]
 
     # SHA-256 distribution.
     shas = [
@@ -238,15 +232,9 @@ def aggregate(records: list[dict[str, Any]], now: datetime) -> dict[str, Any]:
     return {
         "total": total,
         "last_30d_count": last_30d_count,
-        "newest_timestamp": (
-            newest_dt.isoformat().replace("+00:00", "Z") if newest_dt else None
-        ),
-        "oldest_timestamp": (
-            oldest_dt.isoformat().replace("+00:00", "Z") if oldest_dt else None
-        ),
-        "newest_snapshot": (
-            (newest_record or {}).get("snapshot") if newest_record else None
-        ),
+        "newest_timestamp": (newest_dt.isoformat().replace("+00:00", "Z") if newest_dt else None),
+        "oldest_timestamp": (oldest_dt.isoformat().replace("+00:00", "Z") if oldest_dt else None),
+        "newest_snapshot": ((newest_record or {}).get("snapshot") if newest_record else None),
         "median_interval_seconds": median_s,
         "mean_interval_seconds": mean_s,
         "weeks": week_hist,
@@ -302,8 +290,7 @@ def render_markdown(agg: dict[str, Any], log_path: Path) -> str:
         sha = snap.get("sha256", "")
         sha_short = sha[:12] if sha else "(missing)"
         lines.append(
-            f"- Newest snapshot sha256: `{sha_short}…` "
-            f"(`{snap.get('bytes_written', '?')}` bytes)"
+            f"- Newest snapshot sha256: `{sha_short}…` (`{snap.get('bytes_written', '?')}` bytes)"
         )
     lines.append("")
 
@@ -412,15 +399,13 @@ def _emit(out_text: str, *, quiet: bool, stream: Any) -> None:
 def main(argv: list[str] | None = None, *, now: datetime | None = None) -> int:
     parser = build_arg_parser()
     args = parser.parse_args(argv)
-    now = now or datetime.now(timezone.utc)
+    now = now or datetime.now(UTC)
 
     log_path: Path = args.log
 
     if not log_path.exists():
         if not args.quiet:
-            sys.stderr.write(
-                f"error: promotion log not found: {log_path}\n"
-            )
+            sys.stderr.write(f"error: promotion log not found: {log_path}\n")
         return EXIT_CONFIG_ERROR
 
     records = iter_records(log_path)
@@ -434,8 +419,9 @@ def main(argv: list[str] | None = None, *, now: datetime | None = None) -> int:
                 "message": "No promotions recorded",
                 "generated_at": now.isoformat().replace("+00:00", "Z"),
             }
-            _emit(json.dumps(payload, indent=2, sort_keys=True),
-                  quiet=args.quiet, stream=sys.stdout)
+            _emit(
+                json.dumps(payload, indent=2, sort_keys=True), quiet=args.quiet, stream=sys.stdout
+            )
         else:
             _emit(
                 f"# Graph Promotion Log Report\n\n"
@@ -455,11 +441,9 @@ def main(argv: list[str] | None = None, *, now: datetime | None = None) -> int:
     agg = aggregate(records, now)
 
     if args.json:
-        _emit(render_json(agg, log_path),
-              quiet=args.quiet, stream=sys.stdout)
+        _emit(render_json(agg, log_path), quiet=args.quiet, stream=sys.stdout)
     else:
-        _emit(render_markdown(agg, log_path),
-              quiet=args.quiet, stream=sys.stdout)
+        _emit(render_markdown(agg, log_path), quiet=args.quiet, stream=sys.stdout)
 
     return EXIT_OK
 

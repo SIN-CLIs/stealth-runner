@@ -21,9 +21,9 @@ from pathlib import Path
 # Ensure survey-cli is importable
 sys.path.insert(0, str(Path(__file__).parent.parent.parent / "survey-cli"))
 
-from survey.auth.google_oauth import GoogleOAuthFlow, LoginResult
-from survey.auth.login_verifier import LoginVerifier
 from survey.auth.cua_adapter import CuaAdapter
+from survey.auth.google_oauth import GoogleOAuthFlow
+from survey.auth.login_verifier import LoginVerifier
 
 
 def execute(pid: int | None = None, url: str = "https://heypiggy.com/?page=dashboard") -> dict:

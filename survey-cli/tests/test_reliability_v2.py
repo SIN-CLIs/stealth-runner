@@ -3,13 +3,13 @@ Unit tests for SR-157 reliability v2 primitives.
 
 Pytest + pytest-asyncio (replaces deprecated unittest+get_event_loop pattern).
 """
+
 from __future__ import annotations
 
 import asyncio
 import json
 import time
 from http.server import BaseHTTPRequestHandler, HTTPServer
-from pathlib import Path
 from threading import Thread
 
 import pytest
@@ -20,7 +20,6 @@ from survey.reliability.retry_policy import (
     CircuitState,
     FatalError,
     HttpError,
-    PermanentError,
     Retryability,
     RetryPolicy,
     TimeBudgetExceeded,
@@ -34,13 +33,14 @@ from survey.reliability.dlq import DLQ
 # Full Jitter
 # =============================================================================
 
+
 @pytest.mark.asyncio
 async def test_full_jitter_within_cap():
     """Full jitter delay is always in [0, capped_delay]."""
     policy = RetryPolicy(base_delay=1.0, max_delay=10.0)
     for attempt in range(5):
         delay = policy._full_jitter_delay(attempt)
-        cap = min(1.0 * 2 ** attempt, 10.0)
+        cap = min(1.0 * 2**attempt, 10.0)
         assert 0 <= delay <= cap
 
 
@@ -57,6 +57,7 @@ async def test_full_jitter_distribution():
 # =============================================================================
 # Time Budget
 # =============================================================================
+
 
 @pytest.mark.asyncio
 async def test_time_budget_aborts():
@@ -90,6 +91,7 @@ async def test_time_budget_unused_when_success():
 # =============================================================================
 # Circuit Breaker
 # =============================================================================
+
 
 @pytest.mark.asyncio
 async def test_circuit_opens_after_threshold():
@@ -179,6 +181,7 @@ async def test_circuit_per_key_isolation():
 # Typed HTTP Classification
 # =============================================================================
 
+
 def test_http_5xx_is_transient():
     assert default_classify(HttpError(500)) == Retryability.TRANSIENT
     assert default_classify(HttpError(502)) == Retryability.TRANSIENT
@@ -208,6 +211,7 @@ def test_fatal_classification():
 # DLQ — Idempotency
 # =============================================================================
 
+
 def test_dlq_push_is_idempotent(tmp_path):
     """Pushing the same (survey_id, persona_id, url) twice returns same ID."""
     dlq = DLQ(dlq_path=tmp_path)
@@ -231,6 +235,7 @@ def test_dlq_push_different_urls_different_ids(tmp_path):
 # =============================================================================
 # DLQ — Claim / Release
 # =============================================================================
+
 
 def test_claim_succeeds_for_pending(tmp_path):
     """Worker can claim a pending record."""
@@ -281,6 +286,7 @@ def test_release_returns_to_pending(tmp_path):
 # DLQ — Escalation
 # =============================================================================
 
+
 def test_escalation_after_max_replay_attempts(tmp_path):
     """After max_replay_attempts failed replays, record is escalated."""
     dlq = DLQ(dlq_path=tmp_path, max_replay_attempts=3)
@@ -299,6 +305,7 @@ def test_escalation_after_max_replay_attempts(tmp_path):
 # =============================================================================
 # Async Webhook
 # =============================================================================
+
 
 class _WebhookHandler(BaseHTTPRequestHandler):
     received: list[dict] = []
@@ -344,6 +351,7 @@ async def test_async_webhook_delivery(tmp_path):
 # =============================================================================
 # Integration
 # =============================================================================
+
 
 @pytest.mark.asyncio
 async def test_retry_with_circuit_and_budget():

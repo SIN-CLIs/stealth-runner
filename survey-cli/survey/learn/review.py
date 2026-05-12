@@ -103,8 +103,7 @@ class ReviewSummary:
     by_source: dict = field(default_factory=dict)
 
     def total(self) -> int:
-        return (self.accepted + self.rejected + self.skipped
-                + self.filtered + self.already_done)
+        return self.accepted + self.rejected + self.skipped + self.filtered + self.already_done
 
     def bump(self, action: Action, source: str) -> None:
         """In-place increment per (action, source)."""
@@ -180,15 +179,19 @@ def plan_action(record: dict, rules: ReviewRules) -> Action:
     conf = float(record.get("confidence") or 0.0)
 
     # Rule 3: auto-accept high-confidence substring.
-    if (rules.auto_accept_substring_above is not None
-            and src == "substring"
-            and conf >= rules.auto_accept_substring_above):
+    if (
+        rules.auto_accept_substring_above is not None
+        and src == "substring"
+        and conf >= rules.auto_accept_substring_above
+    ):
         return "accept"
 
     # Rule 4: auto-reject low-confidence llm.
-    if (rules.auto_reject_llm_below is not None
-            and src == "llm"
-            and conf < rules.auto_reject_llm_below):
+    if (
+        rules.auto_reject_llm_below is not None
+        and src == "llm"
+        and conf < rules.auto_reject_llm_below
+    ):
         return "reject"
 
     # Rule 5: non-interactive fallthrough.
@@ -250,7 +253,8 @@ def format_display_line(record: dict) -> str:
 
 
 def partition_records(
-    records: Iterable[dict], rules: ReviewRules,
+    records: Iterable[dict],
+    rules: ReviewRules,
 ) -> List[tuple]:
     """Vorab-Partitionierung aller records → Liste von (record, action) Tupeln.
 

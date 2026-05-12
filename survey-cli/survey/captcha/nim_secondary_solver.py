@@ -60,20 +60,24 @@ TIMEOUT_S = 30
 RETRIES = 2
 
 # Captcha-Typen die dieser Solver unterstützt (Vision-basiert)
-SUPPORTED_TYPES = frozenset({
-    "angular_drag_drop",
-    "visual_text",
-    "geetest_v4",
-    "geetest_v3",
-    "slider",
-    "click_captcha",
-})
+SUPPORTED_TYPES = frozenset(
+    {
+        "angular_drag_drop",
+        "visual_text",
+        "geetest_v4",
+        "geetest_v3",
+        "slider",
+        "click_captcha",
+    }
+)
 
 # ── RESULT DATACLASS ───────────────────────────────────────────────────────
+
 
 @dataclass
 class CaptchaResult:
     """Ergebnis eines Captcha-Lösungsversuchs."""
+
     solved: bool
     captcha_type: str = ""
     token: str = ""
@@ -87,6 +91,7 @@ class CaptchaResult:
 
 
 # ── SCREENSHOT CAPTURE ─────────────────────────────────────────────────────
+
 
 def _capture_screenshot_b64(cdp, frame_id: str = "") -> Optional[str]:
     """Capture full-page oder Frame-Screenshot als Base64 PNG.
@@ -108,6 +113,7 @@ def _capture_screenshot_b64(cdp, frame_id: str = "") -> Optional[str]:
 
 
 # ── VISION PROMPT BUILDERS ─────────────────────────────────────────────────
+
 
 def _build_drag_drop_prompt(detection) -> str:
     """Prompt für Angular CDK Drag-Drop Puzzles."""
@@ -199,6 +205,7 @@ If unclear what to click, return:
 
 # ── NIM CLIENT ─────────────────────────────────────────────────────────────
 
+
 class NimSecondarySolver:
     """NVIDIA NIM Qwen2.5-VL Solver für Vision-basierte Captchas.
 
@@ -252,9 +259,9 @@ class NimSecondarySolver:
                     {"type": "text", "text": prompt},
                     {
                         "type": "image_url",
-                        "image_url": {"url": f"data:image/png;base64,{image_b64}"}
-                    }
-                ]
+                        "image_url": {"url": f"data:image/png;base64,{image_b64}"},
+                    },
+                ],
             }
         ]
 
@@ -271,7 +278,7 @@ class NimSecondarySolver:
             except (APIConnectionError, APITimeoutError) as e:
                 self._record_failure(f"network: {e}")
                 if attempt < RETRIES:
-                    time.sleep(2 ** attempt)
+                    time.sleep(2**attempt)
             except RateLimitError as e:
                 self._record_failure(f"rate_limit: {e}")
                 if attempt < RETRIES:
@@ -422,10 +429,10 @@ class NimSecondarySolver:
             return False
 
         # Mouse down at source
-        cdp.call_result("Input.dispatchMouseEvent", {
-            "type": "mousePressed", "x": sx, "y": sy,
-            "button": "left", "clickCount": 1
-        })
+        cdp.call_result(
+            "Input.dispatchMouseEvent",
+            {"type": "mousePressed", "x": sx, "y": sy, "button": "left", "clickCount": 1},
+        )
         time.sleep(0.05)
 
         # Move in steps
@@ -434,16 +441,17 @@ class NimSecondarySolver:
             t = i / steps
             px = sx + (tx - sx) * t
             py = sy + (ty - sy) * t
-            cdp.call_result("Input.dispatchMouseEvent", {
-                "type": "mouseMoved", "x": px, "y": py, "button": "left"
-            })
+            cdp.call_result(
+                "Input.dispatchMouseEvent",
+                {"type": "mouseMoved", "x": px, "y": py, "button": "left"},
+            )
             time.sleep(0.03)
 
         # Mouse up at target
-        cdp.call_result("Input.dispatchMouseEvent", {
-            "type": "mouseReleased", "x": tx, "y": ty,
-            "button": "left", "clickCount": 1
-        })
+        cdp.call_result(
+            "Input.dispatchMouseEvent",
+            {"type": "mouseReleased", "x": tx, "y": ty, "button": "left", "clickCount": 1},
+        )
         time.sleep(0.3)
         return True
 
@@ -491,10 +499,10 @@ class NimSecondarySolver:
         tx = sx + distance
 
         # Execute slide
-        cdp.call_result("Input.dispatchMouseEvent", {
-            "type": "mousePressed", "x": sx, "y": sy,
-            "button": "left", "clickCount": 1
-        })
+        cdp.call_result(
+            "Input.dispatchMouseEvent",
+            {"type": "mousePressed", "x": sx, "y": sy, "button": "left", "clickCount": 1},
+        )
         time.sleep(0.1)
 
         # Slide with acceleration curve
@@ -504,15 +512,16 @@ class NimSecondarySolver:
             # Ease-out curve
             ease = 1 - (1 - t) ** 3
             px = sx + (tx - sx) * ease
-            cdp.call_result("Input.dispatchMouseEvent", {
-                "type": "mouseMoved", "x": px, "y": sy, "button": "left"
-            })
+            cdp.call_result(
+                "Input.dispatchMouseEvent",
+                {"type": "mouseMoved", "x": px, "y": sy, "button": "left"},
+            )
             time.sleep(0.02)
 
-        cdp.call_result("Input.dispatchMouseEvent", {
-            "type": "mouseReleased", "x": tx, "y": sy,
-            "button": "left", "clickCount": 1
-        })
+        cdp.call_result(
+            "Input.dispatchMouseEvent",
+            {"type": "mouseReleased", "x": tx, "y": sy, "button": "left", "clickCount": 1},
+        )
         return True
 
     def _execute_clicks(self, cdp, parsed: dict) -> bool:
@@ -525,15 +534,15 @@ class NimSecondarySolver:
             x, y = click.get("x"), click.get("y")
             if x is None or y is None:
                 continue
-            cdp.call_result("Input.dispatchMouseEvent", {
-                "type": "mousePressed", "x": x, "y": y,
-                "button": "left", "clickCount": 1
-            })
+            cdp.call_result(
+                "Input.dispatchMouseEvent",
+                {"type": "mousePressed", "x": x, "y": y, "button": "left", "clickCount": 1},
+            )
             time.sleep(0.05)
-            cdp.call_result("Input.dispatchMouseEvent", {
-                "type": "mouseReleased", "x": x, "y": y,
-                "button": "left", "clickCount": 1
-            })
+            cdp.call_result(
+                "Input.dispatchMouseEvent",
+                {"type": "mouseReleased", "x": x, "y": y, "button": "left", "clickCount": 1},
+            )
             time.sleep(0.2)
         return True
 

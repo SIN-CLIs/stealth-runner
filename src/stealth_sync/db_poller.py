@@ -8,11 +8,11 @@
 #   ❌ pkill -f "Google Chrome" — tötet USER Chrome
 #   ❌ killall Google Chrome — tötet ALLE Chrome
 
-import asyncio
 import sqlite3
 import time
 from pathlib import Path
-from typing import Optional, List, Dict, Any
+from typing import Any
+
 import structlog
 
 logger = structlog.get_logger(__name__)
@@ -20,36 +20,36 @@ logger = structlog.get_logger(__name__)
 
 class OpenCodeDBPoller:
     """Polls the OpenCode SQLite database for new session entries.
-    
+
     Monitors ~/.local/share/opencode/opencode.db for newly created
     survey sessions. Uses incremental polling (tracks last_check
     timestamp) to avoid re-processing known sessions.
-    
+
     Provides session dicts with created_at, status, and metadata
     for the stealth_survey pipeline to consume.
     """
 
-    def __init__(self, db_path: Optional[str] = None):
+    def __init__(self, db_path: str | None = None):
         """Initialize the database poller with the OpenCode DB path.
-        
+
         Args:
             db_path: Path to opencode.db (default: ~/.local/share/opencode/opencode.db)
         """
         # Expand user path for default OpenCode DB location
         self.db_path = Path(db_path or "~/.local/share/opencode/opencode.db").expanduser()
         # Track last poll time for incremental fetching
-        self.last_check: Optional[float] = None
+        self.last_check: float | None = None
         logger.info("Initialized DB poller", db_path=str(self.db_path))
 
     def _get_connection(self) -> sqlite3.Connection:
         """Create a new SQLite connection with Row factory.
-        
+
         Returns a new connection to the OpenCode DB. Each call creates
         a fresh connection since SQLite connections are not thread-safe.
-        
+
         Returns:
             SQLite connection with row_factory set to sqlite3.Row
-            
+
         Raises:
             FileNotFoundError: If the database file doesn't exist
         """
@@ -60,15 +60,15 @@ class OpenCodeDBPoller:
         conn.row_factory = sqlite3.Row
         return conn
 
-    def get_new_sessions(self) -> List[Dict[str, Any]]:
+    def get_new_sessions(self) -> list[dict[str, Any]]:
         """Fetch sessions created since the last poll.
-        
+
         If last_check is None (first poll), returns the 10 most recent sessions.
         Otherwise, returns sessions created after last_check timestamp.
-        
+
         The timestamp format in OpenCode DB is milliseconds since epoch.
         All timestamps in the DB are stored as INTEGER in milliseconds.
-        
+
         Returns:
             List of session dictionaries with all session table columns
         """
@@ -92,16 +92,16 @@ class OpenCodeDBPoller:
             # Always close connection to prevent locks
             conn.close()
 
-    def get_session_messages(self, session_id: str) -> List[Dict[str, Any]]:
+    def get_session_messages(self, session_id: str) -> list[dict[str, Any]]:
         """Get all messages for a specific session.
-        
+
         Retrieves all messages belonging to the given session, ordered
         by creation time. Each message includes the JSON data field
         which contains role, content, model info, tokens, etc.
-        
+
         Args:
             session_id: The OpenCode session ID (e.g., ses_XYZ)
-            
+
         Returns:
             List of message dictionaries with all message table columns
         """
@@ -117,24 +117,22 @@ class OpenCodeDBPoller:
         finally:
             conn.close()
 
-    def get_session_status(self, session_id: str) -> Optional[str]:
+    def get_session_status(self, session_id: str) -> str | None:
         """Get current status of a session.
-        
+
         Queries the session table to get the current status field.
         Status values include: 'active', 'idle', 'completed', etc.
-        
+
         Args:
             session_id: The OpenCode session ID
-            
+
         Returns:
             Status string if session exists, None otherwise
         """
         conn = self._get_connection()
         try:
             cursor = conn.cursor()
-            cursor.execute(
-                "SELECT status FROM sessions WHERE id = ?", (session_id,)
-            )
+            cursor.execute("SELECT status FROM sessions WHERE id = ?", (session_id,))
             row = cursor.fetchone()
             return row["status"] if row else None
         finally:

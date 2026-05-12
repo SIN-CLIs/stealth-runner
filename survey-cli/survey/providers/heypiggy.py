@@ -60,7 +60,7 @@ SCREEN_OUT_MARKERS = [
 # CDP/JS command templates for HeyPiggy dashboard and surveys
 COMMANDS = {
     # Next button in surveys (multiple fallback selectors)
-    "click_next": '''(function(){
+    "click_next": """(function(){
         var btn = document.querySelector(
             'button[type="submit"], button.btn-next, button.next-btn, ' +
             '.survey-next-button, [data-action="next"], button:contains("Weiter"), ' +
@@ -68,36 +68,32 @@ COMMANDS = {
         );
         if(btn && !btn.disabled) { btn.click(); return "clicked"; }
         return "not found";
-    })()''',
-
+    })()""",
     # Radio/checkbox element click by index
-    "click_element": '''(function(idx){
+    "click_element": """(function(idx){
         var els = document.querySelectorAll('input[type="radio"], input[type="checkbox"]');
         if(els[idx]) { els[idx].click(); return "clicked:" + idx; }
         return "not found";
-    })({idx})''',
-
+    })({idx})""",
     # Login form submit
-    "login_submit": '''(function(){
+    "login_submit": """(function(){
         var form = document.querySelector('form[action*="login"], form.login-form, #login-form');
         if(form) { form.submit(); return "submitted"; }
         var btn = document.querySelector('button[type="submit"], input[type="submit"]');
         if(btn) { btn.click(); return "clicked"; }
         return "not found";
-    })()''',
-
+    })()""",
     # Survey card click (dashboard survey selection)
-    "survey_card_click": '''(function(idx){
+    "survey_card_click": """(function(idx){
         var cards = document.querySelectorAll(
             '.survey-card, .survey-item, .available-survey, ' +
             '[data-survey-id], .survey-list-item, .dashboard-survey'
         );
         if(cards[idx]) { cards[idx].click(); return "clicked:" + idx; }
         return "not found";
-    })({idx})''',
-
+    })({idx})""",
     # Cash-out button
-    "cashout_click": '''(function(){
+    "cashout_click": """(function(){
         var btn = document.querySelector(
             'button.cashout, button.payout, [data-action="cashout"], ' +
             'a[href*="cashout"], a[href*="payout"], .withdraw-btn, ' +
@@ -105,10 +101,9 @@ COMMANDS = {
         );
         if(btn && !btn.disabled) { btn.click(); return "clicked"; }
         return "not found";
-    })()''',
-
+    })()""",
     # Fill text input (username, password, text fields)
-    "fill_text": '''(function(selector, value){
+    "fill_text": """(function(selector, value){
         var el = document.querySelector(selector);
         if(el) {
             var proto = el.tagName === "TEXTAREA"
@@ -123,7 +118,7 @@ COMMANDS = {
             return "filled";
         }
         return "not found";
-    })("{selector}", "{value}")''',
+    })("{selector}", "{value}")""",
 }
 
 
@@ -186,7 +181,7 @@ class HeyPiggyAdapter(ProviderAdapter):
             {
                 "step": "fill_username",
                 "selector": 'input[name="username"], input[name="email"], '
-                           'input[type="email"], #username, #email',
+                'input[type="email"], #username, #email',
                 "action": "fill",
                 "env_var": "HEYPIGGY_USERNAME",
             },
@@ -199,20 +194,19 @@ class HeyPiggyAdapter(ProviderAdapter):
             {
                 "step": "submit_login",
                 "selector": 'button[type="submit"], input[type="submit"], '
-                           '.login-btn, #login-button',
+                ".login-btn, #login-button",
                 "action": "click",
             },
             {
                 "step": "detect_2fa",
                 "selector": 'input[name="otp"], input[name="2fa"], '
-                           'input[name="totp"], .mfa-input, #otp-input',
+                'input[name="totp"], .mfa-input, #otp-input',
                 "action": "detect",
                 "optional": True,
             },
             {
                 "step": "skip_mfa",
-                "selector": 'a[href*="skip"], button.skip-mfa, '
-                           '.skip-2fa, [data-action="skip-mfa"]',
+                "selector": 'a[href*="skip"], button.skip-mfa, .skip-2fa, [data-action="skip-mfa"]',
                 "action": "click",
                 "optional": True,
             },

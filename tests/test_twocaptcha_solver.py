@@ -1,13 +1,13 @@
 # tests/test_twocaptcha_solver.py
 # ─────────────────────────────────────────────────────────────────────────────
 # Tests fuer den 2Captcha-Generic-Fallback-Solver (Issue #82)
-# 
+#
 # HINWEIS (2026-05-11):
 #   Unit-Tests hier brauchen komplexe CDP + httpx Mocks.
 #   Production-Code ist bereits GETESTET über Integration Tests:
 #   - survey-cli/tests/test_qualification_integration.py (3/3 ✅ grün)
 #   - survey-cli/tests/test_e2e_live_survey.py (E2E scaffold)
-#   
+#
 #   Wir skippen diese Unit-Tests pragmatisch bis die Mocks implementiert sind.
 #   Production-Reliability ist gewährleistet durch Integration-Tests.
 # ─────────────────────────────────────────────────────────────────────────────

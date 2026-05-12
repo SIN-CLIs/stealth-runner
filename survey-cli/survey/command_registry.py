@@ -16,16 +16,19 @@ REGISTRY_PATH = Path(__file__).parent.parent / "data" / "command_registry.json"
 
 class CommandRegistryError(Exception):
     """Base error for command registry violations."""
+
     pass
 
 
 class CommandBannedError(CommandRegistryError):
     """Raised when attempting to execute a banned command."""
+
     pass
 
 
 class CommandNotVerifiedError(CommandRegistryError):
     """Warning-level: command not in verified list."""
+
     pass
 
 
@@ -64,17 +67,11 @@ class CommandRegistry:
 
     def is_banned(self, command_id: str) -> bool:
         """Check if command is banned."""
-        return any(
-            b["id"] == command_id
-            for b in self._data.get("banned_commands", [])
-        )
+        return any(b["id"] == command_id for b in self._data.get("banned_commands", []))
 
     def is_verified(self, command_id: str) -> bool:
         """Check if command is verified."""
-        return any(
-            v["id"] == command_id
-            for v in self._data.get("verified_commands", [])
-        )
+        return any(v["id"] == command_id for v in self._data.get("verified_commands", []))
 
     def get_banned_reason(self, command_id: str) -> Optional[str]:
         """Get reason why command is banned."""
@@ -100,9 +97,7 @@ class CommandRegistry:
         """
         if self.is_banned(command_id):
             reason = self.get_banned_reason(command_id)
-            raise CommandBannedError(
-                f"Command '{command_id}' is BANNED: {reason}"
-            )
+            raise CommandBannedError(f"Command '{command_id}' is BANNED: {reason}")
 
         if not self.is_verified(command_id):
             raise CommandNotVerifiedError(
@@ -125,16 +120,18 @@ class CommandRegistry:
                 return
 
         # Add new verified command
-        self._data["verified_commands"].append({
-            "id": command_id,
-            "description": "",
-            "pattern": "",
-            "success_count": 1,
-            "failure_count": 0,
-            "last_success": now,
-            "status": "verified",
-            "notes": notes,
-        })
+        self._data["verified_commands"].append(
+            {
+                "id": command_id,
+                "description": "",
+                "pattern": "",
+                "success_count": 1,
+                "failure_count": 0,
+                "last_success": now,
+                "status": "verified",
+                "notes": notes,
+            }
+        )
         self._save()
 
     def record_failure(self, command_id: str, error: str, notes: str = ""):
@@ -154,17 +151,19 @@ class CommandRegistry:
                 return
 
         # Add to banned list
-        self._data["banned_commands"].append({
-            "id": command_id,
-            "description": "",
-            "pattern": "",
-            "failure_count": 1,
-            "last_failure": now,
-            "error": error,
-            "status": "banned",
-            "fix": "",
-            "notes": notes,
-        })
+        self._data["banned_commands"].append(
+            {
+                "id": command_id,
+                "description": "",
+                "pattern": "",
+                "failure_count": 1,
+                "last_failure": now,
+                "error": error,
+                "status": "banned",
+                "fix": "",
+                "notes": notes,
+            }
+        )
         self._save()
 
     def record_execution(
@@ -202,7 +201,9 @@ class CommandRegistry:
         if status == "completed" and earned > 0:
             self.record_success(key, notes=f"earned=€{earned:.2f}, steps={steps}")
         elif status in ("screen_out", "error"):
-            self.record_failure(key, error=f"{status} (earned=€{earned:.2f})", notes=f"steps={steps}")  # noqa: E501
+            self.record_failure(
+                key, error=f"{status} (earned=€{earned:.2f})", notes=f"steps={steps}"
+            )  # noqa: E501
 
         # Also update provider-level
         prov_key = f"provider_{provider}"
@@ -243,12 +244,10 @@ class CommandRegistry:
             "banned": len(self._data.get("banned_commands", [])),
             "safe_sequences": len(self._data.get("safe_sequences", [])),
             "total_successes": sum(
-                c.get("success_count", 0)
-                for c in self._data.get("verified_commands", [])
+                c.get("success_count", 0) for c in self._data.get("verified_commands", [])
             ),
             "total_failures": sum(
-                c.get("failure_count", 0)
-                for c in self._data.get("banned_commands", [])
+                c.get("failure_count", 0) for c in self._data.get("banned_commands", [])
             ),
         }
 
@@ -305,11 +304,14 @@ def acquire_survey_lock(survey_id: str = "") -> bool:
     # Acquire lock
     SURVEY_LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(SURVEY_LOCK_PATH, "w") as f:
-        json.dump({
-            "survey_id": survey_id,
-            "started": datetime.now(timezone.utc).isoformat(),
-            "pid": os.getpid(),
-        }, f)
+        json.dump(
+            {
+                "survey_id": survey_id,
+                "started": datetime.now(timezone.utc).isoformat(),
+                "pid": os.getpid(),
+            },
+            f,
+        )
     return True
 
 

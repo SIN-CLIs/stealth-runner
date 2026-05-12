@@ -61,7 +61,6 @@ def _rec(**overrides) -> dict:
 
 
 class TestSummarizeInbox(unittest.TestCase):
-
     NOW = datetime(2026, 5, 12, 0, 0, 0, tzinfo=timezone.utc)
 
     def test_empty_input_yields_zero_counts(self):
@@ -133,12 +132,9 @@ class TestSummarizeInbox(unittest.TestCase):
 
     def test_oldest_open_iso_picks_smallest_first_seen(self):
         recs = [
-            _rec(normalized_label="newest",
-                 first_seen="2026-05-10T00:00:00+00:00"),
-            _rec(normalized_label="oldest",
-                 first_seen="2026-04-22T14:33:01+00:00"),
-            _rec(normalized_label="middle",
-                 first_seen="2026-05-01T00:00:00+00:00"),
+            _rec(normalized_label="newest", first_seen="2026-05-10T00:00:00+00:00"),
+            _rec(normalized_label="oldest", first_seen="2026-04-22T14:33:01+00:00"),
+            _rec(normalized_label="middle", first_seen="2026-05-01T00:00:00+00:00"),
         ]
         r = summarize_inbox(recs, now=self.NOW)
         self.assertEqual(r.oldest_open_iso, "2026-04-22T14:33:01+00:00")
@@ -146,10 +142,16 @@ class TestSummarizeInbox(unittest.TestCase):
 
     def test_oldest_ignores_non_open_records(self):
         recs = [
-            _rec(normalized_label="ancient_accepted", status="accepted",
-                 first_seen="2026-01-01T00:00:00+00:00"),
-            _rec(normalized_label="recent_open", status="open",
-                 first_seen="2026-05-10T00:00:00+00:00"),
+            _rec(
+                normalized_label="ancient_accepted",
+                status="accepted",
+                first_seen="2026-01-01T00:00:00+00:00",
+            ),
+            _rec(
+                normalized_label="recent_open",
+                status="open",
+                first_seen="2026-05-10T00:00:00+00:00",
+            ),
         ]
         r = summarize_inbox(recs, now=self.NOW)
         # ancient_accepted ist nicht open -> nicht beruecksichtigt
@@ -169,7 +171,6 @@ class TestSummarizeInbox(unittest.TestCase):
 
 
 class TestFilters(unittest.TestCase):
-
     def test_filter_source_llm_excludes_substring(self):
         rec = _rec(source="substring")
         self.assertFalse(passes_filters(rec, StatusFilters(source="llm")))
@@ -186,16 +187,14 @@ class TestFilters(unittest.TestCase):
         filters = StatusFilters(source="llm", status="open")
         self.assertTrue(passes_filters(rec, filters))
         # mismatch on either field -> False
-        self.assertFalse(passes_filters(
-            rec, StatusFilters(source="substring", status="open")))
-        self.assertFalse(passes_filters(
-            rec, StatusFilters(source="llm", status="accepted")))
+        self.assertFalse(passes_filters(rec, StatusFilters(source="substring", status="open")))
+        self.assertFalse(passes_filters(rec, StatusFilters(source="llm", status="accepted")))
 
     def test_summarize_inbox_respects_filters(self):
         recs = [
-            _rec(normalized_label="a", source="llm",       status="open"),
+            _rec(normalized_label="a", source="llm", status="open"),
             _rec(normalized_label="b", source="substring", status="open"),
-            _rec(normalized_label="c", source="llm",       status="accepted"),
+            _rec(normalized_label="c", source="llm", status="accepted"),
         ]
         # Filter to llm-only
         r = summarize_inbox(recs, filters=StatusFilters(source="llm"))
@@ -210,7 +209,6 @@ class TestFilters(unittest.TestCase):
 
 
 class TestFormatters(unittest.TestCase):
-
     def test_human_report_omits_empty_sections(self):
         report = summarize_inbox([])
         s = format_human_report(report)
@@ -221,12 +219,17 @@ class TestFormatters(unittest.TestCase):
 
     def test_human_report_renders_all_sections_with_data(self):
         recs = [
-            _rec(normalized_label="phone-de", suggested_family="phone",
-                 source="llm", count=4),
-            _rec(normalized_label="phone-en", suggested_family="phone",
-                 source="substring", count=2),
-            _rec(normalized_label="other", suggested_family=None,
-                 source="substring", count=1, status="accepted"),
+            _rec(normalized_label="phone-de", suggested_family="phone", source="llm", count=4),
+            _rec(
+                normalized_label="phone-en", suggested_family="phone", source="substring", count=2
+            ),
+            _rec(
+                normalized_label="other",
+                suggested_family=None,
+                source="substring",
+                count=1,
+                status="accepted",
+            ),
         ]
         report = summarize_inbox(recs, files_scanned=1)
         s = format_human_report(report)
@@ -271,6 +274,7 @@ class _StatusFixture:
 
     def cleanup(self):
         import shutil
+
         shutil.rmtree(self.td, ignore_errors=True)
 
     def file(self, name: str) -> str:
@@ -280,26 +284,30 @@ class _StatusFixture:
 def _run_status(fx, *args):
     buf_out = io.StringIO()
     buf_err = io.StringIO()
-    with mock.patch.object(sys, "stdout", buf_out), \
-         mock.patch.object(sys, "stderr", buf_err):
-        rc = cli_mod.main([
-            "status",
-            "--logs", fx.logs,
-            *args,
-        ])
+    with mock.patch.object(sys, "stdout", buf_out), mock.patch.object(sys, "stderr", buf_err):
+        rc = cli_mod.main(
+            [
+                "status",
+                "--logs",
+                fx.logs,
+                *args,
+            ]
+        )
     return rc, buf_out.getvalue(), buf_err.getvalue()
 
 
 class TestCmdStatus(unittest.TestCase):
-
     def test_multi_file_scan_finds_all_pattern_suggestions(self):
-        fx = _StatusFixture({
-            "pattern-suggestions-20260501.jsonl": [_rec(normalized_label="a")],
-            "pattern-suggestions-20260502.jsonl": [_rec(normalized_label="b")],
-            # accepted/rejected files should be ignored
-            "pattern-suggestions-accepted.jsonl":
-                [_rec(normalized_label="z", status="accepted")],
-        })
+        fx = _StatusFixture(
+            {
+                "pattern-suggestions-20260501.jsonl": [_rec(normalized_label="a")],
+                "pattern-suggestions-20260502.jsonl": [_rec(normalized_label="b")],
+                # accepted/rejected files should be ignored
+                "pattern-suggestions-accepted.jsonl": [
+                    _rec(normalized_label="z", status="accepted")
+                ],
+            }
+        )
         try:
             rc, out, _ = _run_status(fx)
             self.assertEqual(rc, 0)
@@ -309,10 +317,12 @@ class TestCmdStatus(unittest.TestCase):
             fx.cleanup()
 
     def test_single_input_overrides_multi_scan(self):
-        fx = _StatusFixture({
-            "pattern-suggestions-20260501.jsonl": [_rec(normalized_label="a")],
-            "pattern-suggestions-20260502.jsonl": [_rec(normalized_label="b")],
-        })
+        fx = _StatusFixture(
+            {
+                "pattern-suggestions-20260501.jsonl": [_rec(normalized_label="a")],
+                "pattern-suggestions-20260502.jsonl": [_rec(normalized_label="b")],
+            }
+        )
         try:
             single = fx.file("pattern-suggestions-20260501.jsonl")
             rc, out, _ = _run_status(fx, "--input", single)
@@ -323,12 +333,14 @@ class TestCmdStatus(unittest.TestCase):
             fx.cleanup()
 
     def test_json_output_is_parseable(self):
-        fx = _StatusFixture({
-            "pattern-suggestions-20260501.jsonl": [
-                _rec(normalized_label="a", source="llm"),
-                _rec(normalized_label="b", source="substring"),
-            ],
-        })
+        fx = _StatusFixture(
+            {
+                "pattern-suggestions-20260501.jsonl": [
+                    _rec(normalized_label="a", source="llm"),
+                    _rec(normalized_label="b", source="substring"),
+                ],
+            }
+        )
         try:
             rc, out, _ = _run_status(fx, "--json")
             self.assertEqual(rc, 0)
@@ -339,9 +351,11 @@ class TestCmdStatus(unittest.TestCase):
             fx.cleanup()
 
     def test_require_empty_exit_1_with_open_records(self):
-        fx = _StatusFixture({
-            "pattern-suggestions-20260501.jsonl": [_rec(status="open")],
-        })
+        fx = _StatusFixture(
+            {
+                "pattern-suggestions-20260501.jsonl": [_rec(status="open")],
+            }
+        )
         try:
             rc, _, err = _run_status(fx, "--require-empty")
             self.assertEqual(rc, 1)
@@ -351,12 +365,14 @@ class TestCmdStatus(unittest.TestCase):
             fx.cleanup()
 
     def test_require_empty_exit_0_when_all_resolved(self):
-        fx = _StatusFixture({
-            "pattern-suggestions-20260501.jsonl": [
-                _rec(status="accepted"),
-                _rec(normalized_label="b", status="rejected"),
-            ],
-        })
+        fx = _StatusFixture(
+            {
+                "pattern-suggestions-20260501.jsonl": [
+                    _rec(status="accepted"),
+                    _rec(normalized_label="b", status="rejected"),
+                ],
+            }
+        )
         try:
             rc, _, _ = _run_status(fx, "--require-empty")
             self.assertEqual(rc, 0)
@@ -365,15 +381,16 @@ class TestCmdStatus(unittest.TestCase):
 
     def test_require_empty_exit_0_after_filter_excludes_open(self):
         """Pattern: filter on source=llm; only substring records are open."""
-        fx = _StatusFixture({
-            "pattern-suggestions-20260501.jsonl": [
-                _rec(normalized_label="a", source="substring", status="open"),
-                _rec(normalized_label="b", source="llm", status="accepted"),
-            ],
-        })
+        fx = _StatusFixture(
+            {
+                "pattern-suggestions-20260501.jsonl": [
+                    _rec(normalized_label="a", source="substring", status="open"),
+                    _rec(normalized_label="b", source="llm", status="accepted"),
+                ],
+            }
+        )
         try:
-            rc, _, _ = _run_status(
-                fx, "--require-empty", "--filter-source", "llm")
+            rc, _, _ = _run_status(fx, "--require-empty", "--filter-source", "llm")
             # After filter only the llm-accepted record remains -> no open
             self.assertEqual(rc, 0)
         finally:
@@ -411,9 +428,11 @@ class TestReadOnlyAudit(unittest.TestCase):
     """status command MUST NOT write any files."""
 
     def test_status_never_opens_files_for_writing(self):
-        fx = _StatusFixture({
-            "pattern-suggestions-20260501.jsonl": [_rec()],
-        })
+        fx = _StatusFixture(
+            {
+                "pattern-suggestions-20260501.jsonl": [_rec()],
+            }
+        )
         try:
             real_open = open
             write_modes = []
@@ -428,13 +447,10 @@ class TestReadOnlyAudit(unittest.TestCase):
 
             self.assertEqual(rc, 0)
             # No writes triggered anywhere in cmd_status
-            self.assertEqual(write_modes, [],
-                             f"status leaked write opens: {write_modes}")
+            self.assertEqual(write_modes, [], f"status leaked write opens: {write_modes}")
             # And no derived files were created in the logs dir
-            self.assertFalse(os.path.exists(
-                fx.file("pattern-suggestions-accepted.jsonl")))
-            self.assertFalse(os.path.exists(
-                fx.file("pattern-suggestions-rejected.jsonl")))
+            self.assertFalse(os.path.exists(fx.file("pattern-suggestions-accepted.jsonl")))
+            self.assertFalse(os.path.exists(fx.file("pattern-suggestions-rejected.jsonl")))
         finally:
             fx.cleanup()
 

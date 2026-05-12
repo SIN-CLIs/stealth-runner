@@ -46,22 +46,24 @@ import pytest
 # Diese Hooks auto-skippen diese Tests in CI, damit CI grün bleibt während
 # wir die Dependencies noch nicht installed haben.
 
+
 def pytest_configure(config):
     """Register custom pytest markers."""
-    config.addinivalue_line(
-        "markers", "e2e: E2E/live test (skip by default)"
-    )
+    config.addinivalue_line("markers", "e2e: E2E/live test (skip by default)")
 
 
 def pytest_ignore_collect(collection_path, config):
     """Ignore legacy test files that have import errors (Issue #62)."""
     path_str = str(collection_path)
     # Skip collection of files mit fehlenden Imports
-    if any(x in path_str for x in [
-        "test_integration.py",
-        "test_output_generator.py",
-        "test_semantic_engine.py",
-    ]):
+    if any(
+        x in path_str
+        for x in [
+            "test_integration.py",
+            "test_output_generator.py",
+            "test_semantic_engine.py",
+        ]
+    ):
         return True
     return None
 
@@ -120,12 +122,14 @@ def clean_singletons(tmp_path, monkeypatch):
     monkeypatch.setenv("CHROME_EXECUTABLE", "/usr/bin/echo")
     try:
         from core import reset_singletons
+
         reset_singletons()
     except ImportError:
         pass
     yield
     try:
         from core import reset_singletons
+
         reset_singletons()
     except ImportError:
         pass
@@ -139,7 +143,8 @@ def tmp_config(tmp_path: Path, monkeypatch):
     monkeypatch.setenv("AUDIT_LOG_DIR", str(tmp_path / "audit"))
     monkeypatch.setenv("CHROME_PORT", "9999")
     monkeypatch.setenv("CHROME_EXECUTABLE", "/usr/bin/echo")
-    from core import reset_singletons, get_config
+    from core import get_config, reset_singletons
+
     reset_singletons()
     return get_config()
 
@@ -154,7 +159,8 @@ def core_bootstrap(tmp_path, monkeypatch):
     monkeypatch.setenv("SCREENSHOT_DIR", str(tmp_path / "screenshots"))
     monkeypatch.setenv("AUDIT_LOG_DIR", str(tmp_path / "audit"))
     monkeypatch.setenv("CHROME_EXECUTABLE", "/usr/bin/echo")
-    from core import reset_singletons, bootstrap_core, get_config
+    from core import bootstrap_core, get_config, reset_singletons
+
     reset_singletons()
     asyncio.run(bootstrap_core())
     return get_config()
@@ -164,6 +170,7 @@ def core_bootstrap(tmp_path, monkeypatch):
 def eh(tmp_config):
     """Frischer ErrorHandler — auto-isoliert via tmp_config."""
     from core import get_error_handler
+
     return get_error_handler()
 
 
@@ -172,7 +179,8 @@ def security(tmp_config, monkeypatch, tmp_path):
     """Frischer SecurityManager mit tmp-Audit-Log-Pfad."""
     # Master-Key fuer Vault — tmp + ephemeral
     monkeypatch.setenv("VAULT_MASTER_KEY_FILE", str(tmp_path / "vault.key"))
-    from core import reset_singletons, get_security_manager
+    from core import get_security_manager, reset_singletons
+
     reset_singletons()
     return get_security_manager()
 
@@ -181,6 +189,7 @@ def security(tmp_config, monkeypatch, tmp_path):
 def analytics(tmp_config):
     """Frischer AnalyticsCollector — auto-isoliert via tmp_config."""
     from core import get_analytics
+
     return get_analytics()
 
 
@@ -188,6 +197,7 @@ def analytics(tmp_config):
 def state_manager(tmp_config):
     """Frischer StateManager — auto-isoliert via tmp_config."""
     from core import get_state_manager
+
     return get_state_manager()
 
 
@@ -219,6 +229,7 @@ class FakeSurveyState:
     """Minimaler SurveyState-Mock — hat alle Attribute die sync_node_with_core
     erwartet (status, errors, iteration).
     """
+
     survey_id: str = "test-survey"
     provider: str = "heypiggy"
     cdp_port: int = 9999

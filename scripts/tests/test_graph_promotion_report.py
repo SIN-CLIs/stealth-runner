@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for scripts/graph_promotion_report.py (SR-123)."""
 
 from __future__ import annotations
@@ -7,7 +6,7 @@ import io
 import json
 import sys
 import tempfile
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -20,12 +19,11 @@ if str(_SCRIPTS) not in sys.path:
 
 import graph_promotion_report as gpr  # noqa: E402
 
-
 # ---------------------------------------------------------------------------
 # Fixtures / helpers
 # ---------------------------------------------------------------------------
 
-NOW = datetime(2026, 5, 12, 12, 0, 0, tzinfo=timezone.utc)
+NOW = datetime(2026, 5, 12, 12, 0, 0, tzinfo=UTC)
 
 
 def _record(
@@ -127,9 +125,7 @@ def test_t2b_missing_log_quiet_no_stderr():
 
 def test_t3_single_promotion_no_cadence():
     with tempfile.TemporaryDirectory() as d:
-        log = _write_log(
-            Path(d), [_record(NOW - timedelta(days=2), "a" * 64)]
-        )
+        log = _write_log(Path(d), [_record(NOW - timedelta(days=2), "a" * 64)])
         rc, out, _ = _run(["--log", str(log)])
         assert rc == 0
         assert "Total promotions: **1**" in out
@@ -142,9 +138,7 @@ def test_t3_single_promotion_no_cadence():
 
 
 def test_t4_multiple_promotions_counted():
-    records = [
-        _record(NOW - timedelta(days=i), f"{i:064d}") for i in range(1, 6)
-    ]
+    records = [_record(NOW - timedelta(days=i), f"{i:064d}") for i in range(1, 6)]
     with tempfile.TemporaryDirectory() as d:
         log = _write_log(Path(d), records)
         rc, out, _ = _run(["--log", str(log)])
@@ -358,8 +352,7 @@ def test_h1_malformed_lines_are_skipped():
             fh.write("{not-valid-json\n")
             fh.write("\n")  # blank
             fh.write(json.dumps({"event": "other"}) + "\n")  # wrong event
-            fh.write(json.dumps(_record(NOW - timedelta(hours=1), "b" * 64))
-                     + "\n")
+            fh.write(json.dumps(_record(NOW - timedelta(hours=1), "b" * 64)) + "\n")
         rc, out, _ = _run(["--log", str(log), "--json"])
         assert rc == 0
         payload = json.loads(out)
@@ -429,7 +422,7 @@ def test_h7_humanize_seconds_buckets():
 
 
 def test_h8_week_bucket_iso_format():
-    dt = datetime(2026, 1, 5, 12, 0, 0, tzinfo=timezone.utc)
+    dt = datetime(2026, 1, 5, 12, 0, 0, tzinfo=UTC)
     assert gpr.week_bucket(dt) == "2026-W02"
 
 

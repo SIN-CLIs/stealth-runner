@@ -148,7 +148,9 @@ def call_llm(
 
     if not api_key:
         return LLMResponse(
-            content=None, model=used_model, prompt_hash=ph,
+            content=None,
+            model=used_model,
+            prompt_hash=ph,
             error="no AI_GATEWAY_API_KEY in env — LLM path disabled",
         )
 
@@ -192,25 +194,33 @@ def call_llm(
         except Exception:  # noqa: BLE001
             err_body = "?"
         return LLMResponse(
-            content=None, model=used_model, prompt_hash=ph,
+            content=None,
+            model=used_model,
+            prompt_hash=ph,
             error=f"HTTP {e.code}: {err_body}",
             latency_ms=int((time.monotonic() - t0) * 1000),
         )
     except urllib.error.URLError as e:
         return LLMResponse(
-            content=None, model=used_model, prompt_hash=ph,
+            content=None,
+            model=used_model,
+            prompt_hash=ph,
             error=f"URL error: {e.reason}",
             latency_ms=int((time.monotonic() - t0) * 1000),
         )
     except TimeoutError:
         return LLMResponse(
-            content=None, model=used_model, prompt_hash=ph,
+            content=None,
+            model=used_model,
+            prompt_hash=ph,
             error=f"timeout after {timeout}s",
             latency_ms=int((time.monotonic() - t0) * 1000),
         )
     except Exception as e:  # noqa: BLE001 — fail-soft per architecture
         return LLMResponse(
-            content=None, model=used_model, prompt_hash=ph,
+            content=None,
+            model=used_model,
+            prompt_hash=ph,
             error=f"{type(e).__name__}: {e}",
             latency_ms=int((time.monotonic() - t0) * 1000),
         )
@@ -223,15 +233,20 @@ def call_llm(
         actual_model = obj.get("model", used_model)
     except (json.JSONDecodeError, KeyError, IndexError, TypeError) as e:
         return LLMResponse(
-            content=None, model=used_model, prompt_hash=ph,
+            content=None,
+            model=used_model,
+            prompt_hash=ph,
             error=f"unparseable response: {type(e).__name__}: "
-                  f"{str(e)[:120]} (raw[:200]={raw[:200]!r})",
+            f"{str(e)[:120]} (raw[:200]={raw[:200]!r})",
             latency_ms=latency,
         )
 
     return LLMResponse(
-        content=content, model=actual_model, prompt_hash=ph,
-        error=None, latency_ms=latency,
+        content=content,
+        model=actual_model,
+        prompt_hash=ph,
+        error=None,
+        latency_ms=latency,
     )
 
 

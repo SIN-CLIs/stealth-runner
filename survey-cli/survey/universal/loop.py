@@ -86,18 +86,24 @@ def _acquire_lock(survey_id: str = "") -> bool:
             with open(LOCK_PATH, "r") as f:
                 lock = json.load(f)
             lock_time = lock.get("started", "2000-01-01")
-            age_min = (time.time() - time.mgmtime(time.mktime(time.strptime(lock_time[:19], "%Y-%m-%dT%H:%M:%S")))[0]) / 60  # noqa: E501
+            age_min = (
+                time.time()
+                - time.mgmtime(time.mktime(time.strptime(lock_time[:19], "%Y-%m-%dT%H:%M:%S")))[0]
+            ) / 60  # noqa: E501
             if age_min < 30:
                 return False
         except Exception:
             pass
     LOCK_PATH.parent.mkdir(parents=True, exist_ok=True)
     with open(LOCK_PATH, "w") as f:
-        json.dump({
-            "survey_id": survey_id,
-            "started": time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime()),
-            "pid": os.getpid(),
-        }, f)
+        json.dump(
+            {
+                "survey_id": survey_id,
+                "started": time.strftime("%Y-%m-%dT%H:%M:%S", time.gmtime()),
+                "pid": os.getpid(),
+            },
+            f,
+        )
     return True
 
 
@@ -117,7 +123,10 @@ def _wipe_stale_locks():
             with open(LOCK_PATH, "r") as f:
                 lock = json.load(f)
             lock_time = lock.get("started", "2000-01-01")
-            age_min = (time.time() - time.mgmtime(time.mktime(time.strptime(lock_time[:19], "%Y-%m-%dT%H:%M:%S")))[0]) / 60  # noqa: E501
+            age_min = (
+                time.time()
+                - time.mgmtime(time.mktime(time.strptime(lock_time[:19], "%Y-%m-%dT%H:%M:%S")))[0]
+            ) / 60  # noqa: E501
             if age_min >= 30:
                 LOCK_PATH.unlink()
         except Exception:
@@ -128,6 +137,7 @@ def _wipe_stale_locks():
 
 
 # ── Result Dataclass ───────────────────────────────────────────────────────────
+
 
 @dataclass
 class UniversalSurveyResult:
@@ -148,6 +158,7 @@ class UniversalSurveyResult:
 
 # ── CDP Connection ─────────────────────────────────────────────────────────────
 
+
 def _cdp_send(ws_url: str, method: str, params: Dict, timeout: int = 15) -> Dict:
     """Send CDP command and return result value."""
     ws = websocket.create_connection(ws_url, timeout=timeout)
@@ -164,11 +175,16 @@ def _cdp_eval(ws_url: str, js: str, timeout: int = 15) -> str:
 
 # ── Balance Reader ─────────────────────────────────────────────────────────────
 
+
 def _read_balance(port: int = 9999) -> float:
     """Read HeyPiggy balance from dashboard tab."""
     try:
-        pages = json.loads(urllib.request.urlopen(f"http://127.0.0.1:{port}/json", timeout=5).read())  # noqa: E501
-        db = [p for p in pages if "dashboard" in p.get("url", "").lower() and p.get("type") == "page"]  # noqa: E501
+        pages = json.loads(
+            urllib.request.urlopen(f"http://127.0.0.1:{port}/json", timeout=5).read()
+        )  # noqa: E501
+        db = [
+            p for p in pages if "dashboard" in p.get("url", "").lower() and p.get("type") == "page"
+        ]  # noqa: E501
         if not db:
             return 0.0
         body = _cdp_eval(db[0]["webSocketDebuggerUrl"], "document.body.innerText")
@@ -189,6 +205,7 @@ def _read_balance(port: int = 9999) -> float:
 # FIX: Extract EVERYTHING — radio text, button text, input placeholders, select options.
 #      Use the PAGE BODY as source of truth (not just DOM elements).
 #      Body text contains ALL question options laid out visually.
+
 
 def _extract_page(ws_url: str) -> Dict:
     """Extract complete page state for universal survey handling.
@@ -231,7 +248,20 @@ def _extract_page(ws_url: str) -> Dict:
 
     # 2. Detect provider from URL
     provider = "unknown"
-    for p in ["purespectrum", "cint", "toluna", "qualtrics", "samplicio", "ipsos", "nfield", "irbureau", "strat7", "innovatemr", "decipher", "surveymonkey"]:  # noqa: E501
+    for p in [
+        "purespectrum",
+        "cint",
+        "toluna",
+        "qualtrics",
+        "samplicio",
+        "ipsos",
+        "nfield",
+        "irbureau",
+        "strat7",
+        "innovatemr",
+        "decipher",
+        "surveymonkey",
+    ]:  # noqa: E501
         if p in url.lower():
             provider = p
             break
@@ -348,7 +378,14 @@ def _extract_page(ws_url: str) -> Dict:
     try:
         elements = json.loads(els_raw)
     except Exception:
-        elements = {"radios": [], "checkboxes": [], "text_inputs": [], "selects": [], "buttons": [], "links": []}  # noqa: E501
+        elements = {
+            "radios": [],
+            "checkboxes": [],
+            "text_inputs": [],
+            "selects": [],
+            "buttons": [],
+            "links": [],
+        }  # noqa: E501
 
     # 4. Extract progress bar
     progress = None
@@ -369,6 +406,7 @@ def _extract_page(ws_url: str) -> Dict:
 
 # ── Completion Detection ───────────────────────────────────────────────────────
 
+
 def _detect_completion(page: Dict) -> Tuple[str, str]:
     """Detect survey completion/screen-out from page state.
 
@@ -383,10 +421,20 @@ def _detect_completion(page: Dict) -> Tuple[str, str]:
 
     # COMPLETED markers
     completed_markers = [
-        "vielen dank", "danke für", "thank you for completing", "survey complete",
-        "abgeschlossen", "erfolgreich", "ausgefüllt", "gutgeschrieben",
-        "guthaben wurde", "completed the survey", "reward credited",
-        "your submission", "submitted successfully", "finished",
+        "vielen dank",
+        "danke für",
+        "thank you for completing",
+        "survey complete",
+        "abgeschlossen",
+        "erfolgreich",
+        "ausgefüllt",
+        "gutgeschrieben",
+        "guthaben wurde",
+        "completed the survey",
+        "reward credited",
+        "your submission",
+        "submitted successfully",
+        "finished",
     ]
     for m in completed_markers:
         if m in body or m in title:
@@ -394,9 +442,18 @@ def _detect_completion(page: Dict) -> Tuple[str, str]:
 
     # SCREEN-OUT markers
     screenout_markers = [
-        "nicht geeignet", "leider ist ein fehler", "error occurred", "error - support",
-        "screen out", "not eligible", "you do not qualify", "not available",
-        "no app id", "link expired", "survey closed", "survey has ended",
+        "nicht geeignet",
+        "leider ist ein fehler",
+        "error occurred",
+        "error - support",
+        "screen out",
+        "not eligible",
+        "you do not qualify",
+        "not available",
+        "no app id",
+        "link expired",
+        "survey closed",
+        "survey has ended",
         "thank you for your interest",
     ]
     for m in screenout_markers:
@@ -407,6 +464,7 @@ def _detect_completion(page: Dict) -> Tuple[str, str]:
 
 
 # ── NIM Decision ───────────────────────────────────────────────────────────────
+
 
 def _nim_decide(page: Dict, profile: Dict) -> List[Dict]:
     """Use Nemotron NIM to decide actions. Falls back to pattern matcher.
@@ -430,13 +488,13 @@ def _nim_decide(page: Dict, profile: Dict) -> List[Dict]:
     prompt = f"""Du beantwortest eine Online-Umfrage. Du siehst die Seite und musst handeln.
 
 PERSONA (Deutsch, ehrlich):
-- Alter: {profile.get('age', 32)}
-- Geschlecht: {profile.get('gender', 'Männlich')}
-- Wohnort: {profile.get('city', 'Berlin')}
-- PLZ: {profile.get('postal', '10785')}
-- Beruf: {profile.get('occupation', 'Angestellter')}
-- Haushaltseinkommen: {profile.get('income', '€39.000 - €64.999')}
-- Haushaltsgröße: {profile.get('household', '2 Personen')}
+- Alter: {profile.get("age", 32)}
+- Geschlecht: {profile.get("gender", "Männlich")}
+- Wohnort: {profile.get("city", "Berlin")}
+- PLZ: {profile.get("postal", "10785")}
+- Beruf: {profile.get("occupation", "Angestellter")}
+- Haushaltseinkommen: {profile.get("income", "€39.000 - €64.999")}
+- Haushaltsgröße: {profile.get("household", "2 Personen")}
 
 SEITE:
 {body[:2000]}
@@ -463,7 +521,9 @@ VERFÜGBARE OPTIONEN:
     if inputs:
         prompt += "\nText-Felder:\n"
         for i, inp in enumerate(inputs):
-            prompt += f"  [{i}] placeholder=\"{inp['placeholder']}\" aria_label=\"{inp['aria_label']}\"\n"  # noqa: E501
+            prompt += (
+                f'  [{i}] placeholder="{inp["placeholder"]}" aria_label="{inp["aria_label"]}"\n'  # noqa: E501
+            )
 
     # Add selects
     selects = elements.get("selects", [])
@@ -489,14 +549,14 @@ Antworte als JSON:
     try:
         req = urllib.request.Request(
             "https://integrate.api.nvidia.com/v1/chat/completions",
-            data=json.dumps({
-                "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
-                "messages": [
-                    {"role": "user", "content": prompt}
-                ],
-                "temperature": 0.3,
-                "max_tokens": 512,
-            }).encode(),
+            data=json.dumps(
+                {
+                    "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.3,
+                    "max_tokens": 512,
+                }
+            ).encode(),
             headers={
                 "Authorization": f"Bearer {api_key}",
                 "Content-Type": "application/json",
@@ -562,7 +622,9 @@ def _pattern_decide(page: Dict, profile: Dict) -> List[Dict]:
                 else:
                     # Fallback: pick middle option (usually safest)
                     idx = len(radios) // 2
-                    actions.append({"type": "click_radio", "index": idx, "text": radios[idx]["text"]})  # noqa: E501
+                    actions.append(
+                        {"type": "click_radio", "index": idx, "text": radios[idx]["text"]}
+                    )  # noqa: E501
         else:
             # For other questions, pick the most relevant option
             # Simple heuristic: match keyword in option text
@@ -590,13 +652,37 @@ def _pattern_decide(page: Dict, profile: Dict) -> List[Dict]:
         ph = (inp.get("placeholder") or "").lower()
         al = (inp.get("aria_label") or "").lower()
         if is_age or "alter" in ph or "age" in al:
-            actions.append({"type": "fill_text", "index": inputs.index(inp), "value": str(profile.get("age", 32))})  # noqa: E501
+            actions.append(
+                {
+                    "type": "fill_text",
+                    "index": inputs.index(inp),
+                    "value": str(profile.get("age", 32)),
+                }
+            )  # noqa: E501
         elif is_zip or "plz" in ph or "zip" in al or "postal" in al:
-            actions.append({"type": "fill_text", "index": inputs.index(inp), "value": profile.get("postal", "10785")})  # noqa: E501
+            actions.append(
+                {
+                    "type": "fill_text",
+                    "index": inputs.index(inp),
+                    "value": profile.get("postal", "10785"),
+                }
+            )  # noqa: E501
         elif is_city or "stadt" in ph or "city" in al:
-            actions.append({"type": "fill_text", "index": inputs.index(inp), "value": profile.get("city", "Berlin")})  # noqa: E501
+            actions.append(
+                {
+                    "type": "fill_text",
+                    "index": inputs.index(inp),
+                    "value": profile.get("city", "Berlin"),
+                }
+            )  # noqa: E501
         elif "alter" in ph or "age" in al:
-            actions.append({"type": "fill_text", "index": inputs.index(inp), "value": str(profile.get("age", 32))})  # noqa: E501
+            actions.append(
+                {
+                    "type": "fill_text",
+                    "index": inputs.index(inp),
+                    "value": str(profile.get("age", 32)),
+                }
+            )  # noqa: E501
 
     # SELECT: pick matching option
     selects = elements.get("selects", [])
@@ -606,7 +692,9 @@ def _pattern_decide(page: Dict, profile: Dict) -> List[Dict]:
             target = profile.get("income", "€39 000 - €64 999")
             for idx, opt in enumerate(opts):
                 if target in opt or target.split(" ")[0] in opt:
-                    actions.append({"type": "select_option", "index": selects.index(sel), "value": idx})  # noqa: E501
+                    actions.append(
+                        {"type": "select_option", "index": selects.index(sel), "value": idx}
+                    )  # noqa: E501
                     break
 
     # BUTTON: click "Weiter" or "Next" or "Fortfahren"
@@ -614,7 +702,10 @@ def _pattern_decide(page: Dict, profile: Dict) -> List[Dict]:
     [b.get("text", "").lower() for b in buttons]
     for b in buttons:
         txt = b.get("text", "").lower()
-        if any(w in txt for w in ["weiter", "nächste", "next", "fortfahren", "submit", "absenden", "submit"]):  # noqa: E501
+        if any(
+            w in txt
+            for w in ["weiter", "nächste", "next", "fortfahren", "submit", "absenden", "submit"]
+        ):  # noqa: E501
             actions.append({"type": "click_button", "text": b["text"]})
             break
 
@@ -622,6 +713,7 @@ def _pattern_decide(page: Dict, profile: Dict) -> List[Dict]:
 
 
 # ── Action Execution ───────────────────────────────────────────────────────────
+
 
 def _execute_actions(ws_url: str, actions: List[Dict], page: Dict) -> Dict:
     """Execute actions using VERIFIED CDP patterns (from /commands/surveys/survey-answer-patterns.md).  # noqa: E501
@@ -644,7 +736,7 @@ def _execute_actions(ws_url: str, actions: List[Dict], page: Dict) -> Dict:
                     # non-existent Python name `r` (the JS `var r = ...` is JS-side
                     # only). Build the JS via plain `.format(idx=idx)` so JS-side
                     # `r` stays JS-side.
-                    js_template = '''
+                    js_template = """
 (function() {{
     var r = document.querySelectorAll('input[type=radio]');
     if (r[{idx}]) {{
@@ -656,12 +748,12 @@ def _execute_actions(ws_url: str, actions: List[Dict], page: Dict) -> Dict:
     }}
     return 'NOT_FOUND';
 }})()
-'''
+"""
                     js = js_template.format(idx=idx)
                     res = _cdp_eval(ws_url, js)
                     if "RADIO:" in res:
                         result["success"] += 1
-                        result["executed"].append(f"radio[{idx}]={action.get('text','')}")
+                        result["executed"].append(f"radio[{idx}]={action.get('text', '')}")
                     else:
                         result["failed"] += 1
 
@@ -761,10 +853,13 @@ def _execute_actions(ws_url: str, actions: List[Dict], page: Dict) -> Dict:
 
 # ── Survey Tab Cleanup ─────────────────────────────────────────────────────────
 
+
 def _close_survey_tabs(port: int = 9999, keep_dashboard: bool = True):
     """Close all non-dashboard survey tabs (zombie prevention)."""
     try:
-        pages = json.loads(urllib.request.urlopen(f"http://127.0.0.1:{port}/json", timeout=5).read())  # noqa: E501
+        pages = json.loads(
+            urllib.request.urlopen(f"http://127.0.0.1:{port}/json", timeout=5).read()
+        )  # noqa: E501
         for p in pages:
             if p.get("type") == "page":
                 url = p.get("url", "").lower()
@@ -775,8 +870,15 @@ def _close_survey_tabs(port: int = 9999, keep_dashboard: bool = True):
                 # Close survey tabs
                 try:
                     ws = websocket.create_connection(p["webSocketDebuggerUrl"], timeout=5)
-                    ws.send(json.dumps({"id": 1, "method": "Target.closeTarget",
-                                       "params": {"targetId": p["id"]}}))
+                    ws.send(
+                        json.dumps(
+                            {
+                                "id": 1,
+                                "method": "Target.closeTarget",
+                                "params": {"targetId": p["id"]},
+                            }
+                        )
+                    )
                     json.loads(ws.recv())
                     ws.close()
                 except Exception:
@@ -786,6 +888,7 @@ def _close_survey_tabs(port: int = 9999, keep_dashboard: bool = True):
 
 
 # ── MAIN LOOP ─────────────────────────────────────────────────────────────────
+
 
 def run_universal_survey(
     ws_url: str,
@@ -838,7 +941,7 @@ def run_universal_survey(
 
             # 1. EXTRACT page state
             page = _extract_page(ws_url)
-            result.history.append(f"Step {step+1}: {page.get('url','?')[:60]}")
+            result.history.append(f"Step {step + 1}: {page.get('url', '?')[:60]}")
 
             # 2. Check completion/screen-out FIRST
             status, reason = _detect_completion(page)
@@ -846,43 +949,49 @@ def run_universal_survey(
                 result.status = "completed"
                 result.success = True
                 result.completion_detected = True
-                result.history.append(f"COMPLETED at step {step+1}: {reason}")
+                result.history.append(f"COMPLETED at step {step + 1}: {reason}")
                 break
             elif status == "screen_out":
                 result.status = "screen_out"
                 result.screen_out = True
                 result.reason = reason
-                result.history.append(f"SCREEN_OUT at step {step+1}: {reason}")
+                result.history.append(f"SCREEN_OUT at step {step + 1}: {reason}")
                 break
 
             # 3. DECIDE actions
             actions = _nim_decide(page, profile)
             if not actions:
-                result.history.append(f"Step {step+1}: No actions — scrolling")
+                result.history.append(f"Step {step + 1}: No actions — scrolling")
                 # Scroll down if no actions found
                 _cdp_eval(ws_url, "window.scrollBy(0, 300); 'scrolled'")
                 time.sleep(1)
                 continue
 
-            result.history.append(f"Step {step+1}: {[a.get('type') for a in actions]}")
+            result.history.append(f"Step {step + 1}: {[a.get('type') for a in actions]}")
 
             # 4. EXECUTE actions
             exec_result = _execute_actions(ws_url, actions, page)
-            result.history.append(f"  Executed: {exec_result['success']} ok, {exec_result['failed']} fail")  # noqa: E501
-            if exec_result['failed'] > exec_result['success']:
-                result.errors.append(f"Step {step+1}: {exec_result['failed']} actions failed")
+            result.history.append(
+                f"  Executed: {exec_result['success']} ok, {exec_result['failed']} fail"
+            )  # noqa: E501
+            if exec_result["failed"] > exec_result["success"]:
+                result.errors.append(f"Step {step + 1}: {exec_result['failed']} actions failed")
 
             # 5. Wait for page transition
             time.sleep(2)
 
             # 6. Verify: did page change?
             page2 = _extract_page(ws_url)
-            if page2.get("body_text") == page.get("body_text") and page2.get("url") == page.get("url"):  # noqa: E501
+            if page2.get("body_text") == page.get("body_text") and page2.get("url") == page.get(
+                "url"
+            ):  # noqa: E501
                 # Page unchanged — might be stuck
-                result.history.append(f"  Warning: Page unchanged after step {step+1}")
+                result.history.append(f"  Warning: Page unchanged after step {step + 1}")
                 if step >= 3:  # After 3 retries, try clicking next button directly
                     # Try direct "Weiter" click as last resort
-                    direct = _cdp_eval(ws_url, """
+                    direct = _cdp_eval(
+                        ws_url,
+                        """
 (function() {
     var b = document.querySelectorAll('button, [role=button], a');
     for (var i = 0; i < b.length; i++) {
@@ -894,7 +1003,8 @@ def run_universal_survey(
     }
     return 'NO_BUTTON';
 })()
-""")
+""",
+                    )
                     if "DIRECT_CLICK:" in direct:
                         result.history.append(f"  Direct click worked: {direct}")
                     else:
@@ -951,12 +1061,14 @@ if __name__ == "__main__":
         max_steps=args.max_steps,
     )
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"RESULT: {result.status}")
     print(f"Steps: {result.steps}")
-    print(f"Earned: €{result.earned:.2f} (before €{result.balance_before:.2f} → after €{result.balance_after:.2f})")  # noqa: E501
+    print(
+        f"Earned: €{result.earned:.2f} (before €{result.balance_before:.2f} → after €{result.balance_after:.2f})"
+    )  # noqa: E501
     print(f"Completion: {result.completion_detected}")
     print("History:")
     for h in result.history[-5:]:
         print(f"  {h}")
-    print(f"{'='*60}")
+    print(f"{'=' * 60}")

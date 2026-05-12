@@ -163,14 +163,11 @@ def _is_run_clean(run: Dict[str, Any]) -> List[str]:
     # C1 per-run: balance_after > balance_before
     balance_before = run.get("balance_before", 0.0)
     balance_after = run.get("balance_after", 0.0)
-    if not isinstance(balance_before, (int, float)) or not isinstance(
-        balance_after, (int, float)
-    ):
+    if not isinstance(balance_before, (int, float)) or not isinstance(balance_after, (int, float)):
         reasons.append("balance_* fields not numeric")
     elif balance_after <= balance_before:
         reasons.append(
-            f"no net earnings (balance_after={balance_after} <= "
-            f"balance_before={balance_before})"
+            f"no net earnings (balance_after={balance_after} <= balance_before={balance_before})"
         )
 
     # C2: consecutive_failures < 3 (>= 3 means delegated)
@@ -179,8 +176,7 @@ def _is_run_clean(run: Dict[str, Any]) -> List[str]:
         reasons.append("consecutive_failures not an int")
     elif cf >= MAX_CONSECUTIVE_FAILURES:
         reasons.append(
-            f"run was delegated (consecutive_failures={cf} >= "
-            f"{MAX_CONSECUTIVE_FAILURES})"
+            f"run was delegated (consecutive_failures={cf} >= {MAX_CONSECUTIVE_FAILURES})"
         )
 
     # C3: errors == []
@@ -221,9 +217,7 @@ def evaluate_runs(runs: Sequence[Dict[str, Any]]) -> PromotionEvaluation:
             n_successes += 1
 
     if n_successes < REQUIRED_SUCCESSES:
-        reasons.append(
-            f"only {n_successes} clean run(s); need >= {REQUIRED_SUCCESSES}"
-        )
+        reasons.append(f"only {n_successes} clean run(s); need >= {REQUIRED_SUCCESSES}")
 
     eligible = (not reasons) and n_successes >= REQUIRED_SUCCESSES
     return PromotionEvaluation(
@@ -321,15 +315,11 @@ def promote(
     """End-to-end: evaluate criteria, snapshot if eligible, log."""
     evaluation = evaluate_runs(runs)
     if not evaluation.eligible:
-        return PromotionResult(
-            promoted=False, evaluation=evaluation, snapshot=None
-        )
+        return PromotionResult(promoted=False, evaluation=evaluation, snapshot=None)
 
     snapshot = compile_snapshot(graph_source, compiled_dir, now=now)
     append_promotion_log(log_path, snapshot)
-    return PromotionResult(
-        promoted=True, evaluation=evaluation, snapshot=snapshot
-    )
+    return PromotionResult(promoted=True, evaluation=evaluation, snapshot=snapshot)
 
 
 # ── Run loading (optional convenience) ───────────────────────────────────────

@@ -20,7 +20,10 @@ class TestSurveyRater(unittest.TestCase):
         from survey.survey_rater import SurveyRater
 
         mock_tabs.return_value = [
-            {"url": "https://cpx-research.com/rating.php?survey=123", "webSocketDebuggerUrl": "ws://localhost:9223/devtools/page/1"},
+            {
+                "url": "https://cpx-research.com/rating.php?survey=123",
+                "webSocketDebuggerUrl": "ws://localhost:9223/devtools/page/1",
+            },
         ]
         mock_conn = MagicMock()
         mock_conn.recv.return_value = '{"result": {"result": {"value": "clicked"}}}'
@@ -37,7 +40,10 @@ class TestSurveyRater(unittest.TestCase):
         from survey.survey_rater import SurveyRater
 
         mock_tabs.return_value = [
-            {"url": "https://heypiggy.com/dashboard", "webSocketDebuggerUrl": "ws://localhost:9223/devtools/page/1"},
+            {
+                "url": "https://heypiggy.com/dashboard",
+                "webSocketDebuggerUrl": "ws://localhost:9223/devtools/page/1",
+            },
         ]
 
         rater = SurveyRater(cdp_port=9999)
@@ -64,7 +70,10 @@ class TestSurveyRater(unittest.TestCase):
         from survey.survey_rater import SurveyRater
 
         mock_tabs.return_value = [
-            {"url": "https://www.cpx-research.com/survey/456/rate", "webSocketDebuggerUrl": "ws://localhost:9223/devtools/page/2"},
+            {
+                "url": "https://www.cpx-research.com/survey/456/rate",
+                "webSocketDebuggerUrl": "ws://localhost:9223/devtools/page/2",
+            },
         ]
         mock_conn = MagicMock()
         mock_conn.recv.return_value = '{"result": {"result": {"value": null}}}'
@@ -81,7 +90,10 @@ class TestSurveyRater(unittest.TestCase):
         from survey.survey_rater import SurveyRater
 
         mock_tabs.return_value = [
-            {"url": "https://cpx-research.com/rating.php", "webSocketDebuggerUrl": "ws://localhost:9223/devtools/page/1"},
+            {
+                "url": "https://cpx-research.com/rating.php",
+                "webSocketDebuggerUrl": "ws://localhost:9223/devtools/page/1",
+            },
         ]
         mock_ws.create_connection.side_effect = Exception("connection refused")
 
@@ -96,8 +108,14 @@ class TestSurveyRater(unittest.TestCase):
         from survey.survey_rater import SurveyRater
 
         mock_tabs.return_value = [
-            {"url": "https://heypiggy.com/dashboard", "webSocketDebuggerUrl": "ws://localhost:9223/devtools/page/1"},
-            {"url": "https://cpx-research.com/rating.php", "webSocketDebuggerUrl": "ws://localhost:9223/devtools/page/2"},
+            {
+                "url": "https://heypiggy.com/dashboard",
+                "webSocketDebuggerUrl": "ws://localhost:9223/devtools/page/1",
+            },
+            {
+                "url": "https://cpx-research.com/rating.php",
+                "webSocketDebuggerUrl": "ws://localhost:9223/devtools/page/2",
+            },
         ]
         mock_conn = MagicMock()
         mock_conn.recv.return_value = '{"result": {"result": {"value": "done"}}}'

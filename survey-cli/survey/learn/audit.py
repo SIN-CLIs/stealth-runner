@@ -329,8 +329,7 @@ def format_human_report(report: AuditReport, top: int = 10) -> str:
     lines: List[str] = []
 
     lines.append(
-        f"[learn] audit summary  ({report.files_scanned} file(s), "
-        f"{report.total_records} record(s))"
+        f"[learn] audit summary  ({report.files_scanned} file(s), {report.total_records} record(s))"
     )
 
     if report.by_decision:
@@ -346,18 +345,14 @@ def format_human_report(report: AuditReport, top: int = 10) -> str:
         ):
             n = report.by_decision.get(decision, 0)
             if n > 0:
-                lines.append(
-                    f"  {decision:<22} {n:>4}   {_percent(n, total)}"
-                )
+                lines.append(f"  {decision:<22} {n:>4}   {_percent(n, total)}")
 
     if report.by_source_applied:
         lines.append("")
         lines.append("By source (applied only):")
         applied_total = sum(report.by_source_applied.values())
         for source, n in report.by_source_applied.most_common():
-            lines.append(
-                f"  {source:<10} {n:>4}   {_percent(n, applied_total)}"
-            )
+            lines.append(f"  {source:<10} {n:>4}   {_percent(n, applied_total)}")
 
     if report.families_applied:
         lines.append("")
@@ -402,8 +397,7 @@ def report_to_json(report: AuditReport, top: int = 10) -> dict:
         "by_decision": dict(report.by_decision),
         "by_source_applied": dict(report.by_source_applied),
         "top_families_applied": [
-            {"family": fam, "count": n}
-            for fam, n in report.families_applied.most_common(top)
+            {"family": fam, "count": n} for fam, n in report.families_applied.most_common(top)
         ],
         "top_labels_applied": [
             {"role": role, "label": label, "count": n}
