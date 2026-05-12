@@ -14,11 +14,8 @@ from typing import Any, AsyncIterator
 
 from .stealth import (
     StealthBrowser,
-    FingerprintGenerator,
     Fingerprint,
     ProxyConfig,
-    MouseSimulator,
-    TypingSimulator,
 )
 
 logger = logging.getLogger(__name__)
@@ -39,7 +36,7 @@ class ElementInfo:
 class BrowserDriver:
     """
     Stealth browser driver using Playwright.
-    
+
     Provides high-level API for survey automation with
     built-in anti-detection and human-like behavior.
     """
@@ -61,13 +58,15 @@ class BrowserDriver:
         try:
             from playwright.async_api import async_playwright
         except ImportError:
-            logger.error("Playwright not installed. Run: pip install playwright && playwright install")
+            logger.error(
+                "Playwright not installed. Run: pip install playwright && playwright install"
+            )
             raise
 
         self._playwright = await async_playwright().start()
-        
+
         launch_args = self.stealth.get_browser_args()
-        
+
         proxy_config = None
         if self.stealth.proxy:
             proxy_config = {
@@ -120,12 +119,12 @@ class BrowserDriver:
         """Navigate to URL with human-like delay."""
         # Random pre-navigation delay
         await asyncio.sleep(0.5 + 1.5 * asyncio.get_event_loop().time() % 1)
-        
+
         await self._page.goto(url, wait_until=wait_until)
-        
+
         # Post-navigation delay (simulating page scanning)
         await asyncio.sleep(1 + 2 * asyncio.get_event_loop().time() % 1)
-        
+
         logger.info(f"Navigated to: {url}")
 
     async def get_html(self) -> str:
@@ -145,7 +144,7 @@ class BrowserDriver:
 
             tag = await element.evaluate("el => el.tagName.toLowerCase()")
             text = await element.inner_text() if tag not in ["input", "select"] else ""
-            
+
             attrs = await element.evaluate("""
                 el => {
                     const attrs = {};
@@ -216,7 +215,9 @@ class BrowserDriver:
         target_y = int(box["y"] + box["height"] * (0.3 + 0.4 * asyncio.get_event_loop().time() % 1))
 
         # Generate mouse path
-        current_pos = await self._page.evaluate("() => ({x: window.mouseX || 0, y: window.mouseY || 0})")
+        current_pos = await self._page.evaluate(
+            "() => ({x: window.mouseX || 0, y: window.mouseY || 0})"
+        )
         path = self.stealth.mouse.generate_path(
             (current_pos.get("x", 0), current_pos.get("y", 0)),
             (target_x, target_y),

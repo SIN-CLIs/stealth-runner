@@ -7,7 +7,7 @@ Supports:
     - Google Forms
     - TypeForm
     - Generic HTML forms
-    
+
 Question Types:
     - Radio buttons
     - Checkboxes
@@ -19,9 +19,10 @@ Question Types:
     - Date pickers
     - Number inputs
 """
+
+# ruff: noqa: E501  # CSS selectors / argparse help / log strings — wrapping changes semantics
 from __future__ import annotations
 
-import json
 import logging
 import re
 from dataclasses import dataclass, field
@@ -99,7 +100,7 @@ class ParsedSurvey:
 class SurveyParser:
     """
     Universal survey parser that works across platforms.
-    
+
     Uses DOM analysis to detect question types and extract
     answer options, validation rules, and navigation elements.
     """
@@ -196,21 +197,21 @@ class SurveyParser:
     async def parse(self, html: str, url: str) -> ParsedSurvey:
         """
         Parse survey HTML and extract all questions.
-        
+
         Args:
             html: Raw HTML content of the survey page
             url: URL of the survey
-            
+
         Returns:
             ParsedSurvey with extracted questions and metadata
         """
         platform = self._detect_platform(html, url)
         title = self._extract_title(html)
         captcha_info = self._detect_captcha(html)
-        
+
         questions = await self._extract_questions(html, platform)
         navigation = self._extract_navigation(html, platform)
-        
+
         page = SurveyPage(
             page_number=1,
             questions=questions,
@@ -218,7 +219,7 @@ class SurveyParser:
             next_button_selector=navigation["next_selector"],
             submit_button_selector=navigation["submit_selector"],
         )
-        
+
         return ParsedSurvey(
             url=url,
             title=title,
@@ -235,16 +236,16 @@ class SurveyParser:
         # Check cache
         if url in self._platform_cache:
             return self._platform_cache[url]
-        
+
         combined = html + url
-        
+
         for platform, patterns in self.PLATFORM_PATTERNS.items():
             for pattern in patterns:
                 if re.search(pattern, combined, re.IGNORECASE):
                     self._platform_cache[url] = platform
                     logger.info(f"Detected platform: {platform}")
                     return platform
-        
+
         return "generic"
 
     def _extract_title(self, html: str) -> str:
@@ -255,12 +256,12 @@ class SurveyParser:
             r"<h1[^>]*>([^<]+)</h1>",
             r"class=[\"']survey-title[\"'][^>]*>([^<]+)<",
         ]
-        
+
         for pattern in patterns:
             match = re.search(pattern, html, re.IGNORECASE)
             if match:
                 return match.group(1).strip()
-        
+
         return "Untitled Survey"
 
     def _detect_captcha(self, html: str) -> dict[str, Any]:
@@ -270,13 +271,13 @@ class SurveyParser:
             "type": None,
             "site_key": None,
         }
-        
+
         for captcha_type, patterns in self.CAPTCHA_PATTERNS.items():
             for pattern in patterns:
                 if re.search(pattern, html, re.IGNORECASE):
                     result["detected"] = True
                     result["type"] = captcha_type
-                    
+
                     # Extract site key
                     site_key_match = re.search(
                         r'data-sitekey=["\']([^"\']+)["\']',
@@ -284,10 +285,10 @@ class SurveyParser:
                     )
                     if site_key_match:
                         result["site_key"] = site_key_match.group(1)
-                    
+
                     logger.info(f"Captcha detected: {captcha_type}")
                     return result
-        
+
         return result
 
     async def _extract_questions(
@@ -295,7 +296,7 @@ class SurveyParser:
     ) -> list[Question]:
         """Extract all questions from HTML."""
         questions = []
-        
+
         # Platform-specific extraction
         if platform == "qualtrics":
             questions = self._extract_qualtrics_questions(html)
@@ -305,32 +306,32 @@ class SurveyParser:
             questions = self._extract_google_forms_questions(html)
         else:
             questions = self._extract_generic_questions(html)
-        
+
         logger.info(f"Extracted {len(questions)} questions")
         return questions
 
     def _extract_qualtrics_questions(self, html: str) -> list[Question]:
         """Extract questions from Qualtrics survey."""
         questions = []
-        
+
         # Find question containers
         question_pattern = r'id="(QID\d+)"[^>]*class="[^"]*QuestionOuter[^"]*"'
         question_matches = re.finditer(question_pattern, html)
-        
+
         for match in question_matches:
             qid = match.group(1)
-            
+
             # Extract question text
             text_pattern = rf'{qid}[^>]*>.*?class="QuestionText[^"]*"[^>]*>([^<]+)<'
             text_match = re.search(text_pattern, html, re.DOTALL)
             text = text_match.group(1).strip() if text_match else ""
-            
+
             # Detect question type
             qtype = self._detect_question_type(html, qid)
-            
+
             # Extract options
             options = self._extract_options(html, qid, qtype)
-            
+
             questions.append(Question(
                 id=qid,
                 type=qtype,
@@ -338,70 +339,70 @@ class SurveyParser:
                 options=options,
                 element_selector=f"#{qid}",
             ))
-        
+
         return questions
 
     def _extract_surveymonkey_questions(self, html: str) -> list[Question]:
         """Extract questions from SurveyMonkey survey."""
         questions = []
-        
+
         # Find question containers
         pattern = r'data-question-id="(\d+)"'
         for match in re.finditer(pattern, html):
             qid = f"q_{match.group(1)}"
-            
+
             # Extract question context around the match
             start = max(0, match.start() - 2000)
             end = min(len(html), match.end() + 2000)
             context = html[start:end]
-            
+
             # Extract text
             text_match = re.search(
                 r'class="question-title[^"]*"[^>]*>([^<]+)<',
                 context
             )
             text = text_match.group(1).strip() if text_match else ""
-            
+
             qtype = self._detect_question_type(context, qid)
             options = self._extract_options(context, qid, qtype)
-            
+
             questions.append(Question(
                 id=qid,
                 type=qtype,
                 text=text,
                 options=options,
             ))
-        
+
         return questions
 
     def _extract_google_forms_questions(self, html: str) -> list[Question]:
         """Extract questions from Google Forms."""
         questions = []
-        
+
         # Google Forms uses data attributes
         pattern = r'data-params="([^"]+)"'
-        
+
         for i, match in enumerate(re.finditer(pattern, html)):
             try:
                 params = match.group(1)
                 # Decode HTML entities
                 params = params.replace("&quot;", '"')
-                
+
                 qid = f"gf_{i}"
-                
+
                 # Extract text from nearby elements
                 start = max(0, match.start() - 1000)
                 context = html[start:match.end()]
-                
+
                 text_match = re.search(
                     r'class="[^"]*freebirdFormviewerComponentsQuestionBaseTitle[^"]*"[^>]*>([^<]+)<',
                     context
                 )
                 text = text_match.group(1).strip() if text_match else f"Question {i+1}"
-                
+
                 qtype = self._detect_question_type(context, qid)
                 options = self._extract_options(context, qid, qtype)
-                
+
                 questions.append(Question(
                     id=qid,
                     type=qtype,
@@ -410,13 +411,13 @@ class SurveyParser:
                 ))
             except Exception as e:
                 logger.warning(f"Error parsing Google Forms question: {e}")
-        
+
         return questions
 
     def _extract_generic_questions(self, html: str) -> list[Question]:
         """Extract questions from generic HTML form."""
         questions = []
-        
+
         # Find form elements
         form_elements = [
             (r'<input[^>]+type=["\']radio["\'][^>]*>', QuestionType.RADIO),
@@ -428,23 +429,23 @@ class SurveyParser:
             (r'<input[^>]+type=["\']date["\'][^>]*>', QuestionType.DATE),
             (r'<input[^>]+type=["\']text["\'][^>]*>', QuestionType.OPEN_TEXT),
         ]
-        
+
         seen_names = set()
-        
+
         for pattern, qtype in form_elements:
             for match in re.finditer(pattern, html, re.DOTALL | re.IGNORECASE):
                 element = match.group(0)
-                
+
                 # Extract name attribute
                 name_match = re.search(r'name=["\']([^"\']+)["\']', element)
                 if not name_match:
                     continue
-                
+
                 name = name_match.group(1)
                 if name in seen_names:
                     continue
                 seen_names.add(name)
-                
+
                 # Find associated label
                 label_match = re.search(
                     rf'<label[^>]*for=["\']?{re.escape(name)}["\']?[^>]*>([^<]+)<',
@@ -452,7 +453,7 @@ class SurveyParser:
                     re.IGNORECASE
                 )
                 text = label_match.group(1).strip() if label_match else name
-                
+
                 # Extract options for radio/checkbox/select
                 options = []
                 if qtype in (QuestionType.RADIO, QuestionType.CHECKBOX):
@@ -460,7 +461,7 @@ class SurveyParser:
                     for opt_match in re.finditer(option_pattern, html):
                         value = opt_match.group(1)
                         options.append(QuestionOption(value=value, label=value))
-                
+
                 elif qtype == QuestionType.DROPDOWN:
                     # Find the select element and its options
                     select_match = re.search(
@@ -478,7 +479,7 @@ class SurveyParser:
                                 value=opt_match.group(1),
                                 label=opt_match.group(2).strip()
                             ))
-                
+
                 questions.append(Question(
                     id=name,
                     type=qtype,
@@ -486,7 +487,7 @@ class SurveyParser:
                     options=options,
                     element_selector=f'[name="{name}"]',
                 ))
-        
+
         return questions
 
     def _detect_question_type(self, html: str, qid: str) -> QuestionType:
@@ -495,7 +496,7 @@ class SurveyParser:
             for pattern in patterns:
                 if re.search(pattern, html, re.IGNORECASE):
                     return qtype
-        
+
         return QuestionType.UNKNOWN
 
     def _extract_options(
@@ -503,7 +504,7 @@ class SurveyParser:
     ) -> list[QuestionOption]:
         """Extract answer options for a question."""
         options = []
-        
+
         if qtype == QuestionType.RADIO or qtype == QuestionType.CHECKBOX:
             # Find input elements with labels
             pattern = r'<input[^>]*value=["\']([^"\']+)["\'][^>]*>.*?<label[^>]*>([^<]+)<'
@@ -512,7 +513,7 @@ class SurveyParser:
                     value=match.group(1),
                     label=match.group(2).strip(),
                 ))
-        
+
         elif qtype == QuestionType.DROPDOWN:
             pattern = r'<option[^>]*value=["\']([^"\']*)["\'][^>]*>([^<]*)<'
             for match in re.finditer(pattern, html):
@@ -521,7 +522,7 @@ class SurveyParser:
                         value=match.group(1),
                         label=match.group(2).strip(),
                     ))
-        
+
         return options
 
     def _extract_navigation(self, html: str, platform: str) -> dict[str, Any]:
@@ -532,7 +533,7 @@ class SurveyParser:
             "submit_selector": None,
             "total_pages": 1,
         }
-        
+
         # Next button patterns
         next_patterns = [
             (r'id=["\']NextButton["\']', "#NextButton"),
@@ -542,13 +543,13 @@ class SurveyParser:
             (r'>Next<', 'button:contains("Next")'),
             (r'>Continue<', 'button:contains("Continue")'),
         ]
-        
+
         for pattern, selector in next_patterns:
             if re.search(pattern, html, re.IGNORECASE):
                 result["has_next"] = True
                 result["next_selector"] = selector
                 break
-        
+
         # Submit button patterns
         submit_patterns = [
             (r'type=["\']submit["\']', '[type="submit"]'),
@@ -557,16 +558,16 @@ class SurveyParser:
             (r'>Finish<', 'button:contains("Finish")'),
             (r'>Done<', 'button:contains("Done")'),
         ]
-        
+
         for pattern, selector in submit_patterns:
             if re.search(pattern, html, re.IGNORECASE):
                 result["submit_selector"] = selector
                 break
-        
+
         # Try to detect total pages
         page_pattern = r'Page\s+(\d+)\s+of\s+(\d+)'
         page_match = re.search(page_pattern, html)
         if page_match:
             result["total_pages"] = int(page_match.group(2))
-        
+
         return result

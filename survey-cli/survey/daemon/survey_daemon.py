@@ -6,11 +6,13 @@ Features:
     - Crash recovery with state persistence
     - Health monitoring endpoint
     - Graceful shutdown handling
-    
+
 Usage:
     daemon = SurveyDaemon()
     daemon.start()  # Runs forever until SIGTERM
 """
+
+# ruff: noqa: E501  # CSS selectors / argparse help / log strings — wrapping changes semantics
 from __future__ import annotations
 
 import asyncio
@@ -39,7 +41,7 @@ HEALTH_CHECK_PORT = 9847
 class SurveyDaemon:
     """
     24/7 Survey completion daemon with macOS LaunchAgent support.
-    
+
     The daemon:
     1. Fetches available surveys from configured sources
     2. Runs them through the SurveyAgentGraph
@@ -56,13 +58,13 @@ class SurveyDaemon:
         self.config_path = Path(config_path).expanduser()
         self.state_path = Path(state_path).expanduser()
         self.log_path = Path(log_path).expanduser()
-        
+
         self._running = False
         self._shutdown_event = asyncio.Event()
         self._config = self._load_config()
         self._agent: SurveyAgentGraph | None = None
         self._health_server: asyncio.Server | None = None
-        
+
         self._setup_logging()
         self._setup_signal_handlers()
 
@@ -102,7 +104,7 @@ class SurveyDaemon:
                 "webhook_url": "",
             },
         }
-        
+
         if self.config_path.exists():
             with open(self.config_path) as f:
                 user_config = json.load(f)
@@ -111,14 +113,14 @@ class SurveyDaemon:
             self.config_path.parent.mkdir(parents=True, exist_ok=True)
             with open(self.config_path, "w") as f:
                 json.dump(default_config, f, indent=2)
-        
+
         return default_config
 
     def _setup_logging(self) -> None:
         """Configure logging to file and console."""
         self.log_path.mkdir(parents=True, exist_ok=True)
         log_file = self.log_path / f"daemon_{datetime.now():%Y%m%d}.log"
-        
+
         logging.basicConfig(
             level=logging.INFO,
             format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
@@ -134,7 +136,7 @@ class SurveyDaemon:
             logger.info(f"Received signal {signum}, initiating shutdown...")
             self._running = False
             self._shutdown_event.set()
-        
+
         signal.signal(signal.SIGTERM, handle_shutdown)
         signal.signal(signal.SIGINT, handle_shutdown)
 
@@ -152,15 +154,15 @@ class SurveyDaemon:
     async def _start_health_server(self) -> None:
         """Start health check HTTP server."""
         async def handle_health(reader, writer):
-            request = await reader.read(1024)
-            
+            await reader.read(1024)
+
             stats = self._agent.get_stats() if self._agent else {}
             response_body = json.dumps({
                 "status": "running" if self._running else "stopping",
                 "uptime_seconds": (datetime.now() - self._start_time).total_seconds(),
                 "stats": stats,
             })
-            
+
             response = (
                 f"HTTP/1.1 200 OK\r\n"
                 f"Content-Type: application/json\r\n"
@@ -168,11 +170,11 @@ class SurveyDaemon:
                 f"\r\n"
                 f"{response_body}"
             )
-            
+
             writer.write(response.encode())
             await writer.drain()
             writer.close()
-        
+
         try:
             self._health_server = await asyncio.start_server(
                 handle_health, "127.0.0.1", HEALTH_CHECK_PORT
@@ -184,14 +186,14 @@ class SurveyDaemon:
     async def _fetch_available_surveys(self) -> list[dict]:
         """Fetch available surveys from configured sources."""
         surveys = []
-        
+
         for source in self._config["survey_sources"]:
             if not source["enabled"]:
                 continue
-            
+
             # TODO: Implement actual API calls to survey sources
             logger.info(f"Checking {source['name']} for available surveys...")
-        
+
         return surveys
 
     async def _run_survey_loop(self) -> None:
@@ -206,16 +208,16 @@ class SurveyDaemon:
             location=persona_config["location"],
             interests=persona_config.get("interests", []),
         )
-        
+
         self._agent = SurveyAgentGraph(
             persona=persona,
             db_path=self.state_path,
             captcha_api_key=self._config["captcha"].get("api_key"),
         )
-        
+
         limits = self._config["limits"]
         min_delay = limits["min_delay_between_surveys"]
-        
+
         while self._running:
             try:
                 # Check working hours
@@ -224,29 +226,29 @@ class SurveyDaemon:
                     logger.info("Outside working hours, sleeping...")
                     await asyncio.sleep(300)
                     continue
-                
+
                 # Fetch available surveys
                 surveys = await self._fetch_available_surveys()
-                
+
                 if not surveys:
                     logger.info("No surveys available, waiting...")
                     await asyncio.sleep(60)
                     continue
-                
+
                 # Process highest priority survey
                 survey = surveys[0]
                 logger.info(f"Starting survey: {survey.get('url', 'unknown')}")
-                
+
                 result = await self._agent.run(survey["url"])
-                
+
                 if result["status"] == "completed":
                     logger.info(f"Survey completed! Earnings: ${result.get('earnings', 0):.2f}")
                 else:
                     logger.warning(f"Survey ended with status: {result['status']}")
-                
+
                 # Respect rate limits
                 await asyncio.sleep(min_delay)
-                
+
             except Exception as e:
                 logger.exception(f"Error in survey loop: {e}")
                 await asyncio.sleep(60)
@@ -256,15 +258,15 @@ class SurveyDaemon:
         self._running = True
         self._start_time = datetime.now()
         self._write_pid()
-        
+
         logger.info("Survey Daemon starting...")
         logger.info(f"Config: {self.config_path}")
         logger.info(f"State DB: {self.state_path}")
         logger.info(f"Logs: {self.log_path}")
-        
+
         # Start health server
         await self._start_health_server()
-        
+
         # Run main loop
         try:
             await self._run_survey_loop()
@@ -288,7 +290,7 @@ class SurveyDaemon:
         """Check if daemon is currently running."""
         if not DEFAULT_PID_PATH.exists():
             return False
-        
+
         try:
             with open(DEFAULT_PID_PATH) as f:
                 pid = int(f.read().strip())
@@ -307,7 +309,7 @@ class SurveyDaemon:
             sock.sendall(b"GET /health HTTP/1.1\r\nHost: localhost\r\n\r\n")
             response = sock.recv(4096).decode()
             sock.close()
-            
+
             body = response.split("\r\n\r\n", 1)[1]
             return json.loads(body)
         except Exception:
@@ -317,7 +319,7 @@ class SurveyDaemon:
 def install_launchagent() -> Path:
     """
     Install macOS LaunchAgent for auto-start on boot.
-    
+
     Returns:
         Path to installed plist file
     """
@@ -327,7 +329,7 @@ def install_launchagent() -> Path:
 <dict>
     <key>Label</key>
     <string>com.stealth-runner.survey-daemon</string>
-    
+
     <key>ProgramArguments</key>
     <array>
         <string>{sys.executable}</string>
@@ -335,25 +337,25 @@ def install_launchagent() -> Path:
         <string>survey.daemon</string>
         <string>start</string>
     </array>
-    
+
     <key>RunAtLoad</key>
     <true/>
-    
+
     <key>KeepAlive</key>
     <dict>
         <key>SuccessfulExit</key>
         <false/>
     </dict>
-    
+
     <key>WorkingDirectory</key>
     <string>{Path.cwd()}</string>
-    
+
     <key>StandardOutPath</key>
     <string>{DEFAULT_LOG_PATH}/stdout.log</string>
-    
+
     <key>StandardErrorPath</key>
     <string>{DEFAULT_LOG_PATH}/stderr.log</string>
-    
+
     <key>EnvironmentVariables</key>
     <dict>
         <key>PATH</key>
@@ -362,23 +364,23 @@ def install_launchagent() -> Path:
 </dict>
 </plist>
 """
-    
+
     plist_path = Path("~/Library/LaunchAgents/com.stealth-runner.survey-daemon.plist").expanduser()
     plist_path.parent.mkdir(parents=True, exist_ok=True)
-    
+
     with open(plist_path, "w") as f:
         f.write(plist_content)
-    
+
     logger.info(f"LaunchAgent installed: {plist_path}")
     logger.info("Run: launchctl load -w ~/Library/LaunchAgents/com.stealth-runner.survey-daemon.plist")
-    
+
     return plist_path
 
 
 def uninstall_launchagent() -> None:
     """Uninstall macOS LaunchAgent."""
     plist_path = Path("~/Library/LaunchAgents/com.stealth-runner.survey-daemon.plist").expanduser()
-    
+
     if plist_path.exists():
         os.system(f"launchctl unload -w {plist_path}")
         plist_path.unlink()
@@ -388,18 +390,18 @@ def uninstall_launchagent() -> None:
 # CLI entry point
 if __name__ == "__main__":
     import argparse
-    
+
     parser = argparse.ArgumentParser(description="Survey Daemon")
     parser.add_argument("command", choices=["start", "stop", "status", "install", "uninstall"])
     args = parser.parse_args()
-    
+
     if args.command == "start":
         if SurveyDaemon.is_running():
             print("Daemon is already running")
             sys.exit(1)
         daemon = SurveyDaemon()
         daemon.start()
-    
+
     elif args.command == "stop":
         if not SurveyDaemon.is_running():
             print("Daemon is not running")
@@ -408,13 +410,13 @@ if __name__ == "__main__":
             pid = int(f.read().strip())
         os.kill(pid, signal.SIGTERM)
         print("Stop signal sent")
-    
+
     elif args.command == "status":
         status = SurveyDaemon.get_status()
         print(json.dumps(status, indent=2))
-    
+
     elif args.command == "install":
         install_launchagent()
-    
+
     elif args.command == "uninstall":
         uninstall_launchagent()
