@@ -14,6 +14,10 @@
 # (target/../../logs). So the smoke fixture MUST sit in a "survey-cli/survey/"
 # style folder to make log_dir a writable sibling, not "/logs" (root).
 #
+# Audit-log schema: each non-header record has key "decision" with values
+# "applied" | "rejected_by_gate" | "rejected_by_ast" | "rejected_by_reviewer"
+# (see survey/learn/apply.py lines 606-644).
+#
 # See: AGENTS.md §13.8, Issue #99
 name: Learn-Apply Smoke
 
@@ -105,18 +109,25 @@ jobs:
             echo "Audit log created"
             LOGFILE=$(ls -t "$LOG_DIR"/learn-applied-*.jsonl | head -1)
             echo "Log file: $LOGFILE"
+            echo "--- Audit log contents ---"
+            cat "$LOGFILE"
+            echo "--- End audit log ---"
 
-            # Check log contains expected records
-            APPLIED_COUNT=$(grep -c "\"status\": \"applied\"" "$LOGFILE" || echo 0)
-            REJECTED_COUNT=$(grep -c "\"status\": \"rejected" "$LOGFILE" || echo 0)
+            # Schema: records use "decision" field (not "status").
+            # Values: applied | rejected_by_gate | rejected_by_ast | rejected_by_reviewer
+            APPLIED_COUNT=$(grep -c "\"decision\": \"applied\"" "$LOGFILE" || true)
+            REJECTED_COUNT=$(grep -c "\"decision\": \"rejected_by_" "$LOGFILE" || true)
+
+            # Normalize empty to 0 (grep -c can output empty if file missing)
+            APPLIED_COUNT=${APPLIED_COUNT:-0}
+            REJECTED_COUNT=${REJECTED_COUNT:-0}
 
             echo "Applied entries: $APPLIED_COUNT, Rejected entries: $REJECTED_COUNT"
 
             if [ "$APPLIED_COUNT" -ge 1 ] && [ "$REJECTED_COUNT" -ge 2 ]; then
               echo "Audit log contains expected record counts"
             else
-              echo "Audit log record counts unexpected"
-              cat "$LOGFILE"
+              echo "Audit log record counts unexpected (expected applied>=1, rejected>=2)"
               exit 1
             fi
           else
