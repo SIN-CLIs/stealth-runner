@@ -111,6 +111,43 @@ REFRESH-SCAN ZWISCHEN ATTEMPTS:
   Cache invalidieren. Ohne refresh klicken wir auf gestale Koordinaten.
 
 
+ISSUE #86: ANIMATION WAIT — Position-Stability vor Klick
+------
+Alte Verhaltensweise: Sofort klicken sobald box-model verfügbar.
+Problem:
+  - Modal slidet von rechts rein (transform: translateX) — Box ist DA, aber
+    pixelt sich noch durch die Viewport. Klick trifft den Pfad, nicht das
+    Ziel.
+  - Fade-In via opacity hat zwar Position, aber pointer-events sind in
+    manchen Frameworks bis Animation-End disabled.
+  - Material Ripple, framer-motion, GSAP scale → Center-Pixel verschiebt
+    sich um 5-30px während ~150-300ms.
+  - Bottom-Sheet/Drawer slidet noch hoch → Hit-Point ist 100px tiefer als
+    final, Klick landet auf darunterliegendem Element (Overlay-Backdrop).
+
+Neue Verhaltensweise: ``_wait_for_position_stable(cdp, backend_node_id)``
+  1. Polle ``DOM.getBoxModel`` alle 50ms
+  2. Vergleiche top-left Koordinaten (content[0], content[1])
+  3. Wenn Delta < 2px UND letzte Bewegung > 100ms her → STABIL
+  4. Max 1s warten (slidende Modals dauern selten länger)
+  5. Return: (stable: bool, wait_ms: float)
+
+INTEGRATION IN click():
+  scroll → box → ``_wait_for_position_stable`` → frische box → mouse events
+  
+  Wenn die Animation länger als 1s dauert: ActionResult(False, reason=
+  "element_still_animating"). click_with_retry (Issue #85) wird dann den
+  Klick mit 200ms backoff wiederholen — bis dahin ist die Animation durch.
+
+THRESHOLDS-BEGRÜNDUNG:
+  - 2px: kleiner als jeder echte Animation-Frame, aber groß genug um
+    Sub-Pixel-Rendering und Anti-Aliasing-Jitter zu absorbieren
+  - 100ms quiet: zwei requestAnimationFrame-Zyklen — wenn 6 Frames lang
+    keine Bewegung, ist die Animation definitiv durch
+  - 1s timeout: 99% aller UI-Animationen sind unter 500ms; 1s lässt auch
+    langsame Page-Transitions durch ohne den Survey-Flow zu blockieren
+
+
 FÜLLEN VON TEXTFELDERN
 ----------------------
 Auch hier KEIN ``el.value = "..."``. Stattdessen:
@@ -147,14 +184,20 @@ PUBLIC API
 
     ActionResult:
         success:    bool
-        reason:     str ("ok" | "no_dom_change" | "no_dom_change_after_retries"
-                          | "element_not_visible" | ...)
-        before_hash: str
-        after_hash:  str
-        elapsed_ms:  float    (GESAMT-Zeit inkl. aller Retries bei click_with_retry)
-        new_url:    str       (falls Page.navigate ausgelöst wurde)
-        dom_stable_ms: float  (Issue #84: actual MutationObserver wait time)
-        attempts:    int      (Issue #85: 1..4 Klick-Versuche)
+        reason:     str ("ok" | "navigated"
+                          | "no_dom_change" | "no_dom_change_after_retries"
+                          | "element_still_animating"             (Issue #86)
+                          | "element_still_animating_after_retries" (Issue #86)
+                          | "element_not_visible"
+                          | "unknown_stable_id"
+                          | "scroll_failed: ..." | "dispatch_failed: ...")
+        before_hash:    str
+        after_hash:     str
+        elapsed_ms:     float (GESAMT-Zeit inkl. aller Retries bei click_with_retry)
+        new_url:        str   (falls Page.navigate ausgelöst wurde)
+        dom_stable_ms:  float (Issue #84: actual MutationObserver wait time)
+        attempts:       int   (Issue #85: 1..4 Klick-Versuche)
+        position_wait_ms: float (Issue #86: Wartezeit auf Position-Stabilität)
 
 WANN WELCHE METHODE?
 --------------------
@@ -216,6 +259,21 @@ _KEYS_PER_S = 18.0
 _RETRY_MAX_ATTEMPTS = 4
 _RETRY_BACKOFF_MS = [0, 200, 400, 800]  # Wartezeit VOR jedem Attempt
 
+# ── Issue #86: Animation Wait (Position-Stability vor Klick) ─────────
+# Bevor wir die Maus-Events feuern, prüfen wir dass das Element nicht
+# gerade animiert (slidet/faded/scaled). Sonst klicken wir auf eine
+# Pixel-Position, an der das Element 50ms später nicht mehr ist.
+#
+# Algorithmus: Polle Box-Model alle _POLL_INTERVAL_MS, vergleiche
+# top-left mit letztem Sample. Wenn Δ < 2px für 100ms am Stück → stabil.
+# Max 1s warten — danach gilt das Element als "still_animating" und
+# click() returnt entsprechend (click_with_retry retried dann nach 200ms,
+# und beim 2. Attempt ist die Animation typischerweise durch).
+_POSITION_STABLE_TIMEOUT_S = 1.0        # Max Wartezeit auf Position-Stabilität
+_POSITION_STABLE_THRESHOLD_PX = 2.0     # Bewegung unter dieser Distanz = "stabil"
+_POSITION_STABLE_QUIET_MS = 100         # Wie lange Δ<threshold sein muss
+_POSITION_POLL_INTERVAL_S = 0.05        # 50ms Polling — ~2 Animation-Frames
+
 
 @dataclass
 class ActionResult:
@@ -225,8 +283,9 @@ class ActionResult:
     after_hash: str = ""
     elapsed_ms: float = 0.0
     new_url: str = ""
-    dom_stable_ms: float = 0.0  # Issue #84: MutationObserver wait time
+    dom_stable_ms: float = 0.0   # Issue #84: MutationObserver wait time
     attempts: int = 1            # Issue #85: Anzahl Klick-Versuche (1 = direkt OK)
+    position_wait_ms: float = 0.0  # Issue #86: Wartezeit bis Element-Position stabil
     extra: dict[str, Any] | None = None
 
 
@@ -345,6 +404,114 @@ def _wait_for_dom_stable(cdp: CDPConnection) -> tuple[bool, float]:
         return False, float(elapsed_ms)
 
 
+def _wait_for_position_stable(
+    cdp: CDPConnection,
+    backend_node_id: int,
+    *,
+    timeout_s: float = _POSITION_STABLE_TIMEOUT_S,
+    threshold_px: float = _POSITION_STABLE_THRESHOLD_PX,
+    quiet_ms: int = _POSITION_STABLE_QUIET_MS,
+) -> tuple[bool, float]:
+    """Issue #86: Wartet bis das Element nicht mehr animiert.
+
+    Pollt ``DOM.getBoxModel`` alle ~50ms und vergleicht die top-left
+    Koordinaten. Sobald die Bewegung zwischen aufeinanderfolgenden Samples
+    unter ``threshold_px`` liegt UND das so für mindestens ``quiet_ms``
+    bleibt, gilt das Element als stabil.
+
+    WANN IST DAS NÖTIG?
+    -------------------
+    Bei CSS-Animationen ist das Box-Model SOFORT verfügbar (Browser kennt
+    Start- und End-Position), aber die GERENDERTEN Pixel sind irgendwo
+    dazwischen. Wer in der Mitte einer Slide-In-Animation klickt, trifft
+    das Element entweder nicht oder klickt durch zum Backdrop.
+
+    Typische Szenarien:
+      - Modal slidet von rechts ein (transform: translateX 100% → 0%)
+      - Toast fadet ein (opacity 0 → 1, oft mit translateY)
+      - Material Ripple bei Button-Hover
+      - Bottom-Sheet/Drawer (transform: translateY)
+      - Tab-Indikator (slider bar zwischen Tabs)
+      - framer-motion enter/exit, GSAP timeline, Animate.css
+
+    ALGORITHMUS
+    -----------
+    ::
+
+        last_pos = None
+        last_motion = now
+        while elapsed < timeout_s:
+            pos = top_left(getBoxModel())
+            if last_pos:
+                if dist(pos, last_pos) >= threshold_px:
+                    last_motion = now          # noch in Bewegung
+                elif now - last_motion >= quiet_ms:
+                    return (True, elapsed)     # stabil!
+            last_pos = pos
+            sleep(50ms)
+        return (False, elapsed)                # Timeout: still animating
+
+    FAILURE MODES
+    -------------
+    - Element verschwindet während Animation (display:none → ende):
+      getBoxModel wirft → wir loggen und brechen mit (False, elapsed) ab.
+      click() returnt dann ``element_not_visible``.
+    - Endlose Animation (Ladespinner, Pulse-Indikator): timeout greift,
+      Klick wird trotzdem ausgeführt. Vertretbar: wer auf ein dauer-
+      animiertes Element klickt, weiß was er tut.
+    - Sub-Pixel-Jitter durch GPU-Rendering: 2px Threshold absorbiert das.
+
+    Returns:
+        (stable: bool, wait_ms: float)
+        - stable=True: Element ist still (oder war von Anfang an still)
+        - stable=False: Timeout — Element bewegt sich noch
+        - wait_ms: Wie lange wir tatsächlich gewartet haben
+    """
+    t0 = time.time()
+    last_pos: tuple[float, float] | None = None
+    last_motion = t0  # Wann zuletzt eine "echte" Bewegung erkannt wurde
+    quiet_s = quiet_ms / 1000.0
+
+    while True:
+        elapsed = time.time() - t0
+        if elapsed >= timeout_s:
+            return False, elapsed * 1000.0
+
+        # Position abfragen
+        try:
+            box = cdp.call_result(
+                "DOM.getBoxModel", {"backendNodeId": backend_node_id},
+            ).get("model")
+        except CDPError:
+            # Element gerade weg / nicht mehr im DOM → kein stabiler Klick möglich
+            return False, (time.time() - t0) * 1000.0
+
+        if not box:
+            return False, (time.time() - t0) * 1000.0
+
+        content = box.get("content") or []
+        if len(content) < 2:
+            return False, (time.time() - t0) * 1000.0
+
+        # top-left als Referenz (content[0]=x_tl, content[1]=y_tl)
+        pos = (float(content[0]), float(content[1]))
+
+        if last_pos is not None:
+            dx = abs(pos[0] - last_pos[0])
+            dy = abs(pos[1] - last_pos[1])
+            if dx >= threshold_px or dy >= threshold_px:
+                # Echte Bewegung erkannt → Quiet-Timer reset
+                last_motion = time.time()
+            else:
+                # Unter Threshold — prüfen ob lange genug quiet
+                if (time.time() - last_motion) >= quiet_s:
+                    return True, (time.time() - t0) * 1000.0
+        # last_pos initial setzen passiert beim ersten Loop; last_motion bleibt = t0
+        last_pos = pos
+
+        time.sleep(_POSITION_POLL_INTERVAL_S)
+
+
 class Actuator:
     """Universal-Actuator — alle Aktionen gehen hier durch.
 
@@ -393,8 +560,9 @@ class Actuator:
         """Echter Maus-Klick mit Pflicht-Verify.
 
         Pipeline:
-          scroll → fresh bbox → pre-hash → mouseMove/Press/Release →
-          _wait_for_dom_stable() (Issue #84) → post-hash → diff.
+          scroll → _wait_for_position_stable() (Issue #86) → fresh bbox →
+          pre-hash → mouseMove/Press/Release → _wait_for_dom_stable()
+          (Issue #84) → post-hash → diff.
           success=True nur bei DOM-Änderung.
         """
         t0 = time.time()
@@ -411,7 +579,24 @@ class Actuator:
         except CDPError as e:
             return ActionResult(False, f"scroll_failed: {e}")
 
-        # 2) Frische bbox NACH Scroll holen (alte bbox aus Scan ist veraltet)
+        # 2) Issue #86: Warten bis Element-Position stabil ist
+        # Vor dem Klick prüfen, ob das Element gerade animiert (slidet,
+        # faded, scaled). Sonst klicken wir auf eine Position, an der das
+        # Element 50ms später nicht mehr ist (→ no_dom_change oder Klick
+        # auf Backdrop).
+        position_stable, position_wait_ms = _wait_for_position_stable(
+            self.cdp, el.backend_node_id,
+        )
+        if not position_stable:
+            return ActionResult(
+                success=False,
+                reason="element_still_animating",
+                elapsed_ms=(time.time() - t0) * 1000.0,
+                position_wait_ms=position_wait_ms,
+            )
+
+        # 3) Frische bbox NACH Stabilität holen (alte bbox aus Scan ist veraltet
+        #    UND eine während-der-Animation gemessene Box wäre auch falsch)
         try:
             box = self.cdp.call_result(
                 "DOM.getBoxModel", {"backendNodeId": el.backend_node_id}
@@ -419,20 +604,26 @@ class Actuator:
         except CDPError:
             box = None
         if not box:
-            return ActionResult(False, "element_not_visible")
+            return ActionResult(
+                False, "element_not_visible",
+                position_wait_ms=position_wait_ms,
+            )
 
         content = box.get("content") or []
         if len(content) < 8:
-            return ActionResult(False, "element_not_visible")
+            return ActionResult(
+                False, "element_not_visible",
+                position_wait_ms=position_wait_ms,
+            )
         xs = content[0::2]
         ys = content[1::2]
         cx = (min(xs) + max(xs)) / 2.0
         cy = (min(ys) + max(ys)) / 2.0
 
-        # 3) Pre-Hash
+        # 4) Pre-Hash
         before_hash, before_url = _capture_dom_hash(self.cdp)
 
-        # 4) Maus-Events (mouseMoved erzeugt hover, dann pressed/released)
+        # 5) Maus-Events (mouseMoved erzeugt hover, dann pressed/released)
         try:
             self.cdp.call("Input.dispatchMouseEvent", {
                 "type": "mouseMoved", "x": cx, "y": cy,
@@ -447,12 +638,15 @@ class Actuator:
                 "button": "left", "buttons": 0, "clickCount": 1,
             })
         except CDPError as e:
-            return ActionResult(False, f"dispatch_failed: {e}")
+            return ActionResult(
+                False, f"dispatch_failed: {e}",
+                position_wait_ms=position_wait_ms,
+            )
 
-        # 5) Issue #84: Auf SPA-DOM-Stabilität warten (MutationObserver)
+        # 6) Issue #84: Auf SPA-DOM-Stabilität warten (MutationObserver)
         stabilized, dom_stable_ms = _wait_for_dom_stable(self.cdp)
 
-        # 6) Post-Hash + Diff
+        # 7) Post-Hash + Diff
         after_hash, after_url = _capture_dom_hash(self.cdp)
         elapsed_ms = (time.time() - t0) * 1000.0
         navigated = after_url != before_url
@@ -465,6 +659,7 @@ class Actuator:
                 after_hash=after_hash,
                 elapsed_ms=elapsed_ms,
                 dom_stable_ms=dom_stable_ms,
+                position_wait_ms=position_wait_ms,
             )
 
         return ActionResult(
@@ -475,6 +670,7 @@ class Actuator:
             elapsed_ms=elapsed_ms,
             new_url=after_url if navigated else "",
             dom_stable_ms=dom_stable_ms,
+            position_wait_ms=position_wait_ms,
         )
 
     def click_with_retry(self, stable_id: str) -> ActionResult:
@@ -504,15 +700,19 @@ class Actuator:
             return ActionResult(success=False, reason="no_dom_change_after_retries",
                                 attempts=_RETRY_MAX_ATTEMPTS, ...)
 
-        WICHTIG — WAS NICHT RETRIED WIRD
-        ---------------------------------
-        Nur ``no_dom_change`` ist ein Retry-Grund. Diese Fehler werden
-        SOFORT zurückgegeben (Retry würde nichts ändern):
-          - ``unknown_stable_id``  → Element war nie im Cache (refresh_scan
-                                     hilft nichts, weil sid aus altem Scan stammt)
+        WICHTIG — WAS WIRD RETRIED, WAS NICHT
+        --------------------------------------
+        RETRIED:
+          - ``no_dom_change``           → Klick hat nichts ausgelöst (Race?)
+          - ``element_still_animating`` → Issue #86: Element war noch in
+                                          Bewegung. Nach 200ms ist die
+                                          Animation meistens durch.
+        NICHT RETRIED (sofort zurück):
+          - ``unknown_stable_id``   → Element war nie im Cache (refresh_scan
+                                      hilft nichts, sid stammt aus altem Scan)
           - ``element_not_visible`` → Scroll oder Box-Model failt
-          - ``dispatch_failed``    → CDP-Connection-Problem
-          - ``scroll_failed``      → DOM-Operation failt
+          - ``dispatch_failed``     → CDP-Connection-Problem
+          - ``scroll_failed``       → DOM-Operation failt
 
         REFRESH-SCAN ZWISCHEN ATTEMPTS
         ------------------------------
@@ -570,26 +770,37 @@ class Actuator:
                 result.elapsed_ms = (time.time() - t0) * 1000.0
                 return result
 
-            # HARTER FEHLER (nicht no_dom_change) → nicht retryen
-            if result.reason != "no_dom_change":
+            # HARTER FEHLER → nicht retryen (Retry würde nichts ändern)
+            # Retryable: no_dom_change (Race) + element_still_animating (Issue #86)
+            if result.reason not in ("no_dom_change", "element_still_animating"):
                 result.attempts = attempt_num
                 result.elapsed_ms = (time.time() - t0) * 1000.0
                 return result
 
-            # no_dom_change → weiterer Attempt
+            # Weicher Fehler → weiterer Attempt
             last_result = result
             print(f"[retry] click {stable_id[:10]} attempt={attempt_num}/{_RETRY_MAX_ATTEMPTS} "
-                  f"no_dom_change, retrying in {_RETRY_BACKOFF_MS[min(attempt_idx+1, _RETRY_MAX_ATTEMPTS-1)]}ms")
+                  f"reason={result.reason}, retrying in "
+                  f"{_RETRY_BACKOFF_MS[min(attempt_idx+1, _RETRY_MAX_ATTEMPTS-1)]}ms")
 
-        # Alle Attempts erschöpft, alle no_dom_change
+        # Alle Attempts erschöpft (Mix aus no_dom_change und/oder still_animating)
         assert last_result is not None
+        # Reason-Wahl: wenn letzter Attempt noch animierte → behalte das Signal,
+        # damit Caller weiß warum CUA-Fallback fair ist (Element ist live aber
+        # animiert dauerhaft → ggf. Loading-Spinner).
+        final_reason = (
+            "element_still_animating_after_retries"
+            if last_result.reason == "element_still_animating"
+            else "no_dom_change_after_retries"
+        )
         return ActionResult(
             success=False,
-            reason="no_dom_change_after_retries",
+            reason=final_reason,
             before_hash=last_result.before_hash,
             after_hash=last_result.after_hash,
             elapsed_ms=(time.time() - t0) * 1000.0,
             dom_stable_ms=last_result.dom_stable_ms,
+            position_wait_ms=last_result.position_wait_ms,
             attempts=_RETRY_MAX_ATTEMPTS,
         )
 

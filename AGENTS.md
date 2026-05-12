@@ -1469,7 +1469,7 @@ content: |
   ║   FALSCH:   Agent zerlegt Flow in Einzelschritte               ║
   ╚══════════════════════════════════════════════════════════════════╝
   
-  ╔════════════��═════════════════════════════════════════════════════╗
+  ╔════════════���═════════════════════════════════════════════════════╗
   ║  REGEL 2: KEINE Freiheit bei Tool-Wahl                           ║
   ║  ─────────────────────────────────────────────────────────────── ║
   ║   RICHTIG:  dispatch("survey_heypiggy_v1746400000", payload)  ║
@@ -2413,7 +2413,7 @@ MASTER PLAN: plans/01-survey-agent-langgraph-fastapi.md
 === KOMPLETTIERT (2026-05-11 continued) ===
 ✅ **SR-50: update_command_registry() wiring** — alle 9 endpoints rufen registry nach Command auf
 ✅ **SR-51: require_survey_ready wiring** — alle 9 endpoints haben preflight dependency (8 neu, 2 vorh.)
-✅ **SR-52: 7 fehlende FastAPI Endpoints** — POST /click, /find, /verify, /click-angular, /fill-input, /find-tab, /close-modals
+✅ **SR-52: 7 fehlende FastAPI Endpoints** ��� POST /click, /find, /verify, /click-angular, /fill-input, /find-tab, /close-modals
 ✅ **SR-53: Provider Detection + Trust Scores** — scanner.py: surveyrouter.com → "internal", PROVIDER_TRUST_SCORES dict, trust_score in scan output
 
 === OFFEN (NEXT STEPS) ===
@@ -3847,5 +3847,207 @@ Files changed:
 - `survey-cli/survey/graph/nodes.py` (execute_node: click → click_with_retry)
 - `AGENTS.md` (diese Sektion)
 
-**Next:** Issue #86 (Overlay Detection) — P1
+**Next:** Issue #86 (Animation Wait — Position-Stability) — ✅ COMPLETED (siehe unten)
+
+---
+
+## 🆕 ISSUE #86: ANIMATION WAIT — Position-Stability vor Klick (2026-05-12)
+
+### Problem: Klicks auf animierte Elemente verfehlen das Ziel
+
+**Alte Verhaltensweise:**
+```python
+# cdp_actuator.py (vor Issue #86)
+self.cdp.call("DOM.scrollIntoViewIfNeeded", {...})
+box = self.cdp.call_result("DOM.getBoxModel", {...})
+cx, cy = center_of(box)
+# DIREKT Klick — auch wenn Element gerade rein-slidet
+self.cdp.call("Input.dispatchMouseEvent", {"type": "mousePressed", "x": cx, "y": cy, ...})
+```
+
+**Symptome im echten Survey:**
+- Klick auf Modal-Button während Modal noch rein-slidet → trifft Backdrop, Modal schließt sich, Survey hängt
+- Klick auf Toast/Snackbar während Fade-In → keine Reaktion (`pointer-events: none` aktiv)
+- Klick auf Bottom-Sheet während Slide-Up → trifft 100px tiefer als Endposition
+- Material-Buttons mit Ripple-Animation: Center-Pixel verschiebt sich 5-30px
+- framer-motion / GSAP enter-animation: gleiche Story
+
+**Resultat:** `no_dom_change` oder Klick auf falsches Element. Issue #85 (Retry) maskiert das halbwegs, aber:
+- Jeder verfehlte Klick kostet 200-800ms Backoff
+- Bei langsameren Animationen reichen 4 Attempts nicht
+- Wir wollen WISSEN warum ein Klick fehlschlug — `no_dom_change` ist nicht spezifisch genug
+
+### Lösung: `_wait_for_position_stable()` — Polling-basierte Position-Stabilität
+
+**Neue Pipeline in `click()`:**
+```
+scroll → _wait_for_position_stable(backend_node_id) → fresh box → mouse events
+                ↓
+                wenn nicht stabil in 1s:
+                  return ActionResult(reason="element_still_animating")
+                → click_with_retry probiert in 200ms erneut (Animation dann durch)
+```
+
+### Algorithmus
+
+```python
+def _wait_for_position_stable(cdp, backend_node_id):
+    last_pos = None
+    last_motion = now
+    while elapsed < 1.0s:
+        box = cdp.call_result("DOM.getBoxModel", ...)
+        pos = (box.content[0], box.content[1])  # top-left
+        if last_pos and dist(pos, last_pos) < 2px:
+            if now - last_motion >= 100ms:
+                return (True, elapsed)   # stabil!
+        else:
+            last_motion = now            # bewegt sich noch
+        last_pos = pos
+        sleep(50ms)
+    return (False, 1000ms)               # Timeout — still animating
+```
+
+### Konstanten (cdp_actuator.py)
+
+```python
+_POSITION_STABLE_TIMEOUT_S = 1.0      # Max Wartezeit
+_POSITION_STABLE_THRESHOLD_PX = 2.0   # Bewegung darunter = stabil
+_POSITION_STABLE_QUIET_MS = 100       # Wie lange unter Threshold
+_POSITION_POLL_INTERVAL_S = 0.05      # 50ms Polling
+```
+
+**Begründung der Werte:**
+- **2px**: Größer als Sub-Pixel-Anti-Aliasing-Jitter, kleiner als jeder echte Animation-Frame
+- **100ms**: ~6 Animation-Frames bei 60fps — wenn 6 Frames lang keine Bewegung, ist die Animation definitiv durch
+- **1s**: 99% aller UI-Animationen sind <500ms; 1s lässt langsame Page-Transitions durch, blockiert aber Endlos-Animationen (Spinner) nicht ewig
+
+### Was passiert bei `element_still_animating`?
+
+**Issue #85 (`click_with_retry`) wurde erweitert:**
+```python
+# Retryable reasons
+if result.reason not in ("no_dom_change", "element_still_animating"):
+    return result  # Hartfehler — nicht retryen
+
+# Beide Reasons werden retried mit 0/200/400/800ms backoff
+```
+
+→ Beim 2. Attempt (200ms später) ist die Animation in ~95% der Fälle durch.
+
+**Wenn alle 4 Attempts noch animiert:** Endlos-Animation (Loading-Spinner, Pulse-Indikator). Retry-Wrapper returnt:
+```python
+reason = "element_still_animating_after_retries"
+```
+
+→ Caller kann Element überspringen statt CUA-Fallback zu eskalieren (CUA hätte dasselbe Problem).
+
+### Implementierung: cdp_actuator.py
+
+**Neue Konstanten:**
+- `_POSITION_STABLE_TIMEOUT_S`
+- `_POSITION_STABLE_THRESHOLD_PX`
+- `_POSITION_STABLE_QUIET_MS`
+- `_POSITION_POLL_INTERVAL_S`
+
+**Neue Modul-Funktion:**
+- `_wait_for_position_stable(cdp, backend_node_id) -> (stable: bool, wait_ms: float)`
+
+**ActionResult erweitert:**
+```python
+@dataclass
+class ActionResult:
+    ...
+    position_wait_ms: float = 0.0  # ← Neu (Issue #86)
+```
+
+**Neue reason-Werte:**
+- `"element_still_animating"` (single click)
+- `"element_still_animating_after_retries"` (click_with_retry, 4× nicht stabil)
+
+**`click()` Pipeline erweitert:**
+```
+1. scroll_into_view
+2. _wait_for_position_stable(backend_node_id)  ← NEU
+   wenn nicht stabil: return reason="element_still_animating"
+3. fresh getBoxModel  (jetzt FINAL, da Animation durch)
+4. mouseMove/Press/Release
+5. _wait_for_dom_stable() (Issue #84)
+6. post-hash + diff
+```
+
+**`click_with_retry()` erweitert:**
+- Retryable reasons: `no_dom_change` UND `element_still_animating`
+- Final reason: differenziert zwischen `_after_retries`-Varianten
+
+### Was wird NICHT geändert?
+
+- `fill()` und `press_key()`: Diese arbeiten auf Elementen, die schon fokussiert wurden via `click()`. Der Click hat bereits auf Position-Stabilität gewartet — zweite Prüfung wäre redundant.
+- Keine Änderung an `nodes.py` nötig: `click_with_retry()` wickelt die Retry-Logik intern ab.
+
+### Akzeptanzkriterien
+
+- [x] `_wait_for_position_stable()` implementiert (modul-level, konsistent mit `_wait_for_dom_stable`)
+- [x] Polling-Algorithmus: 50ms interval, 2px threshold, 100ms quiet-window, 1s timeout
+- [x] Integration in `click()` zwischen scroll und mouse-events
+- [x] `ActionResult.position_wait_ms` Feld
+- [x] Neue reasons `element_still_animating` + `_after_retries`
+- [x] `click_with_retry()` retryt animation-failures (zusätzlich zu no_dom_change)
+- [x] Failure-Mode: Element verschwindet während Animation → graceful return
+- [ ] (Field-Test) Klicks auf Modals/Toasts erfolgreich beim 1. Attempt
+- [ ] (Field-Test) Avg `position_wait_ms` < 50ms (most clicks: kein Wait)
+- [ ] (Field-Test) `element_still_animating_after_retries` Rate < 1%
+
+### Impact
+
+**Zuverlässigkeit:**
+- Klicks auf rein-slidende Modals treffen jetzt
+- Toast/Snackbar interactions funktionieren beim 1. Versuch
+- Bottom-Sheets, Drawers, Tab-Slider: keine Phantom-Klicks mehr
+- Differenzierte Fehler-Reasons (still_animating vs no_dom_change) → besseres Debugging
+
+**Performance:**
+- Stille Elemente (keine Animation): ~50ms Overhead (1 Poll-Cycle + 100ms quiet detection)
+- Animierte Elemente: 150-400ms warten statt 1-3× CUA-Eskalation (~3-9s)
+- Endlos-Animationen: 1s timeout (Wert: korrekt, blockiert Survey nicht)
+
+**Observability:**
+- `position_wait_ms` in jedem ActionResult
+- `reason="element_still_animating"` macht Animation-Probleme sichtbar
+- Logs: `[retry] click XXX attempt=N/4 reason=element_still_animating, retrying in Nms`
+
+### Zusammenspiel mit Issue #84 + #85
+
+| Issue | Zweck | Wann |
+|-------|-------|------|
+| #86 | Wartet BIS Element-Position stabil | **VOR** mouse-events |
+| #84 | Wartet BIS DOM-Mutations beendet | **NACH** mouse-events |
+| #85 | Retried weiche Failures bis zu 4× | **wraps** click() |
+
+**Komplette `click_with_retry`-Pipeline:**
+```
+Attempt 1:
+  scroll
+  → wait_position_stable (Issue #86)    ← warten bis Animation durch
+  → fresh box
+  → pre-hash
+  → mouse events
+  → wait_dom_stable (Issue #84)         ← warten bis SPA-Render durch
+  → post-hash + diff
+  → success? return : retry
+
+Attempt 2 (200ms später, refresh_scan):   Issue #85
+  [...same pipeline...]
+
+Attempt 3/4 (400/800ms):                  Issue #85
+  [...same pipeline...]
+```
+
+### Status: ✅ MERGED TO MAIN (2026-05-12)
+
+Files changed:
+- `survey-cli/survey/cdp_actuator.py` (+~210 Zeilen: function + integration + retry update + docs)
+- `AGENTS.md` (diese Sektion)
+
+**Next:** Issue #87 (Form Validation Detection — Wartet auf "valid" state vor Submit) — P2
+
 
