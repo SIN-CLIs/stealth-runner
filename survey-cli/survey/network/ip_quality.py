@@ -108,7 +108,12 @@ def score(
         >>> score(success_count=0, fail_count=0, ban_count=5)
         50   # 100 + 0 - 0 - 50
     """
-    raw = BASE_SCORE + (success_count * SUCCESS_WEIGHT) - (fail_count * FAIL_WEIGHT) - (ban_count * BAN_WEIGHT)
+    raw = (
+        BASE_SCORE
+        + (success_count * SUCCESS_WEIGHT)
+        - (fail_count * FAIL_WEIGHT)
+        - (ban_count * BAN_WEIGHT)
+    )
     return max(MIN_SCORE, min(MAX_SCORE, raw))
 
 
