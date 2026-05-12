@@ -441,7 +441,7 @@ class SurveyState:
     # ══════════════════════════════════════════════════════════════════════════
     # DRAG-DROP DETECTION (2026-05-11)
     # ══════════════════════════════════════════════════════════════════════════
-    
+
     drag_drop_detected: bool = False
     """Flag ob ein Drag-Drop Puzzle auf der aktuellen Seite erkannt wurde.
     Wird von snapshot_node gesetzt wenn:
