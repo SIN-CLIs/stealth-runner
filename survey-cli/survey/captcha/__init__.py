@@ -4,7 +4,7 @@ from .drag_drop_solver import solve_puzzle
 from .fallback_chain import (
     CaptchaUnsolvedError,
     FallbackChain,
-    StepTrace,
+    StepResult,
     solve_with_fallback,
 )
 
@@ -12,6 +12,6 @@ __all__ = [
     "solve_puzzle",
     "CaptchaUnsolvedError",
     "FallbackChain",
-    "StepTrace",
+    "StepResult",
     "solve_with_fallback",
 ]
