@@ -20,7 +20,7 @@ content: |
   | #84   | P0   | DONE     | `survey-cli/survey/cdp_actuator.py::_wait_for_dom_stable` (MutationObserver wait)    |
   | #85   | P0   | DONE     | `survey-cli/survey/cdp_actuator.py` (no_dom_change retry: 4x exp 0/200/400/800 ms)   |
   | #86   | P0   | DONE     | `survey-cli/survey/cdp_actuator.py::_wait_for_position_stable` (animation wait)      |
-  | #87   | P2   | PLANNED  | `_plans/87-form-validation.md` (form validation detection — pre/post submit)         |
+  | #87   | P2   | DONE  | `survey-cli/survey/cdp_actuator.py` (form validation detection — pre/post submit)         |
   | #91   | -    | DONE     | repo root cleanup + AGENTS.md absorption (see CHANGELOG)                              |
   | #92   | -    | DONE     | this STATUS INDEX section                                                            |
   | #93   | P1   | DONE     | `survey-cli/survey/oopif_registry.py` (Target.setAutoAttach flatten=True; per-session AX scan in `cdp_universal._scan_session`) |
