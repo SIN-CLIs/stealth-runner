@@ -10,6 +10,10 @@
 #   - Faster feedback: single Python version, no matrix
 #   - Avoids conflict risk with other ci.yml PRs
 #
+# Layout note: apply.py::_resolve_paths derives log_dir from target_path
+# (target/../../logs). So the smoke fixture MUST sit in a "survey-cli/survey/"
+# style folder to make log_dir a writable sibling, not "/logs" (root).
+#
 # See: AGENTS.md §13.8, Issue #99
 name: Learn-Apply Smoke
 
@@ -39,10 +43,13 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r survey-cli/requirements.txt
 
-      - name: Prepare smoke profile
+      # Mirror the survey-cli/survey/ layout so apply._resolve_paths
+      # derives a writable log_dir (= /tmp/smoke_root/logs).
+      - name: Prepare smoke target tree
         run: |
-          mkdir -p /tmp/smoke_logs
-          cp survey-cli/tests/fixtures/learn_apply_smoke_profile.py /tmp/smoke_profile.py
+          mkdir -p /tmp/smoke_root/survey-cli/survey
+          cp survey-cli/tests/fixtures/learn_apply_smoke_profile.py \
+             /tmp/smoke_root/survey-cli/survey/profile_loader.py
 
       # Dry-run test: verify CLI surface and diff output
       - name: Dry-run smoke test
@@ -54,15 +61,15 @@ jobs:
             survey-cli/tests/fixtures/learn_apply_smoke_inbox.jsonl \
             --dry-run \
             --skip-tests \
-            --target /tmp/smoke_profile.py 2>&1) || true
+            --target /tmp/smoke_root/survey-cli/survey/profile_loader.py 2>&1) || true
 
           echo "$OUTPUT"
 
           # Assert: accepted=1 (phone entry), rejected=2 (llm below gate + unknown family)
           if echo "$OUTPUT" | grep -qE "accepted=1.*rejected=2|rejected=2.*accepted=1"; then
-            echo "✓ Dry-run counts match expected: accepted=1 rejected=2"
+            echo "Dry-run counts match expected: accepted=1 rejected=2"
           else
-            echo "✗ Dry-run counts do not match expected pattern"
+            echo "Dry-run counts do not match expected pattern"
             echo "Expected: accepted=1 rejected=2"
             exit 1
           fi
@@ -79,21 +86,24 @@ jobs:
             survey-cli/tests/fixtures/learn_apply_smoke_inbox.jsonl \
             --approve-all \
             --skip-tests \
-            --target /tmp/smoke_profile.py
+            --target /tmp/smoke_root/survey-cli/survey/profile_loader.py
+
+          TARGET=/tmp/smoke_root/survey-cli/survey/profile_loader.py
+          LOG_DIR=/tmp/smoke_root/logs
 
           # Assert: target file was modified (contains mobilnummer)
-          if grep -q "mobilnummer" /tmp/smoke_profile.py; then
-            echo "✓ Target file modified: mobilnummer keyword injected"
+          if grep -q "mobilnummer" "$TARGET"; then
+            echo "Target file modified: mobilnummer keyword injected"
           else
-            echo "✗ Target file not modified as expected"
-            cat /tmp/smoke_profile.py
+            echo "Target file not modified as expected"
+            cat "$TARGET"
             exit 1
           fi
 
-          # Assert: audit log exists in survey-cli/logs/
-          if ls survey-cli/logs/learn-applied-*.jsonl 1>/dev/null 2>&1; then
-            echo "✓ Audit log created"
-            LOGFILE=$(ls -t survey-cli/logs/learn-applied-*.jsonl | head -1)
+          # Assert: audit log exists in derived log_dir
+          if ls "$LOG_DIR"/learn-applied-*.jsonl 1>/dev/null 2>&1; then
+            echo "Audit log created"
+            LOGFILE=$(ls -t "$LOG_DIR"/learn-applied-*.jsonl | head -1)
             echo "Log file: $LOGFILE"
 
             # Check log contains expected records
@@ -103,14 +113,14 @@ jobs:
             echo "Applied entries: $APPLIED_COUNT, Rejected entries: $REJECTED_COUNT"
 
             if [ "$APPLIED_COUNT" -ge 1 ] && [ "$REJECTED_COUNT" -ge 2 ]; then
-              echo "✓ Audit log contains expected record counts"
+              echo "Audit log contains expected record counts"
             else
-              echo "✗ Audit log record counts unexpected"
+              echo "Audit log record counts unexpected"
               cat "$LOGFILE"
               exit 1
             fi
           else
-            echo "✗ No audit log created"
-            ls -la survey-cli/logs/ || echo "logs directory missing"
+            echo "No audit log created"
+            ls -la "$LOG_DIR" || echo "logs directory missing"
             exit 1
           fi
