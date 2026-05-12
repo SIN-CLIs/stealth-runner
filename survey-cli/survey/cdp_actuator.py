@@ -40,7 +40,11 @@ solche) entsteht durch CDP ``Input.dispatchMouseEvent`` mit exakter Sequenz:
        ~ 50 ms warten (humanlike + lässt zone.js arbeiten)
   6) ``Input.dispatchMouseEvent`` { type: mouseReleased, x, y, button:left, clickCount:1 }
 
-  7) Warten auf DOM-Stabilität (network-idle oder timeout 300 ms)
+  7) Warten auf SPA-DOM-Stabilität via MutationObserver (Issue #84)
+       → Statt fixed 300ms: Listen to actual mutations
+       → 500ms silence threshold (element finalized rendering)
+       → Max 5s timeout (slow SPAs)
+
   8) Capture Post-Hash
   9) Wenn pre == post → ``success=False, reason="no_dom_change"``
      Wenn pre != post → ``success=True, mutations=diff``
@@ -49,6 +53,27 @@ Damit sind Halluzinationen wie "Performed but nichts passiert" strukturell
 unmöglich. Wenn der Klick im DOM nichts ändert, gilt er als gescheitert.
 Der Aufrufer (LangGraph-Node) MUSS auf success=False reagieren und etwas
 anderes versuchen.
+
+ISSUE #84: SPA RENDERING WAIT (MutationObserver-based)
+------
+Alte Verhaltensweise: ``time.sleep(0.30)`` nach Action
+Problem: 
+  - Zu schnell → React/Angular sind noch nicht fertig, premature hash capture
+  - Zu langsam → 300ms Overhead bei jeder Action
+
+Neue Verhaltensweise: ``_wait_for_dom_stable()``
+  1. Registriere MutationObserver auf document.body
+  2. Zähle Mutations (childList, attributes, characterData)
+  3. Wenn >500ms keine Mutations → DOM ist "stable"
+  4. Max 5s timeout (long-polling oder complex rendering)
+  5. Return: (stabilized: bool, actual_wait_ms: int)
+
+This ensures:
+  - React/Angular hooks, async state updates vollständig
+  - Vue watchers haben Zeit zu feuern
+  - Form state ist final
+  - Next.js ISR/incremental updates sind durch
+  - Absolut keine premature DOM-hashes
 
 
 FÜLLEN VON TEXTFELDERN
@@ -91,6 +116,7 @@ PUBLIC API
         after_hash:  str
         elapsed_ms:  float
         new_url:    str  (falls Page.navigate ausgelöst wurde)
+        dom_stable_ms: float  (Issue #84: actual MutationObserver wait time)
 
 
 BANNED (siehe AGENTS.md REGEL 1)
@@ -118,9 +144,10 @@ from .cdp_universal import UniversalElement, scan as scan_full
 # 50 ms ist menschlich realistisch (echter Klick ist 40–100 ms).
 _MOUSE_HOLD_S = 0.05
 
-# Wartezeit nach Klick bevor wir Post-Hash messen.
-# 300 ms reicht für SPA-Reaktionen (zone.js, React batched updates).
-_POST_ACTION_WAIT_S = 0.30
+# Issue #84: MutationObserver-based DOM Stability
+# Statt fixed 300ms, warten wir jetzt auf 500ms DOM-Stille
+_DOM_STABILITY_SILENCE_MS = 500  # Keine Mutations für diese Zeit = stabil
+_DOM_STABILITY_MAX_WAIT_MS = 5000  # Max 5s warten auf SPA-Rendering
 
 # Tastendrücke pro Sekunde beim Tippen (humanlike).
 _KEYS_PER_S = 18.0
@@ -134,6 +161,7 @@ class ActionResult:
     after_hash: str = ""
     elapsed_ms: float = 0.0
     new_url: str = ""
+    dom_stable_ms: float = 0.0  # Issue #84: MutationObserver wait time
     extra: dict[str, Any] | None = None
 
 
@@ -168,6 +196,88 @@ def _capture_dom_hash(cdp: CDPConnection) -> tuple[str, str]:
         d = {}
     sig = f"{d.get('u', '')}|{d.get('t', '')}|{d.get('f', '')}"
     return _hash_str(sig), d.get("u", "")
+
+
+def _wait_for_dom_stable(cdp: CDPConnection) -> tuple[bool, float]:
+    """Issue #84: MutationObserver-based DOM Stability Wait.
+
+    Statt fixed time.sleep(0.30), nutzen wir MutationObserver um zu erkennen,
+    wann das DOM sich nicht mehr ändert (SPA-Rendering fertig).
+
+    Returns:
+        (stabilized: bool, actual_wait_ms: float)
+        - stabilized=True: DOM war >500ms ruhig (rendering beendet)
+        - stabilized=False: Timeout nach 5s (komplexes rendering oder error)
+        - actual_wait_ms: wie lange wir tatsächlich gewartet haben
+    """
+    wait_script = """
+    (function() {
+        return new Promise(function(resolve) {
+            let lastMutationTime = Date.now();
+            let silenceThreshold = 500;  // 500ms Stille = DOM-stabil
+            let maxWaitTime = 5000;      // 5s Max-Timeout
+            let startTime = Date.now();
+
+            const observer = new MutationObserver(function(mutations) {
+                lastMutationTime = Date.now();
+            });
+
+            observer.observe(document.body, {
+                childList: true,
+                subtree: true,
+                attributes: true,
+                characterData: true,
+                attributeFilter: ['class', 'style', 'disabled', 'value', 'checked', 'selected'],
+                attributeOldValue: false,
+                characterDataOldValue: false,
+            });
+
+            const checkStability = setInterval(function() {
+                let elapsed = Date.now() - startTime;
+                let timeSinceLastMutation = Date.now() - lastMutationTime;
+
+                // Bedingung 1: 500ms Stille erreicht
+                if (timeSinceLastMutation >= silenceThreshold) {
+                    clearInterval(checkStability);
+                    observer.disconnect();
+                    resolve({
+                        stabilized: true,
+                        elapsed: elapsed,
+                    });
+                    return;
+                }
+
+                // Bedingung 2: 5s Timeout (zu lang gewartet)
+                if (elapsed >= maxWaitTime) {
+                    clearInterval(checkStability);
+                    observer.disconnect();
+                    resolve({
+                        stabilized: false,
+                        elapsed: elapsed,
+                    });
+                    return;
+                }
+            }, 50);  // Check alle 50ms
+        });
+    })()
+    """
+
+    t0 = time.time()
+    try:
+        resp = cdp.call_result("Runtime.evaluate", {
+            "expression": wait_script,
+            "awaitPromise": True,
+            "timeout": 6000,  # 6s CDP-Timeout (5s script + buffer)
+        })
+        result = resp.get("result", {}).get("value", {})
+        stabilized = result.get("stabilized", False)
+        elapsed_ms = result.get("elapsed", int((time.time() - t0) * 1000))
+        return stabilized, float(elapsed_ms)
+    except CDPError as e:
+        # Bei Error trotzdem kurz warten (fallback)
+        time.sleep(0.30)
+        elapsed_ms = int((time.time() - t0) * 1000)
+        return False, float(elapsed_ms)
 
 
 class Actuator:
@@ -219,7 +329,8 @@ class Actuator:
 
         Pipeline:
           scroll → fresh bbox → pre-hash → mouseMove/Press/Release →
-          wait → post-hash → diff. success=True nur bei DOM-Änderung.
+          _wait_for_dom_stable() (Issue #84) → post-hash → diff.
+          success=True nur bei DOM-Änderung.
         """
         t0 = time.time()
         el = self._element_cache.get(stable_id)
@@ -273,8 +384,8 @@ class Actuator:
         except CDPError as e:
             return ActionResult(False, f"dispatch_failed: {e}")
 
-        # 5) Auf SPA-Reaktionen warten
-        time.sleep(_POST_ACTION_WAIT_S)
+        # 5) Issue #84: Auf SPA-DOM-Stabilität warten (MutationObserver)
+        stabilized, dom_stable_ms = _wait_for_dom_stable(self.cdp)
 
         # 6) Post-Hash + Diff
         after_hash, after_url = _capture_dom_hash(self.cdp)
@@ -288,6 +399,7 @@ class Actuator:
                 before_hash=before_hash,
                 after_hash=after_hash,
                 elapsed_ms=elapsed_ms,
+                dom_stable_ms=dom_stable_ms,
             )
 
         return ActionResult(
@@ -297,6 +409,7 @@ class Actuator:
             after_hash=after_hash,
             elapsed_ms=elapsed_ms,
             new_url=after_url if navigated else "",
+            dom_stable_ms=dom_stable_ms,
         )
 
     def fill(self, stable_id: str, value: str, *, clear: bool = True) -> ActionResult:
@@ -304,6 +417,7 @@ class Actuator:
 
         - ``clear=True`` (default): vorher Select-All + Delete.
         - Bei ``len(value) > 50``: nutzt ``Input.insertText`` (schneller).
+        - Issue #84: Auch hier _wait_for_dom_stable() statt fixed sleep
         """
         t0 = time.time()
         el = self._element_cache.get(stable_id)
@@ -357,7 +471,9 @@ class Actuator:
         except CDPError as e:
             return ActionResult(False, f"type_failed: {e}")
 
-        time.sleep(_POST_ACTION_WAIT_S)
+        # Issue #84: Auf SPA-DOM-Stabilität warten
+        stabilized, dom_stable_ms = _wait_for_dom_stable(self.cdp)
+
         after_hash, _ = _capture_dom_hash(self.cdp)
 
         return ActionResult(
@@ -366,6 +482,7 @@ class Actuator:
             before_hash=before_hash,
             after_hash=after_hash,
             elapsed_ms=(time.time() - t0) * 1000.0,
+            dom_stable_ms=dom_stable_ms,
             extra={"typed": value[:80]},
         )
 
@@ -373,6 +490,7 @@ class Actuator:
         """Globaler Tastendruck (z. B. ``Enter``, ``Tab``, ``Escape``).
 
         Modifier-Bits: 1=Alt, 2=Ctrl, 4=Meta, 8=Shift.
+        Issue #84: Auch hier _wait_for_dom_stable() statt fixed sleep
         """
         t0 = time.time()
         before_hash, _ = _capture_dom_hash(self.cdp)
@@ -387,7 +505,10 @@ class Actuator:
             })
         except CDPError as e:
             return ActionResult(False, f"key_failed: {e}")
-        time.sleep(_POST_ACTION_WAIT_S)
+
+        # Issue #84: Auf SPA-DOM-Stabilität warten
+        stabilized, dom_stable_ms = _wait_for_dom_stable(self.cdp)
+
         after_hash, _ = _capture_dom_hash(self.cdp)
         return ActionResult(
             success=before_hash != after_hash,
@@ -395,4 +516,6 @@ class Actuator:
             before_hash=before_hash,
             after_hash=after_hash,
             elapsed_ms=(time.time() - t0) * 1000.0,
+            dom_stable_ms=dom_stable_ms,
         )
+
