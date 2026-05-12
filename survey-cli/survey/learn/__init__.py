@@ -148,4 +148,11 @@ __all__ = [
     "passes_audit_filters",
     "audit_report_to_json",
     "summarize_audit",
+    # SR-112 #112
+    "Explanation",
+    "detect_match_mode",
+    "find_explanations",
+    "format_explain_human_report",
+    "record_matches",
+    "explain_report_to_json",
 ]
