@@ -1,14 +1,15 @@
 """
-SurveyAgentGraph - LangGraph StateGraph for autonomous survey completion.
+SurveyAgentGraph - Production-ready LangGraph StateGraph for survey automation.
 
-Architecture:
-    [fetch_survey] -> [parse_questions] -> [generate_answers] -> [submit_answers]
-                           |                      |
-                           v                      v
-                    [solve_captcha] <-----> [validate_consistency]
+Fully integrated with:
+    - BrowserDriver for automation
+    - SurveyParser for question extraction
+    - AnswerEngine for intelligent responses
+    - CaptchaSolver for CAPTCHA handling
 """
 from __future__ import annotations
 
+import asyncio
 import json
 import logging
 import sqlite3
@@ -20,76 +21,24 @@ from typing import Any, TypedDict
 
 from langgraph.graph import StateGraph, END
 
+from .browser_driver import BrowserDriver
+from .survey_parser import SurveyParser, Question, QuestionType
+from .answer_engine import AnswerEngine, Persona, Answer
+from .captcha_solver import CaptchaSolverQueue, CaptchaTask, CaptchaType
+
 logger = logging.getLogger(__name__)
 
 
-class SurveyState(str, Enum):
-    """Survey completion states."""
+class SurveyStatus(str, Enum):
     IDLE = "idle"
-    FETCHING = "fetching"
+    NAVIGATING = "navigating"
     PARSING = "parsing"
     ANSWERING = "answering"
     SOLVING_CAPTCHA = "solving_captcha"
     SUBMITTING = "submitting"
     COMPLETED = "completed"
-    FAILED = "failed"
     DISQUALIFIED = "disqualified"
-
-
-class QuestionType(str, Enum):
-    """Supported question types."""
-    RADIO = "radio"
-    CHECKBOX = "checkbox"
-    SLIDER = "slider"
-    MATRIX = "matrix"
-    OPEN_TEXT = "open_text"
-    RANKING = "ranking"
-    DROPDOWN = "dropdown"
-    DATE = "date"
-    NUMBER = "number"
-
-
-@dataclass
-class Question:
-    """Parsed survey question."""
-    id: str
-    type: QuestionType
-    text: str
-    options: list[str] = field(default_factory=list)
-    required: bool = True
-    validation: dict[str, Any] = field(default_factory=dict)
-
-
-@dataclass
-class Answer:
-    """Generated answer for a question."""
-    question_id: str
-    value: Any
-    confidence: float = 1.0
-
-
-@dataclass
-class Persona:
-    """Survey persona for consistent answers."""
-    age: int
-    gender: str
-    income_bracket: str
-    education: str
-    occupation: str
-    location: str
-    interests: list[str] = field(default_factory=list)
-    answer_history: dict[str, Any] = field(default_factory=dict)
-
-    def to_dict(self) -> dict:
-        return {
-            "age": self.age,
-            "gender": self.gender,
-            "income_bracket": self.income_bracket,
-            "education": self.education,
-            "occupation": self.occupation,
-            "location": self.location,
-            "interests": self.interests,
-        }
+    FAILED = "failed"
 
 
 class AgentState(TypedDict):
@@ -108,40 +57,43 @@ class AgentState(TypedDict):
     started_at: str
     completed_at: str | None
     earnings: float
+    html_content: str
+    page_url: str
 
 
 class SurveyAgentGraph:
     """
-    LangGraph-based survey completion agent.
+    Production-ready LangGraph-based survey completion agent.
     
-    Usage:
-        graph = SurveyAgentGraph(persona=my_persona, db_path="~/.survey_agent/state.db")
-        result = await graph.run(survey_url="https://survey.example.com/abc123")
+    Flow:
+        navigate -> parse -> [solve_captcha] -> answer -> submit -> (loop or complete)
     """
 
     def __init__(
         self,
-        persona: Persona | None = None,
+        persona: Persona,
         db_path: str | Path = "~/.survey_agent/state.db",
         captcha_api_key: str | None = None,
+        headless: bool = True,
     ):
-        self.persona = persona or self._default_persona()
+        self.persona = persona
         self.db_path = Path(db_path).expanduser()
-        self.captcha_api_key = captcha_api_key
+        self.headless = headless
+        
+        # Initialize components
+        self._browser: BrowserDriver | None = None
+        self._parser = SurveyParser()
+        self._answer_engine = AnswerEngine(persona, db_path=self.db_path.parent / "answers.db")
+        self._captcha_solver: CaptchaSolverQueue | None = None
+        
+        if captcha_api_key:
+            self._captcha_solver = CaptchaSolverQueue(
+                primary_provider="2captcha",
+                primary_api_key=captcha_api_key,
+            )
+        
         self._init_db()
         self.graph = self._build_graph()
-
-    def _default_persona(self) -> Persona:
-        """Create default survey persona."""
-        return Persona(
-            age=32,
-            gender="male",
-            income_bracket="50k-75k",
-            education="bachelors",
-            occupation="software_developer",
-            location="US",
-            interests=["technology", "gaming", "travel"],
-        )
 
     def _init_db(self) -> None:
         """Initialize SQLite database for state persistence."""
@@ -159,141 +111,357 @@ class SurveyAgentGraph:
                 error TEXT
             )
         """)
-        conn.execute("""
-            CREATE TABLE IF NOT EXISTS answer_history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                session_id TEXT,
-                question_hash TEXT,
-                answer_json TEXT,
-                created_at TEXT,
-                FOREIGN KEY (session_id) REFERENCES survey_sessions(id)
-            )
-        """)
         conn.commit()
         conn.close()
-        logger.info(f"Database initialized at {self.db_path}")
 
     def _build_graph(self) -> StateGraph:
-        """Build LangGraph StateGraph for survey flow."""
+        """Build LangGraph StateGraph."""
         graph = StateGraph(AgentState)
 
         # Add nodes
-        graph.add_node("fetch_survey", self._fetch_survey)
-        graph.add_node("parse_questions", self._parse_questions)
-        graph.add_node("generate_answers", self._generate_answers)
-        graph.add_node("validate_consistency", self._validate_consistency)
+        graph.add_node("navigate", self._navigate)
+        graph.add_node("parse", self._parse)
+        graph.add_node("check_status", self._check_status)
         graph.add_node("solve_captcha", self._solve_captcha)
-        graph.add_node("submit_answers", self._submit_answers)
+        graph.add_node("answer", self._answer)
+        graph.add_node("submit", self._submit)
+        graph.add_node("complete", self._complete)
         graph.add_node("handle_error", self._handle_error)
 
         # Set entry point
-        graph.set_entry_point("fetch_survey")
+        graph.set_entry_point("navigate")
 
         # Add edges
-        graph.add_edge("fetch_survey", "parse_questions")
+        graph.add_edge("navigate", "parse")
+        graph.add_edge("parse", "check_status")
+        
         graph.add_conditional_edges(
-            "parse_questions",
-            self._check_captcha_required,
+            "check_status",
+            self._route_after_check,
             {
                 "captcha": "solve_captcha",
-                "continue": "generate_answers",
-            }
-        )
-        graph.add_edge("solve_captcha", "generate_answers")
-        graph.add_edge("generate_answers", "validate_consistency")
-        graph.add_conditional_edges(
-            "validate_consistency",
-            self._check_validation_result,
-            {
-                "valid": "submit_answers",
-                "invalid": "generate_answers",
-            }
-        )
-        graph.add_conditional_edges(
-            "submit_answers",
-            self._check_more_pages,
-            {
-                "more_pages": "parse_questions",
-                "complete": END,
+                "answer": "answer",
+                "complete": "complete",
+                "disqualified": "handle_error",
                 "error": "handle_error",
             }
         )
+        
+        graph.add_edge("solve_captcha", "parse")
+        graph.add_edge("answer", "submit")
+        
+        graph.add_conditional_edges(
+            "submit",
+            self._route_after_submit,
+            {
+                "next_page": "parse",
+                "complete": "complete",
+                "error": "handle_error",
+            }
+        )
+        
+        graph.add_edge("complete", END)
         graph.add_edge("handle_error", END)
 
         return graph.compile()
 
-    async def _fetch_survey(self, state: AgentState) -> AgentState:
-        """Fetch survey page and initialize session."""
-        logger.info(f"Fetching survey: {state['survey_url']}")
-        state["status"] = SurveyState.FETCHING.value
+    async def _navigate(self, state: AgentState) -> AgentState:
+        """Navigate to survey URL."""
+        logger.info(f"Navigating to: {state['survey_url']}")
+        state["status"] = SurveyStatus.NAVIGATING.value
         state["started_at"] = datetime.utcnow().isoformat()
-        # TODO: Implement actual browser fetch via cua-driver
+        
+        if not self._browser:
+            self._browser = BrowserDriver(headless=self.headless)
+            await self._browser.start()
+        
+        await self._browser.goto(state["survey_url"])
+        await asyncio.sleep(2)
+        
+        state["html_content"] = await self._browser.get_html()
+        state["page_url"] = await self._browser.get_url()
+        
         return state
 
-    async def _parse_questions(self, state: AgentState) -> AgentState:
-        """Parse questions from current survey page."""
-        logger.info(f"Parsing questions on page {state['current_page']}")
-        state["status"] = SurveyState.PARSING.value
-        # TODO: Implement DOM parsing for question extraction
+    async def _parse(self, state: AgentState) -> AgentState:
+        """Parse current page for questions."""
+        logger.info(f"Parsing page {state['current_page']}")
+        state["status"] = SurveyStatus.PARSING.value
+        
+        # Get fresh HTML
+        state["html_content"] = await self._browser.get_html()
+        state["page_url"] = await self._browser.get_url()
+        
+        # Parse survey
+        parsed = await self._parser.parse(state["html_content"], state["page_url"])
+        
+        state["questions"] = [
+            {
+                "id": q.id,
+                "type": q.type.value,
+                "text": q.text,
+                "options": [{"value": o.value, "label": o.label} for o in q.options],
+                "required": q.required,
+                "selector": q.element_selector,
+            }
+            for q in parsed.current_page.questions
+        ]
+        
+        state["captcha_required"] = parsed.captcha_detected
+        state["total_pages"] = max(state["total_pages"], parsed.total_pages)
+        
+        logger.info(f"Found {len(state['questions'])} questions, captcha: {state['captcha_required']}")
+        
         return state
 
-    async def _generate_answers(self, state: AgentState) -> AgentState:
-        """Generate consistent answers based on persona."""
-        logger.info(f"Generating answers for {len(state['questions'])} questions")
-        state["status"] = SurveyState.ANSWERING.value
-        # TODO: Implement LLM-based answer generation
+    async def _check_status(self, state: AgentState) -> AgentState:
+        """Check page status (captcha, DQ, completion)."""
+        html = state["html_content"].lower()
+        
+        # Check for disqualification
+        dq_patterns = ["don't qualify", "do not qualify", "disqualified", "screened out", "quota full"]
+        for pattern in dq_patterns:
+            if pattern in html:
+                state["status"] = SurveyStatus.DISQUALIFIED.value
+                state["error"] = "Survey disqualification"
+                return state
+        
+        # Check for completion
+        complete_patterns = ["thank you for completing", "survey completed", "successfully completed", "points credited"]
+        for pattern in complete_patterns:
+            if pattern in html:
+                state["status"] = SurveyStatus.COMPLETED.value
+                state["completed_at"] = datetime.utcnow().isoformat()
+                return state
+        
+        # Check for captcha
+        if state["captcha_required"] and not state["captcha_solved"]:
+            state["status"] = SurveyStatus.SOLVING_CAPTCHA.value
+            return state
+        
+        # Ready to answer
+        state["status"] = SurveyStatus.ANSWERING.value
         return state
 
-    async def _validate_consistency(self, state: AgentState) -> AgentState:
-        """Validate answer consistency with persona and history."""
-        logger.info("Validating answer consistency")
-        # TODO: Check for contradictions
-        return state
+    def _route_after_check(self, state: AgentState) -> str:
+        """Route based on status check."""
+        status = state["status"]
+        
+        if status == SurveyStatus.SOLVING_CAPTCHA.value:
+            return "captcha"
+        elif status == SurveyStatus.COMPLETED.value:
+            return "complete"
+        elif status == SurveyStatus.DISQUALIFIED.value:
+            return "disqualified"
+        elif status == SurveyStatus.FAILED.value:
+            return "error"
+        else:
+            return "answer"
 
     async def _solve_captcha(self, state: AgentState) -> AgentState:
-        """Solve captcha using external service."""
-        logger.info("Solving captcha")
-        state["status"] = SurveyState.SOLVING_CAPTCHA.value
-        # TODO: Implement 2captcha/anti-captcha integration
+        """Solve CAPTCHA on page."""
+        logger.info("Solving CAPTCHA")
+        
+        if not self._captcha_solver:
+            state["error"] = "No CAPTCHA solver configured"
+            state["status"] = SurveyStatus.FAILED.value
+            return state
+        
+        import re
+        html = state["html_content"]
+        
+        # Extract site key
+        site_key_match = re.search(r'data-sitekey=["\']([^"\']+)["\']', html)
+        if not site_key_match:
+            state["error"] = "Could not find CAPTCHA site key"
+            state["status"] = SurveyStatus.FAILED.value
+            return state
+        
+        site_key = site_key_match.group(1)
+        captcha_type = CaptchaType.HCAPTCHA if "hcaptcha" in html.lower() else CaptchaType.RECAPTCHA_V2
+        
+        task = CaptchaTask(
+            type=captcha_type,
+            site_key=site_key,
+            page_url=state["page_url"],
+        )
+        
+        result = await self._captcha_solver.solve(task)
+        
+        if not result.success:
+            state["error"] = f"CAPTCHA solve failed: {result.error}"
+            state["status"] = SurveyStatus.FAILED.value
+            return state
+        
+        # Inject token
+        if captcha_type == CaptchaType.RECAPTCHA_V2:
+            await self._browser.evaluate(f'''
+                document.getElementById('g-recaptcha-response').innerHTML = '{result.token}';
+            ''')
+        else:
+            await self._browser.evaluate(f'''
+                document.querySelector('[name="h-captcha-response"]').value = '{result.token}';
+            ''')
+        
         state["captcha_solved"] = True
+        logger.info(f"CAPTCHA solved in {result.solve_time:.1f}s")
+        
         return state
 
-    async def _submit_answers(self, state: AgentState) -> AgentState:
-        """Submit answers and navigate to next page."""
-        logger.info(f"Submitting answers for page {state['current_page']}")
-        state["status"] = SurveyState.SUBMITTING.value
+    async def _answer(self, state: AgentState) -> AgentState:
+        """Generate and fill answers for all questions."""
+        logger.info(f"Answering {len(state['questions'])} questions")
+        state["status"] = SurveyStatus.ANSWERING.value
+        
+        for q_data in state["questions"]:
+            # Reconstruct Question object
+            from .survey_parser import QuestionOption
+            question = Question(
+                id=q_data["id"],
+                type=QuestionType(q_data["type"]),
+                text=q_data["text"],
+                options=[QuestionOption(value=o["value"], label=o["label"]) for o in q_data["options"]],
+                required=q_data["required"],
+                element_selector=q_data.get("selector"),
+            )
+            
+            # Generate answer
+            answer = self._answer_engine.generate_answer(question)
+            
+            # Store answer
+            state["answers"].append({
+                "question_id": question.id,
+                "value": answer.value,
+                "confidence": answer.confidence,
+            })
+            
+            # Fill answer in browser
+            await self._fill_answer(question, answer)
+            await asyncio.sleep(0.3 + 0.4 * (hash(question.id) % 100) / 100)
+        
+        return state
+
+    async def _fill_answer(self, question: Question, answer: Answer) -> None:
+        """Fill a single answer in the browser."""
+        try:
+            if question.type == QuestionType.RADIO:
+                for opt in question.options:
+                    if opt.value == answer.value:
+                        selector = f'input[value="{opt.value}"]'
+                        await self._browser.human_click(selector)
+                        break
+                        
+            elif question.type == QuestionType.CHECKBOX:
+                values = answer.value if isinstance(answer.value, list) else [answer.value]
+                for val in values:
+                    selector = f'input[value="{val}"]'
+                    await self._browser.check_checkbox(selector, True)
+                    
+            elif question.type == QuestionType.DROPDOWN:
+                selector = question.element_selector or f'select[name="{question.id}"]'
+                await self._browser.select_option(selector, str(answer.value))
+                
+            elif question.type == QuestionType.OPEN_TEXT:
+                selector = question.element_selector or f'textarea, input[type="text"]'
+                await self._browser.human_type(selector, str(answer.value))
+                
+            elif question.type == QuestionType.SLIDER:
+                selector = question.element_selector or 'input[type="range"]'
+                await self._browser.evaluate(f'''
+                    const el = document.querySelector('{selector}');
+                    if (el) {{ el.value = {answer.value}; el.dispatchEvent(new Event('change')); }}
+                ''')
+                
+            elif question.type == QuestionType.NUMBER:
+                selector = question.element_selector or 'input[type="number"]'
+                await self._browser.human_type(selector, str(answer.value))
+                
+        except Exception as e:
+            logger.warning(f"Error filling answer for {question.id}: {e}")
+
+    async def _submit(self, state: AgentState) -> AgentState:
+        """Submit current page and navigate."""
+        logger.info("Submitting page")
+        state["status"] = SurveyStatus.SUBMITTING.value
+        
+        # Try next/submit buttons
+        submit_selectors = [
+            'button[type="submit"]',
+            'input[type="submit"]',
+            '.next-btn', '.continue-btn', '.submit-btn',
+            '#next', '#continue', '#submit',
+            'button:has-text("Next")',
+            'button:has-text("Continue")',
+            'button:has-text("Submit")',
+        ]
+        
+        clicked = False
+        for selector in submit_selectors:
+            try:
+                element = await self._browser.find_element(selector)
+                if element and element.is_visible:
+                    await self._browser.human_click(selector)
+                    clicked = True
+                    break
+            except Exception:
+                continue
+        
+        if not clicked:
+            # Try pressing Enter as last resort
+            await self._browser.evaluate("document.activeElement.form?.submit()")
+        
+        # Wait for navigation
+        await asyncio.sleep(2)
+        await self._browser.wait_for_navigation()
+        
         state["current_page"] += 1
-        # TODO: Implement form submission
+        state["html_content"] = await self._browser.get_html()
+        state["page_url"] = await self._browser.get_url()
+        
+        return state
+
+    def _route_after_submit(self, state: AgentState) -> str:
+        """Route after page submission."""
+        html = state["html_content"].lower()
+        
+        # Check completion
+        if any(p in html for p in ["thank you", "completed", "success", "finished"]):
+            return "complete"
+        
+        # Check for errors
+        if state.get("error"):
+            return "error"
+        
+        # Safety limit
+        if state["current_page"] > 50:
+            state["error"] = "Max pages exceeded"
+            return "error"
+        
+        return "next_page"
+
+    async def _complete(self, state: AgentState) -> AgentState:
+        """Handle successful completion."""
+        logger.info("Survey completed successfully")
+        state["status"] = SurveyStatus.COMPLETED.value
+        state["completed_at"] = datetime.utcnow().isoformat()
+        
+        self._save_state(state)
+        
         return state
 
     async def _handle_error(self, state: AgentState) -> AgentState:
-        """Handle errors and save state for recovery."""
-        logger.error(f"Error in survey: {state['error']}")
-        state["status"] = SurveyState.FAILED.value
+        """Handle errors and disqualification."""
+        logger.warning(f"Survey ended: {state['status']} - {state.get('error')}")
+        
+        if state["status"] != SurveyStatus.DISQUALIFIED.value:
+            state["status"] = SurveyStatus.FAILED.value
+        
         self._save_state(state)
+        
         return state
 
-    def _check_captcha_required(self, state: AgentState) -> str:
-        """Check if captcha solving is needed."""
-        return "captcha" if state.get("captcha_required") else "continue"
-
-    def _check_validation_result(self, state: AgentState) -> str:
-        """Check if answers passed validation."""
-        # TODO: Implement actual validation logic
-        return "valid"
-
-    def _check_more_pages(self, state: AgentState) -> str:
-        """Check if more survey pages remain."""
-        if state.get("error"):
-            return "error"
-        if state["current_page"] < state["total_pages"]:
-            return "more_pages"
-        state["status"] = SurveyState.COMPLETED.value
-        state["completed_at"] = datetime.utcnow().isoformat()
-        return "complete"
-
     def _save_state(self, state: AgentState) -> None:
-        """Persist state to SQLite for recovery."""
+        """Persist state to SQLite."""
         conn = sqlite3.connect(self.db_path)
         conn.execute("""
             INSERT OR REPLACE INTO survey_sessions 
@@ -303,7 +471,7 @@ class SurveyAgentGraph:
             state["survey_id"],
             state["survey_url"],
             state["status"],
-            json.dumps(state),
+            json.dumps({k: v for k, v in state.items() if k != "html_content"}),
             state["started_at"],
             state.get("completed_at"),
             state.get("earnings", 0),
@@ -313,15 +481,7 @@ class SurveyAgentGraph:
         conn.close()
 
     async def run(self, survey_url: str) -> AgentState:
-        """
-        Run the survey completion graph.
-        
-        Args:
-            survey_url: URL of the survey to complete
-            
-        Returns:
-            Final agent state with completion status
-        """
+        """Run the survey completion graph."""
         import uuid
         
         initial_state: AgentState = {
@@ -334,30 +494,22 @@ class SurveyAgentGraph:
             "persona": self.persona.to_dict(),
             "captcha_required": False,
             "captcha_solved": False,
-            "status": SurveyState.IDLE.value,
+            "status": SurveyStatus.IDLE.value,
             "error": None,
             "started_at": "",
             "completed_at": None,
             "earnings": 0.0,
+            "html_content": "",
+            "page_url": "",
         }
 
-        result = await self.graph.ainvoke(initial_state)
-        self._save_state(result)
-        return result
-
-    def resume(self, session_id: str) -> AgentState | None:
-        """Resume a previously interrupted survey session."""
-        conn = sqlite3.connect(self.db_path)
-        cursor = conn.execute(
-            "SELECT state_json FROM survey_sessions WHERE id = ?",
-            (session_id,)
-        )
-        row = cursor.fetchone()
-        conn.close()
-        
-        if row:
-            return json.loads(row[0])
-        return None
+        try:
+            result = await self.graph.ainvoke(initial_state)
+            return result
+        finally:
+            if self._browser:
+                await self._browser.stop()
+                self._browser = None
 
     def get_stats(self) -> dict:
         """Get completion statistics."""
@@ -375,10 +527,10 @@ class SurveyAgentGraph:
         conn.close()
         
         return {
-            "total_surveys": row[0],
-            "completed": row[1],
-            "failed": row[2],
-            "disqualified": row[3],
+            "total_surveys": row[0] or 0,
+            "completed": row[1] or 0,
+            "failed": row[2] or 0,
+            "disqualified": row[3] or 0,
             "total_earnings": row[4] or 0,
-            "completion_rate": row[1] / row[0] if row[0] > 0 else 0,
+            "completion_rate": (row[1] or 0) / row[0] if row[0] else 0,
         }
