@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 class TestDaemonManagerStates(unittest.TestCase):
     def setUp(self):
-        patcher = patch("survey.daemon.CUA_DAEMON_STATE_FILE",
+        patcher = patch("survey.daemon_manager.CUA_DAEMON_STATE_FILE",
                         new_callable=MagicMock)
         self.mock_state_file = patcher.start()
         self.addCleanup(patcher.stop)
@@ -33,20 +33,20 @@ class TestDaemonManagerStates(unittest.TestCase):
         with patch("builtins.open",
                    new_callable=unittest.mock.mock_open,
                    read_data=json.dumps(self._state_data)):
-            from survey.daemon import DaemonManager
+            from survey.daemon_manager import DaemonManager
             return DaemonManager()
 
-    @patch("survey.daemon.DaemonManager._load_state")
+    @patch("survey.daemon_manager.DaemonManager._load_state")
     def test_initial_state_is_stopped(self, mock_load):
         mock_load.return_value = "STOPPED"
-        from survey.daemon import DaemonManager
+        from survey.daemon_manager import DaemonManager
         dm = DaemonManager()
         self.assertEqual(dm.state, "STOPPED")
 
-    @patch("survey.daemon.DaemonManager._load_state")
+    @patch("survey.daemon_manager.DaemonManager._load_state")
     def test_state_transitions_through_save(self, mock_load):
         mock_load.return_value = "STOPPED"
-        from survey.daemon import DaemonManager
+        from survey.daemon_manager import DaemonManager
         dm = DaemonManager()
         dm.state = "STARTING"
         self.assertEqual(dm.state, "STARTING")
@@ -59,41 +59,41 @@ class TestDaemonManagerStates(unittest.TestCase):
 
 
 class TestDaemonManagerProcessCheck(unittest.TestCase):
-    @patch("survey.daemon.DaemonManager._load_state")
+    @patch("survey.daemon_manager.DaemonManager._load_state")
     def test_is_process_alive_true(self, mock_load):
         mock_load.return_value = "STOPPED"
-        from survey.daemon import DaemonManager
+        from survey.daemon_manager import DaemonManager
         dm = DaemonManager()
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=0, stdout="12345\n")
             self.assertTrue(dm._is_process_alive())
 
-    @patch("survey.daemon.DaemonManager._load_state")
+    @patch("survey.daemon_manager.DaemonManager._load_state")
     def test_is_process_alive_false(self, mock_load):
         mock_load.return_value = "STOPPED"
-        from survey.daemon import DaemonManager
+        from survey.daemon_manager import DaemonManager
         dm = DaemonManager()
         with patch("subprocess.run") as mock_run:
             mock_run.return_value = MagicMock(
                 returncode=1, stdout="")
             self.assertFalse(dm._is_process_alive())
 
-    @patch("survey.daemon.DaemonManager._load_state")
+    @patch("survey.daemon_manager.DaemonManager._load_state")
     def test_is_process_alive_exception(self, mock_load):
         mock_load.return_value = "STOPPED"
-        from survey.daemon import DaemonManager
+        from survey.daemon_manager import DaemonManager
         dm = DaemonManager()
         with patch("subprocess.run", side_effect=subprocess.TimeoutExpired("pgrep", 5)):
             self.assertFalse(dm._is_process_alive())
 
 
 class TestDaemonManagerHealthCheck(unittest.TestCase):
-    @patch("survey.daemon.DaemonManager._load_state")
-    @patch("survey.daemon.DaemonManager._save_state")
+    @patch("survey.daemon_manager.DaemonManager._load_state")
+    @patch("survey.daemon_manager.DaemonManager._save_state")
     def test_health_check_healthy(self, mock_save, mock_load):
         mock_load.return_value = "STOPPED"
-        from survey.daemon import DaemonManager
+        from survey.daemon_manager import DaemonManager
         dm = DaemonManager()
         dm._is_process_alive = MagicMock(return_value=True)
         with patch("subprocess.run") as mock_run:
@@ -104,22 +104,22 @@ class TestDaemonManagerHealthCheck(unittest.TestCase):
         self.assertTrue(result["healthy"])
         self.assertEqual(result["state"], "HEALTHY")
 
-    @patch("survey.daemon.DaemonManager._load_state")
-    @patch("survey.daemon.DaemonManager._save_state")
+    @patch("survey.daemon_manager.DaemonManager._load_state")
+    @patch("survey.daemon_manager.DaemonManager._save_state")
     def test_health_check_failed_process_dead(self, mock_save, mock_load):
         mock_load.return_value = "HEALTHY"
-        from survey.daemon import DaemonManager
+        from survey.daemon_manager import DaemonManager
         dm = DaemonManager()
         dm._is_process_alive = MagicMock(return_value=False)
         result = dm.health_check()
         self.assertFalse(result["healthy"])
         self.assertEqual(result["state"], "FAILED")
 
-    @patch("survey.daemon.DaemonManager._load_state")
-    @patch("survey.daemon.DaemonManager._save_state")
+    @patch("survey.daemon_manager.DaemonManager._load_state")
+    @patch("survey.daemon_manager.DaemonManager._save_state")
     def test_health_check_degraded_no_windows(self, mock_save, mock_load):
         mock_load.return_value = "HEALTHY"
-        from survey.daemon import DaemonManager
+        from survey.daemon_manager import DaemonManager
         dm = DaemonManager()
         dm._is_process_alive = MagicMock(return_value=True)
         with patch("subprocess.run") as mock_run:
@@ -130,11 +130,11 @@ class TestDaemonManagerHealthCheck(unittest.TestCase):
         self.assertFalse(result["healthy"])
         self.assertEqual(result["state"], "DEGRADED")
 
-    @patch("survey.daemon.DaemonManager._load_state")
-    @patch("survey.daemon.DaemonManager._save_state")
+    @patch("survey.daemon_manager.DaemonManager._load_state")
+    @patch("survey.daemon_manager.DaemonManager._save_state")
     def test_health_check_degraded_timeout(self, mock_save, mock_load):
         mock_load.return_value = "HEALTHY"
-        from survey.daemon import DaemonManager
+        from survey.daemon_manager import DaemonManager
         dm = DaemonManager()
         dm._is_process_alive = MagicMock(return_value=True)
         with patch("subprocess.run", side_effect=subprocess.TimeoutExpired("cmd", 5)):
@@ -144,22 +144,22 @@ class TestDaemonManagerHealthCheck(unittest.TestCase):
 
 
 class TestDaemonManagerEnsureRunning(unittest.TestCase):
-    @patch("survey.daemon.DaemonManager._load_state")
-    @patch("survey.daemon.DaemonManager._save_state")
+    @patch("survey.daemon_manager.DaemonManager._load_state")
+    @patch("survey.daemon_manager.DaemonManager._save_state")
     def test_ensure_running_when_already_healthy(self, mock_save, mock_load):
         mock_load.return_value = "HEALTHY"
-        from survey.daemon import DaemonManager
+        from survey.daemon_manager import DaemonManager
         dm = DaemonManager()
         dm.health_check = MagicMock(
             return_value={"healthy": True, "state": "HEALTHY", "windows_count": 1})
         self.assertTrue(dm.ensure_running())
 
-    @patch("survey.daemon.DaemonManager._load_state")
-    @patch("survey.daemon.DaemonManager._save_state")
+    @patch("survey.daemon_manager.DaemonManager._load_state")
+    @patch("survey.daemon_manager.DaemonManager._save_state")
     @patch("time.sleep")
     def test_ensure_running_restarts_on_failed(self, mock_sleep, mock_save, mock_load):
         mock_load.return_value = "FAILED"
-        from survey.daemon import DaemonManager
+        from survey.daemon_manager import DaemonManager
         dm = DaemonManager()
         dm.health_check = MagicMock(
             return_value={"healthy": False, "state": "FAILED", "reason": "dead"})
@@ -172,15 +172,15 @@ class TestDaemonManagerEnsureRunning(unittest.TestCase):
 
 
 class TestDaemonManagerHeartbeat(unittest.TestCase):
-    @patch("survey.daemon.DaemonManager._load_state")
-    @patch("survey.daemon.DaemonManager._save_state")
-    @patch("survey.daemon.is_chrome_alive")
-    @patch("survey.daemon.load_state")
+    @patch("survey.daemon_manager.DaemonManager._load_state")
+    @patch("survey.daemon_manager.DaemonManager._save_state")
+    @patch("survey.daemon_manager.is_chrome_alive")
+    @patch("survey.daemon_manager.load_state")
     def test_heartbeat_structure(self, mock_load, mock_chrome, mock_save, mock_load_state):
         mock_load_state.return_value = "STOPPED"
         mock_chrome.return_value = True
         mock_load.return_value = {"surveys_completed": 0}
-        from survey.daemon import DaemonManager
+        from survey.daemon_manager import DaemonManager
         dm = DaemonManager()
         dm.health_check = MagicMock(
             return_value={"healthy": True, "state": "HEALTHY", "windows_count": 2})
