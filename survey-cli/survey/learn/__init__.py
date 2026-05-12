@@ -53,6 +53,13 @@ from .suggester import (
     suggest_family,
     FAMILY_TOKENS,
 )
+from .apply import (
+    InboxEntry,
+    ApplyResult,
+    apply_inbox,
+    apply_keyword_to_family,
+    compute_diff,
+)
 
 __all__ = [
     "aggregate_misses",
@@ -61,4 +68,10 @@ __all__ = [
     "SuggestedFamily",
     "suggest_family",
     "FAMILY_TOKENS",
+    # SR-58 #57
+    "InboxEntry",
+    "ApplyResult",
+    "apply_inbox",
+    "apply_keyword_to_family",
+    "compute_diff",
 ]

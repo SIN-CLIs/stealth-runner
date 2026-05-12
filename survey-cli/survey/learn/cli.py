@@ -37,6 +37,7 @@ from .aggregator import (
     default_suggestions_path,
     write_suggestions,
 )
+from .apply import apply_inbox  # SR-58 #57
 
 
 # ── HARTCODIERT FALSE — niemals aendern ohne §12 Update + Review ────────────
@@ -160,6 +161,64 @@ def cmd_review(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_apply(args: argparse.Namespace) -> int:
+    """SR-58 #57 — manueller, auditierter Apply von Inbox-Eintraegen.
+
+    Workflow:
+      1. Lese accepted-Inbox JSONL.
+      2. Confidence-Gate (substring >= 0.7, llm >= 0.85).
+      3. Pro Eintrag: prompt (interactive) ODER auto-accept (--approve-all)
+         ODER skip-und-Diff-zeigen (--dry-run).
+      4. AST-Roundtrip auf survey/profile_loader.py::FIELD_PATTERNS.
+      5. Smoke-Tests; bei Failure: byte-genauer Rollback.
+      6. Audit-Log: logs/learn-applied-{ISO8601}.jsonl
+
+    Exit codes:
+      0  = OK (auch bei "nothing applied" + dry-run).
+      1  = pre/post Test-Fail mit Rollback, oder Inbox-IO-Fehler.
+      2  = inkompatibler Flag-Mix (sollte argparse abfangen).
+    """
+    if args.approve_all and args.interactive:
+        print("[learn-apply] --approve-all und --interactive sind exklusiv.",
+              file=sys.stderr)
+        return 2
+    if args.approve_all:
+        mode = "approve-all"
+    elif args.dry_run:
+        mode = "dry-run"
+    else:
+        mode = "interactive"
+
+    result = apply_inbox(
+        inbox_path=args.inbox,
+        mode=mode,
+        skip_tests=args.skip_tests,
+    )
+
+    if result.error:
+        print(f"[learn-apply] ERROR: {result.error}", file=sys.stderr)
+        if result.rolled_back:
+            print("[learn-apply] rollback successful — profile_loader.py "
+                  "is back to pre-apply state.", file=sys.stderr)
+        return 1
+
+    print(f"[learn-apply] mode={mode}")
+    print(f"[learn-apply] accepted={result.accepted} "
+          f"rejected={result.rejected} skipped={result.skipped}")
+    for fam, kw in result.applied_keywords:
+        print(f"[learn-apply]   + {fam}: {kw}")
+    if result.audit_log_path:
+        print(f"[learn-apply] audit log: {result.audit_log_path}")
+    elif mode == "dry-run":
+        if not result.applied_keywords:
+            print("[learn-apply] (dry-run: no candidate above confidence gate)")
+        else:
+            print(f"[learn-apply] (dry-run: {len(result.applied_keywords)} "
+                  "candidate(s) above gate — diff printed above, "
+                  "no files written)")
+    return 0
+
+
 def build_argparser() -> argparse.ArgumentParser:
     p = argparse.ArgumentParser(prog="survey learn")
     sub = p.add_subparsers(dest="action", required=True)
@@ -185,6 +244,25 @@ def build_argparser() -> argparse.ArgumentParser:
     p_rev.add_argument("--dry-run", action="store_true",
                       help="Nur anzeigen, nichts schreiben")
     p_rev.set_defaults(func=cmd_review)
+
+    # SR-58 #57: apply ──────────────────────────────────────────────────────
+    p_app = sub.add_parser(
+        "apply",
+        help="Apply accepted suggestions to FIELD_PATTERNS (AST roundtrip)")
+    p_app.add_argument("inbox", type=str,
+                       help="Pfad zur accepted-Inbox JSONL "
+                            "(z.B. logs/pattern-suggestions-accepted.jsonl)")
+    p_app.add_argument("--dry-run", action="store_true",
+                       help="Diff anzeigen, NICHTS schreiben")
+    grp = p_app.add_mutually_exclusive_group()
+    grp.add_argument("--approve-all", action="store_true",
+                     help="Alle Eintraege oberhalb Confidence-Gate uebernehmen")
+    grp.add_argument("--interactive", action="store_true",
+                     help="Pro Eintrag fragen [a/r/s/q] (default)")
+    p_app.add_argument("--skip-tests", action="store_true",
+                       help="DEV-FLAG: pytest-Gate ueberspringen "
+                            "(nur fuer Tests, nicht in CI)")
+    p_app.set_defaults(func=cmd_apply)
 
     return p
 
