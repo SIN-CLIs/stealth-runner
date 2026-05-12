@@ -442,7 +442,7 @@ def cmd_loop(args):
     ================================================================================
     """
     # Lazy Import
-    from survey.runner import SurveyRunner, RunnerConfig
+    from survey.graph import create_graph, SurveyState
 
     # RunnerConfig erstellen (siehe cmd_run für Details)
     config = RunnerConfig(
@@ -470,6 +470,43 @@ def cmd_loop(args):
 
     return results
 
+
+
+
+def _run_survey_via_graph(survey_dict, provider, args):
+    """Issue #34: Wrapper to invoke survey via LangGraph instead of SurveyRunner."""
+    from survey.graph import create_graph, SurveyState
+    import time
+    
+    graph = create_graph()
+    state = SurveyState(
+        survey_id=survey_dict.get("id"),
+        provider=provider,
+        cdp_port=args.port,
+        no_nim=args.no_nim,
+        no_rate=args.no_rate,
+    )
+    state.session_start_time = time.time()
+    
+    try:
+        final_state = graph.invoke(state)
+        return {
+            "success": final_state.status == "completed",
+            "balance_earned": final_state.balance_after - final_state.balance_before,
+            "error": None if final_state.status in ["completed", "screen_out"] else final_state.errors[-1].get("error", "unknown"),
+            "status": final_state.status,
+            "details": {
+                "iterations": final_state.iteration,
+                "errors_count": len(final_state.errors),
+            }
+        }
+    except Exception as e:
+        return {
+            "success": False,
+            "balance_earned": 0.0,
+            "error": str(e),
+            "status": "error",
+        }
 
 def cmd_watch(args):
     """
@@ -547,7 +584,7 @@ def cmd_watch(args):
     # WARUM in Funktion statt global? Vermeidet Import-Fehler beim Modul-Load
     # (z.B. wenn survey.chrome nicht existiert während Entwicklung).
     import signal
-    from survey.runner import SurveyRunner, RunnerConfig
+    from survey.graph import create_graph, SurveyState
     from survey.scanner import read_balance
     from survey.chrome import is_chrome_alive, find_bot_tabs, find_dashboard_ws
     from survey.autodoc import log_session
