@@ -2,6 +2,74 @@
 
 ## [Unreleased] - 2026-05-12
 
+### Fixed
+- **(#95) Critical restore**: recovered 49 root-level Markdown files that were
+  hard-deleted in commit `2f8fdf0` without migration. Full verbatim content
+  embedded into `AGENTS.md` under a new `MIGRATED LEGACY DOCS (RESTORE PASS — Issue #95)`
+  section so the agent brain holds every byte. Original files remain deleted at
+  the repo root in compliance with the 3-MD root rule (AGENTS.md / README.md /
+  CHANGELOG.md only).
+
+### Restored files (sorted)
+- `CONTRIBUTING.md`
+- `INTEGRATION_PLAN.md`
+- `SUPPORT.md`
+- `ULTIMATE-PLAN.md`
+- `api.md`
+- `architecture.md`
+- `banned.md`
+- `benchmarks.md`
+- `brain.md`
+- `commands.md`
+- `design.md`
+- `faq.md`
+- `fix.md`
+- `graph-report-template.md`
+- `graph-report.md`
+- `graphify.md`
+- `history.md`
+- `infisical.md`
+- `issues.md`
+- `opencode.md`
+- `plan-sr-29-ps-captcha-ocr.md`
+- `plan-sr-32-provider-detect.md`
+- `plan-sr-33-persona-system.md`
+- `plan-sr-34-test-suite.md`
+- `plan-sr-35-chrome-safety.md`
+- `plan-sr-36-docs-cleanup.md`
+- `plan-sr-37-skylight-compact.md`
+- `registry-actuation.md`
+- `registry-credentials.md`
+- `registry-google.md`
+- `registry-graphify.md`
+- `registry-macos.md`
+- `registry-perception.md`
+- `registry-skills.md`
+- `registry-surveys.md`
+- `registry.md`
+- `security.md`
+- `session-log-2026-05-06.md`
+- `session-log-2026-05-07.md`
+- `session-versager.md`
+- `sinrules.md`
+- `state.md`
+- `successful.md`
+- `testing.md`
+- `tool-manifest.md`
+- `tool-registry.md`
+- `troubleshooting.md`
+- `usage.md`
+
+### Permanently deleted (no doc value)
+- `2captcha.com__lemin_2026-05-03_22-59-15.jpg` (visual debug leftover)
+- `2captcha.com__lemin_2026-05-03_23-00-40.jpg` (visual debug leftover)
+- `2captcha.com__lemin_2026-05-03_23-00-55.jpg` (visual debug leftover)
+- `2captcha.com__lemin_2026-05-03_23-00-59.jpg` (visual debug leftover)
+- `skylight_screenshot.png` (visual debug leftover)
+- `vision_input.jpg` (visual debug leftover)
+
+## [Unreleased] - 2026-05-12
+
 ### Changed
 - **Repo cleanup (#91)**: removed all legacy root-level Markdown files and stray
   binary assets. Only `AGENTS.md`, `README.md`, `CHANGELOG.md` remain at root.

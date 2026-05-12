@@ -15,6 +15,7 @@ content: |
   | #92   | DONE     | this STATUS INDEX section                                                            |
   | #93   | PLANNED  | `_plans/oopif-autoattach.md` (Target.setAutoAttach flatten=True for OOPIFs)          |
   | #94   | PLANNED  | `_plans/js-dialog-handler.md` (Page.javascriptDialogOpening auto-dismiss)            |
+  | #95   | DONE     | full restore + migration of 49 hard-deleted MDs into the LEGACY (RESTORE PASS) section below |
 
   ### Update Rules (read before editing this table)
   - One line per work item. Always point to a code symbol (`file::function`) OR a plan file path.
@@ -6959,4 +6960,6641 @@ Files changed:
   | 🔜 | **Erste Auszahlung (EUR > 0)** | 🔴 |
   | 🔜 | 10× stabiler Survey-Durchlauf | 🔴 |
   | 🔜 | cua-driver AX-Tree aktiv | 🔴 |
+
+  ---
+
+  # MIGRATED LEGACY DOCS (RESTORE PASS — Issue #95, 2026-05-12)
+
+  The following sections recover, verbatim, the full content of 49 root-level
+  Markdown files that were hard-deleted in commit `2f8fdf0` (which closed #91)
+  without prior migration. The original deletion violated the project rule
+  ("MD contents are gold; nothing gets deleted, only migrated"). The content
+  is now permanently embedded here. The original files remain deleted at the
+  repo root by design — root may only contain AGENTS.md, README.md, CHANGELOG.md.
+
+  Files restored in this pass (sorted):
+  - `CONTRIBUTING.md`
+  - `INTEGRATION_PLAN.md`
+  - `SUPPORT.md`
+  - `ULTIMATE-PLAN.md`
+  - `api.md`
+  - `architecture.md`
+  - `banned.md`
+  - `benchmarks.md`
+  - `brain.md`
+  - `commands.md`
+  - `design.md`
+  - `faq.md`
+  - `fix.md`
+  - `graph-report-template.md`
+  - `graph-report.md`
+  - `graphify.md`
+  - `history.md`
+  - `infisical.md`
+  - `issues.md`
+  - `opencode.md`
+  - `plan-sr-29-ps-captcha-ocr.md`
+  - `plan-sr-32-provider-detect.md`
+  - `plan-sr-33-persona-system.md`
+  - `plan-sr-34-test-suite.md`
+  - `plan-sr-35-chrome-safety.md`
+  - `plan-sr-36-docs-cleanup.md`
+  - `plan-sr-37-skylight-compact.md`
+  - `registry-actuation.md`
+  - `registry-credentials.md`
+  - `registry-google.md`
+  - `registry-graphify.md`
+  - `registry-macos.md`
+  - `registry-perception.md`
+  - `registry-skills.md`
+  - `registry-surveys.md`
+  - `registry.md`
+  - `security.md`
+  - `session-log-2026-05-06.md`
+  - `session-log-2026-05-07.md`
+  - `session-versager.md`
+  - `sinrules.md`
+  - `state.md`
+  - `successful.md`
+  - `testing.md`
+  - `tool-manifest.md`
+  - `tool-registry.md`
+  - `troubleshooting.md`
+  - `usage.md`
+
+  Binary stray assets (2captcha JPGs, skylight_screenshot.png, vision_input.jpg)
+  remain deleted as they are visual debug leftovers without documentation value.
+
+
+  ## --- LEGACY (RESTORE PASS — #95): CONTRIBUTING.md ---
+
+  > Verbatim content of `CONTRIBUTING.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # CONTRIBUTING.md — stealth-runner
+
+  > **Merge-Regeln, Code-Konventionen, PR-Checkliste**
+  > Stand: 2026-04-30 · v0.3.1 Greenfield
+
+  ---
+
+  ## 1. Architektur-Regel (nicht verhandelbar)
+
+  - **Dies ist ein CLI-Orchestrator, kein Server.** Kein MCP, kein REST, keine persistenten Prozesse.
+  - **Jede Aktion ist atomar.** Der `StealthExecutor` kapselt alle CLI-Aufrufe – kein direkter `subprocess.run` außerhalb dieser Klasse.
+  - **Kein Fallback auf `skylight-cli`.** `StealthExecutor.__init__` wirft `RuntimeError`, wenn `skylight-cli` nicht installiert ist.
+  - **State Machine ist die einzige Kontrollstruktur.** Kein `while True` außerhalb von `run()`.
+
+  ---
+
+  ## 2. Merge-Workflow
+
+  1. **Branch**: `feat/<name>` oder `fix/<name>`
+  2. **Commit**: Conventional Commits (`feat:`, `fix:`, `docs:`, `chore:`, `security:`)
+  3. **PR**: gegen `main`, braucht mindestens 1 Review
+  4. **Merge**: Squash & Merge
+
+  ---
+
+  ## 3. PR Checklist (ALLE Punkte müssen erfüllt sein)
+
+  - [ ] `brain.md` aktualisiert (falls Architektur-Änderung)
+  - [ ] `architecture.md` aktualisiert (falls neue/geänderte Komponenten)
+  - [ ] `issues.md` aktualisiert (gelöste Issues markiert, neue dokumentiert)
+  - [ ] `banned.md` konsultiert – KEINE verbotenen Patterns eingeführt
+  - [ ] Tests laufen: `python -m pytest tests/` → 18/18 PASS
+  - [ ] Keine `skylight-cli`-Referenzen
+  - [ ] Keine CDP/DOM-Referenzen
+  - [ ] `StealthExecutor`-Backend ist **ausschließlich** `skylight-cli`
+  - [ ] `VisionClient` hat vollständigen `SYSTEM_PROMPT` (10 Aktionen)
+  - [ ] `unmask-cli verify-stealth` ist im `VERIFY`-State integriert
+  - [ ] `playstealth-cli launch` ist im `LAUNCH_BROWSER`-State
+  - [ ] Alle neuen Funktionen haben Type-Hints
+
+  ---
+
+  ## 4. Code-Konventionen
+
+  ### 4.1 Allgemein
+
+  - Python 3.12+, Type-Hints auf allen public functions
+  - `async/await` für alle Zustandsübergänge
+  - Panel-Logik ausschließlich in `sin_survey_core`, nicht im Runner
+
+  ### 4.2 State Machine
+
+  - Neue Zustände brauchen eine `async`-Methode `_<state>()`
+  - Nach jedem `EXECUTE` MUSS `VERIFY` folgen
+
+  ### 4.3 StealthExecutor
+
+  - Alle CLI-Aufrufe NUR über `self.run(cmd)`
+  - JSON-Parsing von stdout, Fehler von stderr
+
+  ### 4.4 VisionClient
+
+  - `get_action(image_path, step)` — einzige öffentliche Methode
+  - Fallback-Kaskade: CF → NVIDIA → Parse-Fallback → harter Fallback
+  - Prompt-Änderungen in `runner/prompt_kit.py`
+
+  ---
+
+  ## 5. Verbotene Patterns (siehe `banned.md`)
+
+  - ❌ `skylight-cli` · ❌ `open -na Chrome` · ❌ CDP/DOM · ❌ Cursor-Stealing
+  - ❌ `AXStaticText` klicken · ❌ Klick ohne Vision · ❌ `.env` mit Secrets
+
+  ---
+
+  ## 6. Tests
+
+  ```bash
+  python tests/test_runner.py
+  python tests/test_sin_survey_core.py
+  ```
+
+  ---
+
+  ## 7. Dokumentation
+
+  | Datei             | Wann aktualisieren           |
+  | ----------------- | ---------------------------- |
+  | `brain.md`        | Architektur-Änderungen       |
+  | `architecture.md` | Neue/geänderte Komponenten   |
+  | `issues.md`       | Issues gelöst/erstellt       |
+  | `banned.md`       | Neue verbotene Patterns      |
+  | `fix.md`          | Jeder Bugfix mit Commit-Hash |
+
+  ---
+
+  ## 8. Commit-Messages
+
+  ```
+  feat: add OCR fallback for Canvas elements
+  fix: prevent AXStaticText clicks in Vision prompt
+  docs: update architecture.md
+  security: remove .env with real credentials
+  ```
+
+
+  ## --- LEGACY (RESTORE PASS — #95): INTEGRATION_PLAN.md ---
+
+  > Verbatim content of `INTEGRATION_PLAN.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # SIN-HERMES v2.0 → stealth-runner Integration Plan
+
+  ## 🚨 Context: Accidentally Pushed to Wrong Repo
+
+  **What happened:**
+  - v0 built SIN-HERMES v2.0 core modules (5 production-grade Python modules)
+  - Mistakenly pushed to `Delqhi/sin-hermes-agent` instead of `sin-clis/stealth-runner`
+  - Your colleague was correctly working on stealth-runner all along ✅
+
+  **What needs to happen:**
+  - Move core modules to `stealth-runner/core/`
+  - Integrate with existing LangGraph survey agent
+  - Update all imports and tests
+  - Achieve < 2min surveys, 0 errors
+
+  ---
+
+  ## 📋 Files to Integrate from sin-hermes-agent
+
+  ### SIN-HERMES v2.0 Core Modules (Production-Grade)
+  **Location:** Delqhi/sin-hermes-agent/.open-auth-rotator/openai/core/
+
+  Files to port (Python equivalents):
+  - ✅ config.py - Environment detection, validation, immutable settings
+  - ✅ error_handler.py - Circuit breaker, exponential backoff, retry strategies
+  - ✅ security.py - Fernet encryption, credential vault, audit logging
+  - ✅ analytics.py - Metrics collection, Prometheus export, health checks
+  - ✅ state_manager.py - Checkpoint/restore, crash recovery, distributed state
+
+  ---
+
+  ## 🎯 Integration Checklist (GitHub Issues)
+
+  **Created:**
+  - **#81:** [P0] Integrate SIN-HERMES v2.0 Core Modules
+  - **#82:** [CLEANUP] Review accidental pushes to Delqhi/sin-hermes-agent
+  - **#83:** [P1] Production-Ready Error Handling & Observability
+
+  ---
+
+  ## 📊 Current stealth-runner Architecture (Already Correct!)
+
+  Your colleague built this correctly:
+  ```
+  stealth-runner/
+  ├── survey-cli/survey/
+  │   ├── graph.py           ✅ LangGraph orchestration
+  │   ├── cdp_universal.py   ✅ Universal CDP scanner
+  │   ├── cdp_actuator.py    ✅ Action execution
+  │   ├── captcha_router.py  ✅ CAPTCHA routing
+  │   └── chrome.py          ✅ Browser management
+  ├── agent-toolbox/api/
+  │   └── endpoints/
+  │       ├── universal.py   ✅ v2 scan endpoint
+  │       ├── captcha.py     ✅ v2 captcha endpoint
+  │       └── actuator.py    ✅ v2 click/fill endpoint
+  └── AGENTS.md              ✅ Architecture spec
+  ```
+
+  **This is the CORRECT repo for everything. Not Delqhi repos.**
+
+  ---
+
+  ## ❌ What NOT to Integrate
+
+  - ❌ Survey Builder UI (dashboard, forms, survey-plattform stuff)
+  - ❌ Supabase auth pages (login/register)
+  - ❌ Dashboard/analytics pages
+  - ❌ Landing pages
+  - ❌ General-purpose CAPTCHA widget
+
+  **These were for a different product. Keep ONLY agent-focused code.**
+
+  ---
+
+  ## ✅ What SHOULD be integrated
+
+  From SIN-HERMES v2.0 core/:
+  1. **config.py** → `stealth-runner/core/config.py`
+  2. **error_handler.py** → `stealth-runner/core/error_handler.py`
+  3. **security.py** → `stealth-runner/core/security.py`
+  4. **analytics.py** → `stealth-runner/core/analytics.py`
+  5. **state_manager.py** → `stealth-runner/core/state_manager.py`
+
+  Then update:
+  - LangGraph nodes with error handling
+  - FastAPI endpoints with state tracking
+  - Tests for all core modules
+  - AGENTS.md with updated architecture
+
+  ---
+
+  ## 🚀 Why This Matters
+
+  Your goal: **Surveys in < 2min with 0 errors**
+
+  These core modules provide:
+  - ✅ Circuit breaker (fail-safe when things break)
+  - ✅ Exponential backoff (smart retries)
+  - ✅ State persistence (resume after crashes)
+  - ✅ Encryption (secure credential storage)
+  - ✅ Audit logging (compliance + debugging)
+  - ✅ Metrics (Prometheus for monitoring)
+
+  **Result:** Production-ready reliability.
+
+  ---
+
+  ## 📌 Status
+
+  - ✅ stealth-runner is correct (your colleague did it right)
+  - ❌ sin-hermes-agent has accidental files (will cleanup)
+  - ⏳ Integration ready to start (see Issues #81-#83)
+
+  **Next:** Review issues, coordinate with team, start integration.
+
+
+  ## --- LEGACY (RESTORE PASS — #95): SUPPORT.md ---
+
+  > Verbatim content of `SUPPORT.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # Support — stealth-runner
+
+  Open an issue: https://github.com/OpenSIN-AI/stealth-runner/issues
+
+  ## 2026-05-02: Project Info
+
+  - **Remote:** git@github.com:OpenSIN-AI/stealth-runner.git
+  - **Issues:** git@github.com:OpenSIN-AI/stealth-runner/issues
+  - **Sprachen:** TypeScript, JSON, JavaScript, Markdown, Python
+
+
+  ## --- LEGACY (RESTORE PASS — #95): ULTIMATE-PLAN.md ---
+
+  > Verbatim content of `ULTIMATE-PLAN.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # ULTIMATE PLAN — Stealth-Runner SOTA May 2026
+
+  > **Author**: Planner Agent | **Date**: 2026-05-08
+  > **Status**: DRAFT | **Version**: 1.0.0
+  >
+  > This document is THE single source of truth for the Stealth-Runner architecture
+  > overhaul. All sub-plans in `plans/` derive from this document. When in doubt,
+  > come back here.
+
+  ---
+
+  ## THE VERDICT
+
+  **The codebase has a `two-heads` problem.** Everything that matters exists twice:
+
+  | Component | Head A (`survey-cli/`) | Head B (`src/stealth_survey/`) |
+  |-----------|----------------------|-------------------------------|
+  | NIM Client | `NIMClient` (238 lines) | `NIMSurveyClient` (598 lines) |
+  | Snapshot | `CompactSnapshot` + `generate_snapshot()` (454 lines) | `CompactSnapshot` + `CompactSnapshotGenerator` (separate file) |
+  | Batch Executor | `BatchExecutor` (950 lines) | `BatchExecutor` (separate file) |
+  | Survey Runner | `SurveyRunner` (1432 lines) | `SurveyAgent` (1062+ lines) |
+
+  **Plus**: 3 Chrome launchers, 3 login implementations, 4 copies of CPX credentials.
+
+  **Result**: Guaranteed divergence, 2× maintenance cost, 0× confidence about which version is "correct", impossible to test end-to-end.
+
+  **The fix**: MERGE into ONE canonical module. Everything else follows from this.
+
+  ---
+
+  ## ARCHITECTURE: THE TARGET STATE
+
+  ```
+  stealth-runner/
+  │
+  ├── survey_cli/                          ← THE canonical survey engine (NEW name)
+  │   ├── __init__.py
+  │   │
+  │   ├── engine/                          ← Core NEMO loop (THE one implementation)
+  │   │   ├── nim_client.py                ← Single NIMClient (circuit breaker + retry)
+  │   │   ├── snapshot.py                  ← Single CompactSnapshot + generator
+  │   │   ├── batch_executor.py            ← Single BatchExecutor (provider dispatch)
+  │   │   ├── survey_agent.py              ← Single SurveyAgent (run_survey + run_loop)
+  │   │   └── page_analyzer.py             ← NEW: question detection, progress, stuck
+  │   │
+  │   ├── providers/                       ← Provider adapters (one per provider)
+  │   │   ├── base.py                      ← Abstract ProviderAdapter
+  │   │   ├── qualtrics.py                 ← Qualtrics (.NextButton, .LabelWrapper)
+  │   │   ├── toluna.py                    ← TolunaStart (.cf-radio)
+  │   │   ├── strat7.py                    ← Strat7 (.bsbutton)
+  │   │   ├── purespectrum.py              ← PureSpectrum (Angular v19 CDP)
+  │   │   ├── cloudresearch.py             ← CloudResearch ([role=button])
+  │   │   └── generic.py                   ← Generic fallback
+  │   │
+  │   ├── lifecycle/                       ← Chrome + daemon management (ONE path)
+  │   │   ├── chrome.py                    ← ChromeLauncher (single launch path)
+  │   │   ├── daemon.py                    ← DaemonManager (cua-driver state machine)
+  │   │   ├── session.py                   ← SessionManager (Chrome registry)
+  │   │   └── cleanup.py                   ← Safe kill, zombie tab cleanup
+  │   │
+  │   ├── auth/                            ← Login (ONE implementation)
+  │   │   ├── google_oauth.py              ← 6-step CUA flow (refactored from 1734 lines)
+  │   │   ├── login_verifier.py            ← CDP-based login state detection
+  │   │   └── keychain_fallback.py         ← NEW: Password fallback when Keychain disabled
+  │   │
+  │   ├── security/                        ← Credential management
+  │   │   ├── secrets.py                   ← SecretsClient (Infisical/Vault)
+  │   │   └── config.py                    ← Typed config (pydantic, env-based)
+  │   │
+  │   ├── observability/                   ← Logging, metrics, monitoring
+  │   │   ├── logger.py                    ← Structured JSONL logger
+  │   │   ├── metrics.py                   ← Prometheus-style metrics
+  │   │   └── health.py                    ← Health check endpoint
+  │   │
+  │   ├── tools/                           ← Frozen deterministic tools
+  │   │   └── ... (existing tools, no changes)
+  │   │
+  │   ├── cli.py                           ← Typer CLI (survey.py replacement)
+  │   └── watch.py                         ← Daemon watch loop
+  │
+  ├── tests/
+  │   ├── unit/                            ← Unit tests (mock CDP, mock NIM)
+  │   │   ├── test_nim_client.py
+  │   │   ├── test_snapshot.py
+  │   │   ├── test_batch_executor.py
+  │   │   ├── test_survey_agent.py
+  │   │   ├── test_providers/
+  │   │   ├── test_lifecycle/
+  │   │   └── test_auth/
+  │   ├── integration/                     ← Integration tests (real-ish CDP)
+  │   │   ├── test_e2e_survey.py
+  │   │   ├── test_tab_switching.py
+  │   │   └── test_login_flow.py
+  │   └── conftest.py                      ← Shared fixtures, mocks
+  │
+  ├── config/
+  │   ├── profiles/                        ← Persona profiles (no hardcoded PII)
+  │   ├── providers.yaml                   ← Provider config (selectors, markers)
+  │   └── settings.yaml                    ← App settings (ports, timeouts, limits)
+  │
+  ├── scripts/
+  │   ├── verify_completeness.py           ← Pre-commit: banned patterns, docstrings, tests
+  │   ├── cleanup_sessions.py              ← Session file cleanup
+  │   └── graphify.py                      ← Code graph visualization
+  │
+  ├── .pre-commit-config.yaml              ← AUTOMATED ENFORCEMENT
+  ├── pyproject.toml                       ← Project config, ruff, mypy, pytest
+  ├── AGENTS.md                            ← Agent instructions
+  ├── sinrules.md                          ← Central rules
+  ├── ULTIMATE-PLAN.md                     ← YOU ARE HERE
+  └── plans/                               ← Detailed sub-plans
+      ├── 01-merge-two-heads.md
+      ├── 02-secure-credentials.md
+      ├── 03-enforce-rules.md
+      ├── 04-chrome-lifecycle.md
+      ├── 05-nemo-unification.md
+      ├── 06-test-coverage.md
+      ├── 07-auto-login-hardening.md
+      └── 08-observability.md
+  ```
+
+  ## KEY PRINCIPLES
+
+  1. **ONE source of truth per concept.** No duplicate classes. No parallel implementations.
+  2. **Credentials NEVER in code.** Infisical/Vault/env-vars only. Secret scanner in pre-commit.
+  3. **Rules are AUTOMATED, not documented.** Pre-commit hooks enforce bans, not comment blocks.
+  4. **Every public function has ≥3 tests.** Unit tests for logic, integration tests for flows.
+  5. **Provider logic ISOLATED.** Each provider has one adapter file. Engine dispatches to adapter.
+  6. **Graceful degradation.** NIM fails → auto-pilot. Chrome dies → restart. Daemon crashes → recover.
+  7. **Observable by default.** Structured logging, metrics, health checks. No `print()` in production.
+  8. **NO banned pattern comments.** The code should be clean enough that warnings aren't needed.
+
+  ## PHASE PLAN
+
+  ### PHASE 0: EMERGENCY FIXES (today, <2h)
+
+  | # | Action | Why |
+  |---|--------|-----|
+  | P0.1 | Fix `--remote-allow-origins="*"` in `accessibility.py:119` | Actual Chrome startup bug in zsh |
+  | P0.2 | Fix `execute()` duplicate in `auto_google_login.py:1255` | Shadow bug — second definition overwrites first |
+  | P0.3 | Replace `os.kill(pid, 9)` with SIGTERM→SIGKILL in `daemon.py:216` | Prevents graceful shutdown |
+  | P0.4 | Add `.pre-commit-config.yaml` with ruff + secret scanner | Zero automated enforcement today |
+
+  ### PHASE 1: MERGE TWO HEADS (this week, 2-3 days)
+
+  Merge `survey-cli/` and `src/stealth_survey/` into ONE `survey_cli/engine/` module. This eliminates 4 duplicate implementations immediately.
+
+  See: `plans/01-merge-two-heads.md`, `plans/05-nemo-unification.md`
+
+  ### PHASE 2: HARDEN (next week, 2-3 days)
+
+  Secure credentials, enforce rules, consolidate Chrome lifecycle, fix login.
+
+  See: `plans/02-secure-credentials.md`, `plans/03-enforce-rules.md`, `plans/04-chrome-lifecycle.md`, `plans/07-auto-login-hardening.md`
+
+  ### PHASE 3: PRODUCTION-READY (following week, 2-3 days)
+
+  Close test coverage gap, add observability, integration tests, session corruption fix.
+
+  See: `plans/06-test-coverage.md`, `plans/08-observability.md`
+
+  ---
+
+  ## METRICS (TARGET)
+
+  | Metric | Current | Target |
+  |--------|---------|--------|
+  | Python files | 53 | ~35 (de-duplicated) |
+  | Test files | 28 | ~45 (full coverage) |
+  | Test coverage | ~62% | ≥90% |
+  | Duplicate implementations | 6 pairs | 0 |
+  | Hardcoded credentials | 4 files | 0 |
+  | Chrome launch paths | 3 | 1 |
+  | Login implementations | 3 | 1 |
+  | Pre-commit hooks | 0 | 5+ |
+  | Banned pattern comment lines | ~7,500 | 0 |
+  | Session corruption files | 2,965 | 0 |
+
+  ---
+
+  ## BANNED FOREVER
+
+  These are NOT going into any comment block. They are enforced by CI:
+
+  - `playstealth launch` — banned binary
+  - `webauto-nodriver` — banned MCP
+  - `pkill -f "Google Chrome"` — kills user Chrome
+  - `killall Google Chrome` — kills ALL Chrome
+  - `--remote-allow-origins=*` (no quotes)
+  - `/tmp/heypiggy-bot` (fixed profile)
+  - Hardcoded PIDs, credentials, emails, API keys
+  - `skylight-cli click --element-index`
+  - `os.kill(pid, 9)` on Chrome
+  - `print()` in production code (use logger)
+
+  ---
+
+  ## SUB-PLAN INDEX
+
+  | Plan | File | Phase |
+  |------|------|-------|
+  | Merge Two Heads | `plans/01-merge-two-heads.md` | 1 |
+  | Secure Credentials | `plans/02-secure-credentials.md` | 2 |
+  | Enforce Rules | `plans/03-enforce-rules.md` | 2 |
+  | Chrome Lifecycle | `plans/04-chrome-lifecycle.md` | 2 |
+  | NEMO Unification | `plans/05-nemo-unification.md` | 1 |
+  | Test Coverage | `plans/06-test-coverage.md` | 3 |
+  | Auto-Login Hardening | `plans/07-auto-login-hardening.md` | 2 |
+  | Observability | `plans/08-observability.md` | 3 |
+
+  ## --- LEGACY (RESTORE PASS — #95): api.md ---
+
+  > Verbatim content of `api.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # api.md
+
+
+  ## --- LEGACY (RESTORE PASS — #95): architecture.md ---
+
+  > Verbatim content of `architecture.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # stealth-suite — sin-clis/stealth-suite
+
+  **CUA-native Captcha-Solver & GUI-Automation Framework.**
+  Kein CDP. Kein Selenium. Nur macOS Accessibility (AX), CGEvent, Apple-Events-JavaScript.
+
+  ---
+
+  ## 1. Verzeichnisstruktur (vollständig)
+
+  ```
+  stealth-suite/
+  ├── README.md                     # dieses Dokument
+  ├── LICENSE                       # MIT
+  ├── pyproject.toml                # pip install -e .
+  ├── requirements.txt              # httpx, black, pytest
+  │
+  ├── drivers/
+  │   ├── __init__.py
+  │   ├── cua_wrapper.py            # cua-driver CLI wrapper
+  │   ├── ax_tree.py                # AX-Tree Parser + Toolbar
+  │   └── apple_events.py           # Apple Events JS Executor
+  │
+  ├── vision/
+  │   ├── __init__.py
+  │   ├── screenshot.py             # screencapture + Cropping
+  │   └── verify.py                 # Vision-Verify (MOVED/NOT_MOVED)
+  │
+  ├── captchas/
+  │   ├── __init__.py
+  │   ├── gocaptcha.py              # GoCaptcha Slide-Solver
+  │   ├── purespectrum.py           # PureSpectrum Drag-Puzzle
+  │   └── payloads/
+  │       ├── gocaptcha_slide.js    # Apple-Events Drag-Payload
+  │       └── purespectrum_drag.js  # PureSpectrum Dispatcher
+  │
+  ├── incidents/                    # Fehlschlag-Dokumentation
+  │   └── 2026-05-05-cgevent-block-failed.md
+  │
+  └── research/                     # SOTA-Recherche
+      ├── 2026-05-05-vision-model-benchmarks.md
+      └── 2026-05-05-captchax-gui-grounding.md
+  ```
+
+  ---
+
+  ## 2. Schritt-für-Schritt-Arbeitsanweisung
+
+  ### 2.1 Voraussetzungen
+
+  ```bash
+  # Repo klonen & Abhängigkeiten installieren
+  git clone git@github.com:sin-clis/stealth-suite.git
+  cd stealth-suite
+  pip install -e .
+  ```
+
+  ### 2.2 Chrome mit Apple-Events-JS starten (einmalig)
+
+  ```bash
+  PROFILE=$(~/tmp/chrome-instance-B (Profil 902 Kopie))
+  open -a "Google Chrome" --args \
+    --user-data-dir="$PROFILE" \
+    --remote-debugging-port=9224 \
+    --remote-allow-origins="*" \
+    --force-renderer-accessibility \
+    --disable-blink-features=AutomationControlled \
+    --allow-javascript-apple-events
+  ```
+
+  > **Wichtig:** Ohne `allow-javascript-apple-events` schlägt jeder JS-Dispatch fehl.
+
+  ### 2.3 Captcha lösen (Slide-Puzzle)
+
+  ```python
+  from captchas.gocaptcha import GoCaptchaSolver
+
+  solver = GoCaptchaSolver(pid=51525, window_id=58443)
+  result = solver.solve()
+  print(result)  # {"solved": True, "position": 216}
+  ```
+
+  ---
+
+  ## 3. Kern-Module (kompletter Code)
+
+  ### 3.1 `drivers/apple_events.py`
+
+  ```python
+  """Apple Events JavaScript Executor für Chrome."""
+  import subprocess
+  import json
+
+  class AppleEventsJS:
+      def __init__(self, pid: int, window_id: int):
+          self.pid = pid
+          self.window_id = window_id
+
+      def execute(self, code: str, timeout: int = 10) -> str:
+          payload = json.dumps({
+              'pid': self.pid,
+              'window_id': self.window_id,
+              'action': 'execute_javascript',
+              'javascript': code
+          })
+          p = subprocess.run(
+              ['cua-driver', 'page', payload],
+              capture_output=True, text=True, timeout=timeout
+          )
+          out = p.stdout
+          if '```' in out:
+              return out.split('```')[1].strip()
+          return out.strip()
+  ```
+
+  ### 3.2 `drivers/ax_tree.py`
+
+  ```python
+  """AX-Tree Parser – findet WebArea-Offset (Toolbar)."""
+  import subprocess, json, re
+
+  def get_toolbar(pid: int, window_id: int) -> int:
+      p = subprocess.run(
+          ['cua-driver', 'call', 'get_window_state',
+           json.dumps({'pid': pid, 'window_id': window_id})],
+          capture_output=True, text=True, timeout=10
+      )
+      tree = json.loads(p.stdout).get('tree_markdown', '')
+      for line in tree.split('\n'):
+          m = re.search(r'AXWebArea.*@\((\d+),(\d+)', line)
+          if m:
+              return int(m.group(2))
+      return 179  # Fallback Chrome toolbar
+  ```
+
+  ### 3.3 `drivers/cua_wrapper.py`
+
+  ```python
+  """cua-driver Drag-Wrapper mit korrekter Koordinaten-Konvertierung."""
+  import subprocess, json
+
+  def drag(pid: int, from_win: tuple, to_win: tuple, speed=80, steps=80):
+      payload = json.dumps({
+          'pid': pid,
+          'from_x': from_win[0], 'from_y': from_win[1],
+          'to_x': to_win[0],     'to_y': to_win[1],
+          'speed': speed, 'steps': steps
+      })
+      p = subprocess.run(
+          ['cua-driver', 'call', 'drag', payload],
+          capture_output=True, text=True, timeout=25
+      )
+      return p.stdout.strip()
+  ```
+
+  ### 3.4 `captchas/payloads/gocaptcha_slide.js`
+
+  ```javascript
+  // Apple-Events JS Payload für GoCaptcha Slide
+  // Verschiebt den Block per PointerEvent + style.left
+  (() => {
+    const b = document.querySelector('.gc-drag-block');
+    const s = document.querySelector('.gc-drag-slide-bar');
+    if (!b || !s) return 'no captcha';
+
+    const br = b.getBoundingClientRect();
+    const sr = s.getBoundingClientRect();
+    const startX = br.left + br.width / 2;
+    const startY = br.top + br.height / 2;
+    const targetX = sr.right - br.width / 2 - 2;
+    const steps = 30;
+
+    // PointerDown
+    b.dispatchEvent(new PointerEvent('pointerdown', {
+      bubbles: true, cancelable: true,
+      clientX: startX, clientY: startY,
+      pointerId: 1, isPrimary: true
+    }));
+    // PointerMove + style.left
+    for (let i = 1; i <= steps; i++) {
+      const x = startX + (targetX - startX) * (i / steps);
+      b.style.transition = 'none';
+      b.style.left = (x - startX) + 'px';
+      document.dispatchEvent(new PointerEvent('pointermove', {
+        bubbles: true, cancelable: true,
+        clientX: x, clientY: startY,
+        pointerId: 1, isPrimary: true
+      }));
+    }
+    // PointerUp
+    document.dispatchEvent(new PointerEvent('pointerup', {
+      bubbles: true, cancelable: true,
+      clientX: targetX, clientY: startY,
+      pointerId: 1, isPrimary: true
+    }));
+    return JSON.stringify({ finalLeft: b.style.left, target: targetX - startX });
+  })();
+  ```
+
+  ### 3.5 `captchas/gocaptcha.py`
+
+  ```python
+  """GoCaptcha Slide-Captcha Solver (CUA-native)."""
+  import time, json
+  from drivers.apple_events import AppleEventsJS
+  from drivers.ax_tree import get_toolbar
+  from drivers.cua_wrapper import drag
+
+  class GoCaptchaSolver:
+      def __init__(self, pid: int, window_id: int):
+          self.pid = pid
+          self.window_id = window_id
+          self.js = AppleEventsJS(pid, window_id)
+          self.toolbar = get_toolbar(pid, window_id)
+
+      def solve(self) -> dict:
+          self.js.execute(
+              "document.querySelector('.go-captcha')?.scrollIntoView({behavior:'instant',block:'center'})"
+          )
+          time.sleep(0.3)
+
+          coords = self.js.execute("""
+              (() => {
+                  const b=document.querySelector('.gc-drag-block'),s=document.querySelector('.gc-drag-slide-bar');
+                  if(!b||!s)return'{}';
+                  const br=b.getBoundingClientRect(),sr=s.getBoundingClientRect();
+                  return JSON.stringify({fx:Math.round(br.left+br.width/2),fy:Math.round(br.top+br.height/2),tx:Math.round(sr.right-br.width/2-2),ty:Math.round(sr.top+sr.height/2)});
+              })()
+          """)
+          d = json.loads(coords)
+          if not d:
+              return {"solved": False, "error": "Captcha-Elemente nicht gefunden"}
+
+          payload = open('captchas/payloads/gocaptcha_slide.js').read()
+          self.js.execute(payload)
+          time.sleep(1)
+
+          final = self.js.execute(
+              "JSON.stringify({left:document.querySelector('.gc-drag-block')?.style?.left||'0px'})"
+          )
+          return json.loads(final)
+  ```
+
+  ### 3.6 `vision/screenshot.py`
+
+  ```python
+  """Screenshot-Utility mit DOM-basiertem Cropping."""
+  import subprocess, json, re, base64
+  from drivers.apple_events import AppleEventsJS
+  from drivers.ax_tree import get_toolbar
+
+  def capture_fullscreen() -> bytes:
+      subprocess.run(['screencapture', '/tmp/full.png'], check=True, timeout=5)
+      with open('/tmp/full.png', 'rb') as f:
+          return f.read()
+
+  def capture_captcha(pid: int, window_id: int) -> tuple:
+      js = AppleEventsJS(pid, window_id)
+      toolbar = get_toolbar(pid, window_id)
+      coords = js.execute("JSON.stringify(document.querySelector('.go-captcha')?.getBoundingClientRect())")
+      d = json.loads(coords)
+      if not d: return None, None
+      p = subprocess.run(['cua-driver','call','list_windows'], capture_output=True, text=True, timeout=10)
+      wx, wy = 50, 40
+      for w in json.loads(p.stdout).get('windows', []):
+          if w.get('pid')==pid and w.get('window_id')==window_id:
+              wx, wy = w['bounds']['x'], w['bounds']['y']; break
+      rect = f"{wx+d['x']},{wy+toolbar+d['y']},{d['width']},{d['height']}"
+      subprocess.run(['screencapture', '-R', rect, '/tmp/captcha.png'], check=True, timeout=5)
+      with open('/tmp/captcha.png', 'rb') as f:
+          return f.read(), rect
+  ```
+
+  ### 3.7 `vision/verify.py`
+
+  ```python
+  """Vision-basiertes Verify – prüft ob Block bewegt wurde."""
+  import httpx, base64
+
+  API_KEY = "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"
+
+  def verify_movement(image_b64: str) -> str:
+      r = httpx.post('https://integrate.api.nvidia.com/v1/chat/completions',
+          headers={'Authorization': f'Bearer {API_KEY}'},
+          json={'model':'meta/llama-3.2-11b-vision-instruct','max_tokens':10,'temperature':0,
+              'messages':[{'role':'user','content':[
+                  {'type':'text','text':'Slide captcha. Is dark block at LEFT or RIGHT? Reply: LEFT or RIGHT'},
+                  {'type':'image_url','image_url':{'url':f'data:image/png;base64,{image_b64}'}}
+              ]}]}, timeout=25)
+      text = r.json()['choices'][0]['message']['content'].upper()
+      return 'MOVED' if 'RIGHT' in text else 'NOT_MOVED' if 'LEFT' in text else 'UNKNOWN'
+  ```
+
+  ### 3.8 `incidents/2026-05-05-cgevent-block-failed.md`
+
+  ```markdown
+  # Incident: CGEvent Drag triggert GoCaptcha-Handler nicht
+
+  **Datum:** 2026-05-05 | **PID/WID:** 51525/58443
+
+  ## Problem
+  - 20+ Drag-Versuche mit `cua-driver drag` am korrekten Pixel
+  - Spy (MutationObserver + mousedown-Listener): **moved: false, maxLeft: 0**
+  - `elementFromPoint()` findet SVG-Path über dem Block
+  - Trotz `pointer-events: none` auf SVG: kein mousedown auf `.gc-drag-block`
+
+  ## Ursache
+  - CGEvent-Posts sind macOS-System-Events → Chrome übersetzt sie zu `MouseEvent`
+  - GoCaptcha verwendet `PointerEvent`-basierte React-Handler
+  - `isTrusted: true` reicht nicht – Handler erwarten `PointerEvent`, nicht `MouseEvent`
+
+  ## Lösung
+  - Apple-Events JS (`cua-driver page execute_javascript`) als einziger CUA-Hebel
+  - Chrome muss mit `allow-javascript-apple-events` gestartet werden
+  ```
+
+  ### 3.9 `research/2026-05-05-captchax-gui-grounding.md`
+
+  ```markdown
+  # SOTA Research: GUI-Grounding für Captcha-Solver
+
+  **Datum:** 2026-05-05
+  **Quellen:** CAPTCHA-X Benchmark, Agent S3, Surfer 2, GUI-Agent Survey (Adobe 2025)
+
+  ## Kernerkenntnisse
+  1. Vision-Modelle (Llama 3.2, Nemotron Omni, Gemini Flash) können **keine** präzisen
+     Pixel-Koordinaten aus Screenshots extrahieren (13 Modelle getestet, 0 korrekt).
+  2. DOM-Koordinaten (`getBoundingClientRect`) sind 100× präziser und sofort verfügbar.
+  3. Hybride Ansätze (Vision + AX-Tree) verbessern Robustheit, lösen aber das
+     Captcha-Event-Problem nicht.
+  4. CAPTCHA-X zeigt: Grounding-Modelle wie Grounding-DINO + VLMs erreichen beste
+     Präzision – jedoch zu langsam für Echtzeit-Einsatz.
+
+  ## Fazit für stealth-suite
+  - Vision dient **ausschließlich** zur Verify-Phase (Block bewegt? ja/nein)
+  - Koordinaten-Berechnung erfolgt **immer** über DOM
+  - Captcha-Interaktion erfolgt **immer** über Apple-Events JavaScript
+  ```
+
+  ---
+
+  ## 4. SOTA Pipeline
+
+  ```
+  OBSERVE ──→ PLAN ──→ ACT ──→ VERIFY ──→ CORRECT
+     │           │         │         │            │
+     ▼           ▼         ▼         ▼            ▼
+  SoM+AX    Grounding   CGEvent   pixtral    Experience
+  Fusion    DINO/YOLO   +AXPress  Verify    Augmented
+  ```
+
+  | Modul | Status | Technologie |
+  |-------|--------|-------------|
+  | perception | ✅ 100% | screencapture + cua-driver AX-tree |
+  | actuation | ✅ 100% | cua-driver drag/click + AppleEvents JS |
+  | verify | ✅ 90% | Llama 3.2 Vision (MOVED/NOT_MOVED) |
+  | grounding | 🔴 0% | Grounding-DINO oder OS-ATLAS fehlt |
+  | memory | 🔴 0% | Experience-Augmented Planning (Agent S3) |
+  | captchas | 🟡 50% | Slide-Solver existiert, keine Plugin-Architektur |
+
+  ---
+
+  ## 5. Wichtige Regeln (aus der Session-Historie)
+
+  - ❌ **Keine** Alternative zu CUA/AX (kein CDP, kein Selenium, kein cliclick)
+  - ❌ **Kein** Aufgeben nach 2-3 Fehlversuchen – jeder Versuch wird dokumentiert
+  - ✅ Vision-Modelle **nur** für Verify, nicht für Koordinaten
+  - ✅ DOM-Koordinaten sind der Ground-Truth für Positionen
+  - ✅ Einziger Event-Hebel für Captcha-Handler: Apple-Events JavaScript
+  - ✅ Chrome MUSS mit `allow-javascript-apple-events` laufen
+  - ✅ Jeder Fehlversuch → `incidents/<YYYY-MM-DD-HHMM>.md`
+
+  ---
+
+  **Letzte Aktualisierung:** 2026-05-05
+  **Maintainer:** stealth-orchestrator
+
+
+  ## --- LEGACY (RESTORE PASS — #95): banned.md ---
+
+  > Verbatim content of `banned.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # BANNED.md - Gescheiterte Methoden (Architektur-Regeln)
+
+  ## ❌ KRITISCHE VERBOTE (SOFORTIGE STRAFE BEI VERSTOSS)
+
+  ### ❌❌❌ NIEMALS `git checkout -- DATEI` (2026-05-09) ❌❌❌
+  ```bash
+  # ❌❌❌ ATOMWAFFE — VERNICHTET ALLE uncommitted changes in einer Datei!
+  # Kein Unterschied zwischen gut und schlecht — ALLES wird gelöscht!
+  git checkout -- agent-toolbox/api/survey_actions.py  # 966 Zeilen korrekter Code = GELÖSCHT!
+  git checkout -- agent-toolbox/api/schemas.py          # 172 Zeilen Schemas = GELÖSCHT!
+  git checkout -- agent-toolbox/api/main.py             # survey_tools Router = GELÖSCHT!
+  ```
+  **Warum so gefährlich:** `git checkout --` kennt kein "nur die sed-Änderungen reverten". Es verwirft **ALLE** uncommitted changes — sowohl die schlechten (sed-Katastrophe) ALS AUCH die guten (BULLETPROOF click_button, get_any_tab_ws, UniversalSurveyHandler Patterns, Hidden-Input-Fixes).
+
+  **Korrekt:**
+  1. `git diff DATEI` — zeigt EXAKT was geändert wurde
+  2. `git add -p DATEI` — interaktiv nur gute Hunks stagen
+  3. `git stash -p` — interaktiv stash (nicht alles!)
+  4. `git checkout HEAD -- DATEI` nur wenn 100% sicher dass ALLE changes weg sollen
+  5. ODER: `git diff` kopieren, `git checkout --`, dann die guten changes manuell re-applizieren
+
+  **Konsequenz dieses Verbotes:** Agent hat 966 Zeilen funktionierenden Code vernichtet durch einen einzigen `git checkout --` Befehl. Survey-Automation komplett kaputt. Stunden an Rekonstruktion nötig.
+
+  ### ❌ NIEMALS `pkill -f "Google Chrome"` oder `pkill -a Chrome` (2026-05-03)
+  ```bash
+  # ❌ FALSCH - Tötet die PRIVATE Chrome-Sitzung des Nutzers! Absolutes Tabu!
+  pkill -f "Google Chrome"
+  killall "Google Chrome"
+  ```
+  **Korrekt**: Nutze **AUSSCHLIESSLICH** die PID, die dir von `playstealth launch` zurückgegeben wurde (z.B. `kill -9 94247`). Finger weg von allen anderen Chrome-Instanzen!
+
+  ### ❌ NIEMALS AXMenuBar/AXMenuBarItem/AXMenu Elemente anklicken (2026-05-03)
+  ```python
+  # ❌ FALSCH - Klickt Apple Menüleiste ganz oben auf dem Bildschirm!
+  _find_idx(pid, wid, label="Schließen")  # Findet AXMenuBarItem "Schließen" im Systemmenü!
+  test_click(pid, wid, idx)  # Klickt Apple-Menü statt Browser-Content!
+  ```
+  **Korrekt**: IMMER `depth > 5` Filter setzen, um Menüleiste auszuschließen:
+  ```python
+  for line in tree.split('\n'):
+      m = re.match(r'(\s*)-\s*\[(\d+)\]\s+(\S+)\s*(.*)', line)
+      depth = len(m.group(1)) // 2
+      if depth < 5: continue  # SKIP Apple-Menüleiste! (depth 1-4)
+  ```
+
+  ### ❌ NIEMALS CDP für Navigation nutzen (2026-05-03)
+  ```bash
+  # ❌ FALSCH - CDP WebSocket blocked by Chrome origin check!
+  curl "http://127.0.0.1:PORT/json/new?URL"
+  ```
+  **Korrekt**: IMMER Address-Bar via CUA:
+  ```python
+  # RICHTIG - 100% CUA, kein CDP
+  cua.click(pid, wid, addr_bar_idx)
+  cua.set_value(pid, wid, addr_bar_idx, url)
+  cua.press_key(pid, "return")
+  ```
+
+  ### ❌ NIEMALS Captcha-Lösung via Bezahldienste (2026-05-03)
+  ```bash
+  # ❌ FALSCH - Bezahl-API für Captcha-Lösung!
+  pip install 2captcha-python  # NIEMALS!
+  2captcha.com API Key  # NIEMALS!
+  ```
+  **Korrekt**: ALLE Captchas SELBST lösen (ohne Bezahlung):
+  - Pixtral/Mistral Vision AI für Captcha-Text-Erkennung
+  - Open-Source Captcha-Solver (GitHub)
+  - Eigenentwicklung für spezifische Captcha-Typen
+  - Crash-Test auf 2captcha.com/de/demo ohne API-Key!
+
+  ## ❌ BANNED (NIEMALS NUTZEN)
+
+  ### `--disable-blink-features=AutomationControlled` (2026-05-03)
+  ```bash
+  # NICHT BANNED — Flag ist NOTWENDIG für CUA AX-Zugriff auf Chrome-Tree!
+  # Ohne Flag: CUA sieht KEINE Form-Felder (Cross-Origin-Iframe-Blockade)
+  # Google-Login-Flow: skylight für Form-Felder, CUA für Popups
+  ```
+  **Korrekt**: Flag behalten. Skylight für Google-Form-Felder, CUA für Popup-Klicks.
+
+  ### Popup-Interaktion via skylight-cli
+  ```bash
+  # ❌ FALSCH – klickt Hauptfenster-Element, NICHT den Popup-Button!
+  # ❌ FALSCH – skylight Indices ≠ CUA Indices!
+  skylight-cli click --pid 26897 --element-index 35
+  ```
+  **Korrekt**: `cua-driver call click` — IMMER CUA für ALLE Klicks (Popup + Hauptfenster)
+
+  ### Hintergrund-Prozesse via bash mit `&`
+  ```bash
+  # ❌ FALSCH – blockiert trotzdem die Shell!
+  bash(command="screen-follow record --video --output /tmp/file.mp4 &")
+  ```
+  **Korrekt**: `interactive_bash(tmux_command="new-session -d -s mysession")`
+
+  ### playstealth --json Argument-Reihenfolge
+  ```bash
+  # ⚠️ NUR für dev/debug — NIEMALS für production!
+  playstealth launch --url X --json
+  # → "unrecognized arguments: --json"
+  ```
+  **Korrekt**: `playstealth --json launch --url X` (dev/debug ONLY)
+
+  ### asyncio.get_event_loop() in Python 3.14+
+  ```python
+  # ❌ FALSCH – deprecated!
+  loop = asyncio.get_event_loop()
+  ```
+  **Korrekt**: `loop = asyncio.new_event_loop(); asyncio.set_event_loop(loop)`
+
+  | Muster                                     | Warum                                           | semgrep-Regel              |
+  | ------------------------------------------ | ----------------------------------------------- | -------------------------- |
+  | `playstealth launch (isolierte PID)-pgrep` |
+  | `NIEMALS – BANNED`                         |
+  | `playstealth launch`                       | Manipuliert Nutzer-Browser                      | `banned-chrome-open`       |
+  | `BANNED (Mausbewegung verboten)`           | Bewegt Nutzer-Maus                              | `banned-pyautogui`         |
+  | `BANNED (Mausbewegung verboten)`           | Bewegt Nutzer-Maus                              | `banned-pynput`            |
+  | `httpx an NVIDIA NIM`                      | Nur httpx direkt an NVIDIA NIM                  | `banned-openai-client`     |
+  | `skylight-cli click --x`                   | Koordinaten raten → Apple-Menü (0,0)            | `banned-coordinates-click` |
+  | `skylight-cli`                             | Profil-Konflikt, falscher Chrome                | `banned-skylight-cli`      |
+  | `skylight-cli --x --y`                     | **ALT:** Koordinaten-basiert, kein Popup-Schutz | ❌ BANNED                  |
+  | `recovery_mode: true`                      | Omni macht ALLE Entscheidungen                  | `banned-recovery-mode`     |
+
+  ### ❌❌❌ WEBATUO-NODRIVER — ABSOLUT VERBOTEN (2026-05-03) ❌❌❌
+
+  ```
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║  ❌❌❌ WEBATUO-NODRIVER IST BANNED — ABSOLUT VERBOTEN ❌❌❌     ║
+  ║                                                                  ║
+  ║  → webauto-nodriver MCP server                                   ║
+  ║  → webauto_nodriver_* tool apapun                                ║
+  ║  → anonymous skill / stealth-browser-operator skill              ║
+  ║  → JEGLICHE browser automation via nodriver/mcp                  ║
+  ║  → Alle webauto-* imports in Python files                        ║
+  ║  → Alle anonymous-* skill references                             ║
+  ║                                                                  ║
+  ║  GRUND: Nutzt eigenes Chrome-Profil, Konflikte mit playstealth   ║
+  ║  GRUND: Index-basiertes Klicken funktioniert NICHT               ║
+  ║  GRUND: webauto screenshot hat "no page" bug                     ║
+  ║  GRUND: User hat explizit verboten — mehrfach!                   ║
+  ║                                                                  ║
+  ║  ✅ ERLAUBT: playstealth launch                                 ║
+  ║  ✅ ERLAUBT: skylight-cli snapshot-compact + batch               ║
+  ║  ✅ ERLAUBT: CDP via httpx/websockets für Runtime.evaluate       ║
+  ║  ✅ ERLAUBT: cua-driver (NUR Legacy-Fallback)                    ║
+  ╚══════════════════════════════════════════════════════════════════╝
+  ```
+  **NIEMALS. WIEDER. IN BETRACHT ZIEHEN. GÄNZLICH ENTFERNEN. ALLES.**
+
+  ### ❌❌❌ WEBATUO-NODRIVER — RAUS AUS CODE (2026-05-03) ❌❌❌
+
+  | Muster | Warum | Action |
+  |--------|-------|--------|
+  | `webauto-nodriver` | BANNED | Sofort entfernen |
+  | `webauto_nodriver_observe_screen` | BANNED | Niemals nutzen |
+  | `webauto_nodriver_screenshot_to_file` | BANNED — "no page" bug | Niemals nutzen |
+  | `webauto_nodriver_goto` | BANNED | Niemals nutzen |
+  | `webauto_nodriver_click` | BANNED | Niemals nutzen |
+  | `skill("anonymous")` | BANNED | Niemals laden |
+  | `stealth-browser-operator` skill | BANNED | Niemals laden |
+
+  ### ❌❌❌ WEBATUO-NODRIVER — COMPLIANCE CHECK ❌❌❌
+
+  ```bash
+  # Prüfe ob webauto-nodriver noch im Code ist:
+  grep -r "webauto" /Users/jeremy/dev/stealth-runner --include="*.py" --include="*.md"
+  # → MUSS 0 Treffer sein!
+
+  # Prüfe skills:
+  grep -r "anonymous\|stealth-browser-operator" /Users/jeremy/dev/stealth-runner --include="*.py" --include="*.md"
+  # → MUSS 0 Treffer sein!
+  ```
+
+  ### ❌❌❌ RICHTIGE TOOLS FÜR BROWSER AUTOMATION ❌❌❌
+
+  | Task | Tool | Befehl |
+  |------|------|--------|
+  | Chrome starten | `playstealth` | `playstealth launch --url X` |
+  | Fenster finden | `cua-driver` | `cua-driver call list_windows` |
+  | Elemente cachen | `cua-driver` | `cua-driver call get_window_state(pid, wid)` |
+  | Button klicken | `cua-driver` | `cua-driver call click(pid, wid, idx)` |
+  | Text eingeben | `cua-driver` | `cua-driver call set_value(pid, wid, idx, text)` |
+  | Tastendruck | `cua-driver` | `cua-driver call press_key(pid, "return")` |
+  | Navigieren | `cua-driver` | click addr_bar → set_value URL → press_key return |
+  | Daemon starten | `nohup` | `nohup cua-driver serve > /tmp/cua-daemon.log 2>&1 &` |
+  | System-Scan | `macos-ax-cli` | `macos-ax-cli elements --pid X` (NUR Finden!) |
+
+  ## ✅ ALLOWED (skylight-cli ONLY mit window-id + element-index)
+
+  ### ✅ skylight-cli (NEU – mit get_window_state + element_index!)
+
+  **AB v0.2.0+ mit `--element-index` und `--window-id` Support**
+
+  | Tool                                                               | Befehl                                | Wofür                |
+  | ------------------------------------------------------------------ | ------------------------------------- | -------------------- |
+  | `skylight-cli list_windows`                                        | Alle Fenster sehen (auch Popups!)     | Popup-Erkennung      |
+  | `skylight-cli get_window_state --pid --window-id`                  | NUR Elemente im Popup                 | Gezielte Interaktion |
+  | `skylight-cli click --pid --window-id --element-index`             | Klick GARANTIERT im richtigen Fenster | Sichere Ausführung   |
+  | `skylight-cli set_value --pid --window-id --element-index --value` | Text im Popup                         | Texteingabe          |
+
+  ### ✅ skylight-cli (wenn nur 1 Fenster)
+
+  | Befehl                                     | Wofür                                                   |
+  | ------------------------------------------ | ------------------------------------------------------- |
+  | `skylight-cli list-elements --pid`         | Alle Elemente (alle Fenster)                            |
+  | `skylight-cli click --pid --element-index` | Klick (RISKANT bei Popups: klickt ins falsche Fenster!) |
+
+  ### ✅ playstealth launch
+
+  ```bash
+  playstealth launch --url 'https://heypiggy.com/?page=dashboard'
+  ```
+
+  ### ✅ Nemotron Omni Vision
+
+  ```bash
+  model: nvidia/nemotron-3-nano-omni-30b-a3b-reasoning
+  endpoint: https://integrate.api.nvidia.com/v1/chat/completions
+  ```
+
+  ### ❌ `--remote-allow-origins=*` ohne Anführungszeichen (2026-05-07)
+
+  ```bash
+  # ❌ FALSCH — zsh/bash expandiert * als Glob-Muster!
+  --remote-allow-origins=*
+  # → zsh: no matches found: --remote-allow-origins=*
+  # → Chrome startet GAR NICHT!
+  ```
+
+  **Korrekt**: IMMER mit Anführungszeichen:
+  ```bash
+  --remote-allow-origins="*"
+  ```
+
+  **Belege**: `session-log-2026-05-06.md` (VERIFIED nach Reboot), `commands/chrome/cdp-start.md` Zeile 14.
+
+  ### ❌ `--user-data-dir=~/tmp/chrome-instance-B` (fixed profile) (2026-05-07)
+
+  ```bash
+  # ❌ FALSCH — Corrupted profile, stale cookies, login state broken!
+  --user-data-dir=~/tmp/chrome-instance-B
+
+  # ❌ AUCH FALSCH (commit 637d2c1, 1685138, 1ff848a — ALLE FALSCH!)
+  profile_dir = "~/tmp/chrome-instance-B"  # FIXED, not timestamped!
+  ```
+
+  **Korrekt**: IMMER timestamped, frisches Profil:
+  ```bash
+  --user-data-dir="/tmp/heypiggy-new-$(date +%s)"
+  ```
+
+  **Belege**: `session-log-2026-05-06.md` Zeile 12-17 (VERIFIED nach MAC Reboot, Balance 1.26€, 12 Surveys).
+
+  ## 🔥 TRIO LAYER (DIE EINZIG RICHTIGE METHODE)
+
+  ```
+  EYES:  skylight-cli list_windows (250ms Polling) → Popup erkannt!
+  BRAIN: Omni analysiert → "Weiter" Button Index 35 im Google Popup
+  HANDS: skylight-cli click --pid 42296 --window-id 30380 --element-index 35
+         → GARANTIERT im Popup, nicht auf Hauptseite!
+  ```
+
+  ## 🛠️ POPUP-TOOLS (MCP + CLI, 2026-05-02)
+
+  ```bash
+  # Popup-MCP (7 tools via cua-driver)
+  python cli/popup-mcp.py
+  # Tools: popup_list_windows, popup_get_elements, popup_click, popup_type,
+  #        popup_find_button, popup_is_closed, popup_daemon_start
+
+  # HeyPiggy Login: CUA-only 7-Schritt-Flow (siehe brain.md)
+  # KEIN heypiggy_login_box.py mehr!
+
+  # CLI-Wrapper
+  cli/popup list-windows <PID>              # Alle Popup-Fenster
+  cli/popup click <PID> <WID> <INDEX>       # Klick via cua-driver AXPress
+
+  ## ❌ Audio via JS aus blob: URL extrahieren (2026-05-04)
+
+  ```python
+  # ❌ FALSCH – Blob-URLs sind durch CORS/Security geschützt!
+  fetch(video.src)  # → Failed to fetch
+  xhr.responseType = 'blob'  # → xhr error
+  video.captureStream()  # → blockiert bei MSE/EME
+  new AudioContext().decodeAudioData(arrayBuffer)  # → fetch schlägt fehl
+  ```
+
+  **Korrekt**: System-Audio via BlackHole + ffmpeg aufnehmen:
+  ```bash
+  SwitchAudioSource -t output -s "BlackHole 2ch"
+  ffmpeg -f avfoundation -i ":BlackHole 2ch" -t 6 /tmp/audio.wav
+  SwitchAudioSource -t output -s "MacBook Pro-Lautsprecher"
+  # → WAV an NVIDIA Omni senden
+  ```
+
+  ## ❌ CDP Fetch Domain für Media-Interception (2026-05-04)
+
+  ```python
+  # ❌ FALSCH – MSE-Segmente erscheinen nicht als separate Fetch-Events!
+  ws.send('{"method":"Fetch.enable"...}')
+  ```
+
+  **Korrekt**: `URL.createObjectURL` Override VOR dem Laden der Seite injizieren.
+
+  ## ❌ Nach clickSurvey() in neuen Tabs suchen (2026-05-04)
+
+  ```python
+  # ❌ FALSCH – Surveys erscheinen IN-PAGE, nicht als neuer Tab!
+  ws.send({"method": "Target.getTargets"})
+  # → Keine Tabs → "CPX API liefert keine Surveys" ❌
+  ```
+
+  **Korrekt**: Nach clickSurvey() 8s warten, AX-Tree rescanen:
+  ```python
+  time.sleep(8)
+  tree = cua.get_window_state(pid, wid)  # Suche nach In-Page Buttons!
+  ```
+
+  ## ✅ AUDIO PIPELINE (2026-05-04, NEU)
+
+  ### BlackHole Installation
+  | Schritt | Befehl |
+  |---------|--------|
+  | SIP prüfen | `csrutil status` → disabled required |
+  | Install | `brew install blackhole-2ch` |
+  | Manuell | pkg aus Cache: `sudo installer -pkg /path/to/BlackHole2ch.pkg -target /` |
+  | Aktivieren | `sudo killall -9 coreaudiod` (Neustart) |
+  | Check | `SwitchAudioSource -a \| grep BlackHole` |
+
+  ### Audio-Capture Befehl
+  ```bash
+  # 1. Aktuelles Output merken
+  ORIG=$(SwitchAudioSource -c)
+
+  # 2. Auf BlackHole umschalten
+  SwitchAudioSource -t output -s "BlackHole 2ch"
+
+  # 3. Aufnehmen
+  ffmpeg -f avfoundation -i ":BlackHole 2ch" -t 6 -acodec pcm_s16le -ar 44100 -ac 1 /tmp/audio.wav -y
+
+  # 4. Zurückschalten
+  SwitchAudioSource -t output -s "$ORIG"
+  ```
+  # BANNED EMAIL: devjerro@gmail.com — NUR zukunftsorientierte.energie@gmail.com
+
+  | 2026-05-05 | cliclick + CDP dispatchEvent BANNED | [incidents/2026-05-05-1430.md](incidents/2026-05-05-1430.md) |
+  | 2026-05-06 | GoCaptcha Slide: CDP Input.dispatchMouseEvent als letzte Lösung | [incidents/2026-05-06-gocaptcha-slide-cdp.md](incidents/2026-05-06-gocaptcha-slide-cdp.md) |
+
+  ## 🔴 cliclick — ABSOLUT BANNED (2026-05-05)
+  - **Grund**: Mausbewegung! Verstößt gegen CUA-ONLY Architektur.
+  - **Warum**: cliclick simuliert Mausbewegung — genau wie pyautogui/pynput.
+  - **Konsequenz**: CUA-ONLY = NUR cua-driver AXPress. KEINE Maus.
+  - **Ersatz**: `cua-driver call drag` (AX-basiert) oder Survey abbrechen.
+
+  ## 🔴 CDP dispatchEvent — ABSOLUT BANNED (2026-05-05)
+  - **Grund**: CDP für Interaktion verwendet. CUA-ONLY Architektur.
+  - **Warum**: dispatchEvent ist CDP-JS-Injection zur Interaktion.
+  - **Konsequenz**: NUR cua-driver für ALLE Interaktionen. Kein CDP-JS.
+
+  ### 🟢 AUSNAHME: CDP Input.dispatchMouseEvent für GoCaptcha Slide (2026-05-06)
+  - **ERLAUBT**: CDP `Input.dispatchMouseEvent` ausschließlich für captcha slide drag
+  - **Grund**: cua-driver `drag` erzeugt KEINE DOM-MouseEvents in Chromium's sandboxed Renderer
+  - **Limitation**: NUR für GoCaptcha/ähnliche JS-Slide-Captchas. cua-driver muss primär probiert werden
+  - **Nicht erlaubt**: Navigation, normale Klicks, Form-Interaktion, dispatchEvent (JS)
+  - **Beleg**: [incidents/2026-05-06-gocaptcha-slide-cdp.md](incidents/2026-05-06-gocaptcha-slide-cdp.md)
+  - **Command**: [commands/captcha/solve-slide-cdp.md](commands/captcha/solve-slide-cdp.md)
+
+
+  ## --- LEGACY (RESTORE PASS — #95): benchmarks.md ---
+
+  > Verbatim content of `benchmarks.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # benchmarks.md
+
+
+  ## --- LEGACY (RESTORE PASS — #95): brain.md ---
+
+  > Verbatim content of `brain.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # brain.md — Architektur-Entscheidungen & Systemwissen (2026-05-10)
+
+  > **Letztes Update**: 2026-05-10
+  > **← [sinrules.md](sinrules.md)**: Zentrale Regeln
+  > **← [AGENTS.md](AGENTS.md)**: Projekt-Wissensbasis
+  > **← [registry.md](registry.md)**: Command Index
+
+  ---
+
+  ## TOOL STACK (AKTUELL, 2026-05-10)
+
+  | Tool | Status | Verwendung |
+  |------|--------|------------|
+  | **CDP WebSocket** | ✅ PRIMARY | Browser-Interaktionen, Web-Content |
+  | **survey-cli/survey/graph/** | ✅ PRIMARY | LangGraph Survey-Agent |
+  | **cua-driver** | ⚠️ DEPRECATED | NUR native Popups/Sheets |
+  | **skylight-cli** | ⚠️ DEPRECATED | Window Capture (Legacy) |
+  | **playstealth launch** | ❌ BANNED | Profil 902, Port 9224, keine Cookie-Injection |
+  | **webauto-nodriver** | ❌ BANNED | ABSOLUT VERBOTEN |
+  | **decrypt_cookies.py** | ❌ BANNED | Chrome <147 only |
+
+  ---
+
+  ## LANGGRAPH SURVEY AGENT (AKTUELL, 2026-05-10)
+
+  **Location**: `survey-cli/survey/graph/` (5 Files)
+
+  ```
+  survey-cli/survey/graph/
+  ├── __init__.py         ← PUBLIC API (SurveyState, create_graph, run_survey_loop, delegate_task, SurveyGraphError)
+  ├── state.py            ← SurveyState dataclass (~434Z)
+  ├── nodes.py            ← 8 Graph Nodes (~753Z)
+  ├── graph.py            ← StateGraph Builder + run_survey_loop() ~379Z
+  └── opencode_tool.py    ← CLI Delegation
+
+  TOTAL: ~1770Z
+  ```
+
+  ### run_survey_loop() vs create_graph()
+
+  | Funktion | Dependency | Wann nutzen |
+  |----------|-----------|-------------|
+  | `run_survey_loop(state)` | **KEIN** LangGraph nötig | ✅ PRIMARY — cmd_run nutzt dies |
+  | `create_graph()` | LangGraph erforderlich | Future — Phase 4 |
+
+  **WICHTIG**: `run_survey_loop()` ist die standalone Implementierung — KEIN LangGraph. `cmd_run` in `survey.py` nutzt `run_survey_loop()`.
+
+  ### NEMO Loop (in run_survey_loop)
+
+  ```
+  Phase 1: Setup
+    ensure_chrome → open_survey → inject_cookies
+
+  Phase 2: NEMO Loop (jede Iteration inkrementiert!)
+    snapshot_node → decide_node → execute_node → detect_completion
+    Routing: snapshot (continue) | human_delegate (3× fail) | END
+
+  Phase 3: Balance lesen
+    balance_after = read_balance()
+  ```
+
+  ### 8 Graph Nodes
+
+  | Node | Funktion | Status |
+  |------|---------|--------|
+  | `ensure_chrome` | ChromeLauncher.launch_and_verify() | ✅ Implementiert |
+  | `open_survey` | SurveyOpener.open() | ✅ Implementiert |
+  | `inject_cookies` | Network.setCookies (7 Heypiggy-Cookies) | ✅ Implementiert |
+  | `snapshot_node` | CDP Runtime.evaluate inline JS | ✅ Implementiert |
+  | `decide_node` | Heuristic fallback (Placeholder) | ⚠️ NIM nicht integriert |
+  | `execute_node` | BatchExecutor.execute() | ✅ Implementiert |
+  | `detect_completion` | CompletionDetector | ✅ Implementiert |
+  | `human_delegate` | opencode CLI Delegation (3× failures) | ✅ Implementiert |
+
+  ---
+
+  ## CHROME START (REGELN 1-4)
+
+  ```bash
+  cp -R "$HOME/Library/Application Support/Google Chrome/Profile 901 (Jeremy)" /tmp/chrome-jeremy-heypiggy-9999
+
+  nohup "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+    --remote-debugging-port=9999 \
+    --remote-allow-origins="*" \
+    --force-renderer-accessibility \
+    --no-first-run \
+    --user-data-dir="/tmp/chrome-jeremy-heypiggy-9999" \
+    "https://www.heypiggy.com/?page=dashboard" &>/dev/null &
+
+  sleep 4
+  # Dann: 7 Heypiggy-Cookies injizieren aus ~/.stealth/heypiggy-backup/heypiggy-cookies.json
+  ```
+
+  ### 7 Heypiggy-Cookies (KRITISCH!)
+  - PHPSESSID, user_session, user_id, user_a_b_group, lang_pig, g_state, referer
+  - Backup: `~/.stealth/heypiggy-backup/heypiggy-cookies.json`
+  - Injektion: `Network.setCookies` (Batch in einem Call)
+
+  ---
+
+  ## cmd_run vs cmd_loop vs cmd_watch (survey.py)
+
+  | Command | Engine | Status |
+  |---------|--------|--------|
+  | `cmd_run` | `run_survey_loop()` (survey.graph) | ✅ REFRACTORED (2026-05-10) |
+  | `cmd_loop` | `SurveyRunner.run_loop()` | ⚠️ NOCH SurveyRunner (deprecated) |
+  | `cmd_watch` | `SurveyRunner.run_loop()` | ⚠️ NOCH SurveyRunner (deprecated) |
+
+  ### cmd_run (REFRACTORED 2026-05-10)
+  ```python
+  from survey.graph import SurveyState, run_survey_loop
+  state = SurveyState(survey_id=args.id, provider=provider, survey_url=survey_url)
+  final_state = run_survey_loop(state)
+  _print_result_graph(final_state)
+  ```
+  - Balance-Tracking: balance_before/balance_after
+  - Iteration: JEDE Iteration, nicht nur bei Actions
+  - survey_url field: für --url Argument Support
+  - NIM decide_node: Placeholder (kein echter API Call)
+
+  ---
+
+  ## SURVEY PROVIDER (BEKANNT)
+
+  | Provider | URL | Flow | Status |
+  |----------|-----|------|--------|
+  | Purespectrum | `purespectrum.com` | Cookie→ROBOT→Textarea→Visual→**Drag-Drop "Zahl X"** | ❌ BLOCKED |
+  | Samplicio.us | `rx.samplicio.us/consent/` | Consent→My-Take | ✅ |
+  | TolunaStart | `enter.ipsosinteractive.com` | `cf-radio-answer` class | ✅ |
+  | Cint | `sw.cint.com/Session/` | Session→Fragen | ✅ |
+  | Nfield/Kantar | `nfieldeu-interviewing.nfieldmr.com` | Audio/Video (blob) | 🔄 |
+  | Qualtrics | various | Matrix/Radio/Dropdown | 🔄 |
+
+  ---
+
+  ## DRAG-DROP PUZZLE (BLOCKED)
+
+  **Problem**: Angular CDK PointerEvents werden blockiert.
+  **Location**: `purespectrum.py:solve_drag_puzzle()` — BROKEN
+  **Fix needed**: PointerEvent-Simulation auf DOM-Ebene via `Runtime.evaluate`
+  **Siehe**: AGENTS.md §11.3
+
+  ---
+
+  ## BANNED (NIEMALS VERWENDEN)
+
+  - `pkill -f "Google Chrome"` → tötet USER Chrome!
+  - `killall Google Chrome` → tötet ALLE Chrome!
+  - `playstealth launch` → keine Cookie-Injection, Profil 902
+  - `webauto-nodriver` → ABSOLUT VERBOTEN
+  - `decrypt_cookies.py` → Chrome <147 only
+  - `launch_parallel.py` → ❌ DELETED (2026-05-09) — verschlüsselte Cookies, Profil 902
+  - Hardcoded PIDs → dynamisch!
+
+  ---
+
+  ## KEY FILES (AKTUELL)
+
+  ```
+  CHROME START         → AGENTS.md REGELN 1-4
+  SURVEY RUN (cmd_run)  → survey-cli/survey.py:cmd_run() → survey_cli.survey.graph.run_survey_loop()
+  LANGGRAPH AGENT      → survey-cli/survey/graph/ (state.py, nodes.py, graph.py, opencode_tool.py, __init__.py)
+  SURVEY AGENT API     → survey-cli/survey/graph/__init__.py (PUBLIC API)
+  FASTAPI ENDPOINTS    → agent-toolbox/api/survey_tools.py
+  CHROME KILL          → survey/chrome.py:safe_kill_bot()
+  CAPTCHA SOLVE        → stealth-captcha/src/stealth_captcha/cli.py
+  NVIDIA VISION        → stealth-captcha/src/stealth_captcha/solver/text.py:PixtralCaptchaBackend
+  NVIDIA NIM           → survey/nim.py (Placeholder)
+  ```
+
+  ---
+
+  ## GITHUB ISSUES (AKTUELL)
+
+  - SR-38 bis SR-49 (12 Issues in "Survey-Agent-v1" Milestone)
+  - SR-39: ✅ cmd_run → run_survey_loop() (DONE 2026-05-10)
+  - SR-40: ⏳ cmd_watch → Graph invoke (TODO)
+  - SR-41: ✅ balance_before/balance_after (DONE 2026-05-10)
+  - SR-42: ⏳ POST /survey/run-graph FastAPI (TODO)
+
+  ---
+
+  ## VERALTET / GELÖSCHT (DO NOT USE)
+
+  - `src/stealth_survey/` → INTENTIONALLY DELETED 2026-05-08
+  - `app/` → INTENTIONALLY DELETED 2026-05-08
+  - `plans/01-canonical-engine.md` → GELÖSCHT
+  - `plans/01-survey-agent-langgraph-fastapi.md` → MASTER PLAN (GILT NOCH!)
+  - `survey-cli/survey/runner.py` → deprecated (893Z, noch in use von cmd_loop/cmd_watch)
+  - `survey-cli/survey/plan.md` → GELÖSCHT
+
+  ---
+
+  *Update 2026-05-10: brain.md komplett umgeschrieben. Alte CUA-ONLY Stack Dokumentation ist obsolet. cmd_run nutzt jetzt run_survey_loop(). Alte Login-Logs (15k+ Zeilen) sind entfernt.*
+
+  ## --- LEGACY (RESTORE PASS — #95): commands.md ---
+
+  > Verbatim content of `commands.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # commands.md – Alle wichtigen Befehle
+
+  > **← [sinrules.md](sinrules.md) ist das zentrale Regelwerk.**
+  > **← [AGENTS.md](AGENTS.md) listet alle Tool-Befehle.**
+
+  ---
+
+  ## CDP+AX Trinity (LEGACY/DEPRECATED)
+
+  ```bash
+  # Chrome starten (DEPRECATED — use NEMO instead!)
+  playstealth launch --url 'https://accounts.google.com/ServiceLogin'
+  # → {"pid": DYNAMIC_PID, "cdp_port": DYNAMIC_PORT, "cdp_ws": "ws://127.0.0.1:DYNAMIC_PORT"}
+  ```
+
+  ### NEMO PRIMARY (REPLACEMENT)
+  ```python
+  # Compact Snapshot → NIM Decision → Batch Execute
+  from src.stealth_survey import SurveyAgent
+  agent = SurveyAgent()
+  result = agent.run_survey(session, profile)  # 1 LLM call per page!
+  ```
+
+  ---
+
+  ## Google Login FLOWS
+
+  > ⚠️ **NEMO UPDATE 2026-05-06**: `auto_google_login.py` is the AUTHORITATIVE Google Login flow.
+  > CDP+AX Trinity patterns (`cdp_click.py`, `asyncio.run`) are DEPRECATED.
+  > See AGENTS.md § Google Login for the verified CUA-only 6-step flow.
+
+  ### FLOW A — Frischer Browser (keine Cookies)
+  ```bash
+  # 1. Email (cdp_click)
+  asyncio.run(type_by_label(pid, port, 'E-Mail oder Telefonnummer', EMAIL))
+
+  # 2. Weiter (cdp_click)
+  asyncio.run(click_by_label(pid, port, 'Weiter', 'button'))
+
+  # 3-6. ... Passkey + Consent via cua
+  ```
+
+  ### FLOW B — Cookies cached
+  ```bash
+  # 1. Konto klicken (cdp_click)
+  asyncio.run(click_by_label(pid, port, 'zukunftsorientierte.energie@gmail.com', 'link'))
+
+  # 2. Weiter (cdp_click)
+  asyncio.run(click_by_label(pid, port, 'Weiter', 'button'))
+  ```
+
+  ### FLOW C — Google-Login-in-Google
+  ```bash
+  # 1. Email → Weiter
+  asyncio.run(type_by_label(pid, port, 'E-Mail oder Telefonnummer', EMAIL))
+  asyncio.run(click_by_label(pid, port, 'Weiter', 'button'))
+
+  # 2. Andere Option wählen
+  asyncio.run(click_by_label(pid, port, 'Andere Option wählen', 'button'))
+
+  # 3. Passwort eingeben (Link)
+  asyncio.run(click_by_label(pid, port, 'Passwort eingeben', 'link'))
+
+  # 4. Passwort tippen + Weiter
+  asyncio.run(type_by_label(pid, port, 'Passwort eingeben', PASSWORD))
+  asyncio.run(click_by_label(pid, port, 'Weiter', 'button'))
+  ```
+
+  ---
+
+  ## cua-driver (Popups, Sheets, Dialogs)
+
+  ```bash
+  # Daemon starten (einmalig)
+  cua-driver serve &
+
+  # Popup finden
+  cua-driver call list_windows '{}'
+
+  # Popul-Elemente laden
+  cua-driver call get_window_state '{"pid":PID,"window_id":WID}'
+
+  # Im Popup klicken
+  cua-driver call click '{"pid":PID,"window_id":WID,"element_index":N,"action":"press"}'
+
+  # Wert setzen
+  cua-driver call set_value '{"pid":PID,"window_id":WID,"element_index":N,"value":"text"}'
+  ```
+
+  ---
+
+  ## skylight-cli (Fallback, Hauptfenster)
+
+  ```bash
+  # Elemente listen (NUR zum Finden, NICHT zum Index-Klicken!)
+  skylight-cli list-elements --pid PID
+
+  # Screenshot
+  skylight-cli screenshot --pid PID --mode som --output /tmp/step.png
+
+  # Klick (FALLBACK — wenn CDP nicht verfügbar)
+  skylight-cli click --pid PID --element-index N
+  ```
+
+  ---
+
+  ## macos-ax-cli (System-Scan, NUR Finden)
+
+  ```bash
+  # Alle Fenster systemweit
+  macos-ax-cli windows list
+
+  # Text systemweit suchen
+  macos-ax-cli find "Fortfahren"
+
+  # Elemente einer App
+  macos-ax-cli elements --pid PID
+  ```
+
+  ---
+
+  ## Automatisierter Survey
+
+  ```bash
+  # Live Omni Monitor
+  python3 -c "from runner.live_omni_monitor import LiveOmniMonitor; m=LiveOmniMonitor(debug=True); m.start(); m.run_continuous(max_steps=50)"
+
+  # Autonomous Daemon
+  python -m stealth_runner.autonomous_daemon start
+  python -m stealth_runner.autonomous_daemon status
+  ```
+
+  ---
+
+  ## Dokumentation
+
+  ```bash
+  # Knowledge Graph
+  graphify update .
+  graphify query "Wie funktioniert CDP+AX Trinity?"
+
+  # Architecture Guard
+  semgrep --config=.semgrep_rules.yaml .
+
+  # Doctor Audit
+  python3 runner/doctor_cli.py
+  ```
+
+  ---
+
+  ## Captcha Solving (Normal Captcha / Simple Text Captcha)
+
+  ```bash
+  # 1. tmux Session starten (Browser bleibt offen!)
+  tmux new-session -d -s captcha
+  tmux send-keys -t captcha "python3 /tmp/captcha_simple.py" C-m
+  sleep 8
+
+  # 2. Full Page Scan
+  tmux send-keys -t captcha "scan" C-m
+  sleep 2
+  tmux capture-pane -p -t captcha -S -50
+
+  # 3. Screenshot + NVIDIA Vision
+  tmux send-keys -t captcha "ss" C-m
+  sleep 2
+  tmux send-keys -t captcha "nvidia" C-m
+  sleep 12
+  tmux capture-pane -p -t captcha -S -5
+  # → Captcha-Text aus reasoning (Regex: "([A-Z0-9]+)")
+
+  # 4. Antwort + Submit
+  tmux send-keys -t captcha "answer CAPTCHA_TEXT" C-m
+  sleep 1
+  tmux send-keys -t captcha "submit" C-m
+  sleep 3
+  tmux capture-pane -p -t captcha -S -5
+  ```
+
+  **Wichtig:** Browser in tmux OFFEN lassen! Nie schließen zwischen Steps!  
+  **NVIDIA reasoning Feld parsen** — content ist immer None!  
+  **Full Page Scan** vor jeder Aktion!
+
+  ### Survey In-Page Flow
+
+  ```python
+  # clickSurvey öffnet IN-PAGE (kein neuer Tab!)
+  from cli.modules.survey_runner import scan_surveys, start_survey
+
+  # 1. Login
+
+  # 2. Survey scannen + starten
+  surveys = scan_surveys(pid)  # Findet Tab mit .survey-item
+  start_survey(pid, surveys[0]["id"])
+
+  # 3. WARTEN (8s) und AX-Tree rescanen nach In-Page Modal
+  # Suche: "Umfrage starten", "Starten", ">>", "Willkommensbonus"
+  ```
+
+  ### Audio Capture Pipeline
+
+  ```bash
+  # Voraussetzung: BlackHole installiert (SIP deaktiviert)
+  python3 -m cli.modules.audio_capture --check
+  python3 -m cli.modules.audio_capture --capture --duration 6 --analyze
+
+  ## 🔄 CUA-ONLY SURVEY LOOP (2026-05-04)
+
+  ### Vor jeder Aktion
+  ```bash
+  # Fenster frisch finden (NIE hartcodiert!)
+  cua-driver call list_windows | grep "PID\|title"
+
+  # AX-Tree laden mit depth>5 Filter
+  cua-driver call get_window_state '{"pid":PID,"window_id":WID}'
+  ```
+
+  ### Klicken (NUR depth>5 Elemente!)
+  ```bash
+  # Button finden: AXButton mit Label im Tree suchen, depth prüfen
+  cua-driver call click '{"pid":PID,"window_id":WID,"element_index":IDX,"action":"press"}'
+  ```
+
+  ### Text eingeben
+  ```bash
+  # Erst klicken (fokussieren), dann set_value
+  cua-driver call click '{"pid":PID,"window_id":WID,"element_index":IDX,"action":"press"}'
+  cua-driver call set_value '{"pid":PID,"window_id":WID,"element_index":IDX,"value":"TEXT"}'
+  ```
+
+  ### Nach jeder Aktion: Status-Check
+  ```bash
+  # Hat sich der Seiteninhalt geändert?
+  cua-driver call get_window_state '{"pid":PID,"window_id":WID}'
+
+  # Sind neue Fenster/Tabs offen?
+  cua-driver call list_windows
+
+  # Button DISABLED? → warten, andere Felder prüfen
+  # Button ENABLED?  → klicken
+  ```
+
+  ### Wann welcher Befehl?
+  | Befehl | Wann | Warum |
+  |--------|------|-------|
+  | list_windows | Vor JEDEM Schritt | WID kann sich ändern |
+  | get_window_state | Vor JEDEM Klick | Indices sind instabil |
+  | depth > 5 FILTER | IMMER | Filtert Browser-Chrome |
+  | click | Nur wenn ENABLED | DISABLED = andere Felder fehlen |
+  | set_value | Nach click auf Feld | Erst fokussieren, dann schreiben |
+
+  ## 🔒 Captcha lösen (NVIDIA Vision)
+
+  ```bash
+  # Captcha-Bild auslesen + NVIDIA Omni lösen
+  cd /Users/jeremy/dev/stealth-runner && source .env
+
+  # Captcha-Refresh + Solve + Type + Next in einem
+  python3 -c "
+  import ..., httpx, subprocess
+  # Captcha-Bild aus Seite holen → base64
+  # NVIDIA API: nemotron-3-nano-omni
+  # max_tokens=20, temperature=0
+  # Antwort aus reasoning oder content extrahieren
+  # cua-driver set_value + click Go to next question
+  "
+  ```
+
+  ## ⚡ stealth-exec (schnelle Befehle über Daemon)
+
+  ```bash
+  # Daemon starten
+  stealth-session start
+
+  # Befehle (<50ms Antwortzeit)
+  stealth-exec cua-touch --action click --label "Männlich"
+  stealth-exec context --action get_all
+  stealth-exec context --action get_oauth
+  stealth-exec cua-touch --action get_state
+  stealth-exec cdp-js --expression "document.title"
+  ```
+
+  ## 🔒 Verify-Box (Aktion verifizieren)
+
+  ```bash
+  # Nach jeder Aktion mit verify: true prüfen
+  stealth-exec cua-touch --action click --label "Männlich" -j '{"verify": true}'
+  # → {"success": true/false, "verify": {"success": bool, "details": "selected/not selected"}}
+
+  # Was die Verify-Box prüft:
+  # - click RadioButton → AXSelected = true?
+  # - click CheckBox → checked state?
+  # - set_value Text → Text im Feld?
+  # - cdp-js → Rückgabewert existiert?
+  ```
+
+  ## 🛡️ stealth-session (Daemon)
+
+  ```bash
+  # Daemon starten
+  stealth-session start
+
+  # Befehle mit Verify (AUTOMATISCH validiert)
+  stealth-exec cua-touch --action click --label "Männlich" --verify
+  stealth-exec cua-touch --action set_value --label "E-Mail" -j '{"value":"test@mail.com","verify":true}'
+
+  # Kontext abfragen (WindowManager)
+  stealth-exec context --action get_all
+  stealth-exec context --action get_oauth
+  stealth-exec context --action get_heypiggy
+
+  # IdiotProofGuard schützt automatisch vor:
+  # - Falsche PID/WID → Reparatur
+  # - CDP-JS dispatchEvent → Block
+  # - time.sleep(≥4) → Block
+  # - Kein verify → Automatisch
+  # - 3 Fehler → STOP
+  ```
+
+
+  ## --- LEGACY (RESTORE PASS — #95): design.md ---
+
+  > Verbatim content of `design.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # design.md
+
+
+  ## --- LEGACY (RESTORE PASS — #95): faq.md ---
+
+  > Verbatim content of `faq.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # faq.md
+
+
+  ## --- LEGACY (RESTORE PASS — #95): fix.md ---
+
+  > Verbatim content of `fix.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # fix.md – ALL Fixes
+
+  > **← [sinrules.md](sinrules.md) ist die zentrale Regeldatei. §2 definiert Banned-Patterns.**
+  > **← [issues.md](issues.md) dokumentiert das Index-Problem.**
+  > **← [brain.md](brain.md) dokumentiert die NEMO Architektur.**
+
+  ---
+
+  | 2026-05-05 | CUA-ONLY verletzt: cliclick+CDP dispatchEvent | [incidents/2026-05-05-1430.md](incidents/2026-05-05-1430.md) |
+  | 2026-05-06 | GoCaptcha Slide: CDP Input.dispatchMouseEvent als Lösung | [incidents/2026-05-06-gocaptcha-slide-cdp.md](incidents/2026-05-06-gocaptcha-slide-cdp.md) |
+  | 2026-05-06 | NEXT-GEN: 4 Root Causes gefixt + Crash-tested | [learn.md §M](learn.md) |
+
+  ## 🔴 2026-05-06 NEXT-GEN: 4 Root Causes (CRASH-TESTED ✅)
+
+  ### P0: Pre-Qualifiers SKIPPED
+  **Root Cause:** `run_loop()` line 490: `if survey.get("provider") == "pre_qualifier": continue`
+  → 75% (9/12) Surveys wurden ignoriert. `handle_pre_qualifier()` existierte aber nie aufgerufen.
+
+  **Fix:** `continue` ersetzt durch `handle_pre_qualifier(survey_id, survey)`.
+  Zusätzlich: `message_button` an POST angehängt (CPX API erfordert das).
+  Pre-Qualifier Failure Cache vermeidet redundante API Calls.
+  `started_count` statt Loop-Index für max_surveys Tracking.
+
+  **Dateien:** `survey/runner.py` (~40 lines changed)
+  **Tests:** 13 (test_prequalifier.py)
+  **Verifiziert:** LIVE — 6 Pre-Qualifiers verarbeitet, 0 skipped ✅
+
+  ### P1: Zero Stealth Injection
+  **Root Cause:** `Target.createTarget` öffnet neuen Tab ohne Stealth-Overrides.
+  `navigator.webdriver = true` → PureSpectrum/Cint erkennen Automation.
+
+  **Fix:** 3-Phasen Tab-Erstellung: (1) `create_blank_tab()` → about:blank,
+  (2) `inject_stealth_to_tab()` → Page.addScriptToEvaluateOnNewDocument,
+  (3) `navigate_tab()` → Survey-URL. 12-Module Stealth Bundle (251 Zeilen).
+
+  **Dateien:** `survey/chrome.py` (+120 lines), `survey/stealth/injection.js` (new)
+  **Tests:** 19 (test_stealth.py)
+  **Verifiziert:** LIVE — `[STEALTH] ✅ Injected stealth JS into tab AAB87721` ✅
+
+  ### P1: Stale CDP WebSocket
+  **Root Cause:** `websocket.create_connection()` synchron, kein Reconnect.
+  Bei "No such target id" → Crash. Response-Routing broken in `_refresh_tab_ws()`.
+
+  **Fix:** `CDPConnection` Klasse (sync, 229 lines) mit:
+  - Exponential backoff retry (0.3→4.8s, 5 attempts)
+  - ID-based response routing (überspringt Events)
+  - Auto-reconnect bei "No such target"
+  - Context manager support
+
+  **Dateien:** `survey/cdp_client.py` (new), `survey/runner.py`, `survey/execute.py`
+  **Tests:** 15 (test_cdp_client.py)
+  **Verifiziert:** LIVE — 0 "No such target id" errors ✅
+
+  ### P3: Balance Read FAILS
+  **Root Cause:** `read_balance()` wurde NACH `Target.createTarget` aufgerufen.
+  → Dashboard WS stale → Balance immer 0.0€ → 8 completed surveys mit amount_eur: 0.0.
+
+  **Fix:** `balance_before` VOR Tab-Erstellung lesen (`try/except` → fallback 0.0).
+  `earned = max(0, balance_after - balance_before)` mit try/except.
+  `read_page_text` + `detect_error_page` als static methods zu BatchExecutor.
+
+  **Dateien:** `survey/runner.py` (~20 lines), `survey/execute.py` (~30 lines)
+  **Tests:** 5 (test_balance.py)
+  **Verifiziert:** LIVE — `[BALANCE] Before survey: 2.23€ | After: 2.23€ | Earned: +0€` ✅
+
+  ### Bonus Fixes (während Crash-Test entdeckt)
+  - `read_page_text` war in `scanner.py` aber wurde via `BatchExecutor.read_page_text()` aufgerufen → AttributeError. Als static method zu BatchExecutor hinzugefügt.
+  - `detect_error_page` ebenfalls als static method zu BatchExecutor.
+  - Pre-Qualifier Loop: `started_count` tracking damit fehlgeschlagene Pre-Qualifiers nicht max_surveys verbrauchen.
+  - `message_button` Parameter an CPX API POST (war vorher nicht enthalten → API akzeptierte Antwort nicht).
+
+  ## 🔴 KRITISCH: Survey-Test nach Persona-Fix NICHT wiederholt (2026-05-05, 15:15)
+
+  **Ursache**: Agent hat nach Persona-System-Fix (date_of_birth, age=32) den Survey-Test nicht mit
+  korrigiertem Alter wiederholt. Stattdessen wurde Doc-Infrastruktur ausgebaut (890 Dateien).
+
+  **Auswirkung**: Persona-Fix unverifiziert. Kein Beweis dass Survey mit "26-39" statt "40+" erfolgreich ist.
+
+  **Korrektur**: Survey-Test mit korrekter Persona (age=32 → Bracket 26-39) sofort nachholen.
+  Vor jeder Age-Frage: `resolve_answer(persona, question, options)` aufrufen.
+
+  **Prävention**: Nach jedem Fix MUSS der betroffene Flow erneut getestet werden.
+  Keine neuen Tasks vor Abschluss des Tests. Fehlercheck-Pflicht!
+
+  ---
+
+  ## 🔴 KRITISCH: Hartcodiertes Alter im Persona-System (2026-05-05, 14:22)
+
+  **Ursache**: AGENTS.md Zeile 512 enthielt `# Persona: ... männlich, 42` — hartcodiertes FALSCHES Alter.
+  `persona_manager.py` enthielt `DEFAULT_PERSONA = {"age": 34}` — auch falsch.
+  Das Korrekte Profil `jeremy_schulze.json` hatte `date_of_birth: ""` (LEER) — das Feld, das das korrekte Alter berechnet hätte.
+  Kein Agent hat vor dem Survey-Test das Profil geladen oder das Alter verifiziert.
+
+  **Auswirkung**: Survey-Disqualifikation bei "S1. What is your age?" — Agent wählte "40+" statt "26-39".
+  0.06€ verloren (nur 0.03€ Compensation). Geldbeutel: 1.17€ → 1.20€.
+
+  **Korrektur** (3 Dateien):
+  1. `A2A-SIN-Worker-heypiggy/profiles/jeremy_schulze.json`:
+     - `date_of_birth`: `""` → `"1993-11-13"` (→ berechnet age=32)
+     - `city`: `""` → `"Berlin"`, `postal_code`: `""` → `"10785"`
+     - `employment_status`: `""` → `"full_time"`, `occupation`: `""` → `"Angestellter"`
+     - `education_level`: `""` → `"Meister"`, `household_size`: `0` → `2`
+  2. `AGENTS.md` Zeile 503-512: Hartcodierte Persona entfernt → Profil-System-Referenz
+  3. `persona_manager.py`:
+     - `DEFAULT_PERSONA`: `"age": 34` → ENTFERNT, `"date_of_birth": "1993-11-13"` hinzugefügt
+     - `"education": "Bachelor"` → `"Meister"`, `"employment": "Full-time"` → `"full_time"`
+     - `"household_size": 2` (korrigiert)
+
+  **Betroffene Dateien**:
+  - `/Users/jeremy/dev/stealth-runner/AGENTS.md` (Zeile 503-520)
+  - `/Users/jeremy/dev/A2A-SIN-Worker-heypiggy/profiles/jeremy_schulze.json`
+  - `/Users/jeremy/dev/playstealth-cli/playstealth_actions/persona_manager.py`
+
+  **Prävention**: Vor JEDER Survey-Demografie-Frage MUSS `persona.resolve_answer()` aufgerufen werden.
+  Kein hartcodiertes Alter mehr — NUR aus `date_of_birth` berechnen.
+
+  ---
+
+  ## 🔴 KRITISCH: Survey-Suche in neuen Tabs statt In-Page (2026-05-04)
+
+  ### Symptom
+  clickSurvey() wird aufgerufen, aber ich suche nach neuen Tabs:
+  ```python
+  Target.getTargets()  # → findet nichts → "Surveys öffnen sich nicht" ❌
+  ```
+
+  ### Root Cause
+  clickSurvey() öffnet den Survey als IN-PAGE Modal im Dashboard (showTypeOkay/showTypeQuestion).
+  Der Inhalt erscheint im selben Tab, nicht als neuer Browser-Tab.
+
+  ### Fix
+  Nach clickSurvey() den AX-Tree rescanen:
+  ```python
+  time.sleep(8)  # Warten auf API-Response
+  tree = cua.get_window_state(pid=pid, window_id=wid)
+  # Suche nach: "Umfrage starten", "Starten", ">>", "Willkommensbonus"
+  ```
+
+  ### Prävention
+  - NIEMALS Target.getTargets() nach Survey-Start
+  - IMMER AX-Tree rescanen nach In-Page Content
+  - "Willkommensbonus-Strecke" = erfolgreicher Survey!
+
+  ---
+
+  ## 🔴 KRITISCH: skylight-cli element-index Instabilität (2026-05-03)
+
+  ### Symptom
+  `skylight-cli click --pid X --element-index 29` klickt ein Browser-Icon statt "Weiter".
+  Der User: *"du hast ein icon in der browser leiste angeklickt statt weiter button"*
+
+  ### Root Cause
+  `skylight-cli list-elements` returned **flachen AX-Baum** mit Browser-Chrome + Web-Content.
+  Der Index verschiebt sich während Page-Load.
+
+  ### Lösung: CDP+AX Trinity (LEGACY/DEPRECATED — 2026-05-03)
+  **Fusioniert aus 3 Forschungsansätzen + 120+ analysierten Webseiten:**
+
+  | Ansatz | Genutzt als |
+  |--------|-------------|
+  | CDP `Accessibility.queryAXTree()` | FIND: NUR Web-Content |
+  | CDP `DOM.getContentQuads()` | LOCATE: Bounding Box |
+  | `AXUIElementCopyElementAtPosition()` + `AXPress` | CLICK: Positionsbasiert |
+  | `AXEnhancedUserInterface = true` | Unterstützt vollen AX-Tree |
+  | skylight-cli `find_by_label` | Fallback |
+  | cua-driver `get_window_state` click | Popup-Fallback |
+
+  ### Implementierung (NEMO ersetzt dies)
+  **Modul**: `cli/modules/cdp_click.py` (LEGACY/DEPRECATED — ersetzt durch [src/stealth_survey/](src/stealth_survey/))
+
+  ```python
+  async def click_by_label(pid, cdp_port, label, role):
+      """CDP queryAXTree → bounding box → AXPress"""
+      ws = await _connect_cdp(cdp_port)
+      backend_id = await _query_ax(ws, label, role)
+      quad = await _get_quad(ws, backend_id)
+      center = ((quad[0] + quad[2]) / 2, (quad[1] + quad[3]) / 2)
+      return _ax_click_at(pid, *center)
+  ```
+
+  **Key Fixes:**
+  - Word-Boundary in Label-Matching (`\bWeiter\b` ≠ "Weitere")
+  - CDP liefert NUR Web-Content (kein Browser-Chrome)
+  - Position-basiert statt Index-basiert (stabil)
+
+  ---
+
+  ## ✅ E2E LOGIN FIX (2026-05-03, PID 16811)
+
+  **Problem**: Passkey "Fortfahren" wurde nicht gefunden/geklickt.
+  **Root Cause**: 
+    1. Fortfahren ist IM Google OAuth Popup (nicht im Hauptfenster!)
+    2. Code nutzte skylight statt cua für Popup-Klicks
+    3. ax_scan stderr wurde nicht erfasst
+    4. Popup-Titel ändert sich → "Passkey" fehlte in title_patterns
+
+  **Lösung** (5 Commits):
+    1. `passkey_popup.py`: cua-only → `cua.get_window_state(popup_wid)` → find "Fortfahren" → `cua.click`
+    2. `consent_screen.py`: cua-only → kein skylight-Fallback mehr
+    3. `ax_scan.py`: stderr capture, robust JSON parsing
+     4. `cli/modules/auto_google_login.py` (cua-driver PRIMARY, CDP FALLBACK): VERIFIED 6-Step Flow mit Fortfahren-Click
+    5. `cua_popup.py`: "Passkey" zu title_patterns
+
+  ## ✅ MACOS-AX-CLI `find` funktioniert, `windows list` crashed
+  **Problem**: `macos-ax-cli windows list` → NSInvalidArgumentException crash
+  **Lösung**: Swift `[[String: Any]]` statt `__SwiftValue` für listAllWindowsDict()
+
+  ## ✅ ax_scan stderr Capture
+  **Problem**: macos-ax-cli schreibt Output nach stderr statt stdout.
+  **Fix**: `_run()` liest `r.stdout or r.stderr`.
+
+  ## 🔧 Word-Boundary Label Fix (2026-05-03)
+  **Problem**: `label_lower in el_label` matched "Weiter" in "Weitere Informationen"
+  **Fix**: `re.search(r'\b' + re.escape(label) + r'\b', el_label, re.IGNORECASE)`
+  **Betroffen**: `find_by_label()`, `_find_element()`, `_find_in_elements()`, `wait_for_element()`
+
+  ## 🔧 cua-touch Label Parsing
+  **Problem**: 3 verschiedene Label-Formate im AX-Tree
+  **Fix**: Parsing für `": \"Label\""`, `"= \"X\" (Label)"`, `"= \"X\""` Formate
+
+  ## 🔧 Prompt- und API-Fixes
+  - Nemotron Omni: `content > reasoning` Priority
+  - `max_tokens: 300 → 1000` (Reasoning braucht ~400 Tokens)
+  - Image Resize: 50% Thumbnail (960px) für API-Timeout-Fix
+  - Page Detection via AXWebArea-Label
+
+
+  ## ✅ LOGIN FIX — 2026-05-05T13:17:12.476681
+
+  ### Fehlerkette (was ALLES falsch war)
+  1. `list_windows` returns `{"windows": [...]}` nicht `[...]`
+  2. Windows haben `bounds` nicht `frame`
+  3. Kein `depth`-Feld in cua-driver Output
+  4. `playstealth launch` gibt mehrere JSON-Zeilen zurück
+  5. Google-Login-Button ist AXLink (nicht AXButton)
+  6. `click()` erwartet `" Performed "` aber cua-driver returned `"✅ Performed AXPress"`
+  7. Google-Login öffnet POPUP mit NEUER WID — alter Code blieb auf Heypiggy-WID
+  8. `type_text()` suchte `AXTextField` + "passwort" aber Mac-Keychain hat anderes Label
+  9. devjerro@gmail.com statt zukunftsorientierte.energie@gmail.com
+
+  ### Fixes
+  1. Parse `windows.get("windows", [])`
+  2. Verwende `bounds` statt `frame`
+  3. Keine depth-Prüfung mehr
+  4. Parse alle JSON-Zeilen von playstealth
+  5. Suche AXButton + AXLink
+  6. Checke `r.get("stdout","") and " " in r.get("stdout","")` 
+  7. Nach Step 1: `_find_wid(["google","anmelden","sign","accounts"])`
+  8. Nach Step 5: `_find_wid(["heypiggy","dashboard","guthaben"])`
+  9. zukunftsorientierte.energie@gmail.com
+
+  ### Tools die vergessen wurden
+  - **ax-graph** (SIN-CLIs) — Swift AX-Indexer, könnte WID-Findung beschleunigen
+  - **cua-touch MCP** — hat element_index Lookup
+
+  ## ❌ CRITICAL: orchestrator.py importiert gelöschte Datei — 2026-05-05
+
+  > **(2026-05-06: heypiggy_login_box.py replaced by cli/modules/auto_google_login.py)**
+
+  ### Symptom
+  `heypiggy_login_box.py` wurde gelöscht, ABER `orchestrator.py` (line 90) importiert noch daraus:
+  ```python
+  from cli.modules.heypiggy_login_box import heypiggy_login  # GELÖSCHT! → ImportError!
+  ```
+
+  ### Betroffene References (grep gefunden):
+  - `/Users/jeremy/dev/stealth-runner/app/core/orchestrator.py` → line 90 (CRITICAL!)
+  - `/Users/jeremy/dev/stealth-runner/AGENTS.md` → line 537 (auch!)
+  - `/Users/jeremy/dev/stealth-runner/learn.md` → dokumentiert aber OK
+  - `/Users/jeremy/dev/stealth-runner/bugs.md` → dokumentiert aber OK
+
+  ### Fix (Step-by-Step):
+  1. orchestrator.py → `from cli.modules.auto_google_login import execute as auto_google_login`
+  2. AGENTS.md → Pfad + Name aktualisieren
+  3. Verifizieren: grep "heypiggy_login_box" sollte NUR noch in Kommentaren sein
+
+  ### Korrekte Import-Kette:
+  ```
+  run_survey.py → survey_heypiggy.execute() → auto_google_login.execute()
+                              ↓
+                        orchestrator.run() → _dispatch_step("heypiggy_login") → auto_google_login
+  ```
+
+  ### REGEL: Nach dem Löschen einer Datei IMMER grep nach allen References suchen!
+
+  ---
+
+  ## 🔴 2026-05-07 LIVE DEBUGGING: 5 Fixes
+
+  ### Fix #5: Balance reads 125€ instead of 2.23€
+
+  **Root Cause:** `read_balance()` used `Math.max` across all numbers near the `€` sign.
+  The Level-Progress indicator displayed "125" adjacent to a `€` character, causing the max function to return 125€.
+
+  **Fix:** Changed JS logic to:
+  1. Only accept values in range `1.0 < val < 1000`
+  2. Check adjacent DOM lines for "Level" / "Min" keywords and skip those matches
+
+  ```js
+  if (val > 1.0 && val < 1000 && !adjacentLine.match(/(Level|Min)/i))
+  ```
+
+  **File:** `survey-cli/survey/scanner.py` — `read_balance()` function
+
+  **Verification:** Balance consistently reads 2.23€ (verified via CDP `Runtime.evaluate`).
+
+  ---
+
+  ### Fix #6: React form inputs not accepting .value assignment
+
+  **Root Cause:** React's synthetic event system ignores direct `.value = ` property assignments.
+  The native value setter is overridden by React's internal state management.
+
+  **Fix:** Use the native HTMLInputElement value setter descriptor + synthetic event dispatch:
+
+  ```js
+  const nativeSetter = Object.getOwnPropertyDescriptor(
+      HTMLInputElement.prototype, 'value'
+  ).set;
+  nativeSetter.call(el, val);
+  el.dispatchEvent(new Event('input', {bubbles: true}));
+  el.dispatchEvent(new Event('change', {bubbles: true}));
+  ```
+
+  **Alternative (text insertion):**
+  ```js
+  el.focus();
+  document.execCommand('insertText', false, val);
+  ```
+
+  **File:** `survey-cli/survey/snapshot.py` — `fill_by_id()` function
+
+  **Verification:** Zip=10785 and Age=53 accepted by form. "Nächster" button transitions from disabled to enabled.
+
+  ---
+
+  ### Fix #7: Multiple stacked modals blocking survey interaction
+
+  **Root Cause:** The heypiggy dashboard renders 7-9 layered modals at identical z-indices and screen coordinates. The survey card sits behind this stack and cannot receive click events.
+
+  **Fix:** Close all "Schließen" buttons via JS loop before clicking the survey card:
+
+  ```js
+  const btns = document.querySelectorAll('button');
+  for (let i = 0; i < btns.length; i++) {
+      if (btns[i].textContent === 'Schließen') btns[i].click();
+  }
+  ```
+
+  **File:** `survey-cli/survey/scanner.py` — injected before `clickSurveyCard()`
+
+  **Verification:** After closing modals, survey questions become visible and interactive. AX tree populated with survey radio buttons.
+
+  ---
+
+  ### Fix #8: Modal-only element snapshot scanning
+
+  **Root Cause:** `ELEMENT_EXTRACTOR_JS` scanned the entire `document.body`, including all stacked modals, producing 84+ element references — most from invisible background layers.
+
+  **Fix:** Added topmost modal detection by viewport center distance:
+
+  ```js
+  function topmostModal() {
+      const modals = document.querySelectorAll('[role="dialog"], .modal, [class*="modal"]');
+      const cx = window.innerWidth / 2, cy = window.innerHeight / 2;
+      let best = null, bestDist = Infinity;
+      for (const m of modals) {
+          const r = m.getBoundingClientRect();
+          const dist = Math.abs(r.left + r.width/2 - cx) + Math.abs(r.top + r.height/2 - cy);
+          if (dist < bestDist) { bestDist = dist; best = m; }
+      }
+      return best;
+  }
+  const scanRoot = topmostModal() || document.body;
+  ```
+
+  Elements found inside the modal get `inModal: true` flag for downstream filtering.
+
+  **File:** `survey-cli/survey/snapshot.py` — `ELEMENT_EXTRACTOR_JS` constant
+
+  **Verification:** Element count reduced from 84+ to 3-5 for modal-based surveys. Only visible interactive elements are captured.
+
+  ---
+
+  ### Fix #9: New tab detection for Qualtrics surveys
+
+  **Root Cause:** `clickSurvey()` navigates to an external Qualtrics URL that opens in a new browser tab. The CDP WebSocket remained connected to the dashboard tab — subsequent `Runtime.evaluate` calls ran against the wrong page.
+
+  **Fix:** Poll tab list via `http://127.0.0.1:9999/json` (HeyPiggy CDP) before and after `clickSurvey()`. Detect the new tab and connect to its WebSocket debugger URL:
+
+  ```python
+  import urllib.request, json
+
+  tabs = json.loads(urllib.request.urlopen('http://127.0.0.1:9999/json'))
+  # HINWEIS: Port 9224 ist DEPRECATED — HeyPiggy nutzt Port 9999!
+  # Dynamische PID ermitteln: curl http://127.0.0.1:9999/json | jq '.[].processId'
+  new_tab = next(
+      (t for t in tabs if 'qualtrics' in t.get('url', '').lower()),
+      None
+  )
+  if new_tab:
+      ws_url = new_tab['webSocketDebuggerUrl']
+      connect_to_survey_tab(ws_url)
+  ```
+
+  **File:** `survey-cli/survey/runner.py` — `_find_survey_tab()` helper
+
+  **Verification:** Survey questions now visible after connecting to the correct Qualtrics tab. `document.body.innerText` shows "In welchem der folgenden Länder/Regionen leben Sie?".
+
+
+  ## 2026-05-07 Live Debugging Fixes
+
+  ### Fix #5: Balance reads 125€ instead of 2.23€
+  - **ROOT CAUSE**: `read_balance()` took Math.max of all numbers near €. Level progress "125" appeared near € sign.
+  - **FIX**: Changed to `if (val > 1.0 && val < 1000)` and check adjacent lines for "Level"/"Min" keywords
+  - **FILE**: survey-cli/survey/scanner.py :: read_balance()
+  - **VERIFIED**: Balance now reads 2.23€ consistently
+
+  ### Fix #6: React form inputs not accepting .value
+  - **ROOT CAUSE**: React synthetic events ignore direct .value= setter
+  - **FIX**: Use `Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, val)` + dispatchEvent('input') + dispatchEvent('change')
+  - **FILE**: survey-cli/survey/snapshot.py
+  - **VERIFIED**: Zip=10785, Age=53 accepted, button enables
+
+  ### Fix #7: Multiple stacked modals blocking clicks
+  - **ROOT CAUSE**: 7-9 layered modals at identical coordinates
+  - **FIX**: Close all "Schließen" buttons via JS before interacting with survey
+  - **VERIFIED**: Survey questions visible after closing modals
+
+  ### Fix #8: Modal-only element scanning
+  - **ROOT CAUSE**: ELEMENT_EXTRACTOR_JS scanned entire document (84+ elements)
+  - **FIX**: Topmost modal detection by viewport center distance
+  - **VERIFIED**: Element count reduced to 3-5 for modal surveys
+
+  ### Fix #9: New tab detection for Qualtrics
+  - **ROOT CAUSE**: Survey navigates to external URL in new tab
+  - **FIX**: Check tab count via /json before/after clickSurvey()
+  - **VERIFIED**: Survey questions visible after connecting to correct tab
+
+  ---
+
+  ## 🔴 2026-05-08 OPENCODE CRASH: Zod v4/v3 Conflict (FIXED)
+
+  ### Symptom (after `opencode run "..."` or connecting Vercel)
+  ```
+  TypeError: n._zod.def is not a function
+    at /snapshot/build/src/builtInPlugins/openCodeCli.js ...
+    at getToolDefinition (...)
+  ```
+
+  ### Root Cause
+  `oh-my-opencode@3.11.2` and `opencode-antigravity-auth@1.6.5-beta.0` bundle Zod v4.
+  OpenCode 1.14.41 internally uses Zod v3 (`_zod.def` API). When Zod v4 schema passes through
+  tool resolution pipeline → crash. The plugins were globally installed via npm/bun AND
+  referenced in `infra-sin-opencode-stack/` plugin directories.
+
+  ### Fix (Complete)
+  1. **Uninstall global npm/bun packages**:
+     ```bash
+     npm uninstall -g oh-my-opencode opencode-openrouter-auth opencode-qwen-auth opencode-modal-pool-auth
+     bun pm rm -g oh-my-opencode opencode-antigravity-auth opencode-openrouter-auth opencode-qwen-auth
+     ```
+  2. **Delete plugin directories**:
+     - `infra-sin-opencode-stack/plugins/local-plugins/opencode-openrouter-auth/`
+     - `infra-sin-opencode-stack/local-plugins/opencode-qwen-auth/`
+     - `infra-sin-opencode-stack/vendor/opencode-antigravity-auth-1.6.5-beta.0/`
+  3. **Delete oh-my files**:
+     - `~/.config/opencode/oh-my-opencode.json`
+     - `~/.config/opencode/oh-my-openagent.json`
+     - `~/.config/opencode/oh-my-sin.json`
+     - `~/.config/opencode/oh-my-sin_README.md`
+     - `scripts/restore_antigravity_runtime.py`
+  4. **Clean install.sh** — removed plugin install blocks, oh-my copy block
+  5. **Reset opencode config** — deleted `~/.config/opencode/` completely, started fresh
+
+  ### Verboten Plugins (BANNED FOREVER)
+  | Plugin | Why |
+  |--------|-----|
+  | `oh-my-opencode` | Bundles Zod v4 → `_zod.def` crash |
+  | `opencode-antigravity-auth` | Bundles Zod v4 (globally installed via bun) |
+  | `opencode-openrouter-auth` | Unmaintained, conflicts with built-in openrouter |
+  | `opencode-qwen-auth` | Unmaintained |
+  | `opencode-modal-pool-auth` | Unmaintained |
+
+  ### Key Lessons
+  1. `opencode run` crashes from bundled provider SDKs using Zod v4 (`ai-gateway-provider`,
+     `venice-ai-sdk-provider`) — this is a TUI-only bug in 1.14.41. TUI (`opencode`) works fine.
+  2. Custom provider configs with model lists create DUPLICATES — built-in providers
+     auto-discover models from `auth.json`. Use empty `"provider": {}` instead.
+  3. Built-in model IDs differ from what you might expect:
+     - Fireworks: `accounts/fireworks/models/minimax-m2p7` (not `minimax-m2.6`)
+     - Vercel: `vercel/deepseek/deepseek-v4-flash` (prefix with provider name!)
+  4. `opencode models vercel/fireworks-ai` lists correct model IDs from the server.
+
+  ### Files Modified
+  - `~/.config/opencode/opencode.json` — reset, 31 MCPs, 5 agents, empty providers
+  - `~/.local/share/opencode/auth.json` — cleaned, only vercel/mistral/groq keys remain
+  - `infra-sin-opencode-stack/install.sh` — banned-plugin guard, clean provider setup
+  - `infra-sin-opencode-stack/banned.md` — comprehensive ban list + recovery procedure
+
+  ### Verifiziert: `opencode run` mit sauberem Config
+  - ✅ `opencode models vercel` — shows 4 models
+  - ✅ `opencode models fireworks-ai` — shows 12 models  
+  - ✅ TUI starts with all 31 MCP servers
+  - ✅ No `_zod.def` crash on model listing
+
+  ---
+
+  ## 🔴 Cookie Timing: Survey öffnet sich ohne Session-Cookies (2026-05-10)
+
+  ### Problem
+  Survey öffnet sich in NEUEM Tab via `Target.createTarget()` → Cookies fehlen im Redirect-Chain.
+  Resultat: Survey completed ("Vielen Dank") aber Balance erhöht sich NICHT → 0€ verdient.
+
+  ### Root Cause
+  1. 7 HeyPiggy-Cookies werden in den DASHBOARD-Tab injiziert (Page.navigate)
+  2. Survey-Button click → window.open interception → `Target.createTarget(captured_url)`
+  3. NEUER Tab öffnet sich → navigiert sofort zur CPX URL
+  4. CPX/Samplicio/Cint/Potloc redirect chain läuft OHNE Session-Cookies
+  5. Heypiggy Completion-Tracking kann Survey-Completion NICHT mit korrektem User verknüpfen
+  6. Balance bleibt unverändert → 0€ ausbezahlt
+
+  ### Fix 1: Cookie Injection (COMPLETED ✅)
+  **Inject 7 HeyPiggy cookies BEFORE survey navigation**
+  - `_create_tab()` in opener.py: inject cookies via `Network.setCookies` before `Page.navigate`
+  - `_open_in_page_modal()` in opener.py: inject cookies into new tab after window.open
+  - Tests: 17/18 passed
+
+  ### Fix 4: Balance Reading Dot/Comma Bug (COMPLETED ✅)
+  **Problem**: `replace(/[^\d,]/g, "")` removed dots because `.` is not a comma
+  - "2.75 €" → "275" → parseFloat(275) = €275.0 (WRONG)
+  **Fix**: `replace(/[^\d.,]/g, "")` keeps both dots and commas
+  - "2.75 €" → "2.75" → parseFloat(2.75) = €2.75 (CORRECT)
+  **File**: `survey-cli/survey/scanner.py` lines 328, 338
+  **Date**: 2026-05-10
+  **Inject 7 HeyPiggy cookies BEFORE survey navigation**
+  - `_create_tab()` in opener.py: inject cookies via `Network.setCookies` before `Page.navigate`
+  - `_open_in_page_modal()` in opener.py: inject cookies into new tab after window.open
+  - Tests: 6/8 passed (2 pre-existing failures unrelated)
+
+  ### Fix 2: Subid Parameter (COMPLETED ✅)
+  **Keep CPX API URL instead of intercepted URL**
+  - `tool_open_survey.py:open_survey()`: detects empty subid in intercepted URL
+  - If `subid_1=&` or `subid_2=website` found: uses CPX API URL from `_get_survey_url()`
+  - If real subid present: uses intercepted URL (has dashboard context)
+  - Tests: 18/18 passed
+
+  ### E2E Test Results (2026-05-10)
+  - Survey 67078106 (Cint) completed ✅
+  - Balance before: €2.70 → Balance after: €2.70
+  - **Delta: €0.00 — NO PAYMENT!** ❌ (subid fix applied but needs fresh session test)
+
+  ### Files
+  - `survey-cli/survey/opener.py` → `_open_in_page_modal()` + `_find_new_tab_after_click()`
+  - `commands/surveys/survey-start-flow.md` → Warning dokumentiert
+
+  ### Status
+  🔴 UNRESOLVED — Page.navigate im Dashboard Tab löste das Problem NICHT.
+  Weiterer Fix nötig.
+
+  ### Mögliche Lösungsansätze (TODO)
+  1. Cookies in den NEUEN Survey-Tab injizieren VOR Page.navigate (CDP Network.setCookies)
+  2. Survey-Completions anders tracken (nicht über Heypiggy Session-Cookies)
+  3. Debug completion tracking — trace was Heypiggy beim redirect erwartet
+
+  ---
+
+  ## 🔴 2026-05-08 OPENCODE RUN BUG: Bundled Provider SDKs (UNRESOLVED)
+
+  ### Symptom
+  `opencode run "hello"` from `/tmp/heypiggy-test/` with CLEAN config still crashes:
+  ```
+  TypeError: Cannot read properties of undefined (reading 'get')
+    at /snapshot/build/src/builtInPlugins/openCodeCli.js ...
+  ```
+
+  ### Root Cause (Confirmed)
+  Bundled provider SDKs in OpenCode 1.14.41 binary (`ai-gateway-provider`, `venice-ai-sdk-provider`)
+  use Zod v4's `_zod.def` API. When the CLI initializes with any provider, this triggers the crash.
+
+  ### Workaround
+  - Use TUI (`opencode`) — it works fine even with providers configured
+  - `opencode run` only works from isolated HOME with no `~/.config/opencode/` at all
+  - In real HOME, crashes even with clean config
+
+  ### Status: Open Issue
+  No fix yet — this is a bug in the OpenCode binary itself (v1.14.41, all tested versions 1.4.11-1.14.41).
+  Must wait for OpenCode update that removes Zod v4 from bundled provider SDKs.
+
+
+  ## --- LEGACY (RESTORE PASS — #95): graph-report-template.md ---
+
+  > Verbatim content of `graph-report-template.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # graph-report-template.md — Template für Graphify Reports
+
+  > **Generiert am**: YYYY-MM-DD
+  > **Repo**: <repo-name>
+  > **Tool**: safishamsi/graphify
+
+  ---
+
+  ## Top-Level-Struktur
+
+  | Metrik | Wert |
+  |--------|------|
+  | Nodes gesamt | `<zahl>` |
+  | Edges gesamt | `<zahl>` |
+  | Communities | `<zahl>` |
+
+  ## God Nodes (höchste Zentralität)
+
+  | Node | Rolle | Verbindungen |
+  |------|-------|-------------|
+  | `<node>` | `<beschreibung>` | `<zahl>` |
+
+  ## Unerwartete Verknüpfungen
+
+  - `<node A>` ↔ `<node B>` — Grund: `<erklärung>`
+
+  ## Empfehlungen
+
+  - [ ] God Nodes reduzieren (Single Points of Failure)
+  - [ ] Unerwartete Links prüfen (BANNED-Tool-Nutzung?)
+  - [ ] Neue Abhängigkeiten in brain.md dokumentieren
+
+  ---
+
+  *Report generiert von graphify. Template: graph-report-template.md*
+
+
+  ## --- LEGACY (RESTORE PASS — #95): graph-report.md ---
+
+  > Verbatim content of `graph-report.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # graph-report.md — Graphify Knowledge Graph Report
+
+  > **← [graphify.md](graphify.md) für Graphify-Dokumentation**
+  > **Generiert**: 2026-05-05 | **Tool**: safishamsi/graphify
+
+  ---
+
+  ## 📊 Zusammenfassung
+
+  | Metrik | Wert |
+  |--------|------|
+  | **Nodes** | 4.820 |
+  | **Edges** | 10.860 |
+  | **Communities** | 284 |
+  | **Repos analysiert** | 6 |
+  | **God-Nodes** | (nächster Build erforderlich) |
+  | **Unerwartete Links** | (nächster Build erforderlich) |
+
+  ## Repo-Verteilung
+
+  | Repo | Nodes | Communities |
+  |------|-------|-------------|
+  | A2A-SIN-Worker-heypiggy | 2.625 | 110 |
+  | playstealth-cli | 1.166 | 78 |
+  | stealth-runner | 457 | 36 |
+  | screen-follow | 252 | 17 |
+  | unmask-cli | 214 | 25 |
+  | skylight-cli | 120 | 19 |
+
+  ## 🔴 Auffälligkeiten
+
+  > **Nächster Build**: `graphify update . && graphify analyze --god-nodes --unexpected-links`
+  > Dann diesen Report mit konkreten Findings aktualisieren.
+
+  ## 📋 Aktions-Empfehlungen
+
+  1. Vor jedem Survey-Flow: `graphify update .` ausführen
+  2. God-Nodes prüfen: Single Points of Failure identifizieren
+  3. Unerwartete Links: potenzielle BANNED-Tool-Nutzung erkennen
+
+  **Letztes Update**: 2026-05-05 (Template — nächster graphify update erforderlich)
+
+
+  ## --- LEGACY (RESTORE PASS — #95): graphify.md ---
+
+  > Verbatim content of `graphify.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # graphify.md — Graphify Knowledge Graph Integration
+
+  > **← [registry-graphify.md](registry-graphify.md) für Command-Registry**
+
+  ---
+
+  ## 🔗 Graphify im Stealth Suite Ökosystem
+
+  **Graphify** (`safishamsi/graphify`) baut einen Knowledge Graphen aus dem gesamten Codebase.
+  Er wird in **stealth-runner** und den aktiv genutzten Repos eingesetzt.
+
+  ### Stats (letzter Build)
+  ```
+  📊 4.820 Nodes, 10.860 Edges, 284 Communities
+     ├── stealth-runner         (457 nodes,  36 communities)
+     ├── playstealth-cli       (1.166 nodes, 78 communities)
+     ├── skylight-cli          (120 nodes,  19 communities)
+     ├── screen-follow         (252 nodes,  17 communities)
+     ├── unmask-cli            (214 nodes,  25 communities)
+     └── A2A-SIN-Worker        (2.625 nodes, 110 communities)
+  ```
+
+  ### Nutzung
+
+  ```bash
+  # Graph bauen/aktualisieren
+  graphify update .
+
+  # Query: Wie hängen X und Y zusammen?
+  graphify query "Wie hängen X und Y zusammen?"
+
+  # Kürzesten Pfad finden
+  graphify path "ModulA" "ModulB"
+
+  # God-Nodes und unerwartete Links prüfen
+  graphify analyze --god-nodes --unexpected-links
+  ```
+
+  ### Report
+
+  Der letzte Report liegt in [graph-report.md](graph-report.md). Vor jeder größeren Aktion sollte der Graph aktualisiert und der Report auf Anomalien geprüft werden.
+
+  ### Integration
+
+  - **Stealth Pipeline**: `perceive`-Phase prüft Graphify auf Code-Abhängigkeiten
+  - **Guardian**: Blockiert Aktionen wenn Graphify unerwartete God-Nodes findet
+  - **Kommandos**: [registry-graphify.md](registry-graphify.md) listet alle graphify-Befehle
+
+  **Letztes Update**: 2026-05-05
+
+
+  ## --- LEGACY (RESTORE PASS — #95): history.md ---
+
+  > Verbatim content of `history.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # history.md — Session History Log
+
+  > **Zweck**: Chronologisches Log aller Agent-Sessions mit Kurzbeschreibung und Link zum Fix.
+  > Jeder Eintrag = 1 Session. Format: `Datum | Agent | Aktion | Ergebnis | Fix-Link`
+
+  ---
+
+  ## 2026-05-06 (15:00-18:30) — NEXT-GEN: 4 Root Causes + Crash-Test
+  - P0: Pre-qualifier skip → handle_pre_qualifier() call (13 tests)
+  - P1: Stealth injection via Page.addScriptToEvaluateOnNewDocument (19 tests)
+  - P1: CDPConnection wrapper with retry/reconnect (15 tests)
+  - P3: Balance read timing fix (5 tests)
+  - Crash-test: 1 survey completed (66883950, 36.3s, generic provider)
+  - 282 tests passing, learn.md §M documented, fix.md updated
+
+  ## 2026-05-05
+
+  | Zeit | Agent | Aktion | Ergebnis | Fix |
+  |------|-------|--------|----------|-----|
+  | 16:45 | Stealth-Orchestrator | CaptchaSolver Modul: 8/8 Slide-Captchas gelöst, dynamische Koordinaten | [cli/modules/captcha_solver.py](cli/modules/captcha_solver.py) |
+  | 16:30 | Stealth-Orchestrator | AppleEvents JS aktiviert: cua-driver page execute_javascript funktioniert | [commands/captcha/solve-slide.md](commands/captcha/solve-slide.md) |
+  | 16:15 | Stealth-Orchestrator | Koordinaten-Bug entdeckt: Window-Position dynamisch statt hardcoded | [successful.md](successful.md) |
+  | 14:30 | Stealth-Orchestrator | CUA-ONLY-Verletzung: cliclick+CDP → BANNED | [incidents/2026-05-05-1430.md](incidents/2026-05-05-1430.md) |
+  | 15:15 | Stealth-Orchestrator | **FEHLERCHECK**: Survey-Test nie mit korrigierter Persona wiederholt | Doc-Infrastruktur priorisiert, Flow ungetestet | [fix.md](fix.md#survey-test-nicht-wiederholt) |
+  | 15:18 | Stealth-Orchestrator | Fehlercheck-Analyse: 10-Punkte abgearbeitet | Root-Cause: Docs statt Survey-Test | [anti-learn.md](anti-learn.md#doc-ohne-retest) |
+  | 14:35 | Stealth-Orchestrator | .opencode/opencode.json mit 28 context_files + system_message | Permanent System Prompt aktiv | [.opencode/opencode.json](.opencode/opencode.json) |
+  | 14:30 | Stealth-Orchestrator | Stealth Suite Universal Prompt & MD-System adoptiert | registry.md, history.md, changelog.md, roadmap.md erstellt | [AGENTS.md](AGENTS.md) |
+  | 13:12 | Stealth-Orchestrator | /commands Reorganisation | 28 Dateien in 7 Provider-Dirs | [cmd-rules.md](commands/cmd-rules.md) |
+  | 13:20 | Stealth-Orchestrator | End-to-End Survey Test: Login→Card→Consent→Frage→**DISQUALIFIZIERT** | Falsches Alter 42 statt 32 | [fix.md](fix.md#hartcodiertes-alter) |
+
+  ## 2026-05-04
+
+  | Zeit | Agent | Aktion | Ergebnis | Fix |
+  |------|-------|--------|----------|-----|
+  | 09:24 | Stealth-Orchestrator | Skylight-cli Widersprüche in AGENTS.md, sinrules.md, brain.md behoben | 3 Dateien aktualisiert | [fix.md](fix.md) |
+  | — | Stealth-Orchestrator | Banned Commands erweitert (pyautogui, pynput, coordinates, applescript) | 8 neue banned-*.md Dateien | [banned.md](banned.md) |
+  | — | Stealth-Orchestrator | Google Login PASSKEY Flow dokumentiert | 6-Step CUA-ONLY Flow | [cli/modules/auto_google_login.py](cli/modules/auto_google_login.py) |
+  | — | Stealth-Orchestrator | macOS Recovery Mode als SECRET WAY für SIP-Disabling erkannt | csrutil disable dokumentiert | [macos-recovery-mode.md](commands/macos-recovery-mode.md) |
+
+  ## 2026-05-07 (20:00-03:00) — LIVE CRASH-TEST: 10 Discoveries, 0 Payouts
+  - Balance: 125€ bug → fixed → 2.23€ correct
+  - React forms: .value silent failure → native setter solution
+  - Stacked modals: 7-9 layers at same coordinates on dashboard
+  - Tab detection: Surveys open in NEW tabs, CDP was on wrong tab
+  - Qualtrics: Language select is dropdown, not clickable labels
+  - Survey progression: heypiggy → Angular pre-form → Qualtrics (stuck on language page)
+  - 6 commits pushed, 9 GitHub issues created, 19 repos synced
+  - [session-log-2026-05-07.md](session-log-2026-05-07.md)
+
+
+  ## --- LEGACY (RESTORE PASS — #95): infisical.md ---
+
+  > Verbatim content of `infisical.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # infisical.md — Infisical Secrets Management
+
+  > **← [commands/infisical/](commands/infisical/) für CLI-Commands**
+
+  ---
+
+  ## 🔑 Infisical im Stealth Suite Ökosystem
+
+  **Infisical** ist das zentrale Secrets-Management für alle Stealth Suite Repos.
+  Credentials werden NIE in .env-Dateien oder Code gespeichert, sondern über Infisical EU bezogen.
+
+  ### Konfiguration
+
+  ```bash
+  # Infisical EU API
+  export INFISICAL_API_URL="https://eu.infisical.com/api"
+  export INFISICAL_TOKEN="st.xxx..."
+  export INFISICAL_PROJECT_ID="xxx..."
+  export INFISICAL_ENV="dev"  # oder prod, staging
+  ```
+
+  ### CLI Commands
+
+  | Command | Zweck | File |
+  |---------|-------|------|
+  | `sm-cli get` | Secrets abrufen (redacted) | [infisical/secrets.md](commands/infisical/secrets.md) |
+  | `sm-cli inject` | Secrets als export-Statements | [infisical/secrets.md](commands/infisical/secrets.md) |
+  | `sm-cli login` | Bei Infisical anmelden | [infisical/login.md](commands/infisical/login.md) |
+  | `sm-cli sync` | Cache aktualisieren | [infisical/secrets.md](commands/infisical/secrets.md) |
+
+  ### Wichtige Secrets
+
+  | Secret | Environment | Verwendung |
+  |--------|-------------|------------|
+  | `HEYPIGGY_EMAIL` | Development | Google Login Email |
+  | `HEYPIGGY_PASSWORD` | Development | Google Login Passwort |
+  | `NVIDIA_API_KEY` | Alle | NVIDIA NIM Vision API |
+
+  ### Sicherheit
+
+  - Secrets werden NIE im Klartext in Logs ausgegeben (Auto-Redaction)
+  - Lokaler Cache: Fernet-Verschlüsselt (AES-128-CBC)
+  - Cache-TTL: 3600s (konfigurierbar via `SM_CACHE_TTL`)
+
+  **Letztes Update**: 2026-05-05
+
+
+  ## --- LEGACY (RESTORE PASS — #95): issues.md ---
+
+  > Verbatim content of `issues.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # Issues — Stealth-Runner SOTA (2026-05-10)
+
+  > **Master Plan**: `plans/01-survey-agent-langgraph-fastapi.md` — LangGraph + FastAPI Primary
+  > **Survey Agent**: `survey-cli/survey/graph/` — 5 files, ~2200 lines (✅ IMPLEMENTED)
+  > **Assignee**: `stealth-orchestrator` | **Repo**: [stealth-runner](https://github.com/SIN-CLIs/stealth-runner)
+
+  ---
+
+  ## 🚨 CRITICAL BLOCKER
+
+  ### SR-54: Survey Completion Tracking — Cookie + Subid + Balance Fix Bundle (2026-05-10)
+  **Priority**: P0 | **Labels**: `bug`, `critical`, `tracking`, `e2e-verified` | **Component**: opener.py, chrome.py, tool_open_survey.py, scanner.py
+  **Status**: ✅ FIXED & VERIFIED (2026-05-10) | **Found**: 2026-05-10 | **Assignee**: stealth-orchestrator
+  **Blocking**: ALL surveys earn €0 — 3 root causes combined
+  **E2E Test**: ✅ VERIFIED — Survey 66695822 (Cint→Tivian), Balance €2.70 → €2.75 (+€0.05)
+
+  **Three Interdependent Root Causes:**
+  1. **Cookie Timing** — `Target.createTarget()` opened survey in new tab WITHOUT 7 HeyPiggy session cookies
+  2. **Subid Missing** — window.open interception captured URL BEFORE `subid_2=<subid_cpx>` was appended  
+  3. **Balance Reading** — DOM regex read first € value (survey reward) instead of maximum (user balance)
+
+  **Files Changed:**
+  - `survey-cli/survey/opener.py` — cookie injection in `_create_tab()` + `_open_in_page_modal()`
+  - `survey-cli/survey/chrome.py` — `inject_heypiggy_cookies_to_tab()` helper
+  - `survey-cli/tools/tool_open_survey.py` — subid preservation in `open_survey()`
+  - `survey-cli/survey/scanner.py` — balance reading returns MAX € value (not first)
+  - `survey-cli/survey/graph/nodes.py` + `state.py` — session validation integration
+  - `stealth-captcha/src/stealth_captcha/solver/drag_drop_angular.py` — multi-approach solver (4 approaches)
+
+  **Tests:** 17/18 + 18/18 + 10/10 passed (pre-existing failures only)
+
+  ---
+
+  ### SR-51: subid Parameter Missing in Intercepted URL — Balance = €0
+  **Priority**: P0 | **Labels**: `bug`, `critical`, `tracking` | **Component**: opener.py, tool_open_survey.py
+  **Status**: ✅ FIXED & VERIFIED (2026-05-10) | **Found**: 2026-05-10 | **Assignee**: stealth-orchestrator
+  **Blocking**: ALL surveys earn €0 — subid is Heypiggy's tracking key for completion credit
+  **E2E Test**: ✅ VERIFIED — Survey 66695822 (Cint→Tivian), Balance €2.70 → €2.75 (+€0.05)
+
+  **Root Cause** (from /tmp/e2e_test_results.md):
+  - `openSurvey()` in heypiggy JS sets `subid_2=<subid_cpx>` before calling `window.open()`
+  - window.open interception captures the URL BEFORE this subid is appended
+  - Intercepted URL shows `subid_1=&subid_2=website` (default empty values)
+  - Heypiggy Completion-Tracking requires correct subid to credit the user account
+  - Without subid: survey completes but balance cannot be credited → €0
+
+  **Intercept Flow (BROKEN):**
+  ```
+  1. window.open override captures URL from openSurvey()
+  2. URL already has subid_1=&subid_2=website (NOT the real subid!)
+  3. Target.createTarget({url: captured_url}) → opens survey WITHOUT tracking
+  4. CPX → Samplicio → PureSpectrum → Potloc → CloudResearch (all without subid)
+  5. Survey completes → Heypiggy can't match completion to user → €0
+  ```
+
+  **Original openSurvey() Flow (WORKING):**
+  ```
+  1. openSurvey() sets subid_2=<subid_cpx>
+  2. window.open(url_with_subid) → opens in new tab WITH tracking
+  3. Heypiggy credits user via subid when survey completes → €€
+  ```
+
+  **Proposed Fix:**
+  - Capture the URL from openSurvey() BEFORE window.open override
+  - Parse the full URL including `subid_1`, `subid_2`, `subid_cpx` parameters
+  - OR: Inject heypiggy subid into intercepted URL before Target.createTarget
+  - OR: Use Page.navigate in dashboard tab (which already has cookies) instead of new tab
+
+  **Files to Change:**
+  - `survey-cli/tools/tool_open_survey.py`: `_handle_modal_with_cdp()` — extract and preserve subid
+  - `survey-cli/survey/opener.py`: `_open_in_page_modal()` — inject subid into URL
+
+  ---
+
+  ### SR-52: Chrome Crash During Survey Completion — Q3 at CloudResearch
+  **Priority**: P0 | **Labels**: `bug`, `critical`, `crash` | **Component**: cdp_client.py, survey loop
+  **Status**: OPEN | **Found**: 2026-05-10 | **Assignee**: stealth-orchestrator
+  **Blocking**: Surveys crash mid-completion, leaving zombie tabs
+
+  **Root Cause** (from /tmp/e2e_test_results.md):
+  - Survey 67078107: redirect chain `CPX → Samplicio → PureSpectrum → Potloc → CloudResearch`
+  - Chrome crashed at Q3 (cognitive question) during CloudResearch survey
+  - CDP connection lost — WebSocket error or JS exception
+  - Survey never reached completion page
+  - Chrome restart required → session cookies expired → login needed
+
+  **Test Evidence (2026-05-10):**
+  | Step | Result |
+  |------|--------|
+  | Survey opened via window.open interception | ✅ URL captured (but subid=empty) |
+  | Redirect chain: CPX → Samplicio → PureSpectrum → Potloc → CloudResearch | ✅ All redirects worked |
+  | Reached Q3 (cognitive questions at CloudResearch) | ✅ |
+  | Chrome crashed | ❌ CDP connection lost |
+  | Survey completion reached | ❌ NO — crash prevented completion |
+  | Balance before: €2.70, after: €2.70 | ❌ €0 earned |
+
+  **Possible Causes:**
+  1. Memory leak during complex multi-redirect survey (6+ page loads)
+  2. CDP WebSocket disconnection (network issue or Chrome internal)
+  3. JS exception in CloudResearch survey (unhandled error)
+  4. CDP "No such target id" error after tab switches
+  5. Angular/React component crash in survey page
+
+  **Proposed Fixes:**
+  1. CDP crash handler: detect WebSocket error, restart Chrome, resume survey
+  2. Tab re-discovery after every redirect: `_refresh_tab_ws()` after Page.navigate
+  3. Survey timeout: abort after 5 minutes with retry
+  4. Zombie tab cleanup: detect crashed tabs, close them, continue
+
+  **Files to Change:**
+  - `survey-cli/survey/cdp_client.py`: crash detection + reconnect
+  - `survey-cli/survey/runner.py`: timeout + retry logic
+  - `survey-cli/survey/opener.py`: tab re-discovery after redirects
+
+  ---
+
+  ### SR-53: Session Expires After Chrome Restart — Cookie Backup Invalid
+  **Priority**: P2 | **Labels**: `bug`, `cookies`, `session` | **Component**: cookie_manager.py, opener.py
+  **Status**: OPEN | **Found**: 2026-05-10 | **Assignee**: stealth-orchestrator
+  **Blocking**: Must re-login after every Chrome restart, breaks automation continuity
+
+  **Root Cause** (from /tmp/e2e_test_results.md):
+  - Cookie backup `~/.stealth/heypiggy-backup/heypiggy-cookies.json` was taken during active session
+  - After Chrome restart: backup cookies became invalid (session expiry)
+  - Session cookies typically expire after 30min-2h
+  - `Network.setCookies` with expired cookies → Chrome ignores them
+  - Dashboard shows logged-out state → must re-login
+
+  **Test Evidence (2026-05-10):**
+  - Session verified alive before survey (body.innerText contains "abmelden") ✅
+  - Survey opened via window.open interception ✅
+  - Chrome crashed at Q3 ❌
+  - Chrome restart required (Chrome crashed) ❌
+  - Session expired during restart ❌
+  - Backup cookies invalid → dashboard logged out ❌
+  - Re-login required → subid tracking broken ❌
+
+  **Session Recovery Protocol (Proposed):**
+  ```
+  BEFORE survey operation:
+  1. Validate session: navigate to heypiggy.com → check body.innerText for "abmelden"
+  2. If logged out: restore from backup + re-login via Google OAuth
+  3. If backup cookies fail: extract fresh cookies from running Chrome
+
+  AFTER Chrome restart:
+  1. Detect restart (Chrome PID changed or no WS connection)
+  2. Restore session via cookie injection OR re-login
+  3. Verify login before proceeding with survey
+  ```
+
+  **Files to Change:**
+  - `survey-cli/survey/opener.py`: session validation before survey
+  - `agent-toolbox/core/cookie_manager.py`: session recovery protocol
+  - `agent-toolbox/core/gmx_service.py`: reference implementation (already has recovery)
+
+  ---
+
+  ## Previous Critical Blockers
+
+  ### SR-50: Cookie Timing — Survey öffnet sich ohne Session-Cookies, balance = €0
+  **Priority**: P0 | **Labels**: `bug`, `critical`, `cookies` | **Component**: opener.py
+  **Status**: OPEN | **Found**: 2026-05-10 | **Assignee**: stealth-orchestrator
+  **Blocking**: ALL surveys earn €0 despite completion — every provider (Cint, Samplicio, PureSpectrum)
+
+  **Root Cause** (from /tmp/survey_test_results.md):
+  - Survey completed (Cint showed "Vielen Dank"), balance unchanged: €2.70 before → €2.70 after
+  - 7 HeyPiggy-Cookies are injected AFTER `Target.createTarget()` creates the new tab
+  - The entire redirect chain runs WITHOUT session cookies: `CPX → Samplicio → Cint → Potloc`
+  - Heypiggy's completion tracking requires cookies to be present when the redirect returns to the platform
+  - Without cookies, completion event cannot be associated with the correct user session → balance stays €0
+
+  **Affected Code**: `survey-cli/survey/opener.py`
+  - `_open_in_page_modal()` (line 118): calls `_find_new_tab_after_click()` which uses `Target.createTarget()`
+  - `_create_tab()` (line 247): creates blank tab, injects stealth, THEN navigates — cookies not injected before navigation
+  - Cookie injection happens on the DASHBOARD tab first, then new survey tab is created WITHOUT cookies
+
+  **Test Evidence** (2026-05-10, survey 67078106):
+  | Step | Result |
+  |------|--------|
+  | Survey opened via window.open interception + Target.createTarget | ✅ Tab created |
+  | Survey flow: Samplicio → Cint (14 pages) | ✅ Completed |
+  | Cint showed "Vielen Dank" | ✅ Completion detected |
+  | Balance before: €2.70, after: €2.70 | ❌ NO INCREASE |
+  | New survey appeared in list (€1.03) | Survey was processed but NO credit |
+
+  **Failed Fix Approaches**:
+  | Approach | Why Failed |
+  |----------|------------|
+  | Inject cookies after tab creation | Tab already navigated to CPX URL without cookies |
+  | Wait longer before checking balance | Completion tracking never happened — timing is the root cause |
+  | Manual re-test after same flow | Same result: €0 earned despite completion |
+
+  **Proposed Fixes** (ordered by priority):
+  1. **PREFERRED**: Open survey in the SAME dashboard tab (which already has cookies) — navigate to CPX URL instead of creating new tab
+  2. **ALTERNATIVE**: Inject cookies INTO the new tab BEFORE navigating to the survey URL (requires CDP injection into new tab's WS before Page.navigate)
+  3. **WORKAROUND**: Find heypiggy completion callback URL and call it directly with cookies after survey completes
+
+  **Files to Change**:
+  - `survey-cli/survey/opener.py`: `_open_in_page_modal()` — use dashboard tab for survey instead of new tab
+  - `survey-cli/survey/opener.py`: `_create_tab()` — inject cookies before `navigate_tab()`
+
+  ---
+
+  ### SR-38: PureSpectrum Drag-Drop Puzzle — 66% stuck, €0 verdient
+  **Priority**: P0 | **Labels**: `bug`, `providers`, `critical` | **Component**: purespectrum.py
+  **Status**: OPEN | **Found**: 2026-05-09 | **Assignee**: stealth-orchestrator
+  **Blocking**: All PureSpectrum surveys (12+ IDs) — €0 verdient
+
+  **Root Cause** (from AGENTS.md §11.3):
+  - Angular CDK (v7+) uses ONLY PointerEvents: `@HostListener('pointerdown')`
+  - `__ngContext__` is a Production Build Index (number, not Object) — `findInstance(4, '_dropListRef')` = null
+  - `window.ng` (Dev-Mode API) not available in Production
+  - `DragDropCaptchaSolver` in stealth-captcha uses `Input.dispatchMouseEvent` → WRONG event type
+  - Synthetic PointerEvents blocked by Angular on low level
+
+  **Failed Approaches** (all tested 2026-05-09):
+  | Approach | Why Failed |
+  |----------|------------|
+  | `__ngContext__` traversal | `__ngContext__` is **number** (4), not Object |
+  | `window.ng.getComponent()` | Dev-Mode only, not Production |
+  | JS `dispatchEvent(MouseEvent)` | Angular CDK ignores MouseEvents |
+  | JS `dispatchEvent(PointerEvent)` | Angular blocks synthetic PointerEvents |
+  | CDP `Input.dispatchMouseEvent` | Sends MouseEvents, CDK needs PointerEvents |
+  | CSS clone + mutation | Angular change detection not triggered |
+
+  **Solution Architecture** (4 new files):
+  1. `stealth-captcha/src/stealth_captcha/solver/drag_drop_angular.py` → AngularDragDropSolver
+  2. `survey-cli/tools/tool_drag_captcha.py` → POST /survey/drag-solve
+  3. `survey-cli/survey/providers/purespectrum.py:solve_drag_puzzle()` → fix PointerEvent
+  4. `commands/surveys/purespectrum-drag-puzzle.md` → ✅ VERIFIED after 10×
+
+  **Key Insight**: `pointerdown` → `pointermove` (middle) → `pointerup` over drop-zone.
+  CDP has NO `Input.dispatchPointerEvent` — must use `Runtime.evaluate` with pointer event dispatch.
+
+  **Progress**: 0% → 33% (Cookie + ROBOT captcha) → 33% → 66% → BLOCKED
+
+  ---
+
+  ## Phase 1: LangGraph Integration (WOCHE 1)
+
+  ### SR-39: cmd_run in survey.py → run_survey_loop() statt SurveyRunner
+  **Priority**: P0 | **Labels**: `enhancement`, `langgraph` | **Component**: survey.py
+  **Status**: OPEN | **Assignee**: stealth-orchestrator
+
+  **Problem**: `cmd_run` in `survey-cli/survey.py` nutzt noch `SurveyRunner` (893 Zeilen Monolith) statt `run_survey_loop()` aus dem Graph.
+  **Fix**: `cmd_run` → `run_survey_loop(state)` statt `SurveyRunner(config).run_survey()`.
+  **Files**: `survey-cli/survey.py` (~200 Zeilen refactor)
+  **Verification**: `./survey.py run --graph 67064749` → Graph invoken, SurveyRunner nicht genutzt
+
+  ---
+
+  ### SR-40: cmd_watch in survey.py → Graph invoken (Background-Task)
+  **Priority**: P0 | **Labels**: `enhancement`, `langgraph` | **Component**: survey.py
+  **Status**: OPEN | **Assignee**: stealth-orchestrator
+
+  **Problem**: Watch-Daemon (`cmd_watch`) ist der "dumb daemon" — nutzt SurveyRunner statt LangGraph.
+  **Fix**: Watch-Loop invoken `create_graph().invoke(state)` pro Survey, Background-Task für 24/7.
+  **Files**: `survey-cli/survey.py` (~300 Zeilen refactor)
+  **Blocking**: SR-39 (cmd_run muss zuerst fertig sein)
+
+  ---
+
+  ### SR-41: Balance-Tracking in graph.py einbauen
+  **Priority**: P0 | **Labels**: `enhancement`, `langgraph` | **Component**: graph.py
+  **Status**: OPEN | **Assignee**: stealth-orchestrator
+
+  **Problem**: `run_survey_loop()` hat kein Balance-Tracking. `balance_before`/`balance_after` in SurveyState werden nicht gesetzt.
+  **Fix**: `balance_tracker.py` → `read_balance()` vor/after Survey, in detect_completion_node.
+  **Files**: `survey-cli/survey/graph/graph.py` (~50 Zeilen)
+  **Verification**: `state.balance_earned` zeigt echten Verdienst nach Survey
+
+  ---
+
+  ### SR-42: POST /survey/run-graph FastAPI Endpoint
+  **Priority**: P0 | **Labels**: `enhancement`, `fastapi`, `langgraph` | **Component**: agent-toolbox/api/survey_tools.py
+  **Status**: OPEN | **Assignee**: stealth-orchestrator
+
+  **Problem**: Graph existiert als Python-Code aber nicht als FastAPI Endpoint.
+  **Fix**: Neuer Endpoint `POST /survey/run-graph` → `create_graph().invoke(state)`.
+  **Files**: `agent-toolbox/api/survey_tools.py` (~30 Zeilen)
+  **Verification**: `curl -X POST http://127.0.0.1:8889/survey/run-graph -d '{"survey_id":"67064749"}'`
+
+  ---
+
+  ## Phase 2: Intelligence (WOCHE 2)
+
+  ### SR-43: decide_node → NIM Nemotron Decision integrieren
+  **Priority**: P0 | **Labels**: `enhancement`, `nim`, `langgraph` | **Component**: graph/nodes.py
+  **Status**: OPEN | **Assignee**: stealth-orchestrator
+
+  **Problem**: `decide_node()` ist ein Placeholder (heuristic: erste Radio auswählen). Kein echter NIM API Call.
+  **Fix**: `survey-cli/survey/nim.py` → `NIMSurveyClient.decide()` integrieren in `decide_node()`.
+  **Files**: `survey-cli/survey/graph/nodes.py` (~50 Zeilen)
+  **Verification**: `decide_node()` macht echten NVIDIA NIM Call (nicht Placeholder)
+
+  ---
+
+  ### SR-44: Auto-Rating integrieren in Graph
+  **Priority**: P1 | **Labels**: `enhancement`, `rating` | **Component**: graph/nodes.py
+  **Status**: OPEN | **Assignee**: stealth-orchestrator
+
+  **Problem**: Nach Survey-Completion wird kein Rating aufgerufen (+0.01€ Bonus verloren).
+  **Fix**: Nach `detect_completion()` → `survey_rater.py` → Rating-Click auf CPX Rating-Page.
+  **Files**: `survey-cli/survey/graph/nodes.py` (~30 Zeilen)
+
+  ---
+
+  ### SR-45: Auto-Doc + stealth-memory integrieren
+  **Priority**: P1 | **Labels**: `enhancement`, `memory` | **Component**: graph/nodes.py
+  **Status**: OPEN | **Assignee**: stealth-orchestrator
+
+  **Problem**: Graph logged nicht nach learn.md/anti-learn.md. Kein Echtzeit-Monitoring.
+  **Fix**: Nach jedem Survey → stealth-memory Update (erfolgreich/failed, provider, error).
+  **Files**: `survey-cli/survey/graph/` (~40 Zeilen in detect_completion_node)
+
+  ---
+
+  ## Phase 3: FastAPI Production (WOCHE 3)
+
+  ### SR-46: Watch-Loop als FastAPI Background-Task
+  **Priority**: P0 | **Labels**: `enhancement`, `fastapi` | **Component**: agent-toolbox/api/
+  **Status**: OPEN | **Assignee**: stealth-orchestrator
+
+  **Problem**: Kein FastAPI-Server der 24/7 Survey-Loop managet.
+  **Fix**: FastAPI Background-Task → Watch-Loop mit `/survey/run-graph` pro Survey.
+  **Files**: `agent-toolbox/api/` (~100 Zeilen)
+
+  ---
+
+  ### SR-47: GET /survey/status + GET /survey/history Endpoints
+  **Priority**: P1 | **Labels**: `enhancement`, `fastapi`, `monitoring` | **Component**: agent-toolbox/api/
+  **Status**: OPEN | **Assignee**: stealth-orchestrator
+
+  **Problem**: Kein Real-Time Monitoring. Agent sieht nur Post-Mortem-Logs.
+  **Fix**:
+  - `GET /survey/status` → aktueller SurveyState (running/completed/error)
+  - `GET /survey/history` → learn.md / anti-learn.md Inhalte
+  **Files**: `agent-toolbox/api/` (~40 Zeilen)
+
+  ---
+
+  ## Phase 4: LangGraph Promotion (WOCHE 4+)
+
+  ### SR-48: run_survey_loop() → create_graph().invoke() (echtes LangGraph)
+  **Priority**: P1 | **Labels**: `enhancement`, `langgraph` | **Component**: graph/graph.py
+  **Status**: OPEN | **Assignee**: stealth-orchestrator
+
+  **Problem**: `run_survey_loop()` ist nur Fallback (ohne LangGraph). Echtes LangGraph nicht genutzt.
+  **Fix**: Phase 1-3 fertig → `run_survey_loop()` → `create_graph().invoke(state)`.
+  **Files**: `survey-cli/survey/graph/graph.py`
+
+  ---
+
+  ### SR-49: Graph compiled promotion (nach 10× Erfolg)
+  **Priority**: P2 | **Labels**: `enhancement`, `fctes` | **Component**: graph/
+  **Status**: OPEN | **Assignee**: stealth-orchestrator
+
+  **Problem**: Graph nach 10× Erfolg nicht als frozen/production markiert.
+  **Fix**: `survey-cli/survey/graph/compiled/` → `survey_graph_v{TIMESTAMP}.py`, chmod 444.
+  **Files**: `survey-cli/survey/graph/`
+
+  ---
+
+  ## Stale Issues (Deprecated — durch neue Architektur gelöst)
+
+  | Issue | Status | Grund |
+  |-------|--------|-------|
+  | #2 Survey completion not detected | DEPRECATED | `detect_completion_node` im Graph, `completion_detector.py` existiert. Referenz auf `src/stealth_survey/survey_agent.py` (DELETED). |
+  | #3 Tab switching not automated | DEPRECATED | `open_survey_node` + `inject_cookies_node` im Graph. Referenz auf DELETED Modul. |
+  | #5 Anti-stuck loop | DEPRECATED | `execute_node` nutzt `verify_state_change()` aus execute.py. Iteration-Limit als Safety-Net. |
+  | #6 Element leaf-node filter too aggressive | DEPRECATED | Graph nutzt CDP inline JS für Snapshot (nicht `snapshot.py` walker). Referenz auf DELETED `src/stealth_survey/compact_snapshot.py`. |
+  | #12 Login-Loop Failure | DONE | `DaemonManager` + hard-stops implementiert. |
+  | #13 Daemon State Management | DONE | `DaemonManager` mit state machine. |
+  | #14 Chrome Startup Flags | DONE | `ChromeLauncher` mit enforce. |
+
+  ---
+
+  ## Offene Issues (unabhängig von LangGraph)
+
+  ### #10: Graphify Auto-Rebuild auf jedem Commit
+  **Priority**: P3 | **Labels**: `enhancement`, `ci` | **Component**: hooks
+  **Status**: OPEN | **Assignee**: stealth-orchestrator
+
+  **Problem**: Pre-commit hook rebuildt graphify visualization auf jedem Commit (3s Latenz).
+  **Fix**: Selective rebuild nur bei `*.py` Änderungen in survey-cli/ oder src/.
+
+  ### #11: Tab-Switching Test-Coverage
+  **Priority**: P3 | **Labels**: `testing` | **Component**: tests
+  **Status**: OPEN | **Assignee**: stealth-orchestrator
+
+  **Problem**: Kein Integrationstest für Tab-Switching im neuen Graph.
+  **Fix**: `survey-cli/tests/test_graph_tab_switching.py`.
+
+  ### #15: Session File Corruption
+  **Priority**: P1 | **Labels**: `bug`, `session` | **Component**: opencode sessions
+  **Status**: OPEN | **Assignee**: stealth-orchestrator
+
+  **Problem**: `~/.local/share/opencode/sessions/` enthält 2965 Dateien mit je 2 Bytes. Kein Lern-Daten.
+  **Fix**: Session-Write-Verify (size > 100 bytes + JSON validation).
+
+  ### #16: Code-Completeness-Verification Missing
+  **Priority**: P0 | **Labels**: `enhancement`, `ci` | **Component**: scripts, pre-commit
+  **Status**: OPEN | **Assignee**: stealth-orchestrator
+
+  **Problem**: Keine automatisierte Prüfung auf fehlende Kommentare, hardcoded PIDs, BANNED-Methods.
+  **Fix**: `scripts/verify_completeness.py` als pre-commit hook.
+
+  ### #1: Qualtrics Language Page stuck
+  **Priority**: P0 | **Labels**: `bug`, `providers` | **Component**: execute.py
+  **Status**: OPEN | **Assignee**: stealth-orchestrator
+
+  **Problem**: CDP `Input.dispatchMouseEvent` auf "Deutschland" advance nicht. `>>` Button nicht im Snapshot.
+  **Fix**: Qualtrics-spezifische Selector in `PROVIDER_COMMANDS` (`.NextButton` + `.LabelWrapper`).
+
+  ### #8: Qualtrics Provider Commands
+  **Priority**: P2 | **Labels**: `enhancement`, `providers` | **Component**: execute.py
+  **Status**: OPEN | **Assignee**: stealth-orchestrator
+
+  **Problem**: JS Selectors matchen nicht die echte Qualtrics DOM.
+  **Fix**: `PROVIDER_COMMANDS["qualtrics"]` updaten mit echten Selektoren.
+
+  ---
+
+  ## Historical Reference (Completed)
+
+  | Issue | Status | Title |
+  |-------|--------|-------|
+  | SR-11 | DONE | CI/CD — GitHub Actions, Pre-Commit, Auto-Release |
+  | SR-12 | DONE | Test Suite — Unit, Integration, E2E |
+  | SR-13 | DONE | Survey Provider Adapter — Samplicio.us, Cint, Nfield |
+  | SR-14 | DONE | Audio Capture Module — BlackHole + ffmpeg + Omni |
+  | SR-15 | DONE | Captcha Solving — Simple, GeeTest v4, Lemin Puzzle |
+  | SR-16 | DONE | Error Recovery — Disqualification, Modal Error, Timeout |
+  | SR-17 | DONE | CUA-ONLY Migration — skylight-cli → cua-driver |
+  | SR-18 | DONE | stealth-session — Warm Daemon for <50ms Command Execution |
+  | SR-19 | DONE | stealth-axiom — 3-Tier Hierarchical Model Router |
+  | SR-20 | DONE | RecursiveMAS — RecursiveLink + Survey MAS Pipeline |
+  | SR-21 | DONE | stealth-sota — Chaos/Security/Healing/Observability/Determinism |
+  | SR-22 | DONE | stealth-core + stealth-dynamic — Basis-Klassen + Dynamic Engine |
+  | SR-23 | DONE | stealth-memory — Eternal Memory |
+  | SR-24 | DONE | E2E Test: GoCaptcha Slide with Real Browser |
+  | SR-25 | DONE | README.md + CLI Documentation for @stealth/captcha |
+  | SR-26 | DONE | Unit Tests: CDP Client + HitTester + Memory |
+  | SR-27 | DONE | stealth-suite: Incident Resolution + Monitoring |
+  | SR-28 | DEPRECATED | CDP Survey Module → `src/stealth_survey/` DELETED, Graph implementiert |
+  | SR-29 | BLOCKED | PureSpectrum CAPTCHA OCR → SR-38 (Drag-Drop) |
+  | SR-30 | DEPRECATED | Dashboard Poller → SR-40 (Watch-Loop) + Graph |
+  | SR-31 | DEPRECATED | Flow Compiler FCTES → app/ DELETED |
+  | SR-32 | MERGED | Provider Auto-Detect → #1 + #8 |
+  | SR-33 | DONE | Persona System |
+  | SR-34 | MERGED | Survey Flow Test Suite → #11 |
+  | SR-35 | MERGED | Chrome Lease Manager → ChromeLauncher |
+  | SR-36 | DEFERRED | Generated Docs De-Duplication |
+  | SR-37 | DONE | OpenCode Fix: Zod v4 Crash + GitNexus + Graphify |
+  | SR-38 | BLOCKED | PureSpectrum Drag-Drop Blocker → KRITISCH! |
+  | SR-50 | CRITICAL | Cookie Timing — Survey öffnet sich ohne Session-Cookies, balance = €0 |
+  | SR-51 | CRITICAL | subid Parameter Missing in Intercepted URL → balance = €0 |
+  | SR-52 | CRITICAL | Chrome Crash During Survey Completion → Q3 CloudResearch |
+  | SR-53 | OPEN | Session Expires After Chrome Restart → cookie backup invalid |
+  | SR-55 | DONE | LangGraph Import Fix + FastAPI Background-Task + Deps |
+  | SR-55a | OPEN | Background-Task E2E Test — API starten, 30min laufen lassen, prüfen |
+  | SR-56 | CRITICAL | PureSpectrum Web Components blocken CDP Interaction |
+  | SR-57 | OPEN | NIM Nemotron Integration in decide_node (Placeholder → echter Call) |
+  | SR-39-49 | DEPRECATED | LangGraph + FastAPI Integration → konkretisiert in SR-55 bis SR-57 |
+
+  ---
+
+  ### SR-55: LangGraph Import Fix + FastAPI Background-Task + Dependencies (2026-05-10)
+  **Priority**: P1 | **Labels**: `infrastructure`, `langgraph`, `fastapi`, `done` | **Component**: graph.py, main.py, pyproject.toml, Makefile
+  **Status**: ✅ DONE (2026-05-10) | **Found**: 2026-05-10 | **Assignee**: stealth-orchestrator
+  **Blocking**: LangGraph StateGraph konnte nicht importiert werden → Graph-Engine offline
+
+  **Root Causes:**
+  1. **LangGraph in .venv, System-Python 3.14** — `langgraph==1.1.10` in `.venv/lib/python3.12/site-packages`, aber System-Python 3.14 hat keinen Zugriff
+  2. **Fehlende Dependencies** — `fastapi`, `uvicorn`, `openai`, `playwright`, `websocket-client` waren nicht im venv installiert
+  3. **HTTPException Import fehlte** — `survey_tools.py:473` verwendete `HTTPException` ohne Import
+
+  **Fixes:**
+  - `.venv` path injection in `graph.py:112-130` (sys.path.insert vor langgraph Import)
+  - `uv pip install` für alle fehlenden Packages
+  - `from fastapi import APIRouter, HTTPException` in survey_tools.py
+
+  **Files Changed:**
+  - `survey-cli/survey/graph/graph.py` — venv path injection + LANGGRAPH_AVAILABLE fix
+  - `agent-toolbox/api/main.py` — `_survey_loop()` Background-Task, startup/shutdown events
+  - `agent-toolbox/api/dashboard_routes.py` — `_scan_dashboard_impl()` Refactor für Background + Endpoint
+  - `agent-toolbox/api/survey_tools.py` — HTTPException Import fix
+  - `agent-toolbox/start-api.sh` — venv Python Startup-Script
+  - `Makefile` — `run`, `dev`, `start-bg`, `stop-bg` Targets
+  - `pyproject.toml` — Dependencies: fastapi, uvicorn, langgraph, websocket-client
+
+  **Result**: LangGraph `create_graph().invoke()` funktioniert, FastAPI Background-Task läuft alle 5min
+
+  ---
+
+  ### SR-55a: Background-Task E2E Test (2026-05-10)
+  **Priority**: P1 | **Labels**: `testing`, `e2e`, `fastapi` | **Component**: main.py
+  **Status**: OPEN | **Found**: 2026-05-10 | **Assignee**: stealth-orchestrator
+  **Blocking**: Background-Task wurde implementiert aber nie live getestet
+
+  **Test Plan:**
+  1. `./start-api.sh --bg` starten
+  2. Chrome auf Port 9999 starten (Recipe aus AGENTS.md)
+  3. 30 Minuten warten
+  4. Prüfen ob:
+     - `api.log` zeigt "[BG-LOOP]" Logs
+     - Surveys wurden gescannt ("Found X surveys")
+     - Eine Survey wurde ausgewählt und ausgeführt
+     - Balance hat sich verändert (oder Screen-Out erkannt)
+  5. `curl http://localhost:8889/docs` → Swagger UI erreichbar
+
+  **Expected:**
+  - Mindestens 1 Survey-Scan pro 5min
+  - Mindestens 1 Survey-Execution pro 15min (wenn Surveys verfügbar)
+  - Keine Crash-Loops (consecutive_failures < 3)
+
+  ---
+
+  ### SR-56: PureSpectrum Web Components blocken CDP Interaction — Shadow DOM Piercing IMPLEMENTED (2026-05-10)
+  **Priority**: P0 (CRITICAL) | **Labels**: `blocker`, `purespectrum`, `shadow-dom`, `web-components`, `implemented`, `needs-e2e` | **Component**: purespectrum.py
+  **Status**: IMPLEMENTED / NEEDS E2E VERIFICATION | **Found**: 2026-05-10 | **Assignee**: stealth-orchestrator
+  **Blocking**: PureSpectrum Surveys können nicht über 66% hinaus fortschreiten
+
+  **Observed Behavior:**
+  - Survey 67105461 (PureSpectrum / PulseOpinion) — blockiert bei "Gaming question"
+  - DOM enthält `<ps-root>`, `<ps-button>`, `<ps-next-button>` (Custom Elements / Web Components)
+  - Standard CDP `Runtime.evaluate()` + `element.click()` funktioniert NICHT
+  - Buttons bleiben `disabled=true` nach Click
+  - Checkboxes werden nicht selektiert
+
+  **Root Cause:**
+  - PureSpectrum verwendet Angular Elements mit Shadow DOM
+  - `document.querySelector()` kann NICHT in Shadow DOM eindringen
+  - JS `click()` Events werden von Angular CDK Event-System blockiert
+  - Event-Bubbling funktioniert nicht durch Shadow DOM Barriere
+
+  **IMPLEMENTATION (2026-05-10):**
+
+  **4 neue Funktionen in `purespectrum.py`:**
+
+  1. **`shadow_dom_query_selector(ws_url, selector, tag_hint)`**
+     - Findet Custom Elements (`<ps-*>`) im DOM
+     - Greift auf `element.shadowRoot` zu
+     - Query innerhalb Shadow DOM mit `shadowRoot.querySelector()`
+     - Returns: `{found, tag, targetTag, text, x, y, width, height, disabled, hasShadowDOM}`
+
+  2. **`shadow_dom_click(ws_url, selector, tag_hint, debug)`**
+     - Nutzt `shadow_dom_query_selector()` um Element-Position zu finden
+     - Ruft `cdp_click(ws_url, x, y)` auf (CDP `Input.dispatchMouseEvent`)
+     - Real browser-engine events (trusted) statt synthetic JS events
+     - Prüft `disabled` vor dem Click
+
+  3. **`shadow_dom_fill(ws_url, selector, value, tag_hint, debug)`**
+     - Findet `<input>` oder `<textarea>` innerhalb Shadow DOM
+     - Nutzt native value setter (Angular form binding)
+     - Dispatched `input`, `change`, `blur` Events für Angular change detection
+     - Profile-basiert: Wohnort → "Berlin", Alter → "32", PLZ → "10785"
+
+  4. **`navigate_purespectrum_shadow_dom(ws_url, max_steps, debug)`**
+     - Loop über max 15 Seiten
+     - Erkennt Shadow DOM via `shadow_dom_exists()`
+     - Pro Seite:
+       a. Radio-Buttons: Shadow-DOM-pierce + CDP click
+       b. Text-Inputs: Shadow-DOM-pierce + native fill
+       c. Next-Button: Shadow-DOM-pierce + CDP click (ps-next-button, ps-button, etc.)
+     - Completion detection: "vielen dank", "zurück zur website", "gutgeschrieben"
+     - Screen-out detection: "leider", "nicht geeignet", "disqualif", "screenout"
+
+  **Integration in `solve_purespectrum_preflight()`:**
+  ```python
+  # 5. Shadow DOM Navigation (NEW — post-puzzle Web Components)
+  if shadow_dom_exists(ws_url):
+      nav_result = navigate_purespectrum_shadow_dom(ws_url, max_steps=15, debug=debug)
+      steps.append(f"shadow_nav:{nav_result.get('status')}:{nav_result.get('pages')}")
+  ```
+
+  **E2E Test Plan:**
+  - Survey mit PureSpectrum Provider finden (via Dashboard-Scan)
+  - Öffnen und bis 66% fortfahren (cookie → ROBOT → captcha → puzzle)
+  - Bei Web Components (ps-*) prüfen ob `navigate_purespectrum_shadow_dom()` fortschreitet
+  - Erwartet: Survey schließt mit "vielen dank" oder "gutgeschrieben"
+  - Wenn nicht: Debug-Logs (`debug=True`) analysieren
+
+  **Files Changed:**
+  - `survey-cli/survey/providers/purespectrum.py` — 4 neue Funktionen + Integration in preflight
+
+  **Status:**
+  - ✅ Shadow DOM piercing implementiert
+  - ✅ CDP Mouse Events (trusted) statt synthetic JS events
+  - ✅ Angular change detection Events (input/change/blur)
+  - ✅ Completion/Screen-out detection
+  - ✅ Profile-basiertes Füllen
+  - 🔄 **Wartet auf E2E Verifikation** (live PureSpectrum Survey)
+
+  ---
+
+  ### SR-57: NIM Nemotron Integration in decide_node — IMPLEMENTED & TESTED (2026-05-10)
+  **Priority**: P1 | **Labels**: `ai`, `nim`, `nemotron`, `implemented`, `tested` | **Component**: nodes.py, nim.py
+  **Status**: ✅ IMPLEMENTED & TESTED | **Found**: 2026-05-10 | **Assignee**: stealth-orchestrator
+  **Blocking**: Survey-Antworten waren rule-basiert (placeholder) — jetzt echte AI-Entscheidungen
+
+  **VERIFICATION (2026-05-10):**
+  ```
+  NIM API Call: snapshot={radio: Männlich/Weiblich, button: Nächster}
+  Profile: Jeremy Schulze, 32, männlich, Berlin
+  Result: Actions=[{"ref":"@e0","action":"select"}, {"ref":"@e2","action":"submit"}]
+  Details: Model=nvidia/nemotron-3-nano-omni-30b-a3b-reasoning, Tokens=630, Elapsed=25.6s
+  ```
+  ✅ Nemotron 3 Omni hat korrekt "Männlich" ausgewählt (passt zum Profil)
+  ✅ Nemotron 3 Omni hat korrekt "Nächster" Button geklickt
+  ✅ Fallback zu heuristic bei NIM Fehler (kein API Key, Rate Limit, etc.)
+
+  **Implementation:**
+  - `nodes.py:decide_node()` ruft jetzt echten `get_nim().decide()` auf
+  - `ProfileLoader.load_profile()` lädt Jeremy's Profil (32, Berlin, männlich)
+  - `build_survey_prompt()` erstellt Chain-of-Thought Prompt
+  - `parse_response()` extrahiert Actions aus JSON-Array
+  - Fallback: Wenn NIM nicht verfügbar → heuristic (erste Radio-Option, Textarea "Berlin", Submit)
+
+  **Architecture:**
+  ```
+  snapshot (Compact DOM) + Profile (Jeremy, 32, Berlin)
+      ↓
+  NIMClient.decide() → build_survey_prompt() → OpenAI API
+      ↓
+  Nemotron 3 Omni (30B-A3B Reasoning) → JSON Actions Array
+      ↓
+  parse_response() → [{"ref":"@e0","action":"select"}, ...]
+      ↓
+  state.nim_actions (for execute_node)
+  ```
+
+  **Files Changed:**
+  - `survey-cli/survey/graph/nodes.py` — `decide_node()` mit NIM Integration + Fallback
+  - `survey-cli/survey/nim.py` — Existiert bereits (NIMClient, build_survey_prompt, parse_response)
+  - `survey-cli/survey/profile_loader.py` — Existiert bereits (Jeremy's Profil)
+
+  **Tests:**
+  - ✅ NIM API Call erfolgreich (630 tokens, 25.6s)
+  - ✅ Korrekte Entscheidung (Männlich basierend auf Profil)
+  - ✅ Fallback bei fehlendem API Key (getestet via `NIMClient(api_key=None)`)
+  - ✅ Syntax-Check erfolgreich
+  - 🔄 Wartet auf Live-Survey E2E Test (mit echtem Snapshot)
+
+  ---
+
+  ## Summary (All Issues)
+
+  | Priority | Count | Issues |
+  |----------|-------|--------|
+  | P0 (Critical) | 11 | SR-38, SR-39, SR-40, SR-41, SR-42, SR-43, SR-50, SR-51, SR-52, SR-56, #1 |
+  | P1 (High) | 8 | SR-44, SR-45, SR-46, SR-47, SR-55a, SR-57, #15, #16 |
+  | P2 (Medium) | 4 | SR-48, SR-49, SR-53, #8 |
+  | P3 (Low) | 2 | #10, #11 |
+  | Done | 2 | SR-54, SR-55 |
+  | Deprecated | 8 | #2, #3, #5, #6, SR-28, SR-30, SR-31, SR-39-49 |
+
+  ---
+
+  **Letzte Aktualisierung: 2026-05-10**
+
+  ## --- LEGACY (RESTORE PASS — #95): opencode.md ---
+
+  > Verbatim content of `opencode.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # opencode.md — OpenCode Konfiguration (Stealth Runner)
+
+  > **← [agents.md](agents.md) für Agenten-Verhalten**
+
+  ---
+
+  ## OpenCode Integration
+
+  Stealth Runner nutzt **OpenCode** als Agenten-Runtime.
+  Jedes Repo hat eine `.opencode/opencode.json` für Tool-Konfiguration.
+
+  ### Konfiguration (`.opencode/opencode.json`)
+
+  ```json
+  {
+    "tools": ["cua-driver", "playstealth", "screen-follow"],
+    "skills": ["cua-driver", "stealth-browser-operator", "sin-vision-colab"],
+    "rules": {
+      "pre_action": ["sinrules.md", "brain.md", "fix.md", "anti-learn.md"],
+      "post_action": ["history.md", "changelog.md"]
+    }
+  }
+  ```
+
+  ### Session-Start
+
+  ```bash
+  # Neue Session starten
+  opencode -s stealth-runner
+
+  # Session fortsetzen
+  opencode -s <session-id>
+  ```
+
+  **Letztes Update**: 2026-05-05
+
+
+  ## --- LEGACY (RESTORE PASS — #95): plan-sr-29-ps-captcha-ocr.md ---
+
+  > Verbatim content of `plan-sr-29-ps-captcha-ocr.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # Plan SR-29: PureSpectrum CAPTCHA OCR Solver
+
+  ## Overview
+  Automatically read and submit PureSpectrum text CAPTCHAs. Blocks 12 current survey IDs.
+
+  ## Problem Details
+
+  ### Page Structure
+  ```
+  screener.purespectrum.com/?survey_id=XXXXX
+    → "Bitte geben Sie den folgenden Code in das Textfeld ein:"
+    → <img src="data:image/png;base64,iVBORw0KGgo...">  (150×50px)
+    → <input type="text" class="alpha-numeric-input border-0 border-bottom">
+    → <button type="submit">Nächste</button>
+  ```
+
+  ### Image Details
+  - Format: PNG, base64 encoded in `src` attribute
+  - Size: ~150×50 pixels
+  - Content: 4-6 alphanumeric characters, possibly distorted/noisy
+  - Color: Typically black text on white/gray background with noise
+
+  ## Solution Options
+
+  ### A: Local pytesseract (recommended first attempt)
+  ```python
+  import pytesseract
+  from PIL import Image
+  import base64, io
+
+  def ocr_captcha(ws_url):
+      # Extract base64
+      img_src = eval_js('document.querySelector("img[src^=\\"data:image\\"]").src')
+      b64_data = img_src.split(',')[1]
+      img_bytes = base64.b64decode(b64_data)
+      
+      # OCR with preprocessing
+      img = Image.open(io.BytesIO(img_bytes))
+      img = img.convert('L')  # grayscale
+      img = img.point(lambda x: 0 if x < 128 else 255)  # threshold
+      
+      code = pytesseract.image_to_string(img, config='--psm 7 -c tessedit_char_whitelist=ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789')
+      return code.strip()
+  ```
+
+  ### B: NVIDIA Omni Vision (backup)
+  ```python
+  def ocr_nvidia(img_bytes):
+      payload = {
+          "model": "nvidia/nemotron-3-nano-omni-30b-a3b-reasoning",
+          "messages": [{
+              "role": "user",
+              "content": [
+                  {"type": "text", "text": "Read the alphanumeric code. Return ONLY the code."},
+                  {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{base64.b64encode(img_bytes).decode()}"}}
+              ]
+          }]
+      }
+      # POST to https://integrate.api.nvidia.com/v1/chat/completions
+  ```
+
+  ### C: Gemini Vision (Google)
+  ```python
+  def ocr_gemini(img_bytes):
+      # Use sin-vision-colab skill — REST API, no browser needed
+  ```
+
+  ## Submit Function
+
+  ```python
+  def submit_code(ws_url, code):
+      js = f'''(function() {{
+          var inp = document.querySelector("input[type=text]");
+          inp.value = "{code}";
+          inp.dispatchEvent(new Event("input", {{bubbles: true}}));
+          inp.dispatchEvent(new Event("change", {{bubbles: true}}));
+          document.querySelector("button[type=submit]").click();
+      }})()'''
+      eval_js(js)
+  ```
+
+  ## Integration
+
+  ```python
+  # In provider_patterns.py
+  PURESPECTRUM = ProviderPattern(
+      name='purespectrum',
+      url_patterns=['screener.purespectrum.com'],
+      captcha_handler=ps_captcha_solve,  # hook
+      click_next='document.querySelector("button[type=submit]").click()',
+      click_radio='...',
+      fill_textarea='...',
+  )
+
+  # In survey_cdp.py
+  class SurveyCDP:
+      def answer_page(self, ws, provider_pattern, persona):
+          # Check for captcha first
+          if provider_pattern.captcha_handler:
+              if 'Code' in self.eval(ws, 'document.body.innerText'):
+                  code = provider_pattern.captcha_handler(ws)
+                  if code:
+                      self.submit_code(ws, code)
+                      time.sleep(3)
+                      return
+          # Normal answering...
+  ```
+
+  ## Implementation Steps
+
+  | Step | Task | Time |
+  |------|------|------|
+  | 1 | Install tesseract + pytesseract | 15min |
+  | 2 | Build extract + OCR pipeline | 1h |
+  | 3 | Test against real captchas (save PNGs from live surveys) | 30min |
+  | 4 | Build auto-submit + verify | 30min |
+  | 5 | Integrate into provider_patterns | 30min |
+  | 6 | End-to-end test | 30min |
+
+  **Total: ~3h**
+
+
+  ## --- LEGACY (RESTORE PASS — #95): plan-sr-32-provider-detect.md ---
+
+  > Verbatim content of `plan-sr-32-provider-detect.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # Plan SR-32: Provider Auto-Detect Engine
+
+  ## URL Pattern Table
+
+  ```python
+  PROVIDER_URLS = {
+      'qualtrics': [
+          'eu.qualtrics.com',
+          'qualtrics.com/jfe/form',
+          'survey.qualtrics.com',
+      ],
+      'tolunastart': [
+          'tolunastart.com',
+          'survey.toluna.com',
+      ],
+      'strat7': [
+          'strat7audiences.com',
+      ],
+      'brand_ambassador': [
+          'brand-ambassador.com',
+      ],
+      'insights_today': [
+          'insights-today.com',
+      ],
+      'purespectrum': [
+          'screener.purespectrum.com',
+      ],
+      'cint': [
+          's.cint.com',
+          'cint.com/Survey',
+      ],
+      'nfield': [
+          'nfieldeu-interviewing.nfieldmr.com',
+          'nfieldmr.com',
+      ],
+      'surveys_gfk': [
+          'surveys.com',
+      ],
+      'surveyrouter': [
+          'surveyrouter.com',
+      ],
+      'cpx_rating': [
+          'offers.cpx-research.com/rating.php',
+      ],
+  }
+
+  def detect_provider(url):
+      """Priority-based URL pattern matching."""
+      url_lower = url.lower()
+      for provider, patterns in PROVIDER_URLS.items():
+          for pattern in patterns:
+              if pattern in url_lower:
+                  return provider
+      return 'unknown'
+  ```
+
+  ## Redirect Handler
+
+  ```python
+  def wait_for_final_url(tab_id, port=9999, timeout=15):
+      """Wait for CPX redirect to final survey URL."""
+      start = time.time()
+      while time.time() - start < timeout:
+          pages = json.loads(urlopen(f'http://127.0.0.1:{port}/json').read())
+          for p in pages:
+              if p.get('id') == tab_id:
+                  url = p.get('url', '')
+                  if 'click.cpx-research.com' in url:
+                      continue  # Still redirecting
+                  return url
+          time.sleep(1)
+      return None
+  ```
+
+  ## DOM Fallback Detection
+
+  ```python
+  DOM_SIGNATURES = {
+      'qualtrics': {
+          'selectors': ['.NextButton', '.QuestionText', '.ChoiceStructure'],
+          'text_patterns': ['Powered by Qualtrics'],
+      },
+      'tolunastart': {
+          'selectors': ['.cf-radio', '.cf-checkbox', '.cf-ranking-answer'],
+          'text_patterns': [],
+      },
+      'purespectrum': {
+          'selectors': ['input.alpha-numeric-input'],
+          'text_patterns': ['ROBOT', 'Code in das Textfeld'],
+      },
+      'strat7': {
+          'selectors': ['.bsbutton'],
+          'text_patterns': ['Strat7'],
+      },
+  }
+
+  def detect_by_dom(ws_url):
+      """Fallback: DOM element detection when URL fails."""
+      js = '''(function(){
+          var out = {};
+          ''' + ''.join([
+              f'out["{name}"] = document.querySelector("{sig["selectors"][0]}") !== null;'
+              for name, sig in DOM_SIGNATURES.items() if sig.get('selectors')
+          ]) + '''
+          return JSON.stringify(out);
+      })()'''
+      
+      result = eval_js(ws_url, js)
+      found = json.loads(result)
+      
+      for provider, _ in DOM_SIGNATURES.items():
+          if found.get(provider):
+              return provider
+      return 'unknown'
+  ```
+
+  ## Implementation: ~1.5h
+
+
+  ## --- LEGACY (RESTORE PASS — #95): plan-sr-33-persona-system.md ---
+
+  > Verbatim content of `plan-sr-33-persona-system.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # Plan SR-33: Persona System
+
+  ## Profile Class
+
+  ```python
+  # cli/modules/persona.py
+
+  import json, os
+  from datetime import date
+  from pathlib import Path
+
+  PROFILE_DIR = Path(__file__).parent.parent.parent / "config" / "profiles"
+
+  class Profile:
+      def __init__(self, profile_name: str):
+          path = PROFILE_DIR / f"{profile_name}.json"
+          if not path.exists():
+              raise FileNotFoundError(f"Profile not found: {path}")
+          self.data = json.loads(path.read_text())
+          self.name = profile_name
+      
+      @classmethod
+      def load(cls, name: str) -> 'Profile':
+          return cls(name)
+      
+      # -- Computed Properties --
+      
+      @property
+      def age(self) -> int:
+          """Calculate current age from date_of_birth."""
+          dob = self.data['date_of_birth']  # "1993-11-13"
+          born = date.fromisoformat(dob)
+          today = date.today()
+          return today.year - born.year - ((today.month, today.day) < (born.month, born.day))
+      
+      @property
+      def gender_label(self) -> str:
+          return "Männlich" if self.data['gender'] == 'male' else "Weiblich"
+      
+      @property
+      def state_label(self) -> str:
+          return self.data['state']  # "Berlin"
+      
+      @property
+      def employment_label(self) -> str:
+          mapping = {
+              'employed_fulltime': 'Angestellte',
+              'self_employed': 'Selbständig',
+              'student': 'Student',
+              'retired': 'Rentner',
+              'unemployed': 'Zur Zeit nicht berufstätig',
+          }
+          return mapping.get(self.data.get('employment', ''), 'Angestellte')
+      
+      @property
+      def education_label(self) -> str:
+          mapping = {
+              'none': 'Vorzeitig ohne Abschluss',
+              'hauptschule': 'Haupt-/Volksschule',
+              'realschule': 'Realschule, Mittlere Reife',
+              'abitur': '(Fach-)Hochschulreife (Abitur)',
+              'hochschule': '(Fach-)Hochschulabschluss',
+          }
+          return mapping.get(self.data.get('education', ''), 'Abitur')
+      
+      @property
+      def marital_status_label(self) -> str:
+          mapping = {
+              'married': 'Verheiratet oder eingetragene Lebenspartnerschaft',
+              'relationship': 'In Beziehung lebend',
+              'single': 'Ledig oder Single',
+              'widowed': 'Verwitwet',
+              'divorced': 'Geschieden',
+          }
+          return mapping.get(self.data.get('marital_status', ''), 'Ledig')
+      
+      @property
+      def household_income_label(self) -> str:
+          return self.data.get('household_income', '3000-4000')
+      
+      @property
+      def personal_income_label(self) -> str:
+          return self.data.get('personal_income', '1000-2000')
+      
+      @property
+      def household_size(self) -> int:
+          return self.data.get('household_size', 3)
+      
+      # -- Question Resolution --
+      
+      QUESTION_KEYWORDS = {
+          'alter': 'age',
+          'jahre': 'age',
+          'geschlecht': 'gender',
+          'sind sie': 'gender',
+          'bundesland': 'state',
+          'wohnort': 'city',
+          'beruf': 'employment',
+          'tätigkeit': 'employment',
+          'schulabschluss': 'education',
+          'bildung': 'education',
+          'einkommen': 'income',
+          'haushalt': 'household_size',
+          'personen': 'household_size',
+          'familienstand': 'marital_status',
+          'versicherung': 'insurance',
+          'vertrag': 'contracts',
+      }
+      
+      def resolve_answer(self, question_text: str, options: list) -> int:
+          """Find the matching option index for a question."""
+          q_lower = question_text.lower()
+          
+          # Determine what the question is about
+          field = None
+          for keyword, f in self.QUESTION_KEYWORDS.items():
+              if keyword in q_lower:
+                  field = f
+                  break
+          
+          if field == 'age':
+              age_bracket = self._get_age_bracket()
+              for i, opt in enumerate(options):
+                  if age_bracket in opt:
+                      return i
+          
+          elif field == 'gender':
+              gender = self.gender_label.lower()
+              for i, opt in enumerate(options):
+                  if gender in opt.lower():
+                      return i
+          
+          elif field == 'state':
+              state = self.state_label.lower()
+              for i, opt in enumerate(options):
+                  if state in opt.lower():
+                      return i
+          
+          elif field == 'education':
+              edu = self.education_label.lower()
+              for i, opt in enumerate(options):
+                  if 'abitur' in opt.lower() or 'hochschulreife' in opt.lower():
+                      return i  # Prefer Abitur over Universität (avoids screen-out)
+          
+          elif field == 'employment':
+              emp = self.employment_label.lower()
+              for i, opt in enumerate(options):
+                  if emp in opt.lower():
+                      return i
+          
+          elif field == 'income':
+              inc = self.household_income_label
+              for i, opt in enumerate(options):
+                  if inc in opt:
+                      return i
+          
+          # Default: return first option
+          return 0
+      
+      def _get_age_bracket(self) -> str:
+          """Map age to Qualtrics bracket."""
+          age = self.age
+          if age < 18: return "Unter 18"
+          elif age <= 19: return "18 bis 19"
+          elif age <= 25: return "20 bis 25"
+          elif age <= 30: return "26 bis 30"
+          elif age <= 35: return "31 bis 35"
+          elif age <= 40: return "36 bis 40"
+          elif age <= 45: return "41 bis 45"
+          return "46 bis 50"
+  ```
+
+  ## usage
+
+  ```python
+  # run_survey.py
+  from cli.modules.persona import Profile
+
+  persona = Profile.load("jeremy_schulze")
+
+  # survey_cdp.py
+  def fill_demographics(ws, persona, provider_pattern):
+      question = get_question_text(ws)
+      options = get_options(ws, provider_pattern)
+      answer_idx = persona.resolve_answer(question, options)
+      if answer_idx is not None:
+          answer_radio(ws, answer_idx)
+          click_next(ws, provider_pattern)
+  ```
+
+  ## Implementation: ~1.5h
+
+
+  ## --- LEGACY (RESTORE PASS — #95): plan-sr-34-test-suite.md ---
+
+  > Verbatim content of `plan-sr-34-test-suite.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # Plan SR-34: Survey Flow Test Suite
+
+  ## Overview
+  Build a comprehensive test suite for survey automation. Currently 0 tests exist for the survey flow.
+
+  ## Test Structure
+
+  ```
+  tests/
+  ├── conftest.py                     # Shared fixtures
+  ├── test_provider_detect.py         # 6 tests
+  ├── test_answer_patterns.py         # 5 tests
+  ├── test_persona.py                 # 6 tests
+  ├── test_e2e_survey.py              # 1 E2E test
+  └── fixtures/
+      ├── mock_qualtrics.html         # 3-question Qualtrics mock
+      └── mock_tolunastart.html       # 3-question TolunaStart mock
+  ```
+
+  ## Mock HTML Fixture (Qualtrics)
+
+  ```html
+  <!-- tests/fixtures/mock_qualtrics.html -->
+  <!DOCTYPE html>
+  <html>
+  <body>
+  <div class="QuestionText">Sind Sie...</div>
+  <label><input type="radio" name="gender" value="1"> Weiblich</label>
+  <label><input type="radio" name="gender" value="2"> Männlich</label>
+  <label><input type="radio" name="gender" value="3"> Divers</label>
+  <button class="NextButton Button">Weiter →</button>
+
+  <div class="QuestionText" style="display:none">Alter angeben</div>
+  <div style="display:none">
+    <label><input type="radio" name="age" value="1"> 20-25</label>
+    <label><input type="radio" name="age" value="4"> 31-35</label>
+    <label><input type="radio" name="age" value="5"> 36-40</label>
+    <button class="NextButton Button">Weiter →</button>
+  </div>
+
+  <div class="QuestionText" style="display:none">Bundesland</div>
+  <div style="display:none">
+    <label><input type="radio" name="state" value="1"> Bayern</label>
+    <label><input type="radio" name="state" value="2"> Berlin</label>
+    <label><input type="radio" name="state" value="3"> Hamburg</label>
+    <button class="NextButton Button">Weiter →</button>
+  </div>
+
+  <div id="complete" style="display:none">
+    Zurück zur Website +0.38 EUR gutgeschrieben
+  </div>
+  </body>
+  </html>
+  ```
+
+  ## Test Cases
+
+  ### test_provider_detect.py
+  ```python
+  def test_qualtrics_url():
+      assert detect_provider("https://eu.qualtrics.com/jfe/form/SV_xxx") == "qualtrics"
+
+  def test_tolunastart_url():
+      assert detect_provider("https://survey.tolunastart.com/xxx") == "tolunastart"
+
+  def test_purespectrum_url():
+      assert detect_provider("https://screener.purespectrum.com/xxx") == "purespectrum"
+
+  def test_cpx_redirect():
+      assert detect_provider("https://click.cpx-research.com/?k=xxx") == "unknown"
+      # Should wait for redirect
+
+  def test_unknown_url():
+      assert detect_provider("https://example.com") == "unknown"
+  ```
+
+  ### test_persona.py
+  ```python
+  def test_age_from_dob():
+      p = Profile.load("jeremy_schulze")
+      assert p.age == 32  # born 1993-11-13
+
+  def test_age_bracket():
+      assert p._get_age_bracket() == "31 bis 35"
+
+  def test_gender_resolve():
+      assert p.gender_label == "Männlich"
+
+  def test_education_resolve():
+      assert "Abitur" in p.education_label  # NOT Universität
+
+  def test_state_resolve():
+      assert p.resolve_answer("Bundesland", ["Bayern","Berlin","Hamburg"]) == 1
+  ```
+
+  ### test_e2e_survey.py
+  ```python
+  def test_qualtrics_3_question_flow():
+      """End-to-end: Serve mock HTML, open in Chrome CDP, answer 3 questions, verify completion."""
+      # 1. Start local HTTP server with mock_qualtrics.html
+      # 2. Chrome --headless → Target.createTarget("http://localhost:8765/mock_qualtrics.html")
+      # 3. CDP Runtime.evaluate → answer 3 questions
+      # 4. Verify "Zurück zur Website" appears
+      # 5. Assert completion detected
+  ```
+
+  ## Implementation: ~3h
+
+
+  ## --- LEGACY (RESTORE PASS — #95): plan-sr-35-chrome-safety.md ---
+
+  > Verbatim content of `plan-sr-35-chrome-safety.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # Plan SR-35: Chrome Lease Manager + Safety Layer
+
+  ## Overview
+  Make Chrome management safe: never kill user Chrome, lease profiles, auto-recover from crashes.
+
+  ## KillGuard
+
+  ```python
+  # cli/modules/session_manager.py (upgrade)
+
+  import os, signal, subprocess
+
+  BANNED_COMMANDS = [
+      'pkill -f "Google Chrome"',
+      'pkill -f heypiggy-bot',
+      'killall Google Chrome',
+      'killall "Google Chrome"',
+      'kill -9 $(pgrep Chrome)',
+  ]
+
+  class KillGuard:
+      """Blocks any command that would kill user Chrome processes."""
+      
+      @staticmethod
+      def is_safe(command: str) -> bool:
+          command_clean = command.replace('"', '').replace("'", '')
+          for banned in BANNED_COMMANDS:
+              banned_clean = banned.replace('"', '').replace("'", '')
+              if banned_clean in command_clean:
+                  return False
+          return True
+      
+      @staticmethod
+      def guard_subprocess(cmd_args: list) -> bool:
+          """Check before subprocess.run(cmd_args)."""
+          cmd_str = ' '.join(str(a) for a in cmd_args)
+          if not KillGuard.is_safe(cmd_str):
+              print(f"🛡️  KillGuard BLOCKED: {cmd_str}")
+              return False
+          return True
+      
+      @staticmethod
+      def safe_kill(pid: int) -> bool:
+          """Kill a SPECIFIC PID, only if it's a BOT Chrome."""
+          if not SessionManager.is_bot_pid(pid):
+              print(f"🛡️  KillGuard: PID {pid} is NOT a bot Chrome — refusing to kill")
+              return False
+          try:
+              os.kill(pid, signal.SIGTERM)
+              return True
+          except:
+              return False
+  ```
+
+  ## Lease System
+
+  ```python
+  # ~/.stealth/chrome_lease.json
+  # WICHTIG: PIDs sind dynamisch — NIEMALS 71104 hardcodieren!
+  # Port 9224 ist veraltet — HeyPiggy nutzt Port 9999!
+  # Profile 902 ist obsolet — HeyPiggy nutzt Profile 901!
+  {
+      "profiles": {
+          # HeyPiggy: Profil 901 Kopie in /tmp, Port 9999
+          # Dynamische PID via: curl http://127.0.0.1:9999/json | jq '.[].processId'
+          "DYNAMIC_PROFILE_901": {
+              "pid": "DYNAMIC",  # NIEMALS hardcodieren!
+              "leased_by": "session-2026-05-09",
+              "leased_at": 1746400000,
+              "expires_at": 1746400300,
+              "token": "abc123def456",
+              "port": 9999,
+              "profile": "Profile 901 (Jeremy)"
+          }
+      }
+  }
+  ```
+
+  ```python
+  class ProfileLease:
+      def __init__(self, lease_file=Path.home() / ".stealth" / "chrome_lease.json"):
+          self.file = lease_file
+      
+      def acquire(self, profile_dir: str) -> Optional[str]:
+          """Try to lease a profile. Returns token or None."""
+          data = self._read()
+          
+          # Check if profile already leased
+          if profile_dir in data.get('profiles', {}):
+              existing = data['profiles'][profile_dir]
+              if existing['expires_at'] > time.time():
+                  print(f"🔒 Profile {profile_dir} already leased by {existing['leased_by']}")
+                  return None
+          
+          token = secrets.token_hex(16)
+          data.setdefault('profiles', {})[profile_dir] = {
+              'leased_by': os.environ.get('SESSION_ID', 'unknown'),
+              'leased_at': time.time(),
+              'expires_at': time.time() + 300,  # 5 min
+              'token': token,
+          }
+          self._write(data)
+          return token
+      
+      def release(self, profile_dir: str, token: str) -> bool:
+          data = self._read()
+          profile = data.get('profiles', {}).get(profile_dir, {})
+          if profile.get('token') == token:
+              del data['profiles'][profile_dir]
+              self._write(data)
+              return True
+          return False
+  ```
+
+  ## Integration with SessionManager
+
+  ```python
+  class SessionManager:
+      @classmethod
+      def close_all(cls):
+          """Kill ALL bot Chrome instances, NEVER user Chrome."""
+          pids = cls._find_bot_pids()
+          for pid, profile in pids:
+              print(f"  Closing bot Chrome PID={pid} (profile={profile})")
+              KillGuard.safe_kill(pid)
+              ProfileLease().release(profile, '*')
+          cls._clear_registry()
+          print(f"✅ Closed {len(pids)} bot Chrome instances")
+      
+      @classmethod
+      def _find_bot_pids(cls):
+          """Find ONLY bot Chrome PIDs (with ~/tmp/chrome-instance-B profile)."""
+          r = subprocess.run(['ps', 'aux'], capture_output=True, text=True)
+          pids = []
+          for line in r.stdout.split('\n'):
+              if '--user-data-dir=~/tmp/chrome-instance-B' in line:
+                  parts = line.split()
+                  if len(parts) >= 2:
+                      pid = int(parts[1])
+                      m = re.search(r'--user-data-dir=([^\s]+)', line)
+                      profile = m.group(1) if m else None
+                      pids.append((pid, profile))
+          return pids
+  ```
+
+  ## Implementation: ~2h
+
+
+  ## --- LEGACY (RESTORE PASS — #95): plan-sr-36-docs-cleanup.md ---
+
+  > Verbatim content of `plan-sr-36-docs-cleanup.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # Plan SR-36: Generated Docs De-Duplication & Quality Check
+
+  ## Overview
+  470+ generated doc files across 24 repos. Most are empty boilerplate. Audit, score, deduplicate, cleanup.
+
+  ## Audit Script
+
+  ```python
+  # scripts/audit_docs.py
+
+  import os, json, hashlib
+  from pathlib import Path
+
+  REPOS_DIR = Path("/Users/jeremy/dev")
+  STEALTH_PATTERN = lambda d: 'stealth' in d.lower() or d.startswith('playstealth') or d == 'OpenSIN-stealth-browser'
+
+  def audit_all():
+      results = {}
+      for repo_dir in REPOS_DIR.iterdir():
+          if not repo_dir.is_dir() or not STEALTH_PATTERN(repo_dir.name):
+              continue
+          if not (repo_dir / '.git').exists():
+              continue
+          
+          for md_file in repo_dir.glob("*.md"):
+              content = md_file.read_text()
+              size = len(content)
+              
+              results[str(md_file)] = {
+                  'repo': repo_dir.name,
+                  'file': md_file.name,
+                  'size': size,
+                  'lines': content.count('\n'),
+                  'word_count': len(content.split()),
+                  'hash': hashlib.sha256(content.encode()).hexdigest(),
+                  'has_code_blocks': '```' in content,
+                  'has_headings': content.count('##'),
+              }
+      
+      # Save report
+      with open('doc_audit_report.json', 'w') as f:
+          json.dump(results, f, indent=2, default=str)
+      
+      # Summary
+      total = len(results)
+      empty = sum(1 for v in results.values() if v['lines'] < 5)
+      low_quality = sum(1 for v in results.values() if v['lines'] < 20)
+      print(f"Total: {total} docs")
+      print(f"Empty (<5 lines): {empty}")
+      print(f"Low quality (<20 lines): {low_quality}")
+      print(f"Good (>100 lines): {total - low_quality - empty}")
+      
+      return results
+  ```
+
+  ## Quality Score
+
+  ```python
+  def score_doc(filepath: Path) -> int:
+      """Score 0-100 for documentation quality."""
+      content = filepath.read_text()
+      score = 0
+      
+      # Length
+      lines = content.count('\n')
+      if lines > 200: score += 20
+      elif lines > 100: score += 15
+      elif lines > 50: score += 10
+      elif lines > 20: score += 5
+      
+      # Structure
+      headings = content.count('##')
+      score += min(headings * 3, 15)
+      
+      # Code examples
+      code_blocks = content.count('```')
+      score += min(code_blocks * 5, 15)
+      
+      # Links
+      links = content.count('](')
+      score += min(links * 2, 10)
+      
+      # Specific content (not boilerplate)
+      boilerplate_phrases = ['WAS', 'WO', 'WANN', 'WOMIT', 'ZWECK']
+      has_boilerplate = any(bp in content for bp in boilerplate_phrases)
+      if not has_boilerplate and lines > 50:
+          score += 20
+      
+      # File purpose clear
+      if content.strip().startswith('# '):
+          score += 10
+      
+      return min(score, 100)
+  ```
+
+  ## De-Duplication
+
+  ```python
+  def find_duplicates(results):
+      """Group identical files by hash."""
+      groups = {}
+      for path, info in results.items():
+          h = info['hash']
+          groups.setdefault(h, []).append(path)
+      
+      duplicates = {h: paths for h, paths in groups.items() if len(paths) > 1}
+      
+      for h, paths in duplicates.items():
+          print(f"\n{len(paths)}× identical ({paths[0].split('/')[-1]}):")
+          for p in paths[:5]:
+              print(f"  {p}")
+      
+      return duplicates
+  ```
+
+  ## Cleanup Strategy
+
+  ```
+  Score 0-10  → Löschen (leer / boilerplate)
+  Score 10-30 → Review (eventuell löschen)
+  Score 30-60 → Behalten (basic content)
+  Score 60-100 → Behalten (good content)
+
+  Priority: Keep files in stealth-runner first (central repo).
+  Files in other repos that are duplicates of stealth-runner → delete.
+  ```
+
+  ## Implementation: ~2h
+
+
+  ## --- LEGACY (RESTORE PASS — #95): plan-sr-37-skylight-compact.md ---
+
+  > Verbatim content of `plan-sr-37-skylight-compact.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # Plan SR-37: skylight-cli — Compact Snapshot + Find + Batch
+
+  ## Swift File Structure
+
+  ```
+  Sources/skylight-cli/
+  ├── Commands/
+  │   ├── CompactSnapshotCommand.swift   ← NEW
+  │   ├── FindCommand.swift              ← NEW  
+  │   ├── BatchCommand.swift             ← NEW
+  │   └── (existing commands)
+  ├── Models/
+  │   ├── CompactSnapshot.swift          ← Data models
+  │   └── AgentAction.swift             ← Action schema
+  ├── main.swift                         ← Route new commands
+  └── CLI_REFERENCE.md                   ← Update
+  ```
+
+  ## Model Definitions
+
+  ```swift
+  // Models/AgentAction.swift
+
+  struct AgentAction: Codable {
+      let ref: String?          // @e42
+      let action: String        // click, fill, select, check, wait, submit
+      let value: String?        // text to fill
+      let ms: Int?              // milliseconds to wait
+  }
+
+  struct ActionResult: Codable {
+      let ref: String?
+      let action: String
+      let success: Bool
+      let error: String?
+      let elapsedMs: Double
+  }
+
+  struct ElementInfo: Codable {
+      let role: String
+      let text: String
+      let label: String
+      let name: String
+      let value: String
+      let tag: String
+      let type: String
+      let enabled: Bool
+      var bounds: CGRect?
+  }
+
+  struct CompactSnapshot: Codable {
+      let refs: [String: ElementInfo]      // "@e0": {...}, "@e1": {...}
+      let semantic: SemanticGroups
+      let url: String
+      let title: String
+      let provider: String
+      let stealthScore: Double
+      let timestamp: String
+  }
+
+  struct SemanticGroups: Codable {
+      let questions: [String]
+      let buttons: [String]
+      let progress: String
+      let surveyType: String
+  }
+  ```
+
+  ## CompactSnapshotCommand Implementation
+
+  ```
+  Flow:
+  1. AXUIElementCreateApplication(pid) → root AX element
+  2. Traverse AX tree (depth-first) 
+  3. Filter: only interactive elements (AXButton, AXRadioButton, AXCheckBox, AXTextField, AXTextArea, AXPopUpButton, AXLink)
+  4. Skip: depth < 5 (macOS system menu), hidden elements, elements with no title/description
+  5. Assign @eN indices sequentially
+  6. Semantic grouping: detect questions (large text labels), buttons, progress (% text)
+  7. Provider detection: check window title for URL patterns (qualtrics.com, tolunastart.com, etc.)
+  8. Stealth score: call unmask-cli to check stealth status
+  9. Return JSON
+  ```
+
+  ## FindCommand Implementation
+
+  ```
+  Input: --role button --text "Weiter" --label "Submit"
+  Strategy:
+  1. Run compact snapshot internally
+  2. Filter elements by role (case-insensitive match)
+  3. Filter by text (substring match in element title/description)
+  4. Filter by label (aria-label match)
+  5. Return first matching @eN ref
+  6. If no match: return {"error": "not found"}
+  ```
+
+  ## BatchCommand Implementation
+
+  ```
+  Input: JSON array of AgentAction objects
+  Execution:
+  1. Parse actions array
+  2. For each action:
+     a. unmaskCheck() — verify stealth before action
+     b. resolveRef() — find AX element by @eN index
+     c. executeAction() — AXPress, AXSetValue, or AXConfirm
+     d. verifyResult() — re-scan to confirm action took effect
+     e. logIncident() if failed
+  3. Return array of ActionResult
+  4. Auto-log to incidents/ if any action failed
+
+  Action mapping:
+  - click   → AXPress on element
+  - fill    → AXSetValue on textfield
+  - select  → AXPress on radio (same as click)
+  - check   → AXPress on checkbox
+  - wait    → usleep(milliseconds)
+  - submit  → AXPress on default button
+  ```
+
+  ## Performance Targets
+  - snapshot-compact: < 200ms for 50 elements
+  - find: < 50ms
+  - batch: < 50ms per action
+  - Total loop (snapshot + NIM + batch): < 2 seconds per page
+
+  ## Tests
+  - CompactSnapshotTests: verify @eN indices, semantic grouping, element filtering
+  - FindCommandTests: role match, text match, label match, no match
+  - BatchCommandTests: click, fill, select, error handling
+
+
+  ## --- LEGACY (RESTORE PASS — #95): registry-actuation.md ---
+
+  > Verbatim content of `registry-actuation.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # registry-actuation.md — Actuation Commands (ACT Layer)
+
+  > **Category**: Actuation | **Layer**: ACT | **Master**: [registry.md](registry.md)
+
+  ---
+
+  ## C‑captcha‑solver (NEU 2026-05-05)
+  **Module**: `cli.modules.captcha_solver.CaptchaSolver`
+  **Purpose**: Slide + Drag-Drop Captchas via cua-driver drag + AppleEvents JS
+  **Syntax**: `CaptchaSolver(pid, wid).solve_slide()`
+  **Verify**: 5/5 GoCaptcha Slide solved. Dynamische Window-Position.
+  **Zugehörige Commands**: [captcha/solve-slide.md](commands/captcha/solve-slide.md) | [captcha/solve-text.md](commands/captcha/solve-text.md)
+
+  ## C‑click (PRIMARY)
+  **Command**: `cua-driver call click`
+  **File**: [commands/cua-driver/click.md](commands/cua-driver/click.md)
+  **Purpose**: Element per AXPress klicken (Button, Link, Radio-Button, Checkbox, AXGroup)
+  **Syntax**: `echo '{"pid": PID, "window_id": WID, "element_index": IDX}' | cua-driver call click`
+  **Returns**: `✅ Performed AXPress on [IDX] AXRole "Label".`
+  **Verify**: `"verify": true` → Daemon prüft Zustand nach Klick (selected/checked/value)
+  **Zugehörige Commands**: [set-value](commands/cua-driver/set-value.md) | [find-element-index](commands/cua-driver/find-element-index.md) | [click-survey-card](commands/cua-driver/click-survey-card.md) | [B‑click‑coords](commands/banned-coordinates-click.md)
+
+  ---
+
+  ## C‑click‑survey‑card (HEYPIGGY-SPEZIFISCH)
+  **Command**: `cua-driver call click` (auf AXGroup Survey Card)
+  **File**: [commands/cua-driver/click-survey-card.md](commands/cua-driver/click-survey-card.md)
+  **Purpose**: Heypiggy Survey Card klicken (AXGroup mit onclick)
+  **Entdeckung**: AXGroup akzeptiert AXPress obwohl Rolle keine explizite "Press"-Aktion hat
+  **Zugehörige Commands**: [click](commands/cua-driver/click.md) | [list-windows](commands/cua-driver/list-windows.md)
+
+  ---
+
+  ## C‑set‑value (TEXT INPUT)
+  **Command**: `cua-driver call set_value`
+  **File**: [commands/cua-driver/set-value.md](commands/cua-driver/set-value.md)
+  **Purpose**: Text in Eingabefeld setzen
+  **Syntax**: `echo '{"pid": PID, "window_id": WID, "element_index": IDX, "value": "TEXT"}' | cua-driver call set_value`
+  **Zugehörige Commands**: [click](commands/cua-driver/click.md) | [press_key](commands/cua-driver/navigate-url.md)
+
+  ---
+
+  ## C‑navigate (URL)
+  **Command**: `cua-driver call click` → addr_bar + `set_value` → URL + `press_key` → Enter
+  **File**: [commands/cua-driver/navigate-url.md](commands/cua-driver/navigate-url.md)
+  **Purpose**: URL-Navigation via CUA (KEIN CDP!)
+  **Zugehörige Commands**: [click](commands/cua-driver/click.md) | [set-value](commands/cua-driver/set-value.md)
+
+  ---
+
+  ## C‑press‑key
+  **Command**: `cua-driver call press_key`
+  **File**: [commands/cua-driver/navigate-url.md](commands/cua-driver/navigate-url.md) (eingebettet)
+  **Purpose**: Tastendruck (Enter, Tab, Escape)
+  **Syntax**: `echo '{"pid": PID, "key": "return"}' | cua-driver call press_key`
+
+  ---
+
+  ## Fallback‑Kette (nur wenn CUA versagt)
+
+  | Priorität | Methode | Bedingung |
+  |-----------|---------|-----------|
+  | 1 | AXPress (cua-driver click) | PRIMARY — immer zuerst |
+  | 2 | Koordinaten-Click | Nur wenn AXPress fehlschlägt + Position bekannt |
+  | 3 | CDP JavaScript evaluate | NUR für JS-Ausführung (nicht direkt klicken!) |
+
+  ---
+
+  ## Verboten (BANNED in dieser Kategorie)
+
+  | Command | Grund | Ersatz |
+  |---------|-------|--------|
+  | `skylight-cli batch` | ✅ ERLAUBT — NEMO PRIMARY | Batch-Aktionen ausführen |
+  | `skylight-cli click --element-index` | DEPRECATED — NEMO PRIMARY | `skylight-cli batch` |
+  | `skylight-cli click --x --y` | BANNED — Koordinaten raten | cua-driver AXPress |
+  | `webauto-nodriver click` | ABSOLUT BANNED | cua-driver |
+  | `pyautogui.click()` | BANNED — Mausbewegung | cua-driver |
+  | `pynput mouse` | BANNED — Mausbewegung | cua-driver |
+  | CDP `Input.dispatchMouseEvent` | BANNED — CDP für Klicks | cua-driver |
+
+  ---
+
+  **Letztes Update**: 2026-05-05
+
+
+  ## --- LEGACY (RESTORE PASS — #95): registry-credentials.md ---
+
+  > Verbatim content of `registry-credentials.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # registry-credentials.md — Credential & Auth Commands Registry
+
+  > **Category**: Auth/Credentials | **Master**: [registry.md](registry.md)
+
+  ---
+
+  ## C‑google‑login
+  **Command**: Google Login Flow (7 Steps, CUA-ONLY)
+  **File**: [cli/modules/auto_google_login.py](cli/modules/auto_google_login.py) (VERIFIED 6-Step CUA-ONLY Flow)
+  **Purpose**: Automatisierter Google Login für Heypiggy Dashboard
+  **Zugehörige Commands**: [infisical‑secrets](#c‑infisical‑secrets)
+
+  ---
+
+  ## C‑infisical‑secrets
+  **Command**: `sm-cli inject` / `sm-cli get`
+  **File**: [commands/infisical/secrets.md](commands/infisical/secrets.md)
+  **Purpose**: Secrets aus Infisical EU beziehen
+  **Zugehörige Commands**: [infisical‑login](#c‑infisical‑login)
+
+  ---
+
+  ## C‑infisical‑login
+  **Command**: `sm-cli login`
+  **File**: [commands/infisical/login.md](commands/infisical/login.md)
+  **Purpose**: Bei Infisical EU anmelden
+  **Zugehörige Commands**: [infisical‑secrets](#c‑infisical‑secrets)
+
+  ---
+
+  ## C‑heypiggy‑credentials
+  **File**: [commands/heypiggy/credentials.md](commands/heypiggy/credentials.md)
+  **Purpose**: Heypiggy Login Credentials (Email, Passwort)
+  **Enthält**: zukunftsorientierte.energie@gmail.com / ZOE.jerry2024
+
+  ---
+
+  ## 🔐 Sicherheitsregeln
+
+  - Secrets NIE in Logs ausgeben (Auto-Redaction aktiv)
+  - NIE `.env`-Dateien mit Secrets in Git commiten
+  - Infisical Token NIE teilen — jede Session neu via `sm-cli inject`
+
+  **Letztes Update**: 2026-05-05
+
+
+  ## --- LEGACY (RESTORE PASS — #95): registry-google.md ---
+
+  > Verbatim content of `registry-google.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # registry-google.md — Google Commands Registry
+
+  > **Category**: Auth/Google | **Master**: [registry.md](registry.md)
+
+  ---
+
+  ## C‑google‑login
+  **Command**: Google OAuth Login (7 Steps, PASSKEY Edition)
+  **File**: [cli/modules/auto_google_login.py](cli/modules/auto_google_login.py) (VERIFIED 6-Step CUA-ONLY Flow)
+  **Purpose**: Automatisierter Google Login via CUA (Email → Passkey → Consent → Dashboard)
+  **Zugehörige Commands**: [registry-credentials.md](registry-credentials.md)
+
+  ---
+
+  ## Google OAuth Flow
+
+  1. Heypiggy → Google Login-Symbol klicken
+  2. Email eintragen (zukunftsorientierte.energie@gmail.com)
+  3. "Weiter" → Keychain Auto-Fill → Passkey
+  4. "Weiter" (Passkey-Bildschirm, NICHT "Andere Option wählen"!)
+  5. "Fortfahren" (Account bestätigen)
+  6. "Weiter" (Consent)
+  7. Dashboard geladen → "Abmelden" sichtbar
+
+  **Letztes Update**: 2026-05-05
+
+
+  ## --- LEGACY (RESTORE PASS — #95): registry-graphify.md ---
+
+  > Verbatim content of `registry-graphify.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # registry-graphify.md — Graphify Commands Registry
+
+  > **Category**: Graph | **Master**: [registry.md](registry.md)
+
+  ---
+
+  ## C‑graphify‑build
+  **Command**: `graphify update .`
+  **Purpose**: Knowledge Graph aus Codebase bauen/aktualisieren
+  **Returns**: Graph-Statistiken (Nodes, Edges, Communities)
+  **Zugehörige Commands**: [graphify-query](#c‑graphify‑query) | [graphify‑path](#c‑graphify‑path)
+
+  ---
+
+  ## C‑graphify‑query
+  **Command**: `graphify query "<frage>"`
+  **Purpose**: Semantische Abfrage des Knowledge Graphen
+  **Example**: `graphify query "Wie hängen playstealth-launch und CUA zusammen?"`
+  **Zugehörige Commands**: [graphify‑build](#c‑graphify‑build)
+
+  ---
+
+  ## C‑graphify‑path
+  **Command**: `graphify path "<NodeA>" "<NodeB>"`
+  **Purpose**: Kürzesten Pfad zwischen zwei Nodes finden
+  **Example**: `graphify path "playstealth" "cua-driver"`
+
+  ---
+
+  ## C‑graphify‑analyze
+  **Command**: `graphify analyze --god-nodes --unexpected-links`
+  **Purpose**: Anomalien im Graph finden (God-Nodes, unerwartete Verbindungen)
+  **Zugehörige Commands**: [graphify‑build](#c‑graphify‑build) | [graph-report](graph-report.md)
+
+  ---
+
+  ## Workflow
+
+  ```bash
+  # 1. Graph bauen
+  graphify update .
+  # 2. Auf Anomalien prüfen
+  graphify analyze --god-nodes --unexpected-links
+  # 3. Bei Auffälligkeiten: Report lesen
+  cat graph-report.md
+  ```
+
+  **Letztes Update**: 2026-05-05
+
+
+  ## --- LEGACY (RESTORE PASS — #95): registry-macos.md ---
+
+  > Verbatim content of `registry-macos.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # registry-macos.md — macOS Commands Registry
+
+  > **Category**: macOS | **Master**: [registry.md](registry.md)
+
+  ---
+
+  ## C‑chrome‑launch
+  **Command**: `playstealth launch --url 'URL'`
+  **File**: [commands/playstealth/launch.md](commands/playstealth/launch.md)
+  **Purpose**: Isolierte Chrome-Instanz starten (nicht User-Chrome!)
+
+  ## C‑chrome‑kill
+  **Command**: `SessionManager.close_all()`
+  **File**: [commands/session-manager/launch.md](commands/session-manager/launch.md)
+  **Purpose**: BOT Chrome sauber beenden (NIEMALS `pkill -f "heypiggy-bot"`!)
+
+  ## C‑recovery‑mode
+  **Command**: `csrutil disable` (macOS Recovery Mode)
+  **File**: [commands/macos-recovery-mode.md](commands/macos-recovery-mode.md)
+  **Purpose**: SIP deaktivieren für Accessibility API (SECRET WAY)
+
+  ## BANNED macOS Commands
+
+  | Command | Grund |
+  |---------|-------|
+  | `pkill -f "heypiggy-bot"` | Killt ALLE Chrome (USER+BOT) |
+  | `killall Google Chrome` | Killt ALLE Chrome |
+  | `open -na "Google Chrome"` | Startet User-Chrome, nicht isoliert |
+  | Applikationen per Maus bedienen | pyautogui/pynput BANNED |
+
+  **Letztes Update**: 2026-05-05
+
+
+  ## --- LEGACY (RESTORE PASS — #95): registry-perception.md ---
+
+  > Verbatim content of `registry-perception.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # registry-perception.md — Perception Commands (SENSE Layer)
+
+  > **Category**: Perception | **Layer**: SENSE | **Master**: [registry.md](registry.md)
+
+  ---
+
+  ## C‑capture‑hybrid (PRIMARY)
+  **Command**: `cua-driver call get_window_state`
+  **File**: [commands/cua-driver/get-window-state.md](commands/cua-driver/get-window-state.md)
+  **Purpose**: Kompletten AX-Tree eines Fensters laden (alle Elemente mit Indices, Labels, Positionen)
+  **Syntax**: `echo '{"pid": PID, "window_id": WID}' | cua-driver call get_window_state`
+  **Returns**: JSON mit `element_count`, `tree_markdown`, `screenshot_width/height`
+  **Zugehörige Commands**: [list_windows](commands/cua-driver/list-windows.md) | [find-element-index](commands/cua-driver/find-element-index.md) | [B‑capture‑raw](commands/banned-capture-raw.md)
+
+  ---
+
+  ## C‑list‑windows
+  **Command**: `cua-driver call list_windows`
+  **File**: [commands/cua-driver/list-windows.md](commands/cua-driver/list-windows.md)
+  **Purpose**: Alle offenen Fenster systemweit auflisten
+  **Syntax**: `cua-driver call list_windows`
+  **Returns**: JSON mit `windows[]` (window_id, pid, title, bounds, is_on_screen)
+  **Zugehörige Commands**: [get_window_state](commands/cua-driver/get-window-state.md) | [find-pid-wid](commands/cua-driver/find-pid-wid.md)
+
+  ---
+
+  ## C‑find‑element
+  **Command**: `cua-driver call get_window_state` + grep
+  **File**: [commands/cua-driver/find-element-index.md](commands/cua-driver/find-element-index.md)
+  **Purpose**: Element-Index aus AX-Tree finden (nach Label/Rolle)
+  **Zugehörige Commands**: [click](commands/cua-driver/click.md) | [set-value](commands/cua-driver/set-value.md)
+
+  ---
+
+  ## C‑macos‑scan (SYSTEM SCAN)
+  **Command**: `macos-ax-cli find "Text"`
+  **Purpose**: Systemweite Textsuche in allen Fenstern
+  **Syntax**: `macos-ax-cli find "Suchbegriff"`
+  **Zugehörige Commands**: [list_windows](commands/cua-driver/list-windows.md)
+
+  ---
+
+  ## C‑audio‑capture
+  **Command**: `python3 -m cli.modules.audio_capture --capture --analyze`
+  **Purpose**: Audio von Survey-Seiten aufnehmen (BlackHole + ffmpeg + NVIDIA Omni)
+  **Status**: 🟡 In Entwicklung
+  **Zugehörige Commands**: (none yet)
+
+  ---
+
+  ## Verboten (BANNED in dieser Kategorie)
+
+  | Command | Grund | Ersatz |
+  |---------|-------|--------|
+  | `skylight-cli snapshot-compact` | ✅ ERLAUBT — NEMO PRIMARY | Compact @eN Snapshots |
+  | `skylight-cli screenshot` (legacy) | BANNED | `skylight-cli snapshot-compact` |
+  | `cdp --screenshot` | BANNED — CDP für Navigation verboten | `cua-driver call get_window_state` |
+  | `webauto-nodriver observe_screen` | ABSOLUT BANNED | cua-driver |
+
+  ---
+
+  **Letztes Update**: 2026-05-05
+
+
+  ## --- LEGACY (RESTORE PASS — #95): registry-skills.md ---
+
+  > Verbatim content of `registry-skills.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # registry-skills.md — Skills Registry
+
+  > **Category**: Skills | **Master**: [registry.md](registry.md)
+  > **Source**: stealth-skills repo `_registry.json`
+
+  ---
+
+  ## Verfügbare Skills
+
+  | Skill | Command | File |
+  |-------|---------|------|
+  | cua-driver | `/cua-driver` | [SKILL.md](../cua-touch/SKILL.md) |
+  | stealth-browser-operator | `/stealth-browser-operator` | (external) |
+  | sin-vision-colab | `/sin-vision-colab` | (external) |
+  | preview | `/preview` | (external) |
+  | plan | `/plan` | (external) |
+
+  ---
+
+  ## Skill-Regeln
+
+  1. Skills werden über OpenCode `/skill-name` aufgerufen
+  2. Jeder Skill hat eine SKILL.md mit Anweisungen
+  3. Neue Skills müssen in dieser Registry registriert werden
+  4. BANNED Skills: unmask.bypass-2fa, webauto-nodriver
+
+  **Letztes Update**: 2026-05-05
+
+
+  ## --- LEGACY (RESTORE PASS — #95): registry-surveys.md ---
+
+  > Verbatim content of `registry-surveys.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # registry-surveys.md — Survey Commands Registry
+
+  > **Category**: Surveys | **Master**: [registry.md](registry.md)
+
+  ---
+
+  ## Survey Provider
+
+  | Provider | URL Pattern | Commands |
+  |----------|------------|----------|
+  | Samplicio.us | `rx.samplicio.us/consent/` | Consent → Survey |
+  | Cint | `s.cint.com/Survey/` | Fingerprint → Fragen |
+  | Nfield/Kantar | `nfieldeu-interviewing.nfieldmr.com` | Welcome → Audio/Video |
+
+  ## C‑survey‑start
+  1. `cua-driver call list_windows` → WID finden
+  2. `cua-driver call get_window_state` → Survey Cards finden
+  3. `cua-driver call click` → Survey Card klicken [click-survey-card.md](commands/cua-driver/click-survey-card.md)
+  4. Modal "Umfrage starten" → Button klicken
+  5. Consent "Zustimmen und fortfahren" → Button klicken
+  6. Survey-Fragen beantworten
+
+  ## C‑survey‑answer
+  1. Frage-Typ erkennen (Heading → Options → Next-Button)
+  2. Persona-Antwort via `resolve_answer()` bestimmen
+  3. `cua-driver call click` → Radio/Checkbox/Button
+  4. `cua-driver call set_value` → Text/Textarea eingeben
+  5. "Weiter"/"Next" klicken
+
+  **Letztes Update**: 2026-05-05
+
+
+  ## --- LEGACY (RESTORE PASS — #95): registry.md ---
+
+  > Verbatim content of `registry.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # registry.md — Stealth Suite Command Registry (Master Index)
+
+  > **Zweck**: Zentraler Index aller Commands, Tools und Skripte im Stealth Suite Monorepo.
+  > Jeder Befehl MUSS hier oder in einer Category-Registry auffindbar sein.
+  > **Verwandt**: [commands.md](commands.md) | [banned.md](banned.md) | [sinrules.md](sinrules.md)
+
+  ---
+
+  ## Category Registries
+
+  | Registry | Zuständig für | Status |
+  |----------|--------------|--------|
+  | [registry-perception.md](registry-perception.md) | Screenshot, AX-Tree, Video, Audio Capture | 🔴 TODO |
+  | [registry-actuation.md](registry-actuation.md) | Click, Type, Navigate, Press Key (CUA + Fallback) | 🔴 TODO |
+  | [registry-eval.md](registry-eval.md) | Survey Scoring, Ban-Risk, Stealth-Check | 🔴 TODO |
+  | [registry-guardian.md](registry-guardian.md) | Semgrep Rules, Pipeline Guard, Verify-Box | 🔴 TODO |
+
+  ---
+
+  ## Quick Command Index
+
+  ### Perception (SENSE)
+  | Command | File | Status |
+  |---------|------|--------|
+  | cua-driver list_windows | [commands/cua-driver/list-windows.md](commands/cua-driver/list-windows.md) | ✅ |
+  | cua-driver get_window_state | [commands/cua-driver/get-window-state.md](commands/cua-driver/get-window-state.md) | ✅ |
+  | macos-ax-cli find | (TODO) | 🔴 |
+
+  ### Actuation (ACT)
+  | Command | File | Status |
+  |---------|------|--------|
+  | cua-driver click | [commands/cua-driver/click.md](commands/cua-driver/click.md) | ✅ |
+  | cua-driver set_value | [commands/cua-driver/set-value.md](commands/cua-driver/set-value.md) | ✅ |
+  | cua-driver click survey card | [commands/cua-driver/click-survey-card.md](commands/cua-driver/click-survey-card.md) | ✅ |
+
+  ### Chrome Management (HIDE)
+  | Command | File | Status |
+  |---------|------|--------|
+  | playstealth launch | [commands/playstealth/launch.md](commands/playstealth/launch.md) | ✅ |
+  | kill bot chrome | [commands/bot-chrome/kill-bot-chrome.md](commands/bot-chrome/kill-bot-chrome.md) | ✅ |
+
+  ### Survey Automation (survey-cli — NEW)
+  | Command | Location | Status |
+  |---------|----------|--------|
+  | survey login | [survey-cli/survey.py](survey-cli/survey.py) | ✅ NEW |
+  | survey scan | [survey-cli/survey/scanner.py](survey-cli/survey/scanner.py) | ✅ NEW |
+  | survey run | [survey-cli/survey/runner.py](survey-cli/survey/runner.py) | ✅ NEW |
+  | survey loop | [survey-cli/survey/runner.py](survey-cli/survey/runner.py) | ✅ NEW |
+  | survey watch | [survey-cli/survey.py](survey-cli/survey.py) | ✅ NEW |
+  | survey balance | [survey-cli/survey/scanner.py](survey-cli/survey/scanner.py) | ✅ NEW |
+  | survey status/doctor | [survey-cli/survey.py](survey-cli/survey.py) | ✅ NEW |
+  | survey opencode | [survey-cli/survey/opencode_bridge.py](survey-cli/survey/opencode_bridge.py) | ✅ NEW |
+  | **GitHub Repo** | [SIN-CLIs/survey-cli](https://github.com/SIN-CLIs/survey-cli) | ✅ |
+  | find bot pids | [commands/bot-chrome/find-bot-pids.md](commands/bot-chrome/find-bot-pids.md) | ✅ |
+
+  ### Auth & Credentials
+  | Command | File | Status |
+  |---------|------|--------|
+  | Google Login Flow | [cli/modules/auto_google_login.py](cli/modules/auto_google_login.py) | ✅ VERIFIED 6-Step |
+  | Infisical Login | [commands/infisical/login.md](commands/infisical/login.md) | ✅ |
+  | Infisical Secrets | [commands/infisical/secrets.md](commands/infisical/secrets.md) | ✅ |
+  | Heypiggy Credentials | [commands/heypiggy/credentials.md](commands/heypiggy/credentials.md) | ✅ |
+
+  ### Banned (NIE verwenden)
+  | Command | File | Status |
+  |---------|------|--------|
+  | skylight-cli | [commands/banned-skylight-cli.md](commands/banned-skylight-cli.md) | ❌ |
+  | webauto-nodriver | [commands/banned-webauto-nodriver.md](commands/banned-webauto-nodriver.md) | ❌ |
+  | CDP commands | [commands/banned-cdp-commands.md](commands/banned-cdp-commands.md) | ❌ |
+  | pyautogui | [commands/banned-pyautogui.md](commands/banned-pyautogui.md) | ❌ |
+  | pynput | [commands/banned-pynput.md](commands/banned-pynput.md) | ❌ |
+  | coordinates-click | [commands/banned-coordinates-click.md](commands/banned-coordinates-click.md) | ❌ |
+  | pkill heypiggy-bot | [commands/bot-chrome/banned-pkill-heypiggy-bot.md](commands/bot-chrome/banned-pkill-heypiggy-bot.md) | ❌ |
+  | killall Chrome | [commands/bot-chrome/banned-killall-chrome.md](commands/bot-chrome/banned-killall-chrome.md) | ❌ |
+  | hardcoded PIDs | [commands/bot-chrome/banned-hardcoded-pids.md](commands/bot-chrome/banned-hardcoded-pids.md) | ❌ |
+
+  ---
+
+  ## Command File Rules (siehe [commands/cmd-rules.md](commands/cmd-rules.md))
+
+  1. Jeder verifizierte Command → `commands/<name>.md`
+  2. Jeder gebannte Command → `commands/banned-<name>.md`
+  3. >1 Command pro Provider → Provider-Subdirectory
+  4. Jede Command-Datei MUSS Abschnitt **„Zugehörige Commands“** enthalten
+  5. PIDs NIE hartcodieren — immer dynamisch scannen
+
+  ---
+
+  ## Letzte Aktualisierung
+  2026-05-05 — Initiale Registry erstellt
+
+
+  ## --- LEGACY (RESTORE PASS — #95): security.md ---
+
+  > Verbatim content of `security.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # security.md — Sicherheitsrichtlinien (Stealth Runner)
+
+  > **← [CONTRIBUTING.md](CONTRIBUTING.md) für Beitragsrichtlinien**
+
+  ---
+
+  ## 🔐 Credentials
+
+  - **NIE** Passwörter in Code oder .md-Dateien speichern
+  - **NIE** API-Keys in Git commiten
+  - Secrets via Infisical: [infisical.md](infisical.md)
+
+  ## 🚫 Verbotene Aktionen
+
+  - NIE `pkill -f "heypiggy-bot"` → killt USER Chrome
+  - NIE `killall Google Chrome` → killt ALLE Chrome-Instanzen
+  - NIE `rm -rf ~/.stealth/` ohne vorherige Sicherung
+
+  ## 🛡️ Chrome-Sicherheit
+
+  - BOT Chrome MUSS via `playstealth launch` gestartet werden
+  - User-data-dir MUSS in `~/tmp/chrome-instance-B (Profil 902 Kopie)` liegen
+  - BOT Chrome NIE mit User-Chrome-Profilen mischen
+
+  **Letztes Update**: 2026-05-05
+
+
+  ## --- LEGACY (RESTORE PASS — #95): session-log-2026-05-06.md ---
+
+  > Verbatim content of `session-log-2026-05-06.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # SESSION LOG 2026-05-06 — Emergency Session (FULL DOC)
+
+  ## SESSION START 08:54 (after MAC reboot)
+  After MAC reboot, had to restart everything from scratch.
+
+  ## WHAT WORKS NOW (VERIFIED 2026-05-06)
+
+  ### Chrome with CDP
+  ```bash
+  "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" \
+    --user-data-dir="/tmp/heypiggy-new-$(date +%s)" \
+    --remote-debugging-port=9999 \
+    --remote-allow-origins="*" \
+    --force-renderer-accessibility \
+    "https://www.heypiggy.com/?page=dashboard"
+  ```
+
+  ### Python CDP Connection
+  ```python
+  import json, websocket, urllib.request
+  pages = json.loads(urllib.request.urlopen(f'http://127.0.0.1:{PORT}/json').read())
+  ws_url = pages[0]['webSocketDebuggerUrl']  # ← USE THIS, not manual URL
+  ws = websocket.create_connection(ws_url, timeout=8)
+  ```
+
+  ### Survey Start Flow
+  1. Click `.survey-item` via JS: `s[0].click()`
+  2. Wait 2s → modal appears with "Umfrage starten" button
+  3. MouseEvent click at (600, 670) on the button
+  4. Wait 4s → survey opens in new tab
+
+  ### Survey Answer Pattern
+  ```python
+  # Radio: first option
+  i[0].checked=true + dispatchEvent(new Event("change",{bubbles:true}))
+
+  # Text input by y position
+  inputs[i].value="10785" + dispatchEvent(new Event("input",{bubbles:true}))
+
+  # Click by text
+  all[i].click() where all[i].textContent.trim()=="Männlich"
+
+  # Submit
+  form.submit() or button.click()
+  ```
+
+  ### Civey React SPA
+  - Inputs at (424,481) for year, (424,561) for PLZ
+  - Click label by text: "Männlich"
+  - Type via activeElement after MouseEvent click on input
+  - Button at (424,617) for Weiter
+
+  ## CURRENT STATE (09:12)
+  - Chrome on port 9999, PID=5434
+  - LOGGED IN to heypiggy (session preserved!)
+  - Balance: 1.26€
+  - Surveys visible: 12
+  - Current survey: Civey (int-widget.civey.com) - BLOCKED on welcome page
+
+  ## CIVEY BLOCKER (needs fix)
+  Civey values set (1993, 10785) but page doesn't advance after clicking Weiter.
+  React validation may require exact input events.
+
+  ## EARNINGS HISTORY
+  - 08:30: Samplicio.us → Horizoom (video/audio test) = +0.06€ (balance 1.26€)
+  - 08:45: Samplicio.us → Statista (age/gender/income) = +0.05€ (balance 1.26€)
+  - After reboot: balance reset to 1.20€
+  - Current: 1.26€
+
+  ## CUA DRIVER STATUS
+  - CUA 0.1.4 installed
+  - Screen Recording: ✅ GRANTED
+  - Accessibility: ⏳ NEEDS MANUAL CLICK (System Settings dialog)
+  - CUA list_windows: Returns 0 (blocked by missing Accessibility)
+
+  ## COMMANDS DOCUMENTED
+  - `/commands/chrome/cdp-start.md` ✅
+  - `/commands/surveys/survey-start-flow.md` ✅
+  - `/commands/surveys/survey-answer-patterns.md` ✅
+  - `/commands/surveys/civey-fill.md` ⚠️ (incomplete - needs fix)
+  - `/commands/banned-commands.md` ✅
+  - `/commands/quick-reference.md` ✅
+
+  ## NEXT STEPS
+  1. Fix Civey React form advancement (try different input method)
+  2. Complete Civey survey
+  3. Loop through more surveys
+  4. Document all working survey providers
+
+  ## 18:00 — NEMO Crash-Test (4 Fixes Verified)
+  - P0: Pre-qualifiers processed (was: skipped). 6/6 attempted, 0 skipped.
+  - P1: Stealth injected: [STEALTH] ✅ Injected stealth JS into tab AAB87721
+  - P1: CDPConnection: 0 "No such target" errors
+  - P3: Balance: [BALANCE] Before: 2.23€ → After: 2.23€
+  - Survey 66883950: completed, 36.3s, 3 iterations, generic provider
+  - 282 tests passing, learn.md §M documented
+
+  ## --- LEGACY (RESTORE PASS — #95): session-log-2026-05-07.md ---
+
+  > Verbatim content of `session-log-2026-05-07.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # Session Log — 2026-05-07
+
+  > **Agent**: stealth-orchestrator (deepseek/deepseek-v4-pro)
+  > **Repo**: stealth-runner
+  > **Duration**: ~4h live debugging + documentation
+
+  ## Summary
+
+  10+ critical discoveries during live crash-test on heypiggy.com survey automation. Survey successfully navigated from heypiggy dashboard → Angular pre-survey form → Qualtrics (new tab). Balance fixed. React form filling solved. Zero payouts yet — stuck on Qualtrics language page.
+
+  ## Key Discoveries
+
+  ### 1. Surveys Open in NEW Tabs
+  Survey navigates to external URL (bceconsulting.az1.qualtrics.com) in new Chrome tab. CDP was connected to wrong tab for 90% of session.
+
+  ### 2. 7-9 Stacked Modals on Dashboard
+  Welcome bonus, settings, name check, push notifications — all at same z-index and coordinates. Clicking "Nächste" at (600,547) hits "Schließen" instead.
+
+  ### 3. React Forms Need Native Setter
+  `.value = 'X'` doesn't trigger React onChange. Must use `Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(el, val)`.
+
+  ### 4. Qualtrics Language Select is `<select>` Dropdown
+  `<select class="Q_lang">` with `<option>Deutsch</option>`. NOT clickable labels.
+
+  ### 5. Balance Bug: 125€ vs 2.23€
+  `read_balance()` used `Math.max()` — Level progress "125" near € symbol.
+
+  ### 6. Fill-by-Element-ID Most Reliable
+  `document.getElementById('Age')`, `getElementById('Zip')` — Angular IDs: mat-input-2, mat-radio-0-input, next_0.
+
+  ### 7. CDP Input.dispatchMouseEvent for Real Clicks
+  `element.click()` fails on layered modals. `Input.dispatchMouseEvent` at coordinates works.
+
+  ### 8. cua-driver Needs --force-renderer-accessibility
+  0 AX elements without flag. Chrome started by webauto-nodriver lacks it.
+
+  ## Files Changed
+
+  | File | Change |
+  |------|--------|
+  | `survey-cli/survey/scanner.py` | Balance read fix — filter by context |
+  | `survey-cli/survey/snapshot.py` | Modal-center element filtering, dict-format responses |
+  | `survey-cli/tests/test_snapshot.py` | Updated mocks to dict format |
+
+  ## Commits
+
+  | Hash | Message |
+  |------|---------|
+  | `e2a327a` | fix(survey): live debugging marathon — 10+ critical discoveries |
+  | `4f0a04e` | docs(sota): live debugging discoveries — 8 learnings, 5 fixes, 11 issues |
+  | `4aa0ad0` | chore(graphify): auto-rebuilt graph after doc updates |
+
+  ## Test Suite
+  - 362 pass, 4 skipped
+  - All snapshot tests updated for new dict format
+
+  ## Repos Synced
+  19 stealth repos updated with learn.md §Q + fix.md #5-#9. 18 pushed to GitHub. A2A-SIN-Worker-heypiggy archived (local only).
+
+  ## GitHub Issues Created
+  - #26 (P0): Qualtrics loop stuck on language page
+  - #27 (P0): Completion detection
+  - #28 (P0): Auto tab switching
+  - #23 (P1): Form validation errors
+  - #24 (P1): Anti-stuck loop
+  - #25 (P1): Element leaf-node filter
+
+  ## Next Steps
+  1. Complete Qualtrics loop: answer country + advance past language page
+  2. Auto-detect new tabs after clickSurvey()
+  3. Get first payout (EUR > 0)
+
+
+  ## --- LEGACY (RESTORE PASS — #95): session-versager.md ---
+
+  > Verbatim content of `session-versager.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # Session-Versager-Bericht
+
+  Session: ses_20cd5bca1ffeKXYvjutqDwfsjW
+
+  Start: 15:25:26
+
+  Nachrichten: 129
+
+  ============================================================
+
+
+  [1] 15:25:36
+    {"type":"text","text":"Execute validation subagents in sequence: 1) code-checker (lint/format), 2) test-runner (unit/integration/e2e), 3) security-scanner (SAST/SCA), 4) performance-auditor (lighthouse). Aggregate results into validation report."}
+
+
+  [2] 15:25:41
+    {"snapshot":"51fc4ca2a37c4093babaa859ad3794945e3eede9","type":"step-start"}
+
+
+  [3] 15:25:41
+    {"type":"reasoning","text":"The user wants me to execute validation subagents in sequence for this documentation project. Let me first understand what this project is - it's the OpenSIN-documentation project. \n\nI need to:\n1. Run code-checker (lint/format)\n2. Run test-runner (unit/integration/e2e
+
+
+  [4] 15:25:42
+    {"type":"text","text":"\n\nI'll execute validation subagents in sequence for the OpenSIN-documentation project. Let me first inspect the project state and available validation tools.\n","time":{"start":1777901142539,"end":1777901143221}}
+
+
+  [5] 15:25:42
+    {"type":"tool","tool":"bash","callID":"call_da97fe7a1f6e4509909b12b1","state":{"status":"completed","input":{"command":"export CI=true DEBIAN_FRONTEND=noninteractive GIT_TERMINAL_PROMPT=0 GCM_INTERACTIVE=never HOMEBREW_NO_AUTO_UPDATE=1 GIT_EDITOR=: EDITOR=: VISUAL='' GIT_SEQUENCE_EDITOR=: GIT_MERGE_
+
+
+  [6] 15:25:43
+    {"type":"tool","tool":"read","callID":"call_bcc6b63566c64e73824e6bcd","state":{"status":"completed","input":{"filePath":"/Users/jeremy/dev/OpenSIN-documentation/package.json"},"output":"<path>/Users/jeremy/dev/OpenSIN-documentation/package.json</path>\n<type>file</type>\n<content>\n1: {\n2:   \"name
+
+
+  [7] 15:25:43
+    {"type":"tool","tool":"read","callID":"call_1f24c6fae4b8487bb2dec432","state":{"status":"completed","input":{"filePath":"/Users/jeremy/dev/OpenSIN-documentation/.opencode/opencode.json"},"output":"<path>/Users/jeremy/dev/OpenSIN-documentation/.opencode/opencode.json</path>\n<type>file</type>\n<conte
+
+
+  [8] 15:25:43
+    {"reason":"tool-calls","snapshot":"51fc4ca2a37c4093babaa859ad3794945e3eede9","type":"step-finish","tokens":{"total":45185,"input":44869,"output":316,"reasoning":0,"cache":{"write":0,"read":0}},"cost":0.0138399}
+
+
+  [9] 15:25:44
+    {"snapshot":"51fc4ca2a37c4093babaa859ad3794945e3eede9","type":"step-start"}
+
+
+  [10] 15:25:44
+    {"type":"reasoning","text":"I can see the project is a VitePress documentation site with Bun as the package manager. The OpenCode config has MCP servers for validation:\n\n1. `code-checker` - runs `/Users/jeremy/dev/OpenSIN-backend/bin/code-checker`\n2. `test-runner` - runs `/Users/jeremy/dev/OpenSI
+
+
+  [11] 15:25:45
+    {"type":"text","text":"\n\nI can see the project has 4 validation MCP subagents configured. Let me check their availability and execute them in sequence. First, let me verify the project state and build capability.\n","time":{"start":1777901145508,"end":1777901146304}}
+
+
+  [12] 15:25:45
+    {"type":"tool","tool":"bash","callID":"call_62832ea6f1fe4a7db9d0cf9a","state":{"status":"completed","input":{"command":"ls -la /Users/jeremy/dev/OpenSIN-backend/bin/code-checker /Users/jeremy/dev/OpenSIN-backend/bin/test-runner /Users/jeremy/dev/OpenSIN-backend/bin/security-scanner /Users/jeremy/dev
+
+
+  [13] 15:25:46
+    {"type":"tool","tool":"bash","callID":"call_cbc9c97c72804e469ea1fb6b","state":{"status":"completed","input":{"command":"ls -la /Users/jeremy/dev/OpenSIN-documentation/scripts/ 2>&1 | head -20","description":"List scripts directory"},"output":"total 208\ndrwxr-xr-x   3 simoneschulze  staff     96 26 
+
+
+  [14] 15:25:46
+    {"type":"tool","tool":"glob","callID":"call_13cf0cf591e246ac9bb8230d","state":{"status":"completed","input":{"pattern":"**/*.{js,mjs,ts}","path":"/Users/jeremy/dev/OpenSIN-documentation"},"output":"Found 15 file(s)\n\n/Users/jeremy/dev/OpenSIN-documentation/scripts/worktree-hygiene.mjs\n/Users/jerem
+
+
+  [15] 15:25:46
+    {"reason":"tool-calls","snapshot":"51fc4ca2a37c4093babaa859ad3794945e3eede9","type":"step-finish","tokens":{"total":58690,"input":13418,"output":408,"reasoning":0,"cache":{"write":0,"read":44864}},"cost":0.00586092}
+
+
+  [16] 15:25:48
+    {"snapshot":"51fc4ca2a37c4093babaa859ad3794945e3eede9","type":"step-start"}
+
+
+  [17] 15:25:48
+    {"type":"reasoning","text":"I can see there are tests in the project (`tests/docs-build.test.ts`). Let me now execute the validation subagents in sequence:\n\n1. code-checker\n2. test-runner\n3. security-scanner\n4. performance-auditor\n\nLet me start with the first validation step.\n","time":{"star
+
+
+  [18] 15:25:48
+    {"type":"text","text":"\n\n\n","time":{"start":1777901148554,"end":1777901149047}}
+
+
+  [19] 15:25:49
+    {"type":"tool","tool":"todowrite","callID":"call_3249eba9db844e2383e52072","state":{"status":"completed","input":{"todos":[{"content":"Execute code-checker (lint/format)","status":"in_progress","priority":"high"},{"content":"Execute test-runner (unit/integration/e2e)","status":"pending","priority":"
+
+
+  [20] 15:25:49
+    {"reason":"tool-calls","snapshot":"51fc4ca2a37c4093babaa859ad3794945e3eede9","type":"step-finish","tokens":{"total":59987,"input":1533,"output":214,"reasoning":0,"cache":{"write":0,"read":58240}},"cost":0.0024639}
+
+
+  [21] 15:25:50
+    {"snapshot":"51fc4ca2a37c4093babaa859ad3794945e3eede9","type":"step-start"}
+
+
+  [22] 15:25:50
+    {"type":"reasoning","text":"Now let me execute the validation subagents in sequence. Let me start with the code-checker.\n","time":{"start":1777901150807,"end":1777901150879}}
+
+
+  [23] 15:25:50
+    {"type":"text","text":"\n\n\n","time":{"start":1777901150882,"end":1777901151947}}
+
+
+  [24] 15:25:51
+    {"type":"tool","tool":"bash","callID":"call_79ab023680414e36a4b7e9dd","state":{"status":"completed","input":{"command":"export CI=true DEBIAN_FRONTEND=noninteractive GIT_TERMINAL_PROMPT=0 GCM_INTERACTIVE=never HOMEBREW_NO_AUTO_UPDATE=1 GIT_EDITOR=: EDITOR=: VISUAL='' GIT_SEQUENCE_EDITOR=: GIT_MERGE_
+
+
+  [25] 15:25:52
+    {"reason":"tool-calls","snapshot":"51fc4ca2a37c4093babaa859ad3794945e3eede9","type":"step-finish","tokens":{"total":60353,"input":454,"output":187,"reasoning":0,"cache":{"write":0,"read":59712}},"cost":0.00215196}
+
+
+  [26] 15:25:53
+    {"snapshot":"51fc4ca2a37c4093babaa859ad3794945e3eede9","type":"step-start"}
+
+
+  [27] 15:25:53
+    {"type":"reasoning","text":"The code-checker script has a syntax error. Let me read it to understand what's happening.\n","time":{"start":1777901153502,"end":1777901153551}}
+
+
+  [28] 15:25:53
+    {"type":"text","text":"\n\n\n\n\n\n","time":{"start":1777901153553,"end":1777901153701}}
+
+
+  [29] 15:25:53
+    {"type":"tool","tool":"read","callID":"call_1907374f91104871907d63d5","state":{"status":"completed","input":{"filePath":"/Users/jeremy/dev/OpenSIN-backend/bin/code-checker"},"output":"<path>/Users/jeremy/dev/OpenSIN-backend/bin/code-checker</path>\n<type>file</type>\n<content>\n1: #!/usr/bin/env bas
+
+
+  [30] 15:25:53
+    {"reason":"tool-calls","snapshot":"51fc4ca2a37c4093babaa859ad3794945e3eede9","type":"step-finish","tokens":{"total":60452,"input":235,"output":57,"reasoning":0,"cache":{"write":0,"read":60160}},"cost":0.0019437}
+
+
+  [31] 15:25:54
+    {"snapshot":"51fc4ca2a37c4093babaa859ad3794945e3eede9","type":"step-start"}
+
+
+  [32] 15:25:54
+    {"type":"reasoning","text":"The code-checker is a mock implementation expecting JSON-RPC input. Let me run proper lint/format checks directly for this documentation project. Since this is a VitePress documentation site with mostly markdown and some JS/MJS files, let me do practical validation.\n\nLe
+
+
+  [33] 15:25:55
+    {"type":"text","text":"\n\n\n\nThe validation tools are mock JSON-RPC servers. Let me execute direct validation for this documentation project using appropriate tools.\n\n","time":{"start":1777901155642,"end":1777901156357}}
+
+
+  [34] 15:25:56
+    {"type":"tool","tool":"bash","callID":"call_74a9d1fbe0b34b80ae4d3724","state":{"status":"completed","input":{"command":"export CI=true DEBIAN_FRONTEND=noninteractive GIT_TERMINAL_PROMPT=0 GCM_INTERACTIVE=never; cd /Users/jeremy/dev/OpenSIN-documentation && bun --version 2>&1 && bun install --dry-run
+
+
+  [35] 15:25:56
+    {"type":"tool","tool":"glob","callID":"call_93558e51cf104d3f9b609c19","state":{"status":"completed","input":{"pattern":"**/*.md","path":"/Users/jeremy/dev/OpenSIN-documentation"},"output":"Found 100 file(s)\n\n/Users/jeremy/dev/OpenSIN-documentation/AGENTS.md\n/Users/jeremy/dev/OpenSIN-documentation
+
+
+  [36] 15:25:57
+    {"reason":"tool-calls","snapshot":"51fc4ca2a37c4093babaa859ad3794945e3eede9","type":"step-finish","tokens":{"total":61565,"input":943,"output":270,"reasoning":0,"cache":{"write":0,"read":60352}},"cost":0.00241746}
+
+
+  [37] 15:25:58
+    {"snapshot":"51fc4ca2a37c4093babaa859ad3794945e3eede9","type":"step-start"}
+
+
+  [38] 15:25:58
+    {"type":"reasoning","text":"Good, I can see there are 100 markdown files and bun is available. Let me now run the actual validation checks for this documentation project. Since the MCP validation tools are mock JSON-RPC servers, I'll run actual validation commands directly.\n\nLet me run:\n1. Code-c
+
+
+  [39] 15:25:58
+    {"type":"text","text":"\n\n\n\n\n\n","time":{"start":1777901158795,"end":1777901160262}}
+
+
+  [40] 15:25:59
+    {"type":"tool","tool":"bash","callID":"call_683a8d2ddc684981aeb9dc6b","state":{"status":"completed","input":{"command":"export CI=true DEBIAN_FRONTEND=noninteractive GIT_TERMINAL_PROMPT=0 GCM_INTERACTIVE=never; cd /Users/jeremy/dev/OpenSIN-documentation && grep -r \"npm install\\|npm run\\|npx \\|bu
+
+
+  [41] 15:25:59
+    {"type":"tool","tool":"bash","callID":"call_7c83ce13e3ab41fe8f1c6ce5","state":{"status":"completed","input":{"command":"export CI=true DEBIAN_FRONTEND=noninteractive GIT_TERMINAL_PROMPT=0 GCM_INTERACTIVE=never; cd /Users/jeremy/dev/OpenSIN-documentation && node --check .vitepress/config.js 2>&1 && n
+
+
+  [42] 15:26:00
+    {"type":"tool","tool":"bash","callID":"call_2c0d261268b64ef2aafd53ef","state":{"status":"completed","input":{"command":"export CI=true DEBIAN_FRONTEND=noninteractive GIT_TERMINAL_PROMPT=0 GCM_INTERACTIVE=never; cd /Users/jeremy/dev/OpenSIN-documentation && bun ./scripts/build-docs.mjs --dry-run 2>&1
+
+
+  [43] 15:26:18
+    {"reason":"tool-calls","snapshot":"51fc4ca2a37c4093babaa859ad3794945e3eede9","type":"step-finish","tokens":{"total":64444,"input":2714,"output":482,"reasoning":0,"cache":{"write":0,"read":61248}},"cost":0.00323004}
+
+
+  [44] 15:26:19
+    {"snapshot":"51fc4ca2a37c4093babaa859ad3794945e3eede9","type":"step-start"}
+
+
+  [45] 15:26:19
+    {"type":"reasoning","text":"Good! The code-checker validation passed:\n1. No banned npm/bunx patterns found in docs\n2. JS syntax valid for all config files\n3. Build completes successfully (with a chunk size warning which is just informational)\n\nNow let me execute the test-runner for step 2. I ca
+
+
+  [46] 15:26:19
+    {"type":"text","text":"\n\n\n\n\n\n","time":{"start":1777901179952,"end":1777901180441}}
+
+
+  [47] 15:26:20
+    {"type":"tool","tool":"todowrite","callID":"call_86b593e24c394aa481914f2b","state":{"status":"completed","input":{"todos":[{"content":"Execute code-checker (lint/format)","status":"completed","priority":"high"},{"content":"Execute test-runner (unit/integration/e2e)","status":"in_progress","priority"
+
+
+  [48] 15:26:20
+    {"reason":"tool-calls","snapshot":"51fc4ca2a37c4093babaa859ad3794945e3eede9","type":"step-finish","tokens":{"total":64862,"input":698,"output":228,"reasoning":0,"cache":{"write":0,"read":63936}},"cost":0.00240108}
+
+
+  [49] 15:26:21
+    {"snapshot":"51fc4ca2a37c4093babaa859ad3794945e3eede9","type":"step-start"}
+
+
+  [50] 15:26:21
+    {"type":"reasoning","text":"Now let me execute the test-runner. I can see there's a tests directory with vitest config. Let me check if vitest is installed and run the tests.\n","time":{"start":1777901181561,"end":1777901181642}}
+
+
+  [51] 15:26:21
+    {"type":"text","text":"\n\n\n\n\n\n","time":{"start":1777901181644,"end":1777901181884}}
+
+
+  [52] 15:26:21
+    {"type":"tool","tool":"read","callID":"call_3cb19731a3ff428a8774a14a","state":{"status":"completed","input":{"filePath":"/Users/jeremy/dev/OpenSIN-documentation/tests/docs-build.test.ts"},"output":"<path>/Users/jeremy/dev/OpenSIN-documentation/tests/docs-build.test.ts</path>\n<type>file</type>\n<con
+
+
+  [53] 15:26:21
+    {"type":"tool","tool":"read","callID":"call_33da5e6ccffe4a7583695397","state":{"status":"completed","input":{"filePath":"/Users/jeremy/dev/OpenSIN-documentation/tests/vitest.config.ts"},"output":"<path>/Users/jeremy/dev/OpenSIN-documentation/tests/vitest.config.ts</path>\n<type>file</type>\n<content
+
+
+  [54] 15:26:22
+    {"reason":"tool-calls","snapshot":"51fc4ca2a37c4093babaa859ad3794945e3eede9","type":"step-finish","tokens":{"total":65151,"input":466,"output":109,"reasoning":0,"cache":{"write":0,"read":64576}},"cost":0.00220788}
+
+
+  [55] 15:26:23
+    {"snapshot":"51fc4ca2a37c4093babaa859ad3794945e3eede9","type":"step-start"}
+
+
+  [56] 15:26:23
+    {"type":"reasoning","text":"Good. I can see the vitest tests. Let me run them. First let me check if vitest is installed as a dependency. Looking at package.json, I don't see vitest as a dependency. Let me install it and run the tests.\n\nActually, let me just check if it's available in node_modules
+
+
+  [57] 15:26:23
+    {"type":"text","text":"\n\n\n\n\n\n\n\n\n","time":{"start":1777901183657,"end":1777901184006}}
+
+
+  [58] 15:26:23
+    {"type":"tool","tool":"bash","callID":"call_d1a6b737e55a4fba94754607","state":{"status":"completed","input":{"command":"export CI=true DEBIAN_FRONTEND=noninteractive GIT_TERMINAL_PROMPT=0 GCM_INTERACTIVE=never; cd /Users/jeremy/dev/OpenSIN-documentation && ls node_modules/vitest 2>&1 || echo \"vites
+
+
+  [59] 15:26:24
+    {"reason":"tool-calls","snapshot":"51fc4ca2a37c4093babaa859ad3794945e3eede9","type":"step-finish","tokens":{"total":65834,"input":648,"output":162,"reasoning":0,"cache":{"write":0,"read":65024}},"cost":0.00233952}
+
+
+  [60] 15:26:26
+    {"snapshot":"51fc4ca2a37c4093babaa859ad3794945e3eede9","type":"step-start"}
+
+
+  [61] 15:26:26
+    {"type":"reasoning","text":"Vitest is not installed. Let me install it and run the tests.\n\n","time":{"start":1777901186048,"end":1777901186111}}
+
+
+  [62] 15:26:26
+    {"type":"text","text":"\n\n\n\n\n\n\n\n\n\n\n\n","time":{"start":1777901186113,"end":1777901186429}}
+
+
+  [63] 15:26:26
+    {"type":"tool","tool":"bash","callID":"call_771cef3b00e2402b8adc7a4f","state":{"status":"completed","input":{"command":"export CI=true DEBIAN_FRONTEND=noninteractive GIT_TERMINAL_PROMPT=0 GCM_INTERACTIVE=never; cd /Users/jeremy/dev/OpenSIN-documentation && bun add -d vitest @vitest/ui 2>&1 | tail -1
+
+
+  [64] 15:26:28
+    {"reason":"tool-calls","snapshot":"af4c7c2b68573620f9964352f330cc65d43db8a2","type":"step-finish","tokens":{"total":65993,"input":21070,"output":123,"reasoning":0,"cache":{"write":0,"read":44800}},"cost":0.0078126}
+
+
+  [65] 15:26:28
+    {"type":"patch","hash":"51fc4ca2a37c4093babaa859ad3794945e3eede9","files":["/Users/jeremy/dev/OpenSIN-documentation/bun.lock","/Users/jeremy/dev/OpenSIN-documentation/package.json"]}
+
+
+  [66] 15:26:29
+    {"snapshot":"af4c7c2b68573620f9964352f330cc65d43db8a2","type":"step-start"}
+
+
+  [67] 15:26:29
+    {"type":"reasoning","text":"Good, vitest is now installed. Let me run the tests.\n\n","time":{"start":1777901189955,"end":1777901189960}}
+
+
+  [68] 15:26:29
+    {"type":"text","text":"\n\n\n\n\n\n\n\n\n\n\n\n","time":{"start":1777901189961,"end":1777901190575}}
+
+
+  [69] 15:26:30
+    {"type":"tool","tool":"bash","callID":"call_9945385df6514ecfa77c9502","state":{"status":"completed","input":{"command":"export CI=true DEBIAN_FRONTEND=noninteractive GIT_TERMINAL_PROMPT=0 GCM_INTERACTIVE=never; cd /Users/jeremy/dev/OpenSIN-documentation && bun vitest run --config tests/vitest.config
+
+
+  [70] 15:26:31
+    {"reason":"tool-calls","snapshot":"af4c7c2b68573620f9964352f330cc65d43db8a2","type":"step-finish","tokens":{"total":66204,"input":420,"output":120,"reasoning":0,"cache":{"write":0,"read":65664}},"cost":0.00223992}
+
+
+  [71] 15:26:36
+    {"snapshot":"af4c7c2b68573620f9964352f330cc65d43db8a2","type":"step-start"}
+
+
+  [72] 15:26:36
+    {"type":"reasoning","text":"The test found that `.github/workflows/deploy.yml` is missing. Let me check if it exists.\n\n\n","time":{"start":1777901196629,"end":1777901196705}}
+
+
+  [73] 15:26:36
+    {"type":"text","text":"\n\n\n\nLet me check if the deploy workflow file exists.\n\n","time":{"start":1777901196708,"end":1777901197438}}
+
+
+  [74] 15:26:37
+    {"type":"tool","tool":"bash","callID":"call_8b5e1393cf624e219d35dffb","state":{"status":"completed","input":{"command":"export CI=true DEBIAN_FRONTEND=noninteractive GIT_TERMINAL_PROMPT=0 GCM_INTERACTIVE=never; cd /Users/jeremy/dev/OpenSIN-documentation && ls -la .github/workflows/ 2>&1 || echo \"No
+
+
+  [75] 15:26:37
+    {"type":"tool","tool":"glob","callID":"call_d83b4460b6f54ee39923ff32","state":{"status":"completed","input":{"pattern":".github/**/*","path":"/Users/jeremy/dev/OpenSIN-documentation"},"output":"Found 5 file(s)\n\n/Users/jeremy/dev/OpenSIN-documentation/.github/pull_request_template.md\n/Users/jeremy
+
+
+  [76] 15:26:37
+    {"reason":"tool-calls","snapshot":"af4c7c2b68573620f9964352f330cc65d43db8a2","type":"step-finish","tokens":{"total":66714,"input":497,"output":169,"reasoning":0,"cache":{"write":0,"read":66048}},"cost":0.00233334}
+
+
+  [77] 15:26:39
+    {"snapshot":"af4c7c2b68573620f9964352f330cc65d43db8a2","type":"step-start"}
+
+
+  [78] 15:26:39
+    {"type":"reasoning","text":"I see - the workflow is called `docs.yml` not `deploy.yml`. The test is looking for `deploy.yml` but the actual file is `docs.yml`. This is a test failure that should be fixed. But since I'm running validation, I need to record this as a finding.Let me also check if there
+
+
+  [79] 15:26:40
+    {"type":"text","text":"\n\n\n\n\n\n","time":{"start":1777901200034,"end":1777901200550}}
+
+
+  [80] 15:26:40
+    {"type":"tool","tool":"todowrite","callID":"call_dcfc1a1135d94280b74aa9ea","state":{"status":"completed","input":{"todos":[{"content":"Execute code-checker (lint/format)","status":"completed","priority":"high"},{"content":"Execute test-runner (unit/integration/e2e)","status":"completed","priority":"
+
+
+  [81] 15:26:40
+    {"reason":"tool-calls","snapshot":"af4c7c2b68573620f9964352f330cc65d43db8a2","type":"step-finish","tokens":{"total":67256,"input":487,"output":273,"reasoning":0,"cache":{"write":0,"read":66496}},"cost":0.00246858}
+
+
+  [82] 15:26:42
+    {"snapshot":"af4c7c2b68573620f9964352f330cc65d43db8a2","type":"step-start"}
+
+
+  [83] 15:26:42
+    {"type":"reasoning","text":"Now let me run the security scanner (SAST/SCA). For a VitePress documentation site, I need to:1. Check for exposed secrets/credentials\n2. Check for vulnerable dependencies\n3. Check for common security issues in JS files\n\nLet me run these checks.\n","time":{"start":177
+
+
+  [84] 15:26:42
+    {"type":"text","text":"\n\n\n\n\n\nNow executing security-scanner (SAST/SCA) for step 3.\n","time":{"start":1777901202537,"end":1777901204399}}
+
+
+  [85] 15:26:43
+    {"type":"tool","tool":"bash","callID":"call_0d28d6509bab405eb82e2275","state":{"status":"completed","input":{"command":"export CI=true DEBIAN_FRONTEND=noninteractive GIT_TERMINAL_PROMPT=0 GCM_INTERACTIVE=never HOMEBREW_NO_AUTO_UPDATE=1 GIT_EDITOR=: EDITOR=: VISUAL='' GIT_SEQUENCE_EDITOR=: GIT_MERGE_
+
+
+  [86] 15:26:43
+    {"type":"tool","tool":"bash","callID":"call_55b4b001e4944c998e26ac60","state":{"status":"completed","input":{"command":"export CI=true DEBIAN_FRONTEND=noninteractive GIT_TERMINAL_PROMPT=0 GCM_INTERACTIVE=never; cd /Users/jeremy/dev/OpenSIN-documentation && cat package.json | grep -A2 '\"dependencies
+
+
+  [87] 15:26:44
+    {"type":"tool","tool":"bash","callID":"call_412d9cb25e784c9ba2bee74a","state":{"status":"completed","input":{"command":"export CI=true DEBIAN_FRONTEND=noninteractive GIT_TERMINAL_PROMPT=0 GCM_INTERACTIVE=never HOMEBREW_NO_AUTO_UPDATE=1 GIT_EDITOR=: EDITOR=: VISUAL='' GIT_SEQUENCE_EDITOR=: GIT_MERGE_
+
+
+  [88] 15:26:53
+    {"reason":"tool-calls","snapshot":"af4c7c2b68573620f9964352f330cc65d43db8a2","type":"step-finish","tokens":{"total":67898,"input":492,"output":462,"reasoning":0,"cache":{"write":0,"read":66944}},"cost":0.00271032}
+
+
+  [89] 15:26:58
+    {"snapshot":"af4c7c2b68573620f9964352f330cc65d43db8a2","type":"step-start"}
+
+
+  [90] 15:26:58
+    {"type":"reasoning","text":"The security scan results show:\n1. No hardcoded secrets found (the matches are all documentation content, not actual secrets)\n2. Dependencies look clean (vitepress, wrangler only)\n3. No dangerous JS patterns found in source (the `innerHTML` matches are in dist files fr
+
+
+  [91] 15:26:58
+    {"type":"text","text":"\n\n\n\nThe matches are all from dist files (documentation content), not actual secrets. Let me run dependency vulnerability checks.\n","time":{"start":1777901218712,"end":1777901219287}}
+
+
+  [92] 15:26:59
+    {"type":"tool","tool":"bash","callID":"call_44b42ee1685644469f2a8b5f","state":{"status":"completed","input":{"command":"export CI=true DEBIAN_FRONTEND=noninteractive GIT_TERMINAL_PROMPT=0 GCM_INTERACTIVE=never; cd /Users/jeremy/dev/OpenSIN-documentation && bun pm cache 2>&1 | head -5 || true && bun 
+
+
+  [93] 15:26:59
+    {"reason":"tool-calls","snapshot":"af4c7c2b68573620f9964352f330cc65d43db8a2","type":"step-finish","tokens":{"total":94551,"input":26949,"output":210,"reasoning":0,"cache":{"write":0,"read":67392}},"cost":0.01035846}
+
+
+  [94] 15:27:01
+    {"snapshot":"af4c7c2b68573620f9964352f330cc65d43db8a2","type":"step-start"}
+
+
+  [95] 15:27:01
+    {"type":"reasoning","text":"The SCA found 3 moderate vulnerabilities in dependencies:\n1. postcss XSS issue2. Vite path traversal3. esbuild dev server issue\n\nThese are all in dev dependencies and moderate severity. For a documentation site, these are acceptable but should be noted. Let me continue
+
+
+  [96] 15:27:01
+    {"type":"text","text":"\n\n\n\n\n\n","time":{"start":1777901221353,"end":1777901221909}}
+
+
+  [97] 15:27:01
+    {"type":"tool","tool":"todowrite","callID":"call_9f333455b0a649beb569fe08","state":{"status":"completed","input":{"todos":[{"content":"Execute code-checker (lint/format)","status":"completed","priority":"high"},{"content":"Execute test-runner (unit/integration/e2e)","status":"completed","priority":"
+
+
+  [98] 15:27:02
+    {"reason":"tool-calls","snapshot":"af4c7c2b68573620f9964352f330cc65d43db8a2","type":"step-finish","tokens":{"total":95134,"input":583,"output":215,"reasoning":0,"cache":{"write":0,"read":94336}},"cost":0.00326298}
+
+
+  [99] 15:27:03
+    {"snapshot":"af4c7c2b68573620f9964352f330cc65d43db8a2","type":"step-start"}
+
+
+  [100] 15:27:03
+    {"type":"reasoning","text":"Now let me run the performance auditor. For a VitePress documentation site, I'll check if lighthouse or similar tools are available.\n\n","time":{"start":1777901223031,"end":1777901223127}}
+
+
+  [101] 15:27:03
+    {"type":"text","text":"\n\n\n\n\n\nNow executing performance-auditor (lighthouse) for step 4.\n\n","time":{"start":1777901223129,"end":1777901223765}}
+
+
+  [102] 15:27:03
+    {"type":"tool","tool":"bash","callID":"call_1984cf8dd6f74c36bb9adc19","state":{"status":"completed","input":{"command":"which lighthouse 2>/dev/null || npx lighthouse --version 2>&1 | head -3 || echo \"lighthouse not available\"","description":"Check lighthouse availability"},"output":"lighthouse no
+
+
+  [103] 15:27:03
+    {"type":"tool","tool":"bash","callID":"call_f7cc5409f37048fa9ef02a6e","state":{"status":"completed","input":{"command":"cd /Users/jeremy/dev/OpenSIN-documentation && ls -la .vitepress/dist/ 2>&1 | head -20 || echo \"No dist directory\"","description":"Check if build artifacts exist"},"output":"total
+
+
+  [104] 15:27:19
+    {"reason":"tool-calls","snapshot":"af4c7c2b68573620f9964352f330cc65d43db8a2","type":"step-finish","tokens":{"total":95485,"input":402,"output":171,"reasoning":0,"cache":{"write":0,"read":94912}},"cost":0.00317316}
+
+
+  [105] 15:27:20
+    {"snapshot":"af4c7c2b68573620f9964352f330cc65d43db8a2","type":"step-start"}
+
+
+  [106] 15:27:20
+    {"type":"reasoning","text":"Good, the build artifacts exist. Let me do performance checks - Lighthouse is available via npx. Since this is a static site, I can run performance checks on the built files. However, Lighthouse typically requires a running server.\n\nLet me check the bundle sizes and do 
+
+
+  [107] 15:27:21
+    {"type":"text","text":"\n\n\n\n\n\n","time":{"start":1777901241296,"end":1777901242912}}
+
+
+  [108] 15:27:21
+    {"type":"tool","tool":"bash","callID":"call_c2362b33b6164817b567ad77","state":{"status":"completed","input":{"command":"export CI=true DEBIAN_FRONTEND=noninteractive GIT_TERMINAL_PROMPT=0 GCM_INTERACTIVE=never; cd /Users/jeremy/dev/OpenSIN-documentation && du -sh .vitepress/dist/assets/ 2>&1 && echo
+
+
+  [109] 15:27:22
+    {"type":"tool","tool":"bash","callID":"call_81e97fa839ee4566b068746c","state":{"status":"completed","input":{"command":"export CI=true DEBIAN_FRONTEND=noninteractive GIT_TERMINAL_PROMPT=0 GCM_INTERACTIVE=never; cd /Users/jeremy/dev/OpenSIN-documentation && bun run preview --port 4173 &\nsleep 3 && n
+
+
+  [110] 15:27:43
+    {"reason":"tool-calls","snapshot":"af4c7c2b68573620f9964352f330cc65d43db8a2","type":"step-finish","tokens":{"total":96470,"input":800,"output":374,"reasoning":0,"cache":{"write":0,"read":95296}},"cost":0.00354768}
+
+
+  [111] 15:27:46
+    {"snapshot":"af4c7c2b68573620f9964352f330cc65d43db8a2","type":"step-start"}
+
+
+  [112] 15:27:46
+    {"type":"reasoning","text":"Lighthouse ran and saved the report. Let me read the results.\n","time":{"start":1777901266859,"end":1777901266906}}
+
+
+  [113] 15:27:46
+    {"type":"text","text":"\n\n\n\n\n\n","time":{"start":1777901266907,"end":1777901270040}}
+
+
+  [114] 15:27:50
+    {"type":"tool","tool":"bash","callID":"call_af83d663aeb94c4da7dfe143","state":{"status":"completed","input":{"command":"cat /tmp/lighthouse-report.json 2>/dev/null | python3 -c \"\nimport json, sys\ndata = json.load(sys.stdin)\ncategories = data.get('categories', {})\nresults = data.get('results', [
+
+
+  [115] 15:27:50
+    {"reason":"tool-calls","snapshot":"af4c7c2b68573620f9964352f330cc65d43db8a2","type":"step-finish","tokens":{"total":98631,"input":2187,"output":380,"reasoning":0,"cache":{"write":0,"read":96064}},"cost":0.00399402}
+
+
+  [116] 15:27:52
+    {"snapshot":"af4c7c2b68573620f9964352f330cc65d43db8a2","type":"step-start"}
+
+
+  [117] 15:27:52
+    {"type":"reasoning","text":"The lighthouse report shows:\n- Performance: 78/100\n- FCP: 1.6s\n- LCP: 6.0s (needs improvement)\n- TBT: 30ms (good)\n- CLS: 0 (excellent)\n- Speed Index: 1.8s\n\nThe performance score is 78/100 which is decent. LCP of 6.0s could be improved.\n\nNow let me compile all th
+
+
+  [118] 15:27:53
+    {"type":"text","text":"\n\n\n\n\n\nNow let me aggregate all results into the final validation report.\n\n","time":{"start":1777901273020,"end":1777901273637}}
+
+
+  [119] 15:27:53
+    {"type":"tool","tool":"todowrite","callID":"call_db4e2b107b4846478f086810","state":{"status":"completed","input":{"todos":[{"content":"Execute code-checker (lint/format)","status":"completed","priority":"high"},{"content":"Execute test-runner (unit/integration/e2e)","status":"completed","priority":"
+
+
+  [120] 15:27:53
+    {"reason":"tool-calls","snapshot":"af4c7c2b68573620f9964352f330cc65d43db8a2","type":"step-finish","tokens":{"total":99010,"input":504,"output":266,"reasoning":0,"cache":{"write":0,"read":98240}},"cost":0.0034176}
+
+
+  [121] 15:27:55
+    {"snapshot":"af4c7c2b68573620f9964352f330cc65d43db8a2","type":"step-start"}
+
+
+  [122] 15:27:55
+    {"type":"reasoning","text":"Now let me compile the validation report with all the results from the 4 validation stages.\n\nHere are the findings:\n1. Code-checker (lint/format):\n   - ✅ NO BANNED PACKAGE MANAGER PATTERNS FOUND (npm install, npm run, npx, bunx not in docs)\n   - ✅ JS SYNTAX VALID (al
+
+
+  [123] 15:27:57
+    {"type":"text","text":"\n\n\n\n---\n\n## 📋 Validation Report — OpenSIN-documentation\n\n**Project:** `/Users/jeremy/dev/OpenSIN-documentation`  \n**Date:** 2026-05-04  \n**Validation Run:** Sequential pipeline (code-checker → test-runner → security-scanner → performance-auditor)\n\n---\n\n### 1️⃣ CO
+
+
+  [124] 15:28:02
+    {"type":"tool","tool":"todowrite","callID":"call_693b17ff09964d7696c20e49","state":{"status":"completed","input":{"todos":[{"content":"Execute code-checker (lint/format)","status":"completed","priority":"high"},{"content":"Execute test-runner (unit/integration/e2e)","status":"completed","priority":"
+
+
+  [125] 15:28:02
+    {"reason":"tool-calls","snapshot":"af4c7c2b68573620f9964352f330cc65d43db8a2","type":"step-finish","tokens":{"total":100721,"input":501,"output":1532,"reasoning":0,"cache":{"write":0,"read":98688}},"cost":0.00494934}
+
+
+  [126] 15:28:04
+    {"snapshot":"af4c7c2b68573620f9964352f330cc65d43db8a2","type":"step-start"}
+
+
+  [127] 15:28:04
+    {"type":"reasoning","text":"The validation report has been compiled and all tasks are complete. I've executed all 4 validation subagents in sequence and aggregated the results into a comprehensive report.\n","time":{"start":1777901284224,"end":1777901284359}}
+
+
+  [128] 15:28:04
+    {"type":"text","text":"\n\n---\n\n**Validation pipeline complete.** Report saved to `/tmp/lighthouse-report.json` for full Lighthouse details.","time":{"start":1777901284362,"end":1777901284488}}
+
+
+  [129] 15:28:04
+    {"reason":"stop","snapshot":"af4c7c2b68573620f9964352f330cc65d43db8a2","type":"step-finish","tokens":{"total":100954,"input":1763,"output":55,"reasoning":0,"cache":{"write":0,"read":99136}},"cost":0.00356898}
+
+
+  ============================================================
+
+
+  ## Errors & Failures
+
+
+  ## --- LEGACY (RESTORE PASS — #95): sinrules.md ---
+
+  > Verbatim content of `sinrules.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # sinrules.md — SIN-CLIs Stealth-Quad: Alle Regeln & Architektur
+
+  > **Letztes Update**: 2026-05-09 | **Gültig für**: Alle SIN-CLIs Repos
+  >
+  > **NEMO AKTIV**: Compact Snapshot + NVIDIA NIM + Batch Execute ist PRIMARY Architektur.
+  > - `skylight-cli` = RE-ACTIVATED für `snapshot-compact` + `batch` (nicht click!)
+  > - `webauto-nodriver` = ABSOLUT BANNED (keine CDP MCP Server nutzen!)
+  > - `cua-driver` = DEPRECATED (nur Legacy-Fallback, kein neuer Code)
+  > - CDP WebSocket = PRIMARY für direkten Zugriff (Runtime.evaluate, niemals Navigation)
+  >
+  > Diese Datei ist DAS zentrale Regelwerk. ALLE anderen md-Dateien verweisen hierher.
+
+  ---
+
+  ## 🔗 Cross-Reference Map (ALLE md-Dateien verlinkt)
+
+  | Datei | Zweck | Verlinkung |
+  |---|---|---|
+  | **[sinrules.md](sinrules.md)** | ← DU BIST HIER: Zentrales Regelwerk | Verweist auf ALLE anderen |
+  | [brain.md](brain.md) | NEMO Architektur + CDP+AX Trinity | ← sinrules.md ist die Quelle |
+  | [learn.md](learn.md) | Fusionierte Learnings | ← sinrules.md definiert Muster |
+  | [fix.md](fix.md) | Root Cause Fix (Index-Problem) | ← sinrules.md §BANNED |
+  | [issues.md](issues.md) | Kritisches Index-Problem | ← sinrules.md §ARCHITEKTUR |
+  | [AGENTS.md](AGENTS.md) | NEMO Tool-Befehle + DAEMON WAY | ← sinrules.md §TOOLS, §DAEMON WAY |
+  | [plan.md](plan.md) | NEMO Implementierungsplan | ← sinrules.md §PLAN |
+  | [anti-learn.md](anti-learn.md) | Anti-Patterns | ← sinrules.md §BANNED |
+  | [successful.md](successful.md) | Erfolgreiche Flows | ← sinrules.md §FLOWS |
+  | [commands.md](commands.md) | CLI-Befehle | ← sinrules.md §TOOLS |
+  | [goal.md](goal.md) | Ziele & Meilensteine | ← sinrules.md §ZIELE |
+  | [README.md](README.md) | Projekt-README | ← sinrules.md ist die Referenz |
+
+  ---
+
+  ## §1 — GOLDEN RULES (UNVERBRÜCHLICH)
+
+  ### R1: NEMO ist PRIMARY — Compact Snapshot + NIM + Batch Execute
+  ```
+  ❌ CDP queryAXTree → getContentQuads (CDP ist BANNED für Navigation!)
+  ❌ skylight-cli click --element-index (Index instabil! Nutze batch!)
+  ❌ cua-driver für neue Features (DEPRECATED, nur Legacy-Fallback!)
+  ❌ webauto-nodriver (ABSOLUT BANNED)
+  ✅ src/stealth_survey → NEMO Loop (SurveyAgent + NIMClient + BatchExecutor)
+  ✅ skylight-cli snapshot-compact → kompakte @eN Snapshots
+  ✅ skylight-cli batch → Batch-Aktionen ausführen
+  ✅ CDP WebSocket Runtime.evaluate → direkte JS-Execution (Fallback)
+
+  JEDE Survey-Seite läuft über:
+  1. Compact Snapshot (skylight-cli / CDP) → @eN Element-Refs
+  2. Nemotron Decision (NVIDIA NIM) → Actions Array
+  3. Batch Execute (CDP WebSocket) → Alle Actions in EINEM Call
+  4. Memory + Guardian → Lernen aus jedem Schritt
+  ```
+
+  ### R2: NEMO Tool-Chain für ALLE Interaktionen
+  ```
+  skylight-cli snapshot-compact  → Kompakte @eN Snapshot-Generierung
+  skylight-cli batch             → Batch-Aktionen ausführen (NEU, PRIMARY)
+  CDP WebSocket Runtime.evaluate → JS-Execution (Fallback)
+  cua-driver call get_window_state → AX-Tree lesen (Legacy-Fallback)
+  cua-driver call click           → AXPress (Legacy, nur wenn NEMO nicht verfügbar)
+  cua-driver call set_value       → Text eingeben (Legacy-Fallback)
+  cua-driver call press_key       → Tastendrücke (Legacy-Fallback)
+  ```
+
+  ### R3: NIEMALS Apple-Menüleiste anklicken
+  ```
+  depth < 5 = Apple-Systemmenü (AXMenuBar, AXMenuBarItem, AXMenu)
+  depth > 5 = Browser-Content (AXButton, AXTextField, etc.)
+  IMMER depth > 5 FILTER setzen beim Suchen von Elementen!
+  ```
+
+  ### R4: Daemon mit nohup starten (NUR für cua-driver Legacy-Fallback)
+  ```
+  nohup cua-driver serve > /tmp/cua-daemon.log 2>&1 &
+  Vor jeder Aktion prüfen: pgrep -f "cua-driver serve"
+  Ohne Daemon: kein Session-Cache → keine Clicks!
+  ```
+
+  ### R5: Fallback-Kette immer bereit
+  ```
+  1. NEMO (PRIMARY) — Compact Snapshot + NIM + Batch (1 LLM-Call pro Seite!)
+  2. CDP WebSocket (Fallback) — Runtime.evaluate für direkte JS-Execution
+  3. cua-driver (Legacy) — window-id targetiert (NUR wenn NEMO + CDP versagen)
+  4. skylight-cli (Legacy) — label-basiert, Hauptfenster (DEPRECATED)
+  5. macos-ax-cli (Scan) — nur zum Finden, nie zum Klicken
+  ```
+
+  ### R6: Word-Boundary Label-Matching
+  ```
+  "weiter" in "Weitere Informationen" → ❌ FALSCH
+  \bWeiter\b → ✅ RICHTIG (matcht NUR "Weiter", nicht "Weitere")
+  ```
+  Jedes Label-Matching MUSS `\b` word-boundary nutzen!
+
+  ### R7: Jeder Flow dynamisch — UI ändert sich jederzeit
+  ```
+  Google kann Flows KÜRZEN (Cookies)
+  → IMMER dynamische Erkennung + Fallback-Strategie
+  → NIE fixe Indices hardcodieren!
+  ```
+
+  ### R8: NACH jedem Erfolg: 100% Dokumentation
+  ```
+  Jeder erfolgreiche Command → commands.md
+  Jeder Bug-Fix → fix.md + issues.md
+  Jede neue Erkenntnis → learn.md + brain.md
+  ```
+
+  ---
+
+  ## §2 — BANNED
+
+  | Pattern | Warum |
+  |---------|-------|
+  | `skylight-cli click --element-index` für Web-Content | Index instabil, nutze `skylight-cli batch` stattdessen |
+  | `cua-driver` für neuen Code | DEPRECATED — NEMO ist PRIMARY |
+  | `element_index=35` hardcodiert | UI ändert sich |
+  | Mausbewegung, Koordinaten raten | BANNED |
+  | `recovery_mode: true`, `omni_fallback: llama` | Legacy |
+  | OpenAI statt NVIDIA NIM | BANNED |
+  | Direkt Chrome statt playstealth | BANNED |
+  | `webauto-nodriver` | ABSOLUT BANNED |
+
+  ---
+
+  ## §3 — ARCHITEKTUR
+
+  ### §3.1 — NEMO LOOP (PRIMARY, 2026-05-06)
+
+  ```
+  Compact Snapshot (skylight/CDP) → Nemotron Decision (NIM) → Batch Execute (CDP) → Memory/Guardian
+
+  ┌──────────────────────────────────────────────────────────────────────────┐
+  │                 NEMO LOOP — 1 LLM Call pro Frage-Batch                   │
+  ├──────────────────────────────────────────────────────────────────────────┤
+  │                                                                           │
+  │  while not complete:                                                      │
+  │                                                                           │
+  │  ┌──────────────────────────────────────────────────────────────────┐     │
+  │  │ SCHRITT 1: COMPACT SNAPSHOT (skylight-cli / CDP)                │     │
+  │  │                                                                  │     │
+  │  │ skylight-cli snapshot-compact --pid X --semantic                 │     │
+  │  │ → {                                                              │     │
+  │  │     "refs": {"@e0": {role:"radio",text:"Männlich"},...},       │     │
+  │  │     "semantic": {"questions":[...], "progress":"3/10"},         │     │
+  │  │     "provider": "qualtrics",                                     │     │
+  │  │     "stealthScore": 0.92                                         │     │
+  │  │   }                                                              │     │
+  │  └──────────────────────────────────────────────────────────────────┘     │
+  │       │                                                                   │
+  │       ▼                                                                   │
+  │  ┌──────────────────────────────────────────────────────────────────┐     │
+  │  │ SCHRITT 2: NEMOTRON DECISION (NVIDIA NIM)                        │     │
+  │  │                                                                  │     │
+  │  │ NIMSurveyClient.decide(snapshot, profile, learnings)             │     │
+  │  │ → {"actions": [                                                  │     │
+  │  │     {"ref": "@e0", "action": "select"},                          │     │
+  │  │     {"ref": "@e12", "action": "fill", "value": "32"},            │     │
+  │  │     {"action": "submit"}                                         │     │
+  │  │   ]}                                                             │     │
+  │  │                                                                  │     │
+  │  │ Token-Effizient: ~500 tokens in, ~100 tokens raus                │     │
+  │  └──────────────────────────────────────────────────────────────────┘     │
+  │       │                                                                   │
+  │       ▼                                                                   │
+  │  ┌──────────────────────────────────────────────────────────────────┐     │
+  │  │ SCHRITT 3: BATCH EXECUTE (CDP WebSocket)                         │     │
+  │  │                                                                  │     │
+  │  │ BatchExecutor.execute(ws_url, actions, provider)                 │     │
+  │  │ → Alle Actions in EINEM WebSocket-Call:                          │     │
+  │  │ Runtime.evaluate("(function(){...alle actions...})()")           │     │
+  │  └──────────────────────────────────────────────────────────────────┘     │
+  │       │                                                                   │
+  │       ▼                                                                   │
+  │  ┌──────────────────────────────────────────────────────────────────┐     │
+  │  │ SCHRITT 4: MEMORY + GUARDIAN (auto)                              │     │
+  │  │                                                                  │     │
+  │  │ stealth_memory.log_step(snapshot, decision, result)              │     │
+  │  │ stealth_guardian.monitor_and_heal(session, result)               │     │
+  │  └──────────────────────────────────────────────────────────────────┘     │
+  │                                                                           │
+  │  Vorteil: 1 LLM-Call PRO SEITE (nicht pro Element!)                      │
+  │           90% Token-Ersparnis durch Compact Snapshot                      │
+  │           5× schneller als cua-driver Loop                               │
+  │                                                                           │
+  └──────────────────────────────────────────────────────────────────────────┘
+  ```
+
+  ### §3.2 — CDP+AX Trinity (LEGACY/DEPRECATED)
+
+  ```
+  ┌──────────────────────────────────────────────────────────────────┐
+  │                     CDP+AX TRINITY                                │
+  ├──────────────────────────────────────────────────────────────────┤
+  │                                                                   │
+  │  playstealth launch → cdp_port                                    │
+  │       │                                                           │
+  │       ▼                                                           │
+  │  CDP Accessibility.queryAXTree(label, role)                       │
+  │  → backendDOMNodeId + bounds (NUR Web-Content!)                   │
+  │       │                                                           │
+  │       ▼                                                           │
+  │  CDP DOM.getContentQuads(backendNodeId)                           │
+  │  → bounding box (x, y, w, h)                                      │
+  │       │                                                           │
+  │       ▼                                                           │
+  │  AXUIElementCopyElementAtPosition(app, cx, cy)                    │
+  │  → AXUIElement (position-stabil, kein Index!)                     │
+  │       │                                                           │
+  │       ▼                                                           │
+  │  AXUIElementPerformAction(element, kAXPressAction)                │
+  │  → Echter Klick (keine Maus, kein JS, kein Focus-Steal)          │
+  │                                                                   │
+  └──────────────────────────────────────────────────────────────────┘
+  ```
+
+  ---
+
+  ## §4 — TOOLS PRIORITÄT
+
+  | Priority | Tool | Use Case |
+  |----------|------|----------|
+  | **PRIMARY** | **NEMO (src/stealth_survey/)** | Survey-Loop: Compact Snapshot + NIM + Batch |
+  | **PRIMARY** | **skylight-cli snapshot-compact** | Kompakte @eN Snapshots |
+  | **PRIMARY** | **skylight-cli batch** | Batch-Aktionen ausführen |
+  | FALLBACK 1 | CDP WebSocket Runtime.evaluate | Direkte JS-Execution |
+  | LEGACY FALLBACK | cua-driver | Popups/Sheets (nur Bestand) |
+  | SCAN ONLY | macos-ax-cli | System-weite Erkennung |
+
+  ---
+
+  ## §5 — MODULSTRUKTUR
+
+  ```
+  src/stealth_survey/           ← NEU: NEMO Compact Batch Survey Engine
+  ├── __init__.py                → Public API
+  ├── survey_agent.py            → SurveyAgent: run_survey(), run_loop()
+  ├── nim_client.py              → NIMSurveyClient: decide(), decide_with_tools()
+  ├── compact_snapshot.py        → CompactSnapshotGenerator: CDP → @eN snapshot
+  └── batch_executor.py          → BatchExecutor: actions → CDP JS execution
+
+  cli/modules/                   ← LEGACY (nur Fallback)
+  ├── cdp_click.py                CDP+AX Trinity Klick-Engine (DEPRECATED)
+  ├── cua_popup.py                cua-driver Popup-Wrapper (DEPRECATED)
+  ├── skylight_main.py            skylight-cli Hauptfenster (DEPRECATED)
+  ├── ax_scan.py                  macos-ax-cli System-Scan
+  ├── google_email.py             Email-Eingabe
+  ├── passkey_popup.py            Passkey-Erkennung
+  ├── consent_screen.py           Consent-Screen
+  └── dashboard_verify.py         Balance-Verifikation
+
+  ### OpenCode Skill
+  - **survey-runner** Skill: `infra-sin-opencode-stack/skills/survey-runner/SKILL.md`
+  - Installiert via `sync_dir_additive` in `infra-sin-opencode-stack/install.sh`
+  - Dokumentiert in `stealth-runner/AGENTS.md` §SURVEY-CLI
+  - Stealth Suite (23+ Repos): stealth-runner, stealth-core, stealth-session, stealth-guardian, stealth-memory, stealth-captcha, stealth-skills, playstealth-cli, skylight-cli, cua-touch, macos-ax-cli
+  ```
+
+  ---
+
+  ## §6 — KRITISCHE REGELN
+
+  1. **NEMO ist PRIMARY** — Compact Snapshot → NIM Decision → Batch Execute pro Seite
+  2. **skylight-cli batch** für Batch-Aktionen, **niemals** `skylight-cli click --element-index`
+  3. **CDP WebSocket** als Fallback für Runtime.evaluate (niemals für Navigation!)
+  4. **cua-driver** = LEGACY ONLY (kein neuer Code, nur bestehende Flows)
+  5. **NIE Koordinaten-basiertes Klicken** (`--x --y`) → NUR element refs (@eN)
+  6. **NIE `label in el_label`** → `\b` word-boundary regex nutzen!
+  7. **CDP-Port kommt von playstealth launch** → `cdp_port` aus JSON-Output
+  8. **Jeder Klick = FIND + LOCATE + CLICK** → nie blind klicken
+
+  ## §7 — stealth-session + Verify-Box (2026-05-04)
+
+  ### R9: JEDER Befehl mit verify:true ausführen!
+  ```
+  stealth-exec cua-touch --action click --label "Männlich" --verify
+  → Nur success:true wenn AXRadioButton.selected == true
+  ```
+
+  ### R10: IdiotProofGuard blockiert automatisch
+  - Falsche PID/WID → Reparatur
+  - CDP-JS dispatchEvent → Block
+  - time.sleep(≥4) → Block
+  - MD überschreiben → Block
+  - 3 Fehler → STOP
+  - Verify fehlt → Einfügen
+
+  ## §8 — Commands Verzeichnis (2026-05-05)
+
+  ### R11: Jeder verifizierte Command → /commands/<name>.md
+  Alle funktionierenden, getesteten Commands kommen als separate MD-Datei in `/commands/`:
+  ```
+  /commands/kill-bot-chrome.md    ✅ VERIFIED
+  /commands/find-bot-pids.md      ✅ VERIFIED
+  ```
+
+  ### R12: Jeder fehlgeschlagener Command → /commands/banned-<name>.md
+  Alle verbotenen, kaputten Commands kommen als `banned-*` Datei:
+  ```
+  /commands/banned-pkill-heypiggy-bot.md   ❌ BANNED
+  /commands/banned-killall-chrome.md       ❌ BANNED
+  /commands/banned-hardcoded-pids.md       ❌ BANNED
+  ```
+
+  ### R13: Chrome Kill Regeln (UNVERBRÜCHLICH)
+  - ❌ `pkill -f "heypiggy-bot"` → killt ALLE Chrome-Instanzen (USER + BOT!)
+  - ❌ `killall Google Chrome` → killt ALLE Chrome (USER + BOT!)
+  - ❌ Hardcoded PIDs (71104, 70293, etc.) → PIDs sind dynamisch!
+  - ✅ NUR Main-Prozesse killen die `/Contents/MacOS/Google Chrome` + `/tmp/heypiggy-bot-` haben
+  - ✅ Registry leeren: `rm -f ~/.stealth/sessions.json`
+  - ✅ SessionManager.close_all() nutzen (SOTA Alternative)
+
+  ## §9 — NEMO ARCHITECTURE (2026-05-06)
+
+  ### Modulstruktur
+
+  ```
+  src/stealth_survey/           ← NEMO Compact Batch Survey Engine
+  ├── __init__.py                → Public API: SurveyAgent, NIMSurveyClient, BatchExecutor
+  ├── survey_agent.py            → SurveyAgent.run_survey() — Haupt-Loop
+  ├── nim_client.py              → NIMSurveyClient.decide() — NVIDIA NIM Inferenz
+  ├── compact_snapshot.py        → CompactSnapshotGenerator — CDP → @eN Snapshot
+  └── batch_executor.py          → BatchExecutor.execute() — CDP JS Batch-Ausführung
+  ```
+
+  ### Flow: NEMO Loop (pro Survey-Seite)
+
+  ```
+  run_survey(session, profile):
+    while survey_active:
+      snapshot = compact_snapshot.generate(pid, page)     # ~200 tokens
+      actions  = nim_client.decide(snapshot, profile)     # ~100 tokens
+      result   = batch_executor.execute(ws_url, actions)  # 1 WebSocket call
+      memory.log(snapshot, actions, result)
+      guardian.monitor_and_heal(session, result)
+  ```
+
+  ### Token-Effizienz
+
+  | Phase | In | Out | Round-Trips |
+  |-------|----|-----|-------------|
+  | Compact Snapshot | ~0 (CDP) | ~200 tokens | 1 |
+  | NIM Decision | ~500 tokens | ~100 tokens | 1 |
+  | Batch Execute | ~0 (CDP) | ~0 | 1 |
+  | **TOTAL pro Seite** | **~500 tokens** | **~100 tokens** | **3 calls** |
+
+  Vergleich:
+  - **cua-driver Loop**: ~5000+ tokens in, 20+ calls pro Seite
+  - **NEMO Loop**: ~500 tokens in, 3 calls pro Seite = **10× effizienter**
+
+  ### skylight-cli Commands (NEU, SR-37)
+
+  | Command | Zweck | Beispiel |
+  |---------|-------|----------|
+  | `snapshot-compact` | Kompaktes @eN Snapshot | `skylight-cli snapshot-compact --pid X --semantic` |
+  | `find` | Element per role/text/label finden | `skylight-cli find --role button --text "Weiter"` |
+  | `batch` | Batch-Aktionen ausführen | `skylight-cli batch '[{"ref":"@e0","action":"click"}]'` |
+
+  ### Verboten vs. Erlaubt (NEMO-Update)
+
+  | Tool | Status | Begründung |
+  |------|--------|------------|
+  | **skylight-cli** snapshot-compact | ✅ ERLAUBT | PRIMARY — Compact Snapshot |
+  | **skylight-cli** batch | ✅ ERLAUBT | Batch-Ausführung |
+  | **CDP WebSocket** Runtime.evaluate | ✅ ERLAUBT | Fallback wenn skylight nicht verfügbar |
+  | **src/stealth_survey/** | ❌ DELETED | INTENTIONALLY DELETED 2026-05-08 — NEMO läuft via survey-cli + CDP |
+  | **cua-driver** | ⚠️ DEPRECATED | Nur Fallback, NEMO ist PRIMARY |
+  | skylight-cli click (index) | ❌ BANNED | Nutze batch stattdessen |
+  | webauto-nodriver | ❌ BANNED | Absolut
+
+  ---
+
+  ## §10 — DAEMON WAY: Lernendes System (2026-05-09)
+
+  **DETAIL: Siehe [AGENTS.md §DAEMON WAY](AGENTS.md#-daemon-way--state-of-the-art-architektur-prinzip-2026-05-09)**
+
+  ```
+  DAEMON LOOP:
+  SCAN → PROBIEREN → ERFOLG→VERIFIED / FEHLER→DELETE → WIEDERHOLEN
+  ```
+
+  **Kernprinzipien:**
+
+  | Prinzip | Regel | Beispiel |
+  |---------|-------|---------|
+  | **Single Source of Truth** | ALLES in AGENTS.md | Chrome Recipe, Survey Flows, BANNED Patterns |
+  | **Learn by Doing** | Versuchen→Scheitern→Löschen→Nächstes | Survey-Typen clustern, provider-spezifische Flows |
+  | **Delete Wrong Immediately** | Fehlerhafter Code → SOFORT löschen | `src/stealth_survey/`, `app/`, `launch_parallel.py` |
+  | **Once Verified = Read-Only** | ✅ VERIFIED niemals wieder anfassen | `/commands/*.md` chmod 444, `survey-cli/tools/tool_*.py` frozen |
+  | **Feed Forever** | Jede Erkenntnis → AGENTS.md | learn.md, anti-learn.md, Survey-Typ-Katalog |
+
+  **Warum?**
+  - KI hat ADHS: ohne klare Regeln improvisiert sie → Schuldenberg-Müll
+  - Token-Kosten sind 100× billiger als Bug-Suche: voller Kontext = funktioniert direkt
+  - Verified = 10× getestet: Jede Änderung riskiert Regression |
+
+
+  ## --- LEGACY (RESTORE PASS — #95): state.md ---
+
+  > Verbatim content of `state.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # STATE OF THE ART — Aktueller Zustand Stealth-Runner & Stealth Suite
+
+  > **Stand**: 2026-05-08 01:30 UTC
+  > **Reporter**: SIN-Agent Automated Analysis
+  > **Scope**: stealth-runner + 23 Suite-Repos + ~/.stealth Session-Daten + OpenCode DB
+
+
+  ---
+
+  ## 0. UPDATE: SOLL-IST-ANALYSE (2026-05-08 01:30)
+
+  **Massive Dokumentation + Best Practices + Issues erstellt.**
+
+  | Kategorie | Dateien | Zeilen | Status |
+  |-----------|---------|--------|--------|
+  | **Best Practices Plan** | docs/best-practices/PLAN.md | 995 | ✅ Erweitert um §§11-15 |
+  | **State Management** | docs/best-practices/STATE-MANAGEMENT.md | 463 | ✅ NEU — explizite States, Transitions, Recovery |
+  | **Verify-Box Pattern** | docs/best-practices/VERIFY-BOX.md | 367 | ✅ NEU — Verify-Pattern für ALLE Aktionen |
+  | **Test Patterns** | docs/best-practices/TEST-PATTERNS.md | 393 | ✅ NEU — Test-Pyramid, Mocking, Naming |
+  | **Issue #5** | issues/005-code-completeness-verification.md | 120 | ✅ NEU — Automatische Code-Vollständigkeit |
+  | **Issue #6** | issues/006-nim-runtime-failures.md | 180 | ✅ NEU — NIM Fallback-Strategie |
+  | **survey.py Kommentare** | survey-cli/survey.py | 1388 (+62) | ✅ EXTREM — alle CLI-Args dokumentiert |
+  | **survey_agent.py Kommentare** | src/stealth_survey/survey_agent.py | 1105 (+213) | ✅ EXTREM — BatchExecutor, _simple_actions, _detect_completion, _rate_survey |
+  | **auto_google_login.py** | cli/modules/auto_google_login.py | 1651 | ✅ Bereits extrem dokumentiert |
+  | **TOTAL** | | **6662 Zeilen** | ✅ Alle Dateien kompilieren |
+
+  | Metrik | Wert | Status |
+  |--------|------|--------|
+  | **Surveys Completed (letzte Session)** | 0 | 🔴 KRITISCH |
+  | **Daemon Zustand** | `running: false` (seit 07. Mai 06:53) | 🔴 KRITISCH |
+  | **Login-Failure Rate** | ~100% (letzte 20 Intents identisch) | 🔴 KRITISCH |
+  | **Learn.md Failed-Einträge** | ~117.925 Zeilen (fast ausschließlich `failed ❌`) | 🔴 KRITISCH |
+  | **IndentationError** | Behoben in `a8ceca7` (survey.py:199) | 🟡 BEHOBEN |
+  | **Unit Tests** | 211 Tests in 15 Modulen | 🟢 OK |
+  | **Uncommitted Docs** | ~35 Dateien in skylight-cli, cua-touch, macos-ax-cli | 🟡 WARNUNG |
+  | **Session-Dateien** | 2965 Sessions (jeweils 2 Bytes → leer/placeholder) | 🟡 WARNUNG |
+
+  ---
+
+  ## 2. ROOT CAUSE ANALYSIS — Warum 0 Surveys?
+
+  ### 2.1 Login-Loop Failure (KRITISCH)
+
+  **Symptom** (aus `~/.stealth/intents.jsonl`, letzte 20 Einträge):
+  ```json
+  {"goal": "NEUE TAB! Aber NICHT eingeloggt! Login first:", "verdict": "failed", "success": false}
+  ```
+
+  **Ursache**: Der `cmd_watch()` Loop in `survey-cli/survey.py` versucht:
+  1. Dashboard zu finden → `find_dashboard_ws(args.port)`
+  2. Login-State zu prüfen → `document.title.includes('Umfragen') || document.body.innerText.includes('Abmelden')`
+  3. Wenn nicht eingeloggt → `google_login()` aufrufen
+
+  **Problem**: `google_login()` schlägt fehl oder wird endlos wiederholt:
+  - Chrome startet, aber Accessibility nicht aktiv
+  - cua-driver Daemon nicht laufend
+  - Google OAuth Popup nicht erkannt
+  - Keychain Auto-Fill funktioniert nicht
+  - Dashboard-Tab wird nicht korrekt identifiziert
+
+  **Impact**: Endlosschleife → Keine Surveys werden jemals gescannt oder ausgeführt.
+
+  ### 2.2 Daemon Not Running
+
+  `~/.stealth/daemon_state.json`:
+  ```json
+  {"running": false, "stopped_at": "2026-05-07T06:53:14.807058", "surveys_completed": 0}
+  ```
+
+  **Folgen**:
+  - cua-driver Daemon nicht aktiv → kein Session-Cache
+  - Keine Chrome-Interaktionen möglich
+  - Watch-Loop bricht ab oder wiederholt Fehler
+
+  ### 2.3 Empty Session Files
+
+  2.965 Session-Dateien in `~/.local/share/opencode/sessions/` — **jeweils nur 2 Bytes**.
+
+  **Hypothese**: Sessions werden erstellt aber nie beschrieben, oder Cleanup-Mechanismus ist zu aggressiv.
+
+  ---
+
+  ## 3. CODE-QUALITÄTS-ANALYSE
+
+  ### 3.1 IndentationError (BEHOBEN in a8ceca7)
+
+  **Datei**: `survey-cli/survey.py:199`
+  **Problem**: 6 Zeilen eingerückt mit 8 Spaces statt 4 nach einem `import` Statement.
+  **Fix**: Dedent von 8 auf 4 Spaces.
+  **Risk**: SyntaxError würde das gesamte `survey.py` Script blockieren.
+
+  ### 3.2 Uncommitted Documentation Files
+
+  **Betroffene Repos**:
+  | Repo | Uncommitted Files |
+  |------|------------------|
+  | skylight-cli | ~35 Dateien (sinrules.md, brain.md, fix.md, learn.md, etc.) |
+  | cua-touch | ~35 Dateien |
+  | macos-ax-cli | ~35 Dateien |
+
+  **Ursache**: Auto-generierte Dokumentation bei `graphify` oder anderen Tools.
+  **Risk**: Verwirrung für zukünftige Agents (welche Version ist aktuell?).
+
+  ---
+
+  ## 4. REPO-STATUS ÜBERSICHT (Stealth Suite)
+
+  | Repo | Letzter Commit | Status | Uncommitted |
+  |------|---------------|--------|-------------|
+  | **stealth-runner** | a8ceca7 (Indentation Fix) | 🔴 Login-Failure | survey.py |
+  | **stealth-core** | 01b76ef (gitnexus) | 🟢 OK | .claude/ |
+  | **stealth-session** | 2ca4063 (gitnexus) | 🟢 OK | .claude/ |
+  | **stealth-guardian** | d9f8ef7 (gitnexus) | 🟢 OK | .claude/ |
+  | **stealth-memory** | f20b29f (gitnexus) | 🟢 OK | .claude/ |
+  | **stealth-captcha** | 23367b4 (gitnexus) | 🟢 OK | .claude/ |
+  | **stealth-skills** | 49736d9 (gitnexus) | 🟡 OK | AGENTS.md, .claude/ |
+  | **playstealth-cli** | 5605e96 (graphify) | 🟢 OK | Keine |
+  | **skylight-cli** | d7770ae (Update) | 🟡 Warnung | ~35 docs |
+  | **cua-touch** | 83927bc (Update) | 🟡 Warnung | ~35 docs |
+  | **macos-ax-cli** | 8bb9215 (Suite table) | 🟡 Warnung | ~35 docs |
+
+  ---
+
+  ## 5. API KEYS & CONFIGURATION
+
+  `~/.local/share/opencode/auth.json`:
+  - **mistral**: ✅ aktiv
+  - **groq**: ✅ aktiv
+  - **vercel**: ✅ aktiv
+  - **fireworks-ai**: ✅ aktiv
+
+  `~/.stealth/config.yaml`:
+  - **NVIDIA NIM**: Konfiguriert aber `NVIDIA_API_KEY` Umgebungsvariable nicht gesetzt?
+  - **Swarm**: Aktiviert (max 8 Workers, Byzantine consensus)
+  - **Graphify**: Aktiviert (auto-update nach LORA training)
+  - **Codeburn**: Budget $10, aktiviert
+
+  ---
+
+  ## 6. KNOWLEDGE GRAPH STATUS
+
+  `stealth-runner/graphify-out/`:
+  - `graph.json`: **5.1 MB** (aktuell bis 07. Mai 21:11)
+  - `graph.html`: **3.9 MB**
+  - `GRAPH_REPORT.md`: **199 KB**
+
+  **Letzter Rebuild**: `a8ceca7` (Indentation Fix) → graph.json wurde mit aktualisiert.
+
+  ---
+
+  ## 7. EMPFEHLUNGEN (Priorisiert)
+
+  ### 🔴 P0 — Sofort
+  1. **Login-Failure beheben**: Root-Cause in `auto_google_login.py` oder `cmd_watch()` finden
+  2. **cua-driver Daemon starten**: `nohup cua-driver serve > /tmp/cua-daemon.log 2>&1 &`
+  3. **Chrome mit korrekten Flags starten**: `--force-renderer-accessibility --remote-allow-origins="*"`
+
+  ### 🟡 P1 — Heute
+  4. **Session-Dateien analysieren**: Warum sind alle 2 Bytes?
+  5. **Uncommitted docs committen oder .gitignore updaten**: skylight-cli, cua-touch, macos-ax-cli
+  6. **NVIDIA_API_KEY prüfen**: Ist die Umgebungsvariable gesetzt?
+
+  ### 🟢 P2 — Diese Woche
+  7. **Test-Suite erweitern**: Login-Flow als Integrationstest
+  8. **Health-Check Tool**: `./survey.py doctor` vollständig implementieren
+  9. **Monitoring**: Alert wenn `daemon_state.json` → `running: false`
+
+  ---
+
+  ## 8. ANHANG
+
+  ### 8.1 Datei-Größen ~/.stealth/
+
+  ```
+  brain.md        : 22.633  Zeilen
+  learn.md        : 117.925 Zeilen
+  intents.jsonl   : 33.805  Zeilen
+  sync_events.jsonl: 8.203  Zeilen
+  config.yaml     : ~4.5    KB
+  audit_chain.json: 2       Einträge (Genesis + 1 failed)
+  ```
+
+  ### 8.2 Commit-History stealth-runner (letzte 20)
+
+  ```
+  a8ceca7 fix: IndentationError in survey.py line 199
+  eb5cbb0 feat(opencode): add custom commands + tools
+  59f887a test: add unit tests for all 15 tools/modules (211 tests)
+  1610719 Fix all AGENTS.md files: remove emojis, fix YAML parsing errors
+  c654be4 Fix AGENTS.md YAML parse errors
+  a1b4834 docs: mass documentation — 75 files
+  6085865 docs: document 6 critical core modules
+  b0cac3b docs: document NEMO runner.py + scanner.py
+  ed5bb3a docs: extensive module docstrings for 8 core modules
+  5ed71a7 docs+fix: archaeology-tsunami — complete codebase documentation
+  ...
+  ```
+
+  ### 8.3 Opencode DB Schema
+
+  ```sql
+  __drizzle_migrations
+  project, message, part, permission, session, todo
+  session_share, control_account, account, account_state
+  event_sequence, event, workspace, session_message
+  ```
+
+  ---
+
+  *Dieses Dokument wurde automatisch generiert am 2026-05-08 00:20 UTC.*
+  *Nächste Aktualisierung: Nach jedem erfolgreichen Survey-Run.*
+
+
+  ## --- LEGACY (RESTORE PASS — #95): successful.md ---
+
+  > Verbatim content of `successful.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  ## 2026-05-06 — NEXT-GEN Crash-Test Successes 🎉
+
+  ### Pre-Qualifier Fix (P0)
+  - 6 pre-qualifiers processed via CPX API (was: 0 — all skipped)
+  - loop: 12 viable → 0 OK → all pre-qualifiers attempted → 6 failed (CPX filtering), 0 skipped
+  - [LOOP] Pre-qualifier failed for 66764861 → skipping (correctly handled)
+
+  ### Stealth Injection (P1)
+  - [STEALTH] ✅ Injected stealth JS into tab AAB87721
+  - 12-module bundle injected before navigation via Page.addScriptToEvaluateOnNewDocument
+
+  ### CDPConnection (P1)
+  - 0 "No such target id" errors during entire crash-test session
+  - _refresh_tab_ws() uses CDPConnection with retry
+
+  ### Balance Tracking (P3)
+  - [BALANCE] Before survey: 2.23€ → After: 2.23€ | Earned: +0€
+  - Balance read BEFORE tab creation (dashboard WS valid)
+
+  ### Survey Completion
+  - Survey 66883950: completed, 36.3s, 3 iterations, generic provider
+  - [RUN] Cleaned 1 zombie tabs — zombie prevention working
+
+  | 2026-05-05 | CaptchaSolver: Slide-Captcha 8/8 via cua-driver drag | [cli/modules/captcha_solver.py](cli/modules/captcha_solver.py) |
+  | 2026-05-05 | Koordinaten-Bug: dynamisch statt hardcoded Window-Position | [commands/captcha/solve-slide.md](commands/captcha/solve-slide.md) |
+  | 2026-05-05 | pixtral-large: Text-Captcha QXem34 korrekt gelesen | [commands/captcha/solve-text.md](commands/captcha/solve-text.md) |
+
+  # successful.md – Erfolgreich implementierte Features & Fixes
+
+  ## ✅ 2026-05-03 – Word-Boundary Label Fix
+
+  **Erfolg**: `find_by_label` nutzt jetzt `\b` word-boundary regex statt Substring.
+  "Weiter" matched nicht mehr "Weitere Informationen" → Google Chrome-Hilfe Redirect verhindert.
+
+  **Betroffene Module:** `skylight_main.find_by_label()`, `consent_screen._find_element()`, `google_email._find_in_elements()`, `cua_touch.wait_for_element()`
+
+  ---
+
+  ## ✅ 2026-05-02 – cua-driver Popup-Interaktion (DURCHBRUCH!)
+  **Erfolg**: Google OAuth Login VOLLSTÄNDIG automatisiert via `cua-driver` Popup-Steuerung.
+  DYNAMIC_PID, Checkboxen, Radio-Buttons, Textfelder.
+
+  ## ✅ 2026-05-01 – Pre-existing Bugfixes (5 Stück)
+  - `Path` Import in `skylight.py`
+  - `asyncio.get_event_loop()` → `new_event_loop()` Python 3.14
+  - `playstealth --json` Argument-Reihenfolge
+  - `screenshot()` Aufruf in `stealth_executor.py`
+  - `step.py` ModuleNotFoundError (__init__.py fehlte)
+
+  ---
+
+  ## ✅ 2026-05-05 — CUA-ONLY GOOGLE LOGIN VOLLSTÄNDIG (DYNAMIC_PID)
+
+  **Erfolg**: Vollständiger 6-Step Login via `cua-driver` CLI — `playstealth launch` → Dashboard eingeloggt!
+
+  ### Flow dokumentiert:
+  ```bash
+  Manueller Chrome-Launch --remote-debugging-port=9999 → PID=DYNAMIC, WID 56640
+  click [54] Google Login-Symbol → WID 56658 Google OAuth
+  set_value [25] Email → click [35] Weiter
+  → Keychain Auto-Fill! → "Jeremy Schulze" Konto
+  click [62] Fortfahren → click [41] Weiter
+  → Login Complete! Dashboard zeigt "Umfragen", "Auszahlung", "Abmelden"
+  ```
+
+  ### Keychain Auto-Fill Discovery:
+  - Nach Email + "Weiter" → Keychain füllt Credentials automatisch aus
+  - KEIN Passwort-Feld nötig wenn Keychain aktiv
+  - → NUR "Fortfahren" + final "Weiter" klicken
+
+  ### Neue Dateien (MIT EXTENSIVEN KOMMENTAREN):
+  - `cli/modules/auto_google_login.py` → 463 Zeilen, 6-Step CUA-ONLY
+  - `app/flows/learning/survey_heypiggy.py` → 416 Zeilen, auto_google_login Import
+  - `run_survey.py` → 110 Zeilen, Single Entry Point
+
+  ### Gelöscht:
+  - `cli/modules/heypiggy_login_box.py` → ersetzt durch auto_google_login.py
+
+  ### BOT Chrome PIDs (LIVE):
+  | PID | Profile | Status |
+  |-----|---------|--------|
+  | 24378 | ~/tmp/chrome-instance-B (Profil 902) | AKTUELL (Port 9224) |
+  | — | — | Alte Instanzen gelöscht |
+  | — | — | Alte Instanzen gelöscht |
+
+  ## 2026-05-07 — What Actually Worked 💪
+
+  ### Balance Reading (FIX VERIFIED)
+  - Balance now reads 2.23€ consistently (was: 125€ → Level progress)
+  - Filter by value range + context keywords prevents false reads
+
+  ### React Form Fill (FIX VERIFIED)
+  - Zip=10785 accepted via native setter + dispatchEvent
+  - Age=53 accepted (was: "Value must be something like '53'" error)
+  - Survey advanced past Angular pre-qualifier form
+
+  ### Tab Connection (WORKS)
+  - Manual tab detection via http://127.0.0.1:9999/json works
+  - Can connect to Qualtrics tab's WebSocket and read survey questions
+  - Body shows: "In welchem der folgenden Länder/Regionen leben Sie?"
+
+  ### Stacked Modal Cleaner (WORKS)
+  - Closing all "Schließen" buttons via JS reveals survey underneath
+  - After closing: 0 visible modals, survey questions fully visible
+
+  ### Fill-by-Element-ID (WORKS)
+  - document.getElementById('Zip'), getElementById('Age'), getElementById('mat-radio-0-input')
+  - Most reliable approach for Angular Material components
+
+  ### Language Selection (WORKS)
+  - Qualtrics <select class="Q_lang"> identified
+  - selectedIndex set + dispatchEvent('change') → Deutsch selected
+  - Country options reorder: Deutschland moves to top
+
+  ### CDP Input.dispatchMouseEvent (WORKS)
+  - Real mouse events at coordinates work when element.click() fails
+  - Use Input.dispatchMouseEvent with mousePressed + mouseReleased
+
+
+  ## --- LEGACY (RESTORE PASS — #95): testing.md ---
+
+  > Verbatim content of `testing.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # testing.md
+
+
+  ## --- LEGACY (RESTORE PASS — #95): tool-manifest.md ---
+
+  > Verbatim content of `tool-manifest.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # tool-manifest.md — Tool Manifest (JSON Schema)
+
+  > **← [tool-registry.md](tool-registry.md) für Tool-Liste | → [registry.md](registry.md) für Master-Registry**
+
+  ---
+
+  ## Manifest Struktur
+
+  Jedes Tool hat einen JSON-Manifest-Eintrag mit:
+
+  ```json
+  {
+    "name": "cua-driver-click",
+    "description": "Element per AXPress klicken",
+    "category": "actuation",
+    "command": "cua-driver call click",
+    "parameters": {
+      "pid": "number",
+      "window_id": "number",
+      "element_index": "number",
+      "verify": "boolean (optional)"
+    },
+    "file": "commands/cua-driver/click.md",
+    "banned": false
+  }
+  ```
+
+  ## Manifest-Generator
+
+  ```bash
+  # In playstealth-cli:
+  python3 -c "from playstealth_actions.tool_manifest import generate; print(generate())"
+  ```
+
+  ## Registrierte Tools
+
+  Siehe [tool-registry.md](tool-registry.md) für die vollständige Liste mit 16 Tools.
+
+  **Letztes Update**: 2026-05-05
+
+
+  ## --- LEGACY (RESTORE PASS — #95): tool-registry.md ---
+
+  > Verbatim content of `tool-registry.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # tool-registry.md — Tool Registry (Stealth Suite)
+
+  > **← [commands.md](commands.md) für Command-Index | → [registry.md](registry.md) für Master-Registry**
+
+  ---
+
+  ## Captcha Tools (NEU 2026-05-05)
+
+  | Tool | Zweck | File |
+  |------|-------|------|
+  | `CaptchaSolver(pid, wid)` | Slide + Drag-Drop Captchas lösen | [cli/modules/captcha_solver.py](cli/modules/captcha_solver.py) |
+  | `solve_slide()` | Slide-Captcha via cua-driver drag | [commands/captcha/solve-slide.md](commands/captcha/solve-slide.md) |
+  | `solve_dragdrop()` | Generic Drag-Drop | [commands/captcha/solve-drag.md](commands/captcha/solve-drag.md) |
+  | pixtral-large Vision | Text-Captcha OCR | [commands/captcha/solve-text.md](commands/captcha/solve-text.md) |
+
+  ## CUA-Driver Tools
+
+  | Tool | Zweck | File |
+  |------|-------|------|
+  | `cua-driver call list_windows` | Alle Fenster auflisten | [cua-driver/list-windows.md](commands/cua-driver/list-windows.md) |
+  | `cua-driver call get_window_state` | AX-Tree laden | [cua-driver/get-window-state.md](commands/cua-driver/get-window-state.md) |
+  | `cua-driver call click` | Element klicken | [cua-driver/click.md](commands/cua-driver/click.md) |
+  | `cua-driver call set_value` | Text eingeben | [cua-driver/set-value.md](commands/cua-driver/set-value.md) |
+  | `cua-driver call press_key` | Tastendruck | [cua-driver/navigate-url.md](commands/cua-driver/navigate-url.md) |
+
+  ## Playstealth Tools
+
+  | Tool | Zweck | File |
+  |------|-------|------|
+  | `playstealth launch` | Chrome starten | [playstealth/launch.md](commands/playstealth/launch.md) |
+  | `playstealth run-survey` | Survey ausführen | [playstealth/launch.md](commands/playstealth/launch.md) |
+
+  ## Management Tools
+
+  | Tool | Zweck | File |
+  |------|-------|------|
+  | `SessionManager.close_all()` | BOT Chrome killen + Registry leeren | [session-manager/launch.md](commands/session-manager/launch.md) |
+  | `scripts/check_doc_health.py` | Doc-Health prüfen | [scripts/check_doc_health.py](scripts/check_doc_health.py) |
+  | `scripts/generate_missing_docs.py` | Fehlende Docs generieren | [scripts/generate_missing_docs.py](scripts/generate_missing_docs.py) |
+
+  ## NEMO Tools (2026-05-06)
+
+  | Tool | Zweck | Command/File | Description |
+  |------|-------|-------------|-------------|
+  | survey | survey-cli loop | `python3 -m survey run --mode loop` | NEMO Survey Loop |
+  | BatchExecutor | CDP batch actions | `survey/execute.py` | SOTA 3-tier click + verify |
+  | CDPConnection | CDP retry/reconnect | `survey/cdp_client.py` | 5-retry, ID routing |
+  | StealthInjector | Anti-detection | `survey/chrome.py` | Page.addScriptToEvaluateOnNewDocument |
+  | SurveyRunner | Survey orchestration | `survey/runner.py` | NEMO loop + anti-stuck |
+  | NIMSurveyClient | NIM decisions | `survey/nim.py` | NVIDIA Nemotron 3 Omni |
+
+  ## BANNED Tools
+
+  | Tool | Grund | File |
+  |------|-------|------|
+  | webauto-nodriver | ABSOLUT BANNED | [banned-webauto-nodriver.md](commands/banned-webauto-nodriver.md) |
+  | skylight-cli | RE-ACTIVATED (snapshot-compact + batch) | [banned-skylight-cli.md](commands/banned-skylight-cli.md) |
+  | CDP Navigation | BANNED | [banned-cdp-commands.md](commands/banned-cdp-commands.md) |
+  | pyautogui | BANNED | [banned-pyautogui.md](commands/banned-pyautogui.md) |
+  | pynput | BANNED | [banned-pynput.md](commands/banned-pynput.md) |
+
+  ## 2026-05-07 Crash-Test Discoveries (NEU)
+
+  ### CDP Toolbox
+
+  | Tool | Zweck | Befehl |
+  |------|-------|--------|
+  | `Input.dispatchMouseEvent` | Echte Mausklicks auf Koordinaten (durch iframe/React/modals) | `Input.dispatchMouseEvent({type:'mousePressed',x,y,button:'left'})` |
+  | `fill_by_id()` | React/Angular form fill via native setter | `Object.getOwnPropertyDescriptor(HTMLInputElement.prototype,'value').set.call(el,val)` |
+  | `close_stacked_modals()` | Alle "Schließen"-Buttons auf Dashboard klicken | `Array.from(document.querySelectorAll('button')).filter(b=>b.textContent==='Schließen').forEach(b=>b.click())` |
+  | `detect_new_tab()` | Neuen Browser-Tab nach clickSurvey erkennen | `len(tabs_after) > len(tabs_before)` via `/json` endpoint |
+  | `fill_select()` | Qualtrics `<select>` dropdown auswählen | `sel.selectedIndex=i; sel.dispatchEvent(new Event('change',{bubbles:true}))` |
+
+  ### Survey Flow Tools
+
+  | Tool | Zweck | File |
+  |------|-------|------|
+  | `scan_all_tabs()` | Alle Browser-Tabs auf Survey-Inhalte scannen | CDP `/json` endpoint |
+  | `reconnect_to_tab(tab_id)` | CDP WebSocket auf neuen Tab umschalten | `ws://127.0.0.1:9999/devtools/page/{tab_id}` |
+  | `read_balance_v2()` | Balance mit Kontext-Filter lesen (>1.0, <1000, skip "Level"/"Min") | `survey/scanner.py` |
+
+  **Tool-Gesamt**: 24 verified + 5 banned = 29 registrierte Tools
+  **Letztes Update**: 2026-05-07
+
+
+  ## --- LEGACY (RESTORE PASS — #95): troubleshooting.md ---
+
+  > Verbatim content of `troubleshooting.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # troubleshooting.md
+
+
+  ## --- LEGACY (RESTORE PASS — #95): usage.md ---
+
+  > Verbatim content of `usage.md` as it existed at commit `02d585618b`,
+  > recovered and embedded in AGENTS.md on 2026-05-12. Do not edit here —
+  > if information is stale, update the canonical sections above or open
+  > a tracking issue.
+
+  # usage.md
 
