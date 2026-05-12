@@ -68,6 +68,16 @@ from .llm_client import (
     is_available as llm_is_available,
     prompt_hash,
 )
+# SR-102 #102 — source-aware batch-review pure functions
+from .review import (
+    ReviewRules,
+    ReviewSummary,
+    plan_action,
+    apply_status,
+    format_display_line,
+    partition_records,
+    normalize_source,
+)
 
 __all__ = [
     "aggregate_misses",
@@ -89,4 +99,12 @@ __all__ = [
     "call_llm",
     "llm_is_available",
     "prompt_hash",
+    # SR-102 #102
+    "ReviewRules",
+    "ReviewSummary",
+    "plan_action",
+    "apply_status",
+    "format_display_line",
+    "partition_records",
+    "normalize_source",
 ]

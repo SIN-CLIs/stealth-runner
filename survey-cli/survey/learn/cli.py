@@ -32,6 +32,10 @@ import os
 import sys
 from typing import List
 
+from .review import (
+    ReviewRules, ReviewSummary,
+    plan_action, apply_status, format_display_line,
+)
 from .aggregator import (
     aggregate_misses,
     default_suggestions_path,
@@ -84,6 +88,18 @@ def _interactive_choice(prompt: str) -> str:
 
 
 def cmd_review(args: argparse.Namespace) -> int:
+    """SR-102 #102: source-aware batch-review.
+
+    Drei Modi koexistieren ohne sich zu stoeren:
+      - auto-rules (--auto-accept-substring-above / --auto-reject-llm-below)
+        greifen pro record FIRST
+      - --filter-source schaltet records aus, die das Auto-Regelwerk gar
+        nicht erreichen sollen
+      - alles uebrige geht in interaktiven a/r/s/q flow (oder wird unter
+        --non-interactive einfach uebersprungen)
+    Records werden idempotent via "status" field gemerkt — re-run skippt
+    bereits prozessierte.
+    """
     log_dir = args.logs or _logs_dir()
     suggestions_path = args.input or default_suggestions_path(log_dir)
     if not os.path.exists(suggestions_path):
@@ -98,6 +114,18 @@ def cmd_review(args: argparse.Namespace) -> int:
             if line:
                 items.append(json.loads(line))
 
+    rules = ReviewRules(
+        auto_accept_substring_above=(
+            args.auto_accept_substring_above
+            if args.auto_accept_substring_above >= 0 else None),
+        auto_reject_llm_below=(
+            args.auto_reject_llm_below
+            if args.auto_reject_llm_below >= 0 else None),
+        filter_source=args.filter_source,
+        non_interactive=args.non_interactive,
+        filter_open_only=True,
+    )
+
     accepted_path = os.path.join(log_dir, "pattern-suggestions-accepted.jsonl")
     rejected_path = os.path.join(log_dir, "pattern-suggestions-rejected.jsonl")
     # In dry-run NICHT oeffnen — Tests pruefen explizit dass keine
@@ -109,65 +137,98 @@ def cmd_review(args: argparse.Namespace) -> int:
         accepted_f = open(accepted_path, "a")
         rejected_f = open(rejected_path, "a")
 
-    n_acc = 0
-    n_rej = 0
-    n_skip = 0
+    summary = ReviewSummary()
+    quit_requested = False
+
     try:
         for i, item in enumerate(items, start=1):
+            action = plan_action(item, rules)
+            src = item.get("source") or "substring"
+
+            # already_done + filtered: silent skip, kein output
+            if action in ("already_done", "filtered"):
+                summary.bump(action, src)
+                continue
+
+            # accept/reject via auto-rule: log + write + status-flip
+            if action in ("accept", "reject"):
+                flipped = apply_status(item, action)
+                items[i - 1] = flipped  # in-place so input-file gets updated
+                if not args.dry_run:
+                    target = accepted_f if action == "accept" else rejected_f
+                    assert target is not None
+                    target.write(
+                        json.dumps(flipped, ensure_ascii=False) + "\n")
+                    target.flush()
+                summary.bump(action, src)
+                print(f"[{i}/{len(items)}] auto-{action}: "
+                      f"{format_display_line(flipped)}")
+                continue
+
+            # action == "ask"
             print()
             print(f"[{i}/{len(items)}] "
                   f"role={item.get('role', '?')} "
                   f"label={item.get('normalized_label', '?')!r} "
                   f"count={item.get('count', 0)}")
-            family = item.get("suggested_family")
-            conf = item.get("confidence", 0.0)
+            print(f"        {format_display_line(item)}")
             matched = item.get("matched_tokens", [])
-            if family:
-                print(f"        suggested: {family}  "
-                      f"(confidence={conf:.2f}, matched={matched})")
-            else:
-                print(f"        suggested: <NEW family needed>  "
-                      f"(confidence={conf:.2f}, label_tokens="
-                      f"{item.get('label_tokens', [])})")
+            if matched:
+                print(f"        matched_tokens: {matched}")
             samples = item.get("sample_labels", [])
             if samples:
                 print(f"        sample labels: {samples}")
 
             if args.dry_run:
+                summary.bump("ask", src)
                 continue
 
             choice = _interactive_choice(
                 "        Action [a]ccept / [r]eject / [s]kip / [q]uit: "
             )
             if choice == "a" and accepted_f is not None:
-                item["status"] = "accepted"
-                accepted_f.write(json.dumps(item, ensure_ascii=False) + "\n")
+                flipped = apply_status(item, "accept")
+                items[i - 1] = flipped
+                accepted_f.write(json.dumps(flipped, ensure_ascii=False) + "\n")
                 accepted_f.flush()
-                n_acc += 1
+                summary.bump("accept", src)
             elif choice == "r" and rejected_f is not None:
-                item["status"] = "rejected"
-                rejected_f.write(json.dumps(item, ensure_ascii=False) + "\n")
+                flipped = apply_status(item, "reject")
+                items[i - 1] = flipped
+                rejected_f.write(json.dumps(flipped, ensure_ascii=False) + "\n")
                 rejected_f.flush()
-                n_rej += 1
+                summary.bump("reject", src)
             elif choice == "q":
                 print("[learn] quit by user.")
+                quit_requested = True
                 break
             else:
-                n_skip += 1
+                summary.bump("ask", src)
     finally:
         if accepted_f is not None:
             accepted_f.close()
         if rejected_f is not None:
             rejected_f.close()
 
+    # Write back status-flipped input (idempotency). Only when NOT dry-run.
+    # Skip rewrite if quit-requested too — partial state would be confusing.
+    if not args.dry_run and not quit_requested:
+        with open(suggestions_path, "w") as f:
+            for rec in items:
+                f.write(json.dumps(rec, ensure_ascii=False) + "\n")
+
     print()
-    print(f"[learn] review done: accepted={n_acc} rejected={n_rej} "
-          f"skipped={n_skip}")
-    if not _AUTO_APPLY and n_acc:
+    print(f"[learn] review done: accepted={summary.accepted} "
+          f"rejected={summary.rejected} skipped={summary.asked} "
+          f"filtered={summary.filtered} already_done={summary.already_done}")
+    if summary.by_source:
+        bs = ", ".join(f"{k}={v}" for k, v in
+                       sorted(summary.by_source.items()))
+        print(f"[learn] by_source: {bs}")
+    if not _AUTO_APPLY and summary.accepted:
         print(f"[learn] NEXT STEP (manual): open {accepted_path}, "
               "uebernimm die Patterns in survey/profile_loader.py")
     return 0
-
 
 def cmd_apply(args: argparse.Namespace) -> int:
     """SR-58 #57 — manueller, auditierter Apply von Inbox-Eintraegen.
@@ -260,6 +321,25 @@ def build_argparser() -> argparse.ArgumentParser:
                       help="Vorschlags-JSONL (default: heutiges aggregate)")
     p_rev.add_argument("--dry-run", action="store_true",
                       help="Nur anzeigen, nichts schreiben")
+    # SR-102 #102: source-aware batch-review flags.
+    p_rev.add_argument(
+        "--auto-accept-substring-above", type=float, default=-1.0,
+        metavar="CONF",
+        help="Auto-accept records mit source=substring UND "
+             "confidence >= CONF (e.g. 0.9). Default: disabled.")
+    p_rev.add_argument(
+        "--auto-reject-llm-below", type=float, default=-1.0,
+        metavar="CONF",
+        help="Auto-reject records mit source=llm UND "
+             "confidence < CONF (e.g. 0.85). Default: disabled.")
+    p_rev.add_argument(
+        "--filter-source", choices=["all", "substring", "llm"],
+        default="all",
+        help="Nur records dieser source verarbeiten. Default: all.")
+    p_rev.add_argument(
+        "--non-interactive", action="store_true",
+        help="Kein stdin-prompt; records ohne auto-rule-match werden "
+             "uebersprungen (status bleibt open).")
     p_rev.set_defaults(func=cmd_review)
 
     # SR-58 #57: apply ──────────────────────────────────────────────────────
