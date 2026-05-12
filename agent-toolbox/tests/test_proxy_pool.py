@@ -37,6 +37,14 @@ import tempfile
 import threading
 from pathlib import Path
 from unittest.mock import patch, MagicMock
+import sys
+import os
+
+# WARUM sys.path? agent-toolbox heisst mit Bindestrich → kein Python-Package.
+# Existierende Tests im Repo nutzen dasselbe Pattern (siehe test_cookie_recovery.py).
+# Dadurch werden `core.network.*` Imports auflösbar.
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+
 import pytest
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -91,7 +99,7 @@ def temp_log_dir(tmp_path):
 
 def test_load_from_env_returns_correct_length(sample_proxies_json):
     """Test 1: Load from env: 3 entries, pool reports correct length."""
-    from agent_toolbox.core.network.proxy_pool import ProxyPool
+    from core.network.proxy_pool import ProxyPool
     
     with patch.dict(os.environ, {"PROXY_POOL_JSON": sample_proxies_json}):
         pool = ProxyPool.load_from_env()
@@ -106,7 +114,7 @@ def test_load_from_env_returns_correct_length(sample_proxies_json):
 def test_load_from_yaml_returns_correct_length(sample_proxies_yaml):
     """Test 2: Load from yaml: same."""
     pytest.importorskip("yaml")  # Skip wenn PyYAML nicht installiert
-    from agent_toolbox.core.network.proxy_pool import ProxyPool
+    from core.network.proxy_pool import ProxyPool
     
     pool = ProxyPool.load_from_yaml(sample_proxies_yaml)
     assert len(pool) == 3, "Pool sollte 3 Proxies enthalten"
@@ -119,7 +127,7 @@ def test_load_from_yaml_returns_correct_length(sample_proxies_yaml):
 
 def test_pick_on_empty_pool_returns_none_and_logs_warning(caplog):
     """Test 3: Pick on empty pool → None + WARN logged."""
-    from agent_toolbox.core.network.proxy_pool import ProxyPool
+    from core.network.proxy_pool import ProxyPool
     import logging
     
     pool = ProxyPool([])
@@ -138,7 +146,7 @@ def test_pick_on_empty_pool_returns_none_and_logs_warning(caplog):
 
 def test_pick_prefers_higher_score_statistically():
     """Test 4: Pick prefers entries with higher score (statistical: 1000 picks)."""
-    from agent_toolbox.core.network.proxy_pool import ProxyPool, ProxyEntry
+    from core.network.proxy_pool import ProxyPool, ProxyEntry
     
     # Erstelle 2 Proxies: einer mit hohem Score, einer mit niedrigem
     high_score = ProxyEntry(url="http://high.example.com:8080", label="high", success_count=50)  # Score 200
@@ -164,7 +172,7 @@ def test_pick_prefers_higher_score_statistically():
 
 def test_country_preference_picks_matching_country():
     """Test 5: Country preference: persona country=DE → DE proxy picked > 70%."""
-    from agent_toolbox.core.network.proxy_pool import ProxyPool, ProxyEntry
+    from core.network.proxy_pool import ProxyPool, ProxyEntry
     
     de_proxy = ProxyEntry(url="http://de.example.com:8080", label="de", country="DE")
     us_proxy = ProxyEntry(url="http://us.example.com:8080", label="us", country="US")
@@ -190,14 +198,14 @@ def test_country_preference_picks_matching_country():
 
 def test_record_outcome_success_increases_score():
     """Test 6: record_outcome success: score increases by 2."""
-    from agent_toolbox.core.network.proxy_pool import ProxyPool, ProxyEntry
+    from core.network.proxy_pool import ProxyPool, ProxyEntry
     
     entry = ProxyEntry(url="http://test.example.com:8080", label="test")
     pool = ProxyPool([entry])
     
     score_before = entry.score  # 100
     
-    with patch("agent_toolbox.core.network.proxy_pool.persist_event"):
+    with patch("core.network.proxy_pool.persist_event"):
         pool.record_outcome(entry, success=True)
     
     assert entry.success_count == 1, "success_count sollte 1 sein"
@@ -211,14 +219,14 @@ def test_record_outcome_success_increases_score():
 
 def test_record_outcome_fail_decreases_score():
     """Test 7: record_outcome fail: score decreases by 5."""
-    from agent_toolbox.core.network.proxy_pool import ProxyPool, ProxyEntry
+    from core.network.proxy_pool import ProxyPool, ProxyEntry
     
     entry = ProxyEntry(url="http://test.example.com:8080", label="test")
     pool = ProxyPool([entry])
     
     score_before = entry.score  # 100
     
-    with patch("agent_toolbox.core.network.proxy_pool.persist_event"):
+    with patch("core.network.proxy_pool.persist_event"):
         pool.record_outcome(entry, success=False)
     
     assert entry.fail_count == 1, "fail_count sollte 1 sein"
@@ -232,14 +240,14 @@ def test_record_outcome_fail_decreases_score():
 
 def test_record_outcome_banned_decreases_score():
     """Test 8: record_outcome banned: score decreases by 10."""
-    from agent_toolbox.core.network.proxy_pool import ProxyPool, ProxyEntry
+    from core.network.proxy_pool import ProxyPool, ProxyEntry
     
     entry = ProxyEntry(url="http://test.example.com:8080", label="test")
     pool = ProxyPool([entry])
     
     score_before = entry.score  # 100
     
-    with patch("agent_toolbox.core.network.proxy_pool.persist_event"):
+    with patch("core.network.proxy_pool.persist_event"):
         pool.record_outcome(entry, success=False, banned=True)
     
     assert entry.ban_count == 1, "ban_count sollte 1 sein"
@@ -253,7 +261,7 @@ def test_record_outcome_banned_decreases_score():
 
 def test_score_clamping_min_max():
     """Test 9: Score clamping: never below 0, never above 200."""
-    from agent_toolbox.core.network.proxy_pool import ProxyEntry
+    from core.network.proxy_pool import ProxyEntry
     
     # Test minimum (viele Bans)
     entry_min = ProxyEntry(url="http://test.example.com:8080", label="test", ban_count=100)
@@ -271,8 +279,8 @@ def test_score_clamping_min_max():
 
 def test_jsonl_persistence_format(temp_log_dir):
     """Test 10: JSONL persistence: writes are append-only, format matches schema."""
-    from agent_toolbox.core.network.proxy_pool import ProxyEntry
-    from agent_toolbox.core.network import ip_quality
+    from core.network.proxy_pool import ProxyEntry
+    from core.network import ip_quality
     
     # Patch LOG_DIR
     with patch.object(ip_quality, "LOG_DIR", temp_log_dir):
@@ -307,7 +315,7 @@ def test_jsonl_persistence_format(temp_log_dir):
 
 def test_sticky_session_returns_same_proxy():
     """Test 11: Sticky session: pick() called twice → returns same entry."""
-    from agent_toolbox.core.network.proxy_pool import ProxyPool, ProxyEntry
+    from core.network.proxy_pool import ProxyPool, ProxyEntry
     
     proxy1 = ProxyEntry(url="http://p1.example.com:8080", label="p1")
     proxy2 = ProxyEntry(url="http://p2.example.com:8080", label="p2")
@@ -330,7 +338,7 @@ def test_sticky_session_returns_same_proxy():
 
 def test_thread_safety_no_corruption():
     """Test 12: Thread safety: 4 concurrent threads picking from pool of 2."""
-    from agent_toolbox.core.network.proxy_pool import ProxyPool, ProxyEntry
+    from core.network.proxy_pool import ProxyPool, ProxyEntry
     
     proxy1 = ProxyEntry(url="http://p1.example.com:8080", label="p1")
     proxy2 = ProxyEntry(url="http://p2.example.com:8080", label="p2")
@@ -346,7 +354,7 @@ def test_thread_safety_no_corruption():
                 pick = pool.pick()
                 if pick is not None:
                     results.append(pick.label)
-                with patch("agent_toolbox.core.network.proxy_pool.persist_event"):
+                with patch("core.network.proxy_pool.persist_event"):
                     pool.record_outcome(pick, success=True)
         except Exception as e:
             errors.append(str(e))
@@ -368,7 +376,7 @@ def test_thread_safety_no_corruption():
 
 def test_proxy_status_exit_0_when_healthy():
     """Test 13: proxy-status exits 0 when >= 1 entry has score >= 50."""
-    from agent_toolbox.core.network.proxy_pool import ProxyPool, ProxyEntry
+    from core.network.proxy_pool import ProxyPool, ProxyEntry
     
     # Proxy mit Score 100 (>= 50)
     entry = ProxyEntry(url="http://test.example.com:8080", label="test")
@@ -388,7 +396,7 @@ def test_proxy_status_exit_0_when_healthy():
 
 def test_proxy_status_exit_1_when_empty():
     """Test 14: proxy-status exits 1 when pool is empty."""
-    from agent_toolbox.core.network.proxy_pool import ProxyPool
+    from core.network.proxy_pool import ProxyPool
     
     pool = ProxyPool([])
     status = pool.get_status()
@@ -404,7 +412,7 @@ def test_proxy_status_exit_1_when_empty():
 
 def test_proxy_status_exit_2_when_only_cold():
     """Test 15: proxy-status exits 2 when pool has only cold entries (score < 10)."""
-    from agent_toolbox.core.network.proxy_pool import ProxyPool, ProxyEntry
+    from core.network.proxy_pool import ProxyPool, ProxyEntry
     
     # Proxy mit Score < 10 (cold)
     cold_entry = ProxyEntry(url="http://test.example.com:8080", label="cold", ban_count=10)
@@ -426,7 +434,7 @@ def test_proxy_status_exit_2_when_only_cold():
 
 def test_browser_driver_receives_proxy_flag():
     """Test 16: BrowserDriver with proxy: mocked Chrome launch receives --proxy-server flag."""
-    from agent_toolbox.core.network.proxy_pool import ProxyEntry
+    from core.network.proxy_pool import ProxyEntry
     
     proxy = ProxyEntry(url="http://user:pass@proxy.example.com:8080", label="test")
     
@@ -462,7 +470,7 @@ def test_browser_driver_receives_proxy_flag():
 
 def test_ip_quality_score_function():
     """Bonus Test: ip_quality.score() berechnet korrekt."""
-    from agent_toolbox.core.network.ip_quality import score
+    from core.network.ip_quality import score
     
     # Base score
     assert score() == 100, "Base score sollte 100 sein"
@@ -487,7 +495,7 @@ def test_ip_quality_score_function():
 
 def test_is_cold_threshold():
     """Bonus Test: is_cold() prueft < 10 Schwelle."""
-    from agent_toolbox.core.network.ip_quality import is_cold
+    from core.network.ip_quality import is_cold
     
     assert is_cold(0) is True, "Score 0 ist cold"
     assert is_cold(9) is True, "Score 9 ist cold"
