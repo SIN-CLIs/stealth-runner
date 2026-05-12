@@ -25,8 +25,23 @@
   "nationality": "Deutsch",
   "language": "Deutsch",
   "insurance_products": [],
-  "contracts": ["mobilfunk", "internet"],
-  "interests": ["gaming", "musik", "technik"],
+  "contracts": [
+    "mobilfunk",
+    "internet"
+  ],
+  "interests": [
+    "gaming",
+    "musik",
+    "technik"
+  ],
   "vehicles": [],
-  "pets": []
+  "pets": [],
+  "conjoint_preferences": {
+    "price_weight": 0.25,
+    "brand_weight": 0.45,
+    "feature_weights": {
+      "quality": 0.2,
+      "convenience": 0.1
+    }
+  }
 }
