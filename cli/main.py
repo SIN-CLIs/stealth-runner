@@ -223,11 +223,23 @@ def proxy_status() -> None:
       └────────────────┴─────────┴───────┴─────────┴──────┴─────┘
       Pool Status: HEALTHY (2 total, 2 healthy, 0 cold)
     """
+    # WARUM sys.path? Der Ordner heisst "agent-toolbox" (mit Bindestrich) und
+    # ist daher kein importierbares Python-Package. Wir fuegen ihn zur Laufzeit
+    # zum sys.path hinzu, damit "from core.network ..." resolvable wird.
+    # Dies ist das gleiche Pattern das auch agent-toolbox/tests/* nutzt.
+    import sys
+    import os
+    repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+    toolbox_path = os.path.join(repo_root, "agent-toolbox")
+    if toolbox_path not in sys.path:
+        sys.path.insert(0, toolbox_path)
+    
     try:
-        from agent_toolbox.core.network import get_proxy_pool
-    except ImportError:
-        console.print("[bold red]Error: network module not found.[/bold red]")
-        console.print("Make sure agent_toolbox.core.network is installed.")
+        from core.network import get_proxy_pool
+    except ImportError as e:
+        console.print(f"[bold red]Error: network module not found: {e}[/bold red]")
+        console.print(f"Tried path: {toolbox_path}")
+        console.print("Make sure agent-toolbox/core/network/ exists.")
         raise typer.Exit(code=1)
     
     # Lade Pool
