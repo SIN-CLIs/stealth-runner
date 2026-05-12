@@ -45,11 +45,7 @@ class CashOutTrigger:
             )
             windows = json.loads(result.stdout)
             hp_window = next(
-                (
-                    w
-                    for w in windows.get("windows", [])
-                    if "HeyPiggy" in w.get("title", "")
-                ),
+                (w for w in windows.get("windows", []) if "HeyPiggy" in w.get("title", "")),
                 None,
             )
             if not hp_window:
@@ -87,17 +83,13 @@ class CashOutTrigger:
             # 4. Click
             result = subprocess.run(
                 ["cua-driver", "call", "click"],
-                input=json.dumps(
-                    {"pid": pid, "window_id": wid, "element_index": idx}
-                ).encode(),
+                input=json.dumps({"pid": pid, "window_id": wid, "element_index": idx}).encode(),
                 capture_output=True,
                 text=True,
                 timeout=15,
             )
             print(f"[CASH] Clicked Auszahlung sidebar: {result.stdout[:100]}")
-            log_session(
-                "cash_out", "triggered", {"balance_target": balance_target}
-            )
+            log_session("cash_out", "triggered", {"balance_target": balance_target})
             return True
 
         except Exception as e:

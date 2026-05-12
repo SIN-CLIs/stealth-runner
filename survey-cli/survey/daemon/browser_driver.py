@@ -3,6 +3,7 @@ Browser Driver - Playwright-based stealth browser automation.
 
 Integrates with StealthBrowser for anti-detection and human-like behavior.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -24,6 +25,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class ElementInfo:
     """Information about a DOM element."""
+
     selector: str
     tag: str
     text: str
@@ -184,15 +186,17 @@ class BrowserDriver:
                 box = await element.bounding_box()
                 is_visible = await element.is_visible()
 
-                results.append(ElementInfo(
-                    selector=f"{selector}:nth-child({i+1})",
-                    tag=tag,
-                    text=text.strip() if text else "",
-                    attributes={},
-                    bounding_box=box,
-                    is_visible=is_visible,
-                    is_enabled=True,
-                ))
+                results.append(
+                    ElementInfo(
+                        selector=f"{selector}:nth-child({i + 1})",
+                        tag=tag,
+                        text=text.strip() if text else "",
+                        attributes={},
+                        bounding_box=box,
+                        is_visible=is_visible,
+                        is_enabled=True,
+                    )
+                )
             except Exception:
                 continue
 

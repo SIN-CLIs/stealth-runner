@@ -46,6 +46,7 @@ from survey.nim import parse_response
 # Happy-Path: v2-Schema mit stable_id
 # =============================================================================
 
+
 class TestV2SchemaClick(unittest.TestCase):
     def test_dict_with_actions_click(self):
         raw = '{"actions":[{"stable_id":"abc123","action":"click"}]}'
@@ -57,9 +58,12 @@ class TestV2SchemaFillWithValue(unittest.TestCase):
     def test_dict_with_actions_fill(self):
         raw = '{"actions":[{"stable_id":"xy7","action":"fill","value":"Berlin"}]}'
         result = parse_response(raw)
-        self.assertEqual(result, [
-            {"stable_id": "xy7", "action": "fill", "value": "Berlin"},
-        ])
+        self.assertEqual(
+            result,
+            [
+                {"stable_id": "xy7", "action": "fill", "value": "Berlin"},
+            ],
+        )
 
 
 class TestV2SchemaBareList(unittest.TestCase):
@@ -87,6 +91,7 @@ class TestV2SchemaCompleteOnly(unittest.TestCase):
 # Legacy: @eN-ref-Schema (wird zu stable_id normalisiert)
 # =============================================================================
 
+
 class TestLegacyRefNormalisedToStableId(unittest.TestCase):
     def test_ref_renamed_when_no_stable_id(self):
         raw = '[{"ref":"@e0","action":"click"}]'
@@ -113,6 +118,7 @@ class TestLegacyDictWithActionsKey(unittest.TestCase):
 # Robustheit: Markdown-Fences, Fliesstext, Whitespace
 # =============================================================================
 
+
 class TestMarkdownFenceJson(unittest.TestCase):
     def test_strips_json_fence(self):
         raw = '```json\n[{"stable_id":"a","action":"click"}]\n```'
@@ -129,16 +135,20 @@ class TestMarkdownFenceBare(unittest.TestCase):
 
 class TestEmbeddedJsonInProse(unittest.TestCase):
     def test_extracts_dict_from_chatter(self):
-        raw = ('Sure, let me think... I will click the continue button: '
-               '{"actions":[{"stable_id":"btn","action":"click"}]} done.')
+        raw = (
+            "Sure, let me think... I will click the continue button: "
+            '{"actions":[{"stable_id":"btn","action":"click"}]} done.'
+        )
         result = parse_response(raw)
         self.assertEqual(result, [{"stable_id": "btn", "action": "click"}])
 
     def test_extracts_list_across_newlines(self):
-        raw = ('Analysis:\n'
-               'I want to pick the male option.\n'
-               '[\n  {"stable_id":"male","action":"click"}\n]\n'
-               'That is my final answer.')
+        raw = (
+            "Analysis:\n"
+            "I want to pick the male option.\n"
+            '[\n  {"stable_id":"male","action":"click"}\n]\n'
+            "That is my final answer."
+        )
         result = parse_response(raw)
         self.assertEqual(result, [{"stable_id": "male", "action": "click"}])
 
@@ -146,6 +156,7 @@ class TestEmbeddedJsonInProse(unittest.TestCase):
 # =============================================================================
 # Defensiver Fallback: Garbage → [{"action":"wait"}]
 # =============================================================================
+
 
 class TestNoneReturnsWait(unittest.TestCase):
     def test_none_input(self):
@@ -191,7 +202,7 @@ class TestEmptyActionsArrayReturnsWait(unittest.TestCase):
         self.assertEqual(result, [{"action": "wait"}])
 
     def test_bare_empty_list(self):
-        raw = '[]'
+        raw = "[]"
         result = parse_response(raw)
         self.assertEqual(result, [{"action": "wait"}])
 
@@ -199,6 +210,7 @@ class TestEmptyActionsArrayReturnsWait(unittest.TestCase):
 # =============================================================================
 # Spezial: "complete"/"done" als alleiniger Text-Hinweis
 # =============================================================================
+
 
 class TestCompleteKeywordInProse(unittest.TestCase):
     def test_complete_word_no_json(self):
@@ -218,6 +230,7 @@ class TestCompleteWordWithoutKeywordSetReturnsWait(unittest.TestCase):
 # =============================================================================
 # Schema-Resilienz: Plain dict, mixed types, non-dict items
 # =============================================================================
+
 
 class TestPlainDictWrappedInList(unittest.TestCase):
     def test_single_dict_no_actions_key(self):
@@ -242,6 +255,7 @@ class TestNonDictItemsFiltered(unittest.TestCase):
 # Realistische NIM-Antwort-Snapshots (synthetisch aber realistisch)
 # =============================================================================
 
+
 class TestRealisticNimResponseFenced(unittest.TestCase):
     def test_typical_nemotron_output(self):
         # So sieht Nemotron's Output in der Realitaet aus: fenced JSON
@@ -256,9 +270,12 @@ class TestRealisticNimResponseFenced(unittest.TestCase):
             "```"
         )
         result = parse_response(raw)
-        self.assertEqual(result, [
-            {"stable_id": "f0_abc1234", "action": "click"},
-        ])
+        self.assertEqual(
+            result,
+            [
+                {"stable_id": "f0_abc1234", "action": "click"},
+            ],
+        )
 
 
 class TestRealisticNimResponseChainOfThought(unittest.TestCase):
@@ -269,21 +286,24 @@ class TestRealisticNimResponseChainOfThought(unittest.TestCase):
             'JSON: {"actions":[{"stable_id":"f0_male_radio","action":"click"}]}'
         )
         result = parse_response(raw)
-        self.assertEqual(result, [
-            {"stable_id": "f0_male_radio", "action": "click"},
-        ])
+        self.assertEqual(
+            result,
+            [
+                {"stable_id": "f0_male_radio", "action": "click"},
+            ],
+        )
 
 
 class TestRealisticNimResponseFill(unittest.TestCase):
     def test_fill_with_german_value(self):
-        raw = (
-            '{"actions":[{"stable_id":"f0_plz","action":"fill",'
-            '"value":"10785"}]}'
-        )
+        raw = '{"actions":[{"stable_id":"f0_plz","action":"fill","value":"10785"}]}'
         result = parse_response(raw)
-        self.assertEqual(result, [
-            {"stable_id": "f0_plz", "action": "fill", "value": "10785"},
-        ])
+        self.assertEqual(
+            result,
+            [
+                {"stable_id": "f0_plz", "action": "fill", "value": "10785"},
+            ],
+        )
 
 
 class TestRealisticBrokenNimResponseTrailingComma(unittest.TestCase):
@@ -311,6 +331,7 @@ class TestRealisticDoubleEncodedJson(unittest.TestCase):
 # Invariants — ueber alle Inputs garantiert
 # =============================================================================
 
+
 class TestInvariants(unittest.TestCase):
     """Egal welcher Input — parse_response liefert garantiert eine
     nicht-leere Liste mit dict-Items, ohne Exception."""
@@ -329,7 +350,7 @@ class TestInvariants(unittest.TestCase):
         '{"actions":null}',
         '[{"action":"click"}]',
         '[{"stable_id":"a","action":"click"}]',
-        '```\n[\n```',
+        "```\n[\n```",
         "complete!",
         "done done done",
     ]
@@ -352,7 +373,8 @@ class TestInvariants(unittest.TestCase):
                 result = parse_response(inp)
                 for item in result:
                     self.assertIsInstance(
-                        item, dict,
+                        item,
+                        dict,
                         f"non-dict item {item!r} for input {inp!r}",
                     )
 
@@ -361,14 +383,14 @@ class TestInvariants(unittest.TestCase):
         actions-Schema), MUSS jedes Item ein 'action'-Key haben.
         Achtung: parse_response leitet ``[{}]`` durch — das ist by design
         (kein Schema-enforcement im Parser, sondern in decide_node)."""
-        ambiguous = (None, "", " ", "abc", '{"actions":[]}', "complete!",
-                     "done done done")
+        ambiguous = (None, "", " ", "abc", '{"actions":[]}', "complete!", "done done done")
         for inp in ambiguous:
             with self.subTest(input=repr(inp)):
                 result = parse_response(inp)
                 for item in result:
                     self.assertIn(
-                        "action", item,
+                        "action",
+                        item,
                         f"fallback item {item!r} missing 'action' for {inp!r}",
                     )
 

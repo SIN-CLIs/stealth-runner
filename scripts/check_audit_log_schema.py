@@ -71,7 +71,7 @@ import json
 import os
 import sys
 from datetime import datetime
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any
 
 # Public helpers (also imported by tests).
 __all__ = [
@@ -120,8 +120,8 @@ def parse_timestamp(value: Any) -> bool:
 
 
 def validate_record(
-    record: Dict[str, Any], file_path: str, line_num: int
-) -> Optional[Dict[str, Any]]:
+    record: dict[str, Any], file_path: str, line_num: int
+) -> dict[str, Any] | None:
     """Validate a single audit-log record against the schema spec.
 
     Returns None if valid, or a violation dict if invalid.
@@ -175,7 +175,7 @@ def validate_record(
         # confidence: required, 0.0 <= x <= 1.0
         if "confidence" not in record:
             errors.append("missing required field 'confidence' (for decision='applied')")
-        elif not isinstance(record["confidence"], (int, float)):
+        elif not isinstance(record["confidence"], int | float):
             errors.append(
                 f"'confidence' must be numeric, got {type(record['confidence']).__name__} (for decision='applied')"
             )
@@ -203,10 +203,8 @@ def validate_record(
     for opt_field in ["reason", "model", "details", "note"]:
         if opt_field in record:
             val = record[opt_field]
-            if not isinstance(val, (str, type(None))):
-                errors.append(
-                    f"'{opt_field}' must be string or null, got {type(val).__name__}"
-                )
+            if not isinstance(val, str | type(None)):
+                errors.append(f"'{opt_field}' must be string or null, got {type(val).__name__}")
 
     if errors:
         return {
@@ -218,14 +216,14 @@ def validate_record(
     return None
 
 
-def iter_records(file_path: str) -> Tuple[Dict[str, Any], int, Optional[str]]:
+def iter_records(file_path: str) -> tuple[dict[str, Any], int, str | None]:
     """Iterate over JSONL records in a file.
 
     Yields tuples of (record, line_number, error_msg).
     If error_msg is not None, record will be None.
     """
     try:
-        with open(file_path, "r") as f:
+        with open(file_path) as f:
             for line_num, line in enumerate(f, start=1):
                 line = line.strip()
                 if not line:
@@ -235,12 +233,12 @@ def iter_records(file_path: str) -> Tuple[Dict[str, Any], int, Optional[str]]:
                     yield record, line_num, None
                 except json.JSONDecodeError as e:
                     yield None, line_num, f"JSON parse error: {e}"
-    except OSError as e:
+    except OSError:
         # File doesn't exist or can't be read; don't crash.
         pass
 
 
-def check_logs(logs_dir: str) -> Tuple[List[Dict[str, Any]], int, int]:
+def check_logs(logs_dir: str) -> tuple[list[dict[str, Any]], int, int]:
     """Check all learn-applied-*.jsonl files in logs_dir.
 
     Returns (violations, total_records, total_files).
@@ -273,13 +271,15 @@ def check_logs(logs_dir: str) -> Tuple[List[Dict[str, Any]], int, int]:
     return violations, total_records, total_files
 
 
-def format_human(violations: List[Dict[str, Any]], total_records: int, total_files: int) -> str:
+def format_human(violations: list[dict[str, Any]], total_records: int, total_files: int) -> str:
     """Format violations as human-readable text."""
     lines = []
     if not violations:
         lines.append(f"✓ All {total_records} records across {total_files} file(s) are valid.")
     else:
-        lines.append(f"✗ Found {len(violations)} violation(s) across {total_records} records in {total_files} file(s):\n")
+        lines.append(
+            f"✗ Found {len(violations)} violation(s) across {total_records} records in {total_files} file(s):\n"
+        )
         for v in violations:
             lines.append(f"  {v['file']}:{v['line']}")
             if "error" in v:
@@ -291,9 +291,7 @@ def format_human(violations: List[Dict[str, Any]], total_records: int, total_fil
     return "\n".join(lines)
 
 
-def format_json(
-    violations: List[Dict[str, Any]], total_records: int, total_files: int
-) -> str:
+def format_json(violations: list[dict[str, Any]], total_records: int, total_files: int) -> str:
     """Format violations as JSON."""
     return json.dumps(
         {

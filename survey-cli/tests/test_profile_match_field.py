@@ -64,6 +64,7 @@ PROFILE = {
 # Per-Familie Tests — DE + EN
 # =============================================================================
 
+
 class TestEmailMatch(unittest.TestCase):
     def test_de_label_emailadresse(self):
         self.assertEqual(
@@ -79,9 +80,7 @@ class TestEmailMatch(unittest.TestCase):
 
     def test_placeholder_mailadresse(self):
         self.assertEqual(
-            ProfileLoader.match_field(
-                "textbox", "", PROFILE, placeholder="mailadresse@..."
-            ),
+            ProfileLoader.match_field("textbox", "", PROFILE, placeholder="mailadresse@..."),
             "jeremy@example.com",
         )
 
@@ -109,6 +108,7 @@ class TestBirthYearMatch(unittest.TestCase):
         prof = {"age": 30}  # kein date_of_birth
         # Year sollte aus age berechnet werden (heute.year - age).
         from datetime import date as _date
+
         expected = str(_date.today().year - 30)
         self.assertEqual(
             ProfileLoader.match_field("textbox", "Geburtsjahr", prof),
@@ -247,9 +247,7 @@ class TestAgeMatch(unittest.TestCase):
 class TestHouseholdSizeMatch(unittest.TestCase):
     def test_de_personen_im_haushalt(self):
         self.assertEqual(
-            ProfileLoader.match_field(
-                "spinbutton", "Personen im Haushalt", PROFILE
-            ),
+            ProfileLoader.match_field("spinbutton", "Personen im Haushalt", PROFILE),
             "3",
         )
 
@@ -275,17 +273,13 @@ class TestIncomeMatch(unittest.TestCase):
 
     def test_household_income_wins_over_income(self):
         self.assertEqual(
-            ProfileLoader.match_field(
-                "textbox", "Haushaltseinkommen", PROFILE
-            ),
+            ProfileLoader.match_field("textbox", "Haushaltseinkommen", PROFILE),
             "3000-4000",
         )
 
     def test_en_household_income_wins(self):
         self.assertEqual(
-            ProfileLoader.match_field(
-                "textbox", "Household income", PROFILE
-            ),
+            ProfileLoader.match_field("textbox", "Household income", PROFILE),
             "3000-4000",
         )
 
@@ -360,49 +354,36 @@ class TestStateRegionMatch(unittest.TestCase):
 # Negativ-Tests
 # =============================================================================
 
+
 class TestUnknownLabelReturnsNone(unittest.TestCase):
     def test_random_question_returns_none(self):
         self.assertIsNone(
-            ProfileLoader.match_field(
-                "textbox", "Welches ist Ihre Lieblings-Pizza?", PROFILE
-            )
+            ProfileLoader.match_field("textbox", "Welches ist Ihre Lieblings-Pizza?", PROFILE)
         )
 
     def test_lottery_number_returns_none(self):
-        self.assertIsNone(
-            ProfileLoader.match_field("textbox", "Lottozahl", PROFILE)
-        )
+        self.assertIsNone(ProfileLoader.match_field("textbox", "Lottozahl", PROFILE))
 
 
 class TestNonInputRoleReturnsNone(unittest.TestCase):
     def test_button_returns_none(self):
-        self.assertIsNone(
-            ProfileLoader.match_field("button", "Stadt", PROFILE)
-        )
+        self.assertIsNone(ProfileLoader.match_field("button", "Stadt", PROFILE))
 
     def test_radio_returns_none(self):
-        self.assertIsNone(
-            ProfileLoader.match_field("radio", "Wohnort", PROFILE)
-        )
+        self.assertIsNone(ProfileLoader.match_field("radio", "Wohnort", PROFILE))
 
     def test_link_returns_none(self):
-        self.assertIsNone(
-            ProfileLoader.match_field("link", "PLZ", PROFILE)
-        )
+        self.assertIsNone(ProfileLoader.match_field("link", "PLZ", PROFILE))
 
 
 class TestSpinbuttonRejectsTextFields(unittest.TestCase):
     """spinbutton soll text-Felder (city, street, email) NICHT befuellen."""
 
     def test_spinbutton_with_city_label_returns_none(self):
-        self.assertIsNone(
-            ProfileLoader.match_field("spinbutton", "Stadt", PROFILE)
-        )
+        self.assertIsNone(ProfileLoader.match_field("spinbutton", "Stadt", PROFILE))
 
     def test_spinbutton_with_email_label_returns_none(self):
-        self.assertIsNone(
-            ProfileLoader.match_field("spinbutton", "E-Mail-Adresse", PROFILE)
-        )
+        self.assertIsNone(ProfileLoader.match_field("spinbutton", "E-Mail-Adresse", PROFILE))
 
     def test_spinbutton_with_numeric_keyword_works(self):
         self.assertEqual(
@@ -413,14 +394,10 @@ class TestSpinbuttonRejectsTextFields(unittest.TestCase):
 
 class TestEmptyLabelReturnsNone(unittest.TestCase):
     def test_empty_name_no_placeholder(self):
-        self.assertIsNone(
-            ProfileLoader.match_field("textbox", "", PROFILE, placeholder="")
-        )
+        self.assertIsNone(ProfileLoader.match_field("textbox", "", PROFILE, placeholder=""))
 
     def test_none_name_no_placeholder(self):
-        self.assertIsNone(
-            ProfileLoader.match_field("textbox", None, PROFILE)
-        )
+        self.assertIsNone(ProfileLoader.match_field("textbox", None, PROFILE))
 
 
 class TestProfileMissingFields(unittest.TestCase):
@@ -428,20 +405,14 @@ class TestProfileMissingFields(unittest.TestCase):
 
     def test_missing_email_returns_none(self):
         prof = {"city": "Berlin"}  # kein email
-        self.assertIsNone(
-            ProfileLoader.match_field("textbox", "E-Mail", prof)
-        )
+        self.assertIsNone(ProfileLoader.match_field("textbox", "E-Mail", prof))
 
     def test_missing_zip_returns_none(self):
         prof = {"city": "Berlin"}  # kein zip
-        self.assertIsNone(
-            ProfileLoader.match_field("textbox", "PLZ", prof)
-        )
+        self.assertIsNone(ProfileLoader.match_field("textbox", "PLZ", prof))
 
     def test_empty_profile_returns_none(self):
-        self.assertIsNone(
-            ProfileLoader.match_field("textbox", "Stadt", {})
-        )
+        self.assertIsNone(ProfileLoader.match_field("textbox", "Stadt", {}))
 
 
 class TestNameSplittingEdgeCases(unittest.TestCase):
@@ -454,9 +425,7 @@ class TestNameSplittingEdgeCases(unittest.TestCase):
 
     def test_single_word_name_last_name_returns_none(self):
         prof = {"name": "Madonna"}
-        self.assertIsNone(
-            ProfileLoader.match_field("textbox", "Nachname", prof)
-        )
+        self.assertIsNone(ProfileLoader.match_field("textbox", "Nachname", prof))
 
     def test_three_part_name_last_name_returns_last(self):
         prof = {"name": "Maria Anna Schulze"}

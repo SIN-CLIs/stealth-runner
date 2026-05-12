@@ -27,9 +27,9 @@ from stealth_captcha.solver.drag_drop import DragDropCaptchaSolver
 from stealth_captcha.solver.slide import SlideCaptchaSolver
 from stealth_captcha.solver.text import TextCaptchaSolver
 from stealth_captcha.solver.twocaptcha import (
+    TwoCaptchaError,
     TwoCaptchaFallbackSolver,
     TwoCaptchaParams,
-    TwoCaptchaError,
     inject_token_via_cdp,
 )
 

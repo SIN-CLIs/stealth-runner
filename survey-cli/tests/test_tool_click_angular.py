@@ -14,7 +14,7 @@ BANNED METHODS — NIEMALS VERWENDEN:
 """
 
 import unittest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 import json
 import sys
 import os
@@ -24,6 +24,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 class MockWebSocket:
     """Mock CDP WebSocket that returns shaped responses."""
+
     def __init__(self, coords=None, error=None):
         self.coords = coords or {"x": 100.0, "y": 200.0, "tag": "BUTTON"}
         self.error = error
@@ -53,19 +54,18 @@ class TestClickAngular(unittest.TestCase):
 
     def setUp(self):
         self.ws_url = "ws://127.0.0.1:9999/devtools/page/mock123"
-        self._ws_patcher = patch(
-            "tools.tool_click_angular.websocket.create_connection"
-        )
+        self._ws_patcher = patch("tools.tool_click_angular.websocket.create_connection")
         self.mock_create = self._ws_patcher.start()
 
     def tearDown(self):
         self._ws_patcher.stop()
 
     def test_click_by_idx_success(self):
-        """"click via idx returns success with coords."""
+        """ "click via idx returns success with coords."""
         mock_ws = MockWebSocket()
         self.mock_create.return_value = mock_ws
         from tools.tool_click_angular import click
+
         result = click(self.ws_url, idx=5)
         self.assertTrue(result["success"])
         self.assertEqual(result["method"], "cdp_mouse")
@@ -77,6 +77,7 @@ class TestClickAngular(unittest.TestCase):
         mock_ws = MockWebSocket(coords={"x": 50.0, "y": 60.0, "tag": "A"})
         self.mock_create.return_value = mock_ws
         from tools.tool_click_angular import click
+
         result = click(self.ws_url, selector=".NextButton")
         self.assertTrue(result["success"])
         self.assertEqual(result["coords"], [50.0, 60.0])
@@ -86,6 +87,7 @@ class TestClickAngular(unittest.TestCase):
         mock_ws = MockWebSocket()
         self.mock_create.return_value = mock_ws
         from tools.tool_click_angular import click
+
         result = click(self.ws_url, text="Weiter")
         self.assertTrue(result["success"])
 
@@ -94,6 +96,7 @@ class TestClickAngular(unittest.TestCase):
         mock_ws = MockWebSocket()
         self.mock_create.return_value = mock_ws
         from tools.tool_click_angular import click
+
         result = click(self.ws_url)
         self.assertFalse(result["success"])
         self.assertIn("required", result["error"])
@@ -103,6 +106,7 @@ class TestClickAngular(unittest.TestCase):
         mock_ws = MockWebSocket(error=True)
         self.mock_create.return_value = mock_ws
         from tools.tool_click_angular import click
+
         result = click(self.ws_url, idx=999)
         self.assertFalse(result["success"])
         self.assertIn("not found", result["error"])
@@ -111,6 +115,7 @@ class TestClickAngular(unittest.TestCase):
         """click handles WebSocket connection failure gracefully."""
         self.mock_create.side_effect = ConnectionRefusedError("port dead")
         from tools.tool_click_angular import click
+
         result = click(self.ws_url, selector=".btn")
         self.assertFalse(result["success"])
         self.assertIn("port dead", result["error"])
@@ -120,6 +125,7 @@ class TestClickAngular(unittest.TestCase):
         mock_ws = MockWebSocket()
         self.mock_create.return_value = mock_ws
         from tools.tool_click_angular import click
+
         click(self.ws_url, idx=0)
         methods = [s["method"] for s in mock_ws.sent]
         self.assertIn("Runtime.evaluate", methods)

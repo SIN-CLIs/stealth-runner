@@ -53,7 +53,7 @@ class BatchResult:
 
 PROVIDER_COMMANDS = {
     "qualtrics": {
-        "click_next": '''(function(){
+        "click_next": """(function(){
             var start=Date.now();
             function tryClick(){
                 var btn=document.querySelector('.NextButton,.btn-next,#NextButton,button[id*=Next],.btn-primary,[aria-label*=Next],[aria-label*=Weiter]');
@@ -62,13 +62,13 @@ PROVIDER_COMMANDS = {
                 if(Date.now()-start<8000){setTimeout(tryClick,500);return'waiting';}return'no button';
             }
             return tryClick();
-        })()''',
-        "click_element": '''(function(idx){
+        })()""",
+        "click_element": """(function(idx){
             var els=Array.from(document.querySelectorAll("input[type=radio],input[type=checkbox]"));
             els.sort(function(a,b){return a.getBoundingClientRect().top-b.getBoundingClientRect().top});
             if(els[idx])els[idx].click();
-        })({idx})''',
-        "fill_text": '''(function(v){
+        })({idx})""",
+        "fill_text": """(function(v){
             var t=document.querySelector("textarea:not(.g-recaptcha-response)");
             if(!t){var i=document.querySelector("input[type=text],input[type=number]");
             if(i){var s=Object.getOwnPropertyDescriptor(window.HTMLInputElement.prototype,'value');
@@ -79,8 +79,8 @@ PROVIDER_COMMANDS = {
             if(s2&&s2.set)s2.set.call(t,v);else t.value=v;
             t.dispatchEvent(new Event("input",{bubbles:true}));
             t.dispatchEvent(new Event("change",{bubbles:true}));}
-        })("{value}")''',
-        "click_select": '''(function(lang){
+        })("{value}")""",
+        "click_select": """(function(lang){
             var s=document.querySelector("select.Q_lang,select[id*=lang],select");
             if(!s) return JSON.stringify({found:false, reason:"no_select"});
             var langL=(lang||"").toLowerCase();
@@ -103,8 +103,8 @@ PROVIDER_COMMANDS = {
             s.dispatchEvent(new Event("change",{bubbles:true}));
             return JSON.stringify({found:true,method:"selectedIndex",idx:idx,
                                    text:s.options[idx].text.trim()});
-        })("{value}")''',
-        "click_qualtrics_label": '''(function(){
+        })("{value}")""",
+        "click_qualtrics_label": """(function(){
             var labels=document.querySelectorAll('.LabelWrapper,.ChoiceRow label,.choice');
             for(var i=0;i<labels.length;i++){
                 var t=labels[i].textContent.trim();
@@ -114,28 +114,28 @@ PROVIDER_COMMANDS = {
                 }
             }
             return'not found';
-        })()''',
+        })()""",
     },
     "tolunastart": {
         "click_next": 'document.querySelector("button").click()',
-        "click_element": '''(function(){
+        "click_element": """(function(){
             var rs=document.querySelectorAll(".cf-radio,.cf-checkbox");
             if(rs[{idx}]) rs[{idx}].click();
-        })()''',
-        "fill_text": '''(function(v){
+        })()""",
+        "fill_text": """(function(v){
             var i=document.querySelector("input[type=number],input[type=text]");
             if(i){i.value=v;i.dispatchEvent(new Event("input",{bubbles:true}));
             i.dispatchEvent(new Event("change",{bubbles:true}));}
-        })("{value}")''',
+        })("{value}")""",
     },
     "strat7": {
         "click_next": 'document.querySelector(".bsbutton:not([disabled])").click()',
         "click_element": 'document.querySelectorAll("input[type=radio]")[{idx}].click()',
-        "fill_text": '''(function(v){
+        "fill_text": """(function(v){
             var i=document.querySelector("input[type=text],input[type=number]");
             if(i){i.value=v;i.dispatchEvent(new Event("input",{bubbles:true}));
             i.dispatchEvent(new Event("change",{bubbles:true}));}
-        })("{value}")''',
+        })("{value}")""",
     },
     "brand_ambassador": {
         "click_next": 'document.querySelector(".submit-btn,button[type=submit]").click()',
@@ -144,12 +144,12 @@ PROVIDER_COMMANDS = {
     "purespectrum": {
         # Angular v19: JS .click() IGNORED — use CDP marker
         "click_next": "__CDP_CLICK_BUTTON__:Nächste",
-        "click_element": '__CDP_CLICK__:input[type=radio]:{idx}',
-        "fill_text": '''(function(v){
+        "click_element": "__CDP_CLICK__:input[type=radio]:{idx}",
+        "fill_text": """(function(v){
             var t=document.querySelector("textarea");
             if(t){t.value=v;t.dispatchEvent(new Event("input",{bubbles:true}));
             t.dispatchEvent(new Event("change",{bubbles:true}));}
-        })("{value}")''',
+        })("{value}")""",
     },
     "insights_today": {
         "click_next": 'document.querySelector("button[type=submit]").click()',
@@ -158,8 +158,8 @@ PROVIDER_COMMANDS = {
     "cloudresearch": {
         # CloudResearch Sentry: <div role="button"> elements (not <input type=radio>)
         "click_next": "__CDP_CLICK_BUTTON__:Nächster",
-        "click_element": '__CDP_CLICK_ROLE_BUTTON__:{idx}',
-        "fill_text": '''(function(v){
+        "click_element": "__CDP_CLICK_ROLE_BUTTON__:{idx}",
+        "fill_text": """(function(v){
             var ta = document.querySelector("textarea");
             if(!ta){ta = document.querySelector("input[type=text],input[type=number]");}
             if(ta){
@@ -170,13 +170,13 @@ PROVIDER_COMMANDS = {
                 ta.dispatchEvent(new Event("change",{bubbles:true,cancelable:true}));
                 ta.dispatchEvent(new Event("blur",{bubbles:true,cancelable:true}));
             }
-        })("{value}")''',
+        })("{value}")""",
     },
     "edgesurvey": {
         # EdgeSurvey innovatemr.net: Angular Material <mat-radio-button>
         "click_next": "__CDP_CLICK_BUTTON__:Weiter",
-        "click_element": '__CDP_CLICK__:input[type=radio]:{idx}',
-        "fill_text": '''(function(v){
+        "click_element": "__CDP_CLICK__:input[type=radio]:{idx}",
+        "fill_text": """(function(v){
             var ta = document.querySelector("textarea,input[type=text]");
             if(ta){
                 var nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype,"value").set;
@@ -186,26 +186,26 @@ PROVIDER_COMMANDS = {
                 ta.dispatchEvent(new Event("change",{bubbles:true}));
                 ta.dispatchEvent(new Event("blur",{bubbles:true}));
             }
-        })("{value}")''',
+        })("{value}")""",
     },
     "reach3insights": {
         # Reach3Insights: standard form inputs + submit buttons
         "click_next": 'document.querySelector("input[type=submit]").click()',
         "click_element": 'document.querySelectorAll("input[type=radio],input[type=checkbox]")[{idx}].click()',  # noqa: E501
-        "fill_text": '''(function(v){
+        "fill_text": """(function(v){
             var ta = document.querySelector("textarea,input[type=text]");
             if(ta){
                 ta.value = v;
                 ta.dispatchEvent(new Event("input",{bubbles:true}));
                 ta.dispatchEvent(new Event("change",{bubbles:true}));
             }
-        })("{value}")''',
+        })("{value}")""",
     },
     "generic": {
         # Universal fallback for unknown providers: CDP click + textarea fill
         "click_next": "__CDP_CLICK_BUTTON__:Weiter",
-        "click_element": '__CDP_CLICK_GENERIC__:{idx}',
-        "fill_text": '''(function(v){
+        "click_element": "__CDP_CLICK_GENERIC__:{idx}",
+        "fill_text": """(function(v){
             var ta = document.querySelector("textarea,input[type=text]");
             if(ta){
                 var nativeSetter = Object.getOwnPropertyDescriptor(window.HTMLTextAreaElement.prototype,"value").set;
@@ -214,19 +214,19 @@ PROVIDER_COMMANDS = {
                 ta.dispatchEvent(new Event("input",{bubbles:true,cancelable:true}));
                 ta.dispatchEvent(new Event("change",{bubbles:true,cancelable:true}));
             }
-        })("{value}")''',
+        })("{value}")""",
     },
 }
 
 GENERIC_COMMANDS = {
     "click_next": 'document.querySelector("button,.NextButton,.btn-primary,input[type=submit]").click()',  # noqa: E501
     "click_element": 'document.querySelectorAll("input[type=radio],input[type=checkbox],button")[{idx}].click()',  # noqa: E501
-    "fill_text": '''(function(v){
+    "fill_text": """(function(v){
         var el=document.querySelector("textarea,input[type=text],input[type=number]");
         if(el){el.value=v;el.dispatchEvent(new Event("input",{bubbles:true}));
         el.dispatchEvent(new Event("change",{bubbles:true}));}
-    })("{value}")''',
-    "click_select": '''(function(lang){
+    })("{value}")""",
+    "click_select": """(function(lang){
         var s=document.querySelector("select");
         if(!s) return JSON.stringify({found:false});
         var langL=(lang||"").toLowerCase();
@@ -240,13 +240,14 @@ GENERIC_COMMANDS = {
             }
         }
         return JSON.stringify({found:false});
-    })("{value}")''',
+    })("{value}")""",
 }
 
 
 # ══════════════════════════════════════════════════════════════════
 # LANGUAGE SELECTION PAGE DETECTION (2026-05-09)
 # ══════════════════════════════════════════════════════════════════
+
 
 def detect_language_page(ws_url: str, default_lang: str = "Deutsch") -> Optional[List[Dict]]:
     """Detect Qualtrics language selection page and return select action.
@@ -302,10 +303,15 @@ def detect_language_page(ws_url: str, default_lang: str = "Deutsch") -> Optional
             });
         })()
         """
-        ws.send(json.dumps({
-            "id": 0, "method": "Runtime.evaluate",
-            "params": {"expression": js, "returnByValue": True}
-        }))
+        ws.send(
+            json.dumps(
+                {
+                    "id": 0,
+                    "method": "Runtime.evaluate",
+                    "params": {"expression": js, "returnByValue": True},
+                }
+            )
+        )
         r = json.loads(ws.recv())
         ws.close()
         raw = r.get("result", {}).get("result", {}).get("value", "")
@@ -319,16 +325,25 @@ def detect_language_page(ws_url: str, default_lang: str = "Deutsch") -> Optional
         lang_lower = default_lang.lower()
         selected = 0
         for i, opt in enumerate(opts):
-            if opt["text"].lower().includes(lang_lower) or opt["value"].lower().includes(lang_lower):  # noqa: E501
+            if opt["text"].lower().includes(lang_lower) or opt["value"].lower().includes(
+                lang_lower
+            ):  # noqa: E501
                 selected = i
                 break
-        return [{"action": "select", "value": opts[selected]["text"] if selected < len(opts) else default_lang,  # noqa: E501
-                 "lang_page": True, "options_count": len(opts)}]
+        return [
+            {
+                "action": "select",
+                "value": opts[selected]["text"] if selected < len(opts) else default_lang,  # noqa: E501
+                "lang_page": True,
+                "options_count": len(opts),
+            }
+        ]
     except Exception:
         return None
 
 
 # ── Batch Executor ─────────────────────────────────────
+
 
 class BatchExecutor:
     """Execute batched survey actions via CDP WebSocket.
@@ -343,7 +358,9 @@ class BatchExecutor:
     def __init__(self, ws_url, provider="unknown", config=None):
         self.ws_url = ws_url
         self.provider = provider
-        self.commands = get_provider_commands(provider) or PROVIDER_COMMANDS.get(provider, GENERIC_COMMANDS)  # noqa: E501
+        self.commands = get_provider_commands(provider) or PROVIDER_COMMANDS.get(
+            provider, GENERIC_COMMANDS
+        )  # noqa: E501
         self.config = config  # SOTA: access debug flag for logging
 
     # ── Static Helpers ──────────────────────────────────────
@@ -355,9 +372,10 @@ class BatchExecutor:
             cdp = CDPConnection(ws_url, max_retries=2, timeout=10)
             cdp.connect()
             try:
-                result = cdp.call("Runtime.evaluate", {
-                    "expression": f"document.body.innerText.substring(0, {max_len})"
-                })
+                result = cdp.call(
+                    "Runtime.evaluate",
+                    {"expression": f"document.body.innerText.substring(0, {max_len})"},
+                )
                 return result.get("result", {}).get("result", {}).get("value", "")
             finally:
                 cdp.close()
@@ -507,19 +525,18 @@ class BatchExecutor:
                 success = True
                 method_used = "cdp_click_generic"
             elif js:
-                ws.send(json.dumps({
-                    "id": 0, "method": "Runtime.evaluate",
-                    "params": {"expression": js}
-                }))
+                ws.send(
+                    json.dumps(
+                        {"id": 0, "method": "Runtime.evaluate", "params": {"expression": js}}
+                    )
+                )
                 json.loads(ws.recv())
                 success = True
                 method_used = "js_evaluate"
 
             # SOTA: Verify state change after action
             if success and before_hash and ws_url:
-                changed, after_hash = verify_state_change(
-                    ws_url, before_hash, EXECUTION_VERIFY_MS
-                )
+                changed, after_hash = verify_state_change(ws_url, before_hash, EXECUTION_VERIFY_MS)
                 if not changed:
                     # Angular v19 / React: DOM click() fails (isTrusted=false).
                     # Retry with CDP dispatchMouseEvent — real OS-level mouse event.
@@ -545,13 +562,17 @@ class BatchExecutor:
                 time.sleep(ms / 1000 if ms > 0 else 1.0)
 
             return {
-                "action": action_type, "ref": ref, "success": True,
+                "action": action_type,
+                "ref": ref,
+                "success": True,
                 "elapsed_ms": round((time.monotonic() - a_start) * 1000),
                 "method": method_used,
             }
         except Exception as e:
             return {
-                "action": action_type, "ref": ref, "success": False,
+                "action": action_type,
+                "ref": ref,
+                "success": False,
                 "error": str(e)[:200],
                 "elapsed_ms": round((time.monotonic() - a_start) * 1000),
             }
@@ -563,16 +584,37 @@ class BatchExecutor:
         idx = int(parts[1]) if len(parts) > 1 else 0
 
         # Find element position
-        ws.send(json.dumps({
-            "id": 0, "method": "Runtime.evaluate",
-            "params": {"expression": f"var els=document.querySelectorAll('{selector}');if(els[{idx}]){{var r=els[{idx}].getBoundingClientRect();return r.x+r.width/2+','+(r.y+r.height/2);}}return'0,0';"}}))  # noqa: E501
+        ws.send(
+            json.dumps(
+                {
+                    "id": 0,
+                    "method": "Runtime.evaluate",
+                    "params": {
+                        "expression": f"var els=document.querySelectorAll('{selector}');if(els[{idx}]){{var r=els[{idx}].getBoundingClientRect();return r.x+r.width/2+','+(r.y+r.height/2);}}return'0,0';"
+                    },
+                }
+            )
+        )  # noqa: E501
         r = json.loads(ws.recv())
-        coords = r.get("result",{}).get("result",{}).get("value","0,0")
+        coords = r.get("result", {}).get("result", {}).get("value", "0,0")
         x, y = map(float, coords.split(","))
         if x > 0:
-            for et in ["mouseMoved","mousePressed","mouseReleased"]:
-                ws.send(json.dumps({"id":0,"method":"Input.dispatchMouseEvent",
-                    "params":{"type":et,"x":x,"y":y,"button":"left","clickCount":1}}))
+            for et in ["mouseMoved", "mousePressed", "mouseReleased"]:
+                ws.send(
+                    json.dumps(
+                        {
+                            "id": 0,
+                            "method": "Input.dispatchMouseEvent",
+                            "params": {
+                                "type": et,
+                                "x": x,
+                                "y": y,
+                                "button": "left",
+                                "clickCount": 1,
+                            },
+                        }
+                    )
+                )
                 json.loads(ws.recv())
 
     def _cdp_click_button(self, ws, js):
@@ -587,9 +629,13 @@ class BatchExecutor:
         text = js.replace("__CDP_CLICK_BUTTON__:", "")
 
         # 1. Find element position (viewport coords) via JS
-        ws.send(json.dumps({
-            "id": 0, "method": "Runtime.evaluate",
-            "params": {"expression": f'''
+        ws.send(
+            json.dumps(
+                {
+                    "id": 0,
+                    "method": "Runtime.evaluate",
+                    "params": {
+                        "expression": f"""
 (function(){{
     var text = '{text}';
     var selectors = ['button', 'input[type=submit]', 'input[type=button]',
@@ -619,10 +665,14 @@ class BatchExecutor:
     }});
     return result || 'null';
 }})();
-'''}}))
+"""
+                    },
+                }
+            )
+        )
         try:
             r = json.loads(ws.recv())
-            raw_val = r.get("result",{}).get("result",{}).get("value","null")
+            raw_val = r.get("result", {}).get("result", {}).get("value", "null")
             if raw_val == "null" or not raw_val:
                 pos = None
             else:
@@ -632,9 +682,13 @@ class BatchExecutor:
 
         if not pos:
             # Button not found — try JS click as last resort
-            ws.send(json.dumps({
-                "id": 0, "method": "Runtime.evaluate",
-                "params": {"expression": f'''
+            ws.send(
+                json.dumps(
+                    {
+                        "id": 0,
+                        "method": "Runtime.evaluate",
+                        "params": {
+                            "expression": f"""
 (function(){{
     var text = '{text}';
     var selectors = ['button', 'input[type=submit]', '[role=button]'];
@@ -647,10 +701,14 @@ class BatchExecutor:
     }}
     return 'not_found';
 }})();
-'''}}))
+"""
+                        },
+                    }
+                )
+            )
             try:
                 r2 = json.loads(ws.recv())
-                val = r2.get("result",{}).get("result",{}).get("value","")
+                val = r2.get("result", {}).get("result", {}).get("value", "")
                 if val == "clicked":
                     return
             except Exception:
@@ -662,25 +720,35 @@ class BatchExecutor:
         # 2. CDP dispatchMouseEvent (Angular v19 needs this!)
         if pos.get("inView", False) and x > 0 and y > 0:
             for et in ["mouseMoved", "mousePressed", "mouseReleased"]:
-                ws.send(json.dumps({
-                    "id": 0, "method": "Input.dispatchMouseEvent",
-                    "params": {
-                        "type": et,
-                        "x": x, "y": y,
-                        "button": "left",
-                        "clickCount": 1,
-                        "modifiers": 0
-                    }
-                }))
+                ws.send(
+                    json.dumps(
+                        {
+                            "id": 0,
+                            "method": "Input.dispatchMouseEvent",
+                            "params": {
+                                "type": et,
+                                "x": x,
+                                "y": y,
+                                "button": "left",
+                                "clickCount": 1,
+                                "modifiers": 0,
+                            },
+                        }
+                    )
+                )
                 try:
                     json.loads(ws.recv())
                 except Exception:
                     pass  # Don't fail on response parse error
         else:
             # Out of viewport — use JS click as fallback
-            ws.send(json.dumps({
-                "id": 0, "method": "Runtime.evaluate",
-                "params": {"expression": f'''
+            ws.send(
+                json.dumps(
+                    {
+                        "id": 0,
+                        "method": "Runtime.evaluate",
+                        "params": {
+                            "expression": f"""
 (function(){{
     var text = '{text}';
     var selectors = ['button', 'input[type=submit]', '[role=button]'];
@@ -693,7 +761,11 @@ class BatchExecutor:
     }}
     return 'not_found';
 }})();
-'''}}))
+"""
+                        },
+                    }
+                )
+            )
             try:
                 json.loads(ws.recv())
             except Exception:
@@ -703,9 +775,13 @@ class BatchExecutor:
         """CDP click on [role=button] element by index. For CloudResearch."""
         parts = js.replace("__CDP_CLICK_ROLE_BUTTON__:", "").split(":")
         idx = int(parts[0]) if parts else 0
-        ws.send(json.dumps({
-            "id": 0, "method": "Runtime.evaluate",
-            "params": {"expression": f'''
+        ws.send(
+            json.dumps(
+                {
+                    "id": 0,
+                    "method": "Runtime.evaluate",
+                    "params": {
+                        "expression": f"""
 (function(){{
     var els = Array.from(document.querySelectorAll('[role=button]'));
     var visible = els.filter(function(e){{ return e.offsetHeight > 0; }});
@@ -715,23 +791,44 @@ class BatchExecutor:
     }}
     return '0,0';
 }})();
-'''}}))
+"""
+                    },
+                }
+            )
+        )
         r = json.loads(ws.recv())
-        coords = r.get("result",{}).get("result",{}).get("value","0,0")
+        coords = r.get("result", {}).get("result", {}).get("value", "0,0")
         x, y = map(float, coords.split(","))
         if x > 0:
-            for et in ["mouseMoved","mousePressed","mouseReleased"]:
-                ws.send(json.dumps({"id":0,"method":"Input.dispatchMouseEvent",
-                    "params":{"type":et,"x":x,"y":y,"button":"left","clickCount":1}}))
+            for et in ["mouseMoved", "mousePressed", "mouseReleased"]:
+                ws.send(
+                    json.dumps(
+                        {
+                            "id": 0,
+                            "method": "Input.dispatchMouseEvent",
+                            "params": {
+                                "type": et,
+                                "x": x,
+                                "y": y,
+                                "button": "left",
+                                "clickCount": 1,
+                            },
+                        }
+                    )
+                )
                 json.loads(ws.recv())
 
     def _cdp_click_generic(self, ws, js):
         """Universal click: tries [role=button], input[radio], button by index."""
         parts = js.replace("__CDP_CLICK_GENERIC__:", "").split(":")
         idx = int(parts[0]) if parts else 0
-        ws.send(json.dumps({
-            "id": 0, "method": "Runtime.evaluate",
-            "params": {"expression": f'''
+        ws.send(
+            json.dumps(
+                {
+                    "id": 0,
+                    "method": "Runtime.evaluate",
+                    "params": {
+                        "expression": f"""
 (function(){{
     // Try [role=button] first (CloudResearch pattern)
     var rb = Array.from(document.querySelectorAll('[role=button]')).filter(function(e){{return e.offsetHeight>0;}});
@@ -744,15 +841,32 @@ class BatchExecutor:
     if(bt[{idx}] && bt[{idx}].offsetHeight>0){{var r=bt[{idx}].getBoundingClientRect();return r.x+r.width/2+','+(r.y+r.height/2)+',button';}}
     return '0,0,none';
 }})();
-'''}}))
+"""
+                    },
+                }
+            )
+        )
         r = json.loads(ws.recv())
-        coords = r.get("result",{}).get("result",{}).get("value","0,0")
+        coords = r.get("result", {}).get("result", {}).get("value", "0,0")
         parts = coords.split(",")
         x, y = float(parts[0]), float(parts[1])
         if x > 0:
-            for et in ["mouseMoved","mousePressed","mouseReleased"]:
-                ws.send(json.dumps({"id":0,"method":"Input.dispatchMouseEvent",
-                    "params":{"type":et,"x":x,"y":y,"button":"left","clickCount":1}}))
+            for et in ["mouseMoved", "mousePressed", "mouseReleased"]:
+                ws.send(
+                    json.dumps(
+                        {
+                            "id": 0,
+                            "method": "Input.dispatchMouseEvent",
+                            "params": {
+                                "type": et,
+                                "x": x,
+                                "y": y,
+                                "button": "left",
+                                "clickCount": 1,
+                            },
+                        }
+                    )
+                )
                 json.loads(ws.recv())
 
     def _build_js(self, action_type, ref, value, meta=None):
@@ -789,7 +903,10 @@ class BatchExecutor:
                 if self.provider == "qualtrics" and meta:
                     m_role = meta.get("role", "")
                     m_text = meta.get("text", "")
-                    if m_role in ("radio", "radio-selected", "checkbox", "checkbox-checked") and m_text:  # noqa: E501
+                    if (
+                        m_role in ("radio", "radio-selected", "checkbox", "checkbox-checked")
+                        and m_text
+                    ):  # noqa: E501
                         tpl = cmd.get("click_qualtrics_label", "")
                         if tpl:
                             label = m_text.replace('"', '\\"')
@@ -887,8 +1004,7 @@ class BatchExecutor:
 # ══════════════════════════════════════════════════════════════════
 
 
-def _cdp_call(ws_url: str, method: str, params: dict = None,
-              max_retries: int = 3) -> dict:
+def _cdp_call(ws_url: str, method: str, params: dict = None, max_retries: int = 3) -> dict:
     """Execute a CDP command with retry + auto-reconnect via CDPConnection."""
     cdp = CDPConnection(ws_url, max_retries=max_retries)
     cdp.connect()
@@ -902,6 +1018,7 @@ def _cdp_call(ws_url: str, method: str, params: dict = None,
 # SOTA STATE VERIFICATION (2026-05-06)
 # ══════════════════════════════════════════════════════════════════
 
+
 def capture_dom_hash(ws_url: str, max_len: int = 2000) -> str:
     """Capture DOM state as hash — SOTA anti-stuck detection.
 
@@ -911,9 +1028,13 @@ def capture_dom_hash(ws_url: str, max_len: int = 2000) -> str:
     """
     try:
         ws = websocket.create_connection(ws_url, timeout=8)
-        ws.send(json.dumps({
-            "id": 0, "method": "Runtime.evaluate",
-            "params": {"expression": '''
+        ws.send(
+            json.dumps(
+                {
+                    "id": 0,
+                    "method": "Runtime.evaluate",
+                    "params": {
+                        "expression": """
 (function(){
     var els = document.querySelectorAll('input,button,select,textarea,a,label');
     var texts = [];
@@ -926,8 +1047,11 @@ def capture_dom_hash(ws_url: str, max_len: int = 2000) -> str:
         url: location.href.substring(0,100)
     });
 })()
-'''}
-        }))
+"""
+                    },
+                }
+            )
+        )
         r = json.loads(ws.recv())
         ws.close()
         raw = r.get("result", {}).get("result", {}).get("value", "")
@@ -935,14 +1059,15 @@ def capture_dom_hash(ws_url: str, max_len: int = 2000) -> str:
             return ""
         data = json.loads(raw) if isinstance(raw, str) else raw
         h = hashlib.sha256()
-        h.update(f"{data.get('n',0)}|{data.get('t','')}|{data.get('url','')}".encode())
+        h.update(f"{data.get('n', 0)}|{data.get('t', '')}|{data.get('url', '')}".encode())
         return h.hexdigest()[:16]
     except Exception:
         return ""
 
 
-def verify_state_change(ws_url: str, before_hash: str,
-                        verify_ms: int = EXECUTION_VERIFY_MS) -> Tuple[bool, str]:
+def verify_state_change(
+    ws_url: str, before_hash: str, verify_ms: int = EXECUTION_VERIFY_MS
+) -> Tuple[bool, str]:
     """Verify DOM changed after action (SOTA anti-stuck).
 
     After a click/fill action, wait verify_ms, then capture new DOM hash.
@@ -975,26 +1100,56 @@ def cdp_keyboard_enter(ws_url: str) -> bool:
         ws = websocket.create_connection(ws_url, timeout=8)
 
         # Tab to focus first focusable element (usually the submit button)
-        ws.send(json.dumps({
-            "id": 0, "method": "Input.dispatchKeyEvent",
-            "params": {"type": "keyDown", "modifiers": 0, "windowsVirtualKeyCode": 9,
-                       "key": "Tab", "code": "Tab"}
-        }))
+        ws.send(
+            json.dumps(
+                {
+                    "id": 0,
+                    "method": "Input.dispatchKeyEvent",
+                    "params": {
+                        "type": "keyDown",
+                        "modifiers": 0,
+                        "windowsVirtualKeyCode": 9,
+                        "key": "Tab",
+                        "code": "Tab",
+                    },
+                }
+            )
+        )
         json.loads(ws.recv())
         time.sleep(0.05)
 
         # Enter
-        ws.send(json.dumps({
-            "id": 0, "method": "Input.dispatchKeyEvent",
-            "params": {"type": "keyDown", "modifiers": 0, "windowsVirtualKeyCode": 13,
-                       "key": "Enter", "code": "Enter"}
-        }))
+        ws.send(
+            json.dumps(
+                {
+                    "id": 0,
+                    "method": "Input.dispatchKeyEvent",
+                    "params": {
+                        "type": "keyDown",
+                        "modifiers": 0,
+                        "windowsVirtualKeyCode": 13,
+                        "key": "Enter",
+                        "code": "Enter",
+                    },
+                }
+            )
+        )
         json.loads(ws.recv())
-        ws.send(json.dumps({
-            "id": 0, "method": "Input.dispatchKeyEvent",
-            "params": {"type": "keyUp", "modifiers": 0, "windowsVirtualKeyCode": 13,
-                       "key": "Enter", "code": "Enter"}
-        }))
+        ws.send(
+            json.dumps(
+                {
+                    "id": 0,
+                    "method": "Input.dispatchKeyEvent",
+                    "params": {
+                        "type": "keyUp",
+                        "modifiers": 0,
+                        "windowsVirtualKeyCode": 13,
+                        "key": "Enter",
+                        "code": "Enter",
+                    },
+                }
+            )
+        )
         json.loads(ws.recv())
         ws.close()
         return True
@@ -1002,8 +1157,9 @@ def cdp_keyboard_enter(ws_url: str) -> bool:
         return False
 
 
-def cdp_click_element_by_text(ws_url: str, search_text: str,
-                               selectors: List[str] = None) -> Tuple[bool, str]:
+def cdp_click_element_by_text(
+    ws_url: str, search_text: str, selectors: List[str] = None
+) -> Tuple[bool, str]:
     """SOTA: Find element by text + CDP click with verification.
 
     Strategy:
@@ -1014,8 +1170,15 @@ def cdp_click_element_by_text(ws_url: str, search_text: str,
     Returns: (success, method_used)
     """
     if selectors is None:
-        selectors = ['button', 'input[type=submit]', 'input[type=button]',
-                     '[role=button]', 'a[href]', '.btn', '.button']
+        selectors = [
+            "button",
+            "input[type=submit]",
+            "input[type=button]",
+            "[role=button]",
+            "a[href]",
+            ".btn",
+            ".button",
+        ]
 
     try:
         ws = websocket.create_connection(ws_url, timeout=10)
@@ -1030,7 +1193,7 @@ def cdp_click_element_by_text(ws_url: str, search_text: str,
             # Fall through to element-specific click
 
         # Step 2: Find element position + CDP mouse click
-        js_find = f'''
+        js_find = f"""
 (function(){{
     var text = {repr(search_text)};
     var selectors = {json.dumps(selectors)};
@@ -1051,9 +1214,10 @@ def cdp_click_element_by_text(ws_url: str, search_text: str,
     }}
     return result || 'null';
 }})()
-'''
-        ws.send(json.dumps({"id": 0, "method": "Runtime.evaluate",
-                            "params": {"expression": js_find}}))
+"""
+        ws.send(
+            json.dumps({"id": 0, "method": "Runtime.evaluate", "params": {"expression": js_find}})
+        )
         r = json.loads(ws.recv())
         raw_val = r.get("result", {}).get("result", {}).get("value", "null")
 
@@ -1064,11 +1228,22 @@ def cdp_click_element_by_text(ws_url: str, search_text: str,
 
             # CDP dispatchMouseEvent: mouseMoved → mousePressed → mouseReleased
             for etype in ["mouseMoved", "mousePressed", "mouseReleased"]:
-                ws.send(json.dumps({
-                    "id": 0, "method": "Input.dispatchMouseEvent",
-                    "params": {"type": etype, "x": x, "y": y,
-                               "button": "left", "clickCount": 1, "modifiers": 0}
-                }))
+                ws.send(
+                    json.dumps(
+                        {
+                            "id": 0,
+                            "method": "Input.dispatchMouseEvent",
+                            "params": {
+                                "type": etype,
+                                "x": x,
+                                "y": y,
+                                "button": "left",
+                                "clickCount": 1,
+                                "modifiers": 0,
+                            },
+                        }
+                    )
+                )
                 try:
                     json.loads(ws.recv())
                 except Exception:
@@ -1087,7 +1262,7 @@ def cdp_click_element_by_text(ws_url: str, search_text: str,
     try:
         ws = websocket.create_connection(ws_url, timeout=10)
         before = capture_dom_hash(ws_url)
-        js_click = f'''
+        js_click = f"""
 (function(){{
     var selectors = {json.dumps(selectors)};
     for(var si=0; si<selectors.length; si++){{
@@ -1099,9 +1274,10 @@ def cdp_click_element_by_text(ws_url: str, search_text: str,
     }}
     return 'not_found';
 }})()
-'''
-        ws.send(json.dumps({"id": 0, "method": "Runtime.evaluate",
-                            "params": {"expression": js_click}}))
+"""
+        ws.send(
+            json.dumps({"id": 0, "method": "Runtime.evaluate", "params": {"expression": js_click}})
+        )
         r = json.loads(ws.recv())
         val = r.get("result", {}).get("result", {}).get("value", "")
         ws.close()

@@ -19,7 +19,9 @@
 
 from __future__ import annotations
 
-import os, sys
+import os
+import sys
+
 from fastapi import APIRouter
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -35,10 +37,10 @@ if _survey_cli_path not in sys.path:
 # ═══════════════════════════════════════════════════════════════════════════════
 
 from endpoints import (
-    survey_core_router,
-    survey_answer_router,
     survey_actions_router,
+    survey_answer_router,
     survey_captchas_router,
+    survey_core_router,
     survey_scan_router,
     universal_router,
 )
@@ -60,17 +62,25 @@ universal_router_export = universal_router
 # NACHTRÄGLICH: /fill ist ein spezieller Endpoint der SurveyFiller nutzt
 # Er kam aus dem alten monolith — hier als einziger grosser Endpoint behalten
 # (survey-cli/tools/tool_fill_survey.py hat den kompletten Fill-Logic)
-from endpoints._common import FillSurveyRequest, FillSurveyResponse, require_survey_ready, update_command_registry
+from endpoints._common import (
+    FillSurveyRequest,
+    FillSurveyResponse,
+    require_survey_ready,
+    update_command_registry,
+)
 from tools.tool_fill_survey import SurveyFiller
 
-@router.post("/fill", response_model=FillSurveyResponse, dependencies=[Depends(require_survey_ready)])
+
+@router.post(
+    "/fill", response_model=FillSurveyResponse, dependencies=[Depends(require_survey_ready)]
+)
 async def api_fill(req: FillSurveyRequest):
     """
     Füllt eine Survey-Seite basierend auf Compact Snapshot.
-    
+
     Tool: tools.tool_fill_survey.SurveyFiller
     Nutzt: ELEMENT_EXTRACTOR_JS (100% element capture)
-    
+
     NO AUTO-RUN: Dieser Endpoint ist nur für MANUAL TESTING.
     """
     try:

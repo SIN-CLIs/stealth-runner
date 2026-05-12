@@ -36,7 +36,7 @@ from __future__ import annotations
 import json
 import time
 import urllib.request
-from typing import Dict, Optional, List
+from typing import Dict, List
 
 __frozen__ = True
 __version__ = "2026-05-07"
@@ -45,8 +45,7 @@ CDP_PORT = 9999
 
 def _get_cdp_pages(port: int = CDP_PORT) -> List[Dict]:
     try:
-        return json.loads(urllib.request.urlopen(
-            f"http://127.0.0.1:{port}/json", timeout=3).read())
+        return json.loads(urllib.request.urlopen(f"http://127.0.0.1:{port}/json", timeout=3).read())
     except Exception:
         return []
 
@@ -55,15 +54,21 @@ def _click_rating_button(ws_url: str) -> bool:
     """Click first button on rating page via CDP."""
     try:
         import websocket
+
         ws = websocket.create_connection(ws_url, timeout=15)
-        ws.send(json.dumps({
-            "id": 0, "method": "Runtime.evaluate",
-            "params": {
-                "expression": (
-                    'document.querySelector("button,.btn-blue,input[type=button]").click()'
-                )
-            }
-        }))
+        ws.send(
+            json.dumps(
+                {
+                    "id": 0,
+                    "method": "Runtime.evaluate",
+                    "params": {
+                        "expression": (
+                            'document.querySelector("button,.btn-blue,input[type=button]").click()'
+                        )
+                    },
+                }
+            )
+        )
         json.loads(ws.recv())
         ws.close()
         return True
@@ -87,6 +92,7 @@ def _verify_rating_done(tab_id: str, port: int = CDP_PORT) -> bool:
 # ═══════════════════════════════════════════════════════════════════════════
 # MAIN: rate_survey()
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 def rate_survey(port: int = CDP_PORT, verify: bool = True) -> Dict:
     """Rate a completed survey for +0.01€ bonus.

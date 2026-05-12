@@ -93,8 +93,7 @@ def angular_drag_drop_solve(cdp, detection) -> CaptchaResult:
     return CaptchaResult(
         solved=False,
         captcha_type="angular_drag_drop",
-        reason=(getattr(result, "error", None) or
-                f"status={getattr(result, 'status', '?')}")[:200],
+        reason=(getattr(result, "error", None) or f"status={getattr(result, 'status', '?')}")[:200],
         elapsed_ms=elapsed_ms,
     )
 
@@ -140,9 +139,9 @@ def visual_text_solve(cdp, detection) -> CaptchaResult:
         def __init__(self, sync_cdp):
             self._cdp = sync_cdp
 
-        async def send(self, method: str,
-                       params: dict[str, Any] | None = None,
-                       *, timeout: float | None = None) -> dict[str, Any]:
+        async def send(
+            self, method: str, params: dict[str, Any] | None = None, *, timeout: float | None = None
+        ) -> dict[str, Any]:
             # `cdp.send` blockiert; das ist in einem asyncio-Kontext
             # akzeptabel weil dieser Adapter selbst in einem dedizierten
             # asyncio.run() laeuft (sync Caller, eigener Event-Loop).
@@ -166,8 +165,7 @@ def visual_text_solve(cdp, detection) -> CaptchaResult:
 
     elapsed_ms = (time.monotonic() - start) * 1000
     solved = getattr(out, "outcome", None)
-    is_solved = (str(solved).endswith("SUCCESS")
-                 or getattr(solved, "value", "") == "success")
+    is_solved = str(solved).endswith("SUCCESS") or getattr(solved, "value", "") == "success"
     return CaptchaResult(
         solved=bool(is_solved),
         captcha_type="visual_text",
@@ -200,8 +198,7 @@ def visual_text_solve(cdp, detection) -> CaptchaResult:
 # der LangGraph-Loop sollte nach 2 Captchas in einer Survey abbrechen.
 
 
-def _twocaptcha_extract_sitekey(cdp, detection, *,
-                                providers: tuple[str, ...]) -> str | None:
+def _twocaptcha_extract_sitekey(cdp, detection, *, providers: tuple[str, ...]) -> str | None:
     """Holt sitekey aus dem DOM. Erst data-sitekey, dann iframe src ?k=...
 
     `providers` bestimmt welche CSS-Selektoren / iframe-Host-Patterns
@@ -225,8 +222,7 @@ def _twocaptcha_extract_sitekey(cdp, detection, *,
         "})()"
     )
     try:
-        r = cdp.call_result("Runtime.evaluate",
-                            {"expression": js, "returnByValue": True})
+        r = cdp.call_result("Runtime.evaluate", {"expression": js, "returnByValue": True})
         v = ((r or {}).get("result") or {}).get("value")
         if v and isinstance(v, str):
             return v
@@ -238,10 +234,13 @@ def _twocaptcha_extract_sitekey(cdp, detection, *,
 def _twocaptcha_current_url(cdp) -> str | None:
     """Holt die aktuelle Tab-URL — fuer 2captcha pageurl param Pflicht."""
     try:
-        r = cdp.call_result("Runtime.evaluate", {
-            "expression": "location.href",
-            "returnByValue": True,
-        })
+        r = cdp.call_result(
+            "Runtime.evaluate",
+            {
+                "expression": "location.href",
+                "returnByValue": True,
+            },
+        )
         v = ((r or {}).get("result") or {}).get("value")
         if v and isinstance(v, str):
             return v
@@ -250,8 +249,9 @@ def _twocaptcha_current_url(cdp) -> str | None:
     return None
 
 
-def _twocaptcha_solve(cdp, detection, *, captcha_type: str,
-                      providers: tuple[str, ...]) -> CaptchaResult:
+def _twocaptcha_solve(
+    cdp, detection, *, captcha_type: str, providers: tuple[str, ...]
+) -> CaptchaResult:
     """Gemeinsame 2captcha-Solve-Logik. Wird von hcaptcha/recaptcha/
     turnstile-Adaptern mit captcha_type-spezifischem `providers` aufgerufen.
     """
@@ -260,11 +260,13 @@ def _twocaptcha_solve(cdp, detection, *, captcha_type: str,
     # Config laden — fail-soft wenn core nicht installiert ist (z.B. Unit-Test)
     try:
         from core import get_config, get_analytics
+
         cfg = get_config()
         analytics = get_analytics()
     except Exception as e:
         return CaptchaResult(
-            solved=False, captcha_type=captcha_type,
+            solved=False,
+            captcha_type=captcha_type,
             reason=f"core_not_available:{e}"[:100],
             elapsed_ms=(time.monotonic() - start) * 1000,
         )
@@ -272,7 +274,8 @@ def _twocaptcha_solve(cdp, detection, *, captcha_type: str,
     api_key = cfg.captcha.twocaptcha_api_key
     if not api_key:
         return CaptchaResult(
-            solved=False, captcha_type=captcha_type,
+            solved=False,
+            captcha_type=captcha_type,
             reason="2captcha:api_key_missing",
             elapsed_ms=(time.monotonic() - start) * 1000,
         )
@@ -280,7 +283,8 @@ def _twocaptcha_solve(cdp, detection, *, captcha_type: str,
     sitekey = _twocaptcha_extract_sitekey(cdp, detection, providers=providers)
     if not sitekey:
         return CaptchaResult(
-            solved=False, captcha_type=captcha_type,
+            solved=False,
+            captcha_type=captcha_type,
             reason="2captcha:no_sitekey_found",
             elapsed_ms=(time.monotonic() - start) * 1000,
         )
@@ -288,7 +292,8 @@ def _twocaptcha_solve(cdp, detection, *, captcha_type: str,
     pageurl = _twocaptcha_current_url(cdp)
     if not pageurl:
         return CaptchaResult(
-            solved=False, captcha_type=captcha_type,
+            solved=False,
+            captcha_type=captcha_type,
             reason="2captcha:no_pageurl",
             elapsed_ms=(time.monotonic() - start) * 1000,
         )
@@ -301,7 +306,8 @@ def _twocaptcha_solve(cdp, detection, *, captcha_type: str,
         )
     except ImportError as e:
         return CaptchaResult(
-            solved=False, captcha_type=captcha_type,
+            solved=False,
+            captcha_type=captcha_type,
             reason=f"2captcha:import_failed:{e}"[:120],
             elapsed_ms=(time.monotonic() - start) * 1000,
         )
@@ -321,7 +327,8 @@ def _twocaptcha_solve(cdp, detection, *, captcha_type: str,
     except Exception as e:
         analytics.increment(f"captcha.twocaptcha.failed.{captcha_type}")
         return CaptchaResult(
-            solved=False, captcha_type=captcha_type,
+            solved=False,
+            captcha_type=captcha_type,
             reason=f"2captcha:{type(e).__name__}:{e}"[:200],
             elapsed_ms=(time.monotonic() - start) * 1000,
         )
@@ -334,14 +341,14 @@ def _twocaptcha_solve(cdp, detection, *, captcha_type: str,
     analytics.increment(f"captcha.twocaptcha.solved.{captcha_type}")
     # ROI-Tracking: gefuehrte Cost-Schaetzung pro Solve (in USD-Cents)
     cost_est_cents = 0.3 if captcha_type == "recaptcha" else 0.2
-    analytics.record("captcha.twocaptcha.cost_cents", cost_est_cents,
-                     captcha_type=captcha_type)
+    analytics.record("captcha.twocaptcha.cost_cents", cost_est_cents, captcha_type=captcha_type)
 
     return CaptchaResult(
         solved=bool(injected),
         captcha_type=captcha_type,
-        reason=("2captcha:injected" if injected
-                else "2captcha:token_received_but_dom_inject_failed"),
+        reason=(
+            "2captcha:injected" if injected else "2captcha:token_received_but_dom_inject_failed"
+        ),
         elapsed_ms=elapsed_ms,
     )
 
@@ -350,18 +357,14 @@ def hcaptcha_solve(cdp, detection) -> CaptchaResult:
     """hCaptcha via 2Captcha-Service. Schreibt den Token in
     textarea[name="h-captcha-response"] und triggert window.hcaptcha.execute().
     """
-    return _twocaptcha_solve(cdp, detection,
-                             captcha_type="hcaptcha",
-                             providers=("hcaptcha",))
+    return _twocaptcha_solve(cdp, detection, captcha_type="hcaptcha", providers=("hcaptcha",))
 
 
 def recaptcha_solve(cdp, detection) -> CaptchaResult:
     """reCAPTCHA v2 via 2Captcha. Schreibt in textarea#g-recaptcha-response.
     Fuer v3 explizit captcha_type=recaptcha_v3 nutzen (eigener Adapter — TBD).
     """
-    return _twocaptcha_solve(cdp, detection,
-                             captcha_type="recaptcha",
-                             providers=("recaptcha",))
+    return _twocaptcha_solve(cdp, detection, captcha_type="recaptcha", providers=("recaptcha",))
 
 
 def turnstile_solve(cdp, detection) -> CaptchaResult:
@@ -369,9 +372,7 @@ def turnstile_solve(cdp, detection) -> CaptchaResult:
     input[name="cf-turnstile-response"] und ruft __turnstileCb(token) falls
     vorhanden.
     """
-    return _twocaptcha_solve(cdp, detection,
-                             captcha_type="turnstile",
-                             providers=("turnstile",))
+    return _twocaptcha_solve(cdp, detection, captcha_type="turnstile", providers=("turnstile",))
 
 
 # ── REGISTRY ───────────────────────────────────────────────────────────────
@@ -381,10 +382,10 @@ def turnstile_solve(cdp, detection) -> CaptchaResult:
 
 ADAPTERS = {
     "angular_drag_drop": angular_drag_drop_solve,
-    "visual_text":       visual_text_solve,
-    "hcaptcha":          hcaptcha_solve,
-    "recaptcha":         recaptcha_solve,
-    "turnstile":         turnstile_solve,
+    "visual_text": visual_text_solve,
+    "hcaptcha": hcaptcha_solve,
+    "recaptcha": recaptcha_solve,
+    "turnstile": turnstile_solve,
 }
 
 

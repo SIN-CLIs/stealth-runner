@@ -63,8 +63,7 @@ import time
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Optional
-
+from typing import Any
 
 # -- ENUMS ---------------------------------------------------------------------
 
@@ -100,11 +99,12 @@ class StepState:
       inject_cookies -> snapshot -> captcha -> decide -> execute ->
       detect_completion -> read_balance_after
     """
+
     name: str
     index: int
     status: StepStatus = StepStatus.PENDING
-    started_at: Optional[float] = None
-    completed_at: Optional[float] = None
+    started_at: float | None = None
+    completed_at: float | None = None
     duration_ms: float = 0.0
     retries: int = 0
     error_message: str = ""
@@ -114,7 +114,7 @@ class StepState:
         self.status = StepStatus.RUNNING
         self.started_at = time.time()
 
-    def complete(self, output: Optional[dict] = None) -> None:
+    def complete(self, output: dict | None = None) -> None:
         self.status = StepStatus.COMPLETED
         self.completed_at = time.time()
         if self.started_at:
@@ -151,7 +151,7 @@ class StepState:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "StepState":
+    def from_dict(cls, data: dict) -> StepState:
         return cls(
             name=data["name"],
             index=data["index"],
@@ -175,10 +175,11 @@ class PipelineState:
     id wird automatisch generiert (sha256(time.time())[:16]).
     Survey-Use-Case: 1 PipelineState pro Survey (= pro LangGraph-Run).
     """
+
     id: str = ""
     status: PipelineStatus = PipelineStatus.IDLE
-    started_at: Optional[float] = None
-    completed_at: Optional[float] = None
+    started_at: float | None = None
+    completed_at: float | None = None
     current_step_index: int = 0
     total_steps: int = 0
     steps: list[StepState] = field(default_factory=list)
@@ -226,7 +227,7 @@ class PipelineState:
 
     # -- Navigation --------------------------------------------------------
 
-    def get_current_step(self) -> Optional[StepState]:
+    def get_current_step(self) -> StepState | None:
         if 0 <= self.current_step_index < len(self.steps):
             return self.steps[self.current_step_index]
         return None
@@ -247,9 +248,7 @@ class PipelineState:
             "remaining": self.total_steps - completed - failed,
             "total": self.total_steps,
             "percent": (completed / self.total_steps * 100) if self.total_steps else 0,
-            "current_step": (
-                self.steps[self.current_step_index].name if self.steps else None
-            ),
+            "current_step": (self.steps[self.current_step_index].name if self.steps else None),
         }
 
     def get_duration_ms(self) -> float:
@@ -280,7 +279,7 @@ class PipelineState:
         }
 
     @classmethod
-    def from_dict(cls, data: dict) -> "PipelineState":
+    def from_dict(cls, data: dict) -> PipelineState:
         state = cls(
             id=data["id"],
             status=PipelineStatus(data["status"]),
@@ -313,9 +312,9 @@ class StateManager:
 
     def __init__(
         self,
-        checkpoint_dir: Optional[str] = None,
-        supabase_url: Optional[str] = None,
-        supabase_key: Optional[str] = None,
+        checkpoint_dir: str | None = None,
+        supabase_url: str | None = None,
+        supabase_key: str | None = None,
     ):
         default_dir = os.path.expanduser("~/.stealth/checkpoints")
         self.checkpoint_dir = Path(checkpoint_dir or default_dir)
@@ -325,7 +324,7 @@ class StateManager:
             pass
         self.supabase_url = supabase_url or os.environ.get("SUPABASE_URL")
         self.supabase_key = supabase_key or os.environ.get("SUPABASE_ANON_KEY")
-        self._state: Optional[PipelineState] = None
+        self._state: PipelineState | None = None
 
     @property
     def state(self) -> PipelineState:
@@ -335,7 +334,7 @@ class StateManager:
 
     # -- Initialization ----------------------------------------------------
 
-    def initialize(self, step_names: list[str], context: Optional[dict] = None) -> None:
+    def initialize(self, step_names: list[str], context: dict | None = None) -> None:
         self._state = PipelineState()
         self._state.initialize(step_names)
         if context:
@@ -344,7 +343,7 @@ class StateManager:
 
     # -- Step Context ------------------------------------------------------
 
-    def step(self, step_name: str) -> "StepContext":
+    def step(self, step_name: str) -> StepContext:
         return StepContext(self, step_name)
 
     def mark_step_start(self, step_index: int) -> None:
@@ -352,7 +351,7 @@ class StateManager:
             self.state.steps[step_index].start()
             self.state.current_step_index = step_index
 
-    def mark_step_complete(self, step_index: int, output: Optional[dict] = None) -> None:
+    def mark_step_complete(self, step_index: int, output: dict | None = None) -> None:
         if 0 <= step_index < len(self.state.steps):
             self.state.steps[step_index].complete(output)
 
@@ -378,10 +377,11 @@ class StateManager:
             print(f"[STATE] Checkpoint failed: {e}")
             return False
 
-    def restore(self, checkpoint_id: Optional[str] = None) -> bool:
+    def restore(self, checkpoint_id: str | None = None) -> bool:
         path = (
             self.checkpoint_dir / f"checkpoint_{checkpoint_id}.json"
-            if checkpoint_id else self.checkpoint_dir / "latest.json"
+            if checkpoint_id
+            else self.checkpoint_dir / "latest.json"
         )
         if not path.exists():
             return False
@@ -471,9 +471,9 @@ class StepContext:
         self.manager = manager
         self.step_name = step_name
         self.step_index = -1
-        self.step_state: Optional[StepState] = None
+        self.step_state: StepState | None = None
 
-    def __enter__(self) -> Optional[StepState]:
+    def __enter__(self) -> StepState | None:
         for i, step in enumerate(self.manager.state.steps):
             if step.name == self.step_name:
                 self.step_index = i
@@ -492,7 +492,7 @@ class StepContext:
             self.manager.mark_step_failed(self.step_index, str(exc_val))
         self.manager.checkpoint()
 
-    async def __aenter__(self) -> Optional[StepState]:
+    async def __aenter__(self) -> StepState | None:
         return self.__enter__()
 
     async def __aexit__(self, exc_type, exc_val, exc_tb) -> None:
@@ -516,6 +516,7 @@ class StepContext:
 # wuerde aiosqlite als Dependency erzwingen.
 
 import asyncio as _asyncio  # alias um Shadowing zu vermeiden
+import contextlib
 import uuid as _uuid
 
 # Pro-Run File-Locks (best-effort gegen parallele Step-Writes im selben Prozess)
@@ -533,19 +534,15 @@ def _run_lock(run_id: str) -> _asyncio.Lock:
 def _runs_dir_for(manager: StateManager) -> Path:
     """Pfad fuer pro-run Subfolders."""
     base = manager.checkpoint_dir / "runs"
-    try:
+    with contextlib.suppress(Exception):
         base.mkdir(parents=True, exist_ok=True)
-    except Exception:
-        pass
     return base
 
 
 def _run_dir(manager: StateManager, run_id: str) -> Path:
     d = _runs_dir_for(manager) / run_id
-    try:
+    with contextlib.suppress(Exception):
         d.mkdir(parents=True, exist_ok=True)
-    except Exception:
-        pass
     return d
 
 
@@ -574,8 +571,7 @@ async def _start_step(self: StateManager, run_id: str, name: str) -> str:
     return step_id
 
 
-async def _complete_step(self: StateManager, step_id: str,
-                          output: Optional[dict] = None) -> None:
+async def _complete_step(self: StateManager, step_id: str, output: dict | None = None) -> None:
     """Markiere Step als success. step_id wird in jeder Survey persistiert,
     pro-Run-Folder bleibt deshalb der vollstaendige Lifecycle nachvollziehbar.
     """
@@ -609,8 +605,9 @@ async def _fail_step(self: StateManager, step_id: str, error: str) -> None:
         f.write(json.dumps(rec) + "\n")
 
 
-async def _save_checkpoint(self: StateManager, run_id: str,
-                            checkpoint: Any, metadata: dict) -> None:
+async def _save_checkpoint(
+    self: StateManager, run_id: str, checkpoint: Any, metadata: dict
+) -> None:
     """Persistiere LangGraph-Checkpoint + Survey-Metadaten.
 
     Wenn ein 'budget'-Objekt im Checkpoint enthalten ist und es ein
@@ -642,7 +639,7 @@ async def _save_checkpoint(self: StateManager, run_id: str,
             print(f"[STATE] save_checkpoint failed run_id={run_id}: {e}")
 
 
-async def _load_checkpoint(self: StateManager, run_id: str) -> Optional[dict]:
+async def _load_checkpoint(self: StateManager, run_id: str) -> dict | None:
     """Liefere letztes Checkpoint-Dict fuer run_id (oder None)."""
     path = _run_dir(self, run_id) / "checkpoint.json"
     if not path.exists():
@@ -655,8 +652,9 @@ async def _load_checkpoint(self: StateManager, run_id: str) -> Optional[dict]:
         return None
 
 
-async def _list_checkpoints(self: StateManager, run_id: Optional[str] = None,
-                             *, limit: int = 10) -> list[dict]:
+async def _list_checkpoints(
+    self: StateManager, run_id: str | None = None, *, limit: int = 10
+) -> list[dict]:
     """Liefere die letzten N Checkpoints (sortiert nach saved_at desc).
 
     Wenn run_id None — alle Runs, sonst nur dieser eine (max 1 Eintrag, da
@@ -666,7 +664,8 @@ async def _list_checkpoints(self: StateManager, run_id: Optional[str] = None,
     if not base.exists():
         return []
     targets = (
-        [base / run_id / "checkpoint.json"] if run_id
+        [base / run_id / "checkpoint.json"]
+        if run_id
         else [d / "checkpoint.json" for d in base.iterdir() if d.is_dir()]
     )
     results = []
@@ -683,10 +682,10 @@ async def _list_checkpoints(self: StateManager, run_id: Optional[str] = None,
 
 
 # Monkey-attach an StateManager (kein Class-Diff noetig, klar wiederfindbar).
-StateManager.bootstrap = _bootstrap          # type: ignore[attr-defined]
-StateManager.start_step = _start_step        # type: ignore[attr-defined]
+StateManager.bootstrap = _bootstrap  # type: ignore[attr-defined]
+StateManager.start_step = _start_step  # type: ignore[attr-defined]
 StateManager.complete_step = _complete_step  # type: ignore[attr-defined]
-StateManager.fail_step = _fail_step          # type: ignore[attr-defined]
+StateManager.fail_step = _fail_step  # type: ignore[attr-defined]
 StateManager.save_checkpoint = _save_checkpoint  # type: ignore[attr-defined]
 StateManager.load_checkpoint = _load_checkpoint  # type: ignore[attr-defined]
 StateManager.list_checkpoints = _list_checkpoints  # type: ignore[attr-defined]

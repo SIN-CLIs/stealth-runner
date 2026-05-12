@@ -83,6 +83,7 @@ class TestSessionManager(unittest.TestCase):
         _main_pids_patcher.stop()
         _wid_patcher.stop()
         import shutil
+
         shutil.rmtree(_temp_dir, ignore_errors=True)
 
     def test_register_session(self):
@@ -150,7 +151,7 @@ class TestSessionManager(unittest.TestCase):
         """find_session returns None for stale session (reconcile removes)."""
         self.sm.register("dead", pid=999, profile_dir="/tmp/p999")
         _mock_main_pids.return_value = []  # dead PID not running
-        s = self.sm.find_session("dead")
+        self.sm.find_session("dead")
         # After reconcile, stale sessions exist in dict but find_session
         # just returns whatever get() gives. The session is still there
         # but marked stale. Tests verify reconcile ran.
@@ -281,8 +282,9 @@ class TestMainChromePids(unittest.TestCase):
         mock_run.return_value = result
 
         from cli.modules.session_manager import _run
+
         # Call the function directly with patched subprocess
-        r = _run(['ps', 'aux'])
+        r = _run(["ps", "aux"])
         self.assertIn("heypiggy-new", r.stdout)
         self.assertTrue(mock_run.called)
 
@@ -301,7 +303,8 @@ class TestMainChromePids(unittest.TestCase):
         # _main_chrome_pids is patched at module level, but _run is not.
         # Test that _run correctly calls subprocess.run with the right args
         from cli.modules.session_manager import _run
-        r = _run(['ps', 'aux'])
+
+        r = _run(["ps", "aux"])
         self.assertNotIn("heypiggy-new", r.stdout)
 
 
@@ -312,15 +315,18 @@ class TestWidFromPid(unittest.TestCase):
     def test_finds_wid(self, mock_run):
         """Returns WID when matching PID found."""
         result = MagicMock()
-        result.stdout = json.dumps({
-            "windows": [
-                {"pid": 100, "window_id": 42, "bounds": {"height": 800}},
-            ]
-        })
+        result.stdout = json.dumps(
+            {
+                "windows": [
+                    {"pid": 100, "window_id": 42, "bounds": {"height": 800}},
+                ]
+            }
+        )
         result.returncode = 0
         mock_run.return_value = result
 
         from cli.modules.session_manager import _wid_from_pid
+
         wid = _wid_from_pid(100)
         self.assertEqual(wid, 42)
 
@@ -328,16 +334,19 @@ class TestWidFromPid(unittest.TestCase):
     def test_ignores_small_windows(self, mock_run):
         """Windows with height < 100 are ignored (menubars)."""
         result = MagicMock()
-        result.stdout = json.dumps({
-            "windows": [
-                {"pid": 100, "window_id": 10, "bounds": {"height": 30}},
-                {"pid": 100, "window_id": 20, "bounds": {"height": 800}},
-            ]
-        })
+        result.stdout = json.dumps(
+            {
+                "windows": [
+                    {"pid": 100, "window_id": 10, "bounds": {"height": 30}},
+                    {"pid": 100, "window_id": 20, "bounds": {"height": 800}},
+                ]
+            }
+        )
         result.returncode = 0
         mock_run.return_value = result
 
         from cli.modules.session_manager import _wid_from_pid
+
         wid = _wid_from_pid(100)
         self.assertEqual(wid, 20)
 
@@ -345,13 +354,14 @@ class TestWidFromPid(unittest.TestCase):
     def test_no_match_returns_none(self, mock_run):
         """Returns None when no matching window found."""
         result = MagicMock()
-        result.stdout = json.dumps({
-            "windows": [{"pid": 999, "window_id": 1, "bounds": {"height": 800}}]
-        })
+        result.stdout = json.dumps(
+            {"windows": [{"pid": 999, "window_id": 1, "bounds": {"height": 800}}]}
+        )
         result.returncode = 0
         mock_run.return_value = result
 
         from cli.modules.session_manager import _wid_from_pid
+
         wid = _wid_from_pid(100)
         self.assertIsNone(wid)
 

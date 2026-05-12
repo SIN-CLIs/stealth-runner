@@ -130,11 +130,19 @@ def get_details_url(port=9223, force_refresh=False):
             return build_details_url()
 
         import websocket
+
         ws = websocket.create_connection(ws_url, timeout=10)
-        ws.send(json.dumps({
-            "id": 0, "method": "Runtime.evaluate",
-            "params": {"expression": "typeof details_url !== 'undefined' ? details_url : ''"}
-        }))
+        ws.send(
+            json.dumps(
+                {
+                    "id": 0,
+                    "method": "Runtime.evaluate",
+                    "params": {
+                        "expression": "typeof details_url !== 'undefined' ? details_url : ''"
+                    },
+                }
+            )
+        )
         r = json.loads(ws.recv())
         ws.close()
         url = r.get("result", {}).get("result", {}).get("value", "")
@@ -148,12 +156,11 @@ def get_details_url(port=9223, force_refresh=False):
 
 # ── Chrome Management ──────────────────────────────────
 
+
 def find_bot_pids():
     """Find ALL Chrome processes with bot profiles (safe)."""
     try:
-        result = subprocess.run(
-            ["ps", "aux"], capture_output=True, text=True, timeout=5
-        )
+        result = subprocess.run(["ps", "aux"], capture_output=True, text=True, timeout=5)
         pids = []
         for line in result.stdout.split("\n"):
             if "/tmp/heypiggy-new-" in line and "/Contents/MacOS/Google Chrome" in line:
@@ -168,9 +175,9 @@ def find_bot_pids():
 def find_bot_tabs(port=9223):
     """Find all tabs in bot Chrome."""
     try:
-        pages = json.loads(urllib.request.urlopen(
-            f"http://127.0.0.1:{port}/json", timeout=5
-        ).read())
+        pages = json.loads(
+            urllib.request.urlopen(f"http://127.0.0.1:{port}/json", timeout=5).read()
+        )
         return pages
     except Exception:
         return []
@@ -214,6 +221,7 @@ def activate_tab(tab_id, port=9223):
     """
     try:
         import websocket
+
         pages = find_bot_tabs(port)
         if not pages:
             return False
@@ -222,10 +230,9 @@ def activate_tab(tab_id, port=9223):
             return False
 
         ws = websocket.create_connection(ws_url, timeout=10)
-        ws.send(json.dumps({
-            "id": 1, "method": "Target.activateTarget",
-            "params": {"targetId": tab_id}
-        }))
+        ws.send(
+            json.dumps({"id": 1, "method": "Target.activateTarget", "params": {"targetId": tab_id}})
+        )
         r = json.loads(ws.recv())
         ws.close()
         # activateTarget returns {} on success, error on failure
@@ -319,18 +326,30 @@ class ChromeLauncher:
 
         # Step 3: Wait for CDP endpoint
         if not self._wait_for_cdp():
-            return {"ok": False, "error": "CDP endpoint not reachable after launch", "step": "cdp_wait"}  # noqa: E501
+            return {
+                "ok": False,
+                "error": "CDP endpoint not reachable after launch",
+                "step": "cdp_wait",
+            }  # noqa: E501
 
         # Step 4: Verify flags in cmdline
         flags_ok = self._verify_flags_in_cmdline()
         if not flags_ok:
-            return {"ok": False, "error": "Required flags missing from Chrome cmdline", "step": "flag_verify",  # noqa: E501
-                    "missing": [f for f in self.REQUIRED_FLAGS if not self._flag_in_cmdline(f)]}
+            return {
+                "ok": False,
+                "error": "Required flags missing from Chrome cmdline",
+                "step": "flag_verify",  # noqa: E501
+                "missing": [f for f in self.REQUIRED_FLAGS if not self._flag_in_cmdline(f)],
+            }
 
         # Step 5: Verify AX-Tree has elements
         ax_ok = self._verify_ax_tree()
         if not ax_ok:
-            return {"ok": False, "error": "AX-Tree empty after launch (accessibility not working)", "step": "ax_verify"}  # noqa: E501
+            return {
+                "ok": False,
+                "error": "AX-Tree empty after launch (accessibility not working)",
+                "step": "ax_verify",
+            }  # noqa: E501
 
         if self.debug:
             print(f"[CHROME] Verified: pid={self._pid}, port={self.port}, accessibility=ON, cdp=ON")
@@ -341,8 +360,7 @@ class ChromeLauncher:
         """Kill any existing bot Chrome on this port before launching."""
         try:
             result = subprocess.run(
-                ["lsof", "-i", f"TCP:{self.port}", "-t"],
-                capture_output=True, text=True, timeout=5
+                ["lsof", "-i", f"TCP:{self.port}", "-t"], capture_output=True, text=True, timeout=5
             )
             if result.stdout.strip():
                 for pid_line in result.stdout.strip().split("\n"):
@@ -353,7 +371,9 @@ class ChromeLauncher:
                         try:
                             cmdline = subprocess.run(
                                 ["ps", "-p", str(pid), "-o", "command="],
-                                capture_output=True, text=True, timeout=3
+                                capture_output=True,
+                                text=True,
+                                timeout=3,
                             ).stdout
                             if "/tmp/heypiggy-new-" in cmdline and "Google Chrome" in cmdline:
                                 subprocess.run(["kill", str(pid)], timeout=5)
@@ -393,7 +413,9 @@ class ChromeLauncher:
             # Read /proc/{pid}/cmdline on Linux, or ps on macOS
             result = subprocess.run(
                 ["ps", "-p", str(self._pid), "-o", "command="],
-                capture_output=True, text=True, timeout=5
+                capture_output=True,
+                text=True,
+                timeout=5,
             )
             cmdline = result.stdout
             return all(self._flag_in_cmdline(flag, cmdline) for flag in self.REQUIRED_FLAGS)
@@ -406,7 +428,9 @@ class ChromeLauncher:
             try:
                 result = subprocess.run(
                     ["ps", "-p", str(self._pid), "-o", "command="],
-                    capture_output=True, text=True, timeout=5
+                    capture_output=True,
+                    text=True,
+                    timeout=5,
                 )
                 cmdline = result.stdout
             except Exception:
@@ -423,11 +447,17 @@ class ChromeLauncher:
                 return False
 
             import websocket
+
             ws = websocket.create_connection(ws_url, timeout=10)
-            ws.send(json.dumps({
-                "id": 0, "method": "Runtime.evaluate",
-                "params": {"expression": "document.querySelectorAll('*').length"}
-            }))
+            ws.send(
+                json.dumps(
+                    {
+                        "id": 0,
+                        "method": "Runtime.evaluate",
+                        "params": {"expression": "document.querySelectorAll('*').length"},
+                    }
+                )
+            )
             r = json.loads(ws.recv())
             ws.close()
 
@@ -455,6 +485,7 @@ def create_tab(url, port=9223):
     """
     try:
         import websocket
+
         # Find any existing tab to get a WebSocket
         pages = find_bot_tabs(port)
         if not pages:
@@ -464,10 +495,7 @@ def create_tab(url, port=9223):
             return None
 
         ws = websocket.create_connection(ws_url, timeout=10)
-        ws.send(json.dumps({
-            "id": 1, "method": "Target.createTarget",
-            "params": {"url": url}
-        }))
+        ws.send(json.dumps({"id": 1, "method": "Target.createTarget", "params": {"url": url}}))
         r = json.loads(ws.recv())
         ws.close()
         return r.get("result", {}).get("targetId")
@@ -509,6 +537,7 @@ def create_blank_tab(port=9223):
     _cached_details_url = None  # noqa: F841
     try:
         import websocket
+
         pages = find_bot_tabs(port)
         if not pages:
             return None
@@ -517,10 +546,9 @@ def create_blank_tab(port=9223):
             return None
 
         ws = websocket.create_connection(ws_url, timeout=10)
-        ws.send(json.dumps({
-            "id": 1, "method": "Target.createTarget",
-            "params": {"url": "about:blank"}
-        }))
+        ws.send(
+            json.dumps({"id": 1, "method": "Target.createTarget", "params": {"url": "about:blank"}})
+        )
         r = json.loads(ws.recv())
         ws.close()
 
@@ -535,10 +563,15 @@ def create_blank_tab(port=9223):
 
         # Fallback: use Target.attachToTarget to get WS URL
         ws = websocket.create_connection(ws_url, timeout=10)
-        ws.send(json.dumps({
-            "id": 2, "method": "Target.attachToTarget",
-            "params": {"targetId": target_id, "flatten": True}
-        }))
+        ws.send(
+            json.dumps(
+                {
+                    "id": 2,
+                    "method": "Target.attachToTarget",
+                    "params": {"targetId": target_id, "flatten": True},
+                }
+            )
+        )
         r = json.loads(ws.recv())
         ws.close()
         tab_ws_url = r.get("result", {}).get("webSocketDebuggerUrl", "")
@@ -563,11 +596,17 @@ def inject_stealth_to_tab(tab_ws_url: str) -> bool:
     stealth_js = _get_stealth_js()
     try:
         import websocket
+
         ws = websocket.create_connection(tab_ws_url, timeout=10)
-        ws.send(json.dumps({
-            "id": 1, "method": "Page.addScriptToEvaluateOnNewDocument",
-            "params": {"source": stealth_js}
-        }))
+        ws.send(
+            json.dumps(
+                {
+                    "id": 1,
+                    "method": "Page.addScriptToEvaluateOnNewDocument",
+                    "params": {"source": stealth_js},
+                }
+            )
+        )
         resp = json.loads(ws.recv())
         ws.close()
         identifier = resp.get("result", {}).get("identifier")
@@ -588,11 +627,9 @@ def navigate_tab(tab_ws_url: str, url: str) -> bool:
     """
     try:
         import websocket
+
         ws = websocket.create_connection(tab_ws_url, timeout=10)
-        ws.send(json.dumps({
-            "id": 1, "method": "Page.navigate",
-            "params": {"url": url}
-        }))
+        ws.send(json.dumps({"id": 1, "method": "Page.navigate", "params": {"url": url}}))
         resp = json.loads(ws.recv())
         ws.close()
         return resp.get("result", {}).get("frameId") is not None
@@ -604,8 +641,13 @@ def navigate_tab(tab_ws_url: str, url: str) -> bool:
 
 HEYPIGGY_BACKUP_COOKIES = os.path.expanduser("~/.stealth/heypiggy-backup/heypiggy-cookies.json")
 HEYPIGGY_COOKIE_NAMES = {
-    "PHPSESSID", "user_session", "user_id",
-    "user_a_b_group", "lang_pig", "g_state", "referer",
+    "PHPSESSID",
+    "user_session",
+    "user_id",
+    "user_a_b_group",
+    "lang_pig",
+    "g_state",
+    "referer",
 }
 
 
@@ -651,10 +693,7 @@ def inject_heypiggy_cookies_to_tab(tab_ws_url: str, debug: bool = False) -> bool
         return False
 
     cookies = data.get("cookies", [])
-    heypiggy_cookies = [
-        c for c in cookies
-        if c.get("name") in HEYPIGGY_COOKIE_NAMES
-    ]
+    heypiggy_cookies = [c for c in cookies if c.get("name") in HEYPIGGY_COOKIE_NAMES]
 
     if len(heypiggy_cookies) < 7:
         if debug:
@@ -664,18 +703,21 @@ def inject_heypiggy_cookies_to_tab(tab_ws_url: str, debug: bool = False) -> bool
     # Format for Network.setCookies (normalize fields)
     cookie_params = []
     for c in heypiggy_cookies:
-        cookie_params.append({
-            "name": c.get("name", ""),
-            "value": c.get("value", ""),
-            "domain": c.get("domain", "www.heypiggy.com"),
-            "path": c.get("path", "/"),
-            "expires": c.get("expires", -1),
-            "secure": c.get("secure", False),
-            "httpOnly": c.get("httpOnly", False),
-        })
+        cookie_params.append(
+            {
+                "name": c.get("name", ""),
+                "value": c.get("value", ""),
+                "domain": c.get("domain", "www.heypiggy.com"),
+                "path": c.get("path", "/"),
+                "expires": c.get("expires", -1),
+                "secure": c.get("secure", False),
+                "httpOnly": c.get("httpOnly", False),
+            }
+        )
 
     try:
         import websocket
+
         ws = websocket.create_connection(tab_ws_url, timeout=10)
 
         # Step 1: Enable Network domain (needed for setCookies)
@@ -683,11 +725,11 @@ def inject_heypiggy_cookies_to_tab(tab_ws_url: str, debug: bool = False) -> bool
         json.loads(ws.recv())  # consume response
 
         # Step 2: Set ALL 7 cookies in ONE call (batch)
-        ws.send(json.dumps({
-            "id": 2,
-            "method": "Network.setCookies",
-            "params": {"cookies": cookie_params}
-        }))
+        ws.send(
+            json.dumps(
+                {"id": 2, "method": "Network.setCookies", "params": {"cookies": cookie_params}}
+            )
+        )
         r = json.loads(ws.recv())
         ws.close()
 
@@ -723,13 +765,14 @@ def safe_kill_bot():
 
 # ── CPX API ────────────────────────────────────────────
 
+
 def get_survey_url(survey_id, port=9223):
     """Get survey URL from CPX API using live details_url."""
     details = get_details_url(port)
     try:
-        resp = json.loads(urllib.request.urlopen(
-            details + "&survey_id=" + survey_id, timeout=8
-        ).read())
+        resp = json.loads(
+            urllib.request.urlopen(details + "&survey_id=" + survey_id, timeout=8).read()
+        )
         if resp.get("type") == "okay":
             return resp.get("href")
         return None
@@ -741,9 +784,9 @@ def get_survey_details(survey_id, port=9223):
     """Get full survey details from CPX API using live details_url."""
     details = get_details_url(port)
     try:
-        resp = json.loads(urllib.request.urlopen(
-            details + "&survey_id=" + survey_id, timeout=8
-        ).read())
+        resp = json.loads(
+            urllib.request.urlopen(details + "&survey_id=" + survey_id, timeout=8).read()
+        )
         return resp
     except Exception:
         return {}

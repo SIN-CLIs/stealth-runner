@@ -271,10 +271,10 @@ _RETRY_BACKOFF_MS = [0, 200, 400, 800]  # Wartezeit VOR jedem Attempt
 # Max 1s warten — danach gilt das Element als "still_animating" und
 # click() returnt entsprechend (click_with_retry retried dann nach 200ms,
 # und beim 2. Attempt ist die Animation typischerweise durch).
-_POSITION_STABLE_TIMEOUT_S = 1.0        # Max Wartezeit auf Position-Stabilität
-_POSITION_STABLE_THRESHOLD_PX = 2.0     # Bewegung unter dieser Distanz = "stabil"
-_POSITION_STABLE_QUIET_MS = 100         # Wie lange Δ<threshold sein muss
-_POSITION_POLL_INTERVAL_S = 0.05        # 50ms Polling — ~2 Animation-Frames
+_POSITION_STABLE_TIMEOUT_S = 1.0  # Max Wartezeit auf Position-Stabilität
+_POSITION_STABLE_THRESHOLD_PX = 2.0  # Bewegung unter dieser Distanz = "stabil"
+_POSITION_STABLE_QUIET_MS = 100  # Wie lange Δ<threshold sein muss
+_POSITION_POLL_INTERVAL_S = 0.05  # 50ms Polling — ~2 Animation-Frames
 
 
 @dataclass
@@ -285,8 +285,8 @@ class ActionResult:
     after_hash: str = ""
     elapsed_ms: float = 0.0
     new_url: str = ""
-    dom_stable_ms: float = 0.0   # Issue #84: MutationObserver wait time
-    attempts: int = 1            # Issue #85: Anzahl Klick-Versuche (1 = direkt OK)
+    dom_stable_ms: float = 0.0  # Issue #84: MutationObserver wait time
+    attempts: int = 1  # Issue #85: Anzahl Klick-Versuche (1 = direkt OK)
     position_wait_ms: float = 0.0  # Issue #86: Wartezeit bis Element-Position stabil
     extra: dict[str, Any] | None = None
 
@@ -390,11 +390,14 @@ def _wait_for_dom_stable(cdp: CDPConnection) -> tuple[bool, float]:
 
     t0 = time.time()
     try:
-        resp = cdp.call_result("Runtime.evaluate", {
-            "expression": wait_script,
-            "awaitPromise": True,
-            "timeout": 6000,  # 6s CDP-Timeout (5s script + buffer)
-        })
+        resp = cdp.call_result(
+            "Runtime.evaluate",
+            {
+                "expression": wait_script,
+                "awaitPromise": True,
+                "timeout": 6000,  # 6s CDP-Timeout (5s script + buffer)
+            },
+        )
         result = resp.get("result", {}).get("value", {})
         stabilized = result.get("stabilized", False)
         elapsed_ms = result.get("elapsed", int((time.time() - t0) * 1000))
@@ -482,7 +485,8 @@ def _wait_for_position_stable(
         # Position abfragen
         try:
             box = cdp.call_result(
-                "DOM.getBoxModel", {"backendNodeId": backend_node_id},
+                "DOM.getBoxModel",
+                {"backendNodeId": backend_node_id},
             ).get("model")
         except CDPError:
             # Element gerade weg / nicht mehr im DOM → kein stabiler Klick möglich
@@ -591,9 +595,7 @@ class Actuator:
         target_id = getattr(self.cdp, "target_id", "") or ""
         if target_id:
             try:
-                self.cdp.call(
-                    "Target.activateTarget", {"targetId": target_id}
-                )
+                self.cdp.call("Target.activateTarget", {"targetId": target_id})
                 ok = True
             except CDPError as e:
                 print(f"[foreground] Target.activateTarget failed: {e}")
@@ -642,7 +644,8 @@ class Actuator:
         # Element 50ms später nicht mehr ist (→ no_dom_change oder Klick
         # auf Backdrop).
         position_stable, position_wait_ms = _wait_for_position_stable(
-            self.cdp, el.backend_node_id,
+            self.cdp,
+            el.backend_node_id,
         )
         if not position_stable:
             return ActionResult(
@@ -662,14 +665,16 @@ class Actuator:
             box = None
         if not box:
             return ActionResult(
-                False, "element_not_visible",
+                False,
+                "element_not_visible",
                 position_wait_ms=position_wait_ms,
             )
 
         content = box.get("content") or []
         if len(content) < 8:
             return ActionResult(
-                False, "element_not_visible",
+                False,
+                "element_not_visible",
                 position_wait_ms=position_wait_ms,
             )
         xs = content[0::2]
@@ -682,21 +687,41 @@ class Actuator:
 
         # 5) Maus-Events (mouseMoved erzeugt hover, dann pressed/released)
         try:
-            self.cdp.call("Input.dispatchMouseEvent", {
-                "type": "mouseMoved", "x": cx, "y": cy,
-            })
-            self.cdp.call("Input.dispatchMouseEvent", {
-                "type": "mousePressed", "x": cx, "y": cy,
-                "button": "left", "buttons": 1, "clickCount": 1,
-            })
+            self.cdp.call(
+                "Input.dispatchMouseEvent",
+                {
+                    "type": "mouseMoved",
+                    "x": cx,
+                    "y": cy,
+                },
+            )
+            self.cdp.call(
+                "Input.dispatchMouseEvent",
+                {
+                    "type": "mousePressed",
+                    "x": cx,
+                    "y": cy,
+                    "button": "left",
+                    "buttons": 1,
+                    "clickCount": 1,
+                },
+            )
             time.sleep(_MOUSE_HOLD_S)
-            self.cdp.call("Input.dispatchMouseEvent", {
-                "type": "mouseReleased", "x": cx, "y": cy,
-                "button": "left", "buttons": 0, "clickCount": 1,
-            })
+            self.cdp.call(
+                "Input.dispatchMouseEvent",
+                {
+                    "type": "mouseReleased",
+                    "x": cx,
+                    "y": cy,
+                    "button": "left",
+                    "buttons": 0,
+                    "clickCount": 1,
+                },
+            )
         except CDPError as e:
             return ActionResult(
-                False, f"dispatch_failed: {e}",
+                False,
+                f"dispatch_failed: {e}",
                 position_wait_ms=position_wait_ms,
             )
 
@@ -717,9 +742,7 @@ class Actuator:
         # Issue #94: Hat unser JS-Dialog-Handler seit Klick-Start (``t0``)
         # mindestens einen Dialog weggeklickt? Wenn ja, gilt der Klick auch
         # ohne sichtbare DOM-Mutation als erfolgreich.
-        dialogs_handled = any(
-            ev.ts >= t0 for ev in self._js_dialog.peek()
-        )
+        dialogs_handled = any(ev.ts >= t0 for ev in self._js_dialog.peek())
 
         if before_hash == after_hash and not navigated and not dialogs_handled:
             return ActionResult(
@@ -856,9 +879,11 @@ class Actuator:
 
             # Weicher Fehler → weiterer Attempt
             last_result = result
-            print(f"[retry] click {stable_id[:10]} attempt={attempt_num}/{_RETRY_MAX_ATTEMPTS} "
-                  f"reason={result.reason}, retrying in "
-                  f"{_RETRY_BACKOFF_MS[min(attempt_idx+1, _RETRY_MAX_ATTEMPTS-1)]}ms")
+            print(
+                f"[retry] click {stable_id[:10]} attempt={attempt_num}/{_RETRY_MAX_ATTEMPTS} "
+                f"reason={result.reason}, retrying in "
+                f"{_RETRY_BACKOFF_MS[min(attempt_idx + 1, _RETRY_MAX_ATTEMPTS - 1)]}ms"
+            )
 
         # Alle Attempts erschöpft (Mix aus no_dom_change und/oder still_animating)
         assert last_result is not None
@@ -903,20 +928,41 @@ class Actuator:
         if clear:
             try:
                 # Select All
-                self.cdp.call("Input.dispatchKeyEvent", {
-                    "type": "keyDown", "modifiers": 4,  # Meta/Ctrl
-                    "key": "a", "code": "KeyA",
-                })
-                self.cdp.call("Input.dispatchKeyEvent", {
-                    "type": "keyUp", "modifiers": 4, "key": "a", "code": "KeyA",
-                })
+                self.cdp.call(
+                    "Input.dispatchKeyEvent",
+                    {
+                        "type": "keyDown",
+                        "modifiers": 4,  # Meta/Ctrl
+                        "key": "a",
+                        "code": "KeyA",
+                    },
+                )
+                self.cdp.call(
+                    "Input.dispatchKeyEvent",
+                    {
+                        "type": "keyUp",
+                        "modifiers": 4,
+                        "key": "a",
+                        "code": "KeyA",
+                    },
+                )
                 # Delete
-                self.cdp.call("Input.dispatchKeyEvent", {
-                    "type": "keyDown", "key": "Delete", "code": "Delete",
-                })
-                self.cdp.call("Input.dispatchKeyEvent", {
-                    "type": "keyUp", "key": "Delete", "code": "Delete",
-                })
+                self.cdp.call(
+                    "Input.dispatchKeyEvent",
+                    {
+                        "type": "keyDown",
+                        "key": "Delete",
+                        "code": "Delete",
+                    },
+                )
+                self.cdp.call(
+                    "Input.dispatchKeyEvent",
+                    {
+                        "type": "keyUp",
+                        "key": "Delete",
+                        "code": "Delete",
+                    },
+                )
             except CDPError:
                 pass
 
@@ -930,12 +976,21 @@ class Actuator:
             else:
                 delay = 1.0 / _KEYS_PER_S
                 for ch in value:
-                    self.cdp.call("Input.dispatchKeyEvent", {
-                        "type": "keyDown", "text": ch, "key": ch,
-                    })
-                    self.cdp.call("Input.dispatchKeyEvent", {
-                        "type": "keyUp", "key": ch,
-                    })
+                    self.cdp.call(
+                        "Input.dispatchKeyEvent",
+                        {
+                            "type": "keyDown",
+                            "text": ch,
+                            "key": ch,
+                        },
+                    )
+                    self.cdp.call(
+                        "Input.dispatchKeyEvent",
+                        {
+                            "type": "keyUp",
+                            "key": ch,
+                        },
+                    )
                     time.sleep(delay)
         except CDPError as e:
             return ActionResult(False, f"type_failed: {e}")
@@ -964,14 +1019,24 @@ class Actuator:
         t0 = time.time()
         before_hash, _ = _capture_dom_hash(self.cdp)
         try:
-            self.cdp.call("Input.dispatchKeyEvent", {
-                "type": "keyDown", "modifiers": modifiers,
-                "key": key, "code": key,
-            })
-            self.cdp.call("Input.dispatchKeyEvent", {
-                "type": "keyUp", "modifiers": modifiers,
-                "key": key, "code": key,
-            })
+            self.cdp.call(
+                "Input.dispatchKeyEvent",
+                {
+                    "type": "keyDown",
+                    "modifiers": modifiers,
+                    "key": key,
+                    "code": key,
+                },
+            )
+            self.cdp.call(
+                "Input.dispatchKeyEvent",
+                {
+                    "type": "keyUp",
+                    "modifiers": modifiers,
+                    "key": key,
+                    "code": key,
+                },
+            )
         except CDPError as e:
             return ActionResult(False, f"key_failed: {e}")
 
@@ -987,4 +1052,3 @@ class Actuator:
             elapsed_ms=(time.time() - t0) * 1000.0,
             dom_stable_ms=dom_stable_ms,
         )
-

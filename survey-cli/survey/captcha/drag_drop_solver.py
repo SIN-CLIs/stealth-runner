@@ -39,12 +39,15 @@ __version__ = "2026-05-11"
 
 def _extract_target_number(ws_url: str) -> Optional[str]:
     """Extract 'Zahl X' from DOM text."""
-    js = ("var m=(document.body.innerText||'').match(/Bitte legen Sie die Zahl (\\d+)/i);"
-          "return m?m[1]:null;")
+    js = (
+        "var m=(document.body.innerText||'').match(/Bitte legen Sie die Zahl (\\d+)/i);"
+        "return m?m[1]:null;"
+    )
     try:
         ws = websocket.create_connection(ws_url, timeout=10)
         ws.send(json.dumps({"id": 0, "method": "Runtime.evaluate", "params": {"expression": js}}))
-        r = json.loads(ws.recv()); ws.close()  # noqa: E702
+        r = json.loads(ws.recv())
+        ws.close()  # noqa: E702
         return r.get("result", {}).get("result", {}).get("value")
     except Exception:
         return None
@@ -62,7 +65,8 @@ def _detect_puzzle_dom(ws_url: str) -> dict:
     try:
         ws = websocket.create_connection(ws_url, timeout=10)
         ws.send(json.dumps({"id": 0, "method": "Runtime.evaluate", "params": {"expression": js}}))
-        r = json.loads(ws.recv()); ws.close()  # noqa: E702
+        r = json.loads(ws.recv())
+        ws.close()  # noqa: E702
         return r.get("result", {}).get("result", {}).get("value", {})
     except Exception:
         return {}
@@ -72,27 +76,44 @@ def _cdp_dispatch_mouse(ws_url: str, event_type: str, x: float, y: float, button
     """Dispatch single mouse event via CDP."""
     try:
         ws = websocket.create_connection(ws_url, timeout=10)
-        ws.send(json.dumps({"id": 0, "method": "Input.dispatchMouseEvent",
-                           "params": {"type": event_type, "x": x, "y": y, "button": button,
-                                     "clickCount": 1, "pointerType": "mouse"}}))
-        _ = json.loads(ws.recv()); ws.close()  # noqa: E702
+        ws.send(
+            json.dumps(
+                {
+                    "id": 0,
+                    "method": "Input.dispatchMouseEvent",
+                    "params": {
+                        "type": event_type,
+                        "x": x,
+                        "y": y,
+                        "button": button,
+                        "clickCount": 1,
+                        "pointerType": "mouse",
+                    },
+                }
+            )
+        )
+        _ = json.loads(ws.recv())
+        ws.close()  # noqa: E702
     except Exception as e:
         raise RuntimeError(f"CDP dispatch failed: {e}")
 
 
 async def _compute_bezier_path(ws_url: str, number: str) -> Optional[dict]:
     """Compute source + target positions."""
-    js = (f"(function(){{var img=document.querySelector('img[alt=\"{number}\"]');"
-          f"var zone=document.querySelector('.drop-zone,[class*=drop-zone]')||"
-          f"document.querySelectorAll('.cdk-drop-list')[0];if(!img||!zone)return null;"
-          f"var ir=img.getBoundingClientRect();var zr=zone.getBoundingClientRect();"
-          f"return{{source_x:ir.left+ir.width/2,source_y:ir.top+ir.height/2,"
-          f"target_x:zr.left+zr.width/2,target_y:zr.top+zr.height/2}};"
-          f"}})()")
+    js = (
+        f"(function(){{var img=document.querySelector('img[alt=\"{number}\"]');"
+        f"var zone=document.querySelector('.drop-zone,[class*=drop-zone]')||"
+        f"document.querySelectorAll('.cdk-drop-list')[0];if(!img||!zone)return null;"
+        f"var ir=img.getBoundingClientRect();var zr=zone.getBoundingClientRect();"
+        f"return{{source_x:ir.left+ir.width/2,source_y:ir.top+ir.height/2,"
+        f"target_x:zr.left+zr.width/2,target_y:zr.top+zr.height/2}};"
+        f"}})()"
+    )
     try:
         ws = websocket.create_connection(ws_url, timeout=10)
         ws.send(json.dumps({"id": 0, "method": "Runtime.evaluate", "params": {"expression": js}}))
-        r = json.loads(ws.recv()); ws.close()  # noqa: E702
+        r = json.loads(ws.recv())
+        ws.close()  # noqa: E702
         return r.get("result", {}).get("result", {}).get("value")
     except Exception:
         return None
@@ -118,14 +139,17 @@ async def _execute_drag_sequence(ws_url: str, sx: float, sy: float, ex: float, e
 
 async def _click_next_button(ws_url: str) -> bool:
     """Find + click 'Nächste' or 'Weiter' button."""
-    js = ("(function(){var bs=document.querySelectorAll('button');"
-          "for(var i=0;i<bs.length;i++){var t=(bs[i].innerText||'').trim();"
-          "if((t.includes('Nächste')||t.includes('Weiter'))&&!bs[i].disabled){bs[i].click();return true;}}"  # noqa: E501
-          "return false;})()")
+    js = (
+        "(function(){var bs=document.querySelectorAll('button');"
+        "for(var i=0;i<bs.length;i++){var t=(bs[i].innerText||'').trim();"
+        "if((t.includes('Nächste')||t.includes('Weiter'))&&!bs[i].disabled){bs[i].click();return true;}}"  # noqa: E501
+        "return false;})()"
+    )
     try:
         ws = websocket.create_connection(ws_url, timeout=10)
         ws.send(json.dumps({"id": 0, "method": "Runtime.evaluate", "params": {"expression": js}}))
-        r = json.loads(ws.recv()); ws.close()  # noqa: E702
+        r = json.loads(ws.recv())
+        ws.close()  # noqa: E702
         return r.get("result", {}).get("result", {}).get("value", False)
     except Exception:
         return False
@@ -154,22 +178,43 @@ def solve_puzzle(ws_url: str, number: Optional[str] = None) -> dict:
 
     positions = asyncio.run(_compute_bezier_path(ws_url, target))
     if not positions:
-        return {"status": "error", "reason": "no_positions", "number": target, "button_clicked": False}  # noqa: E501
+        return {
+            "status": "error",
+            "reason": "no_positions",
+            "number": target,
+            "button_clicked": False,
+        }  # noqa: E501
 
-    sx, sy, ex, ey = positions["source_x"], positions["source_y"], positions["target_x"], positions["target_y"]  # noqa: E501
+    sx, sy, ex, ey = (
+        positions["source_x"],
+        positions["source_y"],
+        positions["target_x"],
+        positions["target_y"],
+    )  # noqa: E501
     success = asyncio.run(_execute_drag_sequence(ws_url, sx, sy, ex, ey))
     if not success:
-        return {"status": "error", "reason": "drag_execution_failed", "number": target,
-                "button_clicked": False, "source": (round(sx, 1), round(sy, 1)),
-                "target": (round(ex, 1), round(ey, 1))}
+        return {
+            "status": "error",
+            "reason": "drag_execution_failed",
+            "number": target,
+            "button_clicked": False,
+            "source": (round(sx, 1), round(sy, 1)),
+            "target": (round(ex, 1), round(ey, 1)),
+        }
 
     button_clicked = asyncio.run(_click_next_button(ws_url))
-    return {"status": "ok", "number": target, "button_clicked": button_clicked,
-            "source": (round(sx, 1), round(sy, 1)), "target": (round(ex, 1), round(ey, 1))}
+    return {
+        "status": "ok",
+        "number": target,
+        "button_clicked": button_clicked,
+        "source": (round(sx, 1), round(sy, 1)),
+        "target": (round(ex, 1), round(ey, 1)),
+    }
 
 
 if __name__ == "__main__":
     import sys
+
     if len(sys.argv) < 2:
         print("Usage: drag_drop_solver.py <ws_url> [number]")
         sys.exit(1)

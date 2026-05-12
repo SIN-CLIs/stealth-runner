@@ -99,6 +99,7 @@ class TestDetectLanguagePage(unittest.TestCase):
     def test_runner_imports_detect_language_page(self):
         """Runner imports detect_language_page from execute.py."""
         from survey.runner import detect_language_page as runner_detect
+
         # The runner should have access to detect_language_page
         self.assertIsNotNone(runner_detect)
 
@@ -110,21 +111,30 @@ class TestDetectLanguagePage(unittest.TestCase):
         """
         import inspect
         from survey.runner import SurveyRunner
+
         source = inspect.getsource(SurveyRunner.run_survey)
-        self.assertIn("detect_language_page", source,
-                      "run_survey must call detect_language_page for qualtrics")
-        self.assertIn("lang_actions", source,
-                      "run_survey must assign detect_language_page result to lang_actions")
+        self.assertIn(
+            "detect_language_page",
+            source,
+            "run_survey must call detect_language_page for qualtrics",
+        )
+        self.assertIn(
+            "lang_actions",
+            source,
+            "run_survey must assign detect_language_page result to lang_actions",
+        )
 
     def test_execute_imports_detect_language_page(self):
         """execute.py exports detect_language_page."""
         from survey.execute import detect_language_page
+
         self.assertIsNotNone(detect_language_page)
 
     def test_detect_language_page_returns_list_action(self):
         """detect_language_page returns [{"action": "select", "value": ..., "lang_page": True}]."""
         # Verify the function signature
         import inspect
+
         sig = inspect.signature(detect_language_page)
         self.assertIn("ws_url", [p.name for p in sig.parameters.values()])
         self.assertIn("default_lang", [p.name for p in sig.parameters.values()])
@@ -140,9 +150,9 @@ class TestDetectLanguagePage(unittest.TestCase):
         """detect_language_page returns None when CDP response value is empty."""
         with patch("survey.execute.websocket.create_connection") as mock:
             mock.return_value = MagicMock()
-            mock.return_value.recv.return_value = json.dumps({
-                "result": {"result": {"value": None}}
-            })
+            mock.return_value.recv.return_value = json.dumps(
+                {"result": {"result": {"value": None}}}
+            )
             result = detect_language_page("ws://localhost:9999", "Deutsch")
         self.assertIsNone(result)
 
@@ -152,10 +162,16 @@ class TestDetectLanguagePage(unittest.TestCase):
         QUALTRICS: has provider-specific click_select in PROVIDER_COMMANDS.
         OTHER PROVIDERS: use GENERIC_COMMANDS fallback via BatchExecutor.
         """
-        self.assertIn("click_select", PROVIDER_COMMANDS["qualtrics"],
-                      "qualtrics must have click_select command")
-        self.assertIn("click_select", GENERIC_COMMANDS,
-                      "generic must have click_select fallback (for all providers)")
+        self.assertIn(
+            "click_select",
+            PROVIDER_COMMANDS["qualtrics"],
+            "qualtrics must have click_select command",
+        )
+        self.assertIn(
+            "click_select",
+            GENERIC_COMMANDS,
+            "generic must have click_select fallback (for all providers)",
+        )
 
 
 class TestClickSelectJSCommand(unittest.TestCase):
@@ -169,10 +185,10 @@ class TestClickSelectJSCommand(unittest.TestCase):
     def test_click_select_js_has_native_setter(self):
         """click_select JS must use nativeSetter for v-model/ngModel."""
         cmd = PROVIDER_COMMANDS["qualtrics"]["click_select"]
-        self.assertIn("nativeSetter", cmd,
-                      "Must use nativeSetter for Angular/React select binding")
-        self.assertIn("HTMLSelectElement.prototype", cmd,
-                      "Must access native HTMLSelectElement value setter")
+        self.assertIn("nativeSetter", cmd, "Must use nativeSetter for Angular/React select binding")
+        self.assertIn(
+            "HTMLSelectElement.prototype", cmd, "Must access native HTMLSelectElement value setter"
+        )
         self.assertIn("change", cmd, "Must dispatch change event")
         self.assertIn("input", cmd, "Must dispatch input event for v-model")
 
@@ -196,8 +212,9 @@ class TestClickSelectJSCommand(unittest.TestCase):
 
     def test_generic_click_select_command_exists(self):
         """generic provider should also have click_select command."""
-        self.assertIn("click_select", GENERIC_COMMANDS,
-                      "GENERIC_COMMANDS must have click_select as fallback")
+        self.assertIn(
+            "click_select", GENERIC_COMMANDS, "GENERIC_COMMANDS must have click_select as fallback"
+        )
 
 
 class TestToolSelectLanguageIntegration(unittest.TestCase):
@@ -212,9 +229,13 @@ class TestToolSelectLanguageIntegration(unittest.TestCase):
         from tools.tool_select_language import select_language
 
         mock_ws = MagicMock()
-        cdp_resp = json.dumps({
-            "result": {"result": {"value": {"success": True, "method": "select", "value": "Deutsch"}}}
-        })
+        cdp_resp = json.dumps(
+            {
+                "result": {
+                    "result": {"value": {"success": True, "method": "select", "value": "Deutsch"}}
+                }
+            }
+        )
         mock_ws.recv.return_value = cdp_resp
         # side_effect ensures recv() always returns the JSON string
         # (not affected by subsequent MagicMock calls)
@@ -237,9 +258,13 @@ class TestToolSelectLanguageIntegration(unittest.TestCase):
         from tools.tool_select_language import select_language
 
         mock_ws = MagicMock()
-        cdp_resp = json.dumps({
-            "result": {"result": {"value": {"success": True, "method": "select", "value": "Deutsch"}}}
-        })
+        cdp_resp = json.dumps(
+            {
+                "result": {
+                    "result": {"value": {"success": True, "method": "select", "value": "Deutsch"}}
+                }
+            }
+        )
         mock_ws.recv.return_value = cdp_resp
         mock_ws.recv.side_effect = [cdp_resp, cdp_resp]
 
@@ -254,9 +279,13 @@ class TestToolSelectLanguageIntegration(unittest.TestCase):
         from tools.tool_select_language import select_language
 
         mock_ws = MagicMock()
-        cdp_resp = json.dumps({
-            "result": {"result": {"value": {"success": True, "method": "select", "value": "Deutsch"}}}
-        })
+        cdp_resp = json.dumps(
+            {
+                "result": {
+                    "result": {"value": {"success": True, "method": "select", "value": "Deutsch"}}
+                }
+            }
+        )
         mock_ws.recv.return_value = cdp_resp
         mock_ws.recv.side_effect = [cdp_resp, cdp_resp]
 

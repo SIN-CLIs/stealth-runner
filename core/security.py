@@ -56,6 +56,7 @@ BANNED
 from __future__ import annotations
 
 import base64
+import contextlib
 import hashlib
 import json
 import os
@@ -64,8 +65,7 @@ import time
 from dataclasses import dataclass, field
 from datetime import datetime
 from pathlib import Path
-from typing import Any, Optional
-
+from typing import Any
 
 # -- EXCEPTIONS ----------------------------------------------------------------
 
@@ -92,10 +92,11 @@ class CredentialEntry:
     expires_at=None -> Credential gilt unbegrenzt (z. B. API-Key).
     Sonst: TTL pro Eintrag (z. B. Session-Token mit kurzem Refresh).
     """
+
     id: str
     encrypted_value: str
     created_at: float = field(default_factory=time.time)
-    expires_at: Optional[float] = None
+    expires_at: float | None = None
     metadata: dict[str, Any] = field(default_factory=dict)
 
     def is_expired(self) -> bool:
@@ -113,7 +114,7 @@ class CredentialVault:
     (CredentialEntry -> encrypted_value -> DB-Row).
     """
 
-    def __init__(self, encryption_key: Optional[str] = None):
+    def __init__(self, encryption_key: str | None = None):
         self._key = encryption_key or os.environ.get("ENCRYPTION_KEY", "")
         self._fernet = None
         self._credentials: dict[str, CredentialEntry] = {}
@@ -125,6 +126,7 @@ class CredentialVault:
             return
         try:
             from cryptography.fernet import Fernet
+
             # Fernet erwartet 32 url-safe base64-encoded bytes.
             # Wenn Key zu kurz -> SHA256 derivieren.
             if len(self._key) < 32:
@@ -145,10 +147,7 @@ class CredentialVault:
             return self._fernet.encrypt(plaintext.encode()).decode()
         key_hash = hashlib.sha256((self._key or "default").encode()).digest()
         xored = bytes(
-            a ^ b
-            for a, b in zip(
-                plaintext.encode(), key_hash * (len(plaintext) // 32 + 1)
-            )
+            a ^ b for a, b in zip(plaintext.encode(), key_hash * (len(plaintext) // 32 + 1), strict=False)
         )
         return base64.urlsafe_b64encode(xored).decode()
 
@@ -157,9 +156,7 @@ class CredentialVault:
             return self._fernet.decrypt(ciphertext.encode()).decode()
         key_hash = hashlib.sha256((self._key or "default").encode()).digest()
         xored = base64.urlsafe_b64decode(ciphertext.encode())
-        return bytes(
-            a ^ b for a, b in zip(xored, key_hash * (len(xored) // 32 + 1))
-        ).decode()
+        return bytes(a ^ b for a, b in zip(xored, key_hash * (len(xored) // 32 + 1), strict=False)).decode()
 
     # -- Public API ---------------------------------------------------------
 
@@ -167,8 +164,8 @@ class CredentialVault:
         self,
         credential_id: str,
         value: str,
-        expires_in: Optional[int] = None,
-        metadata: Optional[dict] = None,
+        expires_in: int | None = None,
+        metadata: dict | None = None,
     ) -> bool:
         try:
             encrypted = self._encrypt(value)
@@ -183,7 +180,7 @@ class CredentialVault:
         except Exception as e:
             raise EncryptionError(f"Failed to store credential {credential_id}: {e}")
 
-    def retrieve(self, credential_id: str) -> Optional[str]:
+    def retrieve(self, credential_id: str) -> str | None:
         entry = self._credentials.get(credential_id)
         if not entry:
             return None
@@ -217,6 +214,7 @@ class CredentialVault:
 @dataclass
 class AuditEntry:
     """Ein Audit-Eintrag mit integrity_hash zur Tamper-Detection."""
+
     timestamp: float
     event_type: str
     actor: str
@@ -275,15 +273,13 @@ class AuditLogger:
     SECURITY_EVENT = "SECURITY_EVENT"
     BUDGET_EXCEEDED = "BUDGET_EXCEEDED"  # NEU stealth-runner: 2min Survey-Limit
 
-    def __init__(self, log_file: Optional[str] = None, max_buffer_size: int = 10000):
+    def __init__(self, log_file: str | None = None, max_buffer_size: int = 10000):
         default = os.path.expanduser("~/.stealth/logs/stealth_audit.jsonl")
         self._log_file = Path(log_file) if log_file else Path(default)
         self._buffer: list[AuditEntry] = []
         self._max_buffer = max_buffer_size
-        try:
+        with contextlib.suppress(Exception):
             self._log_file.parent.mkdir(parents=True, exist_ok=True)
-        except Exception:
-            pass
 
     def log(
         self,
@@ -292,7 +288,7 @@ class AuditLogger:
         action: str,
         resource: str,
         status: str,
-        details: Optional[dict] = None,
+        details: dict | None = None,
     ) -> None:
         entry = AuditEntry(
             timestamp=time.time(),
@@ -305,7 +301,7 @@ class AuditLogger:
         )
         self._buffer.append(entry)
         if len(self._buffer) > self._max_buffer:
-            self._buffer = self._buffer[-self._max_buffer // 2:]
+            self._buffer = self._buffer[-self._max_buffer // 2 :]
         try:
             with open(self._log_file, "a") as f:
                 f.write(json.dumps(entry.to_dict()) + "\n")
@@ -314,9 +310,9 @@ class AuditLogger:
 
     def query(
         self,
-        event_type: Optional[str] = None,
-        actor: Optional[str] = None,
-        since: Optional[float] = None,
+        event_type: str | None = None,
+        actor: str | None = None,
+        since: float | None = None,
         limit: int = 100,
     ) -> list[dict]:
         results: list[dict] = []
@@ -356,8 +352,8 @@ class SecurityManager:
 
     def __init__(
         self,
-        encryption_key: Optional[str] = None,
-        audit_log_path: Optional[str] = None,
+        encryption_key: str | None = None,
+        audit_log_path: str | None = None,
     ):
         self.vault = CredentialVault(encryption_key)
         self.audit = AuditLogger(audit_log_path)
@@ -381,7 +377,7 @@ class SecurityManager:
         )
         return result
 
-    def get_token(self, provider: str) -> Optional[str]:
+    def get_token(self, provider: str) -> str | None:
         token = self.vault.retrieve(f"{provider}_token")
         self.audit.log(
             AuditLogger.CREDENTIAL_ACCESS,
@@ -394,16 +390,14 @@ class SecurityManager:
 
     # -- Step/Pipeline-Logging ---------------------------------------------
 
-    def log_step(self, step_name: str, status: str, details: Optional[dict] = None) -> None:
-        event_type = (
-            AuditLogger.STEP_COMPLETE if status == "success"
-            else AuditLogger.STEP_FAILED
-        )
+    def log_step(self, step_name: str, status: str, details: dict | None = None) -> None:
+        event_type = AuditLogger.STEP_COMPLETE if status == "success" else AuditLogger.STEP_FAILED
         self.audit.log(event_type, self._session_id, "execute", step_name, status, details)
 
-    def log_pipeline_event(self, event: str, details: Optional[dict] = None) -> None:
+    def log_pipeline_event(self, event: str, details: dict | None = None) -> None:
         event_type = (
-            AuditLogger.PIPELINE_START if "start" in event.lower()
+            AuditLogger.PIPELINE_START
+            if "start" in event.lower()
             else AuditLogger.PIPELINE_COMPLETE
         )
         self.audit.log(event_type, self._session_id, event, "pipeline", "info", details)

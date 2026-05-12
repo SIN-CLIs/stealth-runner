@@ -209,9 +209,12 @@ def delegate_task(
     cmd = [
         "opencode",
         "run",
-        "--format", "json",
-        "--dir", workdir,
-        "--prompt", prompt,
+        "--format",
+        "json",
+        "--dir",
+        workdir,
+        "--prompt",
+        prompt,
     ]
 
     # Logging für Debugging
@@ -329,27 +332,29 @@ def _build_delegation_prompt(
     if tab_ws:
         lines.append(f"Tab WebSocket: {tab_ws}")
 
-    lines.extend([
-        "",
-        "Action required:",
-        "1. Analysiere den aktuellen Tab-Zustand via CDP",
-        "2. Identifiziere das Root-Cause-Problem (nicht die Symptome)",
-        "3. Implementiere eine Lösung",
-        "4. Teste die Lösung",
-        "5. Verifiziere dass balance erhöht wurde",
-        "",
-        "Wichtige Kontext-Dokumente:",
-        "  - AGENTS.md §11.3: Complete Drag-Drop Puzzle Problem",
-        "  - AGENTS.md §DAEMON WAY: Learn-by-Doing System",
-        "  - survey-cli/survey/providers/purespectrum.py: Provider-Implementierung",
-        "",
-        "BANNED methods (NIEMALS verwenden):",
-        "  - pkill -f 'Google Chrome' (tötet USER Chrome!)",
-        "  - webauto-nodriver (ABSOLUT BANNED)",
-        "  - Hardcoded PIDs (PIDs sind dynamisch)",
-        "",
-        "Goal: Complete the survey and verify balance increased.",
-    ])
+    lines.extend(
+        [
+            "",
+            "Action required:",
+            "1. Analysiere den aktuellen Tab-Zustand via CDP",
+            "2. Identifiziere das Root-Cause-Problem (nicht die Symptome)",
+            "3. Implementiere eine Lösung",
+            "4. Teste die Lösung",
+            "5. Verifiziere dass balance erhöht wurde",
+            "",
+            "Wichtige Kontext-Dokumente:",
+            "  - AGENTS.md §11.3: Complete Drag-Drop Puzzle Problem",
+            "  - AGENTS.md §DAEMON WAY: Learn-by-Doing System",
+            "  - survey-cli/survey/providers/purespectrum.py: Provider-Implementierung",
+            "",
+            "BANNED methods (NIEMALS verwenden):",
+            "  - pkill -f 'Google Chrome' (tötet USER Chrome!)",
+            "  - webauto-nodriver (ABSOLUT BANNED)",
+            "  - Hardcoded PIDs (PIDs sind dynamisch)",
+            "",
+            "Goal: Complete the survey and verify balance increased.",
+        ]
+    )
 
     return "\n".join(lines)
 

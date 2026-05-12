@@ -30,7 +30,6 @@ from typing import Any
 from .survey_agent_graph import SurveyAgentGraph, Persona
 from ..reliability import (
     RetryPolicy,
-    Retryability,
     DLQ,
     TransientError,
     PermanentError,
@@ -156,6 +155,7 @@ class SurveyDaemon:
 
     def _setup_signal_handlers(self) -> None:
         """Setup graceful shutdown on SIGTERM/SIGINT."""
+
         def handle_shutdown(signum, frame):
             logger.info(f"Received signal {signum}, initiating shutdown...")
             self._running = False
@@ -177,19 +177,22 @@ class SurveyDaemon:
 
     async def _start_health_server(self) -> None:
         """Start health check HTTP server."""
+
         async def handle_health(reader, writer):
             await reader.read(1024)
 
             # SR-152: Include DLQ stats in health response
             dlq_counts = self._dlq.count_by_status()
-            
+
             stats = self._agent.get_stats() if self._agent else {}
-            response_body = json.dumps({
-                "status": "running" if self._running else "stopping",
-                "uptime_seconds": (datetime.now() - self._start_time).total_seconds(),
-                "stats": stats,
-                "dlq": dlq_counts,  # SR-152
-            })
+            response_body = json.dumps(
+                {
+                    "status": "running" if self._running else "stopping",
+                    "uptime_seconds": (datetime.now() - self._start_time).total_seconds(),
+                    "stats": stats,
+                    "dlq": dlq_counts,  # SR-152
+                }
+            )
 
             response = (
                 f"HTTP/1.1 200 OK\r\n"
@@ -227,22 +230,22 @@ class SurveyDaemon:
     async def _run_single_survey(self, survey: dict) -> dict:
         """
         Run a single survey through the agent.
-        
+
         SR-152: This method is wrapped by RetryPolicy in the main loop.
-        
+
         Args:
             survey: Survey configuration dict
-            
+
         Returns:
             Result dict with status and earnings
-            
+
         Raises:
             TransientError: For retryable failures
             PermanentError: For non-retryable failures
         """
         try:
             result = await self._agent.run(survey["url"])
-            
+
             if result["status"] == "completed":
                 return result
             elif result["status"] in ("disqualified", "quota_full"):
@@ -251,16 +254,17 @@ class SurveyDaemon:
             else:
                 # Unexpected status — treat as transient
                 raise TransientError(f"Unexpected survey status: {result['status']}")
-                
+
         except (TimeoutError, ConnectionError, OSError) as e:
             # Network errors are transient
             raise TransientError(str(e)) from e
         except Exception as e:
             error_str = str(e).lower()
             # Check for permanent error indicators
-            if any(phrase in error_str for phrase in [
-                "banned", "blocked", "forbidden", "invalid", "closed"
-            ]):
+            if any(
+                phrase in error_str
+                for phrase in ["banned", "blocked", "forbidden", "invalid", "closed"]
+            ):
                 raise PermanentError(str(e)) from e
             # Default to transient for unknown errors
             raise TransientError(str(e)) from e
@@ -291,7 +295,11 @@ class SurveyDaemon:
             try:
                 # Check working hours
                 current_hour = datetime.now().hour
-                if not (limits["working_hours"]["start"] <= current_hour < limits["working_hours"]["end"]):
+                if not (
+                    limits["working_hours"]["start"]
+                    <= current_hour
+                    < limits["working_hours"]["end"]
+                ):
                     logger.info("Outside working hours, sleeping...")
                     await asyncio.sleep(300)
                     continue
@@ -309,32 +317,30 @@ class SurveyDaemon:
                 survey_id = survey.get("id", survey.get("url", "unknown"))
                 persona_id = persona_config.get("name", "default")
                 provider = survey.get("provider", "unknown")
-                
+
                 logger.info(f"Starting survey: {survey.get('url', 'unknown')}")
 
                 # SR-152: Wrap survey execution in retry policy
                 attempt_count = 0
-                last_error: Exception | None = None
-                
+
                 def on_retry(attempt: int, error: Exception, delay: float) -> None:
                     nonlocal attempt_count
                     attempt_count = attempt
                     logger.info(f"Survey retry {attempt}: {error}")
-                
+
                 try:
                     result = await self._retry_policy.run(
                         lambda: self._run_single_survey(survey),
                         on_retry=on_retry,
                     )
-                    
+
                     if result["status"] == "completed":
                         logger.info(f"Survey completed! Earnings: ${result.get('earnings', 0):.2f}")
                     else:
                         logger.info(f"Survey ended with status: {result['status']}")
-                        
+
                 except PermanentError as e:
                     # SR-152: Push to DLQ on permanent failure
-                    last_error = e
                     logger.warning(f"Permanent error, pushing to DLQ: {e}")
                     self._dlq.push(
                         survey_id=survey_id,
@@ -348,10 +354,9 @@ class SurveyDaemon:
                             "last_question": getattr(self._agent, "_last_question", None),
                         },
                     )
-                    
+
                 except TransientError as e:
                     # SR-152: All retries exhausted, push to DLQ
-                    last_error = e
                     logger.warning(f"Max retries exceeded, pushing to DLQ: {e}")
                     self._dlq.push(
                         survey_id=survey_id,
@@ -383,7 +388,9 @@ class SurveyDaemon:
         logger.info(f"Config: {self.config_path}")
         logger.info(f"State DB: {self.state_path}")
         logger.info(f"Logs: {self.log_path}")
-        logger.info(f"SR-152: Retry policy enabled (max_attempts={self._retry_policy.max_attempts})")
+        logger.info(
+            f"SR-152: Retry policy enabled (max_attempts={self._retry_policy.max_attempts})"
+        )
 
         # Start health server
         await self._start_health_server()
@@ -493,7 +500,9 @@ def install_launchagent() -> Path:
         f.write(plist_content)
 
     logger.info(f"LaunchAgent installed: {plist_path}")
-    logger.info("Run: launchctl load -w ~/Library/LaunchAgents/com.stealth-runner.survey-daemon.plist")
+    logger.info(
+        "Run: launchctl load -w ~/Library/LaunchAgents/com.stealth-runner.survey-daemon.plist"
+    )
 
     return plist_path
 

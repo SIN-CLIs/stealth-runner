@@ -44,18 +44,18 @@ import os
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
-from unittest import TestCase
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
 
 # ── MOCK FIXTURES ──────────────────────────────────────────────────────────
 
+
 @dataclass
 class MockCaptchaDetection:
     """Mock CaptchaDetection für Tests."""
+
     captcha_type: str
     frame_id: str = ""
     frame_url: str = ""
@@ -65,6 +65,7 @@ class MockCaptchaDetection:
 @dataclass
 class MockCaptchaResult:
     """Mock CaptchaResult für Tests."""
+
     solved: bool
     captcha_type: str = ""
     token: str = ""
@@ -105,30 +106,28 @@ class MockCDPConnection:
 # NIM SECONDARY SOLVER TESTS (3)
 # ══════════════════════════════════════════════════════════════════════════
 
+
 class TestNimSecondarySolver:
     """Tests für nim_secondary_solver.py."""
 
     def test_nim_secondary_success(self):
         """Test successful solve with NIM Qwen2.5-VL."""
-        from survey.captcha.nim_secondary_solver import NimSecondarySolver, CaptchaResult
+        from survey.captcha.nim_secondary_solver import NimSecondarySolver
 
         solver = NimSecondarySolver(api_key="test_key")
         cdp = MockCDPConnection()
-        detection = MockCaptchaDetection(
-            captcha_type="angular_drag_drop",
-            dom_hint="target=28"
-        )
+        detection = MockCaptchaDetection(captcha_type="angular_drag_drop", dom_hint="target=28")
 
         # Mock API response
         mock_response = MagicMock()
         mock_response.choices = [MagicMock()]
-        mock_response.choices[0].message.content = json.dumps({
-            "found": True,
-            "source": {"x": 100, "y": 200},
-            "target": {"x": 300, "y": 200}
-        })
+        mock_response.choices[0].message.content = json.dumps(
+            {"found": True, "source": {"x": 100, "y": 200}, "target": {"x": 300, "y": 200}}
+        )
 
-        with patch.object(solver, "_call_vision_api", return_value=mock_response.choices[0].message.content):
+        with patch.object(
+            solver, "_call_vision_api", return_value=mock_response.choices[0].message.content
+        ):
             result = solver.solve(cdp, detection)
 
         assert result.solved is True
@@ -168,6 +167,7 @@ class TestNimSecondarySolver:
 # GATEWAY SOLVER TESTS (5)
 # ══════════════════════════════════════════════════════════════════════════
 
+
 class TestGatewaySolver:
     """Tests für gateway_solver.py."""
 
@@ -177,19 +177,18 @@ class TestGatewaySolver:
 
         solver = GatewaySolver(api_key="test_gateway_key")
         cdp = MockCDPConnection()
-        detection = MockCaptchaDetection(
-            captcha_type="angular_drag_drop",
-            dom_hint="target=42"
-        )
+        detection = MockCaptchaDetection(captcha_type="angular_drag_drop", dom_hint="target=42")
 
-        gemini_response = json.dumps({
-            "elements": [
-                {"label": "draggable", "bbox": [100, 200, 150, 250]},
-                {"label": "dropzone", "bbox": [300, 200, 350, 250]}
-            ],
-            "action": "drag",
-            "solved": True
-        })
+        gemini_response = json.dumps(
+            {
+                "elements": [
+                    {"label": "draggable", "bbox": [100, 200, 150, 250]},
+                    {"label": "dropzone", "bbox": [300, 200, 350, 250]},
+                ],
+                "action": "drag",
+                "solved": True,
+            }
+        )
 
         with patch.object(solver, "_call_gateway_api", return_value=gemini_response):
             result = solver.solve(cdp, detection)
@@ -199,7 +198,10 @@ class TestGatewaySolver:
 
     def test_gateway_gemini_fail_claude_success(self):
         """Test fallback to Claude when Gemini fails."""
-        from survey.captcha.gateway_solver import GatewaySolver, GATEWAY_PRIMARY_MODEL, GATEWAY_FALLBACK_MODEL
+        from survey.captcha.gateway_solver import (
+            GatewaySolver,
+            GATEWAY_PRIMARY_MODEL,
+        )
 
         solver = GatewaySolver(api_key="test_gateway_key")
         cdp = MockCDPConnection()
@@ -212,11 +214,9 @@ class TestGatewaySolver:
             if model == GATEWAY_PRIMARY_MODEL:
                 return json.dumps({"solved": False, "reason": "gemini_failed"})
             else:
-                return json.dumps({
-                    "action_type": "text",
-                    "solved": True,
-                    "data": {"text": "ABC123"}
-                })
+                return json.dumps(
+                    {"action_type": "text", "solved": True, "data": {"text": "ABC123"}}
+                )
 
         with patch.object(solver, "_call_gateway_api", side_effect=mock_call):
             result = solver.solve(cdp, detection)
@@ -263,16 +263,10 @@ class TestGatewaySolver:
         cdp = MockCDPConnection()
         detection = MockCaptchaDetection(captcha_type="slider")
 
-        response = json.dumps({
-            "action_type": "slide",
-            "solved": True,
-            "data": {"distance": 150}
-        })
+        response = json.dumps({"action_type": "slide", "solved": True, "data": {"distance": 150}})
 
         # Mock slider handle detection
-        cdp._eval_results = {
-            "slider": {"x": 50, "y": 300}
-        }
+        cdp._eval_results = {"slider": {"x": 50, "y": 300}}
 
         with patch.object(solver, "_call_gateway_api", return_value=response):
             result = solver.solve(cdp, detection)
@@ -285,6 +279,7 @@ class TestGatewaySolver:
 # AUDIO SOLVER TESTS (3)
 # ══════════════════════════════════════════════════════════════════════════
 
+
 class TestAudioSolver:
     """Tests für audio_solver.py."""
 
@@ -293,19 +288,26 @@ class TestAudioSolver:
         from survey.captcha.audio_solver import AudioSolver
 
         solver = AudioSolver(api_key="test_nvidia_key")
-        cdp = MockCDPConnection(eval_results={
-            "audio-button": True,
-            "audio-source": "https://example.com/audio.mp3",
-            "audio-response": True,
-            "verify": True,
-        })
+        cdp = MockCDPConnection(
+            eval_results={
+                "audio-button": True,
+                "audio-source": "https://example.com/audio.mp3",
+                "audio-response": True,
+                "verify": True,
+            }
+        )
         detection = MockCaptchaDetection(captcha_type="recaptcha")
 
         # Mock audio download and transcription
-        with patch("survey.captcha.audio_solver._click_audio_button", return_value=True), \
-             patch("survey.captcha.audio_solver._extract_audio_url", return_value="https://example.com/audio.mp3"), \
-             patch("survey.captcha.audio_solver._download_audio_b64", return_value="base64audio"), \
-             patch.object(solver, "_transcribe_audio", return_value="hello world"):
+        with (
+            patch("survey.captcha.audio_solver._click_audio_button", return_value=True),
+            patch(
+                "survey.captcha.audio_solver._extract_audio_url",
+                return_value="https://example.com/audio.mp3",
+            ),
+            patch("survey.captcha.audio_solver._download_audio_b64", return_value="base64audio"),
+            patch.object(solver, "_transcribe_audio", return_value="hello world"),
+        ):
             result = solver.solve(cdp, detection)
 
         assert result.solved is True
@@ -319,10 +321,15 @@ class TestAudioSolver:
         cdp = MockCDPConnection()
         detection = MockCaptchaDetection(captcha_type="hcaptcha")
 
-        with patch("survey.captcha.audio_solver._click_audio_button", return_value=True), \
-             patch("survey.captcha.audio_solver._extract_audio_url", return_value="https://example.com/hcaptcha.mp3"), \
-             patch("survey.captcha.audio_solver._download_audio_b64", return_value="base64audio"), \
-             patch.object(solver, "_transcribe_audio", return_value="nine four two"):
+        with (
+            patch("survey.captcha.audio_solver._click_audio_button", return_value=True),
+            patch(
+                "survey.captcha.audio_solver._extract_audio_url",
+                return_value="https://example.com/hcaptcha.mp3",
+            ),
+            patch("survey.captcha.audio_solver._download_audio_b64", return_value="base64audio"),
+            patch.object(solver, "_transcribe_audio", return_value="nine four two"),
+        ):
             result = solver.solve(cdp, detection)
 
         assert result.solved is True
@@ -336,11 +343,16 @@ class TestAudioSolver:
         cdp = MockCDPConnection()
         detection = MockCaptchaDetection(captcha_type="recaptcha")
 
-        with patch("survey.captcha.audio_solver._click_audio_button", return_value=True), \
-             patch("survey.captcha.audio_solver._extract_audio_url", return_value="https://example.com/audio.mp3"), \
-             patch("survey.captcha.audio_solver._download_audio_b64", return_value="base64audio"), \
-             patch.object(solver, "_transcribe_audio", return_value=None), \
-             patch.object(solver, "_transcribe_via_openai_compat", return_value=None):
+        with (
+            patch("survey.captcha.audio_solver._click_audio_button", return_value=True),
+            patch(
+                "survey.captcha.audio_solver._extract_audio_url",
+                return_value="https://example.com/audio.mp3",
+            ),
+            patch("survey.captcha.audio_solver._download_audio_b64", return_value="base64audio"),
+            patch.object(solver, "_transcribe_audio", return_value=None),
+            patch.object(solver, "_transcribe_via_openai_compat", return_value=None),
+        ):
             result = solver.solve(cdp, detection)
 
         assert result.solved is False
@@ -350,6 +362,7 @@ class TestAudioSolver:
 # ══════════════════════════════════════════════════════════════════════════
 # FALLBACK CHAIN TESTS (4)
 # ══════════════════════════════════════════════════════════════════════════
+
 
 class TestFallbackChain:
     """Tests für fallback_chain.py."""
@@ -391,10 +404,14 @@ class TestFallbackChain:
         def mock_secondary(c, d):
             return success_result
 
-        with patch.object(chain, "_solvers", [
-            ("nim_primary", mock_primary),
-            ("nim_secondary", mock_secondary),
-        ]):
+        with patch.object(
+            chain,
+            "_solvers",
+            [
+                ("nim_primary", mock_primary),
+                ("nim_secondary", mock_secondary),
+            ],
+        ):
             result = chain.solve_with_fallback(cdp, detection, "https://example.com")
 
         assert result.solved is True
@@ -414,12 +431,16 @@ class TestFallbackChain:
         failed_result = CaptchaResult(solved=False, reason="vision_failed")
         audio_result = CaptchaResult(solved=True, captcha_type="recaptcha", token="test_token")
 
-        with patch.object(chain, "_solvers", [
-            ("nim_primary", lambda c, d: failed_result),
-            ("nim_secondary", lambda c, d: failed_result),
-            ("gateway", lambda c, d: failed_result),
-            ("audio", lambda c, d: audio_result),
-        ]):
+        with patch.object(
+            chain,
+            "_solvers",
+            [
+                ("nim_primary", lambda c, d: failed_result),
+                ("nim_secondary", lambda c, d: failed_result),
+                ("gateway", lambda c, d: failed_result),
+                ("audio", lambda c, d: audio_result),
+            ],
+        ):
             result = chain.solve_with_fallback(cdp, detection, "https://example.com")
 
         assert result.solved is True
@@ -438,14 +459,19 @@ class TestFallbackChain:
         failed_result = CaptchaResult(solved=False, reason="all_failed")
 
         with tempfile.TemporaryDirectory() as tmpdir:
-            with patch.object(chain, "_solvers", [
-                ("nim_primary", lambda c, d: failed_result),
-                ("nim_secondary", lambda c, d: failed_result),
-                ("gateway", lambda c, d: failed_result),
-                ("audio", None),  # Audio not applicable for drag_drop
-            ]), \
-                 patch("survey.captcha.fallback_chain._ensure_logs_dir", return_value=Path(tmpdir)):
-
+            with (
+                patch.object(
+                    chain,
+                    "_solvers",
+                    [
+                        ("nim_primary", lambda c, d: failed_result),
+                        ("nim_secondary", lambda c, d: failed_result),
+                        ("gateway", lambda c, d: failed_result),
+                        ("audio", None),  # Audio not applicable for drag_drop
+                    ],
+                ),
+                patch("survey.captcha.fallback_chain._ensure_logs_dir", return_value=Path(tmpdir)),
+            ):
                 with pytest.raises(CaptchaUnsolvedError) as exc_info:
                     chain.solve_with_fallback(cdp, detection, "https://example.com")
 
@@ -458,6 +484,7 @@ class TestFallbackChain:
 # LOGGING TESTS (3)
 # ══════════════════════════════════════════════════════════════════════════
 
+
 class TestLogging:
     """Tests für Logging-Funktionalität."""
 
@@ -467,9 +494,7 @@ class TestLogging:
 
         cdp = MockCDPConnection()
         detection = MockCaptchaDetection(
-            captcha_type="angular_drag_drop",
-            frame_id="frame123",
-            dom_hint="target=28"
+            captcha_type="angular_drag_drop", frame_id="frame123", dom_hint="target=28"
         )
         step_trace = [
             {"solver": "nim_primary", "outcome": "failed", "error": "timeout"},
@@ -549,6 +574,7 @@ class TestLogging:
 # INTEGRATION TEST
 # ══════════════════════════════════════════════════════════════════════════
 
+
 class TestIntegration:
     """Integration tests für die gesamte Chain."""
 
@@ -565,7 +591,10 @@ class TestIntegration:
         # Mock all solvers to return success on first try
         mock_result = CaptchaResult(solved=True, captcha_type="angular_drag_drop")
 
-        with patch("survey.captcha.fallback_chain._get_nim_primary_solver", return_value=lambda c, d: mock_result):
+        with patch(
+            "survey.captcha.fallback_chain._get_nim_primary_solver",
+            return_value=lambda c, d: mock_result,
+        ):
             result = solve_with_fallback(cdp, detection, "https://test.com")
 
         assert result.solved is True

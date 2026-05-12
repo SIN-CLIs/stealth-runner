@@ -56,17 +56,18 @@ import asyncio
 import random
 import time
 import traceback
+from collections.abc import Awaitable, Callable
 from dataclasses import dataclass, field
 from enum import Enum
 from functools import wraps
-from typing import Any, Awaitable, Callable, Optional
-
+from typing import Any
 
 # -- ENUMS ----------------------------------------------------------------------
 
 
 class ErrorSeverity(Enum):
     """Severity fuer Alerting + Audit-Filter."""
+
     INFO = "info"
     WARNING = "warning"
     ERROR = "error"
@@ -82,6 +83,7 @@ class RetryStrategy(Enum):
     EXPONENTIAL         : base_delay * 2**attempt
     EXPONENTIAL_JITTER  : EXPONENTIAL * random(0.5, 1.5)  -- recommended default
     """
+
     NONE = "none"
     IMMEDIATE = "immediate"
     LINEAR = "linear"
@@ -99,6 +101,7 @@ class ErrorContext:
     Wird in AuditLogger geschrieben + an Screenshots gehaengt.
     additional_data: Frei nutzbar (z. B. stable_id des fehlgeschlagenen Klicks).
     """
+
     step_name: str
     step_index: int
     timestamp: float = field(default_factory=time.time)
@@ -134,7 +137,7 @@ class StepError(Exception):
     def __init__(
         self,
         message: str,
-        context: Optional[ErrorContext] = None,
+        context: ErrorContext | None = None,
         severity: ErrorSeverity = ErrorSeverity.ERROR,
     ):
         super().__init__(message)
@@ -155,7 +158,7 @@ class RecoverableError(StepError):
     def __init__(
         self,
         message: str,
-        context: Optional[ErrorContext] = None,
+        context: ErrorContext | None = None,
         suggested_strategy: RetryStrategy = RetryStrategy.EXPONENTIAL_JITTER,
     ):
         super().__init__(message, context, ErrorSeverity.WARNING)
@@ -171,7 +174,7 @@ class FatalError(StepError):
       - Survey-Account gebannt (Cookies tot)
     """
 
-    def __init__(self, message: str, context: Optional[ErrorContext] = None):
+    def __init__(self, message: str, context: ErrorContext | None = None):
         super().__init__(message, context, ErrorSeverity.CRITICAL)
 
 
@@ -186,6 +189,7 @@ class CircuitBreakerState:
     OPEN         : Threshold ueberschritten, requests BLOCKED bis RESET_TIMEOUT
     HALF_OPEN    : RESET_TIMEOUT abgelaufen, 1 Probe-Request erlaubt
     """
+
     failures: int = 0
     last_failure: float = 0.0
     is_open: bool = False
@@ -213,7 +217,7 @@ class ErrorHandler:
         max_retries: int = 3,
         base_delay: float = 1.0,
         max_delay: float = 60.0,
-        on_error: Optional[Callable] = None,
+        on_error: Callable | None = None,
     ):
         self.max_retries = max_retries
         self.base_delay = base_delay
@@ -270,9 +274,9 @@ class ErrorHandler:
         if strategy == RetryStrategy.LINEAR:
             return min(self.base_delay * attempt, self.max_delay)
         if strategy == RetryStrategy.EXPONENTIAL:
-            return min(self.base_delay * (2 ** attempt), self.max_delay)
+            return min(self.base_delay * (2**attempt), self.max_delay)
         if strategy == RetryStrategy.EXPONENTIAL_JITTER:
-            base = min(self.base_delay * (2 ** attempt), self.max_delay)
+            base = min(self.base_delay * (2**attempt), self.max_delay)
             return base * (0.5 + random.random())
         return self.base_delay
 
@@ -281,7 +285,7 @@ class ErrorHandler:
     def with_retry(
         self,
         strategy: RetryStrategy = RetryStrategy.EXPONENTIAL_JITTER,
-        max_retries: Optional[int] = None,
+        max_retries: int | None = None,
     ):
         """Decorator: retry async-Funktion mit Circuit-Breaker.
 
@@ -317,7 +321,7 @@ class ErrorHandler:
                         if attempt < retries:
                             delay = self.calculate_delay(attempt, e.suggested_strategy)
                             print(
-                                f"[RETRY] {step_name} attempt {attempt+1}/{retries} "
+                                f"[RETRY] {step_name} attempt {attempt + 1}/{retries} "
                                 f"after {delay:.1f}s"
                             )
                             await asyncio.sleep(delay)
@@ -338,14 +342,14 @@ class ErrorHandler:
                             delay = self.calculate_delay(attempt, strategy)
                             print(
                                 f"[RETRY] {step_name} unexpected error, "
-                                f"attempt {attempt+1}/{retries}"
+                                f"attempt {attempt + 1}/{retries}"
                             )
                             await asyncio.sleep(delay)
                         else:
-                            raise FatalError(
-                                f"Unexpected error in {step_name}: {e}", ctx
-                            ) from e
+                            raise FatalError(f"Unexpected error in {step_name}: {e}", ctx) from e
+
             return wrapper
+
         return decorator
 
     # -- Manueller Aufruf mit Recovery-Hook ---------------------------------
@@ -355,7 +359,7 @@ class ErrorHandler:
         step_func: Callable,
         step_name: str,
         step_index: int,
-        recovery_func: Optional[Callable] = None,
+        recovery_func: Callable | None = None,
     ) -> bool:
         """Fuehrt step_func aus. Bei Fehler: recovery_func + Retry.
 
@@ -368,9 +372,7 @@ class ErrorHandler:
                 return False
             try:
                 result = (
-                    await step_func()
-                    if asyncio.iscoroutinefunction(step_func)
-                    else step_func()
+                    await step_func() if asyncio.iscoroutinefunction(step_func) else step_func()
                 )
                 self._record_success(step_name)
                 return bool(result) if result is not None else True
@@ -406,7 +408,7 @@ class ErrorHandler:
                 if attempt < self.max_retries:
                     delay = self.calculate_delay(attempt, RetryStrategy.EXPONENTIAL_JITTER)
                     print(
-                        f"[RETRY] {step_name} attempt {attempt+1}/{self.max_retries} "
+                        f"[RETRY] {step_name} attempt {attempt + 1}/{self.max_retries} "
                         f"in {delay:.1f}s"
                     )
                     await asyncio.sleep(delay)

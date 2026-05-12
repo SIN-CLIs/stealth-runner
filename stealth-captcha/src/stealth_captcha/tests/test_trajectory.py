@@ -214,9 +214,7 @@ class TestSampleCount:
         """
         points = gen.generate((100.0, 100.0), (300.0, 100.0))
         max_expected = gen.settings.sample_count_max * 2  # with overshoot correction
-        assert len(points) <= max_expected, (
-            f"{len(points)} points exceeds {max_expected}"
-        )
+        assert len(points) <= max_expected, f"{len(points)} points exceeds {max_expected}"
 
 
 class TestEdgeCases:

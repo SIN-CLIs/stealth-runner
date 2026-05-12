@@ -1,4 +1,3 @@
-# -*- coding: utf-8 -*-
 """Tests for .github/workflows/schema-guard.yml (SR-121).
 
 Pure YAML-structure linting — no docker, no actual workflow invocation.
@@ -17,20 +16,13 @@ yaml = pytest.importorskip(
 )
 
 
-WORKFLOW_PATH = (
-    Path(__file__).resolve().parents[2]
-    / ".github"
-    / "workflows"
-    / "schema-guard.yml"
-)
+WORKFLOW_PATH = Path(__file__).resolve().parents[2] / ".github" / "workflows" / "schema-guard.yml"
 
 
 @pytest.fixture(scope="module")
 def workflow_doc() -> dict:
     """Parse the workflow YAML once per module."""
-    assert WORKFLOW_PATH.exists(), (
-        f"schema-guard workflow not found at {WORKFLOW_PATH}"
-    )
+    assert WORKFLOW_PATH.exists(), f"schema-guard workflow not found at {WORKFLOW_PATH}"
     with WORKFLOW_PATH.open("r", encoding="utf-8") as fh:
         return yaml.safe_load(fh)
 
@@ -94,7 +86,7 @@ def _all_uses(doc: dict) -> list[str]:
     """Walk all `uses:` strings across all jobs/steps."""
     out: list[str] = []
     for job in (doc.get("jobs") or {}).values():
-        for step in (job.get("steps") or []):
+        for step in job.get("steps") or []:
             if "uses" in step:
                 out.append(step["uses"])
     return out
@@ -155,7 +147,7 @@ def test_t6_upload_artifact_if_always_retention_14(workflow_doc, workflow_text):
     # Find the upload-artifact step in the parsed doc.
     upload_step = None
     for job in (workflow_doc.get("jobs") or {}).values():
-        for step in (job.get("steps") or []):
+        for step in job.get("steps") or []:
             uses = step.get("uses", "")
             if uses.startswith("actions/upload-artifact@"):
                 upload_step = step
@@ -171,8 +163,7 @@ def test_t6_upload_artifact_if_always_retention_14(workflow_doc, workflow_text):
     # `if: always()` is the literal YAML token — when PyYAML loads it
     # the value becomes the string "always()" (not a callable).
     assert upload_step.get("if") == "always()", (
-        f"upload-artifact step must guard with `if: always()`, "
-        f"got {upload_step.get('if')!r}"
+        f"upload-artifact step must guard with `if: always()`, got {upload_step.get('if')!r}"
     )
     # retention-days: 14.
     with_block = upload_step.get("with") or {}
@@ -183,10 +174,7 @@ def test_t6_upload_artifact_if_always_retention_14(workflow_doc, workflow_text):
     # `path:` value is a multi-line scalar — accept either a string with
     # newlines or a list.
     path_value = with_block.get("path", "")
-    if isinstance(path_value, list):
-        path_text = "\n".join(path_value)
-    else:
-        path_text = str(path_value)
+    path_text = "\n".join(path_value) if isinstance(path_value, list) else str(path_value)
     assert "audit-schema.json" in path_text
     assert "inbox-schema.json" in path_text
 
@@ -199,12 +187,8 @@ def test_t6_upload_artifact_if_always_retention_14(workflow_doc, workflow_text):
 def test_h1_no_at_latest_or_at_master_references(workflow_doc):
     """AGENTS.md §13.8.4 forbids @latest / @master in action `uses:` refs."""
     for ref in _all_uses(workflow_doc):
-        assert "@latest" not in ref, (
-            f"AGENTS.md §13.8.4 forbids `@latest` action refs, got {ref!r}"
-        )
-        assert "@master" not in ref, (
-            f"AGENTS.md §13.8.4 forbids `@master` action refs, got {ref!r}"
-        )
+        assert "@latest" not in ref, f"AGENTS.md §13.8.4 forbids `@latest` action refs, got {ref!r}"
+        assert "@master" not in ref, f"AGENTS.md §13.8.4 forbids `@master` action refs, got {ref!r}"
 
 
 def test_h2_no_pip_install_step(workflow_text):
@@ -225,20 +209,17 @@ def test_h3_missing_logs_dir_is_handled(workflow_text):
     """AC4: empty / missing logs dir must succeed quietly."""
     # The implementation guards with `if [ -d survey-cli/logs ]`.
     assert "if [ -d survey-cli/logs ]" in workflow_text, (
-        "workflow must guard validator calls against a missing "
-        "survey-cli/logs/ directory"
+        "workflow must guard validator calls against a missing survey-cli/logs/ directory"
     )
 
 
 def test_h4_artifact_name_present(workflow_doc):
     """Sanity check: artifact has a `name:` so it's findable in the UI."""
     for job in (workflow_doc.get("jobs") or {}).values():
-        for step in (job.get("steps") or []):
+        for step in job.get("steps") or []:
             if step.get("uses", "").startswith("actions/upload-artifact@"):
                 with_block = step.get("with") or {}
-                assert with_block.get("name"), (
-                    "upload-artifact step must set a `name:`"
-                )
+                assert with_block.get("name"), "upload-artifact step must set a `name:`"
                 return
     pytest.fail("no upload-artifact step found")
 

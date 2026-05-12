@@ -8,11 +8,15 @@
 
 from __future__ import annotations
 
-import json, asyncio, sys, os, urllib.request
+import asyncio
+import json
+import os
+import sys
+import urllib.request
+from datetime import UTC, datetime
 from pathlib import Path
-from datetime import datetime, timezone
 
-from fastapi import Depends, HTTPException
+from fastapi import HTTPException
 
 # ─── PYTHONPATH SETUP ───────────────────────────────────────────────────────────
 _workspace_root = os.path.dirname(os.path.dirname(os.path.dirname(__file__)))
@@ -29,8 +33,10 @@ if _survey_cli_path not in sys.path:
 # PREFLIGHT CHECK
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class PreflightError(HTTPException):
     """Raised when system not ready (503)."""
+
     def __init__(self, reason: str, action: str = ""):
         super().__init__(
             status_code=503,
@@ -49,11 +55,16 @@ def preflight_check(port: int = 9999) -> dict:
     Returns dict with ready, tab_ws, balance, surveys, reason, action.
     """
     result = {
-        "ready": False, "tab_ws": "", "balance": 0.0,
-        "surveys": 0, "reason": "", "action": "",
-        "chrome_alive": False, "login_valid": False,
+        "ready": False,
+        "tab_ws": "",
+        "balance": 0.0,
+        "surveys": 0,
+        "reason": "",
+        "action": "",
+        "chrome_alive": False,
+        "login_valid": False,
     }
-    
+
     # 1. Chrome alive?
     try:
         raw = urllib.request.urlopen(f"http://127.0.0.1:{port}/json/version", timeout=3).read()
@@ -63,7 +74,7 @@ def preflight_check(port: int = 9999) -> dict:
         result["reason"] = "Chrome not running on port 9999"
         result["action"] = "start_chrome"
         return result
-    
+
     # 2. Dashboard tab?
     try:
         raw = urllib.request.urlopen(f"http://127.0.0.1:{port}/json/list", timeout=3).read()
@@ -85,21 +96,30 @@ def preflight_check(port: int = 9999) -> dict:
         result["reason"] = f"Cannot find dashboard tab: {e}"
         result["action"] = "restart_chrome"
         return result
-    
+
     # 3. Login valid?
     ws = result["tab_ws"]
     if ws:
         try:
             import websockets
+
             async def check():
                 async with websockets.connect(ws) as w:
-                    await w.send(json.dumps({
-                        "id": 1, "method": "Runtime.evaluate",
-                        "params": {"expression": "document.body.innerText.substring(0, 500)"},
-                    }))
+                    await w.send(
+                        json.dumps(
+                            {
+                                "id": 1,
+                                "method": "Runtime.evaluate",
+                                "params": {
+                                    "expression": "document.body.innerText.substring(0, 500)"
+                                },
+                            }
+                        )
+                    )
                     resp = await asyncio.wait_for(w.recv(), timeout=5)
                     text = json.loads(resp).get("result", {}).get("result", {}).get("value", "")
                     return "abmelden" in text.lower()
+
             if not asyncio.run(check()):
                 result["reason"] = "Session expired — not logged in"
                 result["action"] = "restore_cookies"
@@ -107,11 +127,12 @@ def preflight_check(port: int = 9999) -> dict:
             result["login_valid"] = True
         except Exception:
             pass
-    
+
     # 4. Balance
     if ws:
         try:
             import websockets
+
             async def get_bal():
                 async with websockets.connect(ws) as w:
                     js = """
@@ -127,15 +148,19 @@ def preflight_check(port: int = 9999) -> dict:
                         return max;
                     })()
                     """
-                    await w.send(json.dumps({"id": 1, "method": "Runtime.evaluate",
-                                            "params": {"expression": js}}))
+                    await w.send(
+                        json.dumps(
+                            {"id": 1, "method": "Runtime.evaluate", "params": {"expression": js}}
+                        )
+                    )
                     resp = await asyncio.wait_for(w.recv(), timeout=5)
                     val = json.loads(resp).get("result", {}).get("result", {}).get("value")
-                    return float(val) if isinstance(val, (int, float)) else 0.0
+                    return float(val) if isinstance(val, int | float) else 0.0
+
             result["balance"] = asyncio.run(get_bal())
         except Exception:
             pass
-    
+
     result["ready"] = True
     return result
 
@@ -152,14 +177,14 @@ def require_survey_ready(port: int = 9999):
 # COMMAND REGISTRY
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 def update_command_registry(command_id: str, success: bool, details: dict = None):
     """
     Auto-update command_registry.json after every command execution.
     Persists: success_count, failure_count, last_run, last_result, status.
     """
     registry_path = (
-        Path(__file__).parent.parent.parent
-        / "survey-cli" / "data" / "command_registry.json"
+        Path(__file__).parent.parent.parent / "survey-cli" / "data" / "command_registry.json"
     )
     try:
         with open(registry_path) as f:
@@ -167,7 +192,7 @@ def update_command_registry(command_id: str, success: bool, details: dict = None
     except Exception:
         return
 
-    now = datetime.now(timezone.utc).isoformat()
+    now = datetime.now(UTC).isoformat()
     details = details or {}
 
     for cmd in registry.get("commands", []):
@@ -187,20 +212,24 @@ def update_command_registry(command_id: str, success: bool, details: dict = None
                 "final_url": details.get("final_url", ""),
                 "earned": details.get("earned", 0.0),
             }
-            cmd["notes"] = f"{details.get('status','unknown')}, {details.get('pages_processed',0)} pages"
+            cmd["notes"] = (
+                f"{details.get('status', 'unknown')}, {details.get('pages_processed', 0)} pages"
+            )
             break
     else:
-        registry.setdefault("commands", []).append({
-            "id": command_id,
-            "description": "Auto-registered from FastAPI endpoint",
-            "path": "agent-toolbox/api/endpoints/",
-            "success_count": 1 if success else 0,
-            "failure_count": 0 if success else 1,
-            "last_success": now if success else None,
-            "last_run": now,
-            "status": "testing",
-            "notes": f"First {'success' if success else 'failure'} from FastAPI",
-        })
+        registry.setdefault("commands", []).append(
+            {
+                "id": command_id,
+                "description": "Auto-registered from FastAPI endpoint",
+                "path": "agent-toolbox/api/endpoints/",
+                "success_count": 1 if success else 0,
+                "failure_count": 0 if success else 1,
+                "last_success": now if success else None,
+                "last_run": now,
+                "status": "testing",
+                "notes": f"First {'success' if success else 'failure'} from FastAPI",
+            }
+        )
 
     registry["last_updated"] = now
     try:

@@ -9,6 +9,7 @@ Features:
     - LLM integration for open-text questions
     - SR-152: Persona contradiction detection for identity questions
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -31,6 +32,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Persona:
     """Survey respondent persona for consistent answers."""
+
     # Demographics
     age: int = 32
     gender: str = "male"
@@ -79,6 +81,7 @@ class Persona:
 @dataclass
 class Answer:
     """Generated answer for a survey question."""
+
     question_id: str
     question_hash: str  # For consistency tracking
     value: Any
@@ -92,7 +95,7 @@ class AnswerEngine:
 
     Generates consistent, believable answers based on persona
     and maintains history for cross-survey consistency.
-    
+
     SR-152: Uses ContradictionDetector to pin identity answers to prior values.
     """
 
@@ -141,7 +144,7 @@ class AnswerEngine:
 
         self._current_session_answers: dict[str, Answer] = {}
         self._init_db()
-        
+
         # SR-152: Initialize contradiction detector
         self._contradiction_detector = ContradictionDetector(db_path=self.db_path)
         self._persona_id = self._hash_persona()
@@ -167,7 +170,7 @@ class AnswerEngine:
     def _hash_question(self, question: Question) -> str:
         """Generate consistent hash for a question."""
         # Normalize question text for hashing
-        normalized = re.sub(r'\s+', ' ', question.text.lower().strip())
+        normalized = re.sub(r"\s+", " ", question.text.lower().strip())
         return hashlib.sha256(normalized.encode()).hexdigest()[:16]
 
     def _hash_persona(self) -> str:
@@ -211,7 +214,7 @@ class AnswerEngine:
 
         # Store in history
         self._store_answer(question, answer)
-        
+
         # SR-152: Record identity category for contradiction detection
         self._contradiction_detector.record_answer(
             persona_id=self._persona_id,
@@ -385,7 +388,7 @@ class AnswerEngine:
 - Age: {self.persona.age}
 - Gender: {self.persona.gender}
 - Occupation: {self.persona.occupation}
-- Interests: {', '.join(self.persona.interests)}
+- Interests: {", ".join(self.persona.interests)}
 
 Answer this survey question naturally and concisely (1-2 sentences):
 {question.text}
@@ -602,7 +605,7 @@ Your response:"""
                 confidence=pinned.confidence,
                 reasoning=pinned.reasoning,
             )
-        
+
         # Original logic: find matching age bracket
         for opt in question.options:
             # Check for exact age match
@@ -647,7 +650,7 @@ Your response:"""
                 confidence=pinned.confidence,
                 reasoning=pinned.reasoning,
             )
-        
+
         # Original logic
         for opt in question.options:
             if self.persona.gender.lower() in opt.label.lower():
@@ -678,19 +681,17 @@ Your response:"""
                 confidence=pinned.confidence,
                 reasoning=pinned.reasoning,
             )
-        
+
         # Original logic
-        persona_range = self.INCOME_BRACKETS.get(
-            self.persona.income_bracket, (50000, 75000)
-        )
+        persona_range = self.INCOME_BRACKETS.get(self.persona.income_bracket, (50000, 75000))
         persona_mid = (persona_range[0] + persona_range[1]) / 2
 
         best_match = None
-        best_distance = float('inf')
+        best_distance = float("inf")
 
         for opt in question.options:
             # Try to extract numbers from option
-            numbers = re.findall(r'[\d,]+', opt.label.replace(',', ''))
+            numbers = re.findall(r"[\d,]+", opt.label.replace(",", ""))
             if numbers:
                 opt_mid = sum(int(n) for n in numbers) / len(numbers)
                 distance = abs(opt_mid - persona_mid)
@@ -726,7 +727,7 @@ Your response:"""
                 confidence=pinned.confidence,
                 reasoning=pinned.reasoning,
             )
-        
+
         # Original logic
         education_keywords = {
             "high_school": ["high school", "secondary", "ged"],
@@ -775,7 +776,7 @@ Your response:"""
         conn = sqlite3.connect(self.db_path)
         cursor = conn.execute(
             "SELECT answer_value FROM answer_history WHERE question_hash = ? AND persona_hash = ?",
-            (question_hash, self._hash_persona())
+            (question_hash, self._hash_persona()),
         )
         row = cursor.fetchone()
         conn.close()
@@ -791,17 +792,20 @@ Your response:"""
     def _store_answer(self, question: Question, answer: Answer) -> None:
         """Store answer in history database."""
         conn = sqlite3.connect(self.db_path)
-        conn.execute("""
+        conn.execute(
+            """
             INSERT OR REPLACE INTO answer_history
             (question_hash, question_text, answer_value, persona_hash, created_at)
             VALUES (?, ?, ?, ?, ?)
-        """, (
-            answer.question_hash,
-            question.text[:500],
-            json.dumps(answer.value),
-            self._hash_persona(),
-            datetime.utcnow().isoformat(),
-        ))
+        """,
+            (
+                answer.question_hash,
+                question.text[:500],
+                json.dumps(answer.value),
+                self._hash_persona(),
+                datetime.utcnow().isoformat(),
+            ),
+        )
         conn.commit()
         conn.close()
 

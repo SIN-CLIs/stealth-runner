@@ -31,9 +31,7 @@ class TestFillInput(unittest.TestCase):
 
     def setUp(self):
         self.ws_url = "ws://127.0.0.1:9999/devtools/page/mockInput"
-        self._ws_patcher = patch(
-            "tools.tool_fill_input.websocket.create_connection"
-        )
+        self._ws_patcher = patch("tools.tool_fill_input.websocket.create_connection")
         self.mock_create = self._ws_patcher.start()
 
     def tearDown(self):
@@ -48,6 +46,7 @@ class TestFillInput(unittest.TestCase):
         """fill via idx returns success with value."""
         self._set_response({"success": True, "value": "25"})
         from tools.tool_fill_input import fill
+
         result = fill(self.ws_url, value="25", idx=0)
         self.assertTrue(result["success"])
         self.assertEqual(result["value"], "25")
@@ -55,6 +54,7 @@ class TestFillInput(unittest.TestCase):
     def test_fill_no_args_returns_error(self):
         """fill without idx or selector returns error."""
         from tools.tool_fill_input import fill
+
         result = fill(self.ws_url, value="25")
         self.assertFalse(result["success"])
         self.assertIn("required", result["error"])
@@ -62,22 +62,42 @@ class TestFillInput(unittest.TestCase):
     def test_fill_validation_retry_with_hint(self):
         """Validation failure with hint triggers retry with corrected value."""
         calls = []
+
         def recv_fn():
             calls.append(1)
             if len(calls) == 1:
-                return json.dumps({"result": {"result": {"value": {
-                    "error": "validation",
-                    "validationMessage": "Bitte Zahl zwischen 18-65",
-                    "hint": "25",
-                }}}})
+                return json.dumps(
+                    {
+                        "result": {
+                            "result": {
+                                "value": {
+                                    "error": "validation",
+                                    "validationMessage": "Bitte Zahl zwischen 18-65",
+                                    "hint": "25",
+                                }
+                            }
+                        }
+                    }
+                )
             else:
-                return json.dumps({"result": {"result": {"value": {
-                    "success": True, "value": "25",
-                }}}})
+                return json.dumps(
+                    {
+                        "result": {
+                            "result": {
+                                "value": {
+                                    "success": True,
+                                    "value": "25",
+                                }
+                            }
+                        }
+                    }
+                )
+
         mock_ws = MagicMock()
         mock_ws.recv.side_effect = recv_fn
         self.mock_create.return_value = mock_ws
         from tools.tool_fill_input import fill
+
         result = fill(self.ws_url, value="3", idx=0)
         self.assertTrue(result["success"])
         self.assertEqual(result["method"], "hint_retry")
@@ -86,6 +106,7 @@ class TestFillInput(unittest.TestCase):
         """fill via CSS selector returns success."""
         self._set_response({"success": True, "value": "Berlin"})
         from tools.tool_fill_input import fill
+
         result = fill(self.ws_url, value="Berlin", selector="#city")
         self.assertTrue(result["success"])
 
@@ -93,6 +114,7 @@ class TestFillInput(unittest.TestCase):
         """WebSocket failure returns error dict."""
         self.mock_create.side_effect = ConnectionError("no port")
         from tools.tool_fill_input import fill
+
         result = fill(self.ws_url, value="test", selector="#field")
         self.assertFalse(result["success"])
         self.assertIn("no port", result["error"])
@@ -103,6 +125,7 @@ class TestFillInput(unittest.TestCase):
         # and returns the dict with the error message
         self._set_response(None)
         from tools.tool_fill_input import fill
+
         result = fill(self.ws_url, value="test", idx=0)
         self.assertFalse(result["success"])
         # Error could be the exception message or "No result"
@@ -110,13 +133,16 @@ class TestFillInput(unittest.TestCase):
 
     def test_fill_validation_no_hint_no_retry(self):
         """Validation without hint does not trigger retry."""
-        self._set_response({
-            "success": False,
-            "error": "validation",
-            "validationMessage": "Bitte auswählen",
-            "hint": None,
-        })
+        self._set_response(
+            {
+                "success": False,
+                "error": "validation",
+                "validationMessage": "Bitte auswählen",
+                "hint": None,
+            }
+        )
         from tools.tool_fill_input import fill
+
         result = fill(self.ws_url, value="test", idx=0)
         self.assertFalse(result["success"])
         self.assertIsNone(result.get("method"))

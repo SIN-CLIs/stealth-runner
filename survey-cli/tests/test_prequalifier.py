@@ -24,7 +24,10 @@ BANNED METHODS — NIEMALS VERWENDEN:
 
 # === SR-63 #62 legacy-debt skip (do not delete without unskipping) ===
 import pytest
-pytestmark = pytest.mark.skip(reason="SR-63 #62: logic drift — assertions written against older pre-qualifier behavior")
+
+pytestmark = pytest.mark.skip(
+    reason="SR-63 #62: logic drift — assertions written against older pre-qualifier behavior"
+)
 # === END SR-63 skip ===
 
 import unittest
@@ -47,19 +50,19 @@ def _make_urlopen_response(data_dict):
 
 # Test data: 6 age brackets (profile age 32 → answer_idx=2 → a3)
 AGE_ANSWERS = {
-    'a1': {'text': 'Under 18', 'key': 'a1'},
-    'a2': {'text': '18-25', 'key': 'a2'},
-    'a3': {'text': '26-35', 'key': 'a3'},
-    'a4': {'text': '36-45', 'key': 'a4'},
-    'a5': {'text': '46-55', 'key': 'a5'},
-    'a6': {'text': '56+', 'key': 'a6'},
+    "a1": {"text": "Under 18", "key": "a1"},
+    "a2": {"text": "18-25", "key": "a2"},
+    "a3": {"text": "26-35", "key": "a3"},
+    "a4": {"text": "36-45", "key": "a4"},
+    "a5": {"text": "46-55", "key": "a5"},
+    "a6": {"text": "56+", "key": "a6"},
 }
 
 AGE_DETAILS = {
-    'id': 'test_123',
-    'question_text': 'What is your age?',
-    'question_key': 'q_age',
-    'answers': AGE_ANSWERS,
+    "id": "test_123",
+    "question_text": "What is your age?",
+    "question_key": "q_age",
+    "answers": AGE_ANSWERS,
 }
 
 
@@ -72,12 +75,15 @@ class TestHandlePreQualifier(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        cls._env = patch.dict(os.environ, {
-            "CPX_APP_ID": "test_app",
-            "CPX_EXT_USER_ID": "test_user",
-            "CPX_SECURE_HASH": "test_hash",
-            "CPX_EMAIL": "test@example.invalid",
-        })
+        cls._env = patch.dict(
+            os.environ,
+            {
+                "CPX_APP_ID": "test_app",
+                "CPX_EXT_USER_ID": "test_user",
+                "CPX_SECURE_HASH": "test_hash",
+                "CPX_EMAIL": "test@example.invalid",
+            },
+        )
         cls._env.start()
 
     @classmethod
@@ -87,105 +93,135 @@ class TestHandlePreQualifier(unittest.TestCase):
     def _make_runner(self):
         """Create SurveyRunner and clear module-level cache."""
         from survey import chrome as _c
+
         _c._cached_details_url = None
         return SurveyRunner(RunnerConfig(cdp_port=9999))
 
-    @patch.dict(os.environ, {
-        "CPX_APP_ID": "test_app",
-        "CPX_EXT_USER_ID": "test_user",
-        "CPX_SECURE_HASH": "test_hash",
-        "CPX_EMAIL": "test@example.invalid",
-    })
+    @patch.dict(
+        os.environ,
+        {
+            "CPX_APP_ID": "test_app",
+            "CPX_EXT_USER_ID": "test_user",
+            "CPX_SECURE_HASH": "test_hash",
+            "CPX_EMAIL": "test@example.invalid",
+        },
+    )
     @patch("survey.chrome.find_dashboard_ws", return_value=None)
     @patch("survey.pre_qualifier.urllib.request.urlopen")
     def test_returns_href_on_okay(self, mock_urlopen, mock_find_ws):
         """Response with status:success + href → return href."""
         runner = self._make_runner()
-        mock_urlopen.side_effect = lambda *a, **kw: _make_urlopen_response({
-            "status": "success", "href": "https://survey.example.com/s/12345"
-        })
+        mock_urlopen.side_effect = lambda *a, **kw: _make_urlopen_response(
+            {"status": "success", "href": "https://survey.example.com/s/12345"}
+        )
         result = runner.handle_pre_qualifier("preq_123", AGE_DETAILS)
         self.assertEqual(result, "https://survey.example.com/s/12345")
         mock_urlopen.assert_called_once()
 
-    @patch.dict(os.environ, {
-        "CPX_APP_ID": "test_app",
-        "CPX_EXT_USER_ID": "test_user",
-        "CPX_SECURE_HASH": "test_hash",
-        "CPX_EMAIL": "test@example.invalid",
-    })
+    @patch.dict(
+        os.environ,
+        {
+            "CPX_APP_ID": "test_app",
+            "CPX_EXT_USER_ID": "test_user",
+            "CPX_SECURE_HASH": "test_hash",
+            "CPX_EMAIL": "test@example.invalid",
+        },
+    )
     @patch("survey.chrome.find_dashboard_ws", return_value=None)
     @patch("survey.pre_qualifier.urllib.request.urlopen")
     def test_loops_on_multiple_questions(self, mock_urlopen, mock_find_ws):
         """3 questions → 3 POST calls → href returned on 3rd."""
         runner = self._make_runner()
-        responses = iter([
-            _make_urlopen_response({"type": "question", "question_text": "Employment?",
-                                    "question_key": "q_emp",
-                                    "answers": {
-                                        "e1": {"text": "Not employed", "key": "e1"},
-                                        "e2": {"text": "Employed", "key": "e2"},
-                                        "e3": {"text": "Self-employed", "key": "e3"},
-                                    }}),
-            _make_urlopen_response({"type": "question", "question_text": "Income?",
-                                    "question_key": "q_inc",
-                                    "answers": {
-                                        "i1": {"text": "<2000", "key": "i1"},
-                                        "i2": {"text": "2000-4000", "key": "i2"},
-                                        "i3": {"text": "4000+", "key": "i3"},
-                                    }}),
-            _make_urlopen_response({"status": "success",
-                                    "href": "https://real.survey.io/789"}),
-        ])
+        responses = iter(
+            [
+                _make_urlopen_response(
+                    {
+                        "type": "question",
+                        "question_text": "Employment?",
+                        "question_key": "q_emp",
+                        "answers": {
+                            "e1": {"text": "Not employed", "key": "e1"},
+                            "e2": {"text": "Employed", "key": "e2"},
+                            "e3": {"text": "Self-employed", "key": "e3"},
+                        },
+                    }
+                ),
+                _make_urlopen_response(
+                    {
+                        "type": "question",
+                        "question_text": "Income?",
+                        "question_key": "q_inc",
+                        "answers": {
+                            "i1": {"text": "<2000", "key": "i1"},
+                            "i2": {"text": "2000-4000", "key": "i2"},
+                            "i3": {"text": "4000+", "key": "i3"},
+                        },
+                    }
+                ),
+                _make_urlopen_response({"status": "success", "href": "https://real.survey.io/789"}),
+            ]
+        )
         mock_urlopen.side_effect = lambda *a, **kw: next(responses)
 
         result = runner.handle_pre_qualifier("preq_456", AGE_DETAILS)
         self.assertEqual(result, "https://real.survey.io/789")
         self.assertEqual(mock_urlopen.call_count, 3)
 
-    @patch.dict(os.environ, {
-        "CPX_APP_ID": "test_app",
-        "CPX_EXT_USER_ID": "test_user",
-        "CPX_SECURE_HASH": "test_hash",
-        "CPX_EMAIL": "test@example.invalid",
-    })
+    @patch.dict(
+        os.environ,
+        {
+            "CPX_APP_ID": "test_app",
+            "CPX_EXT_USER_ID": "test_user",
+            "CPX_SECURE_HASH": "test_hash",
+            "CPX_EMAIL": "test@example.invalid",
+        },
+    )
     @patch("survey.chrome.find_dashboard_ws", return_value=None)
     @patch("survey.pre_qualifier.urllib.request.urlopen")
     def test_returns_none_on_screen_out(self, mock_urlopen, mock_find_ws):
         """Screen-out response → returns None."""
         runner = self._make_runner()
-        mock_urlopen.side_effect = lambda *a, **kw: _make_urlopen_response({
-            "type": "screen_out", "message": "No qualify"
-        })
+        mock_urlopen.side_effect = lambda *a, **kw: _make_urlopen_response(
+            {"type": "screen_out", "message": "No qualify"}
+        )
         result = runner.handle_pre_qualifier("preq_789", AGE_DETAILS)
         self.assertIsNone(result)
 
-    @patch.dict(os.environ, {
-        "CPX_APP_ID": "test_app",
-        "CPX_EXT_USER_ID": "test_user",
-        "CPX_SECURE_HASH": "test_hash",
-        "CPX_EMAIL": "test@example.invalid",
-    })
+    @patch.dict(
+        os.environ,
+        {
+            "CPX_APP_ID": "test_app",
+            "CPX_EXT_USER_ID": "test_user",
+            "CPX_SECURE_HASH": "test_hash",
+            "CPX_EMAIL": "test@example.invalid",
+        },
+    )
     @patch("survey.chrome.find_dashboard_ws", return_value=None)
     @patch("survey.pre_qualifier.urllib.request.urlopen")
     def test_returns_none_on_max_retries(self, mock_urlopen, mock_find_ws):
         """All responses are 'question' → exceeds 8 retries → None."""
         runner = self._make_runner()
-        mock_urlopen.side_effect = lambda *a, **kw: _make_urlopen_response({
-            "type": "question", "question_text": "Hobby?",
-            "question_key": "q_hobby",
-            "answers": {"h1": {"text": "Sports", "key": "h1"}},
-        })
+        mock_urlopen.side_effect = lambda *a, **kw: _make_urlopen_response(
+            {
+                "type": "question",
+                "question_text": "Hobby?",
+                "question_key": "q_hobby",
+                "answers": {"h1": {"text": "Sports", "key": "h1"}},
+            }
+        )
         result = runner.handle_pre_qualifier("preq_000", AGE_DETAILS)
         self.assertIsNone(result)
         self.assertGreaterEqual(mock_urlopen.call_count, 8)
 
-    @patch.dict(os.environ, {
-        "CPX_APP_ID": "test_app",
-        "CPX_EXT_USER_ID": "test_user",
-        "CPX_SECURE_HASH": "test_hash",
-        "CPX_EMAIL": "test@example.invalid",
-    })
+    @patch.dict(
+        os.environ,
+        {
+            "CPX_APP_ID": "test_app",
+            "CPX_EXT_USER_ID": "test_user",
+            "CPX_SECURE_HASH": "test_hash",
+            "CPX_EMAIL": "test@example.invalid",
+        },
+    )
     @patch("survey.chrome.find_dashboard_ws", return_value=None)
     @patch("survey.pre_qualifier.urllib.request.urlopen")
     def test_profile_matching_gender(self, mock_urlopen, mock_find_ws):
@@ -195,29 +231,33 @@ class TestHandlePreQualifier(unittest.TestCase):
 
         def capture(url, timeout=None):
             captured.append(str(url))
-            return _make_urlopen_response({"status": "success",
-                                           "href": "https://survey.io/m"})
+            return _make_urlopen_response({"status": "success", "href": "https://survey.io/m"})
 
         mock_urlopen.side_effect = capture
-        result = runner.handle_pre_qualifier("preq_gen", {
-            "id": "preq_gen",
-            "question_text": "What is your gender?",
-            "question_key": "q_gender",
-            "answers": {"m": {"text": "Male", "key": "m"},
-                        "f": {"text": "Female", "key": "f"}},
-        })
+        result = runner.handle_pre_qualifier(
+            "preq_gen",
+            {
+                "id": "preq_gen",
+                "question_text": "What is your gender?",
+                "question_key": "q_gender",
+                "answers": {"m": {"text": "Male", "key": "m"}, "f": {"text": "Female", "key": "f"}},
+            },
+        )
         self.assertEqual(result, "https://survey.io/m")
-        self.assertTrue(any("q_gender=m" in u for u in captured),
-                        "Should send male answer (m)")
-        self.assertFalse(any("q_gender=f" in u for u in captured),
-                         "Should NOT send female answer (f)")
+        self.assertTrue(any("q_gender=m" in u for u in captured), "Should send male answer (m)")
+        self.assertFalse(
+            any("q_gender=f" in u for u in captured), "Should NOT send female answer (f)"
+        )
 
-    @patch.dict(os.environ, {
-        "CPX_APP_ID": "test_app",
-        "CPX_EXT_USER_ID": "test_user",
-        "CPX_SECURE_HASH": "test_hash",
-        "CPX_EMAIL": "test@example.invalid",
-    })
+    @patch.dict(
+        os.environ,
+        {
+            "CPX_APP_ID": "test_app",
+            "CPX_EXT_USER_ID": "test_user",
+            "CPX_SECURE_HASH": "test_hash",
+            "CPX_EMAIL": "test@example.invalid",
+        },
+    )
     @patch("survey.chrome.find_dashboard_ws", return_value=None)
     @patch("survey.pre_qualifier.urllib.request.urlopen")
     def test_profile_matching_berlin(self, mock_urlopen, mock_find_ws):
@@ -227,46 +267,53 @@ class TestHandlePreQualifier(unittest.TestCase):
 
         def capture_berlin(url, timeout=None):
             captured.append(str(url))
-            return _make_urlopen_response({"status": "success",
-                                           "href": "https://survey.io/berlin"})
+            return _make_urlopen_response({"status": "success", "href": "https://survey.io/berlin"})
 
         mock_urlopen.side_effect = capture_berlin
-        result = runner.handle_pre_qualifier("preq_city", {
-            "id": "preq_city",
-            "question_text": "In welcher Stadt wohnen Sie?",  # "stadt" triggers Berlin matching
-            "question_key": "q_city",
-            "answers": {
-                "c1": {"text": "München", "key": "c1"},
-                "c2": {"text": "Berlin", "key": "c2"},
-                "c3": {"text": "Hamburg", "key": "c3"},
+        result = runner.handle_pre_qualifier(
+            "preq_city",
+            {
+                "id": "preq_city",
+                "question_text": "In welcher Stadt wohnen Sie?",  # "stadt" triggers Berlin matching
+                "question_key": "q_city",
+                "answers": {
+                    "c1": {"text": "München", "key": "c1"},
+                    "c2": {"text": "Berlin", "key": "c2"},
+                    "c3": {"text": "Hamburg", "key": "c3"},
+                },
             },
-        })
+        )
         self.assertEqual(result, "https://survey.io/berlin")
-        self.assertTrue(any("q_city=c2" in u for u in captured),
-                        "Should send Berlin answer (c2)")
+        self.assertTrue(any("q_city=c2" in u for u in captured), "Should send Berlin answer (c2)")
 
-    @patch.dict(os.environ, {
-        "CPX_APP_ID": "test_app",
-        "CPX_EXT_USER_ID": "test_user",
-        "CPX_SECURE_HASH": "test_hash",
-        "CPX_EMAIL": "test@example.invalid",
-    })
+    @patch.dict(
+        os.environ,
+        {
+            "CPX_APP_ID": "test_app",
+            "CPX_EXT_USER_ID": "test_user",
+            "CPX_SECURE_HASH": "test_hash",
+            "CPX_EMAIL": "test@example.invalid",
+        },
+    )
     @patch("survey.chrome.find_dashboard_ws", return_value=None)
     @patch("survey.pre_qualifier.urllib.request.urlopen")
     def test_answer_idx_bound_check(self, mock_urlopen, mock_find_ws):
         """Profile answer_idx must be < len(answer_keys) to avoid None."""
         runner = self._make_runner()
         # Only 1 answer, but profile age 32 maps to idx 2 → 2 >= 1 → None
-        mock_urlopen.side_effect = lambda *a, **kw: _make_urlopen_response({
-            "status": "success", "href": "https://survey.io/done"
-        })
+        mock_urlopen.side_effect = lambda *a, **kw: _make_urlopen_response(
+            {"status": "success", "href": "https://survey.io/done"}
+        )
         # Age question with only 1 answer (profile age 32 → idx 2 → 2 >= 1)
-        result = runner.handle_pre_qualifier("preq_bound", {
-            "id": "preq_bound",
-            "question_text": "What is your age?",
-            "question_key": "q_age",
-            "answers": {"a1": {"text": "18-25", "key": "a1"}},
-        })
+        result = runner.handle_pre_qualifier(
+            "preq_bound",
+            {
+                "id": "preq_bound",
+                "question_text": "What is your age?",
+                "question_key": "q_age",
+                "answers": {"a1": {"text": "18-25", "key": "a1"}},
+            },
+        )
         self.assertIsNone(result, "answer_idx >= len(answers) → None")
         mock_urlopen.assert_not_called()  # urlopen never reached
 
@@ -281,27 +328,43 @@ class TestRunLoopPreQualifiers(unittest.TestCase):
     def _make_runner(self):
         return SurveyRunner(RunnerConfig(cdp_port=9999))
 
-    @patch("survey.chrome.get_details_url", return_value="http://localhost:9999/details?app_id=x&uid=y&hash=z&email=x@example.invalid")
+    @patch(
+        "survey.chrome.get_details_url",
+        return_value="http://localhost:9999/details?app_id=x&uid=y&hash=z&email=x@example.invalid",
+    )
     @patch("survey.runner.scan_dashboard")
     @patch("survey.runner.read_balance_with_backoff", return_value=0.0)
     @patch("survey.runner.chrome.find_dashboard_ws")
     @patch("survey.runner.chrome.find_bot_tabs")
     def test_prequalifier_answered_via_api(
-            self, mock_tabs, mock_dash_ws, mock_balance_backoff, mock_scan, mock_details):
+        self, mock_tabs, mock_dash_ws, mock_balance_backoff, mock_scan, mock_details
+    ):
         """Pre-qualifier → pre_qualifier.handle_pre_qualifier_api() called → survey run."""
         runner = self._make_runner()
         mock_scan.return_value = [
-            {"id": "pq_001", "provider": "pre_qualifier", "href": "",
-             "question_text": "Age?", "question_key": "q_age",
-             "answers": AGE_ANSWERS},
+            {
+                "id": "pq_001",
+                "provider": "pre_qualifier",
+                "href": "",
+                "question_text": "Age?",
+                "question_key": "q_age",
+                "answers": AGE_ANSWERS,
+            },
         ]
         mock_tabs.return_value = []
         mock_dash_ws.return_value = "ws://localhost:9999/db"
 
-        with patch.object(runner.pre_qualifier, "handle_pre_qualifier_api",
-                          return_value="https://real.survey.io/001") as mock_hpq, \
-             patch.object(runner, "run_survey") as mock_run:
-            mock_run.return_value = SurveyResult(survey_id="pq_001", status="completed", earned=0.50)
+        with (
+            patch.object(
+                runner.pre_qualifier,
+                "handle_pre_qualifier_api",
+                return_value="https://real.survey.io/001",
+            ) as mock_hpq,
+            patch.object(runner, "run_survey") as mock_run,
+        ):
+            mock_run.return_value = SurveyResult(
+                survey_id="pq_001", status="completed", earned=0.50
+            )
             results = runner.run_loop(max_surveys=1)
 
             mock_hpq.assert_called_once()
@@ -309,99 +372,154 @@ class TestRunLoopPreQualifiers(unittest.TestCase):
             mock_run.assert_called_once_with("pq_001", survey_url="https://real.survey.io/001")
             self.assertEqual(len(results), 1)
 
-    @patch("survey.chrome.get_details_url", return_value="http://localhost:9999/details?app_id=x&uid=y&hash=z&email=x@example.invalid")
+    @patch(
+        "survey.chrome.get_details_url",
+        return_value="http://localhost:9999/details?app_id=x&uid=y&hash=z&email=x@example.invalid",
+    )
     @patch("survey.runner.scan_dashboard")
     @patch("survey.runner.read_balance_with_backoff", return_value=0.0)
     @patch("survey.runner.chrome.find_dashboard_ws")
     @patch("survey.runner.chrome.find_bot_tabs")
     def test_prequalifier_skipped_when_api_fails(
-            self, mock_tabs, mock_dash_ws, mock_balance_backoff, mock_scan, mock_details):
+        self, mock_tabs, mock_dash_ws, mock_balance_backoff, mock_scan, mock_details
+    ):
         """Pre-qualifier → handle_pre_qualifier_api() returns None → skipped."""
         runner = self._make_runner()
         mock_scan.return_value = [
-            {"id": "pq_002", "provider": "pre_qualifier", "href": "",
-             "question_text": "Age?", "question_key": "q_age", "answers": {}},
+            {
+                "id": "pq_002",
+                "provider": "pre_qualifier",
+                "href": "",
+                "question_text": "Age?",
+                "question_key": "q_age",
+                "answers": {},
+            },
         ]
         mock_tabs.return_value = []
         mock_dash_ws.return_value = "ws://localhost:9999/db"
 
-        with patch.object(runner.pre_qualifier, "handle_pre_qualifier_api",
-                          return_value=None) as mock_hpq, \
-             patch.object(runner, "run_survey") as mock_run:
+        with (
+            patch.object(
+                runner.pre_qualifier, "handle_pre_qualifier_api", return_value=None
+            ) as mock_hpq,
+            patch.object(runner, "run_survey") as mock_run,
+        ):
             results = runner.run_loop(max_surveys=1)
             mock_hpq.assert_called_once()
             mock_run.assert_not_called()
             self.assertEqual(len(results), 0)
 
-    @patch("survey.chrome.get_details_url", return_value="http://localhost:9999/details?app_id=x&uid=y&hash=z&email=x@example.invalid")
+    @patch(
+        "survey.chrome.get_details_url",
+        return_value="http://localhost:9999/details?app_id=x&uid=y&hash=z&email=x@example.invalid",
+    )
     @patch("survey.runner.scan_dashboard")
     @patch("survey.runner.read_balance_with_backoff", return_value=0.0)
     @patch("survey.runner.chrome.find_dashboard_ws")
     @patch("survey.runner.chrome.find_bot_tabs")
     def test_normal_survey_unchanged(
-            self, mock_tabs, mock_dash_ws, mock_balance_backoff, mock_scan, mock_details):
+        self, mock_tabs, mock_dash_ws, mock_balance_backoff, mock_scan, mock_details
+    ):
         """Non-pre-qualifier runs normally (handle_pre_qualifier NOT called)."""
         runner = self._make_runner()
         mock_scan.return_value = [
-            {"id": "norm_001", "provider": "qualtrics",
-             "href": "https://qualtrics.com/survey/123"},
+            {"id": "norm_001", "provider": "qualtrics", "href": "https://qualtrics.com/survey/123"},
         ]
         mock_tabs.return_value = []
         mock_dash_ws.return_value = "ws://localhost:9999/db"
 
-        with patch.object(runner, "handle_pre_qualifier") as mock_hpq, \
-             patch.object(runner, "run_survey") as mock_run:
-            mock_run.return_value = SurveyResult(survey_id="norm_001", status="completed", earned=0.75)
+        with (
+            patch.object(runner, "handle_pre_qualifier") as mock_hpq,
+            patch.object(runner, "run_survey") as mock_run,
+        ):
+            mock_run.return_value = SurveyResult(
+                survey_id="norm_001", status="completed", earned=0.75
+            )
             results = runner.run_loop(max_surveys=1)
             mock_hpq.assert_not_called()
-            mock_run.assert_called_once_with("norm_001", survey_url="https://qualtrics.com/survey/123")
+            mock_run.assert_called_once_with(
+                "norm_001", survey_url="https://qualtrics.com/survey/123"
+            )
             self.assertEqual(len(results), 1)
 
-    @patch("survey.chrome.get_details_url", return_value="http://localhost:9999/details?app_id=x&uid=y&hash=z&email=x@example.invalid")
+    @patch(
+        "survey.chrome.get_details_url",
+        return_value="http://localhost:9999/details?app_id=x&uid=y&hash=z&email=x@example.invalid",
+    )
     @patch("survey.runner.scan_dashboard")
     @patch("survey.runner.read_balance_with_backoff", return_value=0.0)
     @patch("survey.runner.chrome.find_dashboard_ws")
     @patch("survey.runner.chrome.find_bot_tabs")
     def test_mixed_prequalifier_and_normal(
-            self, mock_tabs, mock_dash_ws, mock_balance_backoff, mock_scan, mock_details):
+        self, mock_tabs, mock_dash_ws, mock_balance_backoff, mock_scan, mock_details
+    ):
         """One pre-qualifier (answered), one normal survey."""
         runner = self._make_runner()
         mock_scan.return_value = [
-            {"id": "pq_001", "provider": "pre_qualifier", "href": "",
-             "question_text": "Age?", "question_key": "q_age", "answers": AGE_ANSWERS},
+            {
+                "id": "pq_001",
+                "provider": "pre_qualifier",
+                "href": "",
+                "question_text": "Age?",
+                "question_key": "q_age",
+                "answers": AGE_ANSWERS,
+            },
             {"id": "norm_001", "provider": "qualtrics", "href": "https://qualtrics.com/s/456"},
         ]
         mock_tabs.return_value = []
         mock_dash_ws.return_value = "ws://localhost:9999/db"
 
-        with patch.object(runner.pre_qualifier, "handle_pre_qualifier_api",
-                          return_value="https://real.survey.io/pq001") as mock_hpq, \
-             patch.object(runner, "run_survey",
-                          side_effect=lambda sid, **kw: SurveyResult(survey_id=sid, status="completed", earned=0.33)):
+        with (
+            patch.object(
+                runner.pre_qualifier,
+                "handle_pre_qualifier_api",
+                return_value="https://real.survey.io/pq001",
+            ) as mock_hpq,
+            patch.object(
+                runner,
+                "run_survey",
+                side_effect=lambda sid, **kw: SurveyResult(
+                    survey_id=sid, status="completed", earned=0.33
+                ),
+            ),
+        ):
             results = runner.run_loop(max_surveys=2)
             self.assertEqual(len(results), 2)
             self.assertEqual(mock_hpq.call_count, 1)
             self.assertEqual(mock_hpq.call_args[0][0], "pq_001")
 
-    @patch("survey.chrome.get_details_url", return_value="http://localhost:9999/details?app_id=x&uid=y&hash=z&email=x@example.invalid")
+    @patch(
+        "survey.chrome.get_details_url",
+        return_value="http://localhost:9999/details?app_id=x&uid=y&hash=z&email=x@example.invalid",
+    )
     @patch("survey.runner.scan_dashboard")
     @patch("survey.runner.read_balance_with_backoff", return_value=0.0)
     @patch("survey.runner.chrome.find_dashboard_ws")
     @patch("survey.runner.chrome.find_bot_tabs")
     def test_all_prequalifiers_no_early_return(
-            self, mock_tabs, mock_dash_ws, mock_balance_backoff, mock_scan, mock_details):
+        self, mock_tabs, mock_dash_ws, mock_balance_backoff, mock_scan, mock_details
+    ):
         """All pre-qualifiers (failed) → return empty, don't crash."""
         runner = self._make_runner()
         mock_scan.return_value = [
-            {"id": "pq_001", "provider": "pre_qualifier", "href": "",
-             "question_text": "Age?", "question_key": "q_age", "answers": AGE_ANSWERS},
+            {
+                "id": "pq_001",
+                "provider": "pre_qualifier",
+                "href": "",
+                "question_text": "Age?",
+                "question_key": "q_age",
+                "answers": AGE_ANSWERS,
+            },
         ]
         mock_tabs.return_value = []
         mock_dash_ws.return_value = "ws://localhost:9999/db"
 
-        with patch.object(runner.pre_qualifier, "handle_pre_qualifier_api",
-                          return_value=None) as mock_hpq, \
-             patch.object(runner, "run_survey") as mock_run:
+        with (
+            patch.object(
+                runner.pre_qualifier, "handle_pre_qualifier_api", return_value=None
+            ) as mock_hpq,
+            patch.object(runner, "run_survey") as mock_run,
+        ):
             results = runner.run_loop(max_surveys=3)
             self.assertEqual(mock_hpq.call_count, 1)
             mock_run.assert_not_called()

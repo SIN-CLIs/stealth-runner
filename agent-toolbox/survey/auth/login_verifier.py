@@ -122,8 +122,6 @@ from __future__ import annotations
 # typing: Type Hints für IDE-Autovervollständigung und mypy.
 # Tuple: Wir geben (pid, wid, logged_in) als Tuple zurück.
 # Optional: pid und wid können None sein (wenn kein Fenster gefunden).
-from typing import Tuple, Optional
-
 # CuaAdapter: Low-Level Wrapper für cua-driver Binary.
 # WARUM relative Import (.cua_adapter)? Gleiches Paket, stabiler bei Refactoring.
 from .cua_adapter import CuaAdapter
@@ -134,22 +132,22 @@ from .cua_adapter import CuaAdapter
 # ═══════════════════════════════════════════════════════════════════════════════
 class LoginVerifier:
     """Erkennt ob HeyPiggy Dashboard eingeloggt ist via CUA/AX-Tree.
-    
+
     WARUM eigene Klasse (nicht Funktion)?
       → Dependency Injection: CuaAdapter kann gemockt werden.
       → Wiederverwendbar: Einmal erstellen, mehrmals prüfen.
       → State: CuaAdapter wird zwischen Aufrufen wiederverwendet.
       → Testbarkeit: Mock CuaAdapter → keine echte macOS Umgebung nötig.
-    
+
     WARUM nicht statisch?
       → Statische Funktionen können nicht gemockt werden (ohne monkeypatching).
       → Instanz-Methode → einfacher zu testen (Dependency Injection).
-    
+
     LEBENSZYKLUS:
       1. Erstellen: verifier = LoginVerifier()  # oder LoginVerifier(mock_adapter)
       2. Prüfen:    pid, wid, ok = verifier.check()
       3. Wiederverwenden: pid, wid, ok = verifier.check()  # erneut prüfen
-    
+
     PERFORMANCE:
       → list_windows(): ~1-2s (alle Fenster scannen).
       → Stage 1 (Titel-Check): ~0ms (kein extra Aufruf).
@@ -157,27 +155,27 @@ class LoginVerifier:
       → Gesamt: 1-2s (meistens) bis 3-7s (selten).
     """
 
-    def __init__(self, cua: Optional[CuaAdapter] = None):
+    def __init__(self, cua: CuaAdapter | None = None):
         """Initialisiere LoginVerifier.
-        
+
         WARUM Optional[CuaAdapter]?
           → Wenn None → erstellt einen neuen CuaAdapter (Standard-Use-Case).
           → Wenn gesetzt → verwendet den übergebenen (für Tests/Mocking).
           → Pattern: Dependency Injection mit Default.
-        
+
         WARUM Default-Timeout von CuaAdapter (15s)?
           → list_windows() braucht 1-2s.
           → get_tree() braucht 2-5s.
           → 15s deckt beides ab.
           → Wenn langsamer → Timeout → (None, None, False).
-        
+
         Args:
             cua: Optionaler CuaAdapter. None = neuen erstellen.
-        
+
         Example:
             # Standard-Use-Case (echtes Chrome)
             verifier = LoginVerifier()
-            
+
             # Mit Mock (für Tests)
             mock_adapter = MagicMock()
             verifier = LoginVerifier(mock_adapter)
@@ -187,9 +185,9 @@ class LoginVerifier:
         # WARUM Instanz-Attribut? Wiederverwendung zwischen check() Aufrufen.
         self.cua = cua or CuaAdapter()
 
-    def check(self) -> Tuple[Optional[int], Optional[int], bool]:
+    def check(self) -> tuple[int | None, int | None, bool]:
         """Prüfe ob HeyPiggy eingeloggt ist.
-        
+
         ABLAUF (Two-Stage Verification):
           Stage 1 (Fast-Path):
             1. Liste alle Fenster via CuaAdapter.list_windows().
@@ -201,76 +199,76 @@ class LoginVerifier:
                   → Return: (pid, wid, True)
                d. Check 2: Wenn Titel "heypiggy"/"verdienen"/"dashboard" enthält
                   → AMBIGUOUS → weiter zu Stage 2.
-          
+
           Stage 2 (AX-Tree Scan, nur bei ambiguous):
             4. Für ambiguous Fenster: get_tree() aufrufen.
             5. Prüfe ob EINE Zeile "abmelden" enthält.
             6. Wenn ja → (pid, wid, True).
-          
+
           Stage 3 (Nicht gefunden):
             7. Wenn nichts gefunden → (None, None, False).
-        
+
         WARUM Two-Stage?
           → Stage 1 ist schnell (nur Titel-Strings vergleichen).
           → 90% der Fälle: Titel zeigt "abmelden" → SOFORT Ergebnis.
           → Stage 2 ist langsamer (AX-Tree Scan) → nur wenn nötig.
           → Optimierung: Durchschnittliche Prüfzeit ~1-2s statt ~3-7s.
-        
+
         WARUM z_index Sortierung (reverse=True)?
           → Höherer z_index = Fenster ist weiter vorne (sichtbarer).
           → Wenn mehrere Chrome-Fenster offen → vorderstes ist wahrscheinlich
             das aktive Dashboard (nicht ein Hintergrund-Tab).
           → WARUM nicht nur aktives Fenster? CUA listet ALLE Fenster,
             nicht nur das aktive.
-        
+
         WARUM "abmelden" in title (nicht nur AX-Tree)?
           → Fenster-Titel wird von Chrome gesetzt (nicht von JavaScript).
           → Titel ist zuverlässiger als DOM (DOM kann manipuliert werden).
           → Schneller: Kein extra CUA-Aufruf nötig.
           → Wenn HeyPiggy Dashboard "abmelden" anzeigt → Chrome setzt das
             oft in den Fenster-Titel (für Tab-Übersicht).
-        
+
         WARUM height > 100?
           → macOS hat viele kleine Fenster (Menüleiste, Dock, Popups).
           → Diese haben height < 100 (oft 20-40 Pixel).
           → Browser-Fenster haben height > 500.
           → Filter entfernt ALLE nicht-Browser-Fenster.
           → WARUM 100? Konservativ. Entfernt Menüleiste aber behält kleine Browser.
-        
+
         WARUM "chrome" in app_name.lower()?
           → app_name kommt von macOS: "Google Chrome", "Safari".
           → Wir wollen NUR Chrome (nicht Safari, Firefox, andere Apps).
           → .lower() für Case-Insensitivität.
-        
+
         WARUM "heypiggy", "verdienen", "dashboard" als ambiguous?
           → Diese Keywords erscheinen in Titel eingeloggt und ausgeloggt.
           → Beispiel: "HeyPiggy Dashboard" → könnte eingeloggt oder nicht sein.
           → Nur wenn der Titel diese Keywords enthält (aber nicht "abmelden")
             → wir müssen den AX-Tree scannen.
           → Wenn Titel "Google" oder "Anmelden" → ausgeloggt → kein Scan nötig.
-        
+
         WARUM return bei erstem Match?
           → Wir geben beim ersten Treffer zurück.
           → Bei mehreren Chrome-Fenstern → erstes passende (vorderstes).
           → Wenn nichts passt → (None, None, False).
-        
+
         WARUM Tuple[Optional[int], Optional[int], bool]?
           → (pid, wid, logged_in)
           → pid/wid = None wenn kein passendes Fenster gefunden.
           → logged_in = True wenn "abmelden" gefunden.
           → Aufrufer kann: if logged_in and wid: ...
           → WARUM nicht nur bool? Aufrufer braucht pid/wid für weitere CUA-Aufrufe.
-        
+
         Returns:
             (pid, wid, logged_in):
             - pid: Prozess-ID des Chrome (oder None).
             - wid: Fenster-ID (oder None).
             - logged_in: True wenn "abmelden" gefunden, sonst False.
-        
+
         Example:
             verifier = LoginVerifier()
             pid, wid, is_logged_in = verifier.check()
-            
+
             if is_logged_in and wid:
                 print(f"Eingeloggt! pid={pid}, wid={wid}")
             else:
@@ -283,7 +281,7 @@ class LoginVerifier:
         # WARUM nicht nur aktives Fenster? CUA kennt "aktives Fenster" nicht.
         #   Wir müssen alle durchsuchen und das richtige finden.
         windows = self.cua.list_windows()
-        
+
         # ═══════════════════════════════════════════════════════════════════
         # SCHRITT 2: Nach z_index sortieren (vorderstes zuerst)
         # ═══════════════════════════════════════════════════════════════════
@@ -293,7 +291,7 @@ class LoginVerifier:
         # WARUM key=lambda? Wir extrahieren z_index aus dem Fenster-Dict.
         # WARUM .get("z_index", 0)? Wenn z_index fehlt → 0 (hinten).
         windows.sort(key=lambda w: w.get("z_index", 0), reverse=True)
-        
+
         # ═══════════════════════════════════════════════════════════════════
         # SCHRITT 3: Durch alle Fenster iterieren
         # ═══════════════════════════════════════════════════════════════════
@@ -303,19 +301,19 @@ class LoginVerifier:
             # Extrahiere bounds (Fenster-Größe).
             # WARUM .get("bounds", {})? Wenn bounds fehlt → leeres Dict → height=0.
             b = w.get("bounds", {})
-            
+
             # Extrahiere Titel (lowercase für Case-Insensitive Matching).
             # WARUM .lower()? "Abmelden", "ABMELDEN", "abmelden" → alle matchen.
             t = (w.get("title") or "").lower()
-            
+
             # Extrahiere App-Name (lowercase).
             # WARUM .get("app_name") or ""? Wenn app_name fehlt → leerer String.
             n = (w.get("app_name") or "").lower()
-            
+
             # Extrahiere PID.
             # WARUM .get("pid")? Wenn pid fehlt → None → später geprüft.
             pid = w.get("pid")
-            
+
             # ═══════════════════════════════════════════════════════════════
             # FILTER 1: Höhe muss > 100 sein
             # ═══════════════════════════════════════════════════════════════
@@ -324,7 +322,7 @@ class LoginVerifier:
             if b.get("height", 0) < 100:
                 # Nicht-Browser-Fenster überspringen.
                 continue
-            
+
             # ═══════════════════════════════════════════════════════════════
             # FILTER 2: Muss Chrome sein
             # ═══════════════════════════════════════════════════════════════
@@ -333,7 +331,7 @@ class LoginVerifier:
             if "chrome" not in n:
                 # Kein Chrome → überspringen.
                 continue
-            
+
             # ═══════════════════════════════════════════════════════════════
             # STAGE 1: STRONG Indicator — "abmelden" im Titel
             # ═══════════════════════════════════════════════════════════════
@@ -345,7 +343,7 @@ class LoginVerifier:
                 # WARUM return (nicht break)? Wir haben unser Ergebnis.
                 # pid und wid sind verfügbar → sofort return.
                 return pid, w.get("window_id"), True
-            
+
             # ═══════════════════════════════════════════════════════════════
             # STAGE 2: AMBIGUOUS — Titel ist unklar → AX-Tree scannen
             # ═══════════════════════════════════════════════════════════════
@@ -363,7 +361,7 @@ class LoginVerifier:
                 # WARUM get_tree()? Wir müssen ALLE Elemente der Seite prüfen.
                 # Der AX-Tree enthält ALLE Accessibility-Elemente (inkl. Shadow-DOM).
                 tree = self.cua.get_tree(pid, w.get("window_id"))
-                
+
                 # Prüfe ob EINE Zeile "abmelden" enthält.
                 # WARUM any()? Wir wollen nur wissen OB es existiert (nicht wo).
                 # WARUM l.lower()? l ist eine Zeile aus dem AX-Tree.
@@ -371,13 +369,13 @@ class LoginVerifier:
                 if any("abmelden" in l.lower() for l in tree):
                     # "abmelden" im AX-Tree gefunden → EINGELOGGT!
                     return pid, w.get("window_id"), True
-                
+
                 # Wenn nicht "abmelden" im AX-Tree → wahrscheinlich ausgeloggt.
                 # Aber: Wir geben nicht False zurück → wir prüfen weitere Fenster.
                 # WARUM? Mehrere Chrome-Fenster → vielleicht ist ein anderes das
                 #   eingeloggte Dashboard (z.B. anderer Tab).
                 # Also: continue → nächstes Fenster prüfen.
-        
+
         # ═══════════════════════════════════════════════════════════════════
         # SCHRITT 4: Nichts gefunden
         # ═══════════════════════════════════════════════════════════════════

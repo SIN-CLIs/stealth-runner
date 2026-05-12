@@ -55,7 +55,6 @@ import time
 import urllib.parse
 import urllib.request
 from dataclasses import dataclass
-from typing import Optional
 
 from stealth_captcha.solver.base import BaseSolver, SolveOutcome, SolveResult
 
@@ -70,14 +69,14 @@ _TWOCAPTCHA_HOST = "https://2captcha.com"
 # Erweiterung: einen Eintrag hier dazu = neuen Captcha-Typ unterstuetzt.
 
 _METHOD_MAP = {
-    "hcaptcha":        "hcaptcha",        # benoetigt sitekey + pageurl
-    "recaptcha":       "userrecaptcha",   # v2 — googlekey + pageurl
-    "recaptcha_v3":    "userrecaptcha",   # zusaetzlich: version=v3, min_score
-    "turnstile":       "turnstile",       # sitekey + pageurl
-    "geetest":         "geetest",         # gt + challenge + api_server
-    "lemin":           "lemin",           # captcha_id + api_server + pageurl
-    "datadome":        "datadome",        # captcha_url + pageurl + userAgent
-    "image":           "base64",          # OCR-only, body=base64 image
+    "hcaptcha": "hcaptcha",  # benoetigt sitekey + pageurl
+    "recaptcha": "userrecaptcha",  # v2 — googlekey + pageurl
+    "recaptcha_v3": "userrecaptcha",  # zusaetzlich: version=v3, min_score
+    "turnstile": "turnstile",  # sitekey + pageurl
+    "geetest": "geetest",  # gt + challenge + api_server
+    "lemin": "lemin",  # captcha_id + api_server + pageurl
+    "datadome": "datadome",  # captcha_url + pageurl + userAgent
+    "image": "base64",  # OCR-only, body=base64 image
 }
 
 
@@ -93,19 +92,20 @@ class TwoCaptchaParams:
       lemin:           captcha_id, pageurl, api_server
       image:           image_base64
     """
+
     captcha_type: str
-    sitekey: Optional[str] = None
-    pageurl: Optional[str] = None
-    gt: Optional[str] = None
-    challenge: Optional[str] = None
-    api_server: Optional[str] = None
-    captcha_id: Optional[str] = None
-    image_base64: Optional[str] = None
-    user_agent: Optional[str] = None
+    sitekey: str | None = None
+    pageurl: str | None = None
+    gt: str | None = None
+    challenge: str | None = None
+    api_server: str | None = None
+    captcha_id: str | None = None
+    image_base64: str | None = None
+    user_agent: str | None = None
     invisible: bool = False
     is_v3: bool = False
     min_score: float = 0.3
-    action: Optional[str] = None  # reCAPTCHA v3
+    action: str | None = None  # reCAPTCHA v3
     extra: dict = None  # type: ignore[assignment]
 
     def __post_init__(self):
@@ -142,8 +142,14 @@ class TwoCaptchaFallbackSolver(BaseSolver):
     bekommt den Token-String zurueck und entscheidet wann/wo er injiziert.
     """
 
-    def __init__(self, api_key: str, *, max_seconds: float = 60.0,
-                 poll_interval: float = 5.0, soft_id: Optional[str] = None):
+    def __init__(
+        self,
+        api_key: str,
+        *,
+        max_seconds: float = 60.0,
+        poll_interval: float = 5.0,
+        soft_id: str | None = None,
+    ):
         self.api_key = (api_key or "").strip()
         self.max_seconds = float(max_seconds)
         self.poll_interval = float(poll_interval)
@@ -156,7 +162,7 @@ class TwoCaptchaFallbackSolver(BaseSolver):
 
     async def solve(self, session) -> SolveResult:  # type: ignore[override]
         start = time.monotonic()
-        params: Optional[TwoCaptchaParams] = getattr(session, "captcha_params", None)
+        params: TwoCaptchaParams | None = getattr(session, "captcha_params", None)
         if params is None:
             return SolveResult(
                 outcome=SolveOutcome.FAILURE,
@@ -208,8 +214,10 @@ class TwoCaptchaFallbackSolver(BaseSolver):
         url = f"{_TWOCAPTCHA_HOST}/in.php"
         log.info(
             "twocaptcha.submit type=%s method=%s sitekey=%s pageurl=%s",
-            params.captcha_type, method,
-            (params.sitekey or "")[:12], (params.pageurl or "")[:60],
+            params.captcha_type,
+            method,
+            (params.sitekey or "")[:12],
+            (params.pageurl or "")[:60],
         )
         resp = await asyncio.to_thread(self._http_post, url, body)
         if not resp.startswith("OK|"):
@@ -234,7 +242,9 @@ class TwoCaptchaFallbackSolver(BaseSolver):
             if resp.startswith("OK|"):
                 token = resp.split("|", 1)[1]
                 log.info(
-                    "twocaptcha.solved captcha_id=%s attempts=%d", captcha_id, attempts,
+                    "twocaptcha.solved captcha_id=%s attempts=%d",
+                    captcha_id,
+                    attempts,
                 )
                 return token
             raise TwoCaptchaError(f"poll_error:{resp}")
@@ -268,14 +278,19 @@ class TwoCaptchaFallbackSolver(BaseSolver):
             if p.invisible:
                 data["invisible"] = "1"
         if method == "geetest":
-            if p.gt:        data["gt"] = p.gt
-            if p.challenge: data["challenge"] = p.challenge
-            if p.api_server: data["api_server"] = p.api_server
+            if p.gt:
+                data["gt"] = p.gt
+            if p.challenge:
+                data["challenge"] = p.challenge
+            if p.api_server:
+                data["api_server"] = p.api_server
         if method == "lemin":
-            if p.captcha_id: data["captcha_id"] = p.captcha_id
-            if p.api_server: data["api_server"] = p.api_server
-        if method == "datadome":
-            if p.user_agent: data["userAgent"] = p.user_agent
+            if p.captcha_id:
+                data["captcha_id"] = p.captcha_id
+            if p.api_server:
+                data["api_server"] = p.api_server
+        if method == "datadome" and p.user_agent:
+            data["userAgent"] = p.user_agent
         if method == "base64":
             if not p.image_base64:
                 raise TwoCaptchaError("image_base64_required")
@@ -291,9 +306,12 @@ class TwoCaptchaFallbackSolver(BaseSolver):
     @staticmethod
     def _http_post(url: str, body: bytes) -> str:
         req = urllib.request.Request(
-            url, data=body,
-            headers={"Content-Type": "application/x-www-form-urlencoded",
-                     "User-Agent": "stealth-runner/twocaptcha/1.0"},
+            url,
+            data=body,
+            headers={
+                "Content-Type": "application/x-www-form-urlencoded",
+                "User-Agent": "stealth-runner/twocaptcha/1.0",
+            },
         )
         with urllib.request.urlopen(req, timeout=15) as r:  # noqa: S310
             return r.read().decode("utf-8", errors="replace").strip()
@@ -301,7 +319,8 @@ class TwoCaptchaFallbackSolver(BaseSolver):
     @staticmethod
     def _http_get(url: str) -> str:
         req = urllib.request.Request(
-            url, headers={"User-Agent": "stealth-runner/twocaptcha/1.0"},
+            url,
+            headers={"User-Agent": "stealth-runner/twocaptcha/1.0"},
         )
         with urllib.request.urlopen(req, timeout=15) as r:  # noqa: S310
             return r.read().decode("utf-8", errors="replace").strip()
@@ -367,10 +386,13 @@ def inject_token_via_cdp(cdp, token: str, captcha_type: str) -> bool:
         return False
 
     try:
-        result = cdp.call_result("Runtime.evaluate", {
-            "expression": expr,
-            "returnByValue": True,
-        })
+        result = cdp.call_result(
+            "Runtime.evaluate",
+            {
+                "expression": expr,
+                "returnByValue": True,
+            },
+        )
         return bool(((result or {}).get("result") or {}).get("value"))
     except Exception as e:
         log.warning("inject_token.cdp_failed type=%s err=%s", captcha_type, e)

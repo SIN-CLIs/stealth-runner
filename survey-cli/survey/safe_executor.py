@@ -102,7 +102,9 @@ class SurveyFlowExecutor:
             elapsed = time.time() - self._last_command_time
             if elapsed < MIN_SLEEP_AFTER_INPUT:
                 sleep_time = MIN_SLEEP_AFTER_INPUT - elapsed
-                print(f"[SAFETY] Enforcing {sleep_time:.1f}s sleep after {self._last_command} before {command_id}")  # noqa: E501
+                print(
+                    f"[SAFETY] Enforcing {sleep_time:.1f}s sleep after {self._last_command} before {command_id}"
+                )  # noqa: E501
                 time.sleep(sleep_time)
 
         self._last_command = command_id
@@ -111,8 +113,7 @@ class SurveyFlowExecutor:
     def capture_page_text(self) -> str:
         """Get page text content."""
         result = self._send_cdp(
-            "Runtime.evaluate",
-            {"expression": "document.body.innerText.substring(0, 2000)"}
+            "Runtime.evaluate", {"expression": "document.body.innerText.substring(0, 2000)"}
         )
         return result.get("result", {}).get("value", "")
 
@@ -120,7 +121,8 @@ class SurveyFlowExecutor:
         """Get all interactive elements on page."""
         result = self._send_cdp(
             "Runtime.evaluate",
-            {"expression": '''
+            {
+                "expression": """
                 JSON.stringify(Array.from(document.querySelectorAll(
                     "input, select, textarea, button, [role=button]"
                 )).map(i => ({
@@ -132,7 +134,8 @@ class SurveyFlowExecutor:
                     disabled: i.disabled,
                     class: (i.className || "").substring(0, 100)
                 })))
-            '''}
+            """
+            },
         )
         return json.loads(result.get("result", {}).get("value", "[]"))
 
@@ -140,14 +143,16 @@ class SurveyFlowExecutor:
         """Map radio buttons to their labels."""
         result = self._send_cdp(
             "Runtime.evaluate",
-            {"expression": '''
+            {
+                "expression": """
                 JSON.stringify(Array.from(document.querySelectorAll("input[type=radio]")).map(r => ({
                     id: r.id,
                     label: document.querySelector("label[for='" + r.id + "']")?.innerText.trim() || "no label",
                     name: r.name,
                     checked: r.checked
                 })))
-            '''}
+            """
+            },
         )
         return json.loads(result.get("result", {}).get("value", "[]"))
 
@@ -219,7 +224,9 @@ class SurveyFlowExecutor:
             self.registry.record_success("select_dropdown", f"Dropdown {select_id}[{option_index}]")
             return True
 
-        self.registry.record_failure("select_dropdown", value, f"Failed to select {select_id}[{option_index}]")  # noqa: E501
+        self.registry.record_failure(
+            "select_dropdown", value, f"Failed to select {select_id}[{option_index}]"
+        )  # noqa: E501
         return False
 
     def click_continue(self, with_sleep: bool = True, sleep_seconds: int = 2) -> bool:
@@ -239,7 +246,7 @@ class SurveyFlowExecutor:
 
         can_execute("click_continue")
 
-        expression = '''
+        expression = """
             (function() {
                 var btn = document.getElementById("btn_continue");
                 if (!btn) return "BUTTON_NOT_FOUND";
@@ -247,7 +254,7 @@ class SurveyFlowExecutor:
                 btn.click();
                 return "CLICKED_CONTINUE";
             })()
-        '''
+        """
         result = self._send_cdp("Runtime.evaluate", {"expression": expression})
         value = result.get("result", {}).get("value", "")
 
@@ -324,7 +331,9 @@ class SurveyFlowExecutor:
                     results.append({"command": command_id, "success": True, "error": None})
                 else:
                     total_fail += 1
-                    results.append({"command": command_id, "success": False, "error": "Command returned False"})  # noqa: E501
+                    results.append(
+                        {"command": command_id, "success": False, "error": "Command returned False"}
+                    )  # noqa: E501
 
             except Exception as e:
                 total_fail += 1

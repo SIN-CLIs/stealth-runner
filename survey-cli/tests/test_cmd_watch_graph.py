@@ -2,8 +2,9 @@
 
 Tests for _run_survey_via_graph wrapper and cmd_watch refactor.
 """
+
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock
 
 
 class TestCmdWatchGraph:
@@ -25,7 +26,7 @@ class TestCmdWatchGraph:
             "balance_earned": 5.5,
             "error": None,
             "status": "completed",
-            "details": {"iterations": 8, "errors_count": 0}
+            "details": {"iterations": 8, "errors_count": 0},
         }
         assert outcome["success"] is True
         assert outcome["balance_earned"] == 5.5
@@ -50,7 +51,7 @@ class TestCmdWatchGraph:
     def test_run_survey_via_graph_error_handling(self):
         """Test _run_survey_via_graph error handling."""
         error_msg = "Chrome crashed"
-        
+
         outcome = {
             "success": False,
             "balance_earned": 0.0,

@@ -95,7 +95,6 @@ from typing import Any
 from fastapi import APIRouter
 from pydantic import BaseModel, Field
 
-
 # Pfad-Hack: survey-cli muss importierbar sein
 _workspace_root = os.path.dirname(
     os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -104,11 +103,10 @@ _survey_cli_path = os.path.join(_workspace_root, "survey-cli")
 if _survey_cli_path not in sys.path:
     sys.path.insert(0, _survey_cli_path)
 
+from survey.captcha_router import CaptchaRouter  # noqa: E402
+from survey.cdp_actuator import Actuator  # noqa: E402
 from survey.cdp_client import CDPConnection  # noqa: E402
 from survey.cdp_universal import scan as scan_full  # noqa: E402
-from survey.cdp_actuator import Actuator  # noqa: E402
-from survey.captcha_router import CaptchaRouter  # noqa: E402
-
 
 router = APIRouter(prefix="/v2", tags=["universal-v2"])
 
@@ -123,9 +121,7 @@ def _resolve_ws(cdp_port: int, url_contains: str) -> str:
     Sonst → erster Page-Tab dessen URL den Substring enthält.
     Raises RuntimeError wenn nichts passt.
     """
-    raw = urllib.request.urlopen(
-        f"http://127.0.0.1:{cdp_port}/json/list", timeout=5
-    ).read()
+    raw = urllib.request.urlopen(f"http://127.0.0.1:{cdp_port}/json/list", timeout=5).read()
     pages = json.loads(raw)
     for p in pages:
         if p.get("type") != "page":
@@ -133,9 +129,7 @@ def _resolve_ws(cdp_port: int, url_contains: str) -> str:
         if url_contains and url_contains not in p.get("url", ""):
             continue
         return p["webSocketDebuggerUrl"]
-    raise RuntimeError(
-        f"no page tab on port {cdp_port} matching {url_contains!r}"
-    )
+    raise RuntimeError(f"no page tab on port {cdp_port} matching {url_contains!r}")
 
 
 # ── Schemas ────────────────────────────────────────────────────────────────
@@ -245,19 +239,21 @@ def v2_scan(req: ScanReq) -> ScanResp:
         # ScanResult.elements ist eine Liste von Dataclasses → dict-Cast
         elements_dicts = []
         for e in result.elements:
-            elements_dicts.append({
-                "stable_id": e.stable_id,
-                "frame_id": e.frame_id,
-                "role": e.role,
-                "name": e.name,
-                "value": e.value,
-                "tag": e.tag,
-                "text": e.text,
-                "state": e.state,
-                "bbox": e.bbox,
-                "attrs": e.attrs,
-                "frame_url": e.frame_url,
-            })
+            elements_dicts.append(
+                {
+                    "stable_id": e.stable_id,
+                    "frame_id": e.frame_id,
+                    "role": e.role,
+                    "name": e.name,
+                    "value": e.value,
+                    "tag": e.tag,
+                    "text": e.text,
+                    "state": e.state,
+                    "bbox": e.bbox,
+                    "attrs": e.attrs,
+                    "frame_url": e.frame_url,
+                }
+            )
         return ScanResp(
             status="ok",
             url=result.url,
@@ -376,9 +372,7 @@ def v2_captcha_solve(req: CaptchaSolveReq) -> CaptchaSolveResp:
             router_obj = CaptchaRouter(cdp)
             solve_res = router_obj.detect_and_solve(result)
         if solve_res is None:
-            return CaptchaSolveResp(
-                status="ok", solved=False, reason="no_captcha_found"
-            )
+            return CaptchaSolveResp(status="ok", solved=False, reason="no_captcha_found")
         return CaptchaSolveResp(
             status="ok" if solve_res.solved else "error",
             solved=solve_res.solved,

@@ -2,13 +2,15 @@
 
 # === SR-63 #62 legacy-debt skip (do not delete without unskipping) ===
 import pytest
-pytestmark = pytest.mark.skip(reason="SR-63 #62: mock drift — ChromeLauncher mocks outdated vs current implementation")
+
+pytestmark = pytest.mark.skip(
+    reason="SR-63 #62: mock drift — ChromeLauncher mocks outdated vs current implementation"
+)
 # === END SR-63 skip ===
 
 import json
-import subprocess
 import unittest
-from unittest.mock import patch, MagicMock, mock_open
+from unittest.mock import patch, MagicMock
 
 from survey.chrome import ChromeLauncher
 
@@ -105,9 +107,7 @@ class TestChromeLauncherVerifyAXTree(unittest.TestCase):
 
         mock_ws = MagicMock()
         mock_ws_lib.create_connection.return_value = mock_ws
-        mock_ws.recv.return_value = json.dumps({
-            "result": {"result": {"value": 150}}
-        })
+        mock_ws.recv.return_value = json.dumps({"result": {"result": {"value": 150}}})
 
         launcher = ChromeLauncher()
         launcher._pid = 12345
@@ -120,9 +120,11 @@ class TestChromeLauncherVerifyAXTree(unittest.TestCase):
 
         mock_ws = MagicMock()
         mock_ws_lib.create_connection.return_value = mock_ws
-        mock_ws.recv.return_value = json.dumps({
-            "result": {"result": {"value": 3}}  # Only <html><head><body>
-        })
+        mock_ws.recv.return_value = json.dumps(
+            {
+                "result": {"result": {"value": 3}}  # Only <html><head><body>
+            }
+        )
 
         launcher = ChromeLauncher()
         launcher._pid = 12345
@@ -236,7 +238,12 @@ class TestLaunchChromeBackwardCompat(unittest.TestCase):
         from survey.chrome import launch_chrome
 
         mock_instance = MagicMock()
-        mock_instance.launch_and_verify.return_value = {"ok": True, "pid": 12345, "port": 9999, "profile": "/tmp/test"}
+        mock_instance.launch_and_verify.return_value = {
+            "ok": True,
+            "pid": 12345,
+            "port": 9999,
+            "profile": "/tmp/test",
+        }
         mock_launcher_class.return_value = mock_instance
 
         result = launch_chrome(url="https://example.com", port=8888)

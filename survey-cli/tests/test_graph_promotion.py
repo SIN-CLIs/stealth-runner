@@ -61,9 +61,7 @@ def make_graph_source(tmp: Path) -> Path:
     """Synthesize a fake graph.py file inside ``tmp``."""
     src = tmp / "graph.py"
     src.write_text(
-        "# fake graph definition for SR-49 tests\n"
-        "def build_graph():\n"
-        "    return None\n",
+        "# fake graph definition for SR-49 tests\ndef build_graph():\n    return None\n",
         encoding="utf-8",
     )
     return src
@@ -73,18 +71,13 @@ def make_graph_source(tmp: Path) -> Path:
 
 
 class TestHappyPath(unittest.TestCase):
-
     def test_T01_10x_clean_runs_promote(self):
         runs = [clean_run(i) for i in range(REQUIRED_SUCCESSES)]
         with tempfile.TemporaryDirectory() as td:
             tmp = Path(td)
             graph = make_graph_source(tmp)
-            result = promote(
-                runs, graph, tmp / "compiled", tmp / "logs.jsonl"
-            )
-            self.assertTrue(
-                result.promoted, result.evaluation.blocking_reasons
-            )
+            result = promote(runs, graph, tmp / "compiled", tmp / "logs.jsonl")
+            self.assertTrue(result.promoted, result.evaluation.blocking_reasons)
             self.assertIsNotNone(result.snapshot)
             self.assertTrue(result.snapshot.path.exists())
 
@@ -119,9 +112,7 @@ class TestHappyPath(unittest.TestCase):
             content = log_path.read_text(encoding="utf-8").strip()
             record = json.loads(content)
             self.assertEqual(record["event"], "graph_promotion")
-            self.assertEqual(
-                record["snapshot"]["sha256"], result.snapshot.sha256
-            )
+            self.assertEqual(record["snapshot"]["sha256"], result.snapshot.sha256)
             self.assertEqual(len(record["snapshot"]["sha256"]), 64)
 
 
@@ -129,7 +120,6 @@ class TestHappyPath(unittest.TestCase):
 
 
 class TestBlockingCriteria(unittest.TestCase):
-
     def test_T05_only_9_runs_blocks(self):
         runs = [clean_run(i) for i in range(REQUIRED_SUCCESSES - 1)]
         ev = evaluate_runs(runs)
@@ -172,7 +162,6 @@ class TestBlockingCriteria(unittest.TestCase):
 
 
 class TestEdgeCases(unittest.TestCase):
-
     def test_T09_mixed_runs_block(self):
         """A single dirty run anywhere in the input blocks promotion."""
         runs = [clean_run(i) for i in range(REQUIRED_SUCCESSES + 5)]
@@ -190,12 +179,8 @@ class TestEdgeCases(unittest.TestCase):
             compiled = tmp / "compiled"
             log = tmp / "logs.jsonl"
 
-            t1 = datetime.datetime(
-                2026, 5, 12, 10, 0, 0, tzinfo=datetime.timezone.utc
-            )
-            t2 = datetime.datetime(
-                2026, 5, 12, 11, 0, 0, tzinfo=datetime.timezone.utc
-            )
+            t1 = datetime.datetime(2026, 5, 12, 10, 0, 0, tzinfo=datetime.timezone.utc)
+            t2 = datetime.datetime(2026, 5, 12, 11, 0, 0, tzinfo=datetime.timezone.utc)
             r1 = promote(runs, graph, compiled, log, now=t1)
             r2 = promote(runs, graph, compiled, log, now=t2)
 
@@ -206,10 +191,7 @@ class TestEdgeCases(unittest.TestCase):
             self.assertTrue(r1.snapshot.path.exists())
             self.assertTrue(r2.snapshot.path.exists())
             # Log has two records
-            lines = [
-                l for l in log.read_text(encoding="utf-8").splitlines()
-                if l.strip()
-            ]
+            lines = [l for l in log.read_text(encoding="utf-8").splitlines() if l.strip()]
             self.assertEqual(len(lines), 2)
 
 
@@ -217,13 +199,10 @@ class TestEdgeCases(unittest.TestCase):
 
 
 class TestLoaders(unittest.TestCase):
-
     def test_T11_load_runs_from_dir_sorted(self):
         with tempfile.TemporaryDirectory() as td:
             tmp = Path(td)
-            for i, run in enumerate(
-                [clean_run(0), clean_run(1), clean_run(2)]
-            ):
+            for i, run in enumerate([clean_run(0), clean_run(1), clean_run(2)]):
                 (tmp / f"run-{i:03d}.json").write_text(json.dumps(run))
             loaded = load_runs_from_dir(tmp)
         self.assertEqual(len(loaded), 3)
@@ -244,11 +223,13 @@ class TestLoaders(unittest.TestCase):
 
 
 class TestCLI(unittest.TestCase):
-
     def _run_cli(self, *args, cwd):
         return subprocess.run(
             [sys.executable, "-m", "survey.graph.promote", *args],
-            cwd=cwd, capture_output=True, text=True, timeout=30,
+            cwd=cwd,
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
 
     def test_T13_cli_returns_0_on_success(self):
@@ -257,20 +238,23 @@ class TestCLI(unittest.TestCase):
             runs_dir = tmp / "runs"
             runs_dir.mkdir()
             for i in range(REQUIRED_SUCCESSES):
-                (runs_dir / f"run-{i:03d}.json").write_text(
-                    json.dumps(clean_run(i))
-                )
+                (runs_dir / f"run-{i:03d}.json").write_text(json.dumps(clean_run(i)))
             graph = make_graph_source(tmp)
             r = self._run_cli(
-                "--runs-dir", str(runs_dir),
-                "--graph-source", str(graph),
-                "--compiled-dir", str(tmp / "compiled"),
-                "--log", str(tmp / "logs.jsonl"),
+                "--runs-dir",
+                str(runs_dir),
+                "--graph-source",
+                str(graph),
+                "--compiled-dir",
+                str(tmp / "compiled"),
+                "--log",
+                str(tmp / "logs.jsonl"),
                 "--quiet",
                 cwd=str(SURVEY_CLI_DIR),
             )
         self.assertEqual(
-            r.returncode, 0,
+            r.returncode,
+            0,
             f"stdout={r.stdout}\nstderr={r.stderr}",
         )
 
@@ -281,15 +265,17 @@ class TestCLI(unittest.TestCase):
             runs_dir.mkdir()
             # Only 3 runs -> blocked
             for i in range(3):
-                (runs_dir / f"run-{i:03d}.json").write_text(
-                    json.dumps(clean_run(i))
-                )
+                (runs_dir / f"run-{i:03d}.json").write_text(json.dumps(clean_run(i)))
             graph = make_graph_source(tmp)
             r = self._run_cli(
-                "--runs-dir", str(runs_dir),
-                "--graph-source", str(graph),
-                "--compiled-dir", str(tmp / "compiled"),
-                "--log", str(tmp / "logs.jsonl"),
+                "--runs-dir",
+                str(runs_dir),
+                "--graph-source",
+                str(graph),
+                "--compiled-dir",
+                str(tmp / "compiled"),
+                "--log",
+                str(tmp / "logs.jsonl"),
                 "--quiet",
                 cwd=str(SURVEY_CLI_DIR),
             )
@@ -300,7 +286,6 @@ class TestCLI(unittest.TestCase):
 
 
 class TestAppendLog(unittest.TestCase):
-
     def test_append_log_creates_parent_dir(self):
         with tempfile.TemporaryDirectory() as td:
             tmp = Path(td)

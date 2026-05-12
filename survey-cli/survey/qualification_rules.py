@@ -51,7 +51,6 @@ NEVER_SELECT_PATTERNS = [
     r"weniger\s*als",
     r"arbeitslos",
     r"nicht\s*berufstätig",
-
     # Englisch
     r"prefer\s*not\s*(to\s*)?(say|answer|disclose)",
     r"rather\s*not\s*say",
@@ -79,61 +78,72 @@ NEVER_SELECT_COMPILED = [re.compile(p, re.IGNORECASE) for p in NEVER_SELECT_PATT
 
 ALWAYS_PREFER_PATTERNS = [
     # Kinder
-    (r"kinder|children|kids", [
-        r"ja.*kinder",
-        r"yes.*children",
-        r"have\s*children",
-        r"habe.*kind",
-        r"1-2\s*kinder",
-        r"1-2\s*children",
-        r"erwart.*kind",  # erwartet Kind
-        r"expect.*child",
-    ]),
-
+    (
+        r"kinder|children|kids",
+        [
+            r"ja.*kinder",
+            r"yes.*children",
+            r"have\s*children",
+            r"habe.*kind",
+            r"1-2\s*kinder",
+            r"1-2\s*children",
+            r"erwart.*kind",  # erwartet Kind
+            r"expect.*child",
+        ],
+    ),
     # Haustiere
-    (r"haustier|pet|animal", [
-        r"ja.*haustier",
-        r"yes.*pet",
-        r"have\s*pet",
-        r"habe.*haustier",
-        r"hund|dog",
-        r"katze|cat",
-    ]),
-
+    (
+        r"haustier|pet|animal",
+        [
+            r"ja.*haustier",
+            r"yes.*pet",
+            r"have\s*pet",
+            r"habe.*haustier",
+            r"hund|dog",
+            r"katze|cat",
+        ],
+    ),
     # Kaufabsicht
-    (r"kaufen|purchase|buy|interest", [
-        r"ja.*interesse",
-        r"yes.*interest",
-        r"definitiv",
-        r"definitely",
-        r"in\s*den\s*nächsten",
-        r"in\s*the\s*next",
-        r"wahrscheinlich",
-        r"likely",
-        r"sehr\s*wahrscheinlich",
-        r"very\s*likely",
-    ]),
-
+    (
+        r"kaufen|purchase|buy|interest",
+        [
+            r"ja.*interesse",
+            r"yes.*interest",
+            r"definitiv",
+            r"definitely",
+            r"in\s*den\s*nächsten",
+            r"in\s*the\s*next",
+            r"wahrscheinlich",
+            r"likely",
+            r"sehr\s*wahrscheinlich",
+            r"very\s*likely",
+        ],
+    ),
     # Einkommen (mittleres bis hohes)
-    (r"einkommen|income|salary|gehalt", [
-        r"40\.?000.*60\.?000",
-        r"60\.?000.*80\.?000",
-        r"80\.?000.*100\.?000",
-        r"\$?50[,.]?000",
-        r"\$?75[,.]?000",
-        r"3\.?000.*4\.?000.*€",
-        r"4\.?000.*5\.?000.*€",
-    ]),
-
+    (
+        r"einkommen|income|salary|gehalt",
+        [
+            r"40\.?000.*60\.?000",
+            r"60\.?000.*80\.?000",
+            r"80\.?000.*100\.?000",
+            r"\$?50[,.]?000",
+            r"\$?75[,.]?000",
+            r"3\.?000.*4\.?000.*€",
+            r"4\.?000.*5\.?000.*€",
+        ],
+    ),
     # Beschäftigung
-    (r"beruf|employ|job|work|occupation", [
-        r"vollzeit",
-        r"full.?time",
-        r"angestellt",
-        r"employed",
-        r"selbständig",
-        r"self.?employed",
-    ]),
+    (
+        r"beruf|employ|job|work|occupation",
+        [
+            r"vollzeit",
+            r"full.?time",
+            r"angestellt",
+            r"employed",
+            r"selbständig",
+            r"self.?employed",
+        ],
+    ),
 ]
 
 
@@ -299,6 +309,7 @@ def rank_answers_for_qualification(question_text: str, answers: list[str]) -> li
 # ════════════════════════════════════════════════════════════════════════���══════
 # SPEED OPTIMIZATION — Schnelle Antwort-Strategien
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 def get_fast_answer_strategy(question_type: str) -> dict:
     """Gibt schnelle Antwort-Strategie für Fragetyp zurück.

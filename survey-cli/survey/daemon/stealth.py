@@ -27,6 +27,7 @@ logger = logging.getLogger(__name__)
 
 class BrowserType(str, Enum):
     """Supported browser types for fingerprint generation."""
+
     CHROME = "chrome"
     FIREFOX = "firefox"
     SAFARI = "safari"
@@ -36,6 +37,7 @@ class BrowserType(str, Enum):
 @dataclass
 class Fingerprint:
     """Browser fingerprint configuration."""
+
     user_agent: str
     screen_width: int
     screen_height: int
@@ -73,6 +75,7 @@ class Fingerprint:
 @dataclass
 class ProxyConfig:
     """Proxy configuration."""
+
     host: str
     port: int
     username: str | None = None
@@ -91,8 +94,14 @@ class FingerprintGenerator:
 
     # Common screen resolutions
     SCREEN_RESOLUTIONS = [
-        (1920, 1080), (1366, 768), (1536, 864), (1440, 900),
-        (1280, 720), (2560, 1440), (1600, 900), (1280, 800),
+        (1920, 1080),
+        (1366, 768),
+        (1536, 864),
+        (1440, 900),
+        (1280, 720),
+        (2560, 1440),
+        (1600, 900),
+        (1280, 800),
     ]
 
     # User agent templates
@@ -121,14 +130,26 @@ class FingerprintGenerator:
 
     # Common fonts
     COMMON_FONTS = [
-        "Arial", "Helvetica", "Times New Roman", "Georgia", "Verdana",
-        "Courier New", "Comic Sans MS", "Impact", "Trebuchet MS", "Palatino",
+        "Arial",
+        "Helvetica",
+        "Times New Roman",
+        "Georgia",
+        "Verdana",
+        "Courier New",
+        "Comic Sans MS",
+        "Impact",
+        "Trebuchet MS",
+        "Palatino",
     ]
 
     # Timezones
     TIMEZONES = [
-        "America/New_York", "America/Chicago", "America/Denver",
-        "America/Los_Angeles", "Europe/London", "Europe/Paris",
+        "America/New_York",
+        "America/Chicago",
+        "America/Denver",
+        "America/Los_Angeles",
+        "Europe/London",
+        "Europe/Paris",
     ]
 
     def generate(self, browser: BrowserType = BrowserType.CHROME) -> Fingerprint:
@@ -145,7 +166,9 @@ class FingerprintGenerator:
         fonts = random.sample(self.COMMON_FONTS, k=random.randint(5, 8))
 
         return Fingerprint(
-            user_agent=random.choice(self.USER_AGENTS.get(browser, self.USER_AGENTS[BrowserType.CHROME])),
+            user_agent=random.choice(
+                self.USER_AGENTS.get(browser, self.USER_AGENTS[BrowserType.CHROME])
+            ),
             screen_width=resolution[0],
             screen_height=resolution[1],
             color_depth=random.choice([24, 32]),
@@ -186,7 +209,7 @@ class MouseSimulator:
         Returns list of (x, y, delay_ms) tuples.
         """
         if steps is None:
-            distance = math.sqrt((end[0] - start[0])**2 + (end[1] - start[1])**2)
+            distance = math.sqrt((end[0] - start[0]) ** 2 + (end[1] - start[1]) ** 2)
             steps = max(10, int(distance / 10))
 
         # Generate control points for bezier curve
@@ -199,16 +222,16 @@ class MouseSimulator:
 
             # Cubic bezier
             x = int(
-                (1-t)**3 * start[0] +
-                3 * (1-t)**2 * t * control1[0] +
-                3 * (1-t) * t**2 * control2[0] +
-                t**3 * end[0]
+                (1 - t) ** 3 * start[0]
+                + 3 * (1 - t) ** 2 * t * control1[0]
+                + 3 * (1 - t) * t**2 * control2[0]
+                + t**3 * end[0]
             )
             y = int(
-                (1-t)**3 * start[1] +
-                3 * (1-t)**2 * t * control1[1] +
-                3 * (1-t) * t**2 * control2[1] +
-                t**3 * end[1]
+                (1 - t) ** 3 * start[1]
+                + 3 * (1 - t) ** 2 * t * control1[1]
+                + 3 * (1 - t) * t**2 * control2[1]
+                + t**3 * end[1]
             )
 
             # Add micro-jitter
@@ -299,7 +322,9 @@ class MouseSimulator:
             position[0] + random.randint(-3, 3),
             position[1] + random.randint(-3, 3),
         )
-        sequence.append({"type": "move", "x": drift[0], "y": drift[1], "delay": random.uniform(50, 100)})
+        sequence.append(
+            {"type": "move", "x": drift[0], "y": drift[1], "delay": random.uniform(50, 100)}
+        )
 
         self._last_position = drift
         return sequence
@@ -360,32 +385,40 @@ class TypingSimulator:
                 typo_char = random.choice(self.TYPO_PATTERNS[char.lower()])
 
                 # Type the typo
-                keystrokes.append({
-                    "key": typo_char,
-                    "delay": self._get_delay(base_delay),
-                })
+                keystrokes.append(
+                    {
+                        "key": typo_char,
+                        "delay": self._get_delay(base_delay),
+                    }
+                )
 
                 # Maybe correct it
                 if random.random() < self.correction_rate:
                     # Pause before noticing
-                    keystrokes.append({
-                        "key": "Backspace",
-                        "delay": random.uniform(200, 500),
-                    })
+                    keystrokes.append(
+                        {
+                            "key": "Backspace",
+                            "delay": random.uniform(200, 500),
+                        }
+                    )
                     # Type correct character
-                    keystrokes.append({
-                        "key": char,
-                        "delay": self._get_delay(base_delay),
-                    })
+                    keystrokes.append(
+                        {
+                            "key": char,
+                            "delay": self._get_delay(base_delay),
+                        }
+                    )
                 else:
                     i += 1
                     continue
 
             # Normal keystroke
-            keystrokes.append({
-                "key": char,
-                "delay": self._get_delay(base_delay, char),
-            })
+            keystrokes.append(
+                {
+                    "key": char,
+                    "delay": self._get_delay(base_delay, char),
+                }
+            )
 
             # Occasional pause (thinking)
             if random.random() < 0.05:
@@ -433,9 +466,7 @@ class SessionManager:
 
     def create_session(self, fingerprint: Fingerprint) -> str:
         """Create new browser session."""
-        session_id = hashlib.md5(
-            f"{time.time()}_{random.random()}".encode()
-        ).hexdigest()[:12]
+        session_id = hashlib.md5(f"{time.time()}_{random.random()}".encode()).hexdigest()[:12]
 
         session_path = self.session_dir / session_id
         session_path.mkdir(exist_ok=True)
@@ -486,6 +517,7 @@ class SessionManager:
         session_path = self.session_dir / session_id
         if session_path.exists():
             import shutil
+
             shutil.rmtree(session_path)
             logger.info(f"Deleted session: {session_id}")
 
@@ -509,6 +541,7 @@ class SessionManager:
             oldest = sessions.pop(0)
             if oldest.is_dir():
                 import shutil
+
                 shutil.rmtree(oldest)
                 logger.info(f"Cleaned up old session: {oldest.name}")
 

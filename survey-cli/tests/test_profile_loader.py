@@ -58,9 +58,7 @@ class TestProfileLoader(unittest.TestCase):
         profile = ProfileLoader.load_profile()
         dob = date.fromisoformat(profile["date_of_birth"])
         today = date.today()
-        expected = today.year - dob.year - (
-            (today.month, today.day) < (dob.month, dob.day)
-        )
+        expected = today.year - dob.year - ((today.month, today.day) < (dob.month, dob.day))
         self.assertEqual(profile["age"], expected)
 
     def test_invalid_dob_falls_back_to_32(self):

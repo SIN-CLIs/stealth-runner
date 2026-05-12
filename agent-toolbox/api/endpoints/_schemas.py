@@ -8,8 +8,10 @@
 
 from __future__ import annotations
 
-from typing import Dict, List, Optional, Any
+from typing import Any
+
 from pydantic import BaseModel
+
 
 # ── /open ──────────────────────────────────────────────────────────────────────
 class OpenSurveyRequest(BaseModel):
@@ -20,71 +22,81 @@ class OpenSurveyRequest(BaseModel):
     wait_modal: float = 3.0
     wait_load: float = 5.0
 
+
 class OpenSurveyResponse(BaseModel):
     status: str
-    tab_id: Optional[str] = None
-    ws_url: Optional[str] = None
-    provider: Optional[str] = None
-    url: Optional[str] = None
-    modal_clicked: Optional[bool] = None
-    flow: Optional[str] = None
-    reason: Optional[str] = None
-    stage: Optional[str] = None
+    tab_id: str | None = None
+    ws_url: str | None = None
+    provider: str | None = None
+    url: str | None = None
+    modal_clicked: bool | None = None
+    flow: str | None = None
+    reason: str | None = None
+    stage: str | None = None
+
 
 # ── /close ─────────────────────────────────────────────────────────────────────
 class CloseSurveyRequest(BaseModel):
     tab_id: str
     cdp_port: int = 9999
 
+
 class CloseSurveyResponse(BaseModel):
     status: str
     closed: bool
     tab_id: str
-    reason: Optional[str] = None
+    reason: str | None = None
+
 
 # ── /fill ──────────────────────────────────────────────────────────────────────
 class FillSurveyRequest(BaseModel):
-    snapshot: Dict[str, Any]
+    snapshot: dict[str, Any]
     profile_name: str = "sin_agent_heypiggy"
     use_nim: bool = False
+
 
 class FillSurveyResponse(BaseModel):
     status: str
     answered: int = 0
     pages_processed: int = 0
-    provider: Optional[str] = None
-    actions: List[Dict[str, Any]] = []
-    question_type: Optional[str] = None
-    confidence: Optional[float] = None
-    reason: Optional[str] = None
+    provider: str | None = None
+    actions: list[dict[str, Any]] = []
+    question_type: str | None = None
+    confidence: float | None = None
+    reason: str | None = None
+
 
 # ── /rate ──────────────────────────────────────────────────────────────────────
 class RateSurveyRequest(BaseModel):
     cdp_port: int = 9999
     verify: bool = True
 
+
 class RateSurveyResponse(BaseModel):
     status: str
     bonus: float = 0.0
-    tab_id: Optional[str] = None
-    verified: Optional[bool] = None
-    reason: Optional[str] = None
+    tab_id: str | None = None
+    verified: bool | None = None
+    reason: str | None = None
+
 
 # ── /purespectrum-preflight ────────────────────────────────────────────────────
 class PurespectrumPreflightRequest(BaseModel):
     tab_id: str
-    ws_url: Optional[str] = None
+    ws_url: str | None = None
     cdp_port: int = 9999
     debug: bool = False
+
 
 class PurespectrumPreflightResponse(BaseModel):
     status: str
     success: bool
-    steps: List[str] = []
-    provider: Optional[str] = "purespectrum"
-    captcha_text: Optional[str] = None
-    tokens_used: Optional[int] = None
-    error: Optional[str] = None
+    steps: list[str] = []
+    provider: str | None = "purespectrum"
+    captcha_text: str | None = None
+    tokens_used: int | None = None
+    error: str | None = None
+
 
 # ── /run-graph ─────────────────────────────────────────────────────────────────
 class RunGraphRequest(BaseModel):
@@ -92,6 +104,7 @@ class RunGraphRequest(BaseModel):
     provider: str = ""
     cdp_port: int = 9999
     max_iterations: int = 15
+
 
 class RunGraphResponse(BaseModel):
     status: str
@@ -103,38 +116,44 @@ class RunGraphResponse(BaseModel):
     screen_out: bool = False
     completion_detected: bool = False
 
+
 # ── /universal (answer page) ───────────────────────────────────────────────────
 class UniversalAnswerRequest(BaseModel):
-    ws_url: Optional[str] = None
+    ws_url: str | None = None
     cdp_port: int = 9999
     profile_name: str = "sin_agent_heypiggy"
-    provider: Optional[str] = None
+    provider: str | None = None
     max_select: int = 4
+
 
 class UniversalAnswerResponse(BaseModel):
     status: str
     answered: int = 0
     provider: str = ""
     question_type: str = ""
-    actions: List[Dict[str, Any]] = []
-    reason: Optional[str] = None
+    actions: list[dict[str, Any]] = []
+    reason: str | None = None
+
 
 # ── /scan ──────────────────────────────────────────────────────────────────────
 class ScanDashboardRequest(BaseModel):
     cdp_port: int = 9999
 
+
 class ScanDashboardResponse(BaseModel):
     status: str
     balance: float = 0.0
-    surveys: List[Dict[str, Any]] = []
+    surveys: list[dict[str, Any]] = []
     count: int = 0
-    reason: Optional[str] = None
+    reason: str | None = None
+
 
 # ── /snapshot ──────────────────────────────────────────────────────────────────
 class SnapshotRequest(BaseModel):
-    ws_url: Optional[str] = None
-    tab_id: Optional[str] = None
+    ws_url: str | None = None
+    tab_id: str | None = None
     cdp_port: int = 9999
+
 
 class SnapshotResponse(BaseModel):
     status: str
@@ -143,12 +162,14 @@ class SnapshotResponse(BaseModel):
     body_preview: str = ""
     element_count: int = 0
     hash: str = ""
-    elements: List[Dict[str, Any]] = []
+    elements: list[dict[str, Any]] = []
+
 
 # ── /completion ────────────────────────────────────────────────────────────────
 class CompletionRequest(BaseModel):
-    ws_url: Optional[str] = None
+    ws_url: str | None = None
     cdp_port: int = 9999
+
 
 class CompletionResponse(BaseModel):
     status: str
@@ -156,114 +177,132 @@ class CompletionResponse(BaseModel):
     screen_out: bool = False
     url: str = ""
     balance: float = 0.0
-    reason: Optional[str] = None
+    reason: str | None = None
+
 
 # ── /click ─────────────────────────────────────────────────────────────────────
 class ClickRequest(BaseModel):
     selector: str
-    ws_url: Optional[str] = None
+    ws_url: str | None = None
     cdp_port: int = 9999
     timeout: float = 5.0
+
 
 class ClickResponse(BaseModel):
     status: str
     clicked: bool = False
-    element: Optional[str] = None
-    reason: Optional[str] = None
+    element: str | None = None
+    reason: str | None = None
+
 
 # ── /find ──────────────────────────────────────────────────────────────────────
 class FindRequest(BaseModel):
     selector: str
-    ws_url: Optional[str] = None
+    ws_url: str | None = None
     cdp_port: int = 9999
-    element_type: Optional[str] = None
+    element_type: str | None = None
+
 
 class FindResponse(BaseModel):
     status: str
     found: bool = False
     count: int = 0
-    elements: List[Dict[str, Any]] = []
-    reason: Optional[str] = None
+    elements: list[dict[str, Any]] = []
+    reason: str | None = None
+
 
 # ── /verify ────────────────────────────────────────────────────────────────────
 class VerifyRequest(BaseModel):
     selector: str
-    ws_url: Optional[str] = None
+    ws_url: str | None = None
     cdp_port: int = 9999
-    expected_state: Optional[str] = None
+    expected_state: str | None = None
+
 
 class VerifyResponse(BaseModel):
     status: str
     verified: bool = False
-    current_state: Optional[str] = None
-    reason: Optional[str] = None
+    current_state: str | None = None
+    reason: str | None = None
+
 
 # ── /click-angular ─────────────────────────────────────────────────────────────
 class ClickAngularRequest(BaseModel):
     selector: str
-    ws_url: Optional[str] = None
+    ws_url: str | None = None
     cdp_port: int = 9999
+
 
 class ClickAngularResponse(BaseModel):
     status: str
     clicked: bool = False
-    reason: Optional[str] = None
+    reason: str | None = None
+
 
 # ── /fill-input ────────────────────────────────────────────────────────────────
 class FillInputRequest(BaseModel):
     selector: str
     value: str
-    ws_url: Optional[str] = None
+    ws_url: str | None = None
     cdp_port: int = 9999
+
 
 class FillInputResponse(BaseModel):
     status: str
     filled: bool = False
-    reason: Optional[str] = None
+    reason: str | None = None
+
 
 # ── /find-tab ──────────────────────────────────────────────────────────────────
 class FindTabRequest(BaseModel):
-    url_pattern: Optional[str] = None
+    url_pattern: str | None = None
     cdp_port: int = 9999
+
 
 class FindTabResponse(BaseModel):
     status: str
-    tab_id: Optional[str] = None
-    ws_url: Optional[str] = None
-    url: Optional[str] = None
-    reason: Optional[str] = None
+    tab_id: str | None = None
+    ws_url: str | None = None
+    url: str | None = None
+    reason: str | None = None
+
 
 # ── /close-modals ──────────────────────────────────────────────────────────────
 class CloseModalsRequest(BaseModel):
-    ws_url: Optional[str] = None
+    ws_url: str | None = None
     cdp_port: int = 9999
+
 
 class CloseModalsResponse(BaseModel):
     status: str
     closed_count: int = 0
-    reason: Optional[str] = None
+    reason: str | None = None
+
 
 # ── /captcha/solve ─────────────────────────────────────────────────────────────
 class CaptchaSolveRequest(BaseModel):
-    ws_url: Optional[str] = None
+    ws_url: str | None = None
     cdp_port: int = 9999
-    captcha_type: Optional[str] = None
+    captcha_type: str | None = None
+
 
 class CaptchaSolveResponse(BaseModel):
     status: str
     solved: bool = False
-    captcha_type: Optional[str] = None
-    answer: Optional[str] = None
-    reason: Optional[str] = None
+    captcha_type: str | None = None
+    answer: str | None = None
+    reason: str | None = None
+
 
 # ── /solve-drag ────────────────────────────────────────────────────────────────
 class SolveDragPuzzleRequest(BaseModel):
-    ws_url: Optional[str] = None
+    ws_url: str | None = None
     cdp_port: int = 9999
+
 
 class SolveDragPuzzleResponse(BaseModel):
     status: str
     solved: bool = False
-    puzzle_number: Optional[str] = None
-    approach: Optional[str] = None
-    reason: Optional[str] = None
+    puzzle_number: str | None = None
+    approach: str | None = None
+    reason: str | None = None

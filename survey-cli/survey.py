@@ -230,6 +230,7 @@ MAX_CONSECUTIVE_ERRORS = 20
 # KOMMANDO-FUNKTIONEN — Jede Funktion EXTREM dokumentiert
 # ============================================================================
 
+
 def cmd_login(args):
     """
     ================================================================================
@@ -442,7 +443,6 @@ def cmd_loop(args):
     ================================================================================
     """
     # Lazy Import
-    from survey.graph import create_graph, SurveyState
 
     # RunnerConfig erstellen (siehe cmd_run für Details)
     config = RunnerConfig(
@@ -471,13 +471,11 @@ def cmd_loop(args):
     return results
 
 
-
-
 def _run_survey_via_graph(survey_dict, provider, args):
     """Issue #34: Wrapper to invoke survey via LangGraph instead of SurveyRunner."""
     from survey.graph import create_graph, SurveyState
     import time
-    
+
     graph = create_graph()
     state = SurveyState(
         survey_id=survey_dict.get("id"),
@@ -487,18 +485,20 @@ def _run_survey_via_graph(survey_dict, provider, args):
         no_rate=args.no_rate,
     )
     state.session_start_time = time.time()
-    
+
     try:
         final_state = graph.invoke(state)
         return {
             "success": final_state.status == "completed",
             "balance_earned": final_state.balance_after - final_state.balance_before,
-            "error": None if final_state.status in ["completed", "screen_out"] else final_state.errors[-1].get("error", "unknown"),
+            "error": None
+            if final_state.status in ["completed", "screen_out"]
+            else final_state.errors[-1].get("error", "unknown"),
             "status": final_state.status,
             "details": {
                 "iterations": final_state.iteration,
                 "errors_count": len(final_state.errors),
-            }
+            },
         }
     except Exception as e:
         return {
@@ -507,6 +507,7 @@ def _run_survey_via_graph(survey_dict, provider, args):
             "error": str(e),
             "status": "error",
         }
+
 
 def cmd_watch(args):
     """
@@ -584,7 +585,6 @@ def cmd_watch(args):
     # WARUM in Funktion statt global? Vermeidet Import-Fehler beim Modul-Load
     # (z.B. wenn survey.chrome nicht existiert während Entwicklung).
     import signal
-    from survey.graph import create_graph, SurveyState
     from survey.scanner import read_balance
     from survey.chrome import is_chrome_alive, find_bot_tabs, find_dashboard_ws
     from survey.autodoc import log_session
@@ -618,27 +618,22 @@ def cmd_watch(args):
         # WARUM Bool? Einfachster Mechanismus für Loop-Control.
         # WIRD GESETZT AUF: False bei SIGINT/SIGTERM (shutdown Handler)
         "running": True,
-
         # total_earned: Kumulierte Einnahmen dieser Session
         # WARUM float? HeyPiggy zeigt Cent-Beträge (z.B. 0.05€).
         # WARUM 0.0? Initialwert — wird inkrementiert.
         "total_earned": 0.0,
-
         # loop_count: Anzahl durchlaufener Cycles
         # WARUM int? Zählvariable.
         # WARUM 0? Initialwert.
         "loop_count": 0,
-
         # consecutive_errors: Anzahl aufeinanderfolgender Fehler
         # WARUM int? Wird inkrementiert bei Fehlern, zurückgesetzt bei Erfolg.
         # WARUM wichtig? Exit-Condition — bei zu vielen Fehlern stoppen wir.
         "consecutive_errors": 0,
-
         # max_consecutive_errors: Schwellwert für Exit
         # WARUM 20? Siehe Konstanten-Dokumentation oben.
         # WARUM in State? Könnte konfigurierbar sein (aus Config-Datei).
         "max_consecutive_errors": MAX_CONSECUTIVE_ERRORS,
-
         # session_start: Timestamp für Duration-Berechnung
         # WARUM time.time()? Unix Timestamp, einfach zu subtrahieren.
         "session_start": time.time(),
@@ -681,20 +676,26 @@ def cmd_watch(args):
 
         # Shutdown-Nachricht
         print(f"\n[WATCH] Received {sig_name} — shutting down gracefully...")
-        print(f"[WATCH] Session: {state['loop_count']} loops, "
-              f"+{state['total_earned']:.2f}€ earned in {elapsed:.0f}s")
+        print(
+            f"[WATCH] Session: {state['loop_count']} loops, "
+            f"+{state['total_earned']:.2f}€ earned in {elapsed:.0f}s"
+        )
 
         # Loop stoppen
         state["running"] = False
 
         # Session loggen
         # WARUM log_session? Strukturierte Logs für spätere Analyse.
-        log_session("watch_stop", "ok", {
-            "reason": sig_name,
-            "loops": state["loop_count"],
-            "earned": state["total_earned"],
-            "elapsed_s": round(elapsed),
-        })
+        log_session(
+            "watch_stop",
+            "ok",
+            {
+                "reason": sig_name,
+                "loops": state["loop_count"],
+                "earned": state["total_earned"],
+                "elapsed_s": round(elapsed),
+            },
+        )
 
     # Signal-Handler registrieren
     # WARUM signal.SIGINT? Ctrl+C im Terminal.
@@ -709,9 +710,9 @@ def cmd_watch(args):
     #   - Was läuft? (Watch Daemon)
     #   - Welche Konfiguration? (interval, max, NIM, target)
     #   - Wie stoppen? (Ctrl+C)
-    print(f"\n{'═'*60}")
-    print(f"  🔄 SURVEY-CLI WATCH DAEMON — 24/7 Mode")
-    print(f"{'═'*60}")
+    print(f"\n{'═' * 60}")
+    print("  🔄 SURVEY-CLI WATCH DAEMON — 24/7 Mode")
+    print(f"{'═' * 60}")
 
     # ============================================================================
     # ACCESSIBILITY CHECK (ONCE at start)
@@ -746,16 +747,20 @@ def cmd_watch(args):
     print(f"  Max/cycle:      {args.max}")
     print(f"  NVIDIA NIM:     {'✅' if config.use_nim else '⚠️  auto-pilot'}")
     print(f"  Balance target: {config.balance_target}€")
-    print(f"  Logs:           survey-cli/logs/")
-    print(f"  Stop:           Ctrl+C or SIGTERM")
-    print(f"{'═'*60}\n")
+    print("  Logs:           survey-cli/logs/")
+    print("  Stop:           Ctrl+C or SIGTERM")
+    print(f"{'═' * 60}\n")
 
     # Session-Start loggen
-    log_session("watch_start", "ok", {
-        "interval": interval,
-        "max_per_cycle": args.max,
-        "use_nim": config.use_nim,
-    })
+    log_session(
+        "watch_start",
+        "ok",
+        {
+            "interval": interval,
+            "max_per_cycle": args.max,
+            "use_nim": config.use_nim,
+        },
+    )
 
     # ============================================================================
     # AUTO-LOGIN (wenn nicht eingeloggt)
@@ -785,16 +790,20 @@ def cmd_watch(args):
             # CDP Runtime.evaluate senden
             # WARUM {"id":0}? CDP verwendet JSON-RPC mit Request IDs.
             # WARUM "Runtime.evaluate"? Führt JavaScript im Browser-Context aus.
-            ws.send(json.dumps({
-                "id": 0,
-                "method": "Runtime.evaluate",
-                "params": {
-                    "expression": (
-                        "document.title.includes('Umfragen') || "
-                        "document.body.innerText.includes('Abmelden')"
-                    )
-                }
-            }))
+            ws.send(
+                json.dumps(
+                    {
+                        "id": 0,
+                        "method": "Runtime.evaluate",
+                        "params": {
+                            "expression": (
+                                "document.title.includes('Umfragen') || "
+                                "document.body.innerText.includes('Abmelden')"
+                            )
+                        },
+                    }
+                )
+            )
 
             # Antwort empfangen
             r = json.loads(ws.recv())
@@ -834,21 +843,27 @@ def cmd_watch(args):
 
             while login_retry_count < max_login_retries:
                 login_retry_count += 1
-                print(f"[WATCH] ❌ Login failed (attempt {login_retry_count}/{max_login_retries}): "
-                      f"{login_result.get('reason')}")
+                print(
+                    f"[WATCH] ❌ Login failed (attempt {login_retry_count}/{max_login_retries}): "
+                    f"{login_result.get('reason')}"
+                )
 
                 if login_retry_count >= max_login_retries:
                     print(f"[WATCH] ❌ CRITICAL: Login failed after {max_login_retries} attempts")
-                    print(f"[WATCH] → Manual intervention required")
-                    log_session("watch_stop", "error", {
-                        "reason": "login_max_retries_exceeded",
-                        "attempts": login_retry_count,
-                        "last_error": login_result.get('reason'),
-                    })
+                    print("[WATCH] → Manual intervention required")
+                    log_session(
+                        "watch_stop",
+                        "error",
+                        {
+                            "reason": "login_max_retries_exceeded",
+                            "attempts": login_retry_count,
+                            "last_error": login_result.get("reason"),
+                        },
+                    )
                     return  # HARD STOP — verhindert Endlosschleife
 
                 # Exponential Backoff vor Retry
-                wait_s = min(60, 2 ** login_retry_count)
+                wait_s = min(60, 2**login_retry_count)
                 print(f"[WATCH] Waiting {wait_s}s before retry...")
                 time.sleep(wait_s)
 
@@ -856,12 +871,12 @@ def cmd_watch(args):
                 login_result = google_login()
 
             # FALLBACK: Wenn alle Retries fehlschlagen
-            print(f"[WATCH] ❌ Login exhausted — stopping watch daemon")
+            print("[WATCH] ❌ Login exhausted — stopping watch daemon")
             log_session("watch_stop", "error", {"reason": "login_exhausted"})
             return
         else:
             # Login erfolgreich
-            print(f"[WATCH] ✅ Login successful")
+            print("[WATCH] ✅ Login successful")
             # WARTEN bis Dashboard bereit
             # WARUM 3s? Weiterleitung nach Login kann dauern.
             time.sleep(3)
@@ -875,7 +890,7 @@ def cmd_watch(args):
 
         # Loop-Start-Zeit
         # WARUM time.monotonic()? Monotonic = nicht von Systemzeit-Änderungen beeinflusst.
-        loop_start = time.monotonic()
+        time.monotonic()
 
         try:
             # ── Health Check: Chrome läuft? ──
@@ -889,7 +904,7 @@ def cmd_watch(args):
 
                 # Max-Fehler erreicht?
                 if state["consecutive_errors"] >= state["max_consecutive_errors"]:
-                    print(f"[WATCH] ❌ Too many Chrome failures — stopping")
+                    print("[WATCH] ❌ Too many Chrome failures — stopping")
                     break  # Loop beenden
 
                 # Exponential Backoff
@@ -903,11 +918,13 @@ def cmd_watch(args):
             # ── Health Check: cua-driver Daemon läuft? ──
             cua_health = cua_mgr.health_check()
             if not cua_health.get("healthy"):
-                print(f"[WATCH] ⚠️  cua-driver daemon unhealthy: {cua_health.get('reason')} — recovering...")
+                print(
+                    f"[WATCH] ⚠️  cua-driver daemon unhealthy: {cua_health.get('reason')} — recovering..."
+                )
                 if not cua_mgr.ensure_running():
                     state["consecutive_errors"] += 1
                     if state["consecutive_errors"] >= state["max_consecutive_errors"]:
-                        print(f"[WATCH] ❌ Too many cua-daemon failures — stopping")
+                        print("[WATCH] ❌ Too many cua-daemon failures — stopping")
                         break
                     time.sleep(10)
                     continue
@@ -916,7 +933,7 @@ def cmd_watch(args):
             # ── Dashboard prüfen ──
             dashboard_ws = find_dashboard_ws(args.port)
             if not dashboard_ws:
-                print(f"[WATCH] ⚠️  No dashboard tab found")
+                print("[WATCH] ⚠️  No dashboard tab found")
                 state["consecutive_errors"] += 1
                 time.sleep(interval)
                 continue
@@ -932,10 +949,12 @@ def cmd_watch(args):
             tabs = len(find_bot_tabs(args.port))
 
             # ── Status ausgeben ──
-            print(f"\n[{state['loop_count']}] Balance: {balance_before}€ | "
-                  f"Tabs: {tabs} | "
-                  f"Earned: +{state['total_earned']:.2f}€ | "
-                  f"{time.strftime('%H:%M:%S')}")
+            print(
+                f"\n[{state['loop_count']}] Balance: {balance_before}€ | "
+                f"Tabs: {tabs} | "
+                f"Earned: +{state['total_earned']:.2f}€ | "
+                f"{time.strftime('%H:%M:%S')}"
+            )
 
             # ── Balance Target prüfen ──
             # WARUM balance_target? Wenn Ziel erreicht → Aufhören.
@@ -963,12 +982,13 @@ def cmd_watch(args):
             # ── Icons für Ergebnisse ──
             # WARUM Icons? Schneller visueller Überblick im Log.
             icons = " ".join(
-                "✅" if r.status == "completed" else
-                "⛔" if r.status == "blocked" else "❌"
+                "✅" if r.status == "completed" else "⛔" if r.status == "blocked" else "❌"
                 for r in results
             )
-            print(f"  → +{earned:.2f}€ | {completed} done, {failed} fail | "
-                  f"Balance: {balance_after}€ | {icons}")
+            print(
+                f"  → +{earned:.2f}€ | {completed} done, {failed} fail | "
+                f"Balance: {balance_after}€ | {icons}"
+            )
 
             # ── Smart Backoff ──
             # WARUM Smart? Wartezeit abhängig von Ergebnissen.
@@ -1001,32 +1021,35 @@ def cmd_watch(args):
 
             # Exponential Backoff
             if state["consecutive_errors"] >= state["max_consecutive_errors"]:
-                print(f"[WATCH] ❌ Too many consecutive errors — stopping")
+                print("[WATCH] ❌ Too many consecutive errors — stopping")
                 break
 
             # Wartezeit berechnen
             # WARUM min(300, ...)? Max 5 Minuten warten.
             # WARUM 5 * (2 ** errors)? Stärkerer Backoff als bei Chrome-Fehlern.
             wait_s = min(300, 5 * (2 ** state["consecutive_errors"]))
-            print(f"[WATCH] Backing off {wait_s}s (error {state['consecutive_errors']}/{state['max_consecutive_errors']})")
+            print(
+                f"[WATCH] Backing off {wait_s}s (error {state['consecutive_errors']}/{state['max_consecutive_errors']})"
+            )
             time.sleep(wait_s)
 
     # ============================================================================
     # SHUTDOWN — Zusammenfassung
     # ============================================================================
     elapsed = time.time() - state["session_start"]
-    print(f"\n{'═'*60}")
-    print(f"  WATCH DAEMON STOPPED")
-    print(f"{'═'*60}")
+    print(f"\n{'═' * 60}")
+    print("  WATCH DAEMON STOPPED")
+    print(f"{'═' * 60}")
     print(f"  Loops:     {state['loop_count']}")
     print(f"  Earned:    +{state['total_earned']:.2f}€")
-    print(f"  Duration:  {elapsed:.0f}s ({elapsed/3600:.1f}h)")
-    print(f"{'═'*60}\n")
+    print(f"  Duration:  {elapsed:.0f}s ({elapsed / 3600:.1f}h)")
+    print(f"{'═' * 60}\n")
 
 
 # ============================================================================
 # WEITERE KOMMANDO-FUNKTIONEN (kürzer dokumentiert, aber immer noch EXTREM)
 # ============================================================================
+
 
 def cmd_balance(args):
     """
@@ -1049,9 +1072,9 @@ def cmd_balance(args):
 
     # Balance lesen
     balance = read_balance(port=args.port)
-    print(f"\n{'='*50}")
+    print(f"\n{'=' * 50}")
     print(f"  CURRENT BALANCE: {balance}€")
-    print(f"{'='*50}")
+    print(f"{'=' * 50}")
 
     # Zusammenfassung generieren
     summary = generate_summary(days=args.days)
@@ -1081,14 +1104,14 @@ def cmd_status(args):
     from survey.nim import get_nim
     from survey.scanner import read_balance
 
-    print(f"\n{'='*50}")
-    print(f"  SURVEY-CLI STATUS")
-    print(f"{'='*50}")
+    print(f"\n{'=' * 50}")
+    print("  SURVEY-CLI STATUS")
+    print(f"{'=' * 50}")
 
     # Chrome Status
     alive = is_chrome_alive(args.port)
     pids = find_bot_pids()
-    print(f"\n  Chrome:")
+    print("\n  Chrome:")
     print(f"    Running:  {'✅' if alive else '❌'}")
     print(f"    PIDs:     {pids if pids else 'none'}")
     print(f"    Port:     {args.port}")
@@ -1097,20 +1120,20 @@ def cmd_status(args):
         # Dashboard
         ws_url = find_dashboard_ws(args.port)
         if ws_url:
-            print(f"    Dashboard: ✅ Connected")
+            print("    Dashboard: ✅ Connected")
             try:
-                snap = generate_snapshot(ws_url)
+                generate_snapshot(ws_url)
                 balance = read_balance(args.port)
                 print(f"    Balance:   {balance}€")
             except Exception:
-                print(f"    Dashboard: connected (read error)")
+                print("    Dashboard: connected (read error)")
         else:
-            print(f"    Dashboard: ❌ Not found")
+            print("    Dashboard: ❌ Not found")
 
     # NIM Status
     nim = get_nim()
     key = os.getenv("NVIDIA_API_KEY", "")
-    print(f"\n  NVIDIA NIM:")
+    print("\n  NVIDIA NIM:")
     print(f"    API Key:  {'✅ set' if key else '❌ NOT SET'}")
     print(f"    Status:   {'✅ ready' if nim and nim.available else '❌ unavailable'}")
     print(f"    Model:    {nim.model if nim and nim.model else 'N/A'}")
@@ -1135,9 +1158,9 @@ def cmd_doctor(args):
     """
     from survey.chrome import is_chrome_alive, find_bot_tabs
 
-    print(f"\n{'='*50}")
-    print(f"  🔬 SURVEY-CLI DOCTOR")
-    print(f"{'='*50}")
+    print(f"\n{'=' * 50}")
+    print("  🔬 SURVEY-CLI DOCTOR")
+    print(f"{'=' * 50}")
 
     # Python Version
     print(f"\n  Python: {sys.version.split()[0]}")
@@ -1164,7 +1187,7 @@ def cmd_doctor(args):
         log_files = list(logs_dir.glob("*.jsonl"))
         print(f"  Log files:  {len(log_files)}")
     else:
-        print(f"  Log files:  0")
+        print("  Log files:  0")
 
     # Tabs
     if is_chrome_alive(args.port):
@@ -1172,11 +1195,11 @@ def cmd_doctor(args):
         print(f"  Tabs open:  {len(pages)}")
         for p in pages[:5]:
             url = p.get("url", "")[:70]
-            print(f"    {p.get('id','?')[:12]} | {url}")
+            print(f"    {p.get('id', '?')[:12]} | {url}")
 
-    print(f"\n  {'='*50}")
-    print(f"  Doctor complete")
-    print(f"  {'='*50}\n")
+    print(f"\n  {'=' * 50}")
+    print("  Doctor complete")
+    print(f"  {'=' * 50}\n")
 
 
 def cmd_kill(args):
@@ -1189,6 +1212,7 @@ def cmd_kill(args):
     ================================================================================
     """
     from survey.chrome import safe_kill_bot
+
     killed = safe_kill_bot()
     if killed:
         print("✅ Bot Chrome killed safely")
@@ -1203,6 +1227,7 @@ def cmd_summary(args):
     ================================================================================
     """
     from survey.autodoc import generate_summary, print_summary
+
     summary = generate_summary(days=args.days or 30)
     print_summary(summary)
     return summary
@@ -1260,11 +1285,11 @@ def cmd_profile(args):
     if action == "show":
         profile = ProfileLoader.load_profile(profile_name=profile_name)
         missing = ProfileLoader._missing_required(profile)
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print(f"  PERSONA: {profile_name}")
         if missing:
             print(f"  WARNING: missing required keys: {sorted(missing)}")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
         for k, v in profile.items():
             if k.startswith("_"):
                 continue
@@ -1277,9 +1302,9 @@ def cmd_profile(args):
         out_path = getattr(args, "out", None)
 
         # Stdout-Summary
-        print(f"\n{'='*60}")
+        print(f"\n{'=' * 60}")
         print("  MATCHER TELEMETRY (in-process)")
-        print(f"{'='*60}")
+        print(f"{'=' * 60}")
         if not telem:
             print("  <empty — kein match_field()/load_profile() bisher>")
         for persona, bucket in telem.items():
@@ -1302,14 +1327,11 @@ def cmd_profile(args):
                 mls = bucket.get("miss_labels", [])
                 print(f"    miss_labels:     {len(mls)} record(s)")
                 if mls:
-                    print("      "
-                          + f"{'role':<10} {'label':<40} "
-                          + f"{'hash':<8} candidates")
+                    print("      " + f"{'role':<10} {'label':<40} " + f"{'hash':<8} candidates")
                     print("      " + "-" * 78)
                     for ml in mls[-20:]:  # show last 20
                         role = str(ml.get("role", ""))[:10]
-                        lbl = str(ml.get("question_text")
-                                  or ml.get("label") or "")[:40]
+                        lbl = str(ml.get("question_text") or ml.get("label") or "")[:40]
                         h = str(ml.get("snapshot_hash", ""))[:8]
                         cands = ",".join(ml.get("candidate_keys", [])) or "-"
                         print(f"      {role:<10} {lbl:<40} {h:<8} {cands}")
@@ -1317,6 +1339,7 @@ def cmd_profile(args):
 
         # JSON Out
         import json
+
         payload = json.dumps(telem, ensure_ascii=False, indent=2)
         print(payload)
         if out_path:
@@ -1324,7 +1347,8 @@ def cmd_profile(args):
                 with open(out_path, "w") as f:
                     for persona, bucket in telem.items():
                         line = json.dumps(
-                            {"persona": persona, **bucket}, ensure_ascii=False,
+                            {"persona": persona, **bucket},
+                            ensure_ascii=False,
                         )
                         f.write(line + "\n")
                 print(f"\n[profile dump] wrote JSONL to {out_path}")
@@ -1339,6 +1363,7 @@ def cmd_profile(args):
 # HILFSFUNKTIONEN
 # ============================================================================
 
+
 def _print_result(result):
     """
     ================================================================================
@@ -1352,7 +1377,7 @@ def _print_result(result):
     """
     if result is None:
         return
-    print(f"\n{'='*50}")
+    print(f"\n{'=' * 50}")
     print(f"  Survey:     {result.survey_id}")
     print(f"  Status:     {result.status}")
     print(f"  Provider:   {result.provider}")
@@ -1362,7 +1387,7 @@ def _print_result(result):
     print(f"  NIM calls:  {result.nim_calls}")
     if result.error:
         print(f"  Error:      {result.error}")
-    print(f"{'='*50}\n")
+    print(f"{'=' * 50}\n")
 
 
 def _print_result_graph(state):
@@ -1391,7 +1416,7 @@ def _print_result_graph(state):
     earned = state.balance_earned
     provider = state.provider or "unknown"
 
-    print(f"\n{'='*50}")
+    print(f"\n{'=' * 50}")
     print(f"  Survey:     {state.survey_id}")
     print(f"  Status:     {status_icon} {state.status}")
     print(f"  Provider:   {provider}")
@@ -1401,7 +1426,7 @@ def _print_result_graph(state):
     if state.errors:
         last = state.errors[-1]
         print(f"  Last error: {last.get('node', '?')}: {last.get('error', '?')[:60]}")
-    print(f"{'='*50}\n")
+    print(f"{'=' * 50}\n")
 
     # SR-54: Matcher-Telemetrie pro Run als JSONL persistieren.
     _persist_matcher_telemetry(state.survey_id or "unknown")
@@ -1414,8 +1439,10 @@ def _persist_matcher_telemetry(run_id: str) -> None:
     Survey-Run ist bereits fertig. Eine Zeile pro Persona → JSONL.
     """
     import json
+
     try:
         from survey.profile_loader import ProfileLoader
+
         telem = ProfileLoader.telemetry()
         if not telem:
             return
@@ -1424,17 +1451,23 @@ def _persist_matcher_telemetry(run_id: str) -> None:
         path = os.path.join(log_dir, f"matcher-telemetry-{run_id}.jsonl")
         with open(path, "w") as f:
             for persona, bucket in telem.items():
-                f.write(json.dumps(
-                    {"persona": persona, **bucket}, ensure_ascii=False,
-                ) + "\n")
+                f.write(
+                    json.dumps(
+                        {"persona": persona, **bucket},
+                        ensure_ascii=False,
+                    )
+                    + "\n"
+                )
         # Kleines Stdout-Summary: Top-5 Miss-Familien fehlt — wir haben
         # nur Miss-Counter, nicht per-key Miss. Fuer SR-51 erweitern.
         total_hits = sum(b.get("match_hits", 0) for b in telem.values())
         total_miss = sum(b.get("match_misses", 0) for b in telem.values())
         total = total_hits + total_miss
         rate = (total_hits / total * 100.0) if total else 0.0
-        print(f"[matcher-telemetry] {total_hits} hits / {total_miss} miss "
-              f"({rate:.1f}% hit-rate) -> {path}")
+        print(
+            f"[matcher-telemetry] {total_hits} hits / {total_miss} miss "
+            f"({rate:.1f}% hit-rate) -> {path}"
+        )
     except Exception as exc:
         print(f"[matcher-telemetry] write failed: {exc}")
 
@@ -1475,6 +1508,7 @@ def _detect_provider_from_url(url):
 # MAIN — CLI ENTRY POINT
 # ============================================================================
 
+
 def main():
     """
     ================================================================================
@@ -1486,12 +1520,16 @@ def main():
     parser = argparse.ArgumentParser(
         description="survey-cli — Standalone Survey Automation CLI",
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        epilog=__doc__  # Zeigt den Docstring als Hilfe an
+        epilog=__doc__,  # Zeigt den Docstring als Hilfe an
     )
 
     # Globale Optionen
-    parser.add_argument("--port", type=int, default=int(os.getenv("SURVEY_PORT", str(DEFAULT_PORT))),
-                        help=f"CDP port (default: {DEFAULT_PORT})")
+    parser.add_argument(
+        "--port",
+        type=int,
+        default=int(os.getenv("SURVEY_PORT", str(DEFAULT_PORT))),
+        help=f"CDP port (default: {DEFAULT_PORT})",
+    )
     parser.add_argument("--debug", action="store_true", help="Verbose output")
 
     # Subcommands
@@ -1523,7 +1561,12 @@ def main():
     # WARUM --max? Loop macht mehrere Surveys — max begrenzt die Anzahl.
     # WARUM DEFAULT_MAX_SURVEYS = 5? Erfahrungswert: 3-5min pro Cycle.
     p = sub.add_parser("loop", help="Auto-loop surveys")
-    p.add_argument("--max", type=int, default=DEFAULT_MAX_SURVEYS, help=f"Max surveys per loop (default: {DEFAULT_MAX_SURVEYS})")
+    p.add_argument(
+        "--max",
+        type=int,
+        default=DEFAULT_MAX_SURVEYS,
+        help=f"Max surveys per loop (default: {DEFAULT_MAX_SURVEYS})",
+    )
     p.add_argument("--no-nim", action="store_true", help="Skip NIM")
     p.add_argument("--no-rate", action="store_true", help="Skip rating")
 
@@ -1534,7 +1577,12 @@ def main():
     # WARUM DEFAULT_INTERVAL = 30? Siehe Konstanten-Dokumentation oben.
     # WARUM --max = 3? Watch macht weniger Surveys pro Cycle als Loop (Dauerbetrieb).
     p = sub.add_parser("watch", help="Continuous poller")
-    p.add_argument("--interval", type=int, default=DEFAULT_INTERVAL, help=f"Poll interval in seconds (default: {DEFAULT_INTERVAL})")
+    p.add_argument(
+        "--interval",
+        type=int,
+        default=DEFAULT_INTERVAL,
+        help=f"Poll interval in seconds (default: {DEFAULT_INTERVAL})",
+    )
     p.add_argument("--max", type=int, default=3, help="Max surveys per poll")
     p.add_argument("--no-nim", action="store_true", help="Skip NIM")
     p.add_argument("--no-rate", action="store_true", help="Skip rating")
@@ -1591,17 +1639,26 @@ def main():
     #   survey profile dump --out logs/matcher-{run}.jsonl
     p = sub.add_parser("profile", help="Show persona or dump matcher telemetry")
     p.add_argument(
-        "profile_action", nargs="?", default="show",
+        "profile_action",
+        nargs="?",
+        default="show",
         choices=("show", "dump"),
         help="show=Profil anzeigen, dump=Matcher-Telemetrie (SR-54) ausgeben",
     )
-    p.add_argument("--name", type=str, default="jeremy_schulze",
-                   help="Persona-Basename (default: jeremy_schulze)")
-    p.add_argument("--out", type=str, default="",
-                   help="Pfad fuer JSONL-Output (nur bei dump)")
+    p.add_argument(
+        "--name",
+        type=str,
+        default="jeremy_schulze",
+        help="Persona-Basename (default: jeremy_schulze)",
+    )
+    p.add_argument("--out", type=str, default="", help="Pfad fuer JSONL-Output (nur bei dump)")
     # SR-59 #58: show the rich miss_labels table on top of the summary.
-    p.add_argument("--miss-labels", dest="miss_labels", action="store_true",
-                   help="Bei 'dump': zeige miss_labels-Tabelle (SR-59 #58)")
+    p.add_argument(
+        "--miss-labels",
+        dest="miss_labels",
+        action="store_true",
+        help="Bei 'dump': zeige miss_labels-Tabelle (SR-59 #58)",
+    )
 
     # ============================================================================
     # ARGUMENTE PARSEN

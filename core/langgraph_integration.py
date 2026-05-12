@@ -50,12 +50,14 @@ diese Datei die existierenden APIs:
 
 from __future__ import annotations
 
+import contextlib
 import functools
 import logging
 import time
 import traceback
 import uuid
-from typing import Any, Awaitable, Callable, Optional
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from .analytics import AnalyticsCollector
 from .config import Config
@@ -68,10 +70,17 @@ from .survey_budget import BudgetExceededError, SurveyBudget
 log = logging.getLogger("core.langgraph")
 
 # Diese State-Keys reserviert core — bitte nicht in Node-Code ueberschreiben.
-CORE_KEYS = frozenset({
-    "run_id", "budget", "_config", "_error_handler",
-    "_analytics", "_state_manager", "_security",
-})
+CORE_KEYS = frozenset(
+    {
+        "run_id",
+        "budget",
+        "_config",
+        "_error_handler",
+        "_analytics",
+        "_state_manager",
+        "_security",
+    }
+)
 
 
 def inject_core(
@@ -82,8 +91,8 @@ def inject_core(
     analytics: AnalyticsCollector,
     state_manager: StateManager,
     security: SecurityManager,
-    run_id: Optional[str] = None,
-    max_seconds: Optional[float] = None,
+    run_id: str | None = None,
+    max_seconds: float | None = None,
 ) -> dict:
     """Reichert den initialen LangGraph-State mit core-Services + Budget an.
 
@@ -121,7 +130,8 @@ def inject_core(
     try:
         security.audit.log(
             event_type=security.audit.PIPELINE_START
-            if hasattr(security.audit, "PIPELINE_START") else "PIPELINE_START",
+            if hasattr(security.audit, "PIPELINE_START")
+            else "PIPELINE_START",
             actor="langgraph",
             action="survey_start",
             resource=rid,
@@ -133,7 +143,8 @@ def inject_core(
 
     log.info(
         "graph.core.injected run_id=%s budget_max=%.0fs",
-        rid, new_state["budget"].max_seconds,
+        rid,
+        new_state["budget"].max_seconds,
     )
     return new_state
 
@@ -163,9 +174,7 @@ def node_with_core(
         # Defensive: wenn jemand vergisst inject_core() aufzurufen, lass den
         # Node trotzdem laufen — aber LOG es als ERROR und ueberspring core-Hooks.
         if "budget" not in state or "_state_manager" not in state:
-            log.error(
-                "graph.node.%s missing core injection — running unprotected", node_name
-            )
+            log.error("graph.node.%s missing core injection — running unprotected", node_name)
             return await func(state)
 
         budget: SurveyBudget = state["budget"]
@@ -191,10 +200,12 @@ def node_with_core(
             analytics.increment(f"node.{node_name}.budget_exceeded")
             await sm.fail_step(step_id, error="budget_exceeded")
             if capture_screenshot_on_fail and cfg.enable_screenshots_on_error:
-                await _safe_capture(cfg, run_id, "budget_exceeded",
-                                    {"node": node_name,
-                                     "elapsed": be.elapsed,
-                                     "limit": be.limit})
+                await _safe_capture(
+                    cfg,
+                    run_id,
+                    "budget_exceeded",
+                    {"node": node_name, "elapsed": be.elapsed, "limit": be.limit},
+                )
             raise
         except Exception as e:
             duration = time.monotonic() - start
@@ -211,7 +222,8 @@ def node_with_core(
                     "elapsed_seconds": round(duration, 3),
                     "error_type": type(e).__name__,
                     "severity": severity_on_fail.value
-                    if hasattr(severity_on_fail, "value") else str(severity_on_fail),
+                    if hasattr(severity_on_fail, "value")
+                    else str(severity_on_fail),
                 },
             )
             try:
@@ -219,21 +231,21 @@ def node_with_core(
             except Exception as inner:
                 log.debug("error_handler.record_failure.skip err=%s", inner)
 
-            await sm.fail_step(step_id,
-                               error=f"{type(e).__name__}: {str(e)[:500]}")
+            await sm.fail_step(step_id, error=f"{type(e).__name__}: {str(e)[:500]}")
             if capture_screenshot_on_fail and cfg.enable_screenshots_on_error:
-                await _safe_capture(cfg, run_id, f"node_{node_name}_failed",
-                                    {"error_type": type(e).__name__,
-                                     "error_msg": str(e)[:500]})
+                await _safe_capture(
+                    cfg,
+                    run_id,
+                    f"node_{node_name}_failed",
+                    {"error_type": type(e).__name__, "error_msg": str(e)[:500]},
+                )
             raise
 
         duration = time.monotonic() - start
         analytics.increment(f"node.{node_name}.succeeded")
         analytics.record(f"node.{node_name}.duration_seconds", duration)
-        try:
+        with contextlib.suppress(Exception):
             eh._record_success(f"langgraph.{node_name}")
-        except Exception:
-            pass
         await sm.complete_step(step_id, output={"duration_seconds": duration})
         return result
 
@@ -262,12 +274,28 @@ class CoreCtx:
     Wird einmal pro Survey via attach_core_ctx() an state._core_ctx geklebt
     und von sync_node_with_core() pro Node konsultiert.
     """
-    __slots__ = ("run_id", "budget", "config", "error_handler",
-                 "analytics", "state_manager", "security")
 
-    def __init__(self, *, run_id: str, budget: SurveyBudget, config: Config,
-                 error_handler: ErrorHandler, analytics: AnalyticsCollector,
-                 state_manager: StateManager, security: SecurityManager):
+    __slots__ = (
+        "run_id",
+        "budget",
+        "config",
+        "error_handler",
+        "analytics",
+        "state_manager",
+        "security",
+    )
+
+    def __init__(
+        self,
+        *,
+        run_id: str,
+        budget: SurveyBudget,
+        config: Config,
+        error_handler: ErrorHandler,
+        analytics: AnalyticsCollector,
+        state_manager: StateManager,
+        security: SecurityManager,
+    ):
         self.run_id = run_id
         self.budget = budget
         self.config = config
@@ -285,8 +313,8 @@ def attach_core_ctx(
     analytics: AnalyticsCollector,
     state_manager: StateManager,
     security: SecurityManager,
-    run_id: Optional[str] = None,
-    max_seconds: Optional[float] = None,
+    run_id: str | None = None,
+    max_seconds: float | None = None,
 ) -> CoreCtx:
     """Haengt einen CoreCtx an state._core_ctx und liefert ihn zurueck.
 
@@ -307,7 +335,7 @@ def attach_core_ctx(
         state_manager=state_manager,
         security=security,
     )
-    setattr(state, "_core_ctx", ctx)
+    state._core_ctx = ctx
     try:
         security.audit.log(
             event_type="PIPELINE_START",
@@ -319,8 +347,7 @@ def attach_core_ctx(
         )
     except Exception as e:
         log.debug("audit.start.skip err=%s", e)
-    log.info("graph.core.attached run_id=%s budget_max=%.0fs",
-             rid, ctx.budget.max_seconds)
+    log.info("graph.core.attached run_id=%s budget_max=%.0fs", rid, ctx.budget.max_seconds)
     return ctx
 
 
@@ -347,10 +374,11 @@ def sync_node_with_core(
 
     @functools.wraps(func)
     def wrapper(state: Any) -> Any:
-        ctx: Optional[CoreCtx] = getattr(state, "_core_ctx", None)
+        ctx: CoreCtx | None = getattr(state, "_core_ctx", None)
         if ctx is None:
             log.warning(
-                "graph.sync.%s missing _core_ctx — running unprotected", node_name,
+                "graph.sync.%s missing _core_ctx — running unprotected",
+                node_name,
             )
             return func(state)
 
@@ -361,22 +389,26 @@ def sync_node_with_core(
             # Hart-abbrechen: state.status setzen, Nodes danach skippen
             ctx.analytics.increment(f"node.{node_name}.budget_exceeded")
             try:
-                setattr(state, "status", "error")
+                state.status = "error"
                 errors = getattr(state, "errors", None)
                 if errors is not None and hasattr(errors, "append"):
-                    errors.append({
-                        "node": node_name,
-                        "error": f"budget_exceeded:{be.elapsed:.1f}s",
-                        "iteration": getattr(state, "iteration", -1),
-                    })
+                    errors.append(
+                        {
+                            "node": node_name,
+                            "error": f"budget_exceeded:{be.elapsed:.1f}s",
+                            "iteration": getattr(state, "iteration", -1),
+                        }
+                    )
             except Exception:
                 pass
             # Screenshot best-effort (sync via asyncio.run)
             if capture_screenshot_on_fail and ctx.config.enable_screenshots_on_error:
-                _safe_capture_sync(ctx.config, ctx.run_id, "budget_exceeded",
-                                   {"node": node_name,
-                                    "elapsed": be.elapsed,
-                                    "limit": be.limit})
+                _safe_capture_sync(
+                    ctx.config,
+                    ctx.run_id,
+                    "budget_exceeded",
+                    {"node": node_name, "elapsed": be.elapsed, "limit": be.limit},
+                )
             # Wir RE-RAISEN NICHT — sonst crasht der LangGraph. Stattdessen
             # signalisieren wir via state.status="error" dass die naechste
             # Routing-Funktion auf END schaltet.
@@ -385,6 +417,7 @@ def sync_node_with_core(
         # 2) Step-Tracking (async unter der Haube, kurz via asyncio.run)
         try:
             import asyncio as _aio
+
             step_id = _aio.run(ctx.state_manager.start_step(ctx.run_id, node_name))
         except RuntimeError:
             # event loop already running — ueberspringen, wir verlieren nur
@@ -411,43 +444,46 @@ def sync_node_with_core(
                     "elapsed_seconds": round(duration, 3),
                     "error_type": type(e).__name__,
                     "severity": severity_on_fail.value
-                    if hasattr(severity_on_fail, "value") else str(severity_on_fail),
+                    if hasattr(severity_on_fail, "value")
+                    else str(severity_on_fail),
                 },
             )
-            try:
+            with contextlib.suppress(Exception):
                 ctx.error_handler._record_failure(f"langgraph.{node_name}", err_ctx)
-            except Exception:
-                pass
 
             if step_id is not None:
                 try:
                     import asyncio as _aio
-                    _aio.run(ctx.state_manager.fail_step(
-                        step_id, error=f"{type(e).__name__}: {str(e)[:500]}"
-                    ))
+
+                    _aio.run(
+                        ctx.state_manager.fail_step(
+                            step_id, error=f"{type(e).__name__}: {str(e)[:500]}"
+                        )
+                    )
                 except RuntimeError:
                     pass
 
             if capture_screenshot_on_fail and ctx.config.enable_screenshots_on_error:
-                _safe_capture_sync(ctx.config, ctx.run_id,
-                                   f"node_{node_name}_failed",
-                                   {"error_type": type(e).__name__,
-                                    "error_msg": str(e)[:500]})
+                _safe_capture_sync(
+                    ctx.config,
+                    ctx.run_id,
+                    f"node_{node_name}_failed",
+                    {"error_type": type(e).__name__, "error_msg": str(e)[:500]},
+                )
             raise
 
         duration = time.monotonic() - start
         ctx.analytics.increment(f"node.{node_name}.succeeded")
         ctx.analytics.record(f"node.{node_name}.duration_seconds", duration)
-        try:
+        with contextlib.suppress(Exception):
             ctx.error_handler._record_success(f"langgraph.{node_name}")
-        except Exception:
-            pass
         if step_id is not None:
             try:
                 import asyncio as _aio
-                _aio.run(ctx.state_manager.complete_step(
-                    step_id, output={"duration_seconds": duration}
-                ))
+
+                _aio.run(
+                    ctx.state_manager.complete_step(step_id, output={"duration_seconds": duration})
+                )
             except RuntimeError:
                 pass
         return result
@@ -461,25 +497,32 @@ def _safe_capture_sync(cfg: Config, run_id: str, reason: str, extra: dict) -> No
     """capture_failure aus sync-Kontext — best effort, schluckt Exceptions."""
     try:
         import asyncio as _aio
-        _aio.run(capture_failure(
-            cdp_url=cfg.chrome.cdp_url,
-            run_id=run_id,
-            reason=reason,
-            extra=extra,
-            base_dir=cfg.screenshot_dir,
-        ))
+
+        _aio.run(
+            capture_failure(
+                cdp_url=cfg.chrome.cdp_url,
+                run_id=run_id,
+                reason=reason,
+                extra=extra,
+                base_dir=cfg.screenshot_dir,
+            )
+        )
     except RuntimeError:
         # event loop already running — schedule fire-and-forget
         try:
-            _aio.get_event_loop().create_task(capture_failure(  # type: ignore
-                cdp_url=cfg.chrome.cdp_url, run_id=run_id,
-                reason=reason, extra=extra, base_dir=cfg.screenshot_dir,
-            ))
+            _aio.get_event_loop().create_task(
+                capture_failure(  # type: ignore
+                    cdp_url=cfg.chrome.cdp_url,
+                    run_id=run_id,
+                    reason=reason,
+                    extra=extra,
+                    base_dir=cfg.screenshot_dir,
+                )
+            )
         except Exception:
             pass
     except Exception as e:
-        log.warning("graph.capture_failed.sync run_id=%s reason=%s err=%s",
-                    run_id, reason, e)
+        log.warning("graph.capture_failed.sync run_id=%s reason=%s err=%s", run_id, reason, e)
 
 
 # ── TOP-LEVEL RUNNER fuer survey-cli ─────────────────────────────────────────
@@ -489,7 +532,7 @@ def run_survey_with_core(
     state: Any,
     *,
     run_fn: Callable[[Any], Any],
-    max_seconds: Optional[float] = None,
+    max_seconds: float | None = None,
 ) -> Any:
     """Top-Level Convenience: bootstrappt core, attached Ctx, fuehrt run_fn aus.
 
@@ -512,20 +555,27 @@ def run_survey_with_core(
         Finaler state inkl. _core_ctx mit budget.snapshot() + analytics
     """
     # Lokale Importe (avoid circular)
-    from . import (
-        bootstrap_core, get_config, get_error_handler, get_analytics,
-        get_state_manager, get_security_manager,
-    )
-
     # Bootstrap core (idempotent — bei wiederholtem Aufruf no-op)
     import asyncio as _aio
+
+    from . import (
+        bootstrap_core,
+        get_analytics,
+        get_config,
+        get_error_handler,
+        get_security_manager,
+        get_state_manager,
+    )
+
     try:
         _aio.run(bootstrap_core())
     except RuntimeError:
         # event loop already running — wir laufen wahrscheinlich aus async
         # context (FastAPI). Caller soll dann run_survey_with_core_async nutzen.
-        log.warning("run_survey_with_core: event loop already running, "
-                    "skipping bootstrap (call await bootstrap_core() yourself)")
+        log.warning(
+            "run_survey_with_core: event loop already running, "
+            "skipping bootstrap (call await bootstrap_core() yourself)"
+        )
 
     ctx = attach_core_ctx(
         state,
@@ -541,44 +591,41 @@ def run_survey_with_core(
     try:
         result = run_fn(state)
     except BudgetExceededError as be:
-        log.error("survey.budget_exceeded run_id=%s elapsed=%.1fs",
-                  ctx.run_id, be.elapsed)
+        log.error("survey.budget_exceeded run_id=%s elapsed=%.1fs", ctx.run_id, be.elapsed)
         ctx.analytics.increment("survey.budget_exceeded")
-        try:
-            setattr(state, "status", "error")
-        except Exception:
-            pass
+        with contextlib.suppress(Exception):
+            state.status = "error"
         result = state
     except Exception as e:
-        log.exception("survey.unhandled_exception run_id=%s err=%s",
-                      ctx.run_id, e)
+        log.exception("survey.unhandled_exception run_id=%s err=%s", ctx.run_id, e)
         ctx.analytics.increment("survey.unhandled_exception")
-        try:
-            setattr(state, "status", "error")
-        except Exception:
-            pass
+        with contextlib.suppress(Exception):
+            state.status = "error"
         result = state
 
     duration = time.monotonic() - start
     ctx.analytics.record("survey.total_duration_seconds", duration)
     ctx.analytics.increment(
         "survey.completed"
-        if getattr(state, "status", "") == "completed" else "survey.not_completed"
+        if getattr(state, "status", "") == "completed"
+        else "survey.not_completed"
     )
 
     # Final-Snapshot persistieren (resumable post-mortem)
     try:
-        _aio.run(ctx.state_manager.save_checkpoint(
-            ctx.run_id,
-            checkpoint=ctx.budget,  # nutzt budget.snapshot()
-            metadata={
-                "status": getattr(state, "status", "?"),
-                "iteration": getattr(state, "iteration", -1),
-                "balance_before": getattr(state, "balance_before", 0.0),
-                "balance_after": getattr(state, "balance_after", 0.0),
-                "duration_seconds": round(duration, 3),
-            },
-        ))
+        _aio.run(
+            ctx.state_manager.save_checkpoint(
+                ctx.run_id,
+                checkpoint=ctx.budget,  # nutzt budget.snapshot()
+                metadata={
+                    "status": getattr(state, "status", "?"),
+                    "iteration": getattr(state, "iteration", -1),
+                    "balance_before": getattr(state, "balance_before", 0.0),
+                    "balance_after": getattr(state, "balance_after", 0.0),
+                    "duration_seconds": round(duration, 3),
+                },
+            )
+        )
     except RuntimeError:
         pass
     except Exception as e:
@@ -586,13 +633,14 @@ def run_survey_with_core(
 
     log.info(
         "survey.completed run_id=%s status=%s duration=%.1fs",
-        ctx.run_id, getattr(state, "status", "?"), duration,
+        ctx.run_id,
+        getattr(state, "status", "?"),
+        duration,
     )
     return result
 
 
-async def _safe_capture(cfg: Config, run_id: str, reason: str,
-                        extra: dict) -> None:
+async def _safe_capture(cfg: Config, run_id: str, reason: str, extra: dict) -> None:
     """capture_failure aber NIE schmeissend (failure-handling darf nicht falln)."""
     try:
         await capture_failure(
@@ -603,8 +651,7 @@ async def _safe_capture(cfg: Config, run_id: str, reason: str,
             base_dir=cfg.screenshot_dir,
         )
     except Exception as e:
-        log.warning("graph.capture_failed run_id=%s reason=%s err=%s",
-                    run_id, reason, e)
+        log.warning("graph.capture_failed run_id=%s reason=%s err=%s", run_id, reason, e)
 
 
 # ── Conditional Edges ────────────────────────────────────────────────────────
@@ -629,13 +676,15 @@ def should_skip_due_to_budget(
             {"continue": "next_question", "submit_early": "submit"},
         )
     """
-    budget: Optional[SurveyBudget] = state.get("budget")
+    budget: SurveyBudget | None = state.get("budget")
     if budget is None:
         return on_ok  # kein Budget injected → kein Skip
     if budget.would_exceed(estimate_seconds):
         log.warning(
             "graph.budget.skip run_id=%s remaining=%.1fs need=%.1fs",
-            budget.run_id, budget.remaining, estimate_seconds,
+            budget.run_id,
+            budget.remaining,
+            estimate_seconds,
         )
         return on_low_budget
     return on_ok
@@ -668,13 +717,13 @@ class CoreCheckpointer:
         await self.sm.save_checkpoint(run_id, checkpoint, metadata or {})
         return {"configurable": {"thread_id": run_id}}
 
-    async def aget(self, config: dict) -> Optional[dict]:
+    async def aget(self, config: dict) -> dict | None:
         run_id = (config or {}).get("configurable", {}).get("thread_id")
         if not run_id:
             return None
         return await self.sm.load_checkpoint(run_id)
 
-    async def alist(self, config: dict, *, limit: Optional[int] = None) -> list:
+    async def alist(self, config: dict, *, limit: int | None = None) -> list:
         run_id = (config or {}).get("configurable", {}).get("thread_id")
         return await self.sm.list_checkpoints(run_id, limit=limit or 10)
 

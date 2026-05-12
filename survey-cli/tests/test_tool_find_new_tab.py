@@ -21,12 +21,24 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 MOCK_TABS = [
-    {"id": "tab1", "url": "https://heypiggy.com/dashboard", "type": "page",
-     "webSocketDebuggerUrl": "ws://127.0.0.1:9222/devtools/page/tab1"},
-    {"id": "tab2", "url": "about:blank", "type": "page",
-     "webSocketDebuggerUrl": "ws://127.0.0.1:9222/devtools/page/tab2"},
-    {"id": "tab3", "url": "https://survey.qualtrics.com/jfe/form/123", "type": "page",
-     "webSocketDebuggerUrl": "ws://127.0.0.1:9222/devtools/page/tab3"},
+    {
+        "id": "tab1",
+        "url": "https://heypiggy.com/dashboard",
+        "type": "page",
+        "webSocketDebuggerUrl": "ws://127.0.0.1:9222/devtools/page/tab1",
+    },
+    {
+        "id": "tab2",
+        "url": "about:blank",
+        "type": "page",
+        "webSocketDebuggerUrl": "ws://127.0.0.1:9222/devtools/page/tab2",
+    },
+    {
+        "id": "tab3",
+        "url": "https://survey.qualtrics.com/jfe/form/123",
+        "type": "page",
+        "webSocketDebuggerUrl": "ws://127.0.0.1:9222/devtools/page/tab3",
+    },
     {"id": "tab4", "url": "chrome-extension://abc", "type": "background_page"},
 ]
 
@@ -47,6 +59,7 @@ class TestGetAllTabs(unittest.TestCase):
         mock_resp.json.return_value = MOCK_TABS
         self.mock_get.return_value = mock_resp
         from tools.tool_find_new_tab import get_all_tabs
+
         tabs = get_all_tabs(9222)
         self.assertEqual(len(tabs), 3)  # tab4 is background_page
 
@@ -54,6 +67,7 @@ class TestGetAllTabs(unittest.TestCase):
         """Returns empty list when Chrome not reachable."""
         self.mock_get.side_effect = ConnectionError("refused")
         from tools.tool_find_new_tab import get_all_tabs
+
         tabs = get_all_tabs(9999)
         self.assertEqual(tabs, [])
 
@@ -63,10 +77,9 @@ class TestGetAllTabs(unittest.TestCase):
         mock_resp.json.return_value = []
         self.mock_get.return_value = mock_resp
         from tools.tool_find_new_tab import get_all_tabs
+
         get_all_tabs(9333)
-        self.mock_get.assert_called_with(
-            "http://127.0.0.1:9333/json", timeout=5
-        )
+        self.mock_get.assert_called_with("http://127.0.0.1:9333/json", timeout=5)
 
 
 class TestGetTabIds(unittest.TestCase):
@@ -84,6 +97,7 @@ class TestGetTabIds(unittest.TestCase):
         mock_resp.json.return_value = MOCK_TABS
         self.mock_get.return_value = mock_resp
         from tools.tool_find_new_tab import get_tab_ids
+
         ids = get_tab_ids(9222)
         self.assertIsInstance(ids, set)
         self.assertIn("tab1", ids)
@@ -109,6 +123,7 @@ class TestFindNewTab(unittest.TestCase):
         mock_resp.json.return_value = MOCK_TABS
         self.mock_get.return_value = mock_resp
         from tools.tool_find_new_tab import find_new_tab
+
         result = find_new_tab(9222, {"tab1"}, wait_s=0)
         self.assertIsNotNone(result)
         self.assertTrue(result.startswith("ws://"))
@@ -119,6 +134,7 @@ class TestFindNewTab(unittest.TestCase):
         mock_resp.json.return_value = MOCK_TABS
         self.mock_get.return_value = mock_resp
         from tools.tool_find_new_tab import find_new_tab
+
         result = find_new_tab(9222, {"tab1", "tab3"}, wait_s=0)
         self.assertIsNone(result)  # Only tab2 (about:blank) is new
 
@@ -128,6 +144,7 @@ class TestFindNewTab(unittest.TestCase):
         mock_resp.json.return_value = MOCK_TABS
         self.mock_get.return_value = mock_resp
         from tools.tool_find_new_tab import find_new_tab
+
         result = find_new_tab(9222, {"tab1", "tab2", "tab3"}, wait_s=0)
         self.assertIsNone(result)
 
@@ -137,8 +154,8 @@ class TestFindNewTab(unittest.TestCase):
         mock_resp.json.return_value = MOCK_TABS
         self.mock_get.return_value = mock_resp
         from tools.tool_find_new_tab import find_new_tab
-        result = find_new_tab(9222, {"tab1", "tab2"}, wait_s=0,
-                              ignore_urls=["qualtrics"])
+
+        result = find_new_tab(9222, {"tab1", "tab2"}, wait_s=0, ignore_urls=["qualtrics"])
         self.assertIsNone(result)  # tab3 is ignored
 
     def test_find_new_tab_waits_before_scan(self):
@@ -147,6 +164,7 @@ class TestFindNewTab(unittest.TestCase):
         mock_resp.json.return_value = MOCK_TABS
         self.mock_get.return_value = mock_resp
         from tools.tool_find_new_tab import find_new_tab
+
         find_new_tab(9222, {"tab1", "tab2"}, wait_s=2.5)
         self.mock_sleep.assert_called_with(2.5)
 
@@ -166,6 +184,7 @@ class TestFindTabByUrl(unittest.TestCase):
         mock_resp.json.return_value = MOCK_TABS
         self.mock_get.return_value = mock_resp
         from tools.tool_find_new_tab import find_tab_by_url
+
         result = find_tab_by_url(9222, "qualtrics")
         self.assertIsNotNone(result)
         self.assertTrue(result.startswith("ws://"))
@@ -175,6 +194,7 @@ class TestFindTabByUrl(unittest.TestCase):
         mock_resp.json.return_value = MOCK_TABS
         self.mock_get.return_value = mock_resp
         from tools.tool_find_new_tab import find_tab_by_url
+
         result = find_tab_by_url(9222, "doesnotexist")
         self.assertIsNone(result)
 
@@ -183,6 +203,7 @@ class TestFindTabByUrl(unittest.TestCase):
         mock_resp.json.return_value = MOCK_TABS
         self.mock_get.return_value = mock_resp
         from tools.tool_find_new_tab import find_tab_by_url
+
         result = find_tab_by_url(9222, "Qualtrics")
         self.assertIsNotNone(result)
 

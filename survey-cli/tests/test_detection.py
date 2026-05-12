@@ -129,7 +129,9 @@ class TestDetectErrorPage(unittest.TestCase):
         self.assertIn("full", reason.lower())
 
     def test_session_expired(self):
-        is_err, reason = BatchExecutor.detect_error_page("Your session has expired. Please re-login.")
+        is_err, reason = BatchExecutor.detect_error_page(
+            "Your session has expired. Please re-login."
+        )
         self.assertTrue(is_err)
         self.assertIn("expired", reason.lower())
 

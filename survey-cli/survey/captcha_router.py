@@ -249,6 +249,7 @@ def _solver_for(captcha_type: str):
     # 1) Adapter im survey-cli (bevorzugt)
     try:
         from .captcha_adapters import get_adapter as _get_adapter
+
         adapter = _get_adapter(captcha_type)
         if adapter is not None:
             return adapter
@@ -258,9 +259,8 @@ def _solver_for(captcha_type: str):
     # 2) Direkter Solver in stealth_captcha (Fallback)
     try:
         import importlib
-        mod = importlib.import_module(
-            f"stealth_captcha.solver.{captcha_type}"
-        )
+
+        mod = importlib.import_module(f"stealth_captcha.solver.{captcha_type}")
         if hasattr(mod, "solve"):
             return mod.solve
     except Exception:
@@ -328,9 +328,7 @@ class CaptchaRouter:
         result.elapsed_ms = (time.time() - t0) * 1000.0
         return result
 
-    def detect_and_solve(
-        self, scan_result: ScanResult
-    ) -> CaptchaResult | None:
+    def detect_and_solve(self, scan_result: ScanResult) -> CaptchaResult | None:
         det = self.detect(scan_result)
         if det is None:
             return None

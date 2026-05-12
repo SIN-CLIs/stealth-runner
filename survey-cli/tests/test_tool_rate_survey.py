@@ -42,20 +42,30 @@ class TestRateSurvey(unittest.TestCase):
 
     def test_rate_survey_not_found(self):
         """Returns 'not_found' when no rating page detected."""
-        self._set_pages([
-            {"id": "tab1", "url": "https://heypiggy.com/dashboard", "type": "page"},
-        ])
+        self._set_pages(
+            [
+                {"id": "tab1", "url": "https://heypiggy.com/dashboard", "type": "page"},
+            ]
+        )
         from tools.tool_rate_survey import rate_survey
+
         result = rate_survey()
         self.assertEqual(result["status"], "not_found")
 
     def test_rate_survey_no_ws_url_error(self):
         """Rating tab without WebSocket URL returns error."""
-        self._set_pages([
-            {"id": "tab2", "url": "https://www.cpx-research.com/rating.php", "type": "page",
-             "webSocketDebuggerUrl": None},
-        ])
+        self._set_pages(
+            [
+                {
+                    "id": "tab2",
+                    "url": "https://www.cpx-research.com/rating.php",
+                    "type": "page",
+                    "webSocketDebuggerUrl": None,
+                },
+            ]
+        )
         from tools.tool_rate_survey import rate_survey
+
         result = rate_survey()
         self.assertEqual(result["status"], "error")
         self.assertIn("no WebSocket URL", result["reason"])
@@ -64,9 +74,11 @@ class TestRateSurvey(unittest.TestCase):
         """CDP HTTP failure returns empty list."""
         self.mock_urlopen.side_effect = ConnectionError("dead")
         from tools.tool_rate_survey import _get_cdp_pages
+
         pages = _get_cdp_pages()
         self.assertEqual(pages, [])
         from tools.tool_rate_survey import rate_survey
+
         result = rate_survey()
         self.assertEqual(result["status"], "not_found")
 
@@ -78,6 +90,7 @@ class TestRateSurvey(unittest.TestCase):
         mock_ws_mod.create_connection.return_value = mock_ws
         with patch.dict("sys.modules", {"websocket": mock_ws_mod}):
             import tools.tool_rate_survey
+
             result = tools.tool_rate_survey._click_rating_button("ws://test/page")
             self.assertTrue(result)
 
@@ -87,6 +100,7 @@ class TestRateSurvey(unittest.TestCase):
         mock_ws_mod.create_connection.side_effect = ConnectionError("nope")
         with patch.dict("sys.modules", {"websocket": mock_ws_mod}):
             import tools.tool_rate_survey
+
             result = tools.tool_rate_survey._click_rating_button("ws://test/page")
             self.assertFalse(result)
 
@@ -94,15 +108,19 @@ class TestRateSurvey(unittest.TestCase):
         """_verify_rating_done returns True when tab closed."""
         self._set_pages([])
         from tools.tool_rate_survey import _verify_rating_done
+
         result = _verify_rating_done("missing_tab")
         self.assertTrue(result)
 
     def test_verify_rating_done_tab_still_rating(self):
         """_verify_rating_done returns False when tab still on rating page."""
-        self._set_pages([
-            {"id": "tab2", "url": "https://www.cpx-research.com/rating.php", "type": "page"},
-        ])
+        self._set_pages(
+            [
+                {"id": "tab2", "url": "https://www.cpx-research.com/rating.php", "type": "page"},
+            ]
+        )
         from tools.tool_rate_survey import _verify_rating_done
+
         result = _verify_rating_done("tab2")
         self.assertFalse(result)
 
@@ -110,6 +128,7 @@ class TestRateSurvey(unittest.TestCase):
         """rate_survey always returns a dict."""
         self._set_pages([])
         from tools.tool_rate_survey import rate_survey
+
         result = rate_survey()
         self.assertIsInstance(result, dict)
         self.assertIn("status", result)

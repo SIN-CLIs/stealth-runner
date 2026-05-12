@@ -29,7 +29,6 @@ Pflicht-Kontext:
 
 from __future__ import annotations
 
-import logging
 import os
 import sys
 import unittest
@@ -165,7 +164,7 @@ class TestTelemetryMatchHits(unittest.TestCase):
         # Required _loader_name fuer _record_match auf Profile-Dict
         p["_loader_name"] = "jeremy_schulze"
 
-        ProfileLoader.match_field("textbox", "Stadt", p)   # hit
+        ProfileLoader.match_field("textbox", "Stadt", p)  # hit
         ProfileLoader.match_field("textbox", "Postleitzahl", p)  # hit
         ProfileLoader.match_field("textbox", "Lieblingsfarbe?", p)  # miss
 

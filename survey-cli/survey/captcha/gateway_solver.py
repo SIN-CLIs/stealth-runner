@@ -61,23 +61,27 @@ TIMEOUT_S = 30
 RETRIES = 2
 
 # Alle Captcha-Typen die dieser Solver unterstützt
-SUPPORTED_TYPES = frozenset({
-    "angular_drag_drop",
-    "visual_text",
-    "geetest_v4",
-    "geetest_v3",
-    "slider",
-    "click_captcha",
-    "hcaptcha",
-    "recaptcha",
-    "turnstile",
-})
+SUPPORTED_TYPES = frozenset(
+    {
+        "angular_drag_drop",
+        "visual_text",
+        "geetest_v4",
+        "geetest_v3",
+        "slider",
+        "click_captcha",
+        "hcaptcha",
+        "recaptcha",
+        "turnstile",
+    }
+)
 
 # ── RESULT DATACLASS ───────────────────────────────────────────────────────
+
 
 @dataclass
 class CaptchaResult:
     """Ergebnis eines Captcha-Lösungsversuchs."""
+
     solved: bool
     captcha_type: str = ""
     token: str = ""
@@ -87,6 +91,7 @@ class CaptchaResult:
 
 
 # ── SCREENSHOT CAPTURE ─────────────────────────────────────────────────────
+
 
 def _capture_screenshot_b64(cdp, frame_id: str = "") -> Optional[str]:
     """Capture Screenshot als Base64 PNG."""
@@ -100,6 +105,7 @@ def _capture_screenshot_b64(cdp, frame_id: str = "") -> Optional[str]:
 
 
 # ── VISION PROMPT BUILDERS ─────────────────────────────────────────────────
+
 
 def _build_unified_prompt(detection) -> str:
     """Unified prompt für alle Captcha-Typen mit Gemini/Claude.
@@ -183,6 +189,7 @@ If unsolvable: {{"solved": false, "reason": "why"}}"""
 
 # ── GATEWAY CLIENT ─────────────────────────────────────────────────────────
 
+
 class GatewaySolver:
     """Vercel AI Gateway Solver für Vision-basierte Captchas.
 
@@ -243,9 +250,9 @@ class GatewaySolver:
                         {"type": "text", "text": prompt},
                         {
                             "type": "image_url",
-                            "image_url": {"url": f"data:image/png;base64,{image_b64}"}
-                        }
-                    ]
+                            "image_url": {"url": f"data:image/png;base64,{image_b64}"},
+                        },
+                    ],
                 }
             ],
             "max_tokens": MAX_TOKENS,
@@ -276,12 +283,12 @@ class GatewaySolver:
                     time.sleep(5)
                     continue
                 if e.code >= 500 and attempt < RETRIES:
-                    time.sleep(2 ** attempt)
+                    time.sleep(2**attempt)
                     continue
             except URLError as e:
                 self._record_failure(f"network: {e.reason}")
                 if attempt < RETRIES:
-                    time.sleep(2 ** attempt)
+                    time.sleep(2**attempt)
                     continue
             except Exception as e:
                 self._record_failure(f"unknown: {e}")
@@ -433,10 +440,10 @@ class GatewaySolver:
         if None in (sx, sy, tx, ty):
             return False
 
-        cdp.call_result("Input.dispatchMouseEvent", {
-            "type": "mousePressed", "x": sx, "y": sy,
-            "button": "left", "clickCount": 1
-        })
+        cdp.call_result(
+            "Input.dispatchMouseEvent",
+            {"type": "mousePressed", "x": sx, "y": sy, "button": "left", "clickCount": 1},
+        )
         time.sleep(0.05)
 
         steps = 10
@@ -444,15 +451,16 @@ class GatewaySolver:
             t = i / steps
             px = sx + (tx - sx) * t
             py = sy + (ty - sy) * t
-            cdp.call_result("Input.dispatchMouseEvent", {
-                "type": "mouseMoved", "x": px, "y": py, "button": "left"
-            })
+            cdp.call_result(
+                "Input.dispatchMouseEvent",
+                {"type": "mouseMoved", "x": px, "y": py, "button": "left"},
+            )
             time.sleep(0.03)
 
-        cdp.call_result("Input.dispatchMouseEvent", {
-            "type": "mouseReleased", "x": tx, "y": ty,
-            "button": "left", "clickCount": 1
-        })
+        cdp.call_result(
+            "Input.dispatchMouseEvent",
+            {"type": "mouseReleased", "x": tx, "y": ty, "button": "left", "clickCount": 1},
+        )
         return True
 
     def _execute_text(self, cdp, data: dict) -> bool:
@@ -496,25 +504,26 @@ class GatewaySolver:
         sx, sy = pos["x"], pos["y"]
         tx = sx + distance
 
-        cdp.call_result("Input.dispatchMouseEvent", {
-            "type": "mousePressed", "x": sx, "y": sy,
-            "button": "left", "clickCount": 1
-        })
+        cdp.call_result(
+            "Input.dispatchMouseEvent",
+            {"type": "mousePressed", "x": sx, "y": sy, "button": "left", "clickCount": 1},
+        )
 
         steps = 15
         for i in range(1, steps + 1):
             t = i / steps
             ease = 1 - (1 - t) ** 3
             px = sx + (tx - sx) * ease
-            cdp.call_result("Input.dispatchMouseEvent", {
-                "type": "mouseMoved", "x": px, "y": sy, "button": "left"
-            })
+            cdp.call_result(
+                "Input.dispatchMouseEvent",
+                {"type": "mouseMoved", "x": px, "y": sy, "button": "left"},
+            )
             time.sleep(0.02)
 
-        cdp.call_result("Input.dispatchMouseEvent", {
-            "type": "mouseReleased", "x": tx, "y": sy,
-            "button": "left", "clickCount": 1
-        })
+        cdp.call_result(
+            "Input.dispatchMouseEvent",
+            {"type": "mouseReleased", "x": tx, "y": sy, "button": "left", "clickCount": 1},
+        )
         return True
 
     def _execute_click(self, cdp, data: dict) -> bool:
@@ -533,15 +542,15 @@ class GatewaySolver:
             x, y = click.get("x"), click.get("y")
             if x is None or y is None:
                 continue
-            cdp.call_result("Input.dispatchMouseEvent", {
-                "type": "mousePressed", "x": x, "y": y,
-                "button": "left", "clickCount": 1
-            })
+            cdp.call_result(
+                "Input.dispatchMouseEvent",
+                {"type": "mousePressed", "x": x, "y": y, "button": "left", "clickCount": 1},
+            )
             time.sleep(0.05)
-            cdp.call_result("Input.dispatchMouseEvent", {
-                "type": "mouseReleased", "x": x, "y": y,
-                "button": "left", "clickCount": 1
-            })
+            cdp.call_result(
+                "Input.dispatchMouseEvent",
+                {"type": "mouseReleased", "x": x, "y": y, "button": "left", "clickCount": 1},
+            )
             time.sleep(0.2)
         return True
 
@@ -552,25 +561,36 @@ class GatewaySolver:
 
         if action == "drag" and len(elements) >= 2:
             source = next((e for e in elements if "drag" in e.get("label", "").lower()), None)
-            target = next((e for e in elements if "drop" in e.get("label", "").lower() or
-                          "zone" in e.get("label", "").lower()), None)
+            target = next(
+                (
+                    e
+                    for e in elements
+                    if "drop" in e.get("label", "").lower() or "zone" in e.get("label", "").lower()
+                ),
+                None,
+            )
             if source and target:
                 sb = source["bbox"]
                 tb = target["bbox"]
-                return self._execute_drag(cdp, {
-                    "source": {"x": (sb[0] + sb[2]) / 2, "y": (sb[1] + sb[3]) / 2},
-                    "target": {"x": (tb[0] + tb[2]) / 2, "y": (tb[1] + tb[3]) / 2},
-                })
+                return self._execute_drag(
+                    cdp,
+                    {
+                        "source": {"x": (sb[0] + sb[2]) / 2, "y": (sb[1] + sb[3]) / 2},
+                        "target": {"x": (tb[0] + tb[2]) / 2, "y": (tb[1] + tb[3]) / 2},
+                    },
+                )
 
         elif action == "click":
             clicks = []
             for elem in elements:
                 bbox = elem.get("bbox", [])
                 if len(bbox) == 4:
-                    clicks.append({
-                        "x": (bbox[0] + bbox[2]) / 2,
-                        "y": (bbox[1] + bbox[3]) / 2,
-                    })
+                    clicks.append(
+                        {
+                            "x": (bbox[0] + bbox[2]) / 2,
+                            "y": (bbox[1] + bbox[3]) / 2,
+                        }
+                    )
             if clicks:
                 return self._execute_click(cdp, {"clicks": clicks})
 

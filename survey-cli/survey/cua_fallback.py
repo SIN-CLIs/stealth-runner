@@ -34,6 +34,7 @@ from typing import Optional
 @dataclass
 class CUAClickResult:
     """Ergebnis eines CUA-Clicks."""
+
     success: bool
     method: str  # "ax_tree", "blind_coords", "failed"
     details: str
@@ -66,9 +67,7 @@ class CUAFallbackHandler:
         """Stellt sicher dass CUA-Driver läuft."""
         try:
             result = subprocess.run(
-                ["pgrep", "-f", "cua-driver serve"],
-                capture_output=True,
-                timeout=5
+                ["pgrep", "-f", "cua-driver serve"], capture_output=True, timeout=5
             )
             if result.returncode != 0:
                 # Start CUA daemon
@@ -76,7 +75,7 @@ class CUAFallbackHandler:
                     ["cua-driver", "serve"],
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
-                    start_new_session=True
+                    start_new_session=True,
                 )
                 time.sleep(2)
             return True
@@ -94,14 +93,11 @@ class CUAFallbackHandler:
                     input=input_json,
                     capture_output=True,
                     text=True,
-                    timeout=10
+                    timeout=10,
                 )
             else:
                 result = subprocess.run(
-                    ["cua-driver", "call", method],
-                    capture_output=True,
-                    text=True,
-                    timeout=10
+                    ["cua-driver", "call", method], capture_output=True, text=True, timeout=10
                 )
 
             if result.returncode == 0:
@@ -133,9 +129,9 @@ class CUAFallbackHandler:
 
         # Fallback: größtes Chrome-Window
         chrome_windows = [
-            w for w in windows.get("windows", [])
-            if w.get("app_name") == "Google Chrome"
-            and w.get("bounds", {}).get("height", 0) > 300
+            w
+            for w in windows.get("windows", [])
+            if w.get("app_name") == "Google Chrome" and w.get("bounds", {}).get("height", 0) > 300
         ]
 
         if chrome_windows:
@@ -145,27 +141,19 @@ class CUAFallbackHandler:
 
     def activate_window(self, window_id: int, pid: int) -> bool:
         """Aktiviert Window (bringt in Vordergrund)."""
-        result = self._call_cua("activate_window", {
-            "window_id": window_id,
-            "pid": pid
-        })
+        result = self._call_cua("activate_window", {"window_id": window_id, "pid": pid})
         time.sleep(0.5)  # Warten bis Aktivierung abgeschlossen
         return result is not None
 
     def get_window_state(self, window_id: int, pid: int) -> Optional[dict]:
         """Holt AX-Tree für Window."""
-        return self._call_cua("get_window_state", {
-            "window_id": window_id,
-            "pid": pid
-        })
+        return self._call_cua("get_window_state", {"window_id": window_id, "pid": pid})
 
     def click_element_by_index(self, window_id: int, pid: int, element_index: int) -> bool:
         """Klickt Element via AX-Index."""
-        result = self._call_cua("click_element", {
-            "window_id": window_id,
-            "pid": pid,
-            "element_index": element_index
-        })
+        result = self._call_cua(
+            "click_element", {"window_id": window_id, "pid": pid, "element_index": element_index}
+        )
         return result is not None and result.get("success", False)
 
     def click_coordinates(self, x: int, y: int, window_id: int = None, pid: int = None) -> bool:
@@ -179,7 +167,9 @@ class CUAFallbackHandler:
         result = self._call_cua("click", params)
         return result is not None
 
-    def find_and_click_checkbox(self, window_id: int, pid: int, label_pattern: str = None) -> CUAClickResult:  # noqa: E501
+    def find_and_click_checkbox(
+        self, window_id: int, pid: int, label_pattern: str = None
+    ) -> CUAClickResult:  # noqa: E501
         """Findet und klickt Checkbox im AX-Tree.
 
         1. Aktiviere Window
@@ -200,7 +190,7 @@ class CUAFallbackHandler:
                 success=False,
                 method="failed",
                 details="Could not get window state",
-                elapsed_ms=(time.time() - start) * 1000
+                elapsed_ms=(time.time() - start) * 1000,
             )
 
         tree_lines = state.get("tree_markdown", "").split("\n")
@@ -211,7 +201,8 @@ class CUAFallbackHandler:
             if "AXCheckBox" in line or "checkbox" in line.lower():
                 # Extract index [N]
                 import re
-                match = re.search(r'\[(\d+)\]', line)
+
+                match = re.search(r"\[(\d+)\]", line)
                 if match:
                     idx = int(match.group(1))
                     if label_pattern:
@@ -230,7 +221,7 @@ class CUAFallbackHandler:
                     success=True,
                     method="ax_tree",
                     details=f"Clicked checkbox index {checkbox_indices[0]}",
-                    elapsed_ms=(time.time() - start) * 1000
+                    elapsed_ms=(time.time() - start) * 1000,
                 )
 
         # 5. Fallback: AX-Tree war leer oder kein Checkbox gefunden
@@ -246,14 +237,14 @@ class CUAFallbackHandler:
                 success=True,  # Wir hoffen es hat funktioniert
                 method="blind_coords",
                 details=f"Blind click at ({x}, {y})",
-                elapsed_ms=(time.time() - start) * 1000
+                elapsed_ms=(time.time() - start) * 1000,
             )
 
         return CUAClickResult(
             success=False,
             method="failed",
             details="No checkbox found and no bounds for blind click",
-            elapsed_ms=(time.time() - start) * 1000
+            elapsed_ms=(time.time() - start) * 1000,
         )
 
     def click_consent_page(self, provider: str = "generic") -> CUAClickResult:
@@ -273,7 +264,7 @@ class CUAFallbackHandler:
                 success=False,
                 method="failed",
                 details="No Chrome window found",
-                elapsed_ms=(time.time() - start) * 1000
+                elapsed_ms=(time.time() - start) * 1000,
             )
 
         wid = window["window_id"]
@@ -306,7 +297,7 @@ class CUAFallbackHandler:
             success=True,
             method="blind_coords",
             details=f"Clicked: {', '.join(clicked)}",
-            elapsed_ms=(time.time() - start) * 1000
+            elapsed_ms=(time.time() - start) * 1000,
         )
 
     def type_text(self, text: str) -> bool:
@@ -323,6 +314,7 @@ class CUAFallbackHandler:
 # ═══════════════════════════════════════════════════════════════════════════════
 # INTEGRATION MIT LANGGRAPH
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 def bring_cdp_tab_to_foreground(tab_ws_url: str, target_id: str = "") -> bool:
     """Bringt einen CDP-Tab via WS in den Vordergrund (Issue #80).
@@ -349,6 +341,7 @@ def bring_cdp_tab_to_foreground(tab_ws_url: str, target_id: str = "") -> bool:
         erfolgreich war, sonst False.
     """
     import json as _json
+
     try:
         import websocket as _ws
     except ImportError:
@@ -363,8 +356,7 @@ def bring_cdp_tab_to_foreground(tab_ws_url: str, target_id: str = "") -> bool:
 
     try:
         # Page.bringToFront — funktioniert für Page-Targets.
-        sock.send(_json.dumps({"id": 1, "method": "Page.bringToFront",
-                               "params": {}}))
+        sock.send(_json.dumps({"id": 1, "method": "Page.bringToFront", "params": {}}))
         resp = _json.loads(sock.recv())
         if "error" not in resp:
             ok = True
@@ -373,8 +365,11 @@ def bring_cdp_tab_to_foreground(tab_ws_url: str, target_id: str = "") -> bool:
 
         # Optional: Target.activateTarget als Belt-and-Braces.
         if target_id:
-            sock.send(_json.dumps({"id": 2, "method": "Target.activateTarget",
-                                   "params": {"targetId": target_id}}))
+            sock.send(
+                _json.dumps(
+                    {"id": 2, "method": "Target.activateTarget", "params": {"targetId": target_id}}
+                )
+            )
             resp2 = _json.loads(sock.recv())
             if "error" not in resp2:
                 ok = True

@@ -9,7 +9,7 @@ Commands:
     survey daemon status    - Show daemon status
     survey stats            - Show statistics
     survey config           - Manage configuration
-    
+
 SR-152 Commands:
     survey dlq-list         - List DLQ items
     survey dlq-replay <id>  - Replay a DLQ item
@@ -111,7 +111,9 @@ async def cmd_heypiggy(args) -> int:
 
     # Get credentials
     email = args.email or config.get("heypiggy_email") or os.environ.get("HEYPIGGY_EMAIL")
-    password = args.password or config.get("heypiggy_password") or os.environ.get("HEYPIGGY_PASSWORD")
+    password = (
+        args.password or config.get("heypiggy_password") or os.environ.get("HEYPIGGY_PASSWORD")
+    )
 
     if not email or not password:
         print("Error: HeyPiggy credentials required")
@@ -213,6 +215,7 @@ def cmd_daemon_status(args) -> int:
 
     # Show recent stats
     from .survey_agent_graph import SurveyAgentGraph
+
     try:
         graph = SurveyAgentGraph(persona=get_persona())
         stats = graph.get_stats()
@@ -225,9 +228,10 @@ def cmd_daemon_status(args) -> int:
         print(f"Total earnings: ${stats['total_earnings']:.2f}")
     except Exception:
         pass
-    
+
     # SR-152: Show DLQ stats
     from ..reliability import DLQ
+
     try:
         dlq = DLQ()
         counts = dlq.count_by_status()
@@ -324,37 +328,46 @@ def cmd_config(args) -> int:
 # SR-152: DLQ Commands
 # =============================================================================
 
+
 def cmd_dlq_list(args) -> int:
     """List DLQ items (SR-152)."""
     from ..reliability import DLQ
-    
+
     dlq = DLQ()
-    
+
     # Filter by status if specified
-    status = args.status if hasattr(args, 'status') and args.status else None
-    limit = args.limit if hasattr(args, 'limit') else 20
-    
+    status = args.status if hasattr(args, "status") and args.status else None
+    limit = args.limit if hasattr(args, "limit") else 20
+
     records = dlq.list_all(status=status, limit=limit)
-    
+
     if not records:
         print("No DLQ records found.")
         return 0
-    
+
     # Count by status
     counts = dlq.count_by_status()
-    print(f"=== DLQ Summary ===")
-    print(f"Pending: {counts.get('pending', 0)} | Replayed: {counts.get('replayed', 0)} | Discarded: {counts.get('discarded', 0)}")
+    print("=== DLQ Summary ===")
+    print(
+        f"Pending: {counts.get('pending', 0)} | Replayed: {counts.get('replayed', 0)} | Discarded: {counts.get('discarded', 0)}"
+    )
     print()
-    
+
     # List records
     print(f"{'ID':<20} {'Status':<10} {'Provider':<10} {'Persona':<15} {'Error':<30} {'Time'}")
     print("-" * 100)
-    
+
     for record in records:
-        error_short = record.error_message[:27] + "..." if len(record.error_message) > 30 else record.error_message
+        error_short = (
+            record.error_message[:27] + "..."
+            if len(record.error_message) > 30
+            else record.error_message
+        )
         ts_short = record.ts[:19] if len(record.ts) > 19 else record.ts
-        print(f"{record.id:<20} {record.status:<10} {record.provider:<10} {record.persona_id:<15} {error_short:<30} {ts_short}")
-    
+        print(
+            f"{record.id:<20} {record.status:<10} {record.provider:<10} {record.persona_id:<15} {error_short:<30} {ts_short}"
+        )
+
     return 0
 
 
@@ -362,71 +375,71 @@ async def cmd_dlq_replay(args) -> int:
     """Replay a DLQ item (SR-152)."""
     from ..reliability import DLQ
     from .survey_agent_graph import SurveyAgentGraph
-    
+
     dlq = DLQ()
     record = dlq.get(args.id)
-    
+
     if not record:
         print(f"DLQ record not found: {args.id}")
         return 1
-    
+
     if record.status != "pending":
         print(f"Record is not pending (status: {record.status})")
         if not args.force:
             print("Use --force to replay anyway")
             return 1
-    
+
     print(f"Replaying DLQ record: {record.id}")
     print(f"  Survey: {record.survey_id}")
     print(f"  URL: {record.url}")
     print(f"  Original error: {record.error_class}: {record.error_message}")
     print()
-    
+
     # Get persona for replay
     persona = get_persona()
-    
+
     graph = SurveyAgentGraph(
         persona=persona,
         nvidia_local=True,
-        headless=not args.visible if hasattr(args, 'visible') else True,
+        headless=not args.visible if hasattr(args, "visible") else True,
     )
-    
+
     try:
         result = await graph.run(record.url)
-        
+
         if result["status"] == "completed":
-            print(f"SUCCESS: Survey completed!")
+            print("SUCCESS: Survey completed!")
             print(f"  Questions answered: {len(result.get('answers', []))}")
             dlq.mark_replayed(record.id)
-            print(f"  DLQ record marked as replayed")
+            print("  DLQ record marked as replayed")
             return 0
         else:
             print(f"FAILED: Survey ended with status {result['status']}")
             if result.get("error"):
                 print(f"  Error: {result['error']}")
-            print(f"  DLQ record remains pending for retry")
+            print("  DLQ record remains pending for retry")
             return 1
-            
+
     except Exception as e:
         print(f"FAILED: {type(e).__name__}: {e}")
-        print(f"  DLQ record remains pending for retry")
+        print("  DLQ record remains pending for retry")
         return 1
 
 
 def cmd_contradiction_scan(args) -> int:
     """Scan for persona contradictions (SR-152)."""
     from ..reliability import ContradictionDetector
-    
+
     detector = ContradictionDetector()
-    
+
     # Get persona ID
     persona_id = args.persona_id
-    
+
     print(f"Scanning contradictions for persona: {persona_id}")
     print()
-    
+
     results = detector.scan(persona_id)
-    
+
     if not results:
         print("No identity answers recorded for this persona.")
         print()
@@ -439,12 +452,12 @@ def cmd_contradiction_scan(args) -> int:
         print("  - HOUSEHOLD_SIZE (household size, haushaltsgroesse)")
         print("  - COUNTRY (country, land, region)")
         return 0
-    
+
     # Print formatted report
     report = detector.format_report(results)
     print(report)
     print()
-    
+
     # Summary
     contradictions = [c for c in results.values() if c.is_contradicted]
     if contradictions:
@@ -453,7 +466,7 @@ def cmd_contradiction_scan(args) -> int:
         print("The daemon will pin future answers to the most-frequent prior value.")
     else:
         print("ok All identity categories are consistent")
-    
+
     return 0
 
 
@@ -474,7 +487,9 @@ def main(args: list[str] | None = None) -> int:
     heypiggy_parser = subparsers.add_parser("heypiggy", help="Run HeyPiggy session")
     heypiggy_parser.add_argument("--email", help="HeyPiggy email")
     heypiggy_parser.add_argument("--password", help="HeyPiggy password")
-    heypiggy_parser.add_argument("--max-surveys", type=int, default=10, help="Max surveys to complete")
+    heypiggy_parser.add_argument(
+        "--max-surveys", type=int, default=10, help="Max surveys to complete"
+    )
     heypiggy_parser.add_argument("--visible", action="store_true", help="Show browser window")
 
     # survey daemon
@@ -498,15 +513,21 @@ def main(args: list[str] | None = None) -> int:
 
     # SR-152: DLQ commands
     dlq_list_parser = subparsers.add_parser("dlq-list", help="List DLQ items (SR-152)")
-    dlq_list_parser.add_argument("--status", choices=["pending", "replayed", "discarded"], help="Filter by status")
+    dlq_list_parser.add_argument(
+        "--status", choices=["pending", "replayed", "discarded"], help="Filter by status"
+    )
     dlq_list_parser.add_argument("--limit", type=int, default=20, help="Max items to show")
 
     dlq_replay_parser = subparsers.add_parser("dlq-replay", help="Replay a DLQ item (SR-152)")
     dlq_replay_parser.add_argument("id", help="DLQ record ID")
-    dlq_replay_parser.add_argument("--force", action="store_true", help="Replay even if not pending")
+    dlq_replay_parser.add_argument(
+        "--force", action="store_true", help="Replay even if not pending"
+    )
     dlq_replay_parser.add_argument("--visible", action="store_true", help="Show browser window")
 
-    contradiction_parser = subparsers.add_parser("contradiction-scan", help="Scan for persona contradictions (SR-152)")
+    contradiction_parser = subparsers.add_parser(
+        "contradiction-scan", help="Scan for persona contradictions (SR-152)"
+    )
     contradiction_parser.add_argument("persona_id", help="Persona ID to scan")
 
     parsed = parser.parse_args(args)

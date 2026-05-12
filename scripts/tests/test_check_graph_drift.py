@@ -25,11 +25,10 @@ import io
 import json
 import tempfile
 from contextlib import redirect_stdout
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
-
 from check_graph_drift import (
     compute_drift,
     format_human,
@@ -39,7 +38,6 @@ from check_graph_drift import (
     read_newest_snapshot,
     sha256_of_file,
 )
-
 
 # -- Fixtures ----------------------------------------------------------------
 
@@ -134,10 +132,8 @@ class TestAge:
             graph = _write_graph(tmp_p)
             sha = sha256_of_file(graph)
             # Snapshot is from 2026-05-02; "now" is 2026-05-12 → 10 days.
-            log = _write_log(
-                tmp_p, [_make_record(sha, ts="20260502T120000Z")]
-            )
-            fake_now = datetime(2026, 5, 12, 12, 0, 0, tzinfo=timezone.utc)
+            log = _write_log(tmp_p, [_make_record(sha, ts="20260502T120000Z")])
+            fake_now = datetime(2026, 5, 12, 12, 0, 0, tzinfo=UTC)
 
             result, err = compute_drift(graph, log, now=fake_now)
 
@@ -158,16 +154,21 @@ class TestMaxAgeDays:
             tmp_p = Path(tmp)
             graph = _write_graph(tmp_p)
             sha = sha256_of_file(graph)
-            now = datetime.now(timezone.utc)
+            now = datetime.now(UTC)
             ts = now.strftime("%Y%m%dT%H%M%SZ")
             log = _write_log(tmp_p, [_make_record(sha, ts=ts)])
 
-            rc = main([
-                "--graph-source", str(graph),
-                "--promotion-log", str(log),
-                "--max-age-days", "7",
-                "--quiet",
-            ])
+            rc = main(
+                [
+                    "--graph-source",
+                    str(graph),
+                    "--promotion-log",
+                    str(log),
+                    "--max-age-days",
+                    "7",
+                    "--quiet",
+                ]
+            )
             assert rc == 0
 
     def test_t5_thirty_day_old_fails(self):
@@ -176,16 +177,21 @@ class TestMaxAgeDays:
             tmp_p = Path(tmp)
             graph = _write_graph(tmp_p)
             sha = sha256_of_file(graph)
-            old = datetime.now(timezone.utc) - timedelta(days=30)
+            old = datetime.now(UTC) - timedelta(days=30)
             ts = old.strftime("%Y%m%dT%H%M%SZ")
             log = _write_log(tmp_p, [_make_record(sha, ts=ts)])
 
-            rc = main([
-                "--graph-source", str(graph),
-                "--promotion-log", str(log),
-                "--max-age-days", "7",
-                "--quiet",
-            ])
+            rc = main(
+                [
+                    "--graph-source",
+                    str(graph),
+                    "--promotion-log",
+                    str(log),
+                    "--max-age-days",
+                    "7",
+                    "--quiet",
+                ]
+            )
             assert rc == 1
 
 
@@ -202,12 +208,16 @@ class TestExitOnDrift:
             graph = _write_graph(tmp_p, b"edited!\n")
             log = _write_log(tmp_p, [_make_record("0" * 64)])
 
-            rc = main([
-                "--graph-source", str(graph),
-                "--promotion-log", str(log),
-                "--exit-non-zero-on-drift",
-                "--quiet",
-            ])
+            rc = main(
+                [
+                    "--graph-source",
+                    str(graph),
+                    "--promotion-log",
+                    str(log),
+                    "--exit-non-zero-on-drift",
+                    "--quiet",
+                ]
+            )
             assert rc == 1
 
     def test_t7_no_drift_returns_zero(self):
@@ -218,12 +228,16 @@ class TestExitOnDrift:
             sha = sha256_of_file(graph)
             log = _write_log(tmp_p, [_make_record(sha)])
 
-            rc = main([
-                "--graph-source", str(graph),
-                "--promotion-log", str(log),
-                "--exit-non-zero-on-drift",
-                "--quiet",
-            ])
+            rc = main(
+                [
+                    "--graph-source",
+                    str(graph),
+                    "--promotion-log",
+                    str(log),
+                    "--exit-non-zero-on-drift",
+                    "--quiet",
+                ]
+            )
             assert rc == 0
 
 
@@ -242,10 +256,14 @@ class TestConfigErrors:
 
             buf = io.StringIO()
             with redirect_stdout(buf):
-                rc = main([
-                    "--graph-source", str(graph),
-                    "--promotion-log", str(missing_log),
-                ])
+                rc = main(
+                    [
+                        "--graph-source",
+                        str(graph),
+                        "--promotion-log",
+                        str(missing_log),
+                    ]
+                )
             output = buf.getvalue()
             assert rc == 2
             assert "promotion log not found" in output
@@ -260,10 +278,14 @@ class TestConfigErrors:
 
             buf = io.StringIO()
             with redirect_stdout(buf):
-                rc = main([
-                    "--graph-source", str(graph),
-                    "--promotion-log", str(log),
-                ])
+                rc = main(
+                    [
+                        "--graph-source",
+                        str(graph),
+                        "--promotion-log",
+                        str(log),
+                    ]
+                )
             output = buf.getvalue()
             assert rc == 2
             assert "no snapshots recorded yet" in output
@@ -298,11 +320,15 @@ class TestJsonOutput:
 
             buf = io.StringIO()
             with redirect_stdout(buf):
-                rc = main([
-                    "--graph-source", str(graph),
-                    "--promotion-log", str(log),
-                    "--json",
-                ])
+                rc = main(
+                    [
+                        "--graph-source",
+                        str(graph),
+                        "--promotion-log",
+                        str(log),
+                        "--json",
+                    ]
+                )
             assert rc == 0
 
             data = json.loads(buf.getvalue())
@@ -325,11 +351,15 @@ class TestHardening:
             log = _write_log(tmp_p, [_make_record("a" * 64)])
             missing_graph = tmp_p / "graph.py"  # never created
 
-            rc = main([
-                "--graph-source", str(missing_graph),
-                "--promotion-log", str(log),
-                "--quiet",
-            ])
+            rc = main(
+                [
+                    "--graph-source",
+                    str(missing_graph),
+                    "--promotion-log",
+                    str(log),
+                    "--quiet",
+                ]
+            )
             assert rc == 2
 
     def test_quiet_suppresses_stdout(self):
@@ -342,11 +372,15 @@ class TestHardening:
 
             buf = io.StringIO()
             with redirect_stdout(buf):
-                rc = main([
-                    "--graph-source", str(graph),
-                    "--promotion-log", str(log),
-                    "--quiet",
-                ])
+                rc = main(
+                    [
+                        "--graph-source",
+                        str(graph),
+                        "--promotion-log",
+                        str(log),
+                        "--quiet",
+                    ]
+                )
             assert rc == 0
             assert buf.getvalue() == ""
 
@@ -397,7 +431,7 @@ class TestHardening:
         dt = parse_snapshot_timestamp("20260512T120000Z")
         assert dt is not None
         assert dt.year == 2026 and dt.month == 5 and dt.day == 12
-        assert dt.hour == 12 and dt.tzinfo == timezone.utc
+        assert dt.hour == 12 and dt.tzinfo == UTC
 
     def test_read_newest_snapshot_returns_dict(self):
         """read_newest_snapshot returns the snapshot sub-dict, not the wrapper."""

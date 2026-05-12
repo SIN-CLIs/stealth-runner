@@ -128,9 +128,7 @@ class PreQualifierHandler:
             selected_text = answers_raw[selected_key].get("text", "")
 
             if self.debug:
-                print(
-                    f"[PREQ] Step {step}: Q={question_text[:50]}... → {selected_text[:50]}"
-                )
+                print(f"[PREQ] Step {step}: Q={question_text[:50]}... → {selected_text[:50]}")
 
             # POST answer
             try:
@@ -146,9 +144,7 @@ class PreQualifierHandler:
                     + "&message_button="
                     + urllib.parse.quote(msg_button)
                 )
-                resp_json = json.loads(
-                    urllib.request.urlopen(post_url, timeout=8).read()
-                )
+                resp_json = json.loads(urllib.request.urlopen(post_url, timeout=8).read())
 
                 # Check if we got the real survey URL
                 if resp_json.get("status") == "success" and resp_json.get("href"):
@@ -165,9 +161,7 @@ class PreQualifierHandler:
 
                 # Other response type
                 if self.debug:
-                    print(
-                        f"[PREQ] Step {step}: unexpected response type: {resp_json.get('type')}"
-                    )
+                    print(f"[PREQ] Step {step}: unexpected response type: {resp_json.get('type')}")
                 return None
 
             except Exception as e:
@@ -210,9 +204,7 @@ class PreQualifierHandler:
                     {
                         "id": 0,
                         "method": "Runtime.evaluate",
-                        "params": {
-                            "expression": f"clickSurvey('{survey_id}'); '';"
-                        },
+                        "params": {"expression": f"clickSurvey('{survey_id}'); '';"},
                     }
                 )
             )
@@ -245,7 +237,7 @@ class PreQualifierHandler:
         tab_id = preq_tab.get("id")
 
         if self.debug:
-            print(f"[PREQ-BROWSER] Tab opened: {preq_tab.get('url','')[:60]}")
+            print(f"[PREQ-BROWSER] Tab opened: {preq_tab.get('url', '')[:60]}")
 
         # Answer pre-qualifier questions
         max_steps = 8
@@ -265,9 +257,7 @@ class PreQualifierHandler:
                     )
                 )
                 r = json.loads(ws2.recv())
-                current_url = (
-                    r.get("result", {}).get("result", {}).get("value", "")
-                )
+                current_url = r.get("result", {}).get("result", {}).get("value", "")
                 ws2.close()
 
                 if (

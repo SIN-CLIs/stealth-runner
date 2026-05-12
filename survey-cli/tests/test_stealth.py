@@ -25,7 +25,6 @@ from unittest.mock import MagicMock, patch
 import json
 import os
 import sys
-import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -36,6 +35,7 @@ class TestGetStealthJs(unittest.TestCase):
     def test_loads_from_file(self):
         """_get_stealth_js returns non-empty string from injection.js."""
         from survey.chrome import _get_stealth_js
+
         js = _get_stealth_js()
         self.assertIsInstance(js, str)
         self.assertGreater(len(js), 100)
@@ -45,20 +45,23 @@ class TestGetStealthJs(unittest.TestCase):
     def test_contains_webdriver_override(self):
         """JS must override navigator.webdriver."""
         from survey.chrome import _get_stealth_js
+
         js = _get_stealth_js()
         self.assertIn("webdriver", js)
 
     def test_contains_plugins_override(self):
         """JS must override navigator.plugins."""
         from survey.chrome import _get_stealth_js
+
         js = _get_stealth_js()
         self.assertIn("plugins", js)
 
     def test_fallback_when_file_missing(self):
         """When injection.js is missing, fallback returns minimal overrides."""
-        from survey.chrome import _get_stealth_js as original_get
+
         # Temporarily rename the file to test fallback
         from survey import chrome
+
         original_path = chrome.STEALTH_BUNDLE
         temp_path = original_path + ".bak"
         try:
@@ -66,8 +69,10 @@ class TestGetStealthJs(unittest.TestCase):
                 os.rename(original_path, temp_path)
             # Reload the function
             import importlib
+
             importlib.reload(chrome)
             from survey.chrome import _get_stealth_js
+
             js = _get_stealth_js()
             # Fallback should be minimal
             self.assertIn("webdriver", js)
@@ -81,6 +86,7 @@ class TestGetStealthJs(unittest.TestCase):
     def test_has_webdriver_override(self):
         """JS must set webdriver override (false or undefined)."""
         from survey.chrome import _get_stealth_js
+
         js = _get_stealth_js()
         # The main file uses 'false', fallback uses 'undefined'
         self.assertTrue("false" in js or "undefined" in js)
@@ -97,6 +103,7 @@ class TestInjectStealthToTab(unittest.TestCase):
         mock_ws_create.return_value = fake_ws
 
         from survey.chrome import inject_stealth_to_tab
+
         result = inject_stealth_to_tab("ws://localhost:9999/devtools/page/42")
 
         self.assertTrue(result)
@@ -114,6 +121,7 @@ class TestInjectStealthToTab(unittest.TestCase):
         mock_ws_create.side_effect = Exception("Connection refused")
 
         from survey.chrome import inject_stealth_to_tab
+
         result = inject_stealth_to_tab("ws://localhost:9999/devtools/page/42")
         self.assertFalse(result)
 
@@ -129,15 +137,16 @@ class TestNavigateTab(unittest.TestCase):
         mock_ws_create.return_value = fake_ws
 
         from survey.chrome import navigate_tab
-        result = navigate_tab("ws://localhost:9999/devtools/page/42",
-                              "https://survey.example.com/s/12345")
+
+        result = navigate_tab(
+            "ws://localhost:9999/devtools/page/42", "https://survey.example.com/s/12345"
+        )
 
         self.assertTrue(result)
         call_data = fake_ws.send.call_args[0][0]
         call_dict = json.loads(call_data)
         self.assertEqual(call_dict["method"], "Page.navigate")
-        self.assertEqual(call_dict["params"]["url"],
-                         "https://survey.example.com/s/12345")
+        self.assertEqual(call_dict["params"]["url"], "https://survey.example.com/s/12345")
 
 
 class TestCreateBlankTab(unittest.TestCase):
@@ -149,20 +158,25 @@ class TestCreateBlankTab(unittest.TestCase):
         """create_blank_tab creates tab at about:blank and returns info."""
         fake_ws = MagicMock()
         # Response for Target.createTarget
-        fake_ws.recv.return_value = json.dumps({
-            "result": {"targetId": "tab-42"}
-        })
+        fake_ws.recv.return_value = json.dumps({"result": {"targetId": "tab-42"}})
         mock_ws_create.return_value = fake_ws
 
         # find_bot_tabs returns a list of tabs, including the new one
         mock_find_tabs.return_value = [
-            {"id": "tab-main", "url": "https://heypiggy.com/dashboard",
-             "webSocketDebuggerUrl": "ws://localhost:9999/main"},
-            {"id": "tab-42", "url": "about:blank",
-             "webSocketDebuggerUrl": "ws://localhost:9999/tab-42"},
+            {
+                "id": "tab-main",
+                "url": "https://heypiggy.com/dashboard",
+                "webSocketDebuggerUrl": "ws://localhost:9999/main",
+            },
+            {
+                "id": "tab-42",
+                "url": "about:blank",
+                "webSocketDebuggerUrl": "ws://localhost:9999/tab-42",
+            },
         ]
 
         from survey.chrome import create_blank_tab
+
         result = create_blank_tab(port=9999)
 
         self.assertIsNotNone(result)
@@ -180,6 +194,7 @@ class TestCreateBlankTab(unittest.TestCase):
     def test_returns_none_on_no_tabs(self, mock_ws_create, mock_find_tabs):
         """create_blank_tab returns None when no existing tabs found."""
         from survey.chrome import create_blank_tab
+
         result = create_blank_tab(port=9999)
         self.assertIsNone(result)
 
@@ -193,13 +208,11 @@ class TestRunnerCreateTabStealth(unittest.TestCase):
     def test_create_tab_uses_stealth_flow(self, mock_nav, mock_inject, mock_blank):
         """_create_tab creates blank tab, injects stealth, navigates."""
         from survey.runner import SurveyRunner, RunnerConfig
+
         runner = SurveyRunner(RunnerConfig(cdp_port=9999))
         runner.config.debug = True
 
-        mock_blank.return_value = {
-            "id": "tab-42",
-            "ws_url": "ws://localhost:9999/tab-42"
-        }
+        mock_blank.return_value = {"id": "tab-42", "ws_url": "ws://localhost:9999/tab-42"}
         mock_inject.return_value = True
         mock_nav.return_value = True
 
@@ -208,14 +221,16 @@ class TestRunnerCreateTabStealth(unittest.TestCase):
         self.assertEqual(result, "tab-42")
         mock_blank.assert_called_once_with(9999)
         mock_inject.assert_called_once_with("ws://localhost:9999/tab-42")
-        mock_nav.assert_called_once_with("ws://localhost:9999/tab-42",
-                                          "https://survey.example.com/s/12345")
+        mock_nav.assert_called_once_with(
+            "ws://localhost:9999/tab-42", "https://survey.example.com/s/12345"
+        )
 
     @patch("survey.runner.chrome.create_blank_tab")
     @patch("survey.runner.chrome.create_tab")
     def test_fallback_when_blank_tab_fails(self, mock_create_tab, mock_blank):
         """_create_tab falls back to direct create_tab when blank tab fails."""
         from survey.runner import SurveyRunner, RunnerConfig
+
         runner = SurveyRunner(RunnerConfig(cdp_port=9999))
 
         mock_blank.return_value = None
@@ -233,6 +248,7 @@ class TestStealthJSContent(unittest.TestCase):
 
     def setUp(self):
         from survey.chrome import _get_stealth_js
+
         self.js = _get_stealth_js()
 
     def test_has_navigator_webdriver(self):

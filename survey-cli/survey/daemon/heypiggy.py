@@ -29,6 +29,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class HeyPiggySurvey:
     """HeyPiggy survey offer."""
+
     id: str
     title: str
     url: str
@@ -45,6 +46,7 @@ class HeyPiggySurvey:
 @dataclass
 class HeyPiggyResult:
     """Result of HeyPiggy survey attempt."""
+
     survey_id: str
     status: str  # completed, disqualified, error
     points_earned: int = 0
@@ -119,13 +121,17 @@ class HeyPiggyConnector:
             await asyncio.sleep(2)
 
             # Fill login form with human-like typing
-            email_input = await self._browser.find_element('input[name="email"], input[type="email"], #email')
+            email_input = await self._browser.find_element(
+                'input[name="email"], input[type="email"], #email'
+            )
             if email_input:
                 await self._browser.human_type(email_input.selector, email)
 
             await asyncio.sleep(0.5)
 
-            password_input = await self._browser.find_element('input[name="password"], input[type="password"], #password')
+            password_input = await self._browser.find_element(
+                'input[name="password"], input[type="password"], #password'
+            )
             if password_input:
                 await self._browser.human_type(password_input.selector, password)
 
@@ -140,7 +146,9 @@ class HeyPiggyConnector:
                     return False
 
             # Click login button
-            login_btn = await self._browser.find_element('button[type="submit"], input[type="submit"], .login-btn, #login-btn')
+            login_btn = await self._browser.find_element(
+                'button[type="submit"], input[type="submit"], .login-btn, #login-btn'
+            )
             if login_btn:
                 await self._browser.human_click(login_btn.selector)
 
@@ -186,17 +194,19 @@ class HeyPiggyConnector:
 
             # Parse survey cards - adapt selectors to actual HeyPiggy structure
             survey_elements = await self._browser.find_elements(
-                '.survey-card, .survey-item, [data-survey-id], .offer-card'
+                ".survey-card, .survey-item, [data-survey-id], .offer-card"
             )
 
             for elem in survey_elements:
                 try:
                     # Extract survey data from element
-                    survey_id = elem.attributes.get('data-survey-id', elem.attributes.get('data-id', ''))
+                    survey_id = elem.attributes.get(
+                        "data-survey-id", elem.attributes.get("data-id", "")
+                    )
                     if not survey_id:
                         # Try to extract from href
-                        href = elem.attributes.get('href', '')
-                        id_match = re.search(r'/survey/(\d+)', href)
+                        href = elem.attributes.get("href", "")
+                        id_match = re.search(r"/survey/(\d+)", href)
                         if id_match:
                             survey_id = id_match.group(1)
 
@@ -204,20 +214,22 @@ class HeyPiggyConnector:
                         continue
 
                     # Extract reward points
-                    points_match = re.search(r'(\d+)\s*(?:points?|pts?)', elem.text, re.IGNORECASE)
+                    points_match = re.search(r"(\d+)\s*(?:points?|pts?)", elem.text, re.IGNORECASE)
                     points = int(points_match.group(1)) if points_match else 50
 
                     # Extract time estimate
-                    time_match = re.search(r'(\d+)\s*(?:min|minutes?)', elem.text, re.IGNORECASE)
+                    time_match = re.search(r"(\d+)\s*(?:min|minutes?)", elem.text, re.IGNORECASE)
                     est_minutes = int(time_match.group(1)) if time_match else 10
 
-                    surveys.append(HeyPiggySurvey(
-                        id=survey_id,
-                        title=elem.text[:100] if elem.text else f"Survey {survey_id}",
-                        url=f"{self.BASE_URL}/survey/{survey_id}",
-                        reward_points=points,
-                        estimated_minutes=est_minutes,
-                    ))
+                    surveys.append(
+                        HeyPiggySurvey(
+                            id=survey_id,
+                            title=elem.text[:100] if elem.text else f"Survey {survey_id}",
+                            url=f"{self.BASE_URL}/survey/{survey_id}",
+                            reward_points=points,
+                            estimated_minutes=est_minutes,
+                        )
+                    )
 
                 except Exception as e:
                     logger.debug(f"Error parsing survey element: {e}")
@@ -228,16 +240,20 @@ class HeyPiggyConnector:
                 survey_pattern = r'href=["\']([^"\']*survey[^"\']*)["\'][^>]*>.*?(\d+)\s*(?:points?|pts?).*?(\d+)\s*min'
                 for match in re.finditer(survey_pattern, html, re.IGNORECASE | re.DOTALL):
                     url = match.group(1)
-                    if not url.startswith('http'):
+                    if not url.startswith("http"):
                         url = self.BASE_URL + url
 
-                    surveys.append(HeyPiggySurvey(
-                        id=re.search(r'/(\d+)', url).group(1) if re.search(r'/(\d+)', url) else str(len(surveys)),
-                        title=f"Survey {len(surveys) + 1}",
-                        url=url,
-                        reward_points=int(match.group(2)),
-                        estimated_minutes=int(match.group(3)),
-                    ))
+                    surveys.append(
+                        HeyPiggySurvey(
+                            id=re.search(r"/(\d+)", url).group(1)
+                            if re.search(r"/(\d+)", url)
+                            else str(len(surveys)),
+                            title=f"Survey {len(surveys) + 1}",
+                            url=url,
+                            reward_points=int(match.group(2)),
+                            estimated_minutes=int(match.group(3)),
+                        )
+                    )
 
             logger.info(f"Found {len(surveys)} available surveys")
 
@@ -392,18 +408,21 @@ class HeyPiggyConnector:
                 return True
 
             elif question.type == QuestionType.OPEN_TEXT:
-                selector = question.element_selector or f'textarea[name="{question.id}"], input[name="{question.id}"]'
+                selector = (
+                    question.element_selector
+                    or f'textarea[name="{question.id}"], input[name="{question.id}"]'
+                )
                 await self._browser.human_type(selector, str(answer.value))
                 return True
 
             elif question.type == QuestionType.SLIDER:
                 # Sliders are tricky - try to set value directly
                 selector = question.element_selector or f'input[type="range"][name="{question.id}"]'
-                await self._browser.evaluate(f'''
+                await self._browser.evaluate(f"""
                     document.querySelector('{selector}').value = {answer.value};
                     document.querySelector('{selector}').dispatchEvent(new Event('input'));
                     document.querySelector('{selector}').dispatchEvent(new Event('change'));
-                ''')
+                """)
                 return True
 
             elif question.type == QuestionType.MATRIX:
@@ -416,15 +435,17 @@ class HeyPiggyConnector:
                 return True
 
             elif question.type == QuestionType.NUMBER:
-                selector = question.element_selector or f'input[type="number"][name="{question.id}"]'
+                selector = (
+                    question.element_selector or f'input[type="number"][name="{question.id}"]'
+                )
                 await self._browser.human_type(selector, str(answer.value))
                 return True
 
             elif question.type == QuestionType.DATE:
                 selector = question.element_selector or f'input[type="date"][name="{question.id}"]'
-                await self._browser.evaluate(f'''
+                await self._browser.evaluate(f"""
                     document.querySelector('{selector}').value = '{answer.value}';
-                ''')
+                """)
                 return True
 
             else:
@@ -432,7 +453,7 @@ class HeyPiggyConnector:
                 selector = question.element_selector or f'[name="{question.id}"]'
                 element = await self._browser.find_element(selector)
                 if element:
-                    if element.tag == 'select':
+                    if element.tag == "select":
                         await self._browser.select_option(selector, str(answer.value))
                     else:
                         await self._browser.human_type(selector, str(answer.value))
@@ -448,13 +469,13 @@ class HeyPiggyConnector:
         html = await self._browser.get_html()
 
         captcha_indicators = [
-            'g-recaptcha',
-            'h-captcha',
-            'data-sitekey',
-            'captcha',
-            'recaptcha',
-            'hcaptcha',
-            'funcaptcha',
+            "g-recaptcha",
+            "h-captcha",
+            "data-sitekey",
+            "captcha",
+            "recaptcha",
+            "hcaptcha",
+            "funcaptcha",
         ]
 
         html_lower = html.lower()
@@ -483,12 +504,14 @@ class HeyPiggyConnector:
             recaptcha_match = re.search(r'data-sitekey=["\']([^"\']+)["\']', html)
             if recaptcha_match:
                 site_key = recaptcha_match.group(1)
-                if 'recaptcha/api.js?render=' in html:
+                if "recaptcha/api.js?render=" in html:
                     captcha_type = CaptchaType.RECAPTCHA_V3
 
             # hCaptcha
             if not site_key:
-                hcaptcha_match = re.search(r'data-sitekey=["\']([^"\']+)["\'].*hcaptcha', html, re.IGNORECASE)
+                hcaptcha_match = re.search(
+                    r'data-sitekey=["\']([^"\']+)["\'].*hcaptcha', html, re.IGNORECASE
+                )
                 if hcaptcha_match:
                     site_key = hcaptcha_match.group(1)
                     captcha_type = CaptchaType.HCAPTCHA
@@ -512,7 +535,7 @@ class HeyPiggyConnector:
 
             # Inject solution
             if captcha_type in (CaptchaType.RECAPTCHA_V2, CaptchaType.RECAPTCHA_V3):
-                await self._browser.evaluate(f'''
+                await self._browser.evaluate(f"""
                     document.getElementById('g-recaptcha-response').innerHTML = '{result.token}';
                     if (typeof ___grecaptcha_cfg !== 'undefined') {{
                         Object.keys(___grecaptcha_cfg.clients).forEach(key => {{
@@ -522,12 +545,12 @@ class HeyPiggyConnector:
                             }}
                         }});
                     }}
-                ''')
+                """)
             elif captcha_type == CaptchaType.HCAPTCHA:
-                await self._browser.evaluate(f'''
+                await self._browser.evaluate(f"""
                     document.querySelector('[name="h-captcha-response"]').value = '{result.token}';
                     document.querySelector('[name="g-recaptcha-response"]').value = '{result.token}';
-                ''')
+                """)
 
             logger.info(f"CAPTCHA solved in {result.solve_time:.1f}s")
             return True
@@ -543,13 +566,13 @@ class HeyPiggyConnector:
             'button:has-text("Continue")',
             'input[value="Next"]',
             'input[value="Continue"]',
-            '.next-btn',
-            '.continue-btn',
-            '#next',
-            '#continue',
+            ".next-btn",
+            ".continue-btn",
+            "#next",
+            "#continue",
             'button[type="submit"]',
-            '.btn-next',
-            '.btn-continue',
+            ".btn-next",
+            ".btn-continue",
             '[data-action="next"]',
         ]
 
@@ -571,10 +594,10 @@ class HeyPiggyConnector:
             'button:has-text("Finish")',
             'button:has-text("Complete")',
             'input[type="submit"]',
-            '.submit-btn',
-            '.finish-btn',
-            '#submit',
-            '#finish',
+            ".submit-btn",
+            ".finish-btn",
+            "#submit",
+            "#finish",
         ]
 
         for selector in submit_selectors:
@@ -685,12 +708,14 @@ async def run_heypiggy_session(
         results = []
         for survey in surveys[:max_surveys]:
             result = await connector.complete_survey(survey)
-            results.append({
-                "survey_id": result.survey_id,
-                "status": result.status,
-                "points": result.points_earned,
-                "time_seconds": result.time_spent_seconds,
-            })
+            results.append(
+                {
+                    "survey_id": result.survey_id,
+                    "status": result.status,
+                    "points": result.points_earned,
+                    "time_seconds": result.time_spent_seconds,
+                }
+            )
 
             # Break if too many failures
             stats = connector.get_session_stats()

@@ -176,7 +176,7 @@ class HitTester:
         overlays = tuple(
             NeutralizedOverlay(
                 tag=o["tag"],
-                selector=f'[data-{o["token"].lower()}]',
+                selector=f"[data-{o['token'].lower()}]",
                 token=o["token"],
             )
             for o in result.get("neutralized", [])

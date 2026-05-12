@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """================================================================================
 CLI MAIN — Typer Entry Point fuer Stealth Suite
 ================================================================================
@@ -7,7 +6,7 @@ CLI MAIN — Typer Entry Point fuer Stealth Suite
 WAS IST DAS?
   Typer-basierte CLI fuer Stealth Suite Operationen.
   Aktuell: Stub/Template — Befehle sind NO-OP (nur Logging).
-  
+
   Dient als Extension-Point fuer zukuenftige CLI-Befehle:
   - Monitor: Session-Monitoring Daemon
   - Auto-Doc: Automatische Dokumentationsgenerierung
@@ -19,7 +18,7 @@ WARUM TYPER?
   - Type-Hints → CLI-Argument-Typisierung
   - Rich-Integration (bunte Ausgabe)
   - Weniger Boilerplate als argparse
-  
+
 WARUM RICH?
   - Bunte, formatierte Ausgabe
   - Progress-Bars, Tables, Panels
@@ -36,7 +35,7 @@ ARCHITEKTUR:
     │         │        │          │
     ▼         ▼        ▼          ▼
   (NO-OP)  (NO-OP)  (NO-OP)    (NO-OP)
-    
+
   → Aktuell sind alle Befehle Stubs. Die echte Logik ist in:
     - survey-cli/survey.py (Standalone CLI)
     - run_survey.py (FCTES Entry Point)
@@ -57,15 +56,14 @@ WARNUNG:
   Diese Datei ist ein TEMPLATE. Die echten CLI-Befehle sind in:
   - survey-cli/survey.py (Survey-CLI mit 12 Subcommands)
   - run_survey.py (FCTES orchestrator)
-  
+
   Bevor du hier implementierst: Pruefe ob survey.py bereits
   den Befehl hat! Vermeide Duplikation.
 ================================================================================"""
 
-from typing import Optional  # Fuer Optional-Typen (None erlaubt)
-import typer                   # CLI-Framework (automatische --help, Type-Validierung)
+
+import typer  # CLI-Framework (automatische --help, Type-Validierung)
 from rich.console import Console  # Bunte Konsolenausgabe
-from rich.table import Table     # Tabellen-Ausgabe (fuer Listen)
 
 # ═════════════════════════════════════════════════════════════════════════════
 # TYPER APP INITIALISIERUNG
@@ -90,7 +88,7 @@ console = Console()
 # ═════════════════════════════════════════════════════════════════════════════
 @app.command()
 def monitor(
-    db_path: Optional[str] = typer.Option(None, help="Path to opencode.db"),
+    db_path: str | None = typer.Option(None, help="Path to opencode.db"),
     # → typer.Option: Named Parameter (--db-path statt Positional)
     # → Optional[str]: Kann weggelassen werden (default: None)
     # → help: Beschreibung fuer --help
@@ -99,25 +97,25 @@ def monitor(
     # → 10: Default-Wert wenn nicht angegeben
 ) -> None:
     """Session-Monitoring Daemon (STUB).
-    
+
     WARUM STUB?
       Die echte Monitor-Logik ist in survey-cli/survey/daemon.py.
       Dieser Befehl ist ein Platzhalter fuer zukuenftige Integration.
-      
+
     WARUM Optional[str] fuer db_path?
       Default ist None → nutzt internen Default-Pfad.
       Wenn angegeben: nutzt spezifische Datenbank.
-      
+
     WARUM int fuer interval?
       Sekunden als Ganzzahl. Keine Floats (zu granular, Overkill).
       → Mindestens 1s (Performance), maximal 3600s (Stunden).
     """
     console.print("[bold green]Starting stealth-sync monitor...[/bold green]")
     # → [bold green]...[/bold green] = Rich Markup (farbige, fette Ausgabe)
-    
+
     console.print(f"DB: {db_path or '~/.local/share/opencode/opencode.db'}")
     # → db_path or '...' = Default wenn None
-    
+
     console.print(f"Interval: {interval}s")
     # → Aktuell: Nur Logging. Echte Logik = survey-cli/survey/daemon.py
 
@@ -134,11 +132,11 @@ def auto_doc(
     # → Ausgabeverzeichnis fuer generierte Dokumentation
 ) -> None:
     """Automatische Dokumentationsgenerierung (STUB).
-    
+
     WARUM STUB?
       Die echte Auto-Doc-Logik ist in scripts/generate_missing_docs.py.
       Dieser Befehl ist ein Platzhalter.
-      
+
     WARUM "opencode" als Default-Source?
       Haupt-Use-Case: opencode.db auswerten und Sessions dokumentieren.
       → Kann erweitert werden: "git", "github", "confluence"
@@ -163,15 +161,15 @@ def summarize(
     # → Format-Auswahl
 ) -> None:
     """Session-Zusammenfassung (STUB).
-    
+
     WARUM STUB?
       Session-Zusammenfassung ist in survey-cli/survey.py (status, summary).
       Dieser Befehl ist ein Platzhalter.
-      
+
     WARUM recursive Option?
       Bei verschachtelten Sessions (Sub-Agents, verschachtelte Flows)
       → recursive=True: Alle Sub-Sessions einbeziehen.
-      
+
     WARUM format Option?
       yaml: Human-readable, gut fuer Review
       json: Machine-readable, gut fuer Scripting
@@ -191,12 +189,12 @@ def validate_ax_docs(
     # → z.B. "cua-driver", "skylight-cli", "macos-ax-cli"
 ) -> None:
     """AX-Dokumentation Validierung (STUB).
-    
+
     WARUM STUB?
       AX-Doku ist in AGENTS.md, commands/*.md, banned.md.
       Validierung = pruefen ob Code und Doku konsistent sind.
       → Skript in scripts/check_doc_health.py.
-      
+
     WARUM cli als Argument?
       Verschiedene CLI-Tools haben verschiedene AX-Dokumentation.
       → Modular: Ein Tool pro Validierung.

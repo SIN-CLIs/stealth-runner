@@ -34,7 +34,7 @@ COMPLETION_MARKERS = [
 ]
 
 COMMANDS = {
-    "click_next": '''(function(){
+    "click_next": """(function(){
         var btn = document.querySelector('.NextButton,#NextButton,input.NextButton,.Skin .NextButton');
         if(!btn){
             btn = Array.from(document.querySelectorAll('button,input[type=button],input[type=submit],[role=button],a,span[onclick]'))
@@ -45,8 +45,8 @@ COMMANDS = {
         }
         if(btn){btn.click(); return 'clicked';}
         return 'not_found';
-    })()''',
-    "click_element": '''(function(idx){
+    })()""",
+    "click_element": """(function(idx){
         var els = Array.from(document.querySelectorAll('.LabelWrapper,.ChoiceStructure,.ChoiceRow,label,input[type=radio],input[type=checkbox]'))
             .filter(function(el){return el.offsetWidth>0 && el.offsetHeight>0;});
         var el = els[idx];
@@ -55,15 +55,15 @@ COMMANDS = {
         if(input){input.click(); input.dispatchEvent(new Event('change',{bubbles:true})); return 'input_clicked';}
         el.click();
         return 'clicked';
-    })({idx})''',
-    "fill_text": '''(function(v){
+    })({idx})""",
+    "fill_text": """(function(v){
         var t=document.querySelector("textarea:not(.g-recaptcha-response)");
         if(!t){var i=document.querySelector("input[type=text],input[type=number]");
         if(i){i.value=v;i.dispatchEvent(new Event("input",{bubbles:true}));
         i.dispatchEvent(new Event("change",{bubbles:true}));}}
         else{t.value=v;t.dispatchEvent(new Event("input",{bubbles:true}));
         t.dispatchEvent(new Event("change",{bubbles:true}));}
-    })("{value}")''',
+    })("{value}")""",
 }
 
 
@@ -99,10 +99,14 @@ def get_action_for_question(question_text, profile):
     # Age
     if "alter" in q or "age" in q or "old are you" in q:
         age = profile.get("age", 32)
-        if age < 16: return {"index": 0}  # noqa: E701
-        if age < 25: return {"index": 1}  # noqa: E701
-        if age < 40: return {"index": 2}  # noqa: E701
-        if age < 60: return {"index": 3}  # noqa: E701
+        if age < 16:
+            return {"index": 0}  # noqa: E701
+        if age < 25:
+            return {"index": 1}  # noqa: E701
+        if age < 40:
+            return {"index": 2}  # noqa: E701
+        if age < 60:
+            return {"index": 3}  # noqa: E701
         return {"index": 4}
 
     # State/Bundesland
@@ -117,8 +121,10 @@ def get_action_for_question(question_text, profile):
     # Education
     if "bildung" in q or "education" in q or "schulabschluss" in q:
         edu = profile.get("education", "abitur")
-        if edu == "abitur": return {"index": 3}  # noqa: E701
-        if edu == "university": return {"index": 4}  # noqa: E701
+        if edu == "abitur":
+            return {"index": 3}  # noqa: E701
+        if edu == "university":
+            return {"index": 4}  # noqa: E701
         return {"index": 2}
 
     # Household income
@@ -128,9 +134,12 @@ def get_action_for_question(question_text, profile):
     # Household size
     if "personen" in q or "household" in q or "haushalt" in q:
         size = profile.get("household_size", 3)
-        if size < 2: return {"index": 0}  # noqa: E701
-        if size == 2: return {"index": 1}  # noqa: E701
-        if size == 3: return {"index": 2}  # noqa: E701
+        if size < 2:
+            return {"index": 0}  # noqa: E701
+        if size == 2:
+            return {"index": 1}  # noqa: E701
+        if size == 3:
+            return {"index": 2}  # noqa: E701
         return {"index": 3}
 
     return None

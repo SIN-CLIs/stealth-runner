@@ -69,11 +69,12 @@ KORREKT:
   ✅ --force-renderer-accessibility
   ✅ NUR tool_*.py verwenden (nicht rohes cua-driver)
 """
+
 from __future__ import annotations
 import json
 import subprocess
 import time
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional
 
 __frozen__ = True
 __version__ = "2026-05-07"
@@ -84,13 +85,16 @@ CUA_BIN = "cua-driver"
 # CORE: Click + Verify
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 def _get_state(pid: int, wid: int) -> str:
     """Get AX-Tree markdown via cua-driver."""
     try:
         result = subprocess.run(
             [CUA_BIN, "call", "get_window_state"],
             input=json.dumps({"pid": pid, "window_id": wid}),
-            capture_output=True, text=True, timeout=30
+            capture_output=True,
+            text=True,
+            timeout=30,
         )
         if result.returncode != 0:
             return ""
@@ -105,12 +109,16 @@ def _click_raw(pid: int, wid: int, element_index: int) -> bool:
     try:
         result = subprocess.run(
             [CUA_BIN, "call", "click"],
-            input=json.dumps({
-                "pid": pid,
-                "window_id": wid,
-                "element_index": element_index,
-            }),
-            capture_output=True, text=True, timeout=15,
+            input=json.dumps(
+                {
+                    "pid": pid,
+                    "window_id": wid,
+                    "element_index": element_index,
+                }
+            ),
+            capture_output=True,
+            text=True,
+            timeout=15,
         )
         return result.returncode == 0 and "Performed" in result.stdout
     except Exception:
@@ -140,7 +148,8 @@ def _verify_click(
 
     # Check if element still exists with same index
     import re
-    pattern = re.compile(rf'- \[{element_index}\]\s+{re.escape(role)}')
+
+    pattern = re.compile(rf"- \[{element_index}\]\s+{re.escape(role)}")
     found = bool(pattern.search(markdown))
 
     if role == "AXLink":
@@ -159,6 +168,7 @@ def _verify_click(
 # ═══════════════════════════════════════════════════════════════════════════
 # PUBLIC: click()
 # ═══════════════════════════════════════════════════════════════════════════
+
 
 def click(
     pid: int,
@@ -197,8 +207,10 @@ def click(
         idx = element_index
     else:
         el = find_element(
-            (pid, wid), role=role,
-            label=label, text_sub=text_sub,
+            (pid, wid),
+            role=role,
+            label=label,
+            text_sub=text_sub,
             use_boundary=True,
         )
         if not el:
@@ -259,6 +271,7 @@ def click(
 # PUBLIC: set_value() — for text fields
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 def set_value(
     pid: int,
     wid: int,
@@ -288,8 +301,10 @@ def set_value(
         idx = element_index
     else:
         el = find_element(
-            (pid, wid), role="AXTextField",
-            label=label, use_boundary=True,
+            (pid, wid),
+            role="AXTextField",
+            label=label,
+            use_boundary=True,
         )
         if not el:
             return {
@@ -302,13 +317,17 @@ def set_value(
         try:
             result = subprocess.run(
                 [CUA_BIN, "call", "set_value"],
-                input=json.dumps({
-                    "pid": pid,
-                    "window_id": wid,
-                    "element_index": idx,
-                    "value": value,
-                }),
-                capture_output=True, text=True, timeout=15,
+                input=json.dumps(
+                    {
+                        "pid": pid,
+                        "window_id": wid,
+                        "element_index": idx,
+                        "value": value,
+                    }
+                ),
+                capture_output=True,
+                text=True,
+                timeout=15,
             )
             if result.returncode != 0:
                 if attempt < max_retries:
@@ -349,6 +368,7 @@ def set_value(
 # CONVENIENCE: press_key
 # ═══════════════════════════════════════════════════════════════════════════
 
+
 def press_key(
     pid: int,
     key: str,
@@ -370,7 +390,9 @@ def press_key(
         result = subprocess.run(
             [CUA_BIN, "call", "press_key"],
             input=json.dumps({"pid": pid, "key": key}),
-            capture_output=True, text=True, timeout=10,
+            capture_output=True,
+            text=True,
+            timeout=10,
         )
         if result.returncode != 0:
             return {"status": "error", "reason": f"press_key failed: {result.stderr[:200]}"}
@@ -379,9 +401,11 @@ def press_key(
             time.sleep(2)
             # CDP check URL
             import urllib.request
+
             try:
-                pages = json.loads(urllib.request.urlopen(
-                    "http://127.0.0.1:9999/json", timeout=3).read())
+                pages = json.loads(
+                    urllib.request.urlopen("http://127.0.0.1:9999/json", timeout=3).read()
+                )
                 for p in pages:
                     if p.get("url") != old_url:
                         return {"status": "ok", "new_url": p.get("url")}
@@ -400,6 +424,7 @@ def press_key(
 
 if __name__ == "__main__":
     import sys
+
     sys.path.insert(0, "..")
     # Unit tests using mock markdown (no real Chrome needed)
     print("✅ tool_click.py imported OK")
@@ -407,7 +432,7 @@ if __name__ == "__main__":
 
     # Test that find_element is used (import check)
     # Direct import for test (running from tools/ directory)
-    import tool_find_element
+
     print("  tool_find_element import: OK")
 
     print("All tests passed")

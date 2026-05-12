@@ -89,7 +89,8 @@ class CDPSession:
             CDPCommandError: If the command returns an error or times out.
         """
         return await self.client._send(
-            method, params or {},
+            method,
+            params or {},
             session_id=self.session_id,
             timeout=timeout,
         )

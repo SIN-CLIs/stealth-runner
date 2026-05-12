@@ -25,8 +25,6 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from typing import Any, Dict, List
-from unittest import mock
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PARENT = os.path.dirname(HERE)
@@ -34,7 +32,6 @@ if PARENT not in sys.path:
     sys.path.insert(0, PARENT)
 
 # Imports from the eval-harness under test
-from evals.learn_suggester import run_eval  # noqa: E402
 from evals.learn_suggester.run_eval import (  # noqa: E402
     DEFAULT_GOLDEN,
     _mock_call_llm,
@@ -53,16 +50,13 @@ class TestGoldenSet(unittest.TestCase):
 
     def test_T01_golden_set_parseable_and_valid(self):
         records = load_golden(GOLDEN_PATH)
-        self.assertGreaterEqual(len(records), 30,
-                                "golden set too small")
+        self.assertGreaterEqual(len(records), 30, "golden set too small")
         errs = validate_golden(records)
-        self.assertEqual(errs, [],
-                         "golden set has validation errors")
+        self.assertEqual(errs, [], "golden set has validation errors")
 
         # Every expected_family must be in FAMILY_TOKENS or None
         for r in records:
-            self.assertIn(r["expected_family"],
-                          set(FAMILY_TOKENS.keys()) | {None})
+            self.assertIn(r["expected_family"], set(FAMILY_TOKENS.keys()) | {None})
 
         # Every family must have at least 1 positive entry
         seen = {r["expected_family"] for r in records}
@@ -71,18 +65,22 @@ class TestGoldenSet(unittest.TestCase):
 
         # There must be at least some negatives
         negatives = sum(1 for r in records if r["expected_family"] is None)
-        self.assertGreaterEqual(negatives, 5,
-                                "need at least 5 negative records")
+        self.assertGreaterEqual(negatives, 5, "need at least 5 negative records")
 
     def test_T02_validate_golden_rejects_invalid_family(self):
-        bad = [{
-            "label": "x", "role": "textbox",
-            "expected_family": "DOES_NOT_EXIST",
-            "lang": "de", "notes": "",
-        }]
+        bad = [
+            {
+                "label": "x",
+                "role": "textbox",
+                "expected_family": "DOES_NOT_EXIST",
+                "lang": "de",
+                "notes": "",
+            }
+        ]
         errs = validate_golden(bad)
-        self.assertTrue(any("DOES_NOT_EXIST" in e for e in errs),
-                        f"expected DOES_NOT_EXIST in errors: {errs}")
+        self.assertTrue(
+            any("DOES_NOT_EXIST" in e for e in errs), f"expected DOES_NOT_EXIST in errors: {errs}"
+        )
 
     def test_T03_validate_golden_rejects_missing_fields(self):
         bad = [{"label": "x"}]
@@ -99,9 +97,16 @@ class TestPhase1(unittest.TestCase):
     def test_T04_phase1_report_has_required_schema(self):
         report = evaluate(self.records, phase=1, use_mock=False)
         for key in [
-            "schema_version", "phase", "mode", "timestamp",
-            "total", "phase1_correct", "phase1_accuracy",
-            "phase1_per_family", "phase1_confusion_top5", "items",
+            "schema_version",
+            "phase",
+            "mode",
+            "timestamp",
+            "total",
+            "phase1_correct",
+            "phase1_accuracy",
+            "phase1_per_family",
+            "phase1_confusion_top5",
+            "items",
         ]:
             self.assertIn(key, report, f"missing key {key!r}")
         self.assertEqual(report["phase"], 1)
@@ -115,7 +120,8 @@ class TestPhase1(unittest.TestCase):
         """Phase 1 must >= 0.65 on shipped golden set (eval is healthy)."""
         report = evaluate(self.records, phase=1, use_mock=False)
         self.assertGreaterEqual(
-            report["phase1_accuracy"], 0.65,
+            report["phase1_accuracy"],
+            0.65,
             f"Phase 1 accuracy {report['phase1_accuracy']} "
             f"is below 0.65 threshold — heuristic regression?",
         )
@@ -130,8 +136,11 @@ class TestPhase2Mock(unittest.TestCase):
     def test_T06_phase2_report_has_phase2_fields(self):
         report = evaluate(self.records, phase=2, use_mock=True)
         for key in [
-            "phase2_correct", "phase2_accuracy", "phase2_lift",
-            "phase2_per_family", "phase2_confusion_top5",
+            "phase2_correct",
+            "phase2_accuracy",
+            "phase2_lift",
+            "phase2_per_family",
+            "phase2_confusion_top5",
         ]:
             self.assertIn(key, report, f"missing key {key!r}")
         self.assertEqual(report["phase"], 2)
@@ -145,7 +154,8 @@ class TestPhase2Mock(unittest.TestCase):
         """
         report = evaluate(self.records, phase=2, use_mock=True)
         self.assertGreater(
-            report["phase2_accuracy"], report["phase1_accuracy"],
+            report["phase2_accuracy"],
+            report["phase1_accuracy"],
             f"phase2_lift={report['phase2_lift']} — mock engine "
             f"failed to beat heuristic; pipeline may be broken",
         )
@@ -175,22 +185,28 @@ class TestCLI(unittest.TestCase):
         return subprocess.run(
             [sys.executable, "-m", "evals.learn_suggester.run_eval", *args],
             cwd=cwd or PARENT,
-            capture_output=True, text=True, timeout=60,
+            capture_output=True,
+            text=True,
+            timeout=60,
         )
 
     def test_T09_threshold_gate_exit_1_when_below(self):
         with tempfile.TemporaryDirectory() as d:
             report = os.path.join(d, "rep.json")
             r = self._run(
-                "--phase", "1",
-                "--min-phase1-accuracy", "0.999",
+                "--phase",
+                "1",
+                "--min-phase1-accuracy",
+                "0.999",
                 "--exit-non-zero-on-threshold-miss",
-                "--report", report, "--quiet",
+                "--report",
+                report,
+                "--quiet",
             )
             self.assertEqual(
-                r.returncode, 1,
-                f"expected exit 1, got {r.returncode}\n"
-                f"stdout={r.stdout}\nstderr={r.stderr}",
+                r.returncode,
+                1,
+                f"expected exit 1, got {r.returncode}\nstdout={r.stdout}\nstderr={r.stderr}",
             )
             self.assertIn("THRESHOLD MISS", r.stderr)
 
@@ -199,32 +215,39 @@ class TestCLI(unittest.TestCase):
         with tempfile.TemporaryDirectory() as d:
             report = os.path.join(d, "rep.json")
             r = self._run(
-                "--phase", "1",
-                "--min-phase1-accuracy", "0.999",
-                "--report", report, "--quiet",
+                "--phase",
+                "1",
+                "--min-phase1-accuracy",
+                "0.999",
+                "--report",
+                report,
+                "--quiet",
             )
-            self.assertEqual(r.returncode, 0,
-                             f"stdout={r.stdout}\nstderr={r.stderr}")
+            self.assertEqual(r.returncode, 0, f"stdout={r.stdout}\nstderr={r.stderr}")
             # But warning still on stderr
             self.assertIn("THRESHOLD MISS", r.stderr)
 
     def test_T11_phase2_without_mode_exits_2(self):
         with tempfile.TemporaryDirectory() as d:
             r = self._run(
-                "--phase", "2",
-                "--report", os.path.join(d, "rep.json"),
+                "--phase",
+                "2",
+                "--report",
+                os.path.join(d, "rep.json"),
                 "--quiet",
             )
-            self.assertEqual(r.returncode, 2,
-                             f"stderr={r.stderr}")
+            self.assertEqual(r.returncode, 2, f"stderr={r.stderr}")
             self.assertIn("requires either --mock or --live", r.stderr)
 
     def test_T12_missing_golden_exits_2(self):
         with tempfile.TemporaryDirectory() as d:
             r = self._run(
-                "--phase", "1",
-                "--golden", os.path.join(d, "nonexistent.jsonl"),
-                "--report", os.path.join(d, "rep.json"),
+                "--phase",
+                "1",
+                "--golden",
+                os.path.join(d, "nonexistent.jsonl"),
+                "--report",
+                os.path.join(d, "rep.json"),
                 "--quiet",
             )
             self.assertEqual(r.returncode, 2)

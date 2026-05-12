@@ -454,23 +454,23 @@ class SurveyState:
     Wird aus dem Page-Text extrahiert via Regex.
     Wird an den Angular-Drag-Drop-Solver übergeben."""
 
-
     # ── Property Helpers ─────────────────────────────────────────────────────
 
     @property
     def is_running(self) -> bool:
         """True wenn Graph noch aktiv ist (nicht completed/error/delegated)."""
         return self.status in (
-            "initialized", "chrome_ready", "tab_open",
-            "cookies_injected", "running"
+            "initialized",
+            "chrome_ready",
+            "tab_open",
+            "cookies_injected",
+            "running",
         )
 
     @property
     def is_terminal(self) -> bool:
         """True wenn Graph in einem Endzustand ist."""
-        return self.status in (
-            "completed", "screen_out", "error", "delegated"
-        )
+        return self.status in ("completed", "screen_out", "error", "delegated")
 
     @property
     def should_delegate(self) -> bool:
@@ -492,12 +492,15 @@ class SurveyState:
             error: Fehlermeldung (max 500 Zeichen)
         """
         import time
-        self.errors.append({
-            "node": node,
-            "error": error[:500],
-            "iteration": self.iteration,
-            "ts": time.time(),
-        })
+
+        self.errors.append(
+            {
+                "node": node,
+                "error": error[:500],
+                "iteration": self.iteration,
+                "ts": time.time(),
+            }
+        )
 
     def reset_failures(self) -> None:
         """Reset consecutive_failures auf 0 nach erfolgreichem execute."""

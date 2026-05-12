@@ -39,7 +39,6 @@ import survey.autodoc as ad
 
 
 class TestLogEarnings(unittest.TestCase):
-
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
         self.orig = ad.LOGS_DIR
@@ -101,20 +100,18 @@ class TestLogEarnings(unittest.TestCase):
 
     def test_details_optional(self):
         entry = ad.log_earnings(
-            "sid3", "samplicio", 3.00, "completed", 200.0,
-            details={"questions_answered": 15}
+            "sid3", "samplicio", 3.00, "completed", 200.0, details={"questions_answered": 15}
         )
         self.assertEqual(entry["details"]["questions_answered"], 15)
 
     def test_daily_file_named_correctly(self):
         date_str = datetime.now().strftime("%Y-%m-%d")
-        entry = ad.log_earnings("sid", "qualtrics", 1.0, "completed", 60.0)
+        ad.log_earnings("sid", "qualtrics", 1.0, "completed", 60.0)
         fp = Path(self.tmp) / f"earnings-{date_str}.jsonl"
         self.assertTrue(fp.exists())
 
 
 class TestLogDecision(unittest.TestCase):
-
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
         self.orig = ad.LOGS_DIR
@@ -164,7 +161,6 @@ class TestLogDecision(unittest.TestCase):
 
 
 class TestLogError(unittest.TestCase):
-
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
         self.orig = ad.LOGS_DIR
@@ -204,7 +200,6 @@ class TestLogError(unittest.TestCase):
 
 
 class TestLogSession(unittest.TestCase):
-
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
         self.orig = ad.LOGS_DIR
@@ -237,7 +232,6 @@ class TestLogSession(unittest.TestCase):
 
 
 class TestGenerateSummary(unittest.TestCase):
-
     def setUp(self):
         self.tmp = tempfile.mkdtemp()
         self.orig = ad.LOGS_DIR
@@ -269,11 +263,14 @@ class TestGenerateSummary(unittest.TestCase):
 
     def test_sums_earnings(self):
         date_str = datetime.now().strftime("%Y-%m-%d")
-        self._write_earnings(date_str, [
-            {"amount_eur": 1.50, "status": "completed", "provider": "qualtrics"},
-            {"amount_eur": 2.00, "status": "completed", "provider": "qualtrics"},
-            {"amount_eur": 0.00, "status": "screen_out", "provider": "tolunastart"},
-        ])
+        self._write_earnings(
+            date_str,
+            [
+                {"amount_eur": 1.50, "status": "completed", "provider": "qualtrics"},
+                {"amount_eur": 2.00, "status": "completed", "provider": "qualtrics"},
+                {"amount_eur": 0.00, "status": "screen_out", "provider": "tolunastart"},
+            ],
+        )
         summary = ad.generate_summary(days=1)
         self.assertEqual(summary["total_earned"], 3.50)
         self.assertEqual(summary["surveys_completed"], 2)
@@ -281,11 +278,14 @@ class TestGenerateSummary(unittest.TestCase):
 
     def test_counts_by_provider(self):
         date_str = datetime.now().strftime("%Y-%m-%d")
-        self._write_earnings(date_str, [
-            {"amount_eur": 1.0, "status": "completed", "provider": "qualtrics"},
-            {"amount_eur": 1.0, "status": "completed", "provider": "qualtrics"},
-            {"amount_eur": 0.5, "status": "completed", "provider": "tolunastart"},
-        ])
+        self._write_earnings(
+            date_str,
+            [
+                {"amount_eur": 1.0, "status": "completed", "provider": "qualtrics"},
+                {"amount_eur": 1.0, "status": "completed", "provider": "qualtrics"},
+                {"amount_eur": 0.5, "status": "completed", "provider": "tolunastart"},
+            ],
+        )
         summary = ad.generate_summary(days=1)
         self.assertEqual(summary["by_provider"]["qualtrics"], 2)
         self.assertEqual(summary["by_provider"]["tolunastart"], 1)
@@ -300,7 +300,9 @@ class TestGenerateSummary(unittest.TestCase):
         today = datetime.now().strftime("%Y-%m-%d")
         yesterday = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
         self._write_earnings(today, [{"amount_eur": 1.0, "status": "completed", "provider": "q"}])
-        self._write_earnings(yesterday, [{"amount_eur": 2.0, "status": "completed", "provider": "q"}])
+        self._write_earnings(
+            yesterday, [{"amount_eur": 2.0, "status": "completed", "provider": "q"}]
+        )
         summary = ad.generate_summary(days=2)
         self.assertEqual(summary["total_earned"], 3.0)
 
@@ -317,7 +319,6 @@ class TestGenerateSummary(unittest.TestCase):
 
 
 class TestPrintSummary(unittest.TestCase):
-
     def test_prints_formatted_output(self):
         summary = {
             "total_earned": 3.50,

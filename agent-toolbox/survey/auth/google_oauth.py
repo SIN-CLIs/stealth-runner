@@ -171,8 +171,6 @@ from dataclasses import dataclass
 
 # typing: Type Hints für bessere IDE-Unterstützung.
 # Optional: pid und wid können None sein (bei Fehler).
-from typing import Optional
-
 # CuaAdapter: Low-Level CUA-Driver Wrapper.
 # WARUM .cua_adapter? Relativer Import (gleiches Paket survey.auth).
 from .cua_adapter import CuaAdapter
@@ -180,7 +178,6 @@ from .cua_adapter import CuaAdapter
 # LoginVerifier: Prüft "abmelden" im AX-Tree → Session-State.
 # WARUM .login_verifier? Relativer Import (gleiches Paket survey.auth).
 from .login_verifier import LoginVerifier
-
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # OPTIONAL: SecretsClient
@@ -208,14 +205,14 @@ except ImportError:
 @dataclass
 class LoginResult:
     """Ergebnis eines Google OAuth Login-Versuchs.
-    
+
     WARUM Dataclass (nicht Dict oder Tuple)?
       → Typsicherheit: status MUSS str sein, pid MUSS Optional[int] sein.
       → IDE-Autovervollständigung: result.status (nicht result["status"]).
       → Immutable: Felder sind read-only (nach Erstellung nicht änderbar).
       → Klare API: Aufrufer weiß EXAKT welche Felder verfügbar sind.
       → Weniger Fehler: Kein Tippfehler bei Keys (result.staus → Error).
-    
+
     FELDER:
       status (str): Gesamt-Status des Login-Flows.
         - "ok": Login erfolgreich, Session aktiv.
@@ -228,7 +225,7 @@ class LoginResult:
       reason (Optional[str]): Fehler-Details (bei status="error").
         - Spezifische Fehler-Reason → schnelles Debugging.
         - Beispiele: "chrome_not_started", "email_field_not_found", etc.
-    
+
     WARUM status als String (nicht Enum)?
       → Einfacher zu erweitern (kein Enum-Definition nötig).
       → JSON-Serialisierung: Strings sind nativ (Enums brauchen Converter).
@@ -236,25 +233,25 @@ class LoginResult:
       → WARUM nicht mehr Werte? 3 Status decken alle Fälle ab:
         ok = Erfolg, already_logged_in = Erfolg (kein Login nötig),
         error = Fehler (Details in reason).
-    
+
     WARUM Optional[int] für pid/wid?
       → Bei Fehler sind pid/wid nicht verfügbar → None.
       → Bei "already_logged_in" sind pid/wid verfügbar → int.
       → Optional macht klar: Diese Werte können fehlen.
-    
+
     WARUM reason Optional[str]?
       → Bei "ok" und "already_logged_in" gibt es keinen Fehler → reason=None.
       → Bei "error" MUSS reason gesetzt sein → spezifische Fehlerursache.
       → Klare Konvention: reason ist None bei Erfolg, String bei Fehler.
-    
+
     Example:
         # Erfolg
         result = LoginResult(status="ok", pid=DYNAMIC_PID, wid=3293, reason=None)
         # Dynamische PID: curl http://127.0.0.1:9999/json | jq '.[].processId'
-        
+
         # Bereits eingeloggt
         result = LoginResult(status="already_logged_in", pid=DYNAMIC_PID, wid=3293)
-        
+
         # Fehler
         result = LoginResult(status="error", reason="email_field_not_found")
     """
@@ -263,18 +260,18 @@ class LoginResult:
     # WARUM str (nicht Literal)? Einfacher, keine Enum-Importe nötig.
     # Gültige Werte: "ok", "already_logged_in", "error".
     status: str  # "ok" | "error" | "already_logged_in"
-    
+
     # pid: Chrome Prozess-ID.
     # WARUM Optional[int]? Bei Fehler oder "chrome_not_started" → None.
-    pid: Optional[int] = None
-    
+    pid: int | None = None
+
     # wid: Window ID (macOS Accessibility).
     # WARUM Optional[int]? Bei Fehler (Fenster nicht gefunden) → None.
-    wid: Optional[int] = None
-    
+    wid: int | None = None
+
     # reason: Fehler-Details (bei status="error").
     # WARUM Optional[str]? Bei Erfolg → None.
-    reason: Optional[str] = None
+    reason: str | None = None
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -282,48 +279,48 @@ class LoginResult:
 # ═══════════════════════════════════════════════════════════════════════════════
 class GoogleOAuthFlow:
     """Führt HeyPiggy Google OAuth Login via CUA aus (6-Step Flow).
-    
+
     WARUM "Flow" im Namen?
       → Ein "Flow" ist eine Abfolge von Schritten mit klarem Start und Ende.
       → Gegenstück: "Adapter" (CuaAdapter) macht einzelne Aktionen.
       → Flow = Orchestration, Adapter = Execution.
-    
+
     WARUM Klasse (nicht Funktion)?
       → Dependency Injection: CuaAdapter und LoginVerifier können gemockt werden.
       → Wiederverwendbar: Einmal erstellen, mehrmals ausführen.
       → State: CuaAdapter und LoginVerifier werden zwischen Aufrufen wiederverwendet.
       → Testbarkeit: Mock Dependencies → Unit-Tests ohne echtes Chrome.
-    
+
     WARUM execute() statt run()?
       → "execute" ist expliziter als "run" (deutet auf Seiteneffekte hin).
       → "run" könnte auch ein Loop sein (mehrfache Ausführung).
       → "execute" = einmaliger, deterministischer Flow.
-    
+
     LEBENSZYKLUS:
       1. Erstellen: flow = GoogleOAuthFlow(CuaAdapter(), LoginVerifier())
       2. PID ermitteln: chrome_pid = dynamisch via CDP JSON (NIEMALS hardcodieren!)
       3. Ausführen: result = flow.execute(pid=chrome_pid)
       4. Prüfen: if result.status == "ok": ...
       5. Optional: Wiederverwenden (neuer execute() Aufruf).
-    
+
     FEHLERBEHANDLUNG (FAIL-FAST):
       → Jeder Step prüft VORAUSSETZUNGEN bevor er ausführt.
       → Wenn eine Voraussetzung fehlt → sofort return mit spezifischer reason.
       → Kein "try next" → jeder Fehler stoppt den Flow.
       → WARUM? Spätere Steps bauen auf früheren auf → sinnlos ohne Voraussetzung.
       → Beispiel: Ohne pid → kann kein Fenster finden → Flow stoppt.
-    
+
     DETERMINISMUS:
       → Gleicher Input → gleicher Output (wenn Chrome/Seite identisch).
       → Keine Zufälligkeit (außer dynamische PIDs/WIDs von Chrome).
       → WARUM wichtig? Reproduzierbare Fehler, besseres Debugging.
-    
+
     PERFORMANCE:
       → Step 0 (already_logged_in): ~1-2s (nur list_windows + Titel-Check).
       → Steps 1-6 (vollständiger Flow): ~25-35s (6 Steps × 5s sleep + CUA-Overhead).
       → Optimierung: Wenn "already_logged_in" → SOFORT return (kein Flow).
       → WARUM 25-35s? Google OAuth hat Redirects, Keychain-Modal braucht Zeit.
-    
+
     THREAD-SICHERHEIT:
       → NICHT thread-safe: CuaAdapter ist stateless, aber Chrome ist global.
       → Gleichzeitige execute() Aufrufe → Race Conditions (gleiches Chrome).
@@ -332,34 +329,34 @@ class GoogleOAuthFlow:
 
     def __init__(
         self,
-        cua: Optional[CuaAdapter] = None,
-        verifier: Optional[LoginVerifier] = None,
+        cua: CuaAdapter | None = None,
+        verifier: LoginVerifier | None = None,
     ):
         """Initialisiere GoogleOAuthFlow.
-        
+
         WARUM Optional Dependencies?
           → Wenn None → erstelle Standard-Instanzen (Default-Use-Case).
           → Wenn gesetzt → verwende übergebene (für Tests/Mocking).
           → Pattern: Dependency Injection mit Default.
-        
+
         WARUM CuaAdapter hier (nicht in execute())?
           → CuaAdapter wird in MEHREREN Steps verwendet (3, 4, 5, 6).
           → Wiederverwendung → schneller (kein Neuerstellen pro Step).
           → Timeout und andere Einstellungen bleiben konsistent.
-        
+
         WARUM LoginVerifier hier (nicht lokal in execute())?
           → Wird in Step 0 (check) und VERIFY (Ende) verwendet.
           → Wiederverwendung → schneller.
           → verify.check() ist teuer (list_windows + AX-Tree Scan).
-        
+
         Args:
             cua: Optionaler CuaAdapter. None = neuen erstellen.
             verifier: Optionaler LoginVerifier. None = neuen erstellen.
-        
+
         Example:
             # Standard (echtes Chrome)
             flow = GoogleOAuthFlow()
-            
+
             # Mit Mocks (für Tests)
             mock_cua = MagicMock()
             mock_verifier = MagicMock()
@@ -368,7 +365,7 @@ class GoogleOAuthFlow:
         # WARUM cua or CuaAdapter()? Lazy-Initialisierung.
         # Wenn cua=None → CuaAdapter() wird erst jetzt erstellt.
         self.cua = cua or CuaAdapter()
-        
+
         # WARUM verifier or LoginVerifier()? Lazy-Initialisierung.
         # Wenn verifier=None → LoginVerifier(self.cua) wird erstellt.
         # WARUM self.cua an LoginVerifier übergeben? LoginVerifier braucht
@@ -376,9 +373,9 @@ class GoogleOAuthFlow:
         # WARUM denselben CuaAdapter? Wiederverwendung, konsistente Timeouts.
         self.verifier = verifier or LoginVerifier(self.cua)
 
-    def execute(self, pid: Optional[int] = None) -> LoginResult:
+    def execute(self, pid: int | None = None) -> LoginResult:
         """Führe den kompletten Google OAuth Login-Flow aus.
-        
+
         ABLAUF (6 Steps + Verify):
           Step 0: Prüfe ob bereits eingeloggt (LoginVerifier.check).
           Step 1: Prüfe ob Chrome läuft (pid muss gesetzt sein).
@@ -388,26 +385,26 @@ class GoogleOAuthFlow:
           Step 5: "Fortfahren" klicken (Keychain Auto-Fill).
           Step 6: Final "Weiter" klicken (zurück zum Dashboard).
           Verify: Prüfe ob wirklich eingeloggt (LoginVerifier.check).
-        
+
         WARUM pid Parameter?
           → Chrome muss VORHER gestartet werden (ChromeLauncher/BrowserManager).
           → Diese Methode startet KEINEN neuen Chrome (nur CUA-Interaktion).
           → pid = Prozess-ID des laufenden Chrome.
           → WARUM nicht hier starten? Chrome-Start ist separat (flexibler).
           → Aufrufer kann Chrome mit spezifischen Flags starten.
-        
+
         WARUM Optional[int]?
           → Wenn None → Fehler "chrome_not_started".
           → Aufrufer MUSS Chrome starten oder pid übergeben.
           → WARUM nicht automatisch suchen? Suche könnte USER Chrome finden
             (gefährlich!). Explizite PID ist sicherer.
-        
+
         WARUM return bei jedem Fehler (nicht Exception)?
           → LoginResult mit reason ist informativer als Exception.
           → Aufrufer kann alle Fehlerfälle behandeln (nicht nur try/except).
           → HTTP API gibt LoginResult als JSON zurück → kein Stack-Trace.
           → Spezifische reason → Client weiß was schiefging.
-        
+
         WARUM 5s sleep nach jedem Klick?
           → Google OAuth hat Redirects (mehrere HTTP 302s).
           → JavaScript rendert neue Elemente async (nicht sofort).
@@ -416,7 +413,7 @@ class GoogleOAuthFlow:
           → 5s = konservativ, aber zuverlässig.
           → WARUM nicht dynamisch warten? CUA kann nicht poll (kein Event).
           → Alternative: Mehrfache Retry mit kürzerem Sleep → komplexer.
-        
+
         FEHLER-REASONS (vollständige Liste):
           chrome_not_started          → pid=None übergeben, Chrome nicht gestartet.
           no_dashboard_window         → Kein Chrome-Fenster mit HeyPiggy gefunden.
@@ -433,13 +430,13 @@ class GoogleOAuthFlow:
           final_weiter_not_found      → Finaler "Weiter" nicht gefunden.
           final_weiter_click_failed   → Klick auf finalen "Weiter" schlug fehl.
           dashboard_not_found_after_login → Verify schlug fehl (nicht eingeloggt).
-        
+
         Args:
             pid: Chrome Prozess-ID (muss laufend sein). None = Fehler.
-        
+
         Returns:
             LoginResult mit status, pid, wid, reason.
-        
+
         Example:
             # Dynamische PID ermitteln (NIEMALS hardcodieren!):
             #   import urllib.request, json
@@ -467,9 +464,7 @@ class GoogleOAuthFlow:
             # Bereits eingeloggt! Kein erneuter Login nötig.
             # WARUM ewid prüfen? Fenster-ID muss gültig sein (nicht None).
             # WARUM epid? Prozess-ID des eingeloggten Chrome.
-            return LoginResult(
-                status="already_logged_in", pid=epid, wid=ewid
-            )
+            return LoginResult(status="already_logged_in", pid=epid, wid=ewid)
 
         # ═══════════════════════════════════════════════════════════════════
         # STEP 1: CHROME RUNNING?
@@ -483,9 +478,7 @@ class GoogleOAuthFlow:
             # Chrome nicht gestartet → Flow kann nicht beginnen.
             # WARUM return (nicht Exception)? LoginResult ist informativer.
             # Aufrufer kann auf "chrome_not_started" reagieren (neu starten).
-            return LoginResult(
-                status="error", reason="chrome_not_started"
-            )
+            return LoginResult(status="error", reason="chrome_not_started")
 
         # ═══════════════════════════════════════════════════════════════════
         # STEP 2: FIND DASHBOARD WINDOW
@@ -494,9 +487,7 @@ class GoogleOAuthFlow:
         # WARUM find_bot_window()? CUA braucht window_id für Interaktion.
         # WARUM Keywords? ["heypiggy", "dashboard", "verdienen"] → spezifisch.
         # WARUM Fallback? Wenn Titel nicht exakt matcht → nimm erstes Chrome-Fenster.
-        pid_d, wid_d = self.cua.find_bot_window(
-            ["heypiggy", "dashboard", "verdienen"]
-        )
+        pid_d, wid_d = self.cua.find_bot_window(["heypiggy", "dashboard", "verdienen"])
         if not wid_d:
             # Fallback: Nimm irgendein Chrome-Fenster.
             # WARUM? Wenn HeyPiggy noch lädt oder Titel anders ist.
@@ -507,9 +498,7 @@ class GoogleOAuthFlow:
             #   - Chrome nicht gestartet (trotz pid → Fenster noch nicht da).
             #   - Chrome minimiert oder versteckt.
             #   - Accessibility nicht aktiv (--force-renderer-accessibility fehlt).
-            return LoginResult(
-                status="error", reason="no_dashboard_window"
-            )
+            return LoginResult(status="error", reason="no_dashboard_window")
 
         # ═══════════════════════════════════════════════════════════════════
         # STEP 3: CLICK GOOGLE LOGIN SYMBOL
@@ -517,7 +506,7 @@ class GoogleOAuthFlow:
         # Wir klicken auf das Google Login-Symbol im HeyPiggy Dashboard.
         # WARUM AX-Tree? Wir müssen element_index finden (nicht hardcoden).
         tree = self.cua.get_tree(pid_d, wid_d)
-        
+
         # Primär: Suche "google login-symbol" (spezifisch für HeyPiggy).
         # WARUM primär? Weniger False-Positives als generisches "google".
         idx = self.cua.find_idx(tree, "google login-symbol", ["AXLink"])
@@ -532,10 +521,8 @@ class GoogleOAuthFlow:
             #   - Seite noch nicht geladen.
             #   - Accessibility nicht aktiv.
             #   - HeyPiggy hat UI geändert (neues Label).
-            return LoginResult(
-                status="error", reason="google_login_button_not_found"
-            )
-        
+            return LoginResult(status="error", reason="google_login_button_not_found")
+
         # Klicke auf das Symbol.
         # WARUM .click() Return-Value prüfen? cua-driver könnte fehlschlagen.
         if not self.cua.click(pid_d, wid_d, idx):
@@ -544,10 +531,8 @@ class GoogleOAuthFlow:
             #   - Element nicht mehr da (Seite hat sich geändert).
             #   - CUA-Driver Timeout.
             #   - Element versteckt oder deaktiviert.
-            return LoginResult(
-                status="error", reason="google_login_click_failed"
-            )
-        
+            return LoginResult(status="error", reason="google_login_click_failed")
+
         # Warte auf Google OAuth Seite.
         # WARUM 5s? Redirects + neues Fenster/Sheet öffnet sich.
         time.sleep(5)
@@ -558,9 +543,7 @@ class GoogleOAuthFlow:
         # Google OAuth hat sich in einem neuen Fenster/Tab geöffnet.
         # Wir müssen das NEUE Fenster finden (nicht das alte Dashboard).
         # WARUM neue Suche? WID hat sich geändert (neues Fenster).
-        pid_g, wid_g = self.cua.find_bot_window(
-            ["google", "anmelden", "accounts"]
-        )
+        pid_g, wid_g = self.cua.find_bot_window(["google", "anmelden", "accounts"])
         if not wid_g:
             # Fallback: Nimm irgendein Chrome-Fenster.
             pid_g, wid_g = self.cua.find_bot_window()
@@ -570,28 +553,22 @@ class GoogleOAuthFlow:
             #   - Pop-Up-Blocker hat das Fenster blockiert.
             #   - Redirect hat sich verzögert.
             #   - Seite ist auf Englisch ("Sign in" statt "Anmelden").
-            return LoginResult(
-                status="error", reason="google_oauth_window_not_found"
-            )
+            return LoginResult(status="error", reason="google_oauth_window_not_found")
 
         # Lese AX-Tree des OAuth-Fensters.
         tree = self.cua.get_tree(pid_g, wid_g)
-        
+
         # Suche E-Mail Eingabefeld.
         # WARUM "e-mail oder telefonnummer"? Deutscher Google OAuth Text.
         # WARUM AXTextField? E-Mail wird in ein Textfeld eingegeben.
-        email_idx = self.cua.find_idx(
-            tree, "e-mail oder telefonnummer", ["AXTextField"]
-        )
+        email_idx = self.cua.find_idx(tree, "e-mail oder telefonnummer", ["AXTextField"])
         if email_idx is None:
             # E-Mail Feld nicht gefunden.
             # Mögliche Ursachen:
             #   - Seite ist auf Englisch ("Email or phone" statt "E-Mail").
             #   - Seite noch nicht geladen.
             #   - Accessibility nicht aktiv.
-            return LoginResult(
-                status="error", reason="email_field_not_found"
-            )
+            return LoginResult(status="error", reason="email_field_not_found")
 
         # Hole E-Mail aus SecretsClient.
         # WARUM SecretsClient (nicht hardcoded)? Keine Credentials im Code.
@@ -611,9 +588,7 @@ class GoogleOAuthFlow:
             #   - GOOGLE_EMAIL nicht in ~/.stealth/config.yaml.
             #   - GOOGLE_EMAIL Env-Variable nicht gesetzt.
             #   - SecretsClient nicht installiert.
-            return LoginResult(
-                status="error", reason="missing_google_email"
-            )
+            return LoginResult(status="error", reason="missing_google_email")
 
         # Tippe E-Mail in das Feld.
         # WARUM .type() Return-Value prüfen? cua-driver könnte fehlschlagen.
@@ -623,9 +598,7 @@ class GoogleOAuthFlow:
             #   - Feld nicht fokussiert.
             #   - Feld read-only.
             #   - CUA-Driver Timeout.
-            return LoginResult(
-                status="error", reason="email_type_failed"
-            )
+            return LoginResult(status="error", reason="email_type_failed")
 
         # Suche "Weiter" Button.
         # WARUM nach type()? Wir müssen den Button finden der die E-Mail abschickt.
@@ -636,17 +609,13 @@ class GoogleOAuthFlow:
             # Mögliche Ursachen:
             #   - Seite ist auf Englisch ("Next" statt "Weiter").
             #   - Button noch nicht gerendert (JavaScript-Delay).
-            return LoginResult(
-                status="error", reason="weiter_button_not_found"
-            )
-        
+            return LoginResult(status="error", reason="weiter_button_not_found")
+
         # Klicke "Weiter".
         if not self.cua.click(pid_g, wid_g, weiter_idx):
             # Klick schlug fehl.
-            return LoginResult(
-                status="error", reason="weiter_click_failed"
-            )
-        
+            return LoginResult(status="error", reason="weiter_click_failed")
+
         # Warte auf Keychain Auto-Fill Modal.
         # WARUM 5s? Google verarbeitet E-Mail + Keychain zeigt Passkey-Modal.
         # Keychain-Modal erscheint mit Animation (~1-2s).
@@ -663,9 +632,7 @@ class GoogleOAuthFlow:
         #   [Fortfahren] [Andere Optionen...]
         # Wir müssen "Fortfahren" klicken.
         # WARUM neues Fenster? Keychain-Modal ist ein neues macOS-Fenster.
-        pid_k, wid_k = self.cua.find_bot_window(
-            ["google", "anmelden", "jeremy"]
-        )
+        pid_k, wid_k = self.cua.find_bot_window(["google", "anmelden", "jeremy"])
         if not wid_k:
             # Fallback: Suche nur nach "google" (wenn Titel nicht Jeremy enthält).
             pid_k, wid_k = self.cua.find_bot_window(["google"])
@@ -675,13 +642,11 @@ class GoogleOAuthFlow:
             #   - Keychain hat keinen Passkey für dieses Google-Konto.
             #   - Keychain deaktiviert oder leer.
             #   - macOS Version unterstützt kein Passkey-AutoFill.
-            return LoginResult(
-                status="error", reason="fortfahren_button_not_found"
-            )
+            return LoginResult(status="error", reason="fortfahren_button_not_found")
 
         # Lese AX-Tree des Keychain-Fensters.
         tree = self.cua.get_tree(pid_k, wid_k)
-        
+
         # Suche "Fortfahren" Button.
         fort_idx = self.cua.find_idx(tree, "fortfahren", ["AXButton"])
         if fort_idx is None:
@@ -694,17 +659,13 @@ class GoogleOAuthFlow:
             #   - Keychain-Modal hat sich nicht geöffnet.
             #   - macOS zeigt "Passwort eingeben" statt "Fortfahren".
             #   - Sprache ist Englisch ("Continue" statt "Fortfahren").
-            return LoginResult(
-                status="error", reason="fortfahren_button_not_found"
-            )
-        
+            return LoginResult(status="error", reason="fortfahren_button_not_found")
+
         # Klicke "Fortfahren".
         if not self.cua.click(pid_k, wid_k, fort_idx):
             # Klick schlug fehl.
-            return LoginResult(
-                status="error", reason="fortfahren_click_failed"
-            )
-        
+            return LoginResult(status="error", reason="fortfahren_click_failed")
+
         # Warte auf finalen "Weiter" Button.
         # WARUM 5s? Keychain bestätigt Passkey + Google zeigt finalen Screen.
         time.sleep(5)
@@ -721,13 +682,11 @@ class GoogleOAuthFlow:
             pid_f, wid_f = self.cua.find_bot_window()
         if not wid_f:
             # Finaler Screen nicht gefunden.
-            return LoginResult(
-                status="error", reason="final_weiter_not_found"
-            )
+            return LoginResult(status="error", reason="final_weiter_not_found")
 
         # Lese AX-Tree.
         tree = self.cua.get_tree(pid_f, wid_f)
-        
+
         # Suche finalen "Weiter" Button.
         final_idx = self.cua.find_idx(tree, "weiter", ["AXButton"])
         if final_idx is None:
@@ -735,16 +694,12 @@ class GoogleOAuthFlow:
             # Mögliche Ursachen:
             #   - Seite noch nicht geladen.
             #   - Button hat anderen Text ("Fertig", "Done").
-            return LoginResult(
-                status="error", reason="final_weiter_not_found"
-            )
-        
+            return LoginResult(status="error", reason="final_weiter_not_found")
+
         # Klicke finalen "Weiter".
         if not self.cua.click(pid_f, wid_f, final_idx):
-            return LoginResult(
-                status="error", reason="final_weiter_click_failed"
-            )
-        
+            return LoginResult(status="error", reason="final_weiter_click_failed")
+
         # Warte auf Dashboard-Redirect.
         # WARUM 5s? Google leitet zurück zu HeyPiggy Dashboard.
         # Dashboard muss laden + "abmelden" muss im AX-Tree erscheinen.
@@ -771,6 +726,4 @@ class GoogleOAuthFlow:
         #   - Google hat den Login abgelehnt (suspected automation).
         #   - HeyPiggy hat die Session nicht akzeptiert.
         #   - Dashboard hat sich nicht geladen (Timeout zu kurz?).
-        return LoginResult(
-            status="error", reason="dashboard_not_found_after_login"
-        )
+        return LoginResult(status="error", reason="dashboard_not_found_after_login")

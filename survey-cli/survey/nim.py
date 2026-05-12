@@ -91,12 +91,26 @@ def build_v2_prompt(snapshot: dict, profile: dict) -> str:
 
     # Truncate to max 30 Elemente — sonst sprengt der Prompt die Token-Limits.
     # Priorisierung: zuerst die wahrscheinlichsten Interaktions-Kandidaten.
-    INTERACTIVE_ORDER = ("button", "link", "radio", "checkbox", "switch",
-                         "combobox", "textbox", "searchbox", "spinbutton",
-                         "slider", "menuitem", "tab", "option")
+    INTERACTIVE_ORDER = (
+        "button",
+        "link",
+        "radio",
+        "checkbox",
+        "switch",
+        "combobox",
+        "textbox",
+        "searchbox",
+        "spinbutton",
+        "slider",
+        "menuitem",
+        "tab",
+        "option",
+    )
     raw_elements.sort(
         key=lambda e: (
-            INTERACTIVE_ORDER.index(e.get("role", "")) if e.get("role") in INTERACTIVE_ORDER else 99,  # noqa: E501
+            INTERACTIVE_ORDER.index(e.get("role", ""))
+            if e.get("role") in INTERACTIVE_ORDER
+            else 99,  # noqa: E501
             0 if not e.get("checked") else 1,
         )
     )
@@ -329,10 +343,13 @@ class NIMClient:
     def available(self):
         if self._available:
             return True
-        if (self.consecutive_failures > 0
-                and time.time() - self.last_failure_time > CIRCUIT_BREAKER_RECOVERY_S):
-            logger.info("NIM auto-recovery: circuit breaker closed after %ds",
-                        CIRCUIT_BREAKER_RECOVERY_S)
+        if (
+            self.consecutive_failures > 0
+            and time.time() - self.last_failure_time > CIRCUIT_BREAKER_RECOVERY_S
+        ):
+            logger.info(
+                "NIM auto-recovery: circuit breaker closed after %ds", CIRCUIT_BREAKER_RECOVERY_S
+            )
             self._available = True
             self.consecutive_failures = 0
         return self._available
@@ -340,18 +357,25 @@ class NIMClient:
     def _record_failure(self, error_type, error_msg):
         self.consecutive_failures += 1
         self.last_failure_time = time.time()
-        logger.warning("NIM failure [%s]: %s (consecutive: %d/%d)",
-                       error_type, error_msg,
-                       self.consecutive_failures, CIRCUIT_BREAKER_THRESHOLD)
+        logger.warning(
+            "NIM failure [%s]: %s (consecutive: %d/%d)",
+            error_type,
+            error_msg,
+            self.consecutive_failures,
+            CIRCUIT_BREAKER_THRESHOLD,
+        )
         if self.consecutive_failures >= CIRCUIT_BREAKER_THRESHOLD:
             self._available = False
-            logger.error("NIM circuit breaker OPEN after %d consecutive failures",
-                         self.consecutive_failures)
+            logger.error(
+                "NIM circuit breaker OPEN after %d consecutive failures", self.consecutive_failures
+            )
 
     def _record_success(self):
         if self.consecutive_failures > 0:
-            logger.info("NIM success: resetting circuit breaker (was %d failures)",
-                        self.consecutive_failures)
+            logger.info(
+                "NIM success: resetting circuit breaker (was %d failures)",
+                self.consecutive_failures,
+            )
         self.consecutive_failures = 0
         self._available = True
 
@@ -363,8 +387,7 @@ class NIMClient:
             max_tokens=MAX_TOKENS,
         )
 
-    def decide(self, snapshot, profile,
-               learnings=None, history=None, temperature=0.0):
+    def decide(self, snapshot, profile, learnings=None, history=None, temperature=0.0):
         """Hauptmethode: liefert {actions, model, elapsed_ms, tokens}.
 
         Fallback bei fehlendem API-Key / Circuit-Breaker / Fehler:
@@ -372,15 +395,21 @@ class NIMClient:
         Heuristik im decide_node uebernimmt dann.
         """
         if not self.client:
-            return {"actions": [{"action": "wait"}],
-                    "model": "auto_pilot", "elapsed_ms": 0,
-                    "tokens": {"total": 0}}
+            return {
+                "actions": [{"action": "wait"}],
+                "model": "auto_pilot",
+                "elapsed_ms": 0,
+                "tokens": {"total": 0},
+            }
 
         if not self.available:
             logger.warning("NIM circuit breaker open — returning fallback")
-            return {"actions": [{"action": "wait"}],
-                    "model": "fallback", "elapsed_ms": 0,
-                    "tokens": {"total": 0}}
+            return {
+                "actions": [{"action": "wait"}],
+                "model": "fallback",
+                "elapsed_ms": 0,
+                "tokens": {"total": 0},
+            }
 
         prompt = build_survey_prompt(snapshot, profile, learnings, history)
 
@@ -397,8 +426,7 @@ class NIMClient:
                     "raw_response": raw[:200],
                     "model": self.model,
                     "elapsed_ms": round(elapsed * 1000),
-                    "tokens": {"total": response.usage.total_tokens
-                               if response.usage else 0},
+                    "tokens": {"total": response.usage.total_tokens if response.usage else 0},
                 }
             except AuthenticationError as e:
                 self._record_failure("auth", str(e))
@@ -406,23 +434,25 @@ class NIMClient:
             except RateLimitError as e:
                 self._record_failure("rate_limit", str(e))
                 if attempt < RETRIES:
-                    time.sleep(min(2 ** attempt, 10))
+                    time.sleep(min(2**attempt, 10))
                     continue
                 break
             except (APIConnectionError, APITimeoutError) as e:
                 self._record_failure("network", str(e))
                 if attempt < RETRIES:
-                    time.sleep(min(2 ** attempt, 10))
+                    time.sleep(min(2**attempt, 10))
                     continue
                 break
             except Exception as e:
                 self._record_failure("unknown", str(e))
                 break
 
-        return {"actions": [{"action": "wait"}],
-                "model": "fallback",
-                "elapsed_ms": round((time.monotonic() - start) * 1000),
-                "tokens": {"total": 0}}
+        return {
+            "actions": [{"action": "wait"}],
+            "model": "fallback",
+            "elapsed_ms": round((time.monotonic() - start) * 1000),
+            "tokens": {"total": 0},
+        }
 
 
 _default_client = None

@@ -4,10 +4,10 @@ WARUM: Die API muss isoliert testbar sein (kein echter Browser nötig).
 Wir patchen BrowserManager und Auth-Flows.
 """
 
-import unittest
-from unittest.mock import MagicMock, patch, AsyncMock
-import sys
 import os
+import sys
+import unittest
+from unittest.mock import AsyncMock, MagicMock, patch
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -26,6 +26,7 @@ class TestBrowserEndpoints(unittest.TestCase):
 
         # Import app AFTER patch
         from api.main import app
+
         self.client = TestClient(app)
 
     def tearDown(self):
@@ -51,12 +52,14 @@ class TestBrowserEndpoints(unittest.TestCase):
 
     def test_browser_health_not_running(self):
         """GET /browser/health when browser not running."""
-        self.mock_bm.health = AsyncMock(return_value={
-            "running": False,
-            "profile": None,
-            "last_used": 0.0,
-            "idle_seconds": None,
-        })
+        self.mock_bm.health = AsyncMock(
+            return_value={
+                "running": False,
+                "profile": None,
+                "last_used": 0.0,
+                "idle_seconds": None,
+            }
+        )
 
         r = self.client.get("/browser/health")
         self.assertEqual(r.status_code, 200)
@@ -73,6 +76,7 @@ class TestHeyPiggyLoginEndpoint(unittest.TestCase):
         self.mock_bm_cls.return_value = self.mock_bm
 
         from api.main import app
+
         self.client = TestClient(app)
 
     def tearDown(self):
@@ -82,13 +86,10 @@ class TestHeyPiggyLoginEndpoint(unittest.TestCase):
     def test_login_success(self, mock_flow_cls):
         """POST /services/heypiggy/login returns success."""
         mock_flow = MagicMock()
-        mock_flow.execute.return_value = MagicMock(
-            status="ok", pid=123, wid=456, reason=None
-        )
+        mock_flow.execute.return_value = MagicMock(status="ok", pid=123, wid=456, reason=None)
         mock_flow_cls.return_value = mock_flow
 
-        r = self.client.post("/services/heypiggy/login",
-                             json={"profile_name": "test"})
+        r = self.client.post("/services/heypiggy/login", json={"profile_name": "test"})
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()["status"], "success")
         self.assertEqual(r.json()["service"], "heypiggy")
@@ -102,8 +103,7 @@ class TestHeyPiggyLoginEndpoint(unittest.TestCase):
         )
         mock_flow_cls.return_value = mock_flow
 
-        r = self.client.post("/services/heypiggy/login",
-                             json={"profile_name": "test"})
+        r = self.client.post("/services/heypiggy/login", json={"profile_name": "test"})
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()["status"], "already_logged_in")
 
@@ -116,8 +116,7 @@ class TestHeyPiggyLoginEndpoint(unittest.TestCase):
         )
         mock_flow_cls.return_value = mock_flow
 
-        r = self.client.post("/services/heypiggy/login",
-                             json={"profile_name": "test"})
+        r = self.client.post("/services/heypiggy/login", json={"profile_name": "test"})
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()["status"], "error")
         self.assertEqual(r.json()["message"], "chrome_not_started")
@@ -133,6 +132,7 @@ class TestCookieEndpoint(unittest.TestCase):
         self.mock_bm_cls.return_value = self.mock_bm
 
         from api.main import app
+
         self.client = TestClient(app)
 
     def tearDown(self):
@@ -141,13 +141,14 @@ class TestCookieEndpoint(unittest.TestCase):
     def test_extract_cookies_success(self):
         """POST /tools/extract-cookies returns cookies."""
         mock_ctx = MagicMock()
-        mock_ctx.cookies = AsyncMock(return_value=[
-            {"name": "session", "value": "abc123", "domain": ".heypiggy.com"},
-        ])
+        mock_ctx.cookies = AsyncMock(
+            return_value=[
+                {"name": "session", "value": "abc123", "domain": ".heypiggy.com"},
+            ]
+        )
         self.mock_bm.start = AsyncMock(return_value=mock_ctx)
 
-        r = self.client.post("/tools/extract-cookies",
-                             json={"profile_name": "test"})
+        r = self.client.post("/tools/extract-cookies", json={"profile_name": "test"})
         self.assertEqual(r.status_code, 200)
         self.assertEqual(r.json()["status"], "success")
         self.assertEqual(r.json()["count"], 1)

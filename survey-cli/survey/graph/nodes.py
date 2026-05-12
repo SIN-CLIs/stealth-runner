@@ -148,16 +148,31 @@ DEFAULT_COOKIE_BACKUP = os.path.expanduser("~/.stealth/heypiggy-backup/heypiggy-
 
 def ensure_chrome(state: SurveyState) -> SurveyState:
     from ..chrome import is_chrome_alive, find_dashboard_ws, ChromeLauncher
+
     if is_chrome_alive(state.cdp_port):
         ws = find_dashboard_ws(state.cdp_port)
-        if ws: state.dashboard_ws = ws; state.status = "chrome_ready"; return state  # noqa: E701,E702
-        state.add_error("ensure_chrome", f"Chrome alive no WS port {state.cdp_port}"); state.status = "error"; return state  # noqa: E501,E702
-    result = ChromeLauncher(port=state.cdp_port, debug=True).launch_and_verify(url="https://www.heypiggy.com/?page=dashboard")
-    if not result.get("ok"): state.add_error("ensure_chrome", result.get("error","launch failed")); state.status = "error"; return state  # noqa: E501,E701,E702
+        if ws:
+            state.dashboard_ws = ws
+            state.status = "chrome_ready"
+            return state  # noqa: E701,E702
+        state.add_error("ensure_chrome", f"Chrome alive no WS port {state.cdp_port}")
+        state.status = "error"
+        return state  # noqa: E501,E702
+    result = ChromeLauncher(port=state.cdp_port, debug=True).launch_and_verify(
+        url="https://www.heypiggy.com/?page=dashboard"
+    )
+    if not result.get("ok"):
+        state.add_error("ensure_chrome", result.get("error", "launch failed"))
+        state.status = "error"
+        return state  # noqa: E501,E701,E702
     time.sleep(2)
     ws = find_dashboard_ws(state.cdp_port)
-    if ws: state.dashboard_ws = ws; state.status = "chrome_ready"  # noqa: E701,E702
-    else: state.add_error("ensure_chrome", "launched no WS"); state.status = "error"  # noqa: E701,E702
+    if ws:
+        state.dashboard_ws = ws
+        state.status = "chrome_ready"  # noqa: E701,E702
+    else:
+        state.add_error("ensure_chrome", "launched no WS")
+        state.status = "error"  # noqa: E701,E702
     return state
 
 
@@ -174,21 +189,38 @@ def open_survey(state: SurveyState) -> SurveyState:
         from tools.tool_open_survey import open_survey as _open_survey_tool
     except ImportError:
         import importlib.util
-        spec = importlib.util.spec_from_file_location("tool_open_survey", "/Users/jeremy/dev/stealth-runner/survey-cli/tools/tool_open_survey.py")  # noqa: E501
-        mod = importlib.util.module_from_spec(spec); spec.loader.exec_module(mod); _open_survey_tool = mod.open_survey  # noqa: E501,E702
-    result = _open_survey_tool(survey_id=state.survey_id, pid=0, wid=0, port=state.cdp_port, wait_modal=3.0, wait_load=5.0)  # noqa: E501
+
+        spec = importlib.util.spec_from_file_location(
+            "tool_open_survey",
+            "/Users/jeremy/dev/stealth-runner/survey-cli/tools/tool_open_survey.py",
+        )  # noqa: E501
+        mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(mod)
+        _open_survey_tool = mod.open_survey  # noqa: E501,E702
+    result = _open_survey_tool(
+        survey_id=state.survey_id, pid=0, wid=0, port=state.cdp_port, wait_modal=3.0, wait_load=5.0
+    )  # noqa: E501
     if result.get("status") != "ok":
         err = result.get("reason", "Unknown")
         state.add_error("open_survey", err)
-        if "screen_out" in err.lower() or "expired" in err.lower(): state.screen_out = True; state.status = "screen_out"  # noqa: E501,E701,E702
-        else: state.status = "error"  # noqa: E701
+        if "screen_out" in err.lower() or "expired" in err.lower():
+            state.screen_out = True
+            state.status = "screen_out"  # noqa: E501,E701,E702
+        else:
+            state.status = "error"  # noqa: E701
         return state
     ws_url = result.get("ws_url")
-    if not ws_url: state.add_error("open_survey", "no ws_url"); state.status = "error"; return state  # noqa: E701,E702
-    state.tab_ws = ws_url; state.survey_url = result.get("url", "")  # noqa: E702
-    if result.get("provider"): state.provider = result.get("provider")  # noqa: E701
+    if not ws_url:
+        state.add_error("open_survey", "no ws_url")
+        state.status = "error"
+        return state  # noqa: E701,E702
+    state.tab_ws = ws_url
+    state.survey_url = result.get("url", "")  # noqa: E702
+    if result.get("provider"):
+        state.provider = result.get("provider")  # noqa: E701
     state.target_mode = "in_dashboard" if result.get("flow") == "in_page" else "new_tab"
-    state.status = "tab_open"; return state  # noqa: E702
+    state.status = "tab_open"
+    return state  # noqa: E702
 
 
 # ── NODE 3: inject_cookies ────────────────────────────────────────────────────
@@ -211,27 +243,54 @@ def open_survey(state: SurveyState) -> SurveyState:
 
 def inject_cookies(state: SurveyState) -> SurveyState:
     if getattr(state, "target_mode", "new_tab") == "in_dashboard":
-        state.cookies_injected = True; state.status = "cookies_injected"; return state  # noqa: E702
+        state.cookies_injected = True
+        state.status = "cookies_injected"
+        return state  # noqa: E702
     if not state.tab_ws:
-        state.add_error("inject_cookies", "tab_ws not set"); state.status = "error"; return state  # noqa: E702
+        state.add_error("inject_cookies", "tab_ws not set")
+        state.status = "error"
+        return state  # noqa: E702
     cookie_file = os.environ.get("HEYPIGGY_COOKIE_BACKUP", DEFAULT_COOKIE_BACKUP)
     try:
-        with open(cookie_file) as f: cookie_data = json.load(f)  # noqa: E701
+        with open(cookie_file) as f:
+            cookie_data = json.load(f)  # noqa: E701
     except Exception as e:
-        state.add_error("inject_cookies", f"Load failed {cookie_file}: {e}"); state.status = "error"; return state  # noqa: E501,E702
-    heypiggy = [{"name":c["name"],"value":c["value"],"domain":c["domain"],"path":c.get("path","/"),"expires":c.get("expires",-1),"secure":c.get("secure",False),"httpOnly":c.get("httpOnly",False)} for c in cookie_data.get("cookies",[]) if "heypiggy" in c.get("domain","").lower()]  # noqa: E501
+        state.add_error("inject_cookies", f"Load failed {cookie_file}: {e}")
+        state.status = "error"
+        return state  # noqa: E501,E702
+    heypiggy = [
+        {
+            "name": c["name"],
+            "value": c["value"],
+            "domain": c["domain"],
+            "path": c.get("path", "/"),
+            "expires": c.get("expires", -1),
+            "secure": c.get("secure", False),
+            "httpOnly": c.get("httpOnly", False),
+        }
+        for c in cookie_data.get("cookies", [])
+        if "heypiggy" in c.get("domain", "").lower()
+    ]  # noqa: E501
     if not heypiggy:
-        state.add_error("inject_cookies", "No heypiggy cookies"); state.status = "error"; return state  # noqa: E501,E702
+        state.add_error("inject_cookies", "No heypiggy cookies")
+        state.status = "error"
+        return state  # noqa: E501,E702
     try:
         ws = websocket.create_connection(state.tab_ws, timeout=15)
-        ws.send(json.dumps({"id": 1, "method": "Network.setCookies", "params": {"cookies": heypiggy}}))  # noqa: E501
-        resp = json.loads(ws.recv()); ws.close()  # noqa: E702
+        ws.send(
+            json.dumps({"id": 1, "method": "Network.setCookies", "params": {"cookies": heypiggy}})
+        )  # noqa: E501
+        resp = json.loads(ws.recv())
+        ws.close()  # noqa: E702
         if resp.get("result", {}).get("success") is True:
-            state.cookies_injected = True; state.status = "cookies_injected"  # noqa: E702
+            state.cookies_injected = True
+            state.status = "cookies_injected"  # noqa: E702
         else:
-            state.add_error("inject_cookies", str(resp)); state.status = "error"  # noqa: E702
+            state.add_error("inject_cookies", str(resp))
+            state.status = "error"  # noqa: E702
     except Exception as e:
-        state.add_error("inject_cookies", str(e)[:200]); state.status = "error"  # noqa: E702
+        state.add_error("inject_cookies", str(e)[:200])
+        state.status = "error"  # noqa: E702
     return state
 
 
@@ -240,6 +299,7 @@ def inject_cookies(state: SurveyState) -> SurveyState:
 # Wrapped:  CDP Runtime.evaluate (inline JS)
 # Returns:  state mit snapshot_refs, status='running'
 # Lines:    ~28
+
 
 def snapshot_node(state: SurveyState) -> SurveyState:
     """Kanonischer Scan via cdp_universal.scan() — ersetzt handgerolltes JS.
@@ -267,27 +327,28 @@ def snapshot_node(state: SurveyState) -> SurveyState:
 
     elements = []
     for el in result.elements:
-        elements.append({
-            "stable_id": el.stable_id,
-            "frame_id": el.frame_id,
-            "role": el.role,
-            "name": el.name,
-            "value": el.value,
-            "tag": el.tag,
-            "text": el.text,
-            "state": el.state,
-            "bbox": el.bbox,
-            "attrs": el.attrs,
-            "frame_url": el.frame_url,
-        })
+        elements.append(
+            {
+                "stable_id": el.stable_id,
+                "frame_id": el.frame_id,
+                "role": el.role,
+                "name": el.name,
+                "value": el.value,
+                "tag": el.tag,
+                "text": el.text,
+                "state": el.state,
+                "bbox": el.bbox,
+                "attrs": el.attrs,
+                "frame_url": el.frame_url,
+            }
+        )
     state.universal_elements = elements
     state.captcha_frames = result.captcha_frames
 
     # Backward-Compat-Spiegel: minimaler @eN-Index fuer alte Tools.
     # NEUER Code MUSS universal_elements + stable_id verwenden.
     state.snapshot_refs = {
-        f"@e{i}": {"role": el["role"], "text": el["name"],
-                   "stable_id": el["stable_id"]}
+        f"@e{i}": {"role": el["role"], "text": el["name"], "stable_id": el["stable_id"]}
         for i, el in enumerate(elements)
     }
     state.status = "running"
@@ -304,7 +365,7 @@ def snapshot_node(state: SurveyState) -> SurveyState:
     try:
         # SR-106: prefix with r''' so embedded JS regex meta \s, \d don't trip Python's
         # invalid-escape-sequence rule (W605). Raw string passes them through unchanged to V8.
-        drag_check_js = r'''
+        drag_check_js = r"""
         (function(){
             var cdkDrags = document.querySelectorAll('.cdk-drag');
             var cdkDrops = document.querySelectorAll('.cdk-drop-list, .drop-zone');
@@ -327,24 +388,29 @@ def snapshot_node(state: SurveyState) -> SurveyState:
                 is_drag_drop_puzzle: (cdkDrags.length > 0 || draggables.length > 0) && hasZahlCue
             });
         })()
-        '''
+        """
         drag_resp = cdp.call_result("Runtime.evaluate", {"expression": drag_check_js})
         drag_raw = drag_resp.get("result", {}).get("value", "{}")
         import json as _json
+
         drag_info = _json.loads(drag_raw)
 
         state.drag_drop_detected = drag_info.get("is_drag_drop_puzzle", False)
         state.drag_drop_target = drag_info.get("target_number")
 
         if state.drag_drop_detected:
-            print(f"[scan] DRAG-DROP PUZZLE DETECTED: target={state.drag_drop_target}, "
-                  f"cdk_drags={drag_info.get('cdk_drag_count')}")
+            print(
+                f"[scan] DRAG-DROP PUZZLE DETECTED: target={state.drag_drop_target}, "
+                f"cdk_drags={drag_info.get('cdk_drag_count')}"
+            )
     except Exception:
         state.drag_drop_detected = False
         state.drag_drop_target = None
 
-    print(f"[scan] {len(elements)} elements, {result.frame_count} frames, "
-          f"{len(result.captcha_frames)} captcha-iframes, drag_drop={state.drag_drop_detected}")
+    print(
+        f"[scan] {len(elements)} elements, {result.frame_count} frames, "
+        f"{len(result.captcha_frames)} captcha-iframes, drag_drop={state.drag_drop_detected}"
+    )
     return state
 
 
@@ -382,9 +448,12 @@ def captcha_node(state: SurveyState) -> SurveyState:
 
     # Log warum wir hier sind
     reason = []
-    if has_captcha_hint: reason.append("captcha_frames")  # noqa: E701
-    if has_drag_drop: reason.append(f"drag_drop(target={getattr(state, 'drag_drop_target', '?')})")  # noqa: E701
-    if stuck_threshold_reached: reason.append(f"no_dom_change={state.no_dom_change_count}")  # noqa: E701
+    if has_captcha_hint:
+        reason.append("captcha_frames")  # noqa: E701
+    if has_drag_drop:
+        reason.append(f"drag_drop(target={getattr(state, 'drag_drop_target', '?')})")  # noqa: E701
+    if stuck_threshold_reached:
+        reason.append(f"no_dom_change={state.no_dom_change_count}")  # noqa: E701
     print(f"[captcha] triggered: {', '.join(reason)}")
 
     if not state.tab_ws:
@@ -401,7 +470,9 @@ def captcha_node(state: SurveyState) -> SurveyState:
     # Detection via CaptchaRouter. Das spart Zeit und vermeidet Race Conditions.
     # ══════════════════════════════════════════════════════════════════════════
     if has_drag_drop:
-        print(f"[captcha] FAST-PATH: drag_drop_detected=True, target={getattr(state, 'drag_drop_target', '?')}")  # noqa: E501
+        print(
+            f"[captcha] FAST-PATH: drag_drop_detected=True, target={getattr(state, 'drag_drop_target', '?')}"
+        )  # noqa: E501
         try:
             from ..captcha_adapters import angular_drag_drop_solve
             from ..captcha_router import CaptchaDetection
@@ -409,13 +480,15 @@ def captcha_node(state: SurveyState) -> SurveyState:
             with CDPConnection(state.tab_ws, timeout=30) as cdp:
                 detection = CaptchaDetection(
                     captcha_type="angular_drag_drop",
-                    dom_hint=f"target={getattr(state, 'drag_drop_target', '?')}"
+                    dom_hint=f"target={getattr(state, 'drag_drop_target', '?')}",
                 )
                 result = angular_drag_drop_solve(cdp, detection)
 
             state.captcha_solved_this_iteration = bool(result.solved)
             if result.solved:
-                print(f"[captcha] FAST-PATH SOLVED: angular_drag_drop elapsed={result.elapsed_ms:.0f}ms")  # noqa: E501
+                print(
+                    f"[captcha] FAST-PATH SOLVED: angular_drag_drop elapsed={result.elapsed_ms:.0f}ms"
+                )  # noqa: E501
                 state.no_dom_change_count = 0
                 state.drag_drop_detected = False  # Reset for next iteration
             else:
@@ -444,16 +517,12 @@ def captcha_node(state: SurveyState) -> SurveyState:
 
     state.captcha_solved_this_iteration = bool(result.solved)
     if result.solved:
-        print(f"[captcha] solved type={result.captcha_type} "
-              f"elapsed={result.elapsed_ms:.0f}ms")
+        print(f"[captcha] solved type={result.captcha_type} elapsed={result.elapsed_ms:.0f}ms")
         state.no_dom_change_count = 0
     else:
-        print(f"[captcha] NOT solved type={result.captcha_type} "
-              f"reason={result.reason}")
-        state.add_error("captcha_node",
-                        f"{result.captcha_type}: {result.reason}")
+        print(f"[captcha] NOT solved type={result.captcha_type} reason={result.reason}")
+        state.add_error("captcha_node", f"{result.captcha_type}: {result.reason}")
     return state
-
 
 
 # ── NODE 5: decide_node ───────────────────────────────────────────────────────
@@ -461,6 +530,7 @@ def captcha_node(state: SurveyState) -> SurveyState:
 # Wrapped:  NIMClient.decide() + heuristic fallback
 # Returns:  state mit nim_actions
 # Lines:    ~27
+
 
 def decide_node(state: SurveyState) -> SurveyState:
     """Waehlt EINE Aktion basierend auf state.universal_elements.
@@ -502,14 +572,26 @@ def decide_node(state: SurveyState) -> SurveyState:
             rank_answers_for_qualification,
             filter_safe_answers,
         )
+
         HAS_QUALIFICATION_RULES = True
     except ImportError:
         HAS_QUALIFICATION_RULES = False
-        def is_disqualifying_answer(x): return False
-        def matched_disqualifying_pattern(x): return None
-        def record_qualification_block(**kw): pass
-        def rank_answers_for_qualification(q, a): return list(range(len(a)))
-        def filter_safe_answers(a): return list(range(len(a)))
+
+        def is_disqualifying_answer(x):
+            return False
+
+        def matched_disqualifying_pattern(x):
+            return None
+
+        def record_qualification_block(**kw):
+            pass
+
+        def rank_answers_for_qualification(q, a):
+            return list(range(len(a)))
+
+        def filter_safe_answers(a):
+            return list(range(len(a)))
+
     try:
         from ..nim import get_nim
     except Exception:
@@ -533,9 +615,13 @@ def decide_node(state: SurveyState) -> SurveyState:
         try:
             llm_in = {
                 "elements": [
-                    {"stable_id": e["stable_id"], "role": e["role"],
-                     "name": e["name"], "value": e["value"],
-                     "checked": e.get("state", {}).get("checked", False)}
+                    {
+                        "stable_id": e["stable_id"],
+                        "role": e["role"],
+                        "name": e["name"],
+                        "value": e["value"],
+                        "checked": e.get("state", {}).get("checked", False),
+                    }
                     for e in elements
                     if not e.get("state", {}).get("disabled")
                 ],
@@ -577,16 +663,20 @@ def decide_node(state: SurveyState) -> SurveyState:
                                 )
                                 state.add_error(
                                     "decide_node",
-                                    f"qualif_block(llm) {sid} '{label[:40]}' "
-                                    f"pat={pat}"[:200],
+                                    f"qualif_block(llm) {sid} '{label[:40]}' pat={pat}"[:200],
                                 )
-                                print(f"[decide] BLOCKED LLM disqualifying "
-                                      f"answer: '{label[:50]}' pattern={pat}")
+                                print(
+                                    f"[decide] BLOCKED LLM disqualifying "
+                                    f"answer: '{label[:50]}' pattern={pat}"
+                                )
                                 rejected = True
                     if not rejected:
-                        decision = {"action": act, "stable_id": sid,
-                                    "value": a0.get("value", ""),
-                                    "reason": "llm"}
+                        decision = {
+                            "action": act,
+                            "stable_id": sid,
+                            "value": a0.get("value", ""),
+                            "reason": "llm",
+                        }
                 state.nim_actions = actions
         except Exception as e:
             state.add_error("decide_node", f"nim failed: {e}"[:200])
@@ -637,8 +727,11 @@ def decide_node(state: SurveyState) -> SurveyState:
         # Wähle erste safe Option
         if radio_options:
             e = radio_options[0]
-            decision = {"action": "click", "stable_id": e["stable_id"],
-                        "reason": f"heuristic_radio_safe:{e['name'][:30]}"}
+            decision = {
+                "action": "click",
+                "stable_id": e["stable_id"],
+                "reason": f"heuristic_radio_safe:{e['name'][:30]}",
+            }
 
         # 2a-bis OPTIONS-BASED COMBOBOX (Dropdown) — KLICK ZUR EXPANSION
         # ----------------------------------------------------------------
@@ -684,9 +777,11 @@ def decide_node(state: SurveyState) -> SurveyState:
                 if e.get("state", {}).get("expanded"):
                     # Liste schon offen — LLM/2a soll konkrete option waehlen
                     continue
-                decision = {"action": "click",
-                            "stable_id": e["stable_id"],
-                            "reason": f"combobox_expand:{(e.get('name') or '')[:30]}"}
+                decision = {
+                    "action": "click",
+                    "stable_id": e["stable_id"],
+                    "reason": f"combobox_expand:{(e.get('name') or '')[:30]}",
+                }
                 break
 
         # 2b leere textbox/searchbox/spinbutton/combobox(editable) — PROFIL-MAPPING
@@ -716,8 +811,7 @@ def decide_node(state: SurveyState) -> SurveyState:
             for e in elements:
                 if e["stable_id"] == avoid_id:
                     continue
-                if e["role"] not in ("textbox", "searchbox", "spinbutton",
-                                     "combobox"):
+                if e["role"] not in ("textbox", "searchbox", "spinbutton", "combobox"):
                     continue
                 if e["role"] == "combobox":
                     is_native_select = e.get("tag", "").lower() == "select"
@@ -736,25 +830,28 @@ def decide_node(state: SurveyState) -> SurveyState:
                 if val is None:
                     # Kein Keyword-Match → LLM-Tick uebernimmt
                     continue
-                decision = {"action": "fill",
-                            "stable_id": e["stable_id"],
-                            "value": val,
-                            "reason": "heuristic_fill:profile_match"}
+                decision = {
+                    "action": "fill",
+                    "stable_id": e["stable_id"],
+                    "value": val,
+                    "reason": "heuristic_fill:profile_match",
+                }
                 break
 
         # 2c continue button
         if not decision:
-            cont = ("weiter", "next", "submit", "continue",
-                    "senden", "fortfahren", "ok")
+            cont = ("weiter", "next", "submit", "continue", "senden", "fortfahren", "ok")
             for e in elements:
                 if e["stable_id"] == avoid_id:
                     continue
                 if e["role"] == "button":
                     name_low = (e.get("name") or "").lower()
                     if any(w in name_low for w in cont):
-                        decision = {"action": "click",
-                                    "stable_id": e["stable_id"],
-                                    "reason": f"heuristic_button:{name_low[:30]}"}
+                        decision = {
+                            "action": "click",
+                            "stable_id": e["stable_id"],
+                            "reason": f"heuristic_button:{name_low[:30]}",
+                        }
                         break
 
         # 2d wait
@@ -762,9 +859,11 @@ def decide_node(state: SurveyState) -> SurveyState:
             decision = {"action": "wait", "reason": "no_candidate_found"}
 
     state.decision = decision
-    print(f"[decide] action={decision.get('action')} "
-          f"stable_id={decision.get('stable_id','')[:10]} "
-          f"reason={decision.get('reason','')[:40]}")
+    print(
+        f"[decide] action={decision.get('action')} "
+        f"stable_id={decision.get('stable_id', '')[:10]} "
+        f"reason={decision.get('reason', '')[:40]}"
+    )
     return state
 
 
@@ -773,6 +872,7 @@ def decide_node(state: SurveyState) -> SurveyState:
 # Wrapped:  SurveyFlowExecutor.execute_actions()
 # Returns:  state mit batch_result, consecutive_failures incrementiert/resetet
 # Lines:    ~25
+
 
 def execute_node(state: SurveyState) -> SurveyState:
     """Fuehrt state.decision aus via cdp_actuator (echter Klick + Verify).
@@ -798,13 +898,21 @@ def execute_node(state: SurveyState) -> SurveyState:
 
     # wait/done: keine CDP-Aktion
     if action in ("wait", "done", ""):
-        state.last_action_result = {"success": True, "reason": action or "noop",
-                                    "stable_id": "", "action_type": action}
+        state.last_action_result = {
+            "success": True,
+            "reason": action or "noop",
+            "stable_id": "",
+            "action_type": action,
+        }
         state.reset_failures()
         state.no_dom_change_count = 0
-        state.batch_result = {"success": True, "results": [],
-                              "total_success": 0, "total_fail": 0,
-                              "elapsed_ms": 0}
+        state.batch_result = {
+            "success": True,
+            "results": [],
+            "total_success": 0,
+            "total_fail": 0,
+            "elapsed_ms": 0,
+        }
         time.sleep(1.0)
         return state
 
@@ -861,9 +969,11 @@ def execute_node(state: SurveyState) -> SurveyState:
         "elapsed_ms": result.elapsed_ms,
     }
 
-    print(f"[act] {action} {sid[:10]} success={result.success} "
-          f"reason={result.reason} attempts={getattr(result, 'attempts', 1)} "
-          f"elapsed={result.elapsed_ms:.0f}ms")
+    print(
+        f"[act] {action} {sid[:10]} success={result.success} "
+        f"reason={result.reason} attempts={getattr(result, 'attempts', 1)} "
+        f"elapsed={result.elapsed_ms:.0f}ms"
+    )
 
     if not result.success:
         state.increment_failures()
@@ -882,12 +992,14 @@ def execute_node(state: SurveyState) -> SurveyState:
             # vorher schon 4 interne Attempts gemacht. Effektiv eskaliert
             # CUA jetzt nach 2× "no_dom_change_after_retries" = 8 echte Klicks.
             if state.no_dom_change_count >= 2:
-                print(f"[execute] CUA-FALLBACK triggered: no_dom_change={state.no_dom_change_count}")  # noqa: E501
+                print(
+                    f"[execute] CUA-FALLBACK triggered: no_dom_change={state.no_dom_change_count}"
+                )  # noqa: E501
                 try:
                     from ..cua_fallback import cua_click_blocked_element
+
                     cua_result = cua_click_blocked_element(
-                        element_selector=sid,
-                        tab_ws_url=state.tab_ws
+                        element_selector=sid, tab_ws_url=state.tab_ws
                     )
                     print(f"[execute] CUA result: {cua_result}")
 
@@ -895,7 +1007,9 @@ def execute_node(state: SurveyState) -> SurveyState:
                         # CUA hat geklickt — warte auf DOM-Change
                         time.sleep(1.0)
                         # Update result
-                        state.last_action_result["reason"] = f"cua_{cua_result.get('method', 'unknown')}"  # noqa: E501
+                        state.last_action_result["reason"] = (
+                            f"cua_{cua_result.get('method', 'unknown')}"  # noqa: E501
+                        )
                         state.last_action_result["success"] = True
                         state.no_dom_change_count = 0
                         state.reset_failures()
@@ -914,22 +1028,37 @@ def execute_node(state: SurveyState) -> SurveyState:
 # Returns:  state mit completion_detected/screen_out + status
 # Lines:    ~23
 
+
 def detect_completion(state: SurveyState) -> SurveyState:
-    if not state.tab_ws: state.add_error("detect_completion", "tab_ws not set"); return state  # noqa: E701,E702
-    from ..completion_detector import CompletionDetector; from ..execute import BatchExecutor  # noqa: E702
+    if not state.tab_ws:
+        state.add_error("detect_completion", "tab_ws not set")
+        return state  # noqa: E701,E702
+    from ..completion_detector import CompletionDetector
+    from ..execute import BatchExecutor  # noqa: E702
+
     page_text = BatchExecutor.read_page_text(state.tab_ws, max_len=500)
     if CompletionDetector(cdp_port=state.cdp_port, debug=False).detect(page_text):
-        state.completion_detected = True; state.status = "completed"  # noqa: E702
-        if getattr(state,"target_mode","new_tab")=="in_dashboard" and state.dashboard_ws:
+        state.completion_detected = True
+        state.status = "completed"  # noqa: E702
+        if getattr(state, "target_mode", "new_tab") == "in_dashboard" and state.dashboard_ws:
             from ..opener import SurveyOpener
-            SurveyOpener(cdp_port=state.cdp_port).navigate_back_to_dashboard(state.tab_ws or state.dashboard_ws or "")  # noqa: E501
+
+            SurveyOpener(cdp_port=state.cdp_port).navigate_back_to_dashboard(
+                state.tab_ws or state.dashboard_ws or ""
+            )  # noqa: E501
         return state
     is_err, reason = BatchExecutor.detect_error_page(page_text)
-    if is_err and any(s in reason.lower() for s in ["qualify","eligible","screen","limit","full"]):
-        state.screen_out = True; state.status = "screen_out"  # noqa: E702
-        if getattr(state,"target_mode","new_tab")=="in_dashboard" and state.dashboard_ws:
+    if is_err and any(
+        s in reason.lower() for s in ["qualify", "eligible", "screen", "limit", "full"]
+    ):
+        state.screen_out = True
+        state.status = "screen_out"  # noqa: E702
+        if getattr(state, "target_mode", "new_tab") == "in_dashboard" and state.dashboard_ws:
             from ..opener import SurveyOpener
-            SurveyOpener(cdp_port=state.cdp_port).navigate_back_to_dashboard(state.tab_ws or state.dashboard_ws or "")  # noqa: E501
+
+            SurveyOpener(cdp_port=state.cdp_port).navigate_back_to_dashboard(
+                state.tab_ws or state.dashboard_ws or ""
+            )  # noqa: E501
         return state
     return state
 
@@ -1014,16 +1143,33 @@ def read_balance_after(state: SurveyState) -> SurveyState:
 
 def human_delegate(state: SurveyState) -> SurveyState:
     last_err = state.errors[-1] if state.errors else {"error": "unknown"}
-    reason = f"3 consecutive failures at iteration {state.iteration}: {last_err.get('error','unknown')}"  # noqa: E501
-    state.delegation_reason = reason; state.status = "delegated"  # noqa: E702
-    result = delegate_task(survey_id=state.survey_id, provider=state.provider, reason=reason, tab_ws=state.tab_ws, iteration=state.iteration)  # noqa: E501
-    state.errors.append({"node": "human_delegate", "error": f"delegated: {result.get('stdout','')[:200]}", "iteration": state.iteration, "ts": time.time()})  # noqa: E501
+    reason = (
+        f"3 consecutive failures at iteration {state.iteration}: {last_err.get('error', 'unknown')}"  # noqa: E501
+    )
+    state.delegation_reason = reason
+    state.status = "delegated"  # noqa: E702
+    result = delegate_task(
+        survey_id=state.survey_id,
+        provider=state.provider,
+        reason=reason,
+        tab_ws=state.tab_ws,
+        iteration=state.iteration,
+    )  # noqa: E501
+    state.errors.append(
+        {
+            "node": "human_delegate",
+            "error": f"delegated: {result.get('stdout', '')[:200]}",
+            "iteration": state.iteration,
+            "ts": time.time(),
+        }
+    )  # noqa: E501
     return state
 
 
 # ── Issue #39: Auto-Doc + stealth-memory Integration ─────────────────────────
 # GOAL: Nach Survey-Completion in stealth-memory persistieren (learn/anti-learn)
 # FILES: issue #39, plan: _plans/39-auto-doc-memory.md
+
 
 def _update_stealth_memory(state: SurveyState) -> None:
     """Persistiere Survey-Ergebnis in stealth-memory für Agent-Lernen.
@@ -1054,7 +1200,11 @@ def _update_stealth_memory(state: SurveyState) -> None:
     try:
         # Berechne Erfolg: balance_after > balance_before
         success = state.balance_after > state.balance_before
-        duration_ms = int((time.time() - state.session_start_time) * 1000) if hasattr(state, 'session_start_time') else 0  # noqa: E501
+        duration_ms = (
+            int((time.time() - state.session_start_time) * 1000)
+            if hasattr(state, "session_start_time")
+            else 0
+        )  # noqa: E501
 
         outcome = {
             "ts": datetime.now().isoformat(),
@@ -1069,13 +1219,14 @@ def _update_stealth_memory(state: SurveyState) -> None:
             "error": state.errors[-1].get("error", "") if state.errors else "",
             "error_iteration": state.errors[-1].get("iteration", 0) if state.errors else 0,
             "total_iterations": state.iteration,
-            "page_count": len(state.dom_snapshots) if hasattr(state, 'dom_snapshots') else 0,
+            "page_count": len(state.dom_snapshots) if hasattr(state, "dom_snapshots") else 0,
             "duration_ms": duration_ms,
         }
 
         # Try extern stealth-memory client
         try:
             from stealth_memory import client as smem_client
+
             smem_client.append_outcome(outcome)
             return  # Success
         except ImportError:

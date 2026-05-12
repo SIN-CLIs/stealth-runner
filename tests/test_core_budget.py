@@ -10,6 +10,7 @@ import pytest
 def test_budget_within_limit_no_exception():
     """Solange unter max_seconds: guard() returnt None ohne Exception."""
     from core import SurveyBudget
+
     b = SurveyBudget(run_id="t1", max_seconds=10.0)
     b.guard("node1")  # MUSS nicht werfen
     assert not b.is_exceeded
@@ -18,7 +19,8 @@ def test_budget_within_limit_no_exception():
 
 def test_budget_exceeded_raises():
     """Wenn elapsed >= max_seconds: guard() MUSS BudgetExceededError werfen."""
-    from core import SurveyBudget, BudgetExceededError
+    from core import BudgetExceededError, SurveyBudget
+
     b = SurveyBudget(run_id="t2", max_seconds=0.001)
     time.sleep(0.05)
     with pytest.raises(BudgetExceededError) as exc:
@@ -31,6 +33,7 @@ def test_budget_exceeded_raises():
 def test_budget_span_tracks_node_duration():
     """span(node_name) MUSS Zeit pro Node im snapshot()['steps'] persistieren."""
     from core import SurveyBudget
+
     b = SurveyBudget(run_id="t3", max_seconds=10.0)
     with b.span("snapshot"):
         time.sleep(0.02)
@@ -50,6 +53,7 @@ def test_budget_span_tracks_node_duration():
 def test_budget_remaining_decreases():
     """remaining MUSS monoton fallen."""
     from core import SurveyBudget
+
     b = SurveyBudget(run_id="t4", max_seconds=2.0)
     r1 = b.remaining
     time.sleep(0.05)
@@ -62,7 +66,9 @@ def test_budget_snapshot_is_json_serializable():
     (sonst kann StateManager.save_checkpoint() es nicht persistieren).
     """
     import json
+
     from core import SurveyBudget
+
     b = SurveyBudget(run_id="t5", max_seconds=10.0)
     with b.span("foo"):
         time.sleep(0.001)

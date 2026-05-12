@@ -38,7 +38,7 @@ class SurveyTarget:
     provider: str
     ws_url: str
     tab_id: Optional[str] = None
-    mode: str = "new_tab"          # "new_tab" | "in_page" | "redirect"
+    mode: str = "new_tab"  # "new_tab" | "in_page" | "redirect"
     actual_url: str = ""
     actual_provider: str = ""
 
@@ -49,7 +49,7 @@ class OpenResult:
 
     target: Optional[SurveyTarget] = None
     error: str = ""
-    status: str = "error"          # "error" | "screen_out"
+    status: str = "error"  # "error" | "screen_out"
 
 
 class SurveyOpener:
@@ -124,8 +124,7 @@ class SurveyOpener:
                     if fid:
                         chrome.activate_tab(fid, self.cdp_port)
                     with CDPConnection(ws_url, max_retries=2, timeout=5) as cdp:
-                        cdp.call("Runtime.evaluate",
-                                 {"expression": "document.readyState"})
+                        cdp.call("Runtime.evaluate", {"expression": "document.readyState"})
                     return ws_url
                 except Exception:
                     continue
@@ -189,9 +188,7 @@ class SurveyOpener:
             # When a new tab opens via window.open, it MAY not have cookies
             # (depends on Chrome's cookie jar sharing). Safer to explicitly inject.
             if new_ws:
-                cookies_ok = chrome.inject_heypiggy_cookies_to_tab(
-                    new_ws, debug=self.debug
-                )
+                cookies_ok = chrome.inject_heypiggy_cookies_to_tab(new_ws, debug=self.debug)
                 if self.debug:
                     print(f"[COOKIES] Injected into new tab: {'OK' if cookies_ok else 'FAIL'}")
 
@@ -240,7 +237,9 @@ class SurveyOpener:
         if tab_ws:
             page_text = self._read_page_text(tab_ws, 500).lower()
             stuck_markers = [
-                "loading", "just getting things ready", "won't be long",
+                "loading",
+                "just getting things ready",
+                "won't be long",
             ]
             if any(s in page_text for s in stuck_markers):
                 if self.debug:
@@ -255,11 +254,16 @@ class SurveyOpener:
         if tab_ws:
             page_text = self._read_page_text(tab_ws, 500).lower()
             error_markers = [
-                "no app id", "survey not available",
-                "error - unable to start survey", "survey closed",
-                "link has expired", "survey has ended",
-                "leider ist ein fehler aufgetreten", "error occurred",
-                "this survey is no longer available", "survey unavailable",
+                "no app id",
+                "survey not available",
+                "error - unable to start survey",
+                "survey closed",
+                "link has expired",
+                "survey has ended",
+                "leider ist ein fehler aufgetreten",
+                "error occurred",
+                "this survey is no longer available",
+                "survey unavailable",
             ]
             if any(s in page_text for s in error_markers):
                 if self.debug:
@@ -329,7 +333,9 @@ class SurveyOpener:
         # If session is invalid, navigating won't register completion → €0
         if not is_session_valid(self.cdp_port):
             if self.debug:
-                print("[SESSION] Session invalid in _open_in_dashboard_tab — attempting recovery...")  # noqa: E501
+                print(
+                    "[SESSION] Session invalid in _open_in_dashboard_tab — attempting recovery..."
+                )  # noqa: E501
             recovered = validate_session(self.cdp_port, auto_recover=True)
             if not recovered:
                 return OpenResult(
@@ -344,11 +350,15 @@ class SurveyOpener:
 
         try:
             ws = websocket.create_connection(dashboard_ws, timeout=15)
-            ws.send(json.dumps({
-                "id": 1,
-                "method": "Page.navigate",
-                "params": {"url": survey_url},
-            }))
+            ws.send(
+                json.dumps(
+                    {
+                        "id": 1,
+                        "method": "Page.navigate",
+                        "params": {"url": survey_url},
+                    }
+                )
+            )
             r = json.loads(ws.recv())
             ws.close()
 
@@ -362,9 +372,9 @@ class SurveyOpener:
                 target=SurveyTarget(
                     survey_id=survey_id,
                     provider=provider,
-                    ws_url=dashboard_ws,       # SAME tab, but now at survey URL
-                    tab_id=None,               # No separate tab — same dashboard tab
-                    mode="in_dashboard",       # NEW mode: navigate back after!
+                    ws_url=dashboard_ws,  # SAME tab, but now at survey URL
+                    tab_id=None,  # No separate tab — same dashboard tab
+                    mode="in_dashboard",  # NEW mode: navigate back after!
                     actual_url=survey_url,
                 ),
                 status="survey_opened",
@@ -398,11 +408,15 @@ class SurveyOpener:
             return False
         try:
             ws = websocket.create_connection(dashboard_ws, timeout=15)
-            ws.send(json.dumps({
-                "id": 1,
-                "method": "Page.navigate",
-                "params": {"url": "https://www.heypiggy.com/?page=dashboard"},
-            }))
+            ws.send(
+                json.dumps(
+                    {
+                        "id": 1,
+                        "method": "Page.navigate",
+                        "params": {"url": "https://www.heypiggy.com/?page=dashboard"},
+                    }
+                )
+            )
             r = json.loads(ws.recv())
             ws.close()
             frame_id = r.get("result", {}).get("frameId")
@@ -440,9 +454,7 @@ class SurveyOpener:
             print(f"[STEALTH] {'OK' if injected else 'FAIL'} {tab_info['id'][:8]}")
 
         # COOKIE INJECTION — MUST happen before navigation!
-        cookies_ok = chrome.inject_heypiggy_cookies_to_tab(
-            tab_info["ws_url"], debug=self.debug
-        )
+        cookies_ok = chrome.inject_heypiggy_cookies_to_tab(tab_info["ws_url"], debug=self.debug)
         if self.debug:
             print(f"[COOKIES] {'OK' if cookies_ok else 'FAIL'} {tab_info['id'][:8]}")
 
@@ -457,11 +469,15 @@ class SurveyOpener:
             return None
         try:
             ws = websocket.create_connection(dashboard_ws, timeout=10)
-            ws.send(json.dumps({
-                "id": 1,
-                "method": "Runtime.evaluate",
-                "params": {"expression": f'clickSurvey("{survey_id}")'},
-            }))
+            ws.send(
+                json.dumps(
+                    {
+                        "id": 1,
+                        "method": "Runtime.evaluate",
+                        "params": {"expression": f'clickSurvey("{survey_id}")'},
+                    }
+                )
+            )
             json.loads(ws.recv())
             ws.close()
             if self.debug:
@@ -478,10 +494,13 @@ class SurveyOpener:
             return
         try:
             ws = websocket.create_connection(tab_ws, timeout=10)
-            ws.send(json.dumps({
-                "id": 0,
-                "method": "Runtime.evaluate",
-                "params": {"expression": '''
+            ws.send(
+                json.dumps(
+                    {
+                        "id": 0,
+                        "method": "Runtime.evaluate",
+                        "params": {
+                            "expression": """
 (function() {
     var links = document.querySelectorAll("a");
     for (var i=0;i<links.length;i++) {
@@ -492,8 +511,11 @@ class SurveyOpener:
     if (links.length > 0) { links[0].click(); return "fallback_click"; }
     return "no_link";
 })()
-'''},
-            }))
+"""
+                        },
+                    }
+                )
+            )
             json.loads(ws.recv())
             ws.close()
         except Exception:
@@ -507,14 +529,18 @@ class SurveyOpener:
                 if not websocket:
                     return None, ""
                 ws = websocket.create_connection(tab_info, timeout=8)
-                ws.send(json.dumps({
-                    "id": 0,
-                    "method": "Runtime.evaluate",
-                    "params": {
-                        "expression": "document.location.href",
-                        "returnByValue": True,
-                    },
-                }))
+                ws.send(
+                    json.dumps(
+                        {
+                            "id": 0,
+                            "method": "Runtime.evaluate",
+                            "params": {
+                                "expression": "document.location.href",
+                                "returnByValue": True,
+                            },
+                        }
+                    )
+                )
                 r = json.loads(ws.recv())
                 ws.close()
                 url = r.get("result", {}).get("result", {}).get("value", "")
@@ -537,25 +563,31 @@ class SurveyOpener:
         try:
             for p in chrome.find_bot_tabs(self.cdp_port):
                 if p.get("id") == tab_id:
-                    ws = websocket.create_connection(
-                        p["webSocketDebuggerUrl"], timeout=10
+                    ws = websocket.create_connection(p["webSocketDebuggerUrl"], timeout=10)
+                    ws.send(
+                        json.dumps(
+                            {
+                                "id": 1,
+                                "method": "Target.closeTarget",
+                                "params": {"targetId": tab_id},
+                            }
+                        )
                     )
-                    ws.send(json.dumps({
-                        "id": 1,
-                        "method": "Target.closeTarget",
-                        "params": {"targetId": tab_id},
-                    }))
                     json.loads(ws.recv())
                     ws.close()
                     return
             dash_ws = chrome.find_dashboard_ws(self.cdp_port)
             if dash_ws:
                 ws = websocket.create_connection(dash_ws, timeout=10)
-                ws.send(json.dumps({
-                    "id": 1,
-                    "method": "Target.closeTarget",
-                    "params": {"targetId": tab_id},
-                }))
+                ws.send(
+                    json.dumps(
+                        {
+                            "id": 1,
+                            "method": "Target.closeTarget",
+                            "params": {"targetId": tab_id},
+                        }
+                    )
+                )
                 json.loads(ws.recv())
                 ws.close()
         except Exception:
@@ -568,8 +600,7 @@ class SurveyOpener:
         if tab_info:
             try:
                 with CDPConnection(tab_info, max_retries=2, timeout=5) as cdp:
-                    cdp.call("Runtime.evaluate",
-                             {"expression": "document.location.href"})
+                    cdp.call("Runtime.evaluate", {"expression": "document.location.href"})
                 return tab_info
             except Exception:
                 pass
@@ -598,14 +629,18 @@ class SurveyOpener:
             return ""
         try:
             ws = websocket.create_connection(ws_url, timeout=8)
-            ws.send(json.dumps({
-                "id": 0,
-                "method": "Runtime.evaluate",
-                "params": {
-                    "expression": f'document.body.innerText.slice(0,{max_len})',
-                    "returnByValue": True,
-                },
-            }))
+            ws.send(
+                json.dumps(
+                    {
+                        "id": 0,
+                        "method": "Runtime.evaluate",
+                        "params": {
+                            "expression": f"document.body.innerText.slice(0,{max_len})",
+                            "returnByValue": True,
+                        },
+                    }
+                )
+            )
             r = json.loads(ws.recv())
             ws.close()
             return r.get("result", {}).get("result", {}).get("value", "")

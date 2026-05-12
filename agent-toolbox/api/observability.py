@@ -51,14 +51,15 @@ if _REPO_ROOT not in sys.path:
 
 try:
     from core import (
+        bootstrap_core,
+        get_analytics,
         get_config,
         get_error_handler,
-        get_analytics,
-        get_state_manager,
         get_security_manager,
-        bootstrap_core,
+        get_state_manager,
         reset_singletons,
     )
+
     CORE_AVAILABLE = True
 except ImportError as e:
     CORE_AVAILABLE = False
@@ -74,16 +75,18 @@ router = APIRouter()
 
 class CoreHealthResponse(BaseModel):
     """Core health-check — alle Module geladen + bootstrapped."""
+
     available: bool
     bootstrapped: bool
-    modules: dict[str, str]   # module name → status (loaded / error)
+    modules: dict[str, str]  # module name → status (loaded / error)
     error: str | None = None
 
 
 class AnalyticsResponse(BaseModel):
     """Snapshot aus AnalyticsCollector."""
+
     counters: dict[str, int]
-    histograms: dict[str, dict[str, float]]   # name → {p50, p95, p99, count}
+    histograms: dict[str, dict[str, float]]  # name → {p50, p95, p99, count}
     started_at: float
     uptime_seconds: float
 
@@ -104,6 +107,7 @@ class ErrorsResponse(BaseModel):
 
 class RunSummary(BaseModel):
     """Eine vergangene Survey-Run."""
+
     run_id: str
     saved_at: float
     status: str
@@ -124,6 +128,7 @@ class RunDetailResponse(BaseModel):
 
 class ConfigResponse(BaseModel):
     """Config OHNE Secrets — sichere Variante fuer /core/config."""
+
     chrome: dict[str, Any]
     captcha: dict[str, Any]
     budget: dict[str, Any]
@@ -144,7 +149,7 @@ def _require_core() -> None:
                 "error": "core_not_available",
                 "message": _core_import_error if not CORE_AVAILABLE else "",
                 "hint": "Stellt sicher dass repo_root in PYTHONPATH liegt "
-                        "und core/__init__.py existiert.",
+                "und core/__init__.py existiert.",
             },
         )
 
@@ -159,6 +164,7 @@ def _redact_config(cfg: Any) -> ConfigResponse:
 
     def _to_dict(obj: Any, *, prefix: str = "") -> dict[str, Any]:
         from dataclasses import fields, is_dataclass
+
         out: dict[str, Any] = {}
         if not is_dataclass(obj):
             return out
@@ -167,8 +173,7 @@ def _redact_config(cfg: Any) -> ConfigResponse:
             val = getattr(obj, name, None)
             # Redaction-Regeln
             lower = name.lower()
-            if any(k in lower for k in ("key", "secret", "token", "password",
-                                         "credential")):
+            if any(k in lower for k in ("key", "secret", "token", "password", "credential")):
                 if val:
                     redacted.append(f"{prefix}{name}")
                     out[name] = "***REDACTED***"
@@ -192,12 +197,9 @@ def _redact_config(cfg: Any) -> ConfigResponse:
             "audit_log_dir": str(getattr(cfg, "audit_log_dir", "")),
         },
         feature_flags={
-            "enable_screenshots_on_error": bool(
-                getattr(cfg, "enable_screenshots_on_error", False)),
-            "enable_audit_logging": bool(
-                getattr(cfg, "enable_audit_logging", False)),
-            "enable_analytics_export": bool(
-                getattr(cfg, "enable_analytics_export", False)),
+            "enable_screenshots_on_error": bool(getattr(cfg, "enable_screenshots_on_error", False)),
+            "enable_audit_logging": bool(getattr(cfg, "enable_audit_logging", False)),
+            "enable_analytics_export": bool(getattr(cfg, "enable_analytics_export", False)),
         },
         redacted_keys=redacted,
     )
@@ -215,13 +217,14 @@ async def core_health() -> CoreHealthResponse:
     """
     if not CORE_AVAILABLE:
         return CoreHealthResponse(
-            available=False, bootstrapped=False,
-            modules={}, error=_core_import_error,
+            available=False,
+            bootstrapped=False,
+            modules={},
+            error=_core_import_error,
         )
 
     modules: dict[str, str] = {}
-    for name in ("config", "error_handler", "security",
-                 "analytics", "state_manager"):
+    for name in ("config", "error_handler", "security", "analytics", "state_manager"):
         try:
             __import__(f"core.{name}")
             modules[name] = "loaded"
@@ -289,8 +292,7 @@ async def flush_analytics() -> dict[str, Any]:
         return {"status": "ok", "path": str(path) if path else None}
     except Exception as e:
         log.exception("analytics.flush.failed err=%s", e)
-        raise HTTPException(status_code=500,
-                            detail={"error": str(e)}) from e
+        raise HTTPException(status_code=500, detail={"error": str(e)}) from e
 
 
 @router.get("/errors", response_model=ErrorsResponse)
@@ -310,7 +312,7 @@ async def get_recent_errors(
     failures = getattr(eh, "failures", {}) or {}
     flat: list[tuple[str, Any]] = []
     for step_name, ctx_list in failures.items():
-        for c in (ctx_list or []):
+        for c in ctx_list or []:
             flat.append((step_name, c))
     # Sort by timestamp desc
     flat.sort(
@@ -318,14 +320,16 @@ async def get_recent_errors(
         reverse=True,
     )
     for step_name, c in flat[:limit]:
-        out.append(ErrorEntry(
-            step_name=step_name,
-            error_type=getattr(c, "error_type", "unknown"),
-            error_msg=str(getattr(c, "error_message", ""))[:500],
-            timestamp=float(getattr(c, "timestamp", 0) or 0),
-            severity=str(getattr(c, "severity", "ERROR")),
-            retry_attempt=int(getattr(c, "retry_attempt", 0) or 0),
-        ))
+        out.append(
+            ErrorEntry(
+                step_name=step_name,
+                error_type=getattr(c, "error_type", "unknown"),
+                error_msg=str(getattr(c, "error_message", ""))[:500],
+                timestamp=float(getattr(c, "timestamp", 0) or 0),
+                severity=str(getattr(c, "severity", "ERROR")),
+                retry_attempt=int(getattr(c, "retry_attempt", 0) or 0),
+            )
+        )
     return ErrorsResponse(errors=out, total=len(flat))
 
 
@@ -346,13 +350,15 @@ async def list_runs(
         meta = cp.get("metadata", {}) or {}
         bal_before = meta.get("balance_before", 0.0) or 0.0
         bal_after = meta.get("balance_after", 0.0) or 0.0
-        out.append(RunSummary(
-            run_id=cp.get("run_id", "?"),
-            saved_at=cp.get("saved_at", 0.0),
-            status=meta.get("status", "?"),
-            duration_seconds=meta.get("duration_seconds"),
-            balance_delta=(bal_after - bal_before) if bal_after else None,
-        ))
+        out.append(
+            RunSummary(
+                run_id=cp.get("run_id", "?"),
+                saved_at=cp.get("saved_at", 0.0),
+                status=meta.get("status", "?"),
+                duration_seconds=meta.get("duration_seconds"),
+                balance_delta=(bal_after - bal_before) if bal_after else None,
+            )
+        )
     return RunsResponse(runs=out)
 
 
@@ -367,8 +373,7 @@ async def get_run_detail(run_id: str) -> RunDetailResponse:
     sm = get_state_manager()
     cp = await sm.load_checkpoint(run_id)
     if cp is None:
-        raise HTTPException(status_code=404,
-                            detail={"error": "run_not_found", "run_id": run_id})
+        raise HTTPException(status_code=404, detail={"error": "run_not_found", "run_id": run_id})
     return RunDetailResponse(
         run_id=run_id,
         checkpoint=cp.get("checkpoint", {}) or {},

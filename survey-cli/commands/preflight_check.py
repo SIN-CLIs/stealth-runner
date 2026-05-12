@@ -5,7 +5,7 @@ PRE-FLIGHT CHECK — Validierung vor Command-Ausfuehrung
 
 WAS DAS TUT:
   Prueft ob HeyPiggy Session aktiv ist, bevor ein Survey-Command ausgefuehrt wird.
-  
+
   ┌────────────────────────────────────────────────────────────────────────┐
   │  preflight_check()                                                    │
   ├────────────────────────────────────────────────────────────────────────┤
@@ -38,7 +38,6 @@ INTEGRATION:
 =================================================================================="""
 
 import json
-import os
 import re
 import time
 import urllib.request
@@ -59,46 +58,53 @@ def is_chrome_alive(port: int = CHROME_PORT) -> bool:
 def find_heypiggy_tab(port: int = CHROME_PORT) -> tuple[str | None, str | None]:
     """
     Findet HeyPiggy Dashboard Tab.
-    
+
     Returns:
         (ws_url, url) oder (None, None) wenn nicht gefunden
     """
     if not is_chrome_alive(port):
         return None, None
-    
+
     try:
-        pages = json.loads(urllib.request.urlopen(f"http://127.0.0.1:{port}/json", timeout=5).read())
+        pages = json.loads(
+            urllib.request.urlopen(f"http://127.0.0.1:{port}/json", timeout=5).read()
+        )
     except Exception:
         return None, None
-    
+
     # HeyPiggy Tab: URL contains heypiggy, nicht extension/about-blank
     for p in pages:
         url = p.get("url", "")
         if "heypiggy" in url.lower() and not url.startswith("chrome-extension"):
             return p["webSocketDebuggerUrl"], url
-    
+
     # Fallback: erste non-extension tab
     for p in pages:
         url = p.get("url", "")
         if url.startswith("http") and "heypiggy" not in url.lower():
             return p["webSocketDebuggerUrl"], url
-    
+
     return None, None
 
 
 def check_login(tab_ws: str) -> tuple[bool, str]:
     """
     Prueft Login-Status via body text.
-    
+
     Returns:
         (logged_in, body_text_preview)
     """
     try:
         ws = websocket.create_connection(tab_ws, timeout=10)
-        ws.send(json.dumps({
-            "id": 1, "method": "Runtime.evaluate",
-            "params": {"expression": "document.body.innerText.substring(0, 1000)"}
-        }))
+        ws.send(
+            json.dumps(
+                {
+                    "id": 1,
+                    "method": "Runtime.evaluate",
+                    "params": {"expression": "document.body.innerText.substring(0, 1000)"},
+                }
+            )
+        )
         r = json.loads(ws.recv())
         ws.close()
         text = r.get("result", {}).get("result", {}).get("value", "")
@@ -111,26 +117,31 @@ def check_login(tab_ws: str) -> tuple[bool, str]:
 def read_balance(tab_ws: str) -> float:
     """
     Liest Balance aus Dashboard-Tab.
-    
+
     Filter: Nur Betraege >= 1.0€ (Rewards sind < 1€)
     Return: Max aller gefundenen Betraege
     """
     try:
         ws = websocket.create_connection(tab_ws, timeout=10)
-        ws.send(json.dumps({
-            "id": 1, "method": "Runtime.evaluate",
-            "params": {"expression": "document.body.innerText"}
-        }))
+        ws.send(
+            json.dumps(
+                {
+                    "id": 1,
+                    "method": "Runtime.evaluate",
+                    "params": {"expression": "document.body.innerText"},
+                }
+            )
+        )
         r = json.loads(ws.recv())
         ws.close()
         text = r.get("result", {}).get("result", {}).get("value", "")
-        
+
         amounts = []
         for m in re.finditer(r"(\d+[.,]?\d*)\s*€", text):
             v = float(m.group(1).replace(",", "."))
             if v >= 1.0:
                 amounts.append(v)
-        
+
         return max(amounts) if amounts else 0.0
     except Exception:
         return 0.0
@@ -139,15 +150,19 @@ def read_balance(tab_ws: str) -> float:
 def count_surveys(tab_ws: str) -> int:
     """
     Zaehlt verfügbare Surveys auf Dashboard.
-    
+
     Sucht nach survey-item cards, clickSurvey() onclick, oder
     Preis-Beträgen im Format "0.XX €".
     """
     try:
         ws = websocket.create_connection(tab_ws, timeout=10)
-        ws.send(json.dumps({
-            "id": 1, "method": "Runtime.evaluate",
-            "params": {"expression": """
+        ws.send(
+            json.dumps(
+                {
+                    "id": 1,
+                    "method": "Runtime.evaluate",
+                    "params": {
+                        "expression": """
 (function() {
     // Try: survey-item class
     var items = document.querySelectorAll('.survey-item, [data-survey-id]');
@@ -167,8 +182,11 @@ def count_surveys(tab_ws: str) -> int:
     var prices = text.match(/\\d+\\.\\d+\\s*€/g);
     return prices ? String(prices.length) : '0';
 })()
-"""}
-        }))
+"""
+                    },
+                }
+            )
+        )
         r = json.loads(ws.recv())
         ws.close()
         raw = r.get("result", {}).get("result", {}).get("value", "0")
@@ -180,7 +198,7 @@ def count_surveys(tab_ws: str) -> int:
 def preflight_check(port: int = CHROME_PORT) -> dict:
     """
     Vollstaendiger Pre-Flight Check vor Command-Ausfuehrung.
-    
+
     Returns:
         {
             "ready": bool,           # Session ist bereit
@@ -205,38 +223,38 @@ def preflight_check(port: int = CHROME_PORT) -> dict:
         "reason": None,
         "action": None,
     }
-    
+
     # Step 1: Chrome alive?
     if not result["chrome_alive"]:
         result["reason"] = "Chrome nicht erreichbar auf Port 9999"
         result["action"] = "start_heypiggy"
         return result
-    
+
     # Step 2: Find HeyPiggy tab
     tab_ws, url = find_heypiggy_tab(port)
     if not tab_ws:
         result["reason"] = "Kein HeyPiggy Dashboard Tab gefunden"
         result["action"] = "start_heypiggy"
         return result
-    
+
     result["tab_ws"] = tab_ws
     result["url"] = url
-    
+
     # Step 3: Check login
     logged_in, _ = check_login(tab_ws)
     result["logged_in"] = logged_in
-    
+
     if not logged_in:
         result["reason"] = "Session abgelaufen (kein 'Abmelden' Button)"
         result["action"] = "start_heypiggy"
         return result
-    
+
     # Step 4: Read balance
     result["balance"] = read_balance(tab_ws)
-    
+
     # Step 5: Count surveys
     result["surveys"] = count_surveys(tab_ws)
-    
+
     # All checks passed
     result["ready"] = True
     return result
@@ -245,22 +263,23 @@ def preflight_check(port: int = CHROME_PORT) -> dict:
 def preflight_or_start() -> dict:
     """
     Pre-Flight Check, bei Bedarf Session neu starten.
-    
+
     Returns:
         preflight_check() result mit aktiver Session
     """
     check = preflight_check()
     if check["ready"]:
         return check
-    
+
     print(f"  [PREFLIGHT] Session nicht bereit: {check['reason']}")
-    print(f"  [PREFLIGHT] Starte neue Session...")
-    
+    print("  [PREFLIGHT] Starte neue Session...")
+
     # Import start_heypiggy only if needed
     try:
         from survey_cli.commands.start_heypiggy import main as start_heypiggy
+
         start_result = start_heypiggy()
-        
+
         if start_result.get("status") == "ok":
             # Verify the new session
             time.sleep(2)
@@ -274,9 +293,9 @@ def preflight_or_start() -> dict:
 
 if __name__ == "__main__":
     result = preflight_check()
-    print(f"\n{'='*50}")
-    print(f"  PRE-FLIGHT CHECK")
-    print(f"{'='*50}")
+    print(f"\n{'=' * 50}")
+    print("  PRE-FLIGHT CHECK")
+    print(f"{'=' * 50}")
     print(f"  Chrome alive:  {'YES ✓' if result['chrome_alive'] else 'NO ✗'}")
     print(f"  Tab WS:        {result['tab_ws'][:50] if result['tab_ws'] else 'NONE'}")
     print(f"  Logged in:     {'YES ✓' if result['logged_in'] else 'NO ✗'}")
@@ -286,4 +305,4 @@ if __name__ == "__main__":
     if not result["ready"]:
         print(f"  Reason:        {result['reason']}")
         print(f"  Action:        {result['action']}")
-    print(f"{'='*50}")
+    print(f"{'=' * 50}")
