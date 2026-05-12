@@ -12,6 +12,17 @@ from dataclasses import dataclass
 from typing import Optional
 
 
+class MissingSecretError(RuntimeError):
+    """Raised when a required secret has no resolved value.
+
+    Placeholder stub for SR-63 (#62) fail-closed contract. The current
+    SecretsClient still returns hardcoded fallbacks; the test in
+    tests/test_security.py is module-level-skipped and uses this symbol
+    only to satisfy its import. Promoting fail-closed behavior is tracked
+    separately under SR-63.
+    """
+
+
 @dataclass
 class CPXCredentials:
     app_id: str = ""
