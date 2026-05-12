@@ -82,9 +82,11 @@ class TestHappyPath(unittest.TestCase):
             result = promote(
                 runs, graph, tmp / "compiled", tmp / "logs.jsonl"
             )
-        self.assertTrue(result.promoted, result.evaluation.blocking_reasons)
-        self.assertIsNotNone(result.snapshot)
-        self.assertTrue(result.snapshot.path.exists())
+            self.assertTrue(
+                result.promoted, result.evaluation.blocking_reasons
+            )
+            self.assertIsNotNone(result.snapshot)
+            self.assertTrue(result.snapshot.path.exists())
 
     def test_T02_snapshot_has_chmod_444(self):
         if os.name != "posix":
@@ -93,9 +95,9 @@ class TestHappyPath(unittest.TestCase):
             tmp = Path(td)
             graph = make_graph_source(tmp)
             snap = compile_snapshot(graph, tmp / "compiled")
-        mode_bits = snap.path.stat().st_mode & 0o777
-        self.assertEqual(mode_bits, 0o444, f"got {oct(mode_bits)}")
-        self.assertTrue(snap.chmod_applied)
+            mode_bits = snap.path.stat().st_mode & 0o777
+            self.assertEqual(mode_bits, 0o444, f"got {oct(mode_bits)}")
+            self.assertTrue(snap.chmod_applied)
 
     def test_T03_snapshot_is_byte_identical(self):
         with tempfile.TemporaryDirectory() as td:
