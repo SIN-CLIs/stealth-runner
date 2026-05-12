@@ -1297,6 +1297,22 @@ def cmd_profile(args):
             if per_key:
                 top = sorted(per_key.items(), key=lambda kv: -kv[1])[:10]
                 print(f"    top hits:        {top}")
+            # SR-59 #58: optional miss_labels table on --miss-labels flag.
+            if getattr(args, "miss_labels", False):
+                mls = bucket.get("miss_labels", [])
+                print(f"    miss_labels:     {len(mls)} record(s)")
+                if mls:
+                    print("      "
+                          + f"{'role':<10} {'label':<40} "
+                          + f"{'hash':<8} candidates")
+                    print("      " + "-" * 78)
+                    for ml in mls[-20:]:  # show last 20
+                        role = str(ml.get("role", ""))[:10]
+                        lbl = str(ml.get("question_text")
+                                  or ml.get("label") or "")[:40]
+                        h = str(ml.get("snapshot_hash", ""))[:8]
+                        cands = ",".join(ml.get("candidate_keys", [])) or "-"
+                        print(f"      {role:<10} {lbl:<40} {h:<8} {cands}")
         print()
 
         # JSON Out
@@ -1583,6 +1599,9 @@ def main():
                    help="Persona-Basename (default: jeremy_schulze)")
     p.add_argument("--out", type=str, default="",
                    help="Pfad fuer JSONL-Output (nur bei dump)")
+    # SR-59 #58: show the rich miss_labels table on top of the summary.
+    p.add_argument("--miss-labels", dest="miss_labels", action="store_true",
+                   help="Bei 'dump': zeige miss_labels-Tabelle (SR-59 #58)")
 
     # ============================================================================
     # ARGUMENTE PARSEN

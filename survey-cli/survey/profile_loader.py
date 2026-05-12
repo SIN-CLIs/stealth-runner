@@ -96,7 +96,8 @@ import json
 import logging
 import os
 import re
-from datetime import date
+from datetime import date, datetime, timezone
+import hashlib
 from typing import Dict, Any, Optional, Tuple, List, Set
 
 
@@ -320,6 +321,43 @@ class ProfileLoader:
 
     # Welche logischen Schluessel sind sinnvolle Treffer fuer ``role=spinbutton``?
     # Alles andere ist verdaechtig (kein numerisches Feld) und wird verworfen.
+    # ── _CANDIDATE_HINTS (SR-59 #58) ─────────────────────────────────────────
+    # Mapping logical_key → user-facing keyword fragments (substrings). Used
+    # ONLY by ``_guess_candidate_keys()`` to populate the ``candidate_keys``
+    # field of a miss_label record — never for match decisions (those go via
+    # FIELD_PATTERNS). Why a separate list? FIELD_PATTERNS regex sources
+    # contain regex metacharacters (``\\b``, ``(?:...)``) which would be a
+    # mess to strip; this list is the curated, parseable form.
+    _CANDIDATE_HINTS: List[Tuple[str, Tuple[str, ...]]] = [
+        ("email", ("email", "e-mail", "mail", "mailadresse")),
+        ("phone", ("telefon", "telephone", "phone", "handy", "mobil",
+                   "cell", "mobile")),
+        ("birth_year", ("geburtsjahr", "jahrgang", "birthyear", "birth year",
+                        "born", "geboren")),
+        ("age", ("alter", "age", "wie alt")),
+        ("postal_code", ("plz", "postleitzahl", "zip", "postal", "postcode")),
+        ("hh_income", ("haushaltseinkommen", "familieneinkommen",
+                       "household income")),
+        ("income", ("einkommen", "gehalt", "salary", "income", "netto")),
+        ("first_name", ("vorname", "first name", "given name", "forename")),
+        ("last_name", ("nachname", "last name", "surname", "family name",
+                       "familyname")),
+        ("street", ("strasse", "straße", "street", "adresse", "address")),
+        ("city", ("stadt", "wohnort", "ort", "city", "town")),
+        ("country", ("land", "country", "nation", "wohnsitzland",
+                     "herkunftsland")),
+        ("state_region", ("bundesland", "region", "state", "province")),
+        ("household_size", ("haushalt", "household size",
+                            "personen im haushalt")),
+        ("job_title", ("beruf", "job title", "occupation", "taetigkeit",
+                       "tätigkeit")),
+        ("industry", ("branche", "industry", "sector")),
+        ("gender", ("geschlecht", "gender", "sex")),
+        ("nationality", ("nationalitaet", "nationalität", "nationality",
+                         "staatsangehoerigkeit", "staatsangehörigkeit")),
+        ("language", ("sprache", "language")),
+    ]
+
     _NUMERIC_KEYS = {"age", "household_size", "birth_year", "postal_code",
                      "income", "hh_income"}
 
@@ -521,6 +559,40 @@ class ProfileLoader:
         return None
 
     @classmethod
+    def _guess_candidate_keys(cls, text: str, max_k: int = 3) -> List[str]:
+        """SR-59 #58: cheap heuristic returning up to ``max_k`` plausible
+        ``logical_key`` candidates for an unmatched label.
+
+        Why a heuristic and not the real FIELD_PATTERNS regex set?
+          - We are in the MISS path: FIELD_PATTERNS already said "no". This
+            field surfaces *near-misses* (e.g. "Mobilnummer" loosely overlapping
+            with the phone family) so a human reviewing
+            ``logs/matcher-telemetry-*.jsonl`` can spot a missing pattern
+            quickly.
+          - Substring overlap on ``_CANDIDATE_HINTS`` is O(n) and deterministic;
+            tokenising-Jaccard would surface noise on short German labels.
+
+        Returns:
+            Ordered, deduplicated list of logical_keys; empty list if no hint
+            matches. NEVER raises — telemetry must never break a survey run.
+        """
+        if not text:
+            return []
+        low = text.lower()
+        out: List[str] = []
+        seen: Set[str] = set()
+        for logical_key, keywords in cls._CANDIDATE_HINTS:
+            for kw in keywords:
+                if kw in low:
+                    if logical_key not in seen:
+                        seen.add(logical_key)
+                        out.append(logical_key)
+                    break
+            if len(out) >= max_k:
+                break
+        return out
+
+    @classmethod
     def _record_match(
         cls,
         profile: Dict[str, Any],
@@ -550,11 +622,36 @@ class ProfileLoader:
         else:
             bucket["match_misses"] = bucket.get("match_misses", 0) + 1
             if label:
-                miss_labels: List[Dict[str, str]] = bucket.setdefault(
+                miss_labels: List[Dict[str, Any]] = bucket.setdefault(
                     "miss_labels", []
                 )
                 if len(miss_labels) < 500:
-                    miss_labels.append({"role": role, "label": label[:200]})
+                    # SR-59 #58: rich, semantically-tagged miss record.
+                    # PRIVACY INVARIANT: ``user_value_provided`` is a boolean
+                    # ONLY — never the actual user value. The aggregator
+                    # (survey/learn/aggregator.py) clusters via token-Jaccard
+                    # over ``question_text``; ``snapshot_hash`` lets us
+                    # deduplicate identical labels across reruns.
+                    label_trunc = label[:200]
+                    page_url = profile.get("_page_url")
+                    miss_labels.append({
+                        # Backward-compat fields (consumed by aggregator <#58):
+                        "role": role,
+                        "label": label_trunc,
+                        # SR-59 #58 enrichment:
+                        "ts": datetime.now(timezone.utc).isoformat(
+                            timespec="seconds"),
+                        "question_text": label_trunc,
+                        "page_url": page_url if isinstance(page_url, str)
+                                    else None,
+                        "snapshot_hash": hashlib.sha1(
+                            label_trunc.encode("utf-8"),
+                            usedforsecurity=False,
+                        ).hexdigest()[:12],
+                        "candidate_keys": cls._guess_candidate_keys(
+                            label_trunc),
+                        "user_value_provided": False,
+                    })
 
     # ────────────────────────────────────────────────────────────────────────
     # Resolver — mappt logical_key → konkreter Profil-Wert

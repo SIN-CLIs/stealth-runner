@@ -133,3 +133,97 @@ def default_suggestions_path(log_dir: str) -> str:
     """logs/pattern-suggestions-YYYY-MM-DD.jsonl"""
     today = datetime.date.today().isoformat()
     return os.path.join(log_dir, f"pattern-suggestions-{today}.jsonl")
+
+# ────────────────────────────────────────────────────────────────────────────
+# SR-59 #58: Token-Jaccard clustering of miss_labels
+# ────────────────────────────────────────────────────────────────────────────
+#
+# Why an extra path next to aggregate_misses()? aggregate_misses() groups by
+# (role, normalized_label) — exact match on the trimmed label. That gives a
+# tight cluster ("postleitzahl" = 3, "PLZ" = 1) but cannot bridge
+# semantically-similar misses ("Wie viele Personen leben im Haushalt?" vs
+# "Personen im Haushalt").
+#
+# cluster_miss_labels() complements aggregate_misses() with a fuzzy view:
+# token-Jaccard ≥ threshold (default 0.6) bridges paraphrases. Output is a
+# dict ``cluster_key → [miss_label, …]`` where cluster_key is a stable
+# canonical token-set string usable as a filename / log key.
+#
+# Privacy: this function consumes structured miss_labels (no user values).
+# ``user_value_provided`` is forwarded verbatim — it remains boolean.
+
+_TOKEN_RE = re.compile(r"[A-Za-zÄÖÜäöüß0-9]+")
+_STOP_TOKENS = frozenset({
+    "der", "die", "das", "des", "dem", "den",
+    "ein", "eine", "einen", "einem", "einer",
+    "und", "oder", "in", "im", "an", "auf", "fuer", "für", "von", "mit",
+    "is", "are", "the", "a", "an", "of", "to", "for", "in", "on", "or", "and",
+    "you", "your", "is",
+})
+
+
+def _tokenize(text: str) -> "frozenset[str]":
+    """Lowercase tokens, drop short stop-words. Used for Jaccard only."""
+    toks = _TOKEN_RE.findall((text or "").lower())
+    return frozenset(t for t in toks if len(t) >= 3 and t not in _STOP_TOKENS)
+
+
+def cluster_miss_labels(
+    miss_labels: List[Dict[str, object]],
+    threshold: float = 0.6,
+) -> Dict[str, List[Dict[str, object]]]:
+    """Greedy token-Jaccard clustering of miss_label dicts (SR-59 #58).
+
+    Args:
+        miss_labels: List of miss_label dicts (rich schema with
+            ``question_text``; falls back to ``label`` for legacy records).
+        threshold: Minimum Jaccard overlap to join an existing cluster
+            (default 0.6 per AGENTS.md §13.8.1 acceptance criterion).
+
+    Returns:
+        Mapping ``cluster_key → members`` where cluster_key is the
+        space-joined sorted token set of the cluster's seed label. Empty if
+        ``miss_labels`` is empty.
+
+    Algorithm:
+        Greedy single-pass: for each miss compute token set, score Jaccard
+        against each existing cluster seed, attach to best ≥ threshold, else
+        start a new cluster. O(n²) worst-case — adequate for the n<10k miss
+        regime; if telemetry ever exceeds that, switch to MinHash/LSH.
+
+    Examples:
+        >>> ml = [{"question_text": "Postleitzahl"},
+        ...       {"question_text": "Was ist Ihre Postleitzahl?"},
+        ...       {"question_text": "Lieblings-Pizza"}]
+        >>> clusters = cluster_miss_labels(ml, threshold=0.5)
+        >>> len(clusters)  # PLZ-cluster + pizza-cluster
+        2
+    """
+    clusters: Dict[str, List[Dict[str, object]]] = {}
+    seed_tokens: Dict[str, frozenset] = {}
+
+    for ml in miss_labels:
+        text = ml.get("question_text") or ml.get("label") or ""
+        tokens = _tokenize(str(text))
+        if not tokens:
+            continue
+
+        best_key: Optional[str] = None
+        best_score = threshold  # strict: must beat the floor
+        for key, ktoks in seed_tokens.items():
+            union = tokens | ktoks
+            if not union:
+                continue
+            jaccard = len(tokens & ktoks) / len(union)
+            if jaccard >= best_score:
+                best_score = jaccard
+                best_key = key
+
+        if best_key is None:
+            new_key = " ".join(sorted(tokens))
+            clusters[new_key] = [ml]
+            seed_tokens[new_key] = tokens
+        else:
+            clusters[best_key].append(ml)
+
+    return clusters
