@@ -1,0 +1,131 @@
+# STATUS-TRUTH WORKFLOW — SR-218
+#
+# Diese Datei ist Teil des Agenten-Brains. Aenderungen an `on:` muessen
+# in AGENTS.md §13.8 (CI-Notiz) reflektiert werden.
+#
+# Geschichte:
+# - 2026-05-13 (CRITIC-AUDIT): Initial. Wurzel-Ursache des #212-Failure-Modus
+#   war "Issue listet 4 PRs als merged, alle 4 sind state=OPEN". Branches
+#   existieren, Code existiert, Merge ist nie passiert. Dieses Gate
+#   verhindert die Wiederholung, indem es JEDE Status-Markdown im Repo
+#   gegen `gh api repos/.../pulls/<n>` haelt.
+#
+# WAS GEPRUEFT WIRD
+# - Jede *.md im Repo (in PRs: nur geaenderte; nightly: alle).
+# - Jeder Issue-Body, der ein Label `status-update` traegt (issues-event).
+#
+# DESIGN
+# - Read-only. Schreibt keine Kommentare zurueck — der Token in CI hat
+#   nur `contents:read`. Bei Verstoss faellt der Job, das ist genug Signal.
+# - Token: GITHUB_TOKEN ist standardmaessig vorhanden, wird an `gh` als
+#   GH_TOKEN durchgereicht.
+name: status-truth
+
+on:
+  pull_request:
+    paths:
+      - "**/*.md"
+      - "scripts/check_status_truth.py"
+      - ".github/workflows/status-truth.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "**/*.md"
+      - "scripts/check_status_truth.py"
+  issues:
+    types: [opened, edited, labeled]
+  # Nightly safety-net: scan all status documents in main.
+  schedule:
+    - cron: "17 4 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: read
+  pull-requests: read
+
+jobs:
+  scan-markdown:
+    if: github.event_name != 'issues'
+    runs-on: ubuntu-latest
+    steps:
+      # AGENTS.md §13.8.4: Action-Versionen sind Brain-Eigentum, kein @latest.
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Determine markdown files to scan
+        id: files
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            git fetch origin "${{ github.base_ref }}" --depth=1
+            CHANGED=$(git diff --name-only --diff-filter=AM \
+              "origin/${{ github.base_ref }}...HEAD" -- '*.md' || true)
+          else
+            # push to main or scheduled/manual: scan everything.
+            CHANGED=$(git ls-files '*.md')
+          fi
+          echo "$CHANGED" > _md_to_scan.txt
+          wc -l _md_to_scan.txt
+
+      - name: Run check_status_truth.py against each file
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [ ! -s _md_to_scan.txt ]; then
+            echo "No markdown to scan — skipping."
+            exit 0
+          fi
+          rc=0
+          while IFS= read -r f; do
+            [ -z "$f" ] && continue
+            echo "::group::status-truth: $f"
+            if ! python scripts/check_status_truth.py \
+                --file "$f" \
+                --exit-non-zero-on-violation; then
+              rc=1
+            fi
+            echo "::endgroup::"
+          done < _md_to_scan.txt
+          exit $rc
+
+  scan-issue-body:
+    # Only when an issue is opened/edited/labeled with `status-update`.
+    # Other labels run the job but it exits early.
+    if: github.event_name == 'issues'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Skip if issue has no status-update label
+        id: gate
+        env:
+          LABELS_JSON: ${{ toJson(github.event.issue.labels) }}
+        run: |
+          set -euo pipefail
+          if echo "$LABELS_JSON" | grep -q '"name": *"status-update"'; then
+            echo "run=1" >> "$GITHUB_OUTPUT"
+          else
+            echo "Issue lacks 'status-update' label — skipping."
+            echo "run=0" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Verify status truth in issue body
+        if: steps.gate.outputs.run == '1'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          ISSUE_NUMBER: ${{ github.event.issue.number }}
+        run: |
+          python scripts/check_status_truth.py \
+            --issue "$ISSUE_NUMBER" \
+            --repo "${{ github.repository }}" \
+            --exit-non-zero-on-violation

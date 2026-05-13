@@ -194,6 +194,24 @@ Docstring spricht von 5 Solvern. Code (`self._solvers`-Liste) listet nur 4. Stuf
 - **Source of Truth = Filesystem + GitHub-API (`state`, `mergedAt`)**. Nicht Issue-Tabellen, nicht Status-Updates, nicht Slack-Berichte.
 - Jeder Critic-Run muss bei PR-Behauptungen zuerst `gh pr view <n> --json state,mergedAt` aufrufen, bevor er die Behauptung als Wahrheit übernimmt.
 
+### Prävention: `scripts/check_status_truth.py`
+
+Damit dieser Audit nicht in vier Wochen erneut nötig wird, läuft jetzt der Status-Truth-Gate:
+
+```bash
+# Manuell, gegen ein Issue:
+python scripts/check_status_truth.py --repo SIN-CLIs/stealth-runner --issue 212 --exit-non-zero-on-violation
+
+# In CI: .github/workflows/status-truth.yml prüft bei jedem Issue-/PR-Edit,
+# ob alle als "merged" markierten PR-Referenzen tatsächlich auf GitHub merged sind.
+```
+
+**Was es tut**: Extrahiert PR-Referenzen (`PR #209`, `pull/175`, `#175 … merged ✅`) in der Nähe von Merge-Keywords (`merged`, `gemerged`, `done`, `✅`, `CI grün`, `11/11 green`) und vergleicht gegen `gh api repos/<owner>/<repo>/pulls/<n>`.
+
+**Was es findet**: Heute (2026-05-13) **15 Verstöße in Issue #212** — alle vier oben gelisteten PRs plus #185, #191, #192, #193, #210 und zwei phantomhafte Referenzen #198/#199, die gar keine PRs sind.
+
+**Doktrin**: *Fix the status document OR merge the PR. Don't reverse the test.*
+
 ### Case-Conflict-Warnung (case-sensitive Filesystem)
 
 Diese Datei heißt `AGENTS.md` (groß). PR #175 will eine Datei `agents.md` (klein) am Root mergen.
