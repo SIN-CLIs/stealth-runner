@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Compatibility delegator for the canonical survey-cli entry point.
 
-The active survey engine lives in `survey-cli/survey.py` and `survey-cli/survey/`.
+The active survey engine lives in `survey-cli/survey_cli_entry.py` (the legacy delegator) and `survey-cli/survey/` (the package).
 This root script only maps the historical `--mode ...` interface to the canonical
 subcommands so old invocations keep working without maintaining a second engine.
 """
@@ -16,7 +16,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
 SURVEY_CLI_DIR = ROOT / "survey-cli"
-SURVEY_ENTRY = SURVEY_CLI_DIR / "survey.py"
+SURVEY_ENTRY = SURVEY_CLI_DIR / "survey_cli_entry.py"  # SR-162b: renamed from survey.py to break module/package shadow
 
 
 def _legacy_to_canonical(argv: list[str]) -> list[str]:
@@ -53,7 +53,7 @@ def _legacy_to_canonical(argv: list[str]) -> list[str]:
 
 
 def _load_survey_entry():
-    """Load `survey-cli/survey.py` without confusing it with the `survey` package."""
+    """Load the legacy survey entry without confusing it with the `survey` package."""
     if str(SURVEY_CLI_DIR) not in sys.path:
         sys.path.insert(0, str(SURVEY_CLI_DIR))
     spec = importlib.util.spec_from_file_location("survey_cli_entry", SURVEY_ENTRY)

@@ -1,0 +1,80 @@
+# Dependabot configuration — keep CI surface and runtime deps current.
+#
+# Why this file exists:
+#   path_guard.py pins behaviour to specific Action versions
+#   (actions/checkout@v5, actions/setup-python@v6). Without dependabot
+#   those pins quietly rot and we either run on EOL'd runners or stop
+#   getting security patches. Two-line yaml is cheap insurance.
+#
+# Why weekly, not daily:
+#   The repo has a single maintainer; daily PR noise drowns signal.
+#   Weekly keeps the queue manageable while still surfacing CVEs within
+#   ~7 days.
+#
+# Scope:
+#   - github-actions: every workflow under .github/workflows/
+#   - pip:            pyproject.toml + survey-cli/requirements.txt
+#
+# Doctrine: see survey-cli/AGENTS.md § PATH DOCTRINE (SR-159) for why
+# anything we add to .github/ must be justified inline.
+
+version: 2
+
+updates:
+  # GitHub Actions used in .github/workflows/*
+  - package-ecosystem: "github-actions"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "ci"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "ci"
+    # Group all action bumps into a single PR per week to avoid noise.
+    groups:
+      github-actions:
+        patterns:
+          - "*"
+
+  # Python deps at repo root (pyproject.toml — the stealth-sync package).
+  - package-ecosystem: "pip"
+    directory: "/"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "python"
+    groups:
+      python-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"
+
+  # Python deps inside survey-cli/ (the canonical survey engine).
+  - package-ecosystem: "pip"
+    directory: "/survey-cli"
+    schedule:
+      interval: "weekly"
+      day: "monday"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "deps(survey-cli)"
+      include: "scope"
+    labels:
+      - "dependencies"
+      - "python"
+      - "survey-cli"
+    groups:
+      survey-cli-minor-patch:
+        update-types:
+          - "minor"
+          - "patch"

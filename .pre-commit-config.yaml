@@ -1,5 +1,14 @@
-# Pre-Commit Configuration (SR-73, 2026-05-11)
-# Hooks enforce AGENTS.md Brain-Rules before commits
+# Pre-Commit Configuration
+#
+# Hooks enforce AGENTS.md Brain-Rules before commits. The CI workflows
+# in .github/workflows/ run the same checks in cloud — local hooks are
+# the fast-feedback mirror, not a substitute.
+#
+# History:
+# - SR-73 (2026-05-11): initial — submodule + black + pylint + standard hooks.
+# - SR-159 (2026-05-13): added `path-guard` local hook. Mirrors
+#   .github/workflows/path-guard.yml exactly. Doctrine lives in
+#   survey-cli/AGENTS.md § PATH DOCTRINE and scripts/path_guard.py.
 
 repos:
   # Submodule Validation (SR-73 §11.9)
@@ -8,6 +17,17 @@ repos:
       - id: check-submodules
         name: "Check Submodules Config (SR-73)"
         entry: python scripts/check_submodules.py
+        language: system
+        pass_filenames: false
+        stages: [commit]
+        always_run: true
+
+  # Path Doctrine (SR-159) — local mirror of .github/workflows/path-guard.yml
+  - repo: local
+    hooks:
+      - id: path-guard
+        name: "Path-Guard: repo layout doctrine (SR-159)"
+        entry: python scripts/path_guard.py --diff
         language: system
         pass_filenames: false
         stages: [commit]
