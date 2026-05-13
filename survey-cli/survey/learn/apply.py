@@ -217,7 +217,10 @@ def _last_string_token_in_range(
     last: Optional[Tuple[int, int, str, str]] = None
     try:
         tokens = list(tokenize.generate_tokens(io.StringIO(snippet).readline))
-    except (tokenize.TokenizeError, IndentationError):
+    # SR-194 C1: stdlib's tokenize exposes `TokenError`, not `TokenizeError`.
+    # The original spelling silently fell through to AttributeError, so the
+    # actual TokenError propagated up instead of returning None as intended.
+    except (tokenize.TokenError, IndentationError):
         return None
     for tok in tokens:
         if tok.type != tokenize.STRING:
