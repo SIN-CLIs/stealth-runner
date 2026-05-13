@@ -329,13 +329,13 @@ def test_quarantine_entry_is_frozen() -> None:
         e.reason = "tampered"  # type: ignore[misc]
 
 
-def test_persona_id_with_unsafe_chars_is_sanitized(tmp_path: Path) -> None:
+def test_persona_id_with_slashes_and_spaces_is_sanitized(tmp_path: Path) -> None:
     """
-    persona_ids containing '/', whitespace, or '..' must NOT escape the
-    store_root. The sanitizer replaces those chars with '_'.
+    persona_ids containing '/' or whitespace must be sanitized to safe filenames.
+    The sanitizer replaces those chars with '_'.
     """
     entry = quarantine(
-        "../weird id/with slashes",
+        "weird id/with slashes",  # No leading dots
         reason="r",
         store_root=tmp_path,
         now=1,
@@ -346,5 +346,19 @@ def test_persona_id_with_unsafe_chars_is_sanitized(tmp_path: Path) -> None:
     assert files[0].parent == tmp_path
     # And the entry can be looked up by the same (un-sanitized) id, because
     # the sanitization is deterministic.
-    assert is_quarantined("../weird id/with slashes", store_root=tmp_path) is True
-    assert entry.persona_id == "../weird id/with slashes"  # stored verbatim in JSON
+    assert is_quarantined("weird id/with slashes", store_root=tmp_path) is True
+    assert entry.persona_id == "weird id/with slashes"  # stored verbatim in JSON
+
+
+def test_persona_id_starting_with_dot_raises_valueerror(tmp_path: Path) -> None:
+    """
+    persona_ids that sanitize to a filename starting with '.' must raise
+    ValueError to prevent hidden files (security concern).
+    """
+    with pytest.raises(ValueError, match="sanitizes to empty/hidden filename"):
+        quarantine(
+            "../weird id",  # After sanitization: '..weird_id' starts with '.'
+            reason="r",
+            store_root=tmp_path,
+            now=1,
+        )
