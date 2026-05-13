@@ -379,8 +379,8 @@ class CDPConnection:
             while True:
                 try:
                     if self._ws is None:
-                raise CDPError("WebSocket disconnected during recv")
-            raw = self._ws.recv()
+                        raise CDPError("WebSocket disconnected during recv")
+                    raw = self._ws.recv()
                 except Exception:
                     # Timeout oder closed → fertig. Wir unterscheiden hier
                     # NICHT zwischen Timeout und echtem Fehler — beides
@@ -421,7 +421,7 @@ class CDPConnection:
         return response.get("result", {})
 
 
-# ── Convenience factory ──────────────────────────────────────────
+# ── Convenience factory ──────���───────────────────────────────────
 
 
 def create_cdp(ws_url: str, **kwargs) -> CDPConnection:
