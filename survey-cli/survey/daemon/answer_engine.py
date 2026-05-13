@@ -19,7 +19,7 @@ import random
 import re
 import sqlite3
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
@@ -1002,7 +1002,8 @@ Your response:"""
                 question.text[:500],
                 json.dumps(answer.value),
                 self._hash_persona(),
-                datetime.utcnow().isoformat(),
+                # SR-187: UTC-aware (naive utcnow() is deprecated in Py 3.12).
+                datetime.now(timezone.utc).isoformat(),
             ),
         )
         conn.commit()

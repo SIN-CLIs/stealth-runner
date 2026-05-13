@@ -16,7 +16,7 @@ import asyncio
 import json
 import logging
 import sqlite3
-from datetime import datetime
+from datetime import datetime, timezone
 from enum import Enum
 from pathlib import Path
 from typing import TypedDict
@@ -199,7 +199,8 @@ class SurveyAgentGraph:
         """Navigate to survey URL."""
         logger.info(f"Navigating to: {state['survey_url']}")
         state["status"] = SurveyStatus.NAVIGATING.value
-        state["started_at"] = datetime.utcnow().isoformat()
+        # SR-187: UTC-aware (naive utcnow() is deprecated in Py 3.12).
+        state["started_at"] = datetime.now(timezone.utc).isoformat()
 
         if not self._browser:
             self._browser = BrowserDriver(headless=self.headless)
@@ -266,7 +267,8 @@ class SurveyAgentGraph:
         for pattern in complete_patterns:
             if pattern in html:
                 state["status"] = SurveyStatus.COMPLETED.value
-                state["completed_at"] = datetime.utcnow().isoformat()
+                # SR-187: UTC-aware (naive utcnow() is deprecated in Py 3.12).
+                state["completed_at"] = datetime.now(timezone.utc).isoformat()
                 return state
 
         # Check for captcha
@@ -582,7 +584,8 @@ class SurveyAgentGraph:
         """Handle successful completion."""
         logger.info("Survey completed successfully")
         state["status"] = SurveyStatus.COMPLETED.value
-        state["completed_at"] = datetime.utcnow().isoformat()
+        # SR-187: UTC-aware (naive utcnow() is deprecated in Py 3.12).
+        state["completed_at"] = datetime.now(timezone.utc).isoformat()
 
         self._save_state(state)
 

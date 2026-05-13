@@ -159,6 +159,89 @@ class ScanFileTests(unittest.TestCase):
             self.assertEqual(cbp.scan_file(f), [])
 
 
+class UtcnowBanTests(unittest.TestCase):
+    """SR-187 (issue #186): `datetime.utcnow()` is banned.
+
+    - POSITIVE: a real call must be flagged (so CI blocks regressions).
+    - NEGATIVE: the same token in a docstring/comment must NOT be flagged
+      (this file itself documents `datetime.utcnow()` in comments).
+    """
+
+    def _write(self, tmp_path: Path, name: str, content: str) -> Path:
+        p = tmp_path / name
+        p.write_text(content)
+        return p
+
+    def test_real_utcnow_call_IS_flagged(self) -> None:
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            f = self._write(Path(td), "bad_dt.py", (
+                'from datetime import datetime\n'
+                'now = datetime.utcnow()\n'
+            ))
+            hits = cbp.scan_file(f)
+            self.assertEqual(len(hits), 1,
+                f"datetime.utcnow() at column-zero must be flagged; got {hits}")
+            line_no, reason, _snippet = hits[0]
+            self.assertEqual(line_no, 2)
+            self.assertIn("SR-187", reason)
+
+    def test_utcnow_chained_call_IS_flagged(self) -> None:
+        # The real production sites used `datetime.utcnow().isoformat()`.
+        # The `\b…(` anchor must still match because `\(` matches the
+        # opening paren of `utcnow()`, not the chained `.isoformat`.
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            f = self._write(Path(td), "bad_dt_chain.py", (
+                'from datetime import datetime\n'
+                'ts = datetime.utcnow().isoformat() + "Z"\n'
+            ))
+            hits = cbp.scan_file(f)
+            self.assertEqual(len(hits), 1,
+                f"chained datetime.utcnow().isoformat() must be flagged; got {hits}")
+
+    def test_utcnow_in_docstring_is_NOT_flagged(self) -> None:
+        # The pattern lives in EXECUTABLE code; docstrings are masked. This
+        # mirrors the SR-60 contract for every other banned pattern.
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            f = self._write(Path(td), "doc_dt.py", (
+                '"""Migration note: replaced datetime.utcnow() with\n'
+                'datetime.now(timezone.utc) per SR-187.\n'
+                '"""\n'
+                'value = 42\n'
+            ))
+            self.assertEqual(cbp.scan_file(f), [],
+                "datetime.utcnow() in docstring must NOT be flagged")
+
+    def test_utcnow_in_comment_is_NOT_flagged(self) -> None:
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            f = self._write(Path(td), "comment_dt.py", (
+                '# SR-187: replaced datetime.utcnow() with timezone.utc form\n'
+                'from datetime import datetime, timezone\n'
+                'now = datetime.now(timezone.utc)\n'
+            ))
+            self.assertEqual(cbp.scan_file(f), [],
+                "datetime.utcnow() in comment must NOT be flagged")
+
+    def test_substring_match_is_NOT_flagged(self) -> None:
+        # `\b` boundary: `not_datetime.utcnow(` should NOT match because
+        # the rule targets `datetime.utcnow(` after a word boundary.
+        # `my_datetime.utcnow(` is a (theoretical) custom class; we
+        # accept the false-negative there. What we MUST not do is fire
+        # on an unrelated `xutcnow(` token.
+        import tempfile
+        with tempfile.TemporaryDirectory() as td:
+            f = self._write(Path(td), "noisy.py", (
+                'def xutcnow():\n'
+                '    return 1\n'
+                'xutcnow()\n'
+            ))
+            self.assertEqual(cbp.scan_file(f), [],
+                "bare `xutcnow()` must NOT be flagged")
+
+
 class SelfScanTests(unittest.TestCase):
     """The script's OWN documentation includes BANNED tokens (this is the
     whole point of SR-60). Scanning the live `check_banned_patterns.py`
