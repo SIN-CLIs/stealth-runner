@@ -1,38 +1,46 @@
 """
-╔══════════════════════════════════════════════════════════════════════════════╗
-║                                                                              ║
-║              STEALTH-RUNNER — Network Module (SR-151)                        ║
-║                                                                              ║
-╠══════════════════════════════════════════════════════════════════════════════╣
-║                                                                              ║
-║  Package marker and public exports for the network module.                  ║
-║                                                                              ║
-║  EXPORTS:                                                                    ║
-║  ────────                                                                    ║
-║  ProxyEntry      - Dataclass representing a single proxy                    ║
-║  ProxyPool       - Thread-safe pool manager with score-based selection      ║
-║  get_proxy_pool  - Singleton getter for global pool instance               ║
-║  score           - Calculate IP quality score                               ║
-║  persist_event   - Log proxy event to JSONL                                ║
-║  is_cold         - Check if score is below cold threshold                  ║
-║                                                                              ║
-╚══════════════════════════════════════════════════════════════════════════════╝
+Stealth-Runner — Network Module.
 
-Closes #151
+SR-151: Proxy pool, IP-quality scoring.
+SR-174: Per-page CDP network tracker + beacon filter (pre-click gate input).
+
+Exports:
+    Proxy pool (SR-151):
+        ProxyEntry, ProxyPool, get_proxy_pool
+        score, persist_event, is_cold, load_events, aggregate_stats
+
+    Pre-click gate inputs (SR-174):
+        BeaconFilter, DEFAULT_BEACON_PATTERNS, get_default_filter, is_beacon
+        CdpNetworkTracker, NetworkActivity
 """
 
 from .proxy_pool import ProxyEntry, ProxyPool, get_proxy_pool
 from .ip_quality import score, persist_event, is_cold, load_events, aggregate_stats
+from .beacon_filter import (
+    BeaconFilter,
+    DEFAULT_BEACON_PATTERNS,
+    get_default_filter,
+    is_beacon,
+)
+from .cdp_network_tracker import CdpNetworkTracker, NetworkActivity
 
 __all__ = [
-    # proxy_pool.py exports
+    # proxy_pool.py exports (SR-151)
     "ProxyEntry",
     "ProxyPool",
     "get_proxy_pool",
-    # ip_quality.py exports
+    # ip_quality.py exports (SR-151)
     "score",
     "persist_event",
     "is_cold",
     "load_events",
     "aggregate_stats",
+    # beacon_filter.py exports (SR-174)
+    "BeaconFilter",
+    "DEFAULT_BEACON_PATTERNS",
+    "get_default_filter",
+    "is_beacon",
+    # cdp_network_tracker.py exports (SR-174)
+    "CdpNetworkTracker",
+    "NetworkActivity",
 ]
