@@ -69,7 +69,14 @@ class SurveyFlowExecutor:
 
     def _ensure_connected(self) -> bool:
         """Ensure WebSocket is connected, reconnect if needed."""
-        if not self._ws or self._ws.status != websocket.STATUS_CONNECTED:
+        # SR-194 C2: websocket-client's WebSocket exposes a boolean
+        # `.connected` attribute (True after `connect()` succeeds, False after
+        # `close()` or a failed handshake). There is no `STATUS_CONNECTED`
+        # constant in the `websocket` module — accessing it raised
+        # AttributeError, masking the real connection-state check. The `.status`
+        # property exists but returns the HTTP handshake status (e.g. 101 for
+        # 'Switching Protocols'), not the live connection state.
+        if not self._ws or not self._ws.connected:
             return self.connect()
         return True
 
