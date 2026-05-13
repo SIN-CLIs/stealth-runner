@@ -36,3 +36,16 @@ langgraph>=0.2
 #   3. Document the reason in this header.
 numpy>=1.26.0
 Pillow>=10.0.0
+
+# SR-168 Phase 2B / SR-169 (2026-05-13): pytest-asyncio is required for
+# `async def test_*` collection. `pyproject.toml` already lists it in
+# optional-dependencies.dev, but CI installs only `requirements.txt +
+# pytest ruff mypy pre-commit` (see .github/workflows/ci.yml), so the
+# `dev` extra is never pulled in. Without this entry, every async
+# test fails with: "async def functions are not natively supported.
+# You need to install a suitable plugin for your async framework, for
+# example: pytest-asyncio".
+#
+# asyncio_mode = "auto" is already set in pyproject.toml — once the
+# plugin is on the runner, every `async def test_*` is auto-collected.
+pytest-asyncio>=0.23.0
