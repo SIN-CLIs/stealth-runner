@@ -217,7 +217,7 @@ def _last_string_token_in_range(
     last: Optional[Tuple[int, int, str, str]] = None
     try:
         tokens = list(tokenize.generate_tokens(io.StringIO(snippet).readline))
-    except (tokenize.TokenizeError, IndentationError):
+    except (tokenize.TokenError, IndentationError):
         return None
     for tok in tokens:
         if tok.type != tokenize.STRING:
