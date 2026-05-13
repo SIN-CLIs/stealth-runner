@@ -60,7 +60,7 @@ from __future__ import annotations
 import os
 from dataclasses import dataclass, field, replace
 from pathlib import Path
-from typing import Literal
+from typing import Final, Literal
 
 # Type alias kept module-level so it can be re-exported and mock-patched
 # easily in tests (lesson from SR-151: local-only types break monkeypatch).
@@ -236,5 +236,76 @@ class RunnerPolicy:
             ),
         )
 
+# ─────────────────────────────────────────────────────────────────────────────
+# NetworkTuning — Pre-Click Network Gate (SR-174)
+# ─────────────────────────────────────────────────────────────────────────────
 
-__all__ = ["RunnerPolicy", "Environment"]
+DEFAULT_PROVIDER: Final[str] = "_default"
+
+
+@dataclass(frozen=True)
+class NetworkTuning:
+    """Per-provider thresholds for the Pre-Click Network Gate (SR-174).
+
+    Attributes:
+        network_quiet_ms: Minimum age of the most recent network response
+            before the gate considers the network quiet.
+        max_pending_requests: Maximum number of in-flight (non-beacon)
+            requests tolerated while still calling the network quiet.
+            ``cint`` uses 2 because they keep ~2 analytics polls alive
+            continuously; a strict 0 would block forever.
+        max_wait_ms: Hard upper bound on how long the gate will wait
+            before giving up and emitting ``network_never_quiet``. The
+            gate then proceeds anyway (force-proceed) — better to click
+            on a slightly busy page than to deadlock.
+    """
+
+    network_quiet_ms: int
+    max_pending_requests: int
+    max_wait_ms: int = 2000
+
+
+# Empirically derived from production traffic. Keep entries lowercase.
+PROVIDER_NETWORK_TUNING: Final[dict[str, NetworkTuning]] = {
+    "pollfish": NetworkTuning(network_quiet_ms=100, max_pending_requests=0),
+    "cint": NetworkTuning(network_quiet_ms=150, max_pending_requests=2),
+    "lucid": NetworkTuning(network_quiet_ms=80, max_pending_requests=0),
+    "qualtrics": NetworkTuning(network_quiet_ms=120, max_pending_requests=1),
+    "prolific": NetworkTuning(network_quiet_ms=100, max_pending_requests=0),
+    "heypiggy": NetworkTuning(network_quiet_ms=100, max_pending_requests=0),
+    DEFAULT_PROVIDER: NetworkTuning(network_quiet_ms=100, max_pending_requests=0),
+}
+
+
+def _normalize_provider(provider: str | None) -> str:
+    if not provider:
+        return DEFAULT_PROVIDER
+    return provider.strip().lower()
+
+
+def get_network_tuning(
+    provider: str | None,
+    *,
+    override: NetworkTuning | None = None,
+) -> NetworkTuning:
+    """Look up the :class:`NetworkTuning` for ``provider``.
+
+    Lookup is case-insensitive and trims whitespace. Unknown providers fall
+    back to the ``"_default"`` entry. Passing ``override`` short-circuits
+    the lookup entirely and returns the override unchanged — used by tests
+    and per-survey overrides.
+    """
+    if override is not None:
+        return override
+    key = _normalize_provider(provider)
+    return PROVIDER_NETWORK_TUNING.get(key, PROVIDER_NETWORK_TUNING[DEFAULT_PROVIDER])
+
+
+__all__ = [
+    "RunnerPolicy",
+    "Environment",
+    "NetworkTuning",
+    "PROVIDER_NETWORK_TUNING",
+    "DEFAULT_PROVIDER",
+    "get_network_tuning",
+]
