@@ -308,3 +308,17 @@ Am 2026-05-13 wurden PRs #175, #209, #215, #216 via **direct-push-to-main** gesc
 | #202 C2 | websocket.STATUS_CONNECTED (removed) | Changed to ws.connected bool | 416c610 |
 
 Alle 3 Issues geschlossen. #221 (visual_hash Bug) war False-Positive (Reproducer-Fehler).
+
+---
+
+## 14. SR-194 Priority:Critical Bugs — FIXED (2026-05-13)
+
+| Issue | Bug | Fix | Commit |
+|-------|-----|-----|--------|
+| #198 A1 | time.mgmtime typo | datetime.fromisoformat | 3ceb9eb |
+| #199 A2 | SurveyDaemon.run_forever() missing | Added async method | 48fc591 |
+| #199 A3 | SurveyDaemon(persona=, nvidia_local=) | Removed invalid kwargs | 7f00712 |
+| #199 A4 | SurveyAgentGraph(nvidia_local=) | Removed invalid kwarg | 7f00712 |
+| #199 A5 | Persona(name=) | Removed invalid kwarg | 7f00712 |
+
+Alle priority:critical Bugs geschlossen. Daemon CLI sollte jetzt starten.
