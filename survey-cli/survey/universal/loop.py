@@ -69,6 +69,7 @@ import re
 import time
 import urllib.request
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 
@@ -86,7 +87,11 @@ def _acquire_lock(survey_id: str = "") -> bool:
             with open(LOCK_PATH, "r") as f:
                 lock = json.load(f)
             lock_time = lock.get("started", "2000-01-01")
-            age_min = (time.time() - time.mgmtime(time.mktime(time.strptime(lock_time[:19], "%Y-%m-%dT%H:%M:%S")))[0]) / 60  # noqa: E501
+            # SR-194 A1 + SR-187: parse ISO timestamp as tz-aware UTC.
+            # The previous implementation called a non-existent time module
+            # attribute and raised AttributeError on every lock recovery.
+            lock_dt = datetime.fromisoformat(lock_time[:19]).replace(tzinfo=timezone.utc)
+            age_min = (datetime.now(timezone.utc) - lock_dt).total_seconds() / 60
             if age_min < 30:
                 return False
         except Exception:
@@ -117,7 +122,11 @@ def _wipe_stale_locks():
             with open(LOCK_PATH, "r") as f:
                 lock = json.load(f)
             lock_time = lock.get("started", "2000-01-01")
-            age_min = (time.time() - time.mgmtime(time.mktime(time.strptime(lock_time[:19], "%Y-%m-%dT%H:%M:%S")))[0]) / 60  # noqa: E501
+            # SR-194 A1 + SR-187: parse ISO timestamp as tz-aware UTC.
+            # The previous implementation called a non-existent time module
+            # attribute and raised AttributeError on every stale-lock sweep.
+            lock_dt = datetime.fromisoformat(lock_time[:19]).replace(tzinfo=timezone.utc)
+            age_min = (datetime.now(timezone.utc) - lock_dt).total_seconds() / 60
             if age_min >= 30:
                 LOCK_PATH.unlink()
         except Exception:
