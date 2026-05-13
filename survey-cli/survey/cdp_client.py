@@ -226,6 +226,14 @@ class CDPConnection:
         """
         if self._ws is None:
             self.connect()
+            # SR-194 B1: connect() either sets self._ws or raises
+            # CDPConnectionError (see line 179). If somehow neither
+            # happened, fail loudly instead of letting the next .send()
+            # crash with AttributeError deep in the retry loop.
+            if self._ws is None:
+                raise CDPConnectionError(
+                    f"connect() did not establish _ws for {self.ws_url}"
+                )
 
         msg_id = self._id_counter
         self._id_counter += 1
@@ -245,6 +253,17 @@ class CDPConnection:
 
         for attempt in range(max_attempts):
             try:
+                # SR-194 B1: re-narrow at the top of every attempt.
+                # close() in a previous iteration sets self._ws = None,
+                # and the matching self.connect() in the except branch
+                # below can silently fail (it sits inside `except`).
+                # Without this guard the next .send() would raise a
+                # confusing AttributeError instead of a CDPConnectionError.
+                if self._ws is None:
+                    raise CDPConnectionError(
+                        f"WebSocket is None entering attempt {attempt} "
+                        f"of CDP call {method!r}"
+                    )
                 self._ws.send(payload)
                 response = self._recv_until_id(msg_id)
                 response_data = json.loads(response)
@@ -303,6 +322,17 @@ class CDPConnection:
         async Event-Loop erweitern müssen.
         """
         while True:
+            # SR-194 B1: same invariant as in call() — the WebSocket can
+            # be torn down by a concurrent close() or by a failed
+            # reconnect. Without this guard recv() would raise
+            # AttributeError ("None has no attribute 'recv'") inside a
+            # while-True loop and the caller sees a stack with no clue
+            # about the underlying connection state.
+            if self._ws is None:
+                raise CDPConnectionError(
+                    "WebSocket disconnected during _recv_until_id "
+                    f"(target_id={target_id})"
+                )
             raw = self._ws.recv()
             try:
                 data = json.loads(raw)

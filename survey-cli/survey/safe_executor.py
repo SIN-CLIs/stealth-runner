@@ -78,6 +78,17 @@ class SurveyFlowExecutor:
         if not self._ensure_connected():
             raise ConnectionError("WebSocket nicht verbunden. connect() zuerst aufrufen.")
 
+        # SR-194 B1: _ensure_connected() returning True guarantees that
+        # self._ws is a live WebSocket. The explicit narrow assertion
+        # both teaches mypy (the previous silent `union-attr` errors)
+        # and documents the invariant for the next reader. This is the
+        # hot-path call, so a strict assertion is preferred over a
+        # silent re-connect attempt (Option A in issue #201).
+        assert self._ws is not None, (
+            "_ensure_connected() returned True but self._ws is None — "
+            "broken invariant in SurveyFlowExecutor.connect()"
+        )
+
         msg_id = int(time.time() * 1000)
         payload = {"id": msg_id, "method": method}
         if params:
