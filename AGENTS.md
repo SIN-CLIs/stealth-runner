@@ -295,3 +295,16 @@ Am 2026-05-13 wurden PRs #175, #209, #215, #216 via **direct-push-to-main** gesc
 - #221 — [bug] H-9: visual_hash dct_hash() Bug
 - #222 — [audit] H-4: geschlossen (NIM existiert)
 - #223 — [test-debt] 10 Skip-Marker referenzieren closed #62
+
+---
+
+## 13. SR-194 Priority:High Bugs — FIXED (2026-05-13)
+
+| Issue | Bug | Fix | Commit |
+|-------|-----|-----|--------|
+| #200 | CommandRegistry.record_command() missing | Added alias method | 98ed9f3 |
+| #201 | WebSocket None without None-check | Added assertions/checks in safe_executor + cdp_client | d221337, a7948bb |
+| #202 C1 | tokenize.TokenizeError (removed) | Changed to tokenize.TokenError | 93f0e14 |
+| #202 C2 | websocket.STATUS_CONNECTED (removed) | Changed to ws.connected bool | 416c610 |
+
+Alle 3 Issues geschlossen. #221 (visual_hash Bug) war False-Positive (Reproducer-Fehler).
