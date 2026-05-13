@@ -59,7 +59,6 @@ def get_persona():
     persona_config = config.get("persona", {})
 
     return Persona(
-        name=persona_config.get("name", "Alex"),
         age=persona_config.get("age", 32),
         gender=persona_config.get("gender", "non-binary"),
         occupation=persona_config.get("occupation", "Software Engineer"),
@@ -79,7 +78,6 @@ async def cmd_run_survey(args) -> int:
 
     graph = SurveyAgentGraph(
         persona=persona,
-        nvidia_local=True,  # FREE NVIDIA Vision for CAPTCHAs
         headless=not args.visible,
     )
 
@@ -121,7 +119,7 @@ async def cmd_heypiggy(args) -> int:
         email=email,
         password=password,
         persona=persona,
-        nvidia_local=True,  # FREE NVIDIA Vision for CAPTCHAs
+        
         max_surveys=args.max_surveys,
         headless=not args.visible,
     )
@@ -160,10 +158,7 @@ def cmd_daemon_start(args) -> int:
     # Run in foreground
     print("Starting survey daemon in foreground (Ctrl+C to stop)...")
 
-    daemon = SurveyDaemon(
-        persona=persona,
-        nvidia_local=True,  # FREE NVIDIA Vision for CAPTCHAs
-    )
+    daemon = SurveyDaemon()  # SR-194 A3: uses config file for all settings
 
     try:
         asyncio.run(daemon.run_forever())
