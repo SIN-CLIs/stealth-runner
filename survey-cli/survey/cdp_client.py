@@ -245,6 +245,8 @@ class CDPConnection:
 
         for attempt in range(max_attempts):
             try:
+                if self._ws is None:
+                    raise CDPError("WebSocket disconnected during send")
                 self._ws.send(payload)
                 response = self._recv_until_id(msg_id)
                 response_data = json.loads(response)
@@ -303,6 +305,8 @@ class CDPConnection:
         async Event-Loop erweitern müssen.
         """
         while True:
+            if self._ws is None:
+                raise CDPError("WebSocket disconnected during recv")
             raw = self._ws.recv()
             try:
                 data = json.loads(raw)
@@ -374,7 +378,9 @@ class CDPConnection:
         try:
             while True:
                 try:
-                    raw = self._ws.recv()
+                    if self._ws is None:
+                raise CDPError("WebSocket disconnected during recv")
+            raw = self._ws.recv()
                 except Exception:
                     # Timeout oder closed → fertig. Wir unterscheiden hier
                     # NICHT zwischen Timeout und echtem Fehler — beides
