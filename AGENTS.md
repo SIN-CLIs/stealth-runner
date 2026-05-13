@@ -105,11 +105,11 @@ Diese Hypothesen sind **permanent**. Jeder Critic-Run muss sie alle re-prüfen. 
 | H-2 | Anti-Drift via question_hash hält Matrix-Fragen | **UNKLAR** — reproducer fehlt. |
 | H-3 | Daemon kann 24h laufen | **UNKLAR** — kein 30-min-Memory-Plot, kein Heartbeat-Recovery-Test. |
 | H-4 | Alle 5 Solver echt verdrahtet | **PARTIAL** — Solver-Dateien existieren, aber kein Integration-Test gegen echte API. |
-| H-5 | Verifier (#175) wird aktiv aufgerufen | **WIDERLEGT** — `state.verify` 0 Matches in `survey-cli/survey/`. Verifier lebt nur in `stealth-captcha/` (Fremdpaket). |
+| H-5 | Verifier (#175) wird aktiv aufgerufen | **WIDERLEGT mit Ursache** — PR #175 ist **OPEN, nicht gemerged** (Stand 2026-05-13). Branch `feat/sr-167-verifier-node` enthält `verifier.py` + `agents.md`, aber nichts davon ist auf `main`. `state.verify` 0 Matches im Survey-Graph. |
 | H-6 | Pre-Qualifier (413 LoC) filtert sinnvoll | **UNKLAR** — Regeln noch nicht zusammengefasst. |
 | H-7 | 70 Test-Dateien, davon wieviele tot? | 11 `@pytest.mark.skip`-Marker, Restzahl noch nicht klassifiziert. |
 | H-8 | Network-Gate (#185) hat keinen toten Pfad | **UNKLAR** — Default-Timeout-Verhalten ungeprüft. |
-| H-9 | Visual-Hash (#209) ist real & nützlich | **BLOCKER** — `visual_hash.py` existiert nicht. 0 Matches für `visual_hash\|pHash\|dct_hash`. PR #209 hat 11/11 CI grün, aber der gemergte Code ist im Repo nicht auffindbar. |
+| H-9 | Visual-Hash (#209) ist real & nützlich | **WIDERLEGT mit Ursache** — PR #209 ist **OPEN, nicht gemerged** (Stand 2026-05-13). Branch `feat/sr-168-a-visual-hash` enthält `survey-cli/survey/reliability/visual_hash.py`, aber das Modul ist auf `main` nicht vorhanden. CI-grün ≠ merged. Issue #212 berichtet hier falsch. |
 | H-10 | Cash-Out wurde je live ausgelöst | **UNKLAR** — `runner.py:782` ruft `self.cash_out.trigger(...)`, aber kein Receipt-Log, kein Screenshot, kein 1-Cent-Beweis. |
 
 ### Output-Format pro Hypothese
@@ -166,13 +166,41 @@ Für jeden Kill-Candidate:
 
 ## 6. Meta-Lügen, die heute (2026-05-13) im Repo stehen
 
-Diese werden separat in `incidents/CRITIC-AUDIT-2026-05-13.md` belegt. Kurzfassung:
+Diese werden vollständig in `incidents/CRITIC-AUDIT-2026-05-13.md` belegt. Kurzfassung:
 
-1. README verweist auf `AGENTS.md`, `sinrules.md`, `brain.md`, `fix.md`, `registry.md` am Root — nur diese Datei (`AGENTS.md`) existiert; die anderen vier fehlen.
-2. Issue #212 listet PRs #209, #215, #216 als "merged, CI grün". Die zugehörigen Module (`visual_hash`, `attestation`, `dom_stability`) sind im Repo nicht auffindbar.
-3. PR #175 ("Verifier-Node") ist als gemergt gelistet, aber kein `state.verify`-Flag oder Verifier-Knoten im Survey-Graph.
+### Lüge #1 — Status-Lüge in Issue #212
 
-→ **Konsequenz für Critic**: PR-Merge-Status der Issue-Tracker-Tabelle ist keine Quelle der Wahrheit. **Source of Truth = Filesystem + Call-Graph.**
+Issue #212 (CEO-Status-Update) listet **4 PRs als "Merged" / "✅"** die in Wahrheit **alle OPEN** sind:
+
+| PR | Issue-#212 sagt | GitHub-API sagt | Branch |
+|---|---|---|---|
+| #175 Verifier-Node | "✅ Merged" | `state: OPEN`, `mergedAt: null` | `feat/sr-167-verifier-node` |
+| #209 visual_hash | "✅ Merged, 11/11 CI grün" | `state: OPEN`, `mergedAt: null` | `feat/sr-168-a-visual-hash` |
+| #215 attestation | "✅ Merged" | `state: OPEN`, `mergedAt: null` | `feat/sr-168-b-attestation-core` |
+| #216 stability_gate | "✅ Merged" | `state: OPEN`, `mergedAt: null` | `feat/sr-169-stability-gate` |
+
+Die Branches **existieren**, der Code in den Branches ist **vorhanden**, nur **gemerged ist nichts davon**. Das erklärt alle beobachteten Symptome auf einmal — Solver-Chain hat 4 statt 5 Stufen (Stufe 5 = stability_gate, hängt in PR #216), `state.verify` fehlt (#175 nicht gemerged), `visual_hash.py` fehlt (#209 nicht gemerged), `attestation.py` fehlt (#215 nicht gemerged).
+
+### Lüge #2 — Dokumentations-Lüge in README
+
+README verweist auf `sinrules.md`, `brain.md`, `fix.md`, `registry.md` am Root — keine dieser Dateien existiert. Nur `AGENTS.md` (diese Datei) ist real.
+
+### Lüge #3 — Code-vs-Docstring-Lüge in `fallback_chain.py`
+
+Docstring spricht von 5 Solvern. Code (`self._solvers`-Liste) listet nur 4. Stufe 5 ist ein Log-only-Branch ohne realen Solver. Wird durch Merge von PR #216 (stability_gate) korrigiert — falls jemals gemerged.
+
+### Konsequenz für Critic
+
+- **Source of Truth = Filesystem + GitHub-API (`state`, `mergedAt`)**. Nicht Issue-Tabellen, nicht Status-Updates, nicht Slack-Berichte.
+- Jeder Critic-Run muss bei PR-Behauptungen zuerst `gh pr view <n> --json state,mergedAt` aufrufen, bevor er die Behauptung als Wahrheit übernimmt.
+
+### Case-Conflict-Warnung (case-sensitive Filesystem)
+
+Diese Datei heißt `AGENTS.md` (groß). PR #175 will eine Datei `agents.md` (klein) am Root mergen.
+- Auf macOS (case-insensitive default): Merge funktioniert, eine Datei überschreibt die andere.
+- Auf Linux/Vercel/CI (case-sensitive): Es entstehen **zwei separate Dateien** mit unterschiedlichem Inhalt.
+
+→ Vor Merge von #175: PR umbenennen, sodass `agents.md` → `AGENTS.md` umbenannt und mit dem Inhalt dieser Datei vereinheitlicht wird.
 
 ---
 
