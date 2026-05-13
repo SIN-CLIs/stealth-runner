@@ -222,7 +222,12 @@ class ProxyPool:
 
         FORMAT (JSON Array):
             [
-                {"url": "http://user:pass@host:port", "label": "name", "country": "DE", "type": "residential"},  # noqa: E501
+                {
+                    "url": "http://user:pass@host:port",
+                    "label": "name",
+                    "country": "DE",
+                    "type": "residential",
+                },
                 ...
             ]
 
