@@ -82,7 +82,7 @@ def _slider_controls(qid: str, value: str) -> list[dict]:
 
 def test_radio_match_passes():
     q = _q("q1", QuestionType.RADIO, [("a", "A"), ("b", "B")])
-    a = Answer(question_id="q1", value="a", confidence=0.9)
+    a = Answer(question_id="q1", question_hash="h_q1", value="a", confidence=0.9)
     before = from_controls("u", _radio_controls("q1", None, ["a", "b"]))
     after = from_controls("u", _radio_controls("q1", "a", ["a", "b"]))
 
@@ -95,7 +95,7 @@ def test_radio_match_passes():
 
 def test_checkbox_set_match_passes():
     q = _q("q1", QuestionType.CHECKBOX, [("a", "A"), ("b", "B"), ("c", "C")])
-    a = Answer(question_id="q1", value=["a", "c"], confidence=0.9)
+    a = Answer(question_id="q1", question_hash="h_q1", value=["a", "c"], confidence=0.9)
     before = from_controls("u", _checkbox_controls("q1", [], ["a", "b", "c"]))
     after = from_controls("u", _checkbox_controls("q1", ["a", "c"], ["a", "b", "c"]))
 
@@ -106,7 +106,7 @@ def test_checkbox_set_match_passes():
 
 def test_dropdown_match_passes():
     q = _q("q1", QuestionType.DROPDOWN, [("us", "US"), ("de", "DE")])
-    a = Answer(question_id="q1", value="de", confidence=0.9)
+    a = Answer(question_id="q1", question_hash="h_q1", value="de", confidence=0.9)
     before = from_controls("u", _dropdown_controls("q1", ""))
     after = from_controls("u", _dropdown_controls("q1", "de"))
 
@@ -115,7 +115,7 @@ def test_dropdown_match_passes():
 
 def test_open_text_match_passes():
     q = _q("q1", QuestionType.OPEN_TEXT)
-    a = Answer(question_id="q1", value="hello world", confidence=0.9)
+    a = Answer(question_id="q1", question_hash="h_q1", value="hello world", confidence=0.9)
     before = from_controls("u", _text_controls("q1", ""))
     after = from_controls("u", _text_controls("q1", "Hello World"))  # case/whitespace tolerant
 
@@ -125,7 +125,7 @@ def test_open_text_match_passes():
 def test_open_text_autocomplete_prefix_match_passes():
     """Some UIs append autocomplete suggestion text; verifier accepts startswith."""
     q = _q("q1", QuestionType.OPEN_TEXT)
-    a = Answer(question_id="q1", value="berl", confidence=0.9)
+    a = Answer(question_id="q1", question_hash="h_q1", value="berl", confidence=0.9)
     before = from_controls("u", _text_controls("q1", ""))
     after = from_controls("u", _text_controls("q1", "berlin, germany"))
 
@@ -134,7 +134,7 @@ def test_open_text_autocomplete_prefix_match_passes():
 
 def test_slider_numeric_match_passes():
     q = _q("q1", QuestionType.SLIDER)
-    a = Answer(question_id="q1", value=7, confidence=0.9)
+    a = Answer(question_id="q1", question_hash="h_q1", value=7, confidence=0.9)
     before = from_controls("u", _slider_controls("q1", "0"))
     after = from_controls("u", _slider_controls("q1", "7"))
 
@@ -143,7 +143,7 @@ def test_slider_numeric_match_passes():
 
 def test_number_match_passes():
     q = _q("q1", QuestionType.NUMBER)
-    a = Answer(question_id="q1", value=42, confidence=0.9)
+    a = Answer(question_id="q1", question_hash="h_q1", value=42, confidence=0.9)
     before = from_controls("u", _text_controls("q1", ""))
     after = from_controls("u", _text_controls("q1", "42"))
 
@@ -157,7 +157,7 @@ def test_number_match_passes():
 
 def test_radio_wrong_value_detected():
     q = _q("q1", QuestionType.RADIO, [("a", "A"), ("b", "B")])
-    a = Answer(question_id="q1", value="a", confidence=0.9)
+    a = Answer(question_id="q1", question_hash="h_q1", value="a", confidence=0.9)
     before = from_controls("u", _radio_controls("q1", None, ["a", "b"]))
     after = from_controls("u", _radio_controls("q1", "b", ["a", "b"]))  # wrong one checked
 
@@ -171,7 +171,7 @@ def test_radio_wrong_value_detected():
 
 def test_radio_not_checked_detected():
     q = _q("q1", QuestionType.RADIO, [("a", "A"), ("b", "B")])
-    a = Answer(question_id="q1", value="a", confidence=0.9)
+    a = Answer(question_id="q1", question_hash="h_q1", value="a", confidence=0.9)
     before = from_controls("u", _radio_controls("q1", None, ["a", "b"]))
     after = from_controls("u", _radio_controls("q1", None, ["a", "b"]))  # NOTHING checked
 
@@ -184,7 +184,7 @@ def test_radio_not_checked_detected():
 
 def test_checkbox_wrong_set_detected():
     q = _q("q1", QuestionType.CHECKBOX, [("a", "A"), ("b", "B"), ("c", "C")])
-    a = Answer(question_id="q1", value=["a", "c"], confidence=0.9)
+    a = Answer(question_id="q1", question_hash="h_q1", value=["a", "c"], confidence=0.9)
     before = from_controls("u", _checkbox_controls("q1", [], ["a", "b", "c"]))
     after = from_controls("u", _checkbox_controls("q1", ["a", "b"], ["a", "b", "c"]))  # b instead of c
 
@@ -196,7 +196,7 @@ def test_checkbox_wrong_set_detected():
 
 def test_missing_control_detected():
     q = _q("q_missing", QuestionType.RADIO, [("a", "A")])
-    a = Answer(question_id="q_missing", value="a", confidence=0.9)
+    a = Answer(question_id="q_missing", question_hash="h_qmissing", value="a", confidence=0.9)
     before = from_controls("u", [])
     after = from_controls("u", [])  # frame for q_missing never appears
 
@@ -208,7 +208,7 @@ def test_missing_control_detected():
 
 def test_number_out_of_range_detected():
     q = _q("q1", QuestionType.NUMBER)
-    a = Answer(question_id="q1", value=10, confidence=0.9)
+    a = Answer(question_id="q1", question_hash="h_q1", value=10, confidence=0.9)
     before = from_controls("u", _text_controls("q1", ""))
     after = from_controls("u", _text_controls("q1", "not-a-number"))
 
@@ -226,7 +226,7 @@ def test_number_out_of_range_detected():
 def test_dom_unstable_when_no_change_at_all():
     """If we tried to answer but page_hash_before == page_hash_after, the action never landed."""
     q = _q("q1", QuestionType.RADIO, [("a", "A")])
-    a = Answer(question_id="q1", value="a", confidence=0.9)
+    a = Answer(question_id="q1", question_hash="h_q1", value="a", confidence=0.9)
     # Both snapshots identical → no DOM movement
     same = _radio_controls("q1", None, ["a"])
     before = from_controls("u", same)
@@ -242,8 +242,8 @@ def test_unchanged_qids_reported_for_phase2():
     """qids that we answered but whose subtree didn't shift go into unchanged_qids."""
     q1 = _q("q1", QuestionType.RADIO, [("a", "A")])
     q2 = _q("q2", QuestionType.RADIO, [("x", "X")])
-    a1 = Answer(question_id="q1", value="a", confidence=0.9)
-    a2 = Answer(question_id="q2", value="x", confidence=0.9)
+    a1 = Answer(question_id="q1", question_hash="h_q1", value="a", confidence=0.9)
+    a2 = Answer(question_id="q2", question_hash="h_q2", value="x", confidence=0.9)
 
     before = from_controls("u",
         _radio_controls("q1", None, ["a"]) + _radio_controls("q2", None, ["x"]))
@@ -260,7 +260,7 @@ def test_unchanged_qids_reported_for_phase2():
 def test_no_snapshot_before_skips_dom_unstable_check():
     """First page / cold start: no baseline available, must still pass on real success."""
     q = _q("q1", QuestionType.RADIO, [("a", "A")])
-    a = Answer(question_id="q1", value="a", confidence=0.9)
+    a = Answer(question_id="q1", question_hash="h_q1", value="a", confidence=0.9)
     after = from_controls("u", _radio_controls("q1", "a", ["a"]))
 
     result = verify_action([q], [a], None, after)
@@ -279,7 +279,7 @@ def test_verification_result_to_dict_is_json_safe():
     import json
 
     q = _q("q1", QuestionType.RADIO, [("a", "A"), ("b", "B")])
-    a = Answer(question_id="q1", value="a", confidence=0.9)
+    a = Answer(question_id="q1", question_hash="h_q1", value="a", confidence=0.9)
     before = from_controls("u", _radio_controls("q1", None, ["a", "b"]))
     after = from_controls("u", _radio_controls("q1", "b", ["a", "b"]))
 
@@ -306,7 +306,7 @@ def test_unknown_question_type_requires_frame_presence():
         pytest.skip("No 'unknown to verifier' QuestionType available in this build")
 
     q = _q("qg", grid_type)
-    a = Answer(question_id="qg", value="anything", confidence=0.5)
+    a = Answer(question_id="qg", question_hash="h_qg", value="anything", confidence=0.5)
 
     # Frame present → no mismatch
     after_present = from_controls("u", _text_controls("qg", "anything"))
