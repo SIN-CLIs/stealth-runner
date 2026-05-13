@@ -23,7 +23,6 @@ BANNED METHODS — NIEMALS VERWENDEN:
 
 # === SR-63 #62 legacy-debt skip (do not delete without unskipping) ===
 import pytest
-pytestmark = pytest.mark.skip(reason="SR-63 #62: requires real browser CDP session — kept for local regression runs")
 # === END SR-63 skip ===
 
 import unittest
