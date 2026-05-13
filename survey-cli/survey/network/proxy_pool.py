@@ -73,7 +73,7 @@ import random
 import logging
 import threading
 from pathlib import Path
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Optional, List, Dict, Any, Self
 from datetime import datetime, timezone
 
