@@ -9,7 +9,6 @@ chrome-Module und websocket werden gepatcht.
 
 # === SR-63 #62 legacy-debt skip (do not delete without unskipping) ===
 import pytest
-pytestmark = pytest.mark.skip(reason="SR-63 #62: mock drift — SurveyOpener mocks need update for current chrome helpers")
 # === END SR-63 skip ===
 
 import unittest
