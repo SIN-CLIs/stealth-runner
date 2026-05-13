@@ -1,0 +1,1 @@
+# Intentional violation — banned dir (top-level core)\n
