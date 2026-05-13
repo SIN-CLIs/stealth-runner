@@ -58,8 +58,10 @@ def get_persona():
     config = load_config()
     persona_config = config.get("persona", {})
 
+    # SR-194 A5: Persona (in survey.daemon.answer_engine) does not define
+    # a ``name`` field. The CLI previously passed ``name=...`` which raised
+    # TypeError on every persona instantiation.
     return Persona(
-        name=persona_config.get("name", "Alex"),
         age=persona_config.get("age", 32),
         gender=persona_config.get("gender", "non-binary"),
         occupation=persona_config.get("occupation", "Software Engineer"),
@@ -77,9 +79,10 @@ async def cmd_run_survey(args) -> int:
     load_config()
     persona = get_persona()
 
+    # SR-194 A4: SurveyAgentGraph.__init__ does not accept ``nvidia_local``;
+    # NVIDIA Vision is configured via the CAPTCHA stack, not the graph.
     graph = SurveyAgentGraph(
         persona=persona,
-        nvidia_local=True,  # FREE NVIDIA Vision for CAPTCHAs
         headless=not args.visible,
     )
 
@@ -160,12 +163,17 @@ def cmd_daemon_start(args) -> int:
     # Run in foreground
     print("Starting survey daemon in foreground (Ctrl+C to stop)...")
 
-    daemon = SurveyDaemon(
-        persona=persona,
-        nvidia_local=True,  # FREE NVIDIA Vision for CAPTCHAs
-    )
+    # SR-194 A3: SurveyDaemon.__init__ accepts only path kwargs
+    # (config_path / state_path / log_path). Persona is loaded from the
+    # config file inside the daemon, not injected here. The kwargs
+    # ``persona`` and ``nvidia_local`` were silent TypeErrors before.
+    _ = persona  # retained for parity with future Persona-injection refactor
+    daemon = SurveyDaemon()
 
     try:
+        # SR-194 A2: ``run_forever`` is now a public async alias on
+        # SurveyDaemon (see survey_daemon.py). The CLI previously called
+        # a non-existent method and crashed immediately.
         asyncio.run(daemon.run_forever())
     except KeyboardInterrupt:
         print("\nDaemon stopped")

@@ -276,8 +276,20 @@ class SurveyDaemon:
             self._remove_pid()
             logger.info("Survey Daemon stopped.")
 
+    async def run_forever(self) -> None:
+        """
+        Async entry point for callers that already manage an event loop
+        (e.g. ``asyncio.run(daemon.run_forever())`` from the CLI).
+
+        This is the public counterpart to the private :meth:`_run` coroutine
+        and to the synchronous :meth:`start` wrapper. It runs until the
+        daemon's internal loop exits (SIGTERM/SIGINT, shutdown event,
+        or an unrecoverable error).
+        """
+        await self._run()
+
     def start(self) -> None:
-        """Start the daemon (blocking)."""
+        """Start the daemon (blocking, owns the event loop)."""
         asyncio.run(self._run())
 
     def stop(self) -> None:
