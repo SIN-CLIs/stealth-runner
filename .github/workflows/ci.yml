@@ -38,7 +38,7 @@ jobs:
       # SR-65 (2026-05-11): Bump auf Node-24-Runtime vor 2026-06-02-Frist.
       # checkout@v4 -> @v5, setup-python@v5 -> @v6. Folge-Bumps hier nachziehen
       # und in §13.8.4 als Zeile + Datum verankern (Audit-Trail).
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
 
       - name: Set up Python ${{ matrix.python-version }}
         uses: actions/setup-python@v6
