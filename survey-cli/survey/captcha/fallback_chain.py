@@ -50,7 +50,7 @@ import json
 import logging
 import time
 from dataclasses import dataclass, field
-from datetime import datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Optional
 
@@ -186,7 +186,10 @@ def _log_human_handoff(
         Pfad zur Log-Datei
     """
     logs_dir = _ensure_logs_dir()
-    date_str = datetime.utcnow().strftime("%Y%m%d")
+    # SR-187: UTC-aware datetimes (naive utcnow() is deprecated in Py 3.12,
+    # removed in 3.14; comparing naive against tz-aware silently mis-orders).
+    now_utc = datetime.now(timezone.utc)
+    date_str = now_utc.strftime("%Y%m%d")
     log_path = logs_dir / f"captcha-failures-{date_str}.jsonl"
 
     # Capture screenshot
@@ -194,7 +197,9 @@ def _log_human_handoff(
 
     # Build log entry
     entry = {
-        "timestamp": datetime.utcnow().isoformat() + "Z",
+        # SR-187: isoformat() on tz-aware dt emits "+00:00"; we keep the
+        # historical "Z" suffix for jsonl-consumer compatibility.
+        "timestamp": now_utc.isoformat().replace("+00:00", "Z"),
         "detected_type": detection.captcha_type,
         "page_url": page_url,
         "frame_id": detection.frame_id,

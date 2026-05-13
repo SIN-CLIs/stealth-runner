@@ -49,9 +49,10 @@ import asyncio
 import json
 import os
 import subprocess
+import time
 import hashlib
-from datetime import datetime
-from typing import Dict
+from datetime import datetime, timezone
+from typing import Dict, Any, List, Optional
 
 # ═════════════════════════════════════════════════════════════════════════════
 # IMPORTS — vorhandene tools nutzen
@@ -60,7 +61,8 @@ sys_path = "/Users/jeremy/dev/stealth-runner/survey-cli"
 import sys
 sys.path.insert(0, sys_path)
 
-from tools.tool_snapshot import EXTRACTOR_JS
+from tools.tool_snapshot import EXTRACTOR_JS, snapshot, find_submit, find_unfilled
+from survey.completion_detector import CompletionDetector
 from survey.session_validator import validate_session
 
 CHROME_PORT = 9999
@@ -216,8 +218,7 @@ async def solve_captcha(ws) -> str:
     Model: meta/llama-3.2-90b-vision-instruct (NVIDIA NIM)
     API: https://integrate.api.nvidia.com/v1/chat/completions
     """
-    import base64
-    import urllib.request
+    import os, base64, urllib.request
     
     # Get page text to detect captcha type
     page_text = await cdp_execute_js(ws, 100, "document.body.innerText.substring(0, 500)")
@@ -372,6 +373,7 @@ async def solve_drag_drop(ws) -> str:
     Uses CDP Input.dispatchMouseEvent (Approach B) — REAL browser-level mouse events
     trigger Angular CDK's pointer event handlers. Verified working 2026-05-10.
     """
+    import time
     
     # Extract target number
     number = await cdp_execute_js(ws, 200, """
@@ -476,7 +478,7 @@ async def solve_drag_drop(ws) -> str:
 """)
             await asyncio.sleep(3)
             return f"DRAG_SOLVED:{number}->btn_enabled"
-        return "DRAG_FAILED:btn_disabled"
+        return f"DRAG_FAILED:btn_disabled"
     except:
         return f"DRAG_VERIFY_ERROR:{verify}"
 
@@ -529,7 +531,7 @@ def detect_page_type(snap: Dict) -> str:
         "unknown"    → Nicht erkannt
     """
     body = (snap.get("bodyText", "") or "").lower()
-    (snap.get("url", "") or "").lower()
+    url = (snap.get("url", "") or "").lower()
     
     # Screen-Out Keywords
     for kw in ["umfrage passt nicht", "leider", "nicht geeignet", "vorzeitig beendet",
@@ -763,14 +765,14 @@ async def answer_survey(survey_ws_url: str, max_pages: int = MAX_PAGES) -> Dict:
         }
     """
     print(f"\n{'='*60}")
-    print("  ANSWER_SURVEY — Manual Testing Mode")
+    print(f"  ANSWER_SURVEY — Manual Testing Mode")
     print(f"{'='*60}")
     print(f"  Survey Tab WS: {survey_ws_url[:60]}...")
     
     # Pre-Flight: Session validieren
     if not validate_session(CHROME_PORT):
         return {"status": "error", "reason": "Session invalid — cookies expired?"}
-    print("  [PREFLIGHT] Session: OK")
+    print(f"  [PREFLIGHT] Session: OK")
     
     # Import websockets here
     import websockets
@@ -830,7 +832,7 @@ async def answer_survey(survey_ws_url: str, max_pages: int = MAX_PAGES) -> Dict:
                 break
             
             # 4. Submit (Next / Continue / Submit)
-            print("  [SUBMIT] Clicking submit button...")
+            print(f"  [SUBMIT] Clicking submit button...")
             submit_result = await click_submit(ws)
             print(f"    [SUBMIT] {submit_result}")
             results["actions"].append(f"SUBMIT:{submit_result}")
@@ -865,7 +867,9 @@ def _update_registry(command_id: str, success: bool, result: Dict):
     except:
         registry = {"version": "1.0.0", "commands": []}
     
-    now = datetime.utcnow().isoformat() + "Z"
+    # SR-187: UTC-aware (naive utcnow() is deprecated in Py 3.12, gone in 3.14).
+    # Keep historical "Z" suffix for command_registry.json wire-format stability.
+    now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
     
     # Find or create command entry
     found = False
@@ -906,7 +910,7 @@ def _update_registry(command_id: str, success: bool, result: Dict):
 
 # ═════════════════════════════════════════════════════════════════════════════
 # CLI — MANUELLE TESTING ONLY!
-# ═════════════════════════════════════════════════════════════════════════════
+# ═════════════════════════════════════════════���═══════════════════════════════
 
 if __name__ == "__main__":
     if len(sys.argv) < 2:

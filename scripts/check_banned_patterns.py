@@ -99,6 +99,12 @@ BANNED_PATTERNS: list[tuple[re.Pattern[str], str]] = [
      "skylight-cli click --element-index is unstable"),
     (re.compile(r'subprocess\.Popen.*Chrome.*(?!remote-allow-origins=\\"\*\\")'),
      'Chrome MUST be launched with --remote-allow-origins="*" (with quotes!)'),
+    # SR-187: datetime.utcnow() is deprecated in Python 3.12 (DeprecationWarning)
+    # and slated for removal in 3.14. It returns a NAIVE datetime — comparing
+    # naive against UTC-aware DB timestamps silently mis-orders. Use
+    # `datetime.now(timezone.utc)` instead. See issue #186 for migration log.
+    (re.compile(r'\bdatetime\.utcnow\s*\('),
+     'datetime.utcnow() returns NAIVE dt; use datetime.now(timezone.utc) (SR-187)'),
 ]
 
 ROOT = Path(__file__).resolve().parent.parent
