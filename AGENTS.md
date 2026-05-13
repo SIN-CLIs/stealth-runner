@@ -255,3 +255,19 @@ Jeder BLOCKER (etwas, das den nächsten Live-Run garantiert killt):
 ## 10. How merges happened on 2026-05-13
 
 Am 2026-05-13 wurden PRs #175, #209, #215, #216 via **direct-push-to-main** geschlossen, nicht via GitHub-PR-Merge-Button. Branch-Protection wurde umgangen (Hotfix-Situation). GitHub-UI zeigt diese PRs als "closed" — das sieht aus wie "rejected", ist aber "code-landed-via-push". Die Branches existieren noch, der Code ist auf main. **Ab sofort Regel**: Nur PR-Merge, nie direct-push, außer bei kritischem Hotfix mit gleichzeitigem Issue-Eintrag der den Bypass dokumentiert.
+
+---
+
+## 11. H-7/H-9 Reproducer-Ergebnisse (2026-05-13)
+
+### H-7: Test-Marker-Audit
+- **767 Tests collected**, 25 collection errors
+- **10 pytestmark.skip Marker** (nicht 11 wie zuvor behauptet)
+- Alle Skip-Marker referenzieren SR-63 #62
+- Betroffene Tests: test_action_selector, test_balance, test_chrome_launcher, test_in_page_modal, test_open_survey_verified, test_opener, test_prequalifier, test_run_survey, test_security, test_tool_fill_survey
+
+### H-9: visual_hash Bug
+- **BUG GEFUNDEN**: dct_hash() gibt 0x0000000000000000 für alle Overlay-Bilder zurück
+- Base-Bild: d50b2ad52ad4d52a, Overlay-Bilder: 0x0 (egal welches Alpha)
+- Problem: DCT-Koeffizienten-Extraktion oder RGBA→RGB Konvertierung defekt
+- **Status**: Bug-Fix erforderlich in survey-cli/survey/reliability/visual_hash.py
