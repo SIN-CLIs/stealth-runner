@@ -271,3 +271,27 @@ Am 2026-05-13 wurden PRs #175, #209, #215, #216 via **direct-push-to-main** gesc
 - Base-Bild: d50b2ad52ad4d52a, Overlay-Bilder: 0x0 (egal welches Alpha)
 - Problem: DCT-Koeffizienten-Extraktion oder RGBA→RGB Konvertierung defekt
 - **Status**: Bug-Fix erforderlich in survey-cli/survey/reliability/visual_hash.py
+
+---
+
+## 12. Hypothesen-Audit Finale Verdicts (2026-05-13)
+
+| Hypothese | Urspr. Verdikt | Finales Verdikt | Beweis |
+|-----------|----------------|-----------------|--------|
+| H-2 | UNKLAR | ARCH-DEBT | question_hash existiert nicht, Feature-Request #220 |
+| H-4 | VAPORWARE | WIDERLEGT | NIM ist implementiert (20+ Treffer in lokaler grep) |
+| H-7 | CLEAN | 10 SKIP-MARKER | #62 ist closed aber Marker noch da, Issue #223 |
+| H-9 | FUNKTIONAL | BUG | dct_hash() gibt 0x0 zurück, Issue #221 |
+
+### Lektion
+
+1. GitHub Code Search ist unzuverlässig — immer lokaler grep als Verifikation
+2. "0 Treffer" != "existiert nicht" — False-Negatives sind häufig
+3. Closed Issues != gelöste Probleme — Skip-Marker können überleben
+
+### Erstellte Issues
+
+- #220 — [arch-debt] H-2: question_hash Feature-Request
+- #221 — [bug] H-9: visual_hash dct_hash() Bug
+- #222 — [audit] H-4: geschlossen (NIM existiert)
+- #223 — [test-debt] 10 Skip-Marker referenzieren closed #62
