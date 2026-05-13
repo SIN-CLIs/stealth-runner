@@ -2,7 +2,6 @@
 
 # === SR-63 #62 legacy-debt skip (do not delete without unskipping) ===
 import pytest
-pytestmark = pytest.mark.skip(reason="SR-63 #62: mock drift — ChromeLauncher mocks outdated vs current implementation")
 # === END SR-63 skip ===
 
 import json
