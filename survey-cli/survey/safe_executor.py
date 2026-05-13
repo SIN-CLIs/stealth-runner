@@ -69,7 +69,7 @@ class SurveyFlowExecutor:
 
     def _ensure_connected(self) -> bool:
         """Ensure WebSocket is connected, reconnect if needed."""
-        if not self._ws or self._ws.status != websocket.STATUS_CONNECTED:
+        if not self._ws or not self._ws.connected:
             return self.connect()
         return True
 
