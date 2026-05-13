@@ -83,6 +83,7 @@ class SurveyFlowExecutor:
         if params:
             payload["params"] = params
 
+        assert self._ws is not None, "WebSocket wurde nach connect() None — Race Condition"
         self._ws.send(json.dumps(payload))
         response = json.loads(self._ws.recv())
 
