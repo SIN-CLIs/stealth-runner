@@ -13,7 +13,7 @@
 #   2. Verify CI pip-install passes (no `|| true` since SR-61).
 #   3. Document the reason in this header.
 websocket-client>=1.6.0
-openai>=1.0.0
+openai>=2.36.0
 requests>=2.31.0
 
 # SR-150 (2026-05-12 cherry-pick): langgraph is imported by
