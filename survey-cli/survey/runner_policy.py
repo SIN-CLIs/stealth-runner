@@ -51,8 +51,8 @@ BANNED METHODS — NIEMALS VERWENDEN
 RELATED ISSUES
 ==============
 - SR-173 (#178) — introduced this file; visual-debug fields.
-- SR-167 (#173) — verifier; will add `verifier_strict_mode` here when merged.
-- SR-168 (#174) — attestation; will add `attestation_threshold` here when merged.
+- SR-167 (#167) — verifier; will add `verifier_strict_mode` here when merged.
+- SR-168 (#168) — attestation; will add `attestation_threshold` here when merged.
 """
 
 from __future__ import annotations

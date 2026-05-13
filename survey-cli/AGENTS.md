@@ -207,12 +207,12 @@ content: |
   ```
 
   ### Wann erweitern (Roadmap-Hooks)
-  - **SR-167 (#173) merged**\: in `visual_debug.py` ersetze
+  - **SR-167 (#167) merged**\: in `visual_debug.py` ersetze
     `class VerificationResultLike(Protocol)` durch
     `from survey.reliability.verifier import VerificationResult`. Type-Alias
     behalten\: `VerificationResultLike = VerificationResult` falls Downstream-
     Code den Shim referenziert.
-  - **SR-168 (#174) merged**\: analog für `AttestationResultLike`. Plus\:
+  - **SR-168 (#168) merged**\: analog für `AttestationResultLike`. Plus\:
     `network_pending_at_click` field in die Daten-Quelle einhängen
     (gelangt heute schon durch -- braucht nur den Producer).
   - **SR-172 (#172) meta-tracker**\: nach Merge dieses PRs Checkbox abhaken.

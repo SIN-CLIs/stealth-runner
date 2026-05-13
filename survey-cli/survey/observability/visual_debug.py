@@ -86,8 +86,8 @@ caps at `max_queue` hard).
 
 PROTOCOL SHIMS FOR SR-167 / SR-168
 ==================================
-`VerificationResult` (from SR-167 / #173) and `AttestationResult` (from
-SR-168 / #174) are not yet merged on `main` at the time SR-173 was implemented.
+`VerificationResult` (from SR-167 / #167) and `AttestationResult` (from
+SR-168 / #168) are not yet merged on `main` at the time SR-173 was implemented.
 We declare `typing.Protocol`-based shims here so:
 
   - this module compiles + tests run today;
@@ -95,8 +95,8 @@ We declare `typing.Protocol`-based shims here so:
     with a `from survey.reliability.verifier import VerificationResult` in
     the type-checker's eyes -- no run-time changes.
 
-TODO(SR-167 / #173):  swap VerificationResultLike for the real dataclass.
-TODO(SR-168 / #174):  swap AttestationResultLike for the real dataclass.
+TODO(SR-167 / #167):  swap VerificationResultLike for the real dataclass.
+TODO(SR-168 / #168):  swap AttestationResultLike for the real dataclass.
 
 COST BUDGET (defended in PR review)
 ===================================
@@ -122,8 +122,8 @@ BANNED METHODS -- NIEMALS VERWENDEN
 RELATED ISSUES
 ==============
 - #178 (SR-173)  -- this file.
-- #173 (SR-167)  -- post-action verifier; provides VerificationResult.
-- #174 (SR-168)  -- triple-channel attestation; provides AttestationResult.
+- #167 (SR-167)  -- post-action verifier; provides VerificationResult.
+- #168 (SR-168)  -- triple-channel attestation; provides AttestationResult.
 - #172 (SR-172)  -- meta-tracker for the reliability push.
 """
 
@@ -166,7 +166,7 @@ logger = logging.getLogger(__name__)
 #  (a) snapshot.py already has 900+ lines and we should not bloat it for SR-173;
 #  (b) Box/Point/ElementRef are *observability* concepts in our codebase --
 #      the snapshot module only deals with CompactSnapshot today.
-# TODO(SR-167 / #173): once verifier.py lands, consider promoting these to a
+# TODO(SR-167 / #167): once verifier.py lands, consider promoting these to a
 # shared `survey.geometry` module if more than two callers need them.
 
 @dataclass(frozen=True, slots=True)
