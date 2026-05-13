@@ -167,6 +167,60 @@ class CommandRegistry:
         })
         self._save()
 
+    def record_command(
+        self, command_id: str, ok: bool, details: str = ""
+    ) -> None:
+        """
+        SR-194 A6: tool-level telemetry hook.
+
+        Called from ``survey-cli/tools/tool_*.py`` after each command
+        execution. Tracks success/failure counts on the
+        ``verified_commands`` entry for ``command_id`` without the
+        ban-on-first-failure semantics of :meth:`record_failure`.
+
+        ``record_failure`` exists for *survey-level* outcomes where a
+        single bad result should mark a provider as untrustworthy.
+        Tool-level telemetry needs the opposite: count failures and
+        keep going. Banning ``"universal_answer"`` after one CAPTCHA
+        miss would disable a healthy tool across all future runs.
+
+        For survey-level result tracking that *should* affect provider
+        trust, use :meth:`record_execution` instead.
+
+        Args:
+            command_id: Stable tool identifier, e.g. ``"universal_answer"``.
+            ok: ``True`` if the command succeeded, ``False`` otherwise.
+            details: Free-form notes (success notes or error string).
+        """
+        now = datetime.now(timezone.utc).isoformat()
+
+        for cmd in self._data.get("verified_commands", []):
+            if cmd["id"] == command_id:
+                if ok:
+                    cmd["success_count"] = cmd.get("success_count", 0) + 1
+                    cmd["last_success"] = now
+                else:
+                    cmd["failure_count"] = cmd.get("failure_count", 0) + 1
+                    cmd["last_failure"] = now
+                if details:
+                    cmd["notes"] = details
+                self._save()
+                return
+
+        # New entry — seed counts from the first observation.
+        self._data.setdefault("verified_commands", []).append({
+            "id": command_id,
+            "description": "",
+            "pattern": "",
+            "success_count": 1 if ok else 0,
+            "failure_count": 0 if ok else 1,
+            "last_success": now if ok else None,
+            "last_failure": None if ok else now,
+            "status": "verified",
+            "notes": details,
+        })
+        self._save()
+
     def record_execution(
         self,
         command_id: str,
