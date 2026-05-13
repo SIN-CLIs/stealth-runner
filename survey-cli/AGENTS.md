@@ -265,3 +265,41 @@ content: |
   in separate, narrowly-scoped PRs that the guard itself makes safe to
   land. Mixing governance and bulk-delete into one PR is exactly how
   SR-154 happened.
+  
+  ---
+  
+  ##  SR-190 - mypy in CI (gradually enforcing types)
+  
+  **Status:** Phase 1 ACTIVE — informational only, non-blocking.
+  
+  **What happens:**
+  - CI workflow `.github/workflows/ci.yml` runs `mypy survey/` after
+    `ruff check` and before `pytest`, only on the Python 3.13 matrix leg.
+  - Scope: `survey-cli/survey/` (production code). Tests OUT-OF-SCOPE.
+  - Config: `survey-cli/pyproject.toml` -> `[tool.mypy] strict = true`.
+  - Exit code is forced to 0 via `|| true` (GHA shells run with
+    `bash -e -o pipefail`, so `; true` would NOT swallow the failure
+    — `set -e` aborts after `;`. MUST use `|| true`).
+  - `--no-error-summary` keeps raw `error:` lines grep-able in the log
+    (count via `grep -c "error:"`).
+  
+  **Why not blocking yet:**
+  - Baseline = 1075 errors (PR #193, run 25785123606).
+  - Hard gate would paint every PR red -> velocity killer.
+  - Phase 1 = visibility. Real bugs surfaced by mypy (60 attr-defined,
+    63 union-attr) get fixed as small surgical PRs under SR-194
+    (#198-#202, #210/#211/#213/#214/#217).
+  
+  **Promotion trigger to Phase 2 (blocking):**
+  - When error count < 50: drop the `|| true` and `--no-error-summary`,
+    then flip this block to "Phase 2 ACTIVE".
+  
+  **Audit trail:**
+  - 2026-05-13 (SR-190 / PR #193): step introduced. Baseline 1075 errors.
+    No local run, no clone — implemented entirely via GitHub API.
+  
+  **Forbidden:**
+  - NO `--ignore-missing-imports` CLI flag in the workflow.
+  - NO per-module `[[tool.mypy.overrides]]` without a separate debt
+    issue (precedent: SR-62/SR-63 for ruff/pytest).
+  - NO type-check on `survey-cli/tests/` in this phase.

@@ -73,6 +73,31 @@ jobs:
       - name: Run ruff check
         run: ruff check survey-cli/survey --select E,W,F
 
+      # SR-190 (Issue #189) — mypy in CI, Phase 1: INFORMATIONAL ONLY.
+      # ----------------------------------------------------------------
+      # Doctrine (full rationale lives at the tail of survey-cli/AGENTS.md
+      # under "SR-190 - mypy in CI"). Short form here for the next agent:
+      # - Scope: survey-cli/survey/ (Production-Code). Tests OUT-OF-SCOPE.
+      # - Config: survey-cli/pyproject.toml has [tool.mypy] strict = true.
+      #   We respect that config; no CLI overrides here.
+      # - Matrix-Pin: ONLY runs on Python 3.13 (avoids double-counts in CI
+      #   logs and matches Issue #189's Python-3.13-as-baseline requirement).
+      # - Non-blocking: `|| true` forces exit 0. GitHub Actions runs each
+      #   `run:` block with `bash -e -o pipefail`, so `; true` would NOT
+      #   swallow mypy's non-zero exit — `set -e` aborts after `;`. You
+      #   MUST use `|| true` here.
+      # - --no-error-summary keeps raw `error:` lines grep-able from logs
+      #   (count via `grep -c "error:"`). Baseline at first run was 1075.
+      # - Promotion to Phase 2 (blocking): when count drops below 50, drop
+      #   the `|| true` and the `--no-error-summary`, then update the
+      #   AGENTS.md SR-190 block to "Phase 2 ACTIVE".
+      # - DO NOT add `--ignore-missing-imports` here. DO NOT inline
+      #   per-module overrides — those belong in pyproject.toml and need
+      #   a separate debt issue (precedent: SR-62/SR-63 for ruff/pytest).
+      - name: Type-check with mypy (SR-190 — informational phase)
+        if: matrix.python-version == '3.13'
+        run: cd survey-cli && mypy survey/ --no-error-summary 2>&1 || true
+
       - name: Run survey-cli tests
         env:
           PYTHONPATH: survey-cli
