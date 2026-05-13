@@ -18,6 +18,12 @@ Question Types:
     - Dropdowns
     - Date pickers
     - Number inputs
+    - Drag-and-drop (SR-150)
+    - Hotspot / image-click (SR-150)
+    - Conjoint choice (SR-150)
+    - MaxDiff best/worst (SR-150)
+    - Video ad attention (SR-150)
+    - Audio ad attention (SR-150)
 """
 
 # ruff: noqa: E501  # CSS selectors / argparse help / log strings — wrapping changes semantics
@@ -33,25 +39,36 @@ logger = logging.getLogger(__name__)
 
 
 class QuestionType(str, Enum):
-    """Supported survey question types."""
-    RADIO = "radio"
+    """Supported survey question types.
+
+    SR-150 extended: AUDIO_AD, CONJOINT, DRAG_DROP, HOTSPOT, MAX_DIFF, VIDEO_AD.
+    """
+
+    AUDIO_AD = "audio_ad"  # SR-150: must-listen ad attention
     CHECKBOX = "checkbox"
-    SLIDER = "slider"
-    MATRIX = "matrix"
-    OPEN_TEXT = "open_text"
-    RANKING = "ranking"
-    DROPDOWN = "dropdown"
+    CONJOINT = "conjoint"  # SR-150: Sawtooth-style profile choice
     DATE = "date"
-    NUMBER = "number"
-    LIKERT = "likert"
-    NPS = "nps"
+    DRAG_DROP = "drag_drop"  # SR-150: drag-to-rank / drag-to-bucket
+    DROPDOWN = "dropdown"
     FILE_UPLOAD = "file_upload"
+    HOTSPOT = "hotspot"  # SR-150: click image regions
+    LIKERT = "likert"
+    MATRIX = "matrix"
+    MAX_DIFF = "max_diff"  # SR-150: best/worst scaling
+    NPS = "nps"
+    NUMBER = "number"
+    OPEN_TEXT = "open_text"
+    RADIO = "radio"
+    RANKING = "ranking"
+    SLIDER = "slider"
     UNKNOWN = "unknown"
+    VIDEO_AD = "video_ad"  # SR-150: must-watch ad attention
 
 
 @dataclass
 class QuestionOption:
     """Single answer option for a question."""
+
     value: str
     label: str
     element_id: str | None = None
@@ -61,6 +78,7 @@ class QuestionOption:
 @dataclass
 class Question:
     """Parsed survey question."""
+
     id: str
     type: QuestionType
     text: str
@@ -72,11 +90,16 @@ class Question:
     max_value: int | None = None
     rows: list[str] = field(default_factory=list)  # For matrix questions
     columns: list[str] = field(default_factory=list)  # For matrix questions
+    # SR-150: additional fields for extended types
+    media_selector: str | None = None  # For VIDEO_AD / AUDIO_AD
+    hotspot_areas: list[dict[str, Any]] = field(default_factory=list)  # For HOTSPOT
+    conjoint_cards: list[dict[str, Any]] = field(default_factory=list)  # For CONJOINT
 
 
 @dataclass
 class SurveyPage:
     """Single page of a multi-page survey."""
+
     page_number: int
     questions: list[Question]
     has_next: bool
@@ -87,6 +110,7 @@ class SurveyPage:
 @dataclass
 class ParsedSurvey:
     """Complete parsed survey structure."""
+
     url: str
     title: str
     platform: str
@@ -127,8 +151,49 @@ class SurveyParser:
         ],
     }
 
-    # Question type detection patterns
+    # Question type detection patterns — order matters: more specific types first (SR-150)
     QUESTION_PATTERNS = {
+        # SR-150: new extended types (detect before generic fallback)
+        QuestionType.DRAG_DROP: [
+            r'\[draggable=["\']true["\']\]',
+            r'class="[^"]*ui-sortable[^"]*"',
+            r'class="[^"]*react-beautiful-dnd[^"]*"',
+            r"data-rbd-draggable-id",
+            r'class="[^"]*sortable-handle[^"]*"',
+            r'class="[^"]*draggable-item[^"]*"',
+        ],
+        QuestionType.HOTSPOT: [
+            r"<map[^>]*name=",
+            r"\[data-hotspot\]",
+            r'class="[^"]*clickable-image[^"]*"',
+            r'class="[^"]*hotspot-container[^"]*"',
+            r"QID\d+[^>]*hotspot",
+        ],
+        QuestionType.CONJOINT: [
+            r"\[data-conjoint-task\]",
+            r'<form[^>]*name=["\']ConjointForm["\']',
+            r'class="[^"]*conjoint-card[^"]*"',
+            r'class="[^"]*profile-card[^"]*".*Choose this',
+            r"sawtooth.*conjoint",
+        ],
+        QuestionType.MAX_DIFF: [
+            r"\[data-maxdiff\]",
+            r'class="[^"]*maxdiff[^"]*"',
+            r"(Most|Least|Am meisten|Am wenigsten).*radio",
+            r"best.?worst.*scaling",
+        ],
+        QuestionType.VIDEO_AD: [
+            r"<video[^>]*>.*Continue.*disabled",
+            r"data-min-watch-seconds",
+            r'class="[^"]*video-ad[^"]*"',
+            r"<video[^>]*autoplay[^>]*>",
+        ],
+        QuestionType.AUDIO_AD: [
+            r"<audio[^>]*>.*Continue.*disabled",
+            r'class="[^"]*audio-ad[^"]*"',
+            r"<audio[^>]*autoplay[^>]*>",
+        ],
+        # Original types
         QuestionType.RADIO: [
             r"input\[type=[\"']radio[\"']\]",
             r"role=[\"']radiogroup[\"']",
@@ -279,10 +344,7 @@ class SurveyParser:
                     result["type"] = captcha_type
 
                     # Extract site key
-                    site_key_match = re.search(
-                        r'data-sitekey=["\']([^"\']+)["\']',
-                        html
-                    )
+                    site_key_match = re.search(r'data-sitekey=["\']([^"\']+)["\']', html)
                     if site_key_match:
                         result["site_key"] = site_key_match.group(1)
 
@@ -291,9 +353,7 @@ class SurveyParser:
 
         return result
 
-    async def _extract_questions(
-        self, html: str, platform: str
-    ) -> list[Question]:
+    async def _extract_questions(self, html: str, platform: str) -> list[Question]:
         """Extract all questions from HTML."""
         questions = []
 
@@ -332,13 +392,16 @@ class SurveyParser:
             # Extract options
             options = self._extract_options(html, qid, qtype)
 
-            questions.append(Question(
+            q = Question(
                 id=qid,
                 type=qtype,
                 text=text,
                 options=options,
                 element_selector=f"#{qid}",
-            ))
+            )
+            # SR-150: extract extended type metadata
+            self._extract_extended_type_metadata(q, html, qid)
+            questions.append(q)
 
         return questions
 
@@ -357,21 +420,20 @@ class SurveyParser:
             context = html[start:end]
 
             # Extract text
-            text_match = re.search(
-                r'class="question-title[^"]*"[^>]*>([^<]+)<',
-                context
-            )
+            text_match = re.search(r'class="question-title[^"]*"[^>]*>([^<]+)<', context)
             text = text_match.group(1).strip() if text_match else ""
 
             qtype = self._detect_question_type(context, qid)
             options = self._extract_options(context, qid, qtype)
 
-            questions.append(Question(
+            q = Question(
                 id=qid,
                 type=qtype,
                 text=text,
                 options=options,
-            ))
+            )
+            self._extract_extended_type_metadata(q, context, qid)
+            questions.append(q)
 
         return questions
 
@@ -392,23 +454,25 @@ class SurveyParser:
 
                 # Extract text from nearby elements
                 start = max(0, match.start() - 1000)
-                context = html[start:match.end()]
+                context = html[start : match.end()]
 
                 text_match = re.search(
                     r'class="[^"]*freebirdFormviewerComponentsQuestionBaseTitle[^"]*"[^>]*>([^<]+)<',
-                    context
+                    context,
                 )
-                text = text_match.group(1).strip() if text_match else f"Question {i+1}"
+                text = text_match.group(1).strip() if text_match else f"Question {i + 1}"
 
                 qtype = self._detect_question_type(context, qid)
                 options = self._extract_options(context, qid, qtype)
 
-                questions.append(Question(
+                q = Question(
                     id=qid,
                     type=qtype,
                     text=text,
                     options=options,
-                ))
+                )
+                self._extract_extended_type_metadata(q, context, qid)
+                questions.append(q)
             except Exception as e:
                 logger.warning(f"Error parsing Google Forms question: {e}")
 
@@ -422,8 +486,8 @@ class SurveyParser:
         form_elements = [
             (r'<input[^>]+type=["\']radio["\'][^>]*>', QuestionType.RADIO),
             (r'<input[^>]+type=["\']checkbox["\'][^>]*>', QuestionType.CHECKBOX),
-            (r'<select[^>]*>.*?</select>', QuestionType.DROPDOWN),
-            (r'<textarea[^>]*>', QuestionType.OPEN_TEXT),
+            (r"<select[^>]*>.*?</select>", QuestionType.DROPDOWN),
+            (r"<textarea[^>]*>", QuestionType.OPEN_TEXT),
             (r'<input[^>]+type=["\']range["\'][^>]*>', QuestionType.SLIDER),
             (r'<input[^>]+type=["\']number["\'][^>]*>', QuestionType.NUMBER),
             (r'<input[^>]+type=["\']date["\'][^>]*>', QuestionType.DATE),
@@ -450,7 +514,7 @@ class SurveyParser:
                 label_match = re.search(
                     rf'<label[^>]*for=["\']?{re.escape(name)}["\']?[^>]*>([^<]+)<',
                     html,
-                    re.IGNORECASE
+                    re.IGNORECASE,
                 )
                 text = label_match.group(1).strip() if label_match else name
 
@@ -467,41 +531,150 @@ class SurveyParser:
                     select_match = re.search(
                         rf'<select[^>]*name=["\']?{re.escape(name)}["\']?[^>]*>(.*?)</select>',
                         html,
-                        re.DOTALL | re.IGNORECASE
+                        re.DOTALL | re.IGNORECASE,
                     )
                     if select_match:
                         select_html = select_match.group(1)
                         for opt_match in re.finditer(
-                            r'<option[^>]*value=["\']([^"\']*)["\'][^>]*>([^<]*)<',
-                            select_html
+                            r'<option[^>]*value=["\']([^"\']*)["\'][^>]*>([^<]*)<', select_html
                         ):
-                            options.append(QuestionOption(
-                                value=opt_match.group(1),
-                                label=opt_match.group(2).strip()
-                            ))
+                            options.append(
+                                QuestionOption(
+                                    value=opt_match.group(1), label=opt_match.group(2).strip()
+                                )
+                            )
 
-                questions.append(Question(
+                q = Question(
                     id=name,
                     type=qtype,
                     text=text,
                     options=options,
                     element_selector=f'[name="{name}"]',
-                ))
+                )
+                self._extract_extended_type_metadata(q, html, name)
+                questions.append(q)
+
+        # SR-150: also detect standalone extended types (video/audio ads, drag-drop, etc.)
+        self._extract_standalone_extended_questions(html, questions, seen_names)
 
         return questions
 
+    def _extract_standalone_extended_questions(
+        self, html: str, questions: list[Question], seen_names: set[str]
+    ) -> None:
+        """SR-150: Extract extended question types that may not follow standard form patterns."""
+        # Video ads
+        for i, match in enumerate(re.finditer(r'<video[^>]*id=["\']([^"\']+)["\'][^>]*>', html)):
+            vid_id = match.group(1)
+            if vid_id in seen_names:
+                continue
+            seen_names.add(vid_id)
+            q = Question(
+                id=vid_id,
+                type=QuestionType.VIDEO_AD,
+                text="Video Ad",
+                media_selector=f"#{vid_id}",
+            )
+            questions.append(q)
+
+        # Audio ads
+        for i, match in enumerate(re.finditer(r'<audio[^>]*id=["\']([^"\']+)["\'][^>]*>', html)):
+            aud_id = match.group(1)
+            if aud_id in seen_names:
+                continue
+            seen_names.add(aud_id)
+            q = Question(
+                id=aud_id,
+                type=QuestionType.AUDIO_AD,
+                text="Audio Ad",
+                media_selector=f"#{aud_id}",
+            )
+            questions.append(q)
+
+        # Drag-drop containers
+        for i, match in enumerate(re.finditer(r'data-rbd-draggable-id=["\']([^"\']+)["\']', html)):
+            drag_id = f"drag_{match.group(1)}"
+            if drag_id in seen_names:
+                continue
+            seen_names.add(drag_id)
+            q = Question(
+                id=drag_id,
+                type=QuestionType.DRAG_DROP,
+                text="Drag and Drop",
+            )
+            questions.append(q)
+
     def _detect_question_type(self, html: str, qid: str) -> QuestionType:
-        """Detect question type from HTML context."""
+        """Detect question type from HTML context.
+
+        SR-150: extended types checked first (drag-drop, hotspot, conjoint, max-diff, video-ad, audio-ad).
+        """
         for qtype, patterns in self.QUESTION_PATTERNS.items():
             for pattern in patterns:
-                if re.search(pattern, html, re.IGNORECASE):
+                if re.search(pattern, html, re.IGNORECASE | re.DOTALL):
                     return qtype
 
         return QuestionType.UNKNOWN
 
-    def _extract_options(
-        self, html: str, qid: str, qtype: QuestionType
-    ) -> list[QuestionOption]:
+    def _extract_extended_type_metadata(self, question: Question, html: str, qid: str) -> None:
+        """SR-150: Extract additional metadata for extended question types."""
+        if question.type == QuestionType.VIDEO_AD:
+            # Extract video selector
+            video_match = re.search(r'<video[^>]*id=["\']([^"\']+)["\']', html)
+            if video_match:
+                question.media_selector = f"#{video_match.group(1)}"
+            else:
+                question.media_selector = "video"
+
+        elif question.type == QuestionType.AUDIO_AD:
+            audio_match = re.search(r'<audio[^>]*id=["\']([^"\']+)["\']', html)
+            if audio_match:
+                question.media_selector = f"#{audio_match.group(1)}"
+            else:
+                question.media_selector = "audio"
+
+        elif question.type == QuestionType.HOTSPOT:
+            # Extract image map areas
+            map_match = re.search(
+                r'<map[^>]*name=["\']([^"\']+)["\'][^>]*>(.*?)</map>', html, re.DOTALL
+            )
+            if map_match:
+                areas = []
+                for area_match in re.finditer(
+                    r'<area[^>]*coords=["\']([^"\']+)["\'][^>]*(?:alt=["\']([^"\']*)["\'])?',
+                    map_match.group(2),
+                ):
+                    coords = [int(c) for c in area_match.group(1).split(",")]
+                    areas.append(
+                        {
+                            "coords": coords,
+                            "label": area_match.group(2) or "",
+                        }
+                    )
+                question.hotspot_areas = areas
+
+        elif question.type == QuestionType.CONJOINT:
+            # Extract conjoint profile cards
+            cards = []
+            for card_match in re.finditer(
+                r'class="[^"]*(?:conjoint-card|profile-card)[^"]*"[^>]*>(.*?)</div>',
+                html,
+                re.DOTALL,
+            ):
+                card_html = card_match.group(1)
+                features = {}
+                # Extract feature rows
+                for feat_match in re.finditer(
+                    r'class="[^"]*feature[^"]*"[^>]*>([^<]+)</.*?class="[^"]*value[^"]*"[^>]*>([^<]+)<',
+                    card_html,
+                    re.DOTALL,
+                ):
+                    features[feat_match.group(1).strip()] = feat_match.group(2).strip()
+                if features:
+                    cards.append({"features": features})
+            question.conjoint_cards = cards
+
+    def _extract_options(self, html: str, qid: str, qtype: QuestionType) -> list[QuestionOption]:
         """Extract answer options for a question."""
         options = []
 
@@ -509,19 +682,45 @@ class SurveyParser:
             # Find input elements with labels
             pattern = r'<input[^>]*value=["\']([^"\']+)["\'][^>]*>.*?<label[^>]*>([^<]+)<'
             for match in re.finditer(pattern, html, re.DOTALL | re.IGNORECASE):
-                options.append(QuestionOption(
-                    value=match.group(1),
-                    label=match.group(2).strip(),
-                ))
+                options.append(
+                    QuestionOption(
+                        value=match.group(1),
+                        label=match.group(2).strip(),
+                    )
+                )
 
         elif qtype == QuestionType.DROPDOWN:
             pattern = r'<option[^>]*value=["\']([^"\']*)["\'][^>]*>([^<]*)<'
             for match in re.finditer(pattern, html):
                 if match.group(1):  # Skip empty values
-                    options.append(QuestionOption(
+                    options.append(
+                        QuestionOption(
+                            value=match.group(1),
+                            label=match.group(2).strip(),
+                        )
+                    )
+
+        elif qtype == QuestionType.MAX_DIFF:
+            # SR-150: extract items for best/worst selection
+            for match in re.finditer(r'class="[^"]*maxdiff-item[^"]*"[^>]*>([^<]+)<', html):
+                options.append(
+                    QuestionOption(
+                        value=match.group(1).strip(),
+                        label=match.group(1).strip(),
+                    )
+                )
+
+        elif qtype == QuestionType.DRAG_DROP:
+            # SR-150: extract draggable items
+            for match in re.finditer(
+                r'data-rbd-draggable-id=["\']([^"\']+)["\'][^>]*>([^<]*)<', html
+            ):
+                options.append(
+                    QuestionOption(
                         value=match.group(1),
-                        label=match.group(2).strip(),
-                    ))
+                        label=match.group(2).strip() or match.group(1),
+                    )
+                )
 
         return options
 
@@ -540,8 +739,8 @@ class SurveyParser:
             (r'class="[^"]*next-button[^"]*"', ".next-button"),
             (r'value=["\']Next["\']', '[value="Next"]'),
             (r'data-action=["\']next["\']', '[data-action="next"]'),
-            (r'>Next<', 'button:contains("Next")'),
-            (r'>Continue<', 'button:contains("Continue")'),
+            (r">Next<", 'button:contains("Next")'),
+            (r">Continue<", 'button:contains("Continue")'),
         ]
 
         for pattern, selector in next_patterns:
@@ -554,9 +753,9 @@ class SurveyParser:
         submit_patterns = [
             (r'type=["\']submit["\']', '[type="submit"]'),
             (r'id=["\']SubmitButton["\']', "#SubmitButton"),
-            (r'>Submit<', 'button:contains("Submit")'),
-            (r'>Finish<', 'button:contains("Finish")'),
-            (r'>Done<', 'button:contains("Done")'),
+            (r">Submit<", 'button:contains("Submit")'),
+            (r">Finish<", 'button:contains("Finish")'),
+            (r">Done<", 'button:contains("Done")'),
         ]
 
         for pattern, selector in submit_patterns:
@@ -565,7 +764,7 @@ class SurveyParser:
                 break
 
         # Try to detect total pages
-        page_pattern = r'Page\s+(\d+)\s+of\s+(\d+)'
+        page_pattern = r"Page\s+(\d+)\s+of\s+(\d+)"
         page_match = re.search(page_pattern, html)
         if page_match:
             result["total_pages"] = int(page_match.group(2))

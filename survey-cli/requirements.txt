@@ -15,3 +15,11 @@
 websocket-client>=1.6.0
 openai>=1.0.0
 requests>=2.31.0
+
+# SR-150 (2026-05-12 cherry-pick): langgraph is imported by
+# survey/daemon/survey_agent_graph.py and pulled into the daemon
+# package __init__. Without it, `from survey.daemon import answer_engine`
+# fails at the __init__ level → test collection error in
+# test_answer_engine_extended_types.py.
+# Listed in pyproject.toml but was missing from requirements.txt.
+langgraph>=0.2

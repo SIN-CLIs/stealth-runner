@@ -24,9 +24,33 @@
   "personal_income": "1000-2000",
   "nationality": "Deutsch",
   "language": "Deutsch",
-  "insurance_products": ["haftpflicht"],
-  "contracts": ["mobilfunk", "strom"],
-  "interests": ["technik", "auto", "sport"],
-  "vehicles": ["motorrad"],
-  "pets": ["katze", "katze", "katze", "katze"]
+  "insurance_products": [
+    "haftpflicht"
+  ],
+  "contracts": [
+    "mobilfunk",
+    "strom"
+  ],
+  "interests": [
+    "technik",
+    "auto",
+    "sport"
+  ],
+  "vehicles": [
+    "motorrad"
+  ],
+  "pets": [
+    "katze",
+    "katze",
+    "katze",
+    "katze"
+  ],
+  "conjoint_preferences": {
+    "price_weight": 0.5,
+    "brand_weight": 0.2,
+    "feature_weights": {
+      "quality": 0.15,
+      "convenience": 0.15
+    }
+  }
 }
