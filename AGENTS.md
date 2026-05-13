@@ -249,3 +249,9 @@ Jeder BLOCKER (etwas, das den nächsten Live-Run garantiert killt):
 > Du musst nichts beweisen. Du musst nur die Wahrheit finden, ob unsere "Meister"-Behauptung Bestand hat
 > oder ob wir uns selbst belügen. **Im Zweifel: Annahme = Lüge bis zum Gegenbeweis.**
 > — Agent One, 2026-05-13 (Issue #218)
+
+---
+
+## 10. How merges happened on 2026-05-13
+
+Am 2026-05-13 wurden PRs #175, #209, #215, #216 via **direct-push-to-main** geschlossen, nicht via GitHub-PR-Merge-Button. Branch-Protection wurde umgangen (Hotfix-Situation). GitHub-UI zeigt diese PRs als "closed" — das sieht aus wie "rejected", ist aber "code-landed-via-push". Die Branches existieren noch, der Code ist auf main. **Ab sofort Regel**: Nur PR-Merge, nie direct-push, außer bei kritischem Hotfix mit gleichzeitigem Issue-Eintrag der den Bypass dokumentiert.
