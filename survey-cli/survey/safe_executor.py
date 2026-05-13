@@ -18,6 +18,17 @@ import websocket
 from typing import Dict, List, Optional, Any, Callable
 from pathlib import Path
 
+# SR-173 (#178): visual debug hook. We import lazily-by-name to avoid making
+# the observability module a hard import-time dependency of safe_executor --
+# tests that exercise pure command-registry logic should not need Pillow.
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:  # pragma: no cover -- typing only
+    from survey.observability.visual_debug import (
+        VisualDebugDispatcher,
+        VisualDebugFrame,
+    )
+
 from survey.command_registry import (
     CommandRegistry,
     CommandBannedError,
@@ -38,13 +49,42 @@ MIN_SLEEP_AFTER_INPUT = 2
 class SurveyFlowExecutor:
     """Executes survey commands with safety validation."""
 
-    def __init__(self, tab_id: str, registry_path: Optional[Path] = None):
+    def __init__(
+        self,
+        tab_id: str,
+        registry_path: Optional[Path] = None,
+        *,
+        visual_debug_dispatcher: "Optional[VisualDebugDispatcher]" = None,
+        visual_debug_frame_builder: Optional[
+            Callable[[str, Dict, Dict], "Optional[VisualDebugFrame]"]
+        ] = None,
+    ):
+        """Construct the executor.
+
+        Args:
+            tab_id: CDP tab/page id.
+            registry_path: optional override for `command_registry.json`.
+            visual_debug_dispatcher: SR-173 (#178). Optional dispatcher to render
+                an HTML+SVG debug report after each action. Pass None to
+                disable. The dispatcher is non-blocking (bounded thread-pool +
+                drop-on-overflow) so the hot path is unaffected.
+            visual_debug_frame_builder: SR-173 (#178). Caller-provided callback
+                that converts (command_id, params, result_dict) into a
+                `VisualDebugFrame` (or None to skip this step). Lives at the
+                caller because frame construction needs Page/Screenshot/AX
+                context that the executor does not own. Keeping it as a
+                pluggable callback prevents this module from depending on the
+                Page snapshot pipeline.
+        """
         self.tab_id = tab_id
         self.ws_url = f"{CDP_BASE}{tab_id}"
         self.registry = CommandRegistry(registry_path)
         self._ws: Optional[websocket.WebSocket] = None
         self._last_command: Optional[str] = None
         self._last_command_time: float = 0
+        # SR-173 (#178)
+        self._visdbg = visual_debug_dispatcher
+        self._visdbg_build_frame = visual_debug_frame_builder
 
     def connect(self) -> bool:
         """Connect to CDP WebSocket."""
@@ -334,6 +374,10 @@ class SurveyFlowExecutor:
                 results.append({"command": command_id, "success": False, "error": error_msg})
                 self.registry.record_failure(command_id, error_msg)
 
+            # SR-173 (#178): emit visual-debug frame. Best-effort, non-blocking.
+            # Any failure here MUST NOT influence the executor's return value.
+            self._emit_visual_debug(command_id, params, results[-1])
+
         elapsed_ms = int((time.time() - start_time) * 1000)
 
         return {
@@ -431,3 +475,25 @@ class SurveyFlowExecutor:
         except Exception as e:
             self.registry.record_failure(command_id, str(e))
             raise
+
+
+    # SR-173 (#178) -- Visual Debug hook
+    def _emit_visual_debug(
+        self, command_id: str, params: Dict, result: Dict,
+    ) -> None:
+        """Submit a visual-debug frame for this step, if a dispatcher was wired.
+
+        Failure-isolated: any exception in the hook is swallowed and logged
+        via the existing print-channel; the executor must remain stable even
+        if the debug pipeline is misconfigured. This matches the SR-173
+        invariant "never block the hot path".
+        """
+        if self._visdbg is None or self._visdbg_build_frame is None:
+            return
+        try:
+            frame = self._visdbg_build_frame(command_id, params, result)
+            if frame is not None:
+                self._visdbg.submit(frame)
+        except Exception as exc:  # pragma: no cover -- defensive
+            print(f"[visual_debug] hook failed (suppressed): {exc!r}")
+
