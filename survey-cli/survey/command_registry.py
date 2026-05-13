@@ -253,6 +253,22 @@ class CommandRegistry:
         }
 
 
+
+    def record_command(self, command_id: str, ok: bool, details: str = ""):
+        """
+        Alias for record_success/record_failure — used by tool_*.py files.
+
+        Added 2026-05-13 to fix SR-194 A6 (AttributeError: record_command missing).
+
+        Args:
+            command_id: Command identifier (e.g. "solve_captcha", "universal_answer")
+            ok: True for success, False for failure
+            details: Additional info (error message for failure, notes for success)
+        """
+        if ok:
+            self.record_success(command_id, notes=details)
+        else:
+            self.record_failure(command_id, error=details)
 # Convenience function for quick validation
 def can_execute(command_id: str, registry_path: Optional[Path] = None) -> bool:
     """
