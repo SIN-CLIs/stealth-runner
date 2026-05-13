@@ -12,7 +12,7 @@
 #   1. Add it here.
 #   2. Verify CI pip-install passes (no `|| true` since SR-61).
 #   3. Document the reason in this header.
-websocket-client>=1.6.0
+websocket-client>=1.9.0
 openai>=1.0.0
 requests>=2.31.0
 
