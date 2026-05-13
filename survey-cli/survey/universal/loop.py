@@ -1,3 +1,4 @@
+from datetime import datetime, timezone
 #!/usr/bin/env python3
 """================================================================================
 UNIVERSAL SURVEY LOOP — Das Herzstück des Agenten (2026-05-10)
@@ -86,7 +87,7 @@ def _acquire_lock(survey_id: str = "") -> bool:
             with open(LOCK_PATH, "r") as f:
                 lock = json.load(f)
             lock_time = lock.get("started", "2000-01-01")
-            age_min = (time.time() - time.mgmtime(time.mktime(time.strptime(lock_time[:19], "%Y-%m-%dT%H:%M:%S")))[0]) / 60  # noqa: E501
+            age_min = (time.time() - datetime.fromisoformat(lock_time[:19]).replace(tzinfo=timezone.utc).timestamp()) / 60  # noqa: E501
             if age_min < 30:
                 return False
         except Exception:
@@ -117,7 +118,7 @@ def _wipe_stale_locks():
             with open(LOCK_PATH, "r") as f:
                 lock = json.load(f)
             lock_time = lock.get("started", "2000-01-01")
-            age_min = (time.time() - time.mgmtime(time.mktime(time.strptime(lock_time[:19], "%Y-%m-%dT%H:%M:%S")))[0]) / 60  # noqa: E501
+            age_min = (time.time() - datetime.fromisoformat(lock_time[:19]).replace(tzinfo=timezone.utc).timestamp()) / 60  # noqa: E501
             if age_min >= 30:
                 LOCK_PATH.unlink()
         except Exception:
