@@ -33,7 +33,7 @@ content: |
   ### Pflicht-Prozedur (IN DIESER REIHENFOLGE - KEIN VERKÜRZEN!):
   1. **Explore Subagent STARTEN**\: Scan ALLER Repos und Code-Dateien (rekursiv!)
   2. **Kategorisieren**\:  DELETE (alt/broken/banned) | ️ LEGACY |  ACTIVE
-  3. **BANNED-Patterns prüfen**\: playstealth, webauto-nodriver, pkill -f Google Chrome, hardcoded PIDs, --remote-allow-origins=* ohne Quotes
+  3. **BANNED-Patterns prüfen**\: playstealth, webauto-nodriver, pkill -f Google Chrome, hardcoded PIDs, --remote-allow-origins=* ohne Quotes, `datetime.utcnow()` (siehe Python-Sektion unten)
   4. **Löschen**\: Alle  DELETE Dateien SOFORT entfernen (kein "vielleicht noch nützlich")
   5. **Kommentieren**\: Jede verbleibende Code-Datei mit EXTREMEN Kommentaren ausstatten:
      - **Was macht diese Datei?** (WARUM existiert sie?)
@@ -76,6 +76,34 @@ content: |
   -  cua-driver click (raw index) - instabil, nutze tool_click.py
   -  skylight-cli click --element-index - Index instabil
   -  Hardcoded PIDs - dynamisch, niemals hardcodieren
+  
+  ### Python / Datetime Hygiene (SR-187, Issue #186)
+  
+  **REGEL: KEIN naiver Datetime im Survey-CLI. EVER.**
+  
+  -  `datetime.utcnow()` - BANNED (Python 3.12 Deprecation, removal in 3.14)
+     - Liefert **naive** Datetime → silent off-by-tz beim Vergleich mit tz-aware DB-Spalten
+     - Wird vom Path-Guard automatisch geblockt: `scripts/check_banned_patterns.py`
+  -  `datetime.now()` ohne tz - BANNED aus demselben Grund (lokale Zeitzone leakt rein)
+  -  `datetime.now(timezone.utc)` - PFLICHT für alle neuen Timestamps
+     ```python
+     from datetime import datetime, timezone
+     ts = datetime.now(timezone.utc)             # aware, UTC
+     iso = ts.isoformat()                        # "2026-05-13T10:00:00+00:00"
+     legacy_z = iso.replace("+00:00", "Z")       # NUR wenn Wire-Format/Log-Konsument
+                                                 # historisch "Z" erwartet (z.B.
+                                                 # command_registry.json, jsonl-Logs)
+     ```
+  
+  **Wo das wichtig ist (Stand SR-187 / PR #191):**
+  - `survey-cli/commands/answer_survey.py` - command_registry.json wire-format → "Z"-Suffix erhalten
+  - `survey-cli/survey/captcha/fallback_chain.py` - captcha-failures-YYYYMMDD.jsonl Konsumenten → "Z"-Suffix erhalten
+  - `survey-cli/survey/daemon/answer_engine.py` - sqlite `answer_history.created_at` → "+00:00" ist OK, matched DB-Spalten
+  - `survey-cli/survey/daemon/survey_agent_graph.py` - LangGraph state JSON intern → "+00:00" ist OK
+  
+  **Warum die Differenzierung?** Externe Konsumenten (CI-Logs, dashboards) parsen evtl. nur `^.*Z$`. Interne sqlite/state JSONs vergleichen direkt mit tz-aware Werten, dort ist `+00:00` semantisch korrekt. Im Zweifel: "Z" emittieren via `.replace("+00:00", "Z")` ist immer rückwärtskompatibel.
+  
+  **Enforcement:** `python3 scripts/check_banned_patterns.py` (CI + lokaler pre-commit). Tests in `scripts/tests/test_check_banned_patterns.py::UtcnowBanTests`.
   
   ## NEMO Architecture
   
