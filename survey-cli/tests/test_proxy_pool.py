@@ -56,9 +56,9 @@ import pytest
 def sample_proxies_json():
     """JSON-Array mit 3 Test-Proxies."""
     return json.dumps([
-        {"url": "http://user1:pass1@proxy1.example.com:8080", "label": "de-1", "country": "DE", "type": "residential"},
-        {"url": "http://user2:pass2@proxy2.example.com:8080", "label": "us-1", "country": "US", "type": "residential"},
-        {"url": "socks5://user3:pass3@proxy3.example.com:1080", "label": "uk-1", "country": "UK", "type": "residential"},
+        {"url": "http://user1:pass1@proxy1.example.com:8080", "label": "de-1", "country": "DE", "type": "residential"},  # noqa: E501
+        {"url": "http://user2:pass2@proxy2.example.com:8080", "label": "us-1", "country": "US", "type": "residential"},  # noqa: E501
+        {"url": "socks5://user3:pass3@proxy3.example.com:1080", "label": "uk-1", "country": "UK", "type": "residential"},  # noqa: E501
     ])
 
 
@@ -136,7 +136,7 @@ def test_pick_on_empty_pool_returns_none_and_logs_warning(caplog):
         result = pool.pick()
 
     assert result is None, "pick() sollte None zurueckgeben bei leerem Pool"
-    assert "leer" in caplog.text.lower() or "empty" in caplog.text.lower(), "Warnung sollte geloggt werden"
+    assert "leer" in caplog.text.lower() or "empty" in caplog.text.lower(), "Warnung sollte geloggt werden"  # noqa: E501
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -149,8 +149,8 @@ def test_pick_prefers_higher_score_statistically():
     from core.network.proxy_pool import ProxyPool, ProxyEntry
 
     # Erstelle 2 Proxies: einer mit hohem Score, einer mit niedrigem
-    high_score = ProxyEntry(url="http://high.example.com:8080", label="high", success_count=50)  # Score 200
-    low_score = ProxyEntry(url="http://low.example.com:8080", label="low", fail_count=10)  # Score 50
+    high_score = ProxyEntry(url="http://high.example.com:8080", label="high", success_count=50)  # Score 200  # noqa: E501
+    low_score = ProxyEntry(url="http://low.example.com:8080", label="low", fail_count=10)  # Score 50  # noqa: E501
 
     pool = ProxyPool([high_score, low_score])
 
@@ -162,7 +162,7 @@ def test_pick_prefers_higher_score_statistically():
         counts[pick.label] += 1
 
     # High-Score Proxy sollte deutlich oefter gewaehlt werden (>50%)
-    assert counts["high"] > 500, f"High-score Proxy sollte >50% gewaehlt werden, war {counts['high']/10}%"
+    assert counts["high"] > 500, f"High-score Proxy sollte >50% gewaehlt werden, war {counts['high']/10}%"  # noqa: E501
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -209,7 +209,7 @@ def test_record_outcome_success_increases_score():
         pool.record_outcome(entry, success=True)
 
     assert entry.success_count == 1, "success_count sollte 1 sein"
-    assert entry.score == score_before + 2, f"Score sollte um 2 steigen: {score_before} → {entry.score}"
+    assert entry.score == score_before + 2, f"Score sollte um 2 steigen: {score_before} → {entry.score}"  # noqa: E501
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -230,7 +230,7 @@ def test_record_outcome_fail_decreases_score():
         pool.record_outcome(entry, success=False)
 
     assert entry.fail_count == 1, "fail_count sollte 1 sein"
-    assert entry.score == score_before - 5, f"Score sollte um 5 sinken: {score_before} → {entry.score}"
+    assert entry.score == score_before - 5, f"Score sollte um 5 sinken: {score_before} → {entry.score}"  # noqa: E501
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
@@ -251,7 +251,7 @@ def test_record_outcome_banned_decreases_score():
         pool.record_outcome(entry, success=False, banned=True)
 
     assert entry.ban_count == 1, "ban_count sollte 1 sein"
-    assert entry.score == score_before - 10, f"Score sollte um 10 sinken: {score_before} → {entry.score}"
+    assert entry.score == score_before - 10, f"Score sollte um 10 sinken: {score_before} → {entry.score}"  # noqa: E501
 
 
 # ═══════════════════════════════════════════════════════════════════════════════
