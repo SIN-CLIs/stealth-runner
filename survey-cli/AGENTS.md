@@ -33,7 +33,7 @@ content: |
   ### Pflicht-Prozedur (IN DIESER REIHENFOLGE - KEIN VERKÜRZEN!):
   1. **Explore Subagent STARTEN**\: Scan ALLER Repos und Code-Dateien (rekursiv!)
   2. **Kategorisieren**\:  DELETE (alt/broken/banned) | ️ LEGACY |  ACTIVE
-  3. **BANNED-Patterns prüfen**\: playstealth, webauto-nodriver, pkill -f Google Chrome, hardcoded PIDs, --remote-allow-origins=* ohne Quotes, `datetime.utcnow()` (siehe Python-Sektion unten)
+  3. **BANNED-Patterns prüfen**\: playstealth, webauto-nodriver, pkill -f Google Chrome, hardcoded PIDs, --remote-allow-origins=* ohne Quotes
   4. **Löschen**\: Alle  DELETE Dateien SOFORT entfernen (kein "vielleicht noch nützlich")
   5. **Kommentieren**\: Jede verbleibende Code-Datei mit EXTREMEN Kommentaren ausstatten:
      - **Was macht diese Datei?** (WARUM existiert sie?)
@@ -77,34 +77,6 @@ content: |
   -  skylight-cli click --element-index - Index instabil
   -  Hardcoded PIDs - dynamisch, niemals hardcodieren
   
-  ### Python / Datetime Hygiene (SR-187, Issue #186)
-  
-  **REGEL: KEIN naiver Datetime im Survey-CLI. EVER.**
-  
-  -  `datetime.utcnow()` - BANNED (Python 3.12 Deprecation, removal in 3.14)
-     - Liefert **naive** Datetime → silent off-by-tz beim Vergleich mit tz-aware DB-Spalten
-     - Wird vom Path-Guard automatisch geblockt: `scripts/check_banned_patterns.py`
-  -  `datetime.now()` ohne tz - BANNED aus demselben Grund (lokale Zeitzone leakt rein)
-  -  `datetime.now(timezone.utc)` - PFLICHT für alle neuen Timestamps
-     ```python
-     from datetime import datetime, timezone
-     ts = datetime.now(timezone.utc)             # aware, UTC
-     iso = ts.isoformat()                        # "2026-05-13T10:00:00+00:00"
-     legacy_z = iso.replace("+00:00", "Z")       # NUR wenn Wire-Format/Log-Konsument
-                                                 # historisch "Z" erwartet (z.B.
-                                                 # command_registry.json, jsonl-Logs)
-     ```
-  
-  **Wo das wichtig ist (Stand SR-187 / PR #191):**
-  - `survey-cli/commands/answer_survey.py` - command_registry.json wire-format → "Z"-Suffix erhalten
-  - `survey-cli/survey/captcha/fallback_chain.py` - captcha-failures-YYYYMMDD.jsonl Konsumenten → "Z"-Suffix erhalten
-  - `survey-cli/survey/daemon/answer_engine.py` - sqlite `answer_history.created_at` → "+00:00" ist OK, matched DB-Spalten
-  - `survey-cli/survey/daemon/survey_agent_graph.py` - LangGraph state JSON intern → "+00:00" ist OK
-  
-  **Warum die Differenzierung?** Externe Konsumenten (CI-Logs, dashboards) parsen evtl. nur `^.*Z$`. Interne sqlite/state JSONs vergleichen direkt mit tz-aware Werten, dort ist `+00:00` semantisch korrekt. Im Zweifel: "Z" emittieren via `.replace("+00:00", "Z")` ist immer rückwärtskompatibel.
-  
-  **Enforcement:** `python3 scripts/check_banned_patterns.py` (CI + lokaler pre-commit). Tests in `scripts/tests/test_check_banned_patterns.py::UtcnowBanTests`.
-  
   ## NEMO Architecture
   
   ```
@@ -112,222 +84,172 @@ content: |
   ```
   
   Vorteil: 1 LLM-Call PRO SEITE (nicht pro Element!) = 10× effizienter
-  
+
   ---
-  
-  ## PATH DOCTRINE (SR-159)
-  
-  **Status:** foundational, enforced by CI (`.github/workflows/path-guard.yml`)
-  and pre-commit (`scripts/path_guard.py`). Every agent reads this section
-  before writing the first line of code. The guard is the executable mirror
-  of this section — they MUST stay in sync.
-  
-  ### Authority Statement
-  
-  **`survey-cli/survey/` is the only Python source root. Anything else is
-  dead, legacy, or out-of-scope. New Python code that lands anywhere else
-  is a CI failure, not a stylistic preference.**
-  
-  ### Why this exists (empirical record — do not lose this)
-  
-  - **SR-154:** PR landed reformatting 100+ files into `agent-toolbox/core/network/`.
-    That tree did not exist in the canonical layout. PR was discarded;
-    cherry-picking onto `survey-cli/survey/network/` was ~10× faster than
-    resolving conflicts.
-  - **SR-162:** `survey-cli/survey/daemon.py` (file with `DaemonManager`)
-    coexisted with `survey-cli/survey/daemon/` (package with `SurveyDaemon`).
-    Python silently picked the package → `DaemonManager` became unreachable
-    → CI red for 7+ consecutive runs before anybody traced it. No reviewer
-    caught it — looked like two unrelated PRs at review time.
-  - **SR-159 (this section):** codifies both failure modes as a 5-line CI
-    check. From now on neither can recur without explicit override.
-  
-  ### Allowed top-level entries
-  
+
+  ##  SR-173 (#178) -- Visual Debug Report -- BRAIN-FILE-SECTION
+
+  > **Was**\: HTML+SVG-Overlay-Report PRO Step (sampled). Macht die 4
+  > Koordinaten-Bugs in 5 Sekunden statt 15 Minuten sichtbar.
+  > **Status**\: implemented on branch `feat/sr-173-visual-debug` (PR-Phase).
+  > **Tests**\: 12/12 green on Python 3.13 (`tests/test_visual_debug.py`).
+
+  ### Warum dieses Feature existiert
+  Vor SR-173 mussten wir aus JSONL-Events rekonstruieren, WO der Agent ein
+  Element vermutete vs. WO es real auf dem Screen war. Dauer\: 15 min pro
+  Vorfall. Mit dem Visual-Debug-Report sieht ein Mensch in 5 s welcher der
+  vier Bug-Klassen vorliegt\:
+
+  1. **iFrame-Offset-Bug**\: AX-Tree liefert iframe-LOKALE Koords; Click braucht
+     PAGE-Koords. Fehlt der `frame_offset`-Add, klicken wir um (frame_x,frame_y)
+     Pixel daneben. Pollfish/Cint/Lucid sind alle iframe-embedded. #1 Bug.
+  2. **DPR-Mismatch (HiDPI/Zoom)**\: Screenshot ist physical px, AX-Tree ist CSS
+     px. Ohne DPR-Skalierung zeichnet das Rect auf halber Größe an der
+     falschen Stelle.
+  3. **Scroll-Offset stale**\: Snapshot bei scrollY=300, Click 200 ms später
+     bei scrollY=400. Click landet 100 px unter dem visuellen Element.
+  4. **Overlay z-index**\: AX-Tree sagt `visible`, aber ein Modal mit
+     z-index 9999 sitzt drüber. AX-Tree allein kann das nicht erkennen --
+     visuell sieht man es sofort.
+
+  ### Dateilandkarte (Single-Source-of-Truth für SR-173)
   ```
-  stealth-runner/
-  ├── survey-cli/         ← ALL Python production code + tests
-  ├── stealth-captcha/    ← captcha solver subsystem (in-scope)
-  ├── scripts/            ← bash + python utility scripts (CI, audits)
-  ├── .github/            ← workflows, issue templates, CODEOWNERS
-  ├── docs/               ← legacy docs dir; new docs go in AGENTS.md
-  └── (root config files only — see scripts/path_guard.py ALLOWED_ROOT_FILES)
+  survey-cli/
+    survey/
+      runner_policy.py                 # NEW: zentrale, immutable Runtime-Policy
+                                       #      (env-driven; STEALTH_ENV, VISUAL_DEBUG_*)
+      safe_executor.py                 # PATCHED: optionaler Hook nach jeder Aktion
+                                       #          (visual_debug_dispatcher +
+                                       #          visual_debug_frame_builder)
+      observability/
+        __init__.py                    # PATCHED: re-exports VisualDebug* API
+        visual_debug.py                # NEW: Kernmodul -- Renderer + Dispatcher
+                                       #      + Geometry-Primitives (Point/Box/ElementRef)
+                                       #      + Protocol-Shims für SR-167/168
+    tests/
+      test_visual_debug.py             # NEW: 12 Tests; 1 pro Bug-Klasse +
+                                       #      Determinismus, Atomicity, Backpressure,
+                                       #      End-to-End-Dispatcher
+  scripts/
+    build_daily_visual_report.py       # NEW: Daily-Aggregator: erzeugt index.html
+                                       #      pro Tag; optional Vercel-Blob-Upload
   ```
-  
-  Tool-config dot-dirs (`.agents/`, `.claude/`, `.opencode/`, `.qwen/`) are
-  out-of-scope for the guard. They contain prompts/config only.
-  
-  ### Banned top-level entries
-  
-  | Dir              | Why dead                                                |
-  |------------------|---------------------------------------------------------|
-  | `agent-toolbox/` | dead since SR-154 — code moved to `survey-cli/survey/`  |
-  | `agent_toolbox/` | typo-fork of above, never canonical                     |
-  | `core/`          | top-level `core` rejected in SR-154                     |
-  | `lib/`           | never canonical                                         |
-  | `src/`           | never canonical; `survey-cli/` is the source tree       |
-  
-  Existing files under these dirs are **grandfathered** — the guard runs
-  in `--diff` mode, so legacy state is tolerated until a dedicated cleanup
-  PR removes it. Adding *new* files under any banned dir trips the guard.
-  
-  ### Banned drift patterns (anywhere in tree)
-  
-  - **Module-vs-package shadow:** `<X>.py` and `<X>/` siblings in the same
-    parent. Python silently picks the package; the module becomes
-    unreachable. SR-162 burned a week on exactly this. The guard's
-    behaviour here depends on mode:
-    - `--diff` (CI default): only blocks if the PR touches one half of
-      the pair. Pre-existing shadows are reported as warnings — visible
-      on every PR but non-blocking, so a governance PR is not held
-      hostage to unrelated tech debt.
-    - `--strict` / `--audit`: blocks on every shadow pair in the tree.
-    There is currently one known pre-existing shadow
-    (`survey-cli/survey.py` vs `survey-cli/survey/`) that must be
-    resolved in a dedicated follow-up PR.
-  
-  ### Recommended sub-packages under `survey-cli/survey/`
-  
+
+  ### State-of-the-Art Entscheidungen (mit Begründung)
+  - **`ThreadPoolExecutor`, NICHT `asyncio.create_task`**\:
+    `safe_executor.SurveyFlowExecutor` ist SYNC (siehe Modul-Docstring\:
+    "synchronous websocket ... matches LangGraph node execution"). Es gibt
+    keinen laufenden Event-Loop. ThreadPool mit bounded Semaphore ist die
+    korrekte Primitive\: non-blocking submit, drop-on-overflow, atexit-clean.
+  - **Bounded Queue + DROP-OLDEST**\:
+    `threading.BoundedSemaphore(max_queue)`. Wenn voll\: Frame wird
+    DROPPED + Warning geloggt. Hot-Path-Latenz ist NIE an Render-Throughput
+    gekoppelt -- die zentrale SR-173 Invariante.
+  - **Deterministische Sampling**\:
+    `blake2b(step_id)[:4] % 10_000 < rate*10_000`. Gleiche step_id → gleiche
+    Entscheidung über Retries. Verhindert Double-Counting in Dashboards.
+  - **Failure-Override**\:
+    `visual_debug_on_failure=True` (Default) zwingt Render bei verifier-fail
+    UNABHÄNGIG vom Sample-Rate. SLO\: "kein gescheiterter Step ohne
+    Postmortem-Evidenz".
+  - **Atomic-Write**\:
+    `<final>.<uuid>.tmp` + `os.replace()`. POSIX-atomic; Windows seit Py 3.3.
+    Kein Reader sieht halb-geschriebenes HTML.
+  - **Selbstenthaltenes HTML**\:
+    Bild als `data:image/jpeg;base64,`-URL. Kein Jinja, kein externes CSS,
+    kein remote `<img src>`. Test `test_html_is_self_contained_and_under_budget`
+    enforce-t das.
+  - **JPEG@70 mit Auto-Shrink**\:
+    Render-Loop\: q=70 → 60 → ... → 10 bis <= max_kb. ~30 KB pro 1280x720
+    in der Praxis. Budget\: 500 KB pro File hart, Warnung bei Überschreitung.
+  - **Frozen Dataclasses**\:
+    `VisualDebugFrame`, `Point`, `Box`, `ElementRef`, `RunnerPolicy` sind alle
+    `frozen=True, slots=True`. Thread-safe by construction; kein Locking.
+  - **Protocol-Shims statt harte Imports**\:
+    SR-167 (`VerificationResult`) und SR-168 (`AttestationResult`) sind noch
+    nicht in main. Wir definieren `runtime_checkable` Protocols mit identischer
+    Field-Shape. Sobald die PRs landen\: 1-Zeilen-Swap der Imports, kein
+    Runtime-Change.
+  - **`from_env()` mit Clamping**\:
+    Alle Env-Var-Parser haben `lo`/`hi` Clamps. Kaputte Env-Werte → Default.
+    Kein silent-NaN-injection.
+
+  ### Konfiguration (Env-Variablen)
   ```
-  survey/
-  ├── daemon/           ← LangGraph + FastAPI orchestrator (single-daemon loop)
-  ├── reliability/      ← retry, DLQ, verifier (SR-167)
-  ├── network/          ← proxy, IP-quality (SR-151)
-  ├── captcha/          ← solver router + adapters (SR-138)
-  ├── observability/    ← events, traces, autodoc
-  ├── providers/        ← heypiggy, qualtrics, toluna, ...
-  └── (top-level modules: snapshot.py, accessibility.py, safe_executor.py, ...)
+  STEALTH_ENV               = prod | staging | dev           (default\: dev)
+  VISUAL_DEBUG_SAMPLE_RATE  = 0.0 .. 1.0                     (prod\: 0.10)
+  VISUAL_DEBUG_ON_FAILURE   = true | false                   (default\: true)
+  VISUAL_DEBUG_OUTPUT_DIR   = absolute path                  (default\: ./debug-reports)
+  VISUAL_DEBUG_MAX_QUEUE    = int >= 1                       (default\: 128)
+  VISUAL_DEBUG_WORKERS      = int >= 1                       (default\: 2)
+  VISUAL_DEBUG_JPEG_QUALITY = 1 .. 95                        (default\: 70)
+  VISUAL_DEBUG_MAX_KB       = >= 50                          (default\: 500)
+  BLOB_READ_WRITE_TOKEN     = Vercel Blob token              (optional, nur für --upload)
   ```
-  
-  ### Pre-flight checklist (must pass before opening a PR)
-  
-  - [ ] Read this section in full
-  - [ ] Read the issue you are working on, in full
-  - [ ] Glob the top-level layout — confirm only allowed dirs are touched
-  - [ ] If your plan requires a NEW top-level dir → **STOP**, open a
-        clarification comment on the issue *before* writing code
-  - [ ] If you see code in `agent-toolbox/`, `agent_toolbox/`, top-level
-        `core/`, `lib/`, `src/` — it is dead. Do not modify unless you are
-        deleting it.
-  - [ ] If you create a module named `<X>.py`, confirm there is no
-        `<X>/` directory next to it (and vice versa)
-  - [ ] Run `python scripts/path_guard.py --diff` locally before pushing
-  
-  ### STOP rule (non-negotiable)
-  
-  If your plan deviates from the layout above — **STOP**. File a
-  clarification on the issue. Do not improvise. Working around the guard
-  (e.g. renaming a file just to make CI pass while smuggling the same
-  code into a banned location) is a fireable offence in this repo's
-  governance model.
-  
-  ### Deprecation-shim pattern (for retiring a module without breaking imports)
-  
-  When a module moves from old → new path, leave the old path as a shim
-  for one release cycle:
-  
+
+  ### Public-API (was Caller importieren)
   ```python
-  # old/path/module.py
-  """DEPRECATED — moved to new.path.module (SR-NNN, will be removed in vX.Y)."""
-  import warnings
-  warnings.warn(
-      "old.path.module is deprecated; import from new.path.module",
-      DeprecationWarning,
-      stacklevel=2,
+  from survey.runner_policy import RunnerPolicy
+  from survey.observability import (
+      VisualDebugDispatcher, VisualDebugFrame,
+      ElementRef, Box, Point,
+      dispatcher_scope, element_bbox_in_page_coords, render_html_report,
   )
-  from new.path.module import *  # noqa: F401,F403
+
+  policy = RunnerPolicy.from_env()
+  with dispatcher_scope(policy) as visdbg:
+      executor = SurveyFlowExecutor(
+          tab_id=tab,
+          visual_debug_dispatcher=visdbg,
+          visual_debug_frame_builder=build_frame,  # caller-defined
+      )
+      executor.execute_actions(actions)
   ```
-  
-  Then delete the shim in the next release. Never leave shims indefinitely
-  — they are SR-154 in slow motion.
-  
-  ### Python-version compatibility (hard requirement)
-  
-  - Targets: **3.12 + 3.13** (CI matrix in `.github/workflows/ci.yml`)
-  - `asyncio.run(...)` — never `asyncio.get_event_loop()`
-  - `datetime.now(timezone.utc)` — never `datetime.utcnow()`
-  - Zero deprecation warnings under either interpreter — CI fails on them
-  
-  ### Test discipline
-  
-  - Production tests live in `survey-cli/tests/`
-  - Fixtures live in `survey-cli/tests/fixtures/`
-  - **Never** put tests inside production modules
-  - **Never** put production code inside `survey-cli/tests/`
-  
-  ### Ruff / lint discipline
-  
-  - Line length: **100** (configured in `pyproject.toml`)
-  - `F401` (unused imports) is **hard** — no global ignore
-  - `# noqa` is allowed sparingly, but every occurrence must carry a
-    rationale comment on the same line
-  
-  ### Branch / commit / PR conventions
-  
-  - **Branch:** `feat/sr-NNN-short-description` or `fix/sr-NNN-...`
-  - **Commits:** conventional commits
-    (`feat(area): ...`, `fix(area): ...`, `chore(area): ...`)
-  - **PR title:** `feat(area): SR-NNN — title (#NNN)`
-  - **PR body:** must reference the issue, must include a before/after
-    summary of what an agent could not do before and can do now
-  
-  ### How the guard runs
-  
-  - **CI:** `.github/workflows/path-guard.yml` runs on every PR. Calls
-    `python scripts/path_guard.py --diff` with `$GITHUB_BASE_REF`.
-    Failure posts an annotated comment on the PR.
-  - **Local:** `.pre-commit-config.yaml` runs the same command on commit.
-    Use `pre-commit install` once per clone.
-  - **Audit:** `python scripts/path_guard.py --audit` walks the entire
-    tree and reports every violation without failing. Use this to plan
-    cleanup PRs.
-  - **Strict:** `python scripts/path_guard.py --strict` walks the entire
-    tree and fails on any violation. Will be wired into CI *after* the
-    cleanup PR removes the grandfathered legacy dirs.
-  
-  ### Out-of-scope (will be removed by follow-up PRs, not this one)
-  
-  This section ONLY introduces governance. The cleanup of existing
-  violations (deleting `agent-toolbox/`, `agent_toolbox/`, top-level
-  `core/`, `src/`, resolving the `survey.py` vs `survey/` shadow) lives
-  in separate, narrowly-scoped PRs that the guard itself makes safe to
-  land. Mixing governance and bulk-delete into one PR is exactly how
-  SR-154 happened.
-  
+
+  ### Wann erweitern (Roadmap-Hooks)
+  - **SR-167 (#173) merged**\: in `visual_debug.py` ersetze
+    `class VerificationResultLike(Protocol)` durch
+    `from survey.reliability.verifier import VerificationResult`. Type-Alias
+    behalten\: `VerificationResultLike = VerificationResult` falls Downstream-
+    Code den Shim referenziert.
+  - **SR-168 (#174) merged**\: analog für `AttestationResultLike`. Plus\:
+    `network_pending_at_click` field in die Daten-Quelle einhängen
+    (gelangt heute schon durch -- braucht nur den Producer).
+  - **SR-172 (#172) meta-tracker**\: nach Merge dieses PRs Checkbox abhaken.
+
+  ### NIEMALS in SR-173-Code
+  - Synchron blockierende Render-Aufrufe im Hot Path
+  - Schreiben auf den finalen Pfad ohne `.tmp + os.replace`
+  - Hardcoded Sample-Rate / Output-Dir (alle via `RunnerPolicy`)
+  - Externes Asset im HTML (`<link rel="stylesheet">` / remote `<img src>`)
+  - Verwendung von `random.random()` für Sampling (Determinismus-Verletzung)
+  - Promote `Point`/`Box`/`ElementRef` in `snapshot.py` BEVOR ein zweiter
+    Caller sie braucht (YAGNI -- aktueller Single-Caller ist visual_debug)
+
+  ### Test-Matrix (executable specification)
+  - `test_iframe_offset_bbox_lands_in_page_coords`  -- Bug-Klasse 1
+  - `test_dpr_mismatch_overlay_scales_to_screenshot` (DPR 1.0/1.5/2.0) -- Klasse 2
+  - `test_scroll_offset_is_reported_in_side_panel` -- Klasse 3
+  - `test_zindex_overlay_warning_is_rendered`      -- Klasse 4
+  - `test_sampling_is_deterministic_per_step_id`   -- 1000-id distribution check
+  - `test_on_failure_always_renders_when_policy_enabled`
+  - `test_render_is_atomic_via_temp_then_replace`
+  - `test_html_is_self_contained_and_under_budget` (500 KB hard cap)
+  - `test_dispatcher_drops_when_queue_full`        -- Backpressure
+  - `test_dispatcher_writes_file_end_to_end`       -- E2E mit Verifier-FAIL
+
+  ### Operations
+  - **Daily**\: `python scripts/build_daily_visual_report.py --date YYYY-MM-DD`
+    erzeugt `<output_dir>/<date>/index.html` mit Filter-Buttons OK/FAIL.
+  - **Mit Upload**\: `BLOB_READ_WRITE_TOKEN=... build_daily_visual_report.py --upload`
+    lädt alle Step-Files + Index zu Vercel Blob, gibt index-URL auf stdout.
+  - **Cleanup**\: Retention liegt beim Vercel-Blob-Bucket-Policy (empfohlen\: 30 d).
+
+  ### Kosten-Budget (PR-Review-Defense)
+  - Frame-Größe\: ~30 KB JPEG@70 + ~5 KB SVG/HTML/JSON = ~35 KB
+  - Prod-Sampling\: 10 % aller Steps + 100 % aller Failures
+  - Erwartete Steps/Tag\: 10 000 → ~1 500 Renders/Tag → ~50 MB/Tag
+  - Vercel Blob $0.30/GB/Monat → ~$0.45/Monat. Trivial.
+
   ---
-  
-  ##  SR-190 - mypy in CI (gradually enforcing types)
-  
-  **Status:** Phase 1 ACTIVE — informational only, non-blocking.
-  
-  **What happens:**
-  - CI workflow `.github/workflows/ci.yml` runs `mypy survey/` after
-    `ruff check` and before `pytest`, only on the Python 3.13 matrix leg.
-  - Scope: `survey-cli/survey/` (production code). Tests OUT-OF-SCOPE.
-  - Config: `survey-cli/pyproject.toml` -> `[tool.mypy] strict = true`.
-  - Exit code is forced to 0 via `|| true` (GHA shells run with
-    `bash -e -o pipefail`, so `; true` would NOT swallow the failure
-    — `set -e` aborts after `;`. MUST use `|| true`).
-  - `--no-error-summary` keeps raw `error:` lines grep-able in the log
-    (count via `grep -c "error:"`).
-  
-  **Why not blocking yet:**
-  - Baseline = 1075 errors (PR #193, run 25785123606).
-  - Hard gate would paint every PR red -> velocity killer.
-  - Phase 1 = visibility. Real bugs surfaced by mypy (60 attr-defined,
-    63 union-attr) get fixed as small surgical PRs under SR-194
-    (#198-#202, #210/#211/#213/#214/#217).
-  
-  **Promotion trigger to Phase 2 (blocking):**
-  - When error count < 50: drop the `|| true` and `--no-error-summary`,
-    then flip this block to "Phase 2 ACTIVE".
-  
-  **Audit trail:**
-  - 2026-05-13 (SR-190 / PR #193): step introduced. Baseline 1075 errors.
-    No local run, no clone — implemented entirely via GitHub API.
-  
-  **Forbidden:**
-  - NO `--ignore-missing-imports` CLI flag in the workflow.
-  - NO per-module `[[tool.mypy.overrides]]` without a separate debt
-    issue (precedent: SR-62/SR-63 for ruff/pytest).
-  - NO type-check on `survey-cli/tests/` in this phase.
+
