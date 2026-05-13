@@ -70,7 +70,11 @@ Two modes:
         origin/main, or $GITHUB_BASE_REF if set by GitHub Actions). Fails
         only on files *introduced or modified* by this PR. Pre-existing
         legacy paths are grandfathered — this is intentional, so SR-159
-        itself can land without first deleting agent-toolbox/.
+        itself can land without first deleting agent-toolbox/. Shadow
+        pairs are likewise only blocking if the PR touches one half of
+        the pair; pre-existing shadows are reported as warnings (visible
+        on every PR but non-blocking until a dedicated cleanup PR fixes
+        them).
 
     --audit
         Local / manual mode. Walks the entire tree and reports every
@@ -228,11 +232,15 @@ def check_unknown_top(files: Iterable[str]) -> list[str]:
     return violations
 
 
-def check_shadow_pairs(all_files: Iterable[str]) -> list[str]:
-    """Detect `<X>.py` and `<X>/` siblings in the same parent dir. Python
-    will pick the package and silently hide the module — see SR-162.
-    Operates on the *full* tracked set so we catch shadows that already
-    exist in main (those are the dangerous ones — they are live bugs).
+def find_shadow_pairs(all_files: Iterable[str]) -> list[tuple[str, str]]:
+    """Return every `<X>.py` ↔ `<X>/` sibling pair in the tracked tree as
+    (file_path, dir_path) tuples. Python will pick the package and silently
+    hide the module — see SR-162.
+
+    This is split from the "format violations" step so the caller can decide
+    whether a given pair is *introduced by this PR* (→ blocking) or *already
+    existed in main* (→ informational warning that should not block a
+    governance PR — see SR-159 PR body).
     """
     files_by_parent: dict[str, set[str]] = {}
     dirs_by_parent: dict[str, set[str]] = {}
@@ -247,7 +255,7 @@ def check_shadow_pairs(all_files: Iterable[str]) -> list[str]:
             d_name = parts[i - 1]
             dirs_by_parent.setdefault(d_parent, set()).add(d_name)
 
-    violations: list[str] = []
+    pairs: list[tuple[str, str]] = []
     for parent, names in files_by_parent.items():
         dirs_here = dirs_by_parent.get(parent, set())
         for name in names:
@@ -257,12 +265,41 @@ def check_shadow_pairs(all_files: Iterable[str]) -> list[str]:
             if stem in dirs_here:
                 full_file = f"{parent}/{name}" if parent else name
                 full_dir = f"{parent}/{stem}/" if parent else f"{stem}/"
-                violations.append(
-                    f"  SHADOW PAIR    {full_file} vs {full_dir}\n"
-                    f"                 Python imports the package and hides "
-                    f"the module. Rename one (SR-162 precedent)."
-                )
-    return violations
+                pairs.append((full_file, full_dir))
+    return pairs
+
+
+def _format_shadow(file_path: str, dir_path: str) -> str:
+    return (
+        f"  SHADOW PAIR    {file_path} vs {dir_path}\n"
+        f"                 Python imports the package and hides the module. "
+        f"Rename one (SR-162 precedent)."
+    )
+
+
+def partition_shadow_pairs(
+    all_files: Iterable[str],
+    changed_files: Iterable[str],
+) -> tuple[list[tuple[str, str]], list[tuple[str, str]]]:
+    """Split shadow pairs into (touched_by_diff, preexisting). A pair is
+    'touched_by_diff' if either half is in `changed_files`.
+
+    The 'touched' set blocks CI in --diff mode (the PR is actively making
+    the problem worse or introducing it fresh). The 'preexisting' set is
+    surfaced as a warning so it stays visible but does not block governance
+    work — see SR-159 PR body for rationale.
+    """
+    changed = set(changed_files)
+    touched: list[tuple[str, str]] = []
+    preexisting: list[tuple[str, str]] = []
+    for file_path, dir_path in find_shadow_pairs(all_files):
+        # A directory match means any changed file *under* that directory.
+        dir_prefix = dir_path  # already ends with '/'
+        if file_path in changed or any(c.startswith(dir_prefix) for c in changed):
+            touched.append((file_path, dir_path))
+        else:
+            preexisting.append((file_path, dir_path))
+    return touched, preexisting
 
 
 # --- MAIN -------------------------------------------------------------------
@@ -314,12 +351,41 @@ def main(argv: list[str] | None = None) -> int:
     violations: list[str] = []
     violations += check_banned_top_dirs(files)
     violations += check_unknown_top(files)
-    # Shadow-pair check is global by design: a shadow already in main is
-    # a live bug, not something a single PR introduced.
-    violations += check_shadow_pairs(_all_tracked_files())
+
+    # Shadow-pair handling depends on mode.
+    #
+    # --strict / --audit: report every shadow pair in the tree (`files`
+    # already equals the full tracked set in those modes).
+    # --diff: only *touched* shadow pairs are blocking — pre-existing pairs
+    # are surfaced as warnings so we do not punish governance/cleanup PRs
+    # for tech debt they did not create. See SR-159 PR body.
+    all_tracked = _all_tracked_files()
+    warnings: list[str] = []
+    if args.audit or args.strict:
+        for fp, dp in find_shadow_pairs(all_tracked):
+            violations.append(_format_shadow(fp, dp))
+    else:
+        touched, preexisting = partition_shadow_pairs(all_tracked, files)
+        for fp, dp in touched:
+            violations.append(_format_shadow(fp, dp))
+        for fp, dp in preexisting:
+            warnings.append(_format_shadow(fp, dp))
+
+    if warnings:
+        print("")
+        print("path-guard: pre-existing shadow pairs (warnings, not blocking):")
+        print("─" * 72)
+        for w in warnings:
+            print(w)
+        print("─" * 72)
+        print("Run `python scripts/path_guard.py --strict` locally to see "
+              "the full list. Resolve in a dedicated cleanup PR (SR-162-class).")
 
     if not violations:
-        print("path-guard: OK — layout matches SR-159 doctrine.")
+        if warnings:
+            print("path-guard: OK — no new violations from this PR.")
+        else:
+            print("path-guard: OK — layout matches SR-159 doctrine.")
         return 0
 
     print("")
