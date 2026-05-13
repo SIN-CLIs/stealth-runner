@@ -55,7 +55,16 @@ jobs:
         id: guard
         # The script uses $GITHUB_BASE_REF on pull_request events and falls
         # back to origin/main on push events. No `pip install` — pure stdlib.
+        #
+        # `set -o pipefail` is REQUIRED — without it the exit code of `tee`
+        # (always 0) masks a non-zero exit from path_guard.py and the guard
+        # silently passes on real violations. This is not theoretical: the
+        # first iteration of this workflow shipped without pipefail, the
+        # demo probe PR (#174) showed the violations in the log but the
+        # check was marked green. Do NOT remove this line.
+        shell: bash
         run: |
+          set -o pipefail
           python scripts/path_guard.py --diff | tee path_guard.out
         env:
           # Explicit even though Actions sets it automatically — makes the
