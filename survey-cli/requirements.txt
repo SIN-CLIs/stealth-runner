@@ -23,3 +23,16 @@ requests>=2.31.0
 # test_answer_engine_extended_types.py.
 # Listed in pyproject.toml but was missing from requirements.txt.
 langgraph>=0.2
+
+# SR-168 Phase 2A (2026-05-13): survey/reliability/visual_hash.py
+# implements a pure-python perceptual hash (DCT-II) for the vision
+# channel of triple-channel attestation. numpy is the math backbone;
+# Pillow is for screenshot decode. We deliberately do NOT pull in
+# `imagehash` (which would bring scipy → +10 MB, unused).
+#
+# Adding a new top-level import? Same drill as above:
+#   1. Add it here.
+#   2. Verify CI pip-install passes (no `|| true` since SR-61).
+#   3. Document the reason in this header.
+numpy>=1.26.0
+Pillow>=10.0.0
