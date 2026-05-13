@@ -300,6 +300,21 @@ class SurveyDaemon:
             return False
 
     @staticmethod
+
+    async def run_forever(self):
+        """
+        Block until daemon stops (via SIGINT/SIGTERM or explicit stop()).
+
+        Added 2026-05-13 to fix SR-194 A2.
+        """
+        await self.start()
+        try:
+            while self.is_running():
+                await asyncio.sleep(1)
+        except asyncio.CancelledError:
+            await self.stop()
+            raise
+
     def get_status() -> dict:
         """Get daemon status via health endpoint."""
         try:
