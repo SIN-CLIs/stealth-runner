@@ -147,10 +147,16 @@ content: |
   
   - **Module-vs-package shadow:** `<X>.py` and `<X>/` siblings in the same
     parent. Python silently picks the package; the module becomes
-    unreachable. SR-162 burned a week on exactly this. The guard checks
-    the full tree for this — there is currently one known shadow
-    (`survey-cli/survey.py` vs `survey-cli/survey/`) that must be resolved
-    in a follow-up PR.
+    unreachable. SR-162 burned a week on exactly this. The guard's
+    behaviour here depends on mode:
+    - `--diff` (CI default): only blocks if the PR touches one half of
+      the pair. Pre-existing shadows are reported as warnings — visible
+      on every PR but non-blocking, so a governance PR is not held
+      hostage to unrelated tech debt.
+    - `--strict` / `--audit`: blocks on every shadow pair in the tree.
+    There is currently one known pre-existing shadow
+    (`survey-cli/survey.py` vs `survey-cli/survey/`) that must be
+    resolved in a dedicated follow-up PR.
   
   ### Recommended sub-packages under `survey-cli/survey/`
   
