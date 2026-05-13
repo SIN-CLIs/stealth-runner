@@ -1,5 +1,5 @@
-from datetime import datetime, timezone
 #!/usr/bin/env python3
+# ruff: noqa: E402
 """================================================================================
 UNIVERSAL SURVEY LOOP — Das Herzstück des Agenten (2026-05-10)
 
@@ -64,12 +64,14 @@ FUNKTIONIERT (aus /commands/surveys/survey-answer-patterns.md):
 # ruff: noqa: E501  (long JS/HTML payloads in multi-line strings - SR-62 #61)
 
 from __future__ import annotations
+
 import json
 import os
 import re
 import time
 import urllib.request
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 

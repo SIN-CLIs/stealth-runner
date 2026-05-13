@@ -119,7 +119,6 @@ async def cmd_heypiggy(args) -> int:
         email=email,
         password=password,
         persona=persona,
-        
         max_surveys=args.max_surveys,
         headless=not args.visible,
     )
@@ -145,7 +144,7 @@ def cmd_daemon_start(args) -> int:
     from .survey_daemon import SurveyDaemon, install_launchagent
 
     load_config()
-    persona = get_persona()
+    # SR-194 A3 follow-up: persona is read from config file inside SurveyDaemon
 
     if args.background:
         # Install and start LaunchAgent
