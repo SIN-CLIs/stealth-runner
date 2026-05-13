@@ -103,7 +103,7 @@ def step1_start_chrome_and_inject():
         "--no-default-browser-check",
         f"--user-data-dir={profile_dir}",
     ]
-    print(f"  Starting Chrome (no URL)...")
+    print("  Starting Chrome (no URL)...")
     subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     
     # Warten bis Chrome bereit
@@ -122,7 +122,7 @@ def step1_start_chrome_and_inject():
         return None, profile_dir
     
     # Create about:blank tab via Browser CDP (kein HTTP API!)
-    print(f"  Creating about:blank tab via Target.createTarget...")
+    print("  Creating about:blank tab via Target.createTarget...")
     try:
         ws = websocket.create_connection(browser_ws_url, timeout=15)
         ws.send(json.dumps({
@@ -149,7 +149,7 @@ def step1_start_chrome_and_inject():
     print(f"  Tab WS: {tab_ws[:60]}")
     
     # Enable Network domain on this tab
-    print(f"  Enabling Network domain...")
+    print("  Enabling Network domain...")
     try:
         ws = websocket.create_connection(tab_ws, timeout=15)
         ws.send(json.dumps({"id": 1, "method": "Network.enable"}))
@@ -165,7 +165,7 @@ def step1_start_chrome_and_inject():
         print("  WARNING: Cookie injection failed, continuing...")
     
     # Navigate tab to HeyPiggy dashboard
-    print(f"  Navigating to HeyPiggy dashboard...")
+    print("  Navigating to HeyPiggy dashboard...")
     try:
         ws = websocket.create_connection(tab_ws, timeout=15)
         ws.send(json.dumps({

@@ -6,9 +6,8 @@ pytestmark = pytest.mark.skip(reason="SR-63 #62: mock drift — ChromeLauncher m
 # === END SR-63 skip ===
 
 import json
-import subprocess
 import unittest
-from unittest.mock import patch, MagicMock, mock_open
+from unittest.mock import patch, MagicMock
 
 from survey.chrome import ChromeLauncher
 

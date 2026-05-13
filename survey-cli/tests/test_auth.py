@@ -13,7 +13,7 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from survey.auth.cua_adapter import CuaAdapter
 from survey.auth.login_verifier import LoginVerifier
-from survey.auth.google_oauth import GoogleOAuthFlow, LoginResult
+from survey.auth.google_oauth import GoogleOAuthFlow
 
 
 class TestCuaAdapter(unittest.TestCase):

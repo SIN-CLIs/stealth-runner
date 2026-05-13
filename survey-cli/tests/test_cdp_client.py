@@ -22,7 +22,7 @@ BANNED METHODS — NIEMALS VERWENDEN:
 """
 
 import unittest
-from unittest.mock import MagicMock, patch, call
+from unittest.mock import MagicMock, patch
 import json
 import websocket
 
@@ -177,7 +177,6 @@ class TestCDPConnectionRetry(unittest.TestCase):
         ws1 = MagicMock()
         ws1.send.side_effect = websocket.WebSocketException("Broken pipe")
 
-        from survey.cdp_client import websocket as ws_mod
         ws2 = _make_ws_with_responses([_make_cdp_response(1, {"ok": True})])
 
         mock_create.side_effect = [ws1, ws2]

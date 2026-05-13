@@ -16,7 +16,7 @@ import pytest
 from survey.snapshot_v2 import from_controls
 from survey.daemon.survey_parser import Question, QuestionType, QuestionOption
 from survey.daemon.answer_engine import Answer
-from survey.daemon.verifier import verify_action, Mismatch, VerificationResult
+from survey.daemon.verifier import verify_action
 
 
 # --------------------------------------------------------------------------- #

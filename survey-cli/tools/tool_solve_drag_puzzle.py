@@ -53,7 +53,10 @@ BANNED: ❌ dispatchEvent(PointerEvent) | ❌ __ngContext__ traversal | ❌ wind
         ❌ playstealth | ❌ webauto-nodriver | ❌ hardcoded PIDs | ❌ pkill Chrome
 """
 from __future__ import annotations
-import json, asyncio, random, websocket
+import json
+import asyncio
+import random
+import websocket
 from typing import Optional
 
 __frozen__ = True

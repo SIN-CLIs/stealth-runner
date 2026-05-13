@@ -9,8 +9,7 @@ Deckt ab:
 """
 
 import unittest
-from unittest.mock import Mock, patch, MagicMock
-import json
+from unittest.mock import patch
 import sys
 from pathlib import Path
 
@@ -18,11 +17,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from survey.captcha.drag_drop_solver import (
-    solve_puzzle,
-    _detect_puzzle_dom,
-    _extract_target_number,
-    _compute_bezier_path,
-    _execute_drag_sequence
+    solve_puzzle
 )
 
 

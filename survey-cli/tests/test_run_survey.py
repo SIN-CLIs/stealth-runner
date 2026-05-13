@@ -26,15 +26,13 @@ pytestmark = pytest.mark.skip(reason="SR-63 #62: mock drift — SurveyRunner moc
 # === END SR-63 skip ===
 
 import unittest
-from unittest.mock import MagicMock, patch, PropertyMock, call
-import time
+from unittest.mock import MagicMock, patch
 import sys
 import os
-import websocket
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from survey.runner import SurveyRunner, RunnerConfig, SurveyResult
+from survey.runner import SurveyRunner, RunnerConfig
 
 # Anti-stuck: page text counter for tests
 _page_counter = [0]

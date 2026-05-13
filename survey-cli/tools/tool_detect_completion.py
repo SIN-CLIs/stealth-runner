@@ -63,7 +63,6 @@ BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
 
 import json       # CDP Nachrichten (de)serialisierung
 import websocket  # CDP WebSocket Verbindung
-from typing import Literal
 
 __version__ = "1.0.0"
 __frozen__ = True  # 🔒 NICHT AENDERN! Getestet mit Qualtrics + HeyPiggy.

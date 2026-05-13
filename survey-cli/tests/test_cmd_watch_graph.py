@@ -3,7 +3,7 @@
 Tests for _run_survey_via_graph wrapper and cmd_watch refactor.
 """
 import pytest
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import Mock
 
 
 class TestCmdWatchGraph:

@@ -49,7 +49,11 @@ STATUS: __frozen__=True | Version: 2026-05-11
 BANNED: ❌ playstealth | ❌ webauto-nodriver | ❌ hardcoded PIDs | ❌ pkill Chrome
 """
 from __future__ import annotations
-import json, os, random, urllib.request, websocket
+import json
+import os
+import random
+import urllib.request
+import websocket
 from typing import Literal
 
 __frozen__ = True
@@ -145,7 +149,7 @@ def _solve_slide(ws_url: str) -> dict:
         return {"status": "error", "reason": str(e)[:100]}
 
     sx, sy, ex, ey, gap = geo["blockX"], geo["blockY"], geo["targetX"], geo["targetY"], geo["gap"]
-    dur = 1200 + gap * 2
+    1200 + gap * 2
 
     def cdp_mouse(t_, x, y, btn="left", cc=1):
         ws = websocket.create_connection(ws_url, timeout=10)

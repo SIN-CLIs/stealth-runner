@@ -41,7 +41,6 @@ import os
 import subprocess
 import time
 import urllib.request
-import re
 from typing import Dict, Optional, List
 
 __frozen__ = True
@@ -95,7 +94,7 @@ def _get_survey_url(survey_id: str, port: int = CDP_PORT) -> Optional[str]:
         # Handle pre-qualifier
         if resp.get("type") == "question":
             return None  # Pre-qualifier not handled here
-    except Exception as e:
+    except Exception:
         return None
     return None
 
@@ -385,7 +384,7 @@ def _click_modal_button_cdp(ws_url: str, port: int = CDP_PORT, cpx_url: Optional
                     }))
                     json.loads(ws3.recv())
                     ws3.close()
-            except Exception as e:
+            except Exception:
                 pass  # Cookie injection failure — continue anyway
         
         # 3d: NOW navigate to survey URL (cookies injected first!)

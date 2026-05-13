@@ -23,7 +23,6 @@ INTEGRATION:
 =================================================================================="""
 
 import json
-import re
 import time
 import urllib.request
 import websocket
@@ -226,7 +225,7 @@ def click_survey(dashboard_ws: str, survey_id: str, timeout: float = 5.0) -> dic
         # Modal detection: overlay, popup, oder survey-start button
         if any(w in body_text.lower() for w in ["umfrage starten", "survey start", "teilnehmen", "beginnen"]):
             modal_detected = True
-            print(f"  [MODAL] Detected on dashboard")
+            print("  [MODAL] Detected on dashboard")
     except Exception:
         pass
     
@@ -251,7 +250,7 @@ if __name__ == "__main__":
         sys.exit(1)
     
     print(f"\n{'='*50}")
-    print(f"  FIND SURVEY — Dashboard scan")
+    print("  FIND SURVEY — Dashboard scan")
     print(f"{'='*50}")
     
     # Find surveys

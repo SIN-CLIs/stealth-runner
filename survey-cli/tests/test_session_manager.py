@@ -150,7 +150,7 @@ class TestSessionManager(unittest.TestCase):
         """find_session returns None for stale session (reconcile removes)."""
         self.sm.register("dead", pid=999, profile_dir="/tmp/p999")
         _mock_main_pids.return_value = []  # dead PID not running
-        s = self.sm.find_session("dead")
+        self.sm.find_session("dead")
         # After reconcile, stale sessions exist in dict but find_session
         # just returns whatever get() gives. The session is still there
         # but marked stale. Tests verify reconcile ran.

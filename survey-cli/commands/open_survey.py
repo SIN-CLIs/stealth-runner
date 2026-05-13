@@ -36,7 +36,11 @@ NUTZT:
 - CDP WS: Page.navigate (Navigieren nach Cookie-Injection)
 """
 
-import asyncio, json, subprocess, os, sys
+import asyncio
+import json
+import subprocess
+import os
+import sys
 from urllib.parse import urlparse, parse_qs, urlunparse
 
 CHROME_PORT = 9999
@@ -303,7 +307,7 @@ async def open_survey(dashboard_ws: str) -> dict:
         }
     """
     print(f"\n{'='*50}")
-    print(f"  OPEN SURVEY")
+    print("  OPEN SURVEY")
     print(f"{'='*50}")
 
     # 1. Get survey URL + subids
@@ -368,7 +372,7 @@ if __name__ == "__main__":
 
     print(f"\n{'='*50}")
     if result["status"] == "ok":
-        print(f"  Status: OK ✓")
+        print("  Status: OK ✓")
         print(f"  Provider: {result.get('provider')}")
         print(f"  Tab WS: {result.get('tab_ws', '')[:60]}...")
         print(f"  URL: {result.get('url', '')[:80]}")
@@ -376,6 +380,6 @@ if __name__ == "__main__":
         print(f"  Screen-out: {result.get('screen_out')}")
         print(f"  Completion: {result.get('completion')}")
     else:
-        print(f"  Status: ERROR")
+        print("  Status: ERROR")
         print(f"  Reason: {result.get('reason')}")
     print(f"{'='*50}")

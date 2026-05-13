@@ -9,7 +9,8 @@ BANNED: ❌ provider hardcode | ❌ playstealth | ❌ webauto-nodriver | ❌ har
 """
 
 from __future__ import annotations
-import json, websocket
+import json
+import websocket
 from typing import Optional
 
 __frozen__ = True

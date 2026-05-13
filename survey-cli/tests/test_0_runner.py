@@ -30,7 +30,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from survey.runner import SurveyRunner, RunnerConfig, SurveyResult
-from survey.snapshot import CompactSnapshot, detect_completion
+from survey.snapshot import CompactSnapshot
 from survey.action_selector import ActionSelector
 
 

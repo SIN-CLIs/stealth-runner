@@ -108,7 +108,7 @@ class TestLogEarnings(unittest.TestCase):
 
     def test_daily_file_named_correctly(self):
         date_str = datetime.now().strftime("%Y-%m-%d")
-        entry = ad.log_earnings("sid", "qualtrics", 1.0, "completed", 60.0)
+        ad.log_earnings("sid", "qualtrics", 1.0, "completed", 60.0)
         fp = Path(self.tmp) / f"earnings-{date_str}.jsonl"
         self.assertTrue(fp.exists())
 

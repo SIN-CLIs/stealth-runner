@@ -44,9 +44,7 @@ import os
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Optional
-from unittest import TestCase
-from unittest.mock import MagicMock, patch, PropertyMock
+from unittest.mock import MagicMock, patch
 
 import pytest
 
@@ -110,7 +108,7 @@ class TestNimSecondarySolver:
 
     def test_nim_secondary_success(self):
         """Test successful solve with NIM Qwen2.5-VL."""
-        from survey.captcha.nim_secondary_solver import NimSecondarySolver, CaptchaResult
+        from survey.captcha.nim_secondary_solver import NimSecondarySolver
 
         solver = NimSecondarySolver(api_key="test_key")
         cdp = MockCDPConnection()
@@ -201,7 +199,7 @@ class TestGatewaySolver:
     @pytest.mark.skip(reason="SR-163: GatewaySolver fallback returns None instead of True — mock setup for Gemini-fail/Claude-success path needs update")
     def test_gateway_gemini_fail_claude_success(self):
         """Test fallback to Claude when Gemini fails."""
-        from survey.captcha.gateway_solver import GatewaySolver, GATEWAY_PRIMARY_MODEL, GATEWAY_FALLBACK_MODEL
+        from survey.captcha.gateway_solver import GatewaySolver, GATEWAY_PRIMARY_MODEL
 
         solver = GatewaySolver(api_key="test_gateway_key")
         cdp = MockCDPConnection()

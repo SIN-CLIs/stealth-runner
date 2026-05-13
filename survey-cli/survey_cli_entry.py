@@ -442,7 +442,6 @@ def cmd_loop(args):
     ================================================================================
     """
     # Lazy Import
-    from survey.graph import create_graph, SurveyState
 
     # RunnerConfig erstellen (siehe cmd_run für Details)
     config = RunnerConfig(
@@ -584,7 +583,6 @@ def cmd_watch(args):
     # WARUM in Funktion statt global? Vermeidet Import-Fehler beim Modul-Load
     # (z.B. wenn survey.chrome nicht existiert während Entwicklung).
     import signal
-    from survey.graph import create_graph, SurveyState
     from survey.scanner import read_balance
     from survey.chrome import is_chrome_alive, find_bot_tabs, find_dashboard_ws
     from survey.autodoc import log_session
@@ -710,7 +708,7 @@ def cmd_watch(args):
     #   - Welche Konfiguration? (interval, max, NIM, target)
     #   - Wie stoppen? (Ctrl+C)
     print(f"\n{'═'*60}")
-    print(f"  🔄 SURVEY-CLI WATCH DAEMON — 24/7 Mode")
+    print("  🔄 SURVEY-CLI WATCH DAEMON — 24/7 Mode")
     print(f"{'═'*60}")
 
     # ============================================================================
@@ -746,8 +744,8 @@ def cmd_watch(args):
     print(f"  Max/cycle:      {args.max}")
     print(f"  NVIDIA NIM:     {'✅' if config.use_nim else '⚠️  auto-pilot'}")
     print(f"  Balance target: {config.balance_target}€")
-    print(f"  Logs:           survey-cli/logs/")
-    print(f"  Stop:           Ctrl+C or SIGTERM")
+    print("  Logs:           survey-cli/logs/")
+    print("  Stop:           Ctrl+C or SIGTERM")
     print(f"{'═'*60}\n")
 
     # Session-Start loggen
@@ -839,7 +837,7 @@ def cmd_watch(args):
 
                 if login_retry_count >= max_login_retries:
                     print(f"[WATCH] ❌ CRITICAL: Login failed after {max_login_retries} attempts")
-                    print(f"[WATCH] → Manual intervention required")
+                    print("[WATCH] → Manual intervention required")
                     log_session("watch_stop", "error", {
                         "reason": "login_max_retries_exceeded",
                         "attempts": login_retry_count,
@@ -856,12 +854,12 @@ def cmd_watch(args):
                 login_result = google_login()
 
             # FALLBACK: Wenn alle Retries fehlschlagen
-            print(f"[WATCH] ❌ Login exhausted — stopping watch daemon")
+            print("[WATCH] ❌ Login exhausted — stopping watch daemon")
             log_session("watch_stop", "error", {"reason": "login_exhausted"})
             return
         else:
             # Login erfolgreich
-            print(f"[WATCH] ✅ Login successful")
+            print("[WATCH] ✅ Login successful")
             # WARTEN bis Dashboard bereit
             # WARUM 3s? Weiterleitung nach Login kann dauern.
             time.sleep(3)
@@ -875,7 +873,7 @@ def cmd_watch(args):
 
         # Loop-Start-Zeit
         # WARUM time.monotonic()? Monotonic = nicht von Systemzeit-Änderungen beeinflusst.
-        loop_start = time.monotonic()
+        time.monotonic()
 
         try:
             # ── Health Check: Chrome läuft? ──
@@ -889,7 +887,7 @@ def cmd_watch(args):
 
                 # Max-Fehler erreicht?
                 if state["consecutive_errors"] >= state["max_consecutive_errors"]:
-                    print(f"[WATCH] ❌ Too many Chrome failures — stopping")
+                    print("[WATCH] ❌ Too many Chrome failures — stopping")
                     break  # Loop beenden
 
                 # Exponential Backoff
@@ -907,7 +905,7 @@ def cmd_watch(args):
                 if not cua_mgr.ensure_running():
                     state["consecutive_errors"] += 1
                     if state["consecutive_errors"] >= state["max_consecutive_errors"]:
-                        print(f"[WATCH] ❌ Too many cua-daemon failures — stopping")
+                        print("[WATCH] ❌ Too many cua-daemon failures — stopping")
                         break
                     time.sleep(10)
                     continue
@@ -916,7 +914,7 @@ def cmd_watch(args):
             # ── Dashboard prüfen ──
             dashboard_ws = find_dashboard_ws(args.port)
             if not dashboard_ws:
-                print(f"[WATCH] ⚠️  No dashboard tab found")
+                print("[WATCH] ⚠️  No dashboard tab found")
                 state["consecutive_errors"] += 1
                 time.sleep(interval)
                 continue
@@ -1001,7 +999,7 @@ def cmd_watch(args):
 
             # Exponential Backoff
             if state["consecutive_errors"] >= state["max_consecutive_errors"]:
-                print(f"[WATCH] ❌ Too many consecutive errors — stopping")
+                print("[WATCH] ❌ Too many consecutive errors — stopping")
                 break
 
             # Wartezeit berechnen
@@ -1016,7 +1014,7 @@ def cmd_watch(args):
     # ============================================================================
     elapsed = time.time() - state["session_start"]
     print(f"\n{'═'*60}")
-    print(f"  WATCH DAEMON STOPPED")
+    print("  WATCH DAEMON STOPPED")
     print(f"{'═'*60}")
     print(f"  Loops:     {state['loop_count']}")
     print(f"  Earned:    +{state['total_earned']:.2f}€")
@@ -1082,13 +1080,13 @@ def cmd_status(args):
     from survey.scanner import read_balance
 
     print(f"\n{'='*50}")
-    print(f"  SURVEY-CLI STATUS")
+    print("  SURVEY-CLI STATUS")
     print(f"{'='*50}")
 
     # Chrome Status
     alive = is_chrome_alive(args.port)
     pids = find_bot_pids()
-    print(f"\n  Chrome:")
+    print("\n  Chrome:")
     print(f"    Running:  {'✅' if alive else '❌'}")
     print(f"    PIDs:     {pids if pids else 'none'}")
     print(f"    Port:     {args.port}")
@@ -1097,20 +1095,20 @@ def cmd_status(args):
         # Dashboard
         ws_url = find_dashboard_ws(args.port)
         if ws_url:
-            print(f"    Dashboard: ✅ Connected")
+            print("    Dashboard: ✅ Connected")
             try:
-                snap = generate_snapshot(ws_url)
+                generate_snapshot(ws_url)
                 balance = read_balance(args.port)
                 print(f"    Balance:   {balance}€")
             except Exception:
-                print(f"    Dashboard: connected (read error)")
+                print("    Dashboard: connected (read error)")
         else:
-            print(f"    Dashboard: ❌ Not found")
+            print("    Dashboard: ❌ Not found")
 
     # NIM Status
     nim = get_nim()
     key = os.getenv("NVIDIA_API_KEY", "")
-    print(f"\n  NVIDIA NIM:")
+    print("\n  NVIDIA NIM:")
     print(f"    API Key:  {'✅ set' if key else '❌ NOT SET'}")
     print(f"    Status:   {'✅ ready' if nim and nim.available else '❌ unavailable'}")
     print(f"    Model:    {nim.model if nim and nim.model else 'N/A'}")
@@ -1136,7 +1134,7 @@ def cmd_doctor(args):
     from survey.chrome import is_chrome_alive, find_bot_tabs
 
     print(f"\n{'='*50}")
-    print(f"  🔬 SURVEY-CLI DOCTOR")
+    print("  🔬 SURVEY-CLI DOCTOR")
     print(f"{'='*50}")
 
     # Python Version
@@ -1164,7 +1162,7 @@ def cmd_doctor(args):
         log_files = list(logs_dir.glob("*.jsonl"))
         print(f"  Log files:  {len(log_files)}")
     else:
-        print(f"  Log files:  0")
+        print("  Log files:  0")
 
     # Tabs
     if is_chrome_alive(args.port):
@@ -1175,7 +1173,7 @@ def cmd_doctor(args):
             print(f"    {p.get('id','?')[:12]} | {url}")
 
     print(f"\n  {'='*50}")
-    print(f"  Doctor complete")
+    print("  Doctor complete")
     print(f"  {'='*50}\n")
 
 

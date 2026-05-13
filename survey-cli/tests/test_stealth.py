@@ -25,7 +25,6 @@ from unittest.mock import MagicMock, patch
 import json
 import os
 import sys
-import tempfile
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
@@ -56,7 +55,6 @@ class TestGetStealthJs(unittest.TestCase):
 
     def test_fallback_when_file_missing(self):
         """When injection.js is missing, fallback returns minimal overrides."""
-        from survey.chrome import _get_stealth_js as original_get
         # Temporarily rename the file to test fallback
         from survey import chrome
         original_path = chrome.STEALTH_BUNDLE

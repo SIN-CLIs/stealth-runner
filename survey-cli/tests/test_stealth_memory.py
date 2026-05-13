@@ -2,11 +2,9 @@
 
 Tests for _update_stealth_memory() and detect_completion_with_memory().
 """
-import json
 import pytest
 from datetime import datetime
-from pathlib import Path
-from unittest.mock import Mock, patch, MagicMock
+from unittest.mock import patch
 
 # Assuming nodes module is importable
 # from survey_cli.survey.graph.nodes import _update_stealth_memory, detect_completion_with_memory
@@ -60,7 +58,6 @@ def test_update_stealth_memory_success_local_jsonl():
     with patch("pathlib.Path.mkdir"):
         with patch("builtins.open", mock_open):
             # Simulate nodes module call (would be from survey.graph.nodes)
-            from unittest.mock import MagicMock
             # Simplified inline test since we can't import the actual module
             outcome = {
                 "ts": datetime.now().isoformat(),
@@ -118,7 +115,7 @@ def test_detect_completion_calls_memory_on_success():
 
 def test_stealth_memory_best_effort_swallows_errors():
     """Test _update_stealth_memory swallows I/O errors and logs them."""
-    state = FakeSurveyState(
+    FakeSurveyState(
         survey_id="s-err",
         balance_before=1.0,
         balance_after=2.0

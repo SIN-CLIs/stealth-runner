@@ -36,7 +36,7 @@ from __future__ import annotations
 import json
 import time
 import urllib.request
-from typing import Dict, Optional, List
+from typing import Dict, List
 
 __frozen__ = True
 __version__ = "2026-05-07"

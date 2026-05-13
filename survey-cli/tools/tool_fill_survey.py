@@ -45,7 +45,7 @@ import os
 import re
 from datetime import datetime
 from difflib import SequenceMatcher
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 __frozen__ = True
 __version__ = "2026-05-07"
@@ -655,6 +655,6 @@ if __name__ == "__main__":
     assert actions[2]["option_idx"] == 0  # Berlin
     
     print("All tests passed")
-    print(f"\nSample actions for test snapshot:")
+    print("\nSample actions for test snapshot:")
     for a in actions:
         print(f"  {a}")

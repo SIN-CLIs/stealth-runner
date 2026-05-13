@@ -13,7 +13,10 @@ import pytest
 pytestmark = pytest.mark.skip(reason="SR-63 #62: E2E test requires real browser + live CDP; not suitable for CI")
 # === END SR-63 skip ===
 
-import asyncio, json, subprocess, os, sys
+import asyncio
+import json
+import subprocess
+import os
 
 
 async def recv_target(ws, target_id, timeout=10):
@@ -107,7 +110,7 @@ async def test_open_survey():
         if not modal_open:
             print("[4a] Re-opening modal by clicking survey card...")
             # Click highest-value survey (€0.40, ID 67038730)
-            result = await eval_js(ws, 3, 'clickSurvey("67038730")', 10)
+            await eval_js(ws, 3, 'clickSurvey("67038730")', 10)
             await asyncio.sleep(3)
             body_text = await eval_js(ws, 4, 'document.body.innerText', 10)
             modal_open = 'Umfrage starten' in (body_text or '') and 'beginnen' in (body_text or '')
@@ -158,7 +161,7 @@ async def test_open_survey():
         await asyncio.sleep(2)
 
         # 7. Create new tab via Target.createTarget
-        print(f"\n[7] Creating survey tab via Target.createTarget...")
+        print("\n[7] Creating survey tab via Target.createTarget...")
         target_resp = subprocess.run([
             'curl', '-s', '-X', 'PUT',
             f'http://127.0.0.1:9999/json/new?{survey_url}'

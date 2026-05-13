@@ -125,7 +125,7 @@ def start_chrome() -> str:
         "--no-default-browser-check",
         f"--user-data-dir={profile_dir}",
     ]
-    print(f"  Starting Chrome...")
+    print("  Starting Chrome...")
     subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     
     # 4. Wait for CDP
@@ -148,7 +148,7 @@ def start_chrome() -> str:
 def create_tab_with_cookies(browser_ws: str) -> tuple[str, str]:
     """Create about:blank tab, inject cookies, return (tab_ws, target_id)."""
     # 1. Create about:blank tab
-    print(f"  Creating about:blank tab...")
+    print("  Creating about:blank tab...")
     ws = websocket.create_connection(browser_ws, timeout=15)
     ws.send(json.dumps({"id": 1, "method": "Target.createTarget", "params": {"url": "about:blank"}}))
     r = json.loads(ws.recv())
@@ -169,7 +169,7 @@ def create_tab_with_cookies(browser_ws: str) -> tuple[str, str]:
     print(f"  Tab WS: {tab_ws[:60]}")
     
     # 3. Enable Network domain
-    print(f"  Enabling Network domain...")
+    print("  Enabling Network domain...")
     ws = websocket.create_connection(tab_ws, timeout=15)
     ws.send(json.dumps({"id": 1, "method": "Network.enable"}))
     json.loads(ws.recv())
@@ -190,7 +190,7 @@ def create_tab_with_cookies(browser_ws: str) -> tuple[str, str]:
 
 def navigate_to_dashboard(tab_ws: str):
     """Navigate tab to HeyPiggy dashboard."""
-    print(f"  Navigating to HeyPiggy dashboard...")
+    print("  Navigating to HeyPiggy dashboard...")
     ws = websocket.create_connection(tab_ws, timeout=15)
     ws.send(json.dumps({
         "id": 1, "method": "Page.navigate",
@@ -198,7 +198,7 @@ def navigate_to_dashboard(tab_ws: str):
     }))
     json.loads(ws.recv())  # consume response
     ws.close()
-    print(f"  Navigation sent, waiting 5s for page load...")
+    print("  Navigation sent, waiting 5s for page load...")
     time.sleep(5)
 
 

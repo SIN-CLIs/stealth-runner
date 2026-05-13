@@ -74,7 +74,7 @@ from __future__ import annotations
 import re
 import subprocess
 import json
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional
 
 __frozen__ = True
 __version__ = "2026-05-07"

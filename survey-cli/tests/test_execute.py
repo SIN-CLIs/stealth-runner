@@ -30,9 +30,7 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from survey.execute import (
-    BatchExecutor, BatchResult, PROVIDER_COMMANDS, GENERIC_COMMANDS,
-    cdp_keyboard_enter, cdp_click_element_by_text, capture_dom_hash,
-    verify_state_change, EXECUTION_VERIFY_MS
+    BatchExecutor, BatchResult, cdp_keyboard_enter, cdp_click_element_by_text, capture_dom_hash
 )
 from survey.providers import get_provider_commands
 
@@ -195,7 +193,7 @@ class TestCDPKeyboardEnter(unittest.TestCase):
     def test_keyboard_enter_sends_enter_keydown(self):
         mock_ws = MockWs()
         with patch('websocket.create_connection', return_value=mock_ws):
-            result = cdp_keyboard_enter("ws://localhost:9999")
+            cdp_keyboard_enter("ws://localhost:9999")
         enter_down = any(
             s.get("method") == "Input.dispatchKeyEvent" and
             s["params"].get("type") == "keyDown" and
@@ -207,7 +205,7 @@ class TestCDPKeyboardEnter(unittest.TestCase):
     def test_keyboard_enter_sends_enter_keyup(self):
         mock_ws = MockWs()
         with patch('websocket.create_connection', return_value=mock_ws):
-            result = cdp_keyboard_enter("ws://localhost:9999")
+            cdp_keyboard_enter("ws://localhost:9999")
         enter_up = any(
             s.get("method") == "Input.dispatchKeyEvent" and
             s["params"].get("type") == "keyUp" and
@@ -670,7 +668,7 @@ class TestBatchExecutorExecute(unittest.TestCase):
             mock_ws = MockWsForExecute([make_resp({"n": 1, "t": "btn", "url": ""})])
             executor = BatchExecutor("ws://localhost:9999", "generic")
             with patch('websocket.create_connection', return_value=mock_ws):
-                result = executor.execute([{"ref": "@e0", "action": "click", "value": ""}])
+                executor.execute([{"ref": "@e0", "action": "click", "value": ""}])
             # After execute, WS should be closed (close() called)
             # MockWs tracks close() calls
             self.assertTrue(hasattr(mock_ws, 'close'))

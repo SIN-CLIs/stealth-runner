@@ -41,7 +41,7 @@ BANNED METHODS:
 
 from __future__ import annotations
 import json
-from typing import List, Dict, Optional
+from typing import Dict, Optional
 
 __frozen__ = True
 __version__ = "2026-05-11"

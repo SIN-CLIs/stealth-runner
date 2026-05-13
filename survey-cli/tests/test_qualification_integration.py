@@ -38,7 +38,7 @@ def test_disqualifying_patterns():
     
     for answer in disqualifying:
         result = is_disqualifying_answer(answer)
-        assert result == True, f"FAIL: '{answer}' should be disqualifying but got {result}"
+        assert result, f"FAIL: '{answer}' should be disqualifying but got {result}"
         print(f"PASS: '{answer}' -> disqualifying")
     
     print(f"\n{len(disqualifying)} disqualifying patterns tested OK")
@@ -65,7 +65,7 @@ def test_safe_patterns():
     
     for answer in safe:
         result = is_disqualifying_answer(answer)
-        assert result == False, f"FAIL: '{answer}' should be safe but got {result}"
+        assert not result, f"FAIL: '{answer}' should be safe but got {result}"
         print(f"PASS: '{answer}' -> safe")
     
     print(f"\n{len(safe)} safe patterns tested OK")
@@ -92,7 +92,7 @@ def test_decide_node_filtering():
     assert 1 not in safe_indices, "Index 1 ('Nein, keine Kinder') should be filtered"
     assert 2 not in safe_indices, "Index 2 ('Möchte nicht angeben') should be filtered"
     
-    print(f"PASS: decide_node filtering works correctly")
+    print("PASS: decide_node filtering works correctly")
     print(f"  Input: {radio_names}")
     print(f"  Safe indices: {safe_indices}")
 

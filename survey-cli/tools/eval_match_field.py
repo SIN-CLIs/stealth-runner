@@ -129,7 +129,7 @@ def evaluate(corpus: list[dict], verbose: bool = False) -> EvalResult:
     misses = []
     
     for case in corpus:
-        role = case.get("role", "textbox")
+        case.get("role", "textbox")
         label = case.get("label", "")
         placeholder = case.get("placeholder", "")
         expected_key = case.get("expected_key")  # None für negative cases

@@ -108,7 +108,7 @@ BANNED METHODS — NIEMALS VERWENDEN (siehe /banned.md):
 import json       # CDP WebSocket Nachrichten (de)serialisierung
 import time       # Sleep zwischen Mouse-Events (0.05s, 0.02s)
 import websocket  # CDP WebSocket Verbindung
-from typing import Optional, Dict, Any, Union
+from typing import Optional, Dict, Any
 
 # ═════════════════════════════════════════════════════════════════════════════
 # METADATEN

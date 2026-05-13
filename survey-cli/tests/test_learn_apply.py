@@ -27,7 +27,6 @@ import os
 import re
 import sys
 import tempfile
-import textwrap
 import unittest
 from unittest import mock
 

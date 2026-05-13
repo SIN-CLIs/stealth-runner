@@ -26,8 +26,7 @@ pytestmark = pytest.mark.skip(reason="SR-63 #62: API change — balance reader i
 # === END SR-63 skip ===
 
 import unittest
-from unittest.mock import MagicMock, patch
-import json
+from unittest.mock import patch
 import sys
 import os
 
@@ -64,7 +63,7 @@ class TestBalanceTiming(unittest.TestCase):
              patch.object(runner, "_find_survey_tab_ws", return_value=(None, None)):
             # run_survey will fail at "no tab ws found" but balance_before was already read
             runner.config.max_iterations = 1
-            result = runner.run_survey("norm_001", survey_url="https://qualtrics.com/survey/123")
+            runner.run_survey("norm_001", survey_url="https://qualtrics.com/survey/123")
 
         # balance was read (at least once at the start)
         self.assertGreaterEqual(mock_read_balance.call_count, 1)
@@ -122,7 +121,7 @@ class TestBalanceNonNegative(unittest.TestCase):
 
     def test_max_zero_prevents_negative(self):
         """Even if balance_after < balance_before, earned = 0 (not negative)."""
-        result = SurveyResult(survey_id="test")
+        SurveyResult(survey_id="test")
         # Simulate the calculation
         earned = max(0, round(1.50 - 2.50, 2))
         self.assertEqual(earned, 0.0)

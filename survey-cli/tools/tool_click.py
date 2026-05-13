@@ -73,7 +73,7 @@ from __future__ import annotations
 import json
 import subprocess
 import time
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional
 
 __frozen__ = True
 __version__ = "2026-05-07"
@@ -407,7 +407,6 @@ if __name__ == "__main__":
 
     # Test that find_element is used (import check)
     # Direct import for test (running from tools/ directory)
-    import tool_find_element
     print("  tool_find_element import: OK")
 
     print("All tests passed")

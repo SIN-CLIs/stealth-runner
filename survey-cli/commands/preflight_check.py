@@ -38,7 +38,6 @@ INTEGRATION:
 =================================================================================="""
 
 import json
-import os
 import re
 import time
 import urllib.request
@@ -254,7 +253,7 @@ def preflight_or_start() -> dict:
         return check
     
     print(f"  [PREFLIGHT] Session nicht bereit: {check['reason']}")
-    print(f"  [PREFLIGHT] Starte neue Session...")
+    print("  [PREFLIGHT] Starte neue Session...")
     
     # Import start_heypiggy only if needed
     try:
@@ -275,7 +274,7 @@ def preflight_or_start() -> dict:
 if __name__ == "__main__":
     result = preflight_check()
     print(f"\n{'='*50}")
-    print(f"  PRE-FLIGHT CHECK")
+    print("  PRE-FLIGHT CHECK")
     print(f"{'='*50}")
     print(f"  Chrome alive:  {'YES ✓' if result['chrome_alive'] else 'NO ✗'}")
     print(f"  Tab WS:        {result['tab_ws'][:50] if result['tab_ws'] else 'NONE'}")

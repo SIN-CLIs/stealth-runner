@@ -17,10 +17,7 @@ Pflicht-Kontext: SR-80 / AGENTS.md Deep-Dive "Issue #80".
 from __future__ import annotations
 
 import json
-import os
 import sys
-import tempfile
-from datetime import datetime
 from pathlib import Path
 from unittest import mock
 

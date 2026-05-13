@@ -13,13 +13,13 @@ pytestmark = pytest.mark.skip(reason="SR-63 #62: mock drift — SurveyOpener moc
 # === END SR-63 skip ===
 
 import unittest
-from unittest.mock import MagicMock, patch
+from unittest.mock import patch
 import sys
 import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from survey.opener import SurveyOpener, SurveyTarget, OpenResult
+from survey.opener import SurveyOpener, SurveyTarget
 
 
 class TestSurveyOpenerOpenNewTab(unittest.TestCase):

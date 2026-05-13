@@ -25,8 +25,6 @@ import subprocess
 import sys
 import tempfile
 import unittest
-from typing import Any, Dict, List
-from unittest import mock
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 PARENT = os.path.dirname(HERE)
@@ -34,7 +32,6 @@ if PARENT not in sys.path:
     sys.path.insert(0, PARENT)
 
 # Imports from the eval-harness under test
-from evals.learn_suggester import run_eval  # noqa: E402
 from evals.learn_suggester.run_eval import (  # noqa: E402
     DEFAULT_GOLDEN,
     _mock_call_llm,

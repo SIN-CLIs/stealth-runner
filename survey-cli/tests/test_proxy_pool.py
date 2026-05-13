@@ -33,12 +33,9 @@ Closes #151
 
 import os
 import json
-import tempfile
 import threading
-from pathlib import Path
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 import sys
-import os
 
 # WARUM sys.path? agent-toolbox heisst mit Bindestrich → kein Python-Package.
 # Existierende Tests im Repo nutzen dasselbe Pattern (siehe test_cookie_recovery.py).
@@ -443,7 +440,6 @@ def test_browser_driver_receives_proxy_flag():
     proxy = ProxyEntry(url="http://user:pass@proxy.example.com:8080", label="test")
 
     # Mock die Chrome-Launch Argumente
-    chrome_args = []
 
     def mock_build_chrome_args(proxy_entry=None, **kwargs):
         """Simuliert wie BrowserDriver Chrome-Args baut."""
