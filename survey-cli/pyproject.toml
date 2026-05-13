@@ -31,10 +31,6 @@ dependencies = [
     "lxml>=5.0.0",
     "pydantic>=2.5.0",
     "python-dotenv>=1.0.0",
-    # SR-168 Phase 2A: perceptual image hashing for vision-channel attestation.
-    # numpy: 1.26+ is what playwright already pulls in transitively. Pillow:
-    # for screenshot decode in survey/reliability/visual_hash.py. Avoiding
-    # "imagehash" because it pulls scipy (10 MB) for no extra value here.
     "numpy>=1.26.0",
     "Pillow>=10.0.0",
 ]
@@ -45,7 +41,6 @@ dev = [
     "pytest-asyncio>=0.23.0",
     "ruff>=0.1.0",
     "mypy>=1.7.0",
-    # SR-168: type stubs for the perceptual-hash module.
     "types-Pillow>=10.0.0",
 ]
 
@@ -63,6 +58,9 @@ packages = ["survey"]
 [tool.ruff]
 line-length = 100
 target-version = "py312"
+# E402: module level import not at top (needed for sys.path manipulation)
+# E701/E702/E703: multiple statements on one line (style-only, not bugs)
+ignore = ["E402", "E701", "E702", "E703"]
 
 [tool.mypy]
 python_version = "3.12"
