@@ -15,7 +15,6 @@ BANNED METHODS — NIEMALS VERWENDEN:
 
 # === SR-63 #62 legacy-debt skip (do not delete without unskipping) ===
 import pytest
-pytestmark = pytest.mark.skip(reason="SR-63 #62: logic drift — assertions need update for current SurveyFiller matching algorithm")
 # === END SR-63 skip ===
 
 import unittest
