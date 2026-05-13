@@ -1,0 +1,99 @@
+# PATH-GUARD WORKFLOW — SR-159
+#
+# Enforces the repo's path doctrine on every PR. The doctrine itself lives
+# in two places that MUST stay in sync:
+#
+#   1. survey-cli/AGENTS.md  § PATH DOCTRINE (human-readable spec)
+#   2. scripts/path_guard.py (machine-readable manifest + checker)
+#
+# This workflow is a thin shim around `scripts/path_guard.py --diff`.
+# Keep it small. All policy logic belongs in the Python script so the
+# pre-commit hook and CI run the exact same code path.
+#
+# History:
+# - 2026-05-13 SR-159: created. Reason: SR-154 (100-file PR landed in a
+#   non-existent dir) + SR-162 (daemon.py vs daemon/ shadow killed CI for
+#   a week). Both could have been blocked by a 5-line CI check.
+#
+# Style notes (mirroring .github/workflows/ci.yml §13.8.4):
+# - Action versions are Brain-property. Bumped explicitly, never @latest.
+# - actions/checkout@v5, setup-python@v6 to stay on Node-24 runtime.
+# - fetch-depth: 0 is REQUIRED because the guard runs `git diff
+#   $base...HEAD` and needs the merge-base reachable.
+
+name: path-guard
+
+on:
+  pull_request:
+    # No `branches:` filter — see ci.yml: PRs against integration branches
+    # must also be gated, otherwise drift sneaks in via long-running feat
+    # branches (SR-50..SR-55 precedent in PR #54).
+  push:
+    branches:
+      - main
+      - master
+
+permissions:
+  contents: read
+  pull-requests: write   # for the failure comment
+
+jobs:
+  path-guard:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          # Needed for `git diff $base...HEAD` to resolve the merge-base.
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.13"
+
+      - name: Run path-guard (diff mode)
+        id: guard
+        # The script uses $GITHUB_BASE_REF on pull_request events and falls
+        # back to origin/main on push events. No `pip install` — pure stdlib.
+        run: |
+          python scripts/path_guard.py --diff | tee path_guard.out
+        env:
+          # Explicit even though Actions sets it automatically — makes the
+          # script's behaviour obvious to anyone reading the workflow.
+          GITHUB_BASE_REF: ${{ github.base_ref }}
+
+      - name: Comment on PR when guard fails
+        if: failure() && github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const out = fs.existsSync('path_guard.out')
+              ? fs.readFileSync('path_guard.out', 'utf8')
+              : '(no output captured)';
+            const body = [
+              '### path-guard failed (SR-159)',
+              '',
+              'This PR adds files outside the canonical repo layout. The doctrine',
+              'lives in [`survey-cli/AGENTS.md` § PATH DOCTRINE](https://github.com/' +
+                context.repo.owner + '/' + context.repo.repo +
+                '/blob/main/survey-cli/AGENTS.md#path-doctrine-sr-159).',
+              '',
+              '<details><summary>Guard output</summary>',
+              '',
+              '```',
+              out,
+              '```',
+              '',
+              '</details>',
+              '',
+              'If the verdict is wrong (e.g. a genuinely new canonical area),',
+              '**STOP** and comment on the issue with rationale — do not work',
+              'around the guard.',
+            ].join('\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body,
+            });
