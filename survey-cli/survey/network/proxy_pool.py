@@ -76,6 +76,7 @@ from pathlib import Path
 from dataclasses import dataclass
 from typing import Optional, List, Dict, Any, Self
 from datetime import datetime, timezone
+from .ip_quality import persist_event  # noqa: F401 — re-exported so tests can patch survey.network.proxy_pool.persist_event
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # LOGGING
@@ -401,7 +402,6 @@ class ProxyPool:
             success: True wenn Request erfolgreich war.
             banned: True wenn 403/429 oder bekannter Block-Marker erkannt wurde.
         """
-        from .ip_quality import persist_event
 
         with self._lock:
             score_before = entry.score
