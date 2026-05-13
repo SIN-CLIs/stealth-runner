@@ -1,4 +1,3 @@
-import pytest
 
 """
 Unit tests for SR-150 extended question types.
@@ -11,6 +10,7 @@ No real browser launch — browser_driver primitives are mocked.
 
 from __future__ import annotations
 
+import pytest
 import unittest
 from unittest.mock import AsyncMock, patch, MagicMock
 import tempfile
