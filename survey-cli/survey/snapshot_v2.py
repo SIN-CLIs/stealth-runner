@@ -24,7 +24,7 @@ from __future__ import annotations
 import hashlib
 import json
 import logging
-from dataclasses import dataclass, field, asdict
+from dataclasses import dataclass, field
 from typing import Any, Protocol
 
 logger = logging.getLogger(__name__)
@@ -180,7 +180,10 @@ def _build_frames(controls: list[dict]) -> dict[str, QuestionFrame]:
         if not qid:
             continue  # orphan controls (no question container) — excluded from per-question hash
         # Sort for determinism (DOM order can shift)
-        group_sorted = sorted(group, key=lambda c: (c.get("name", ""), c.get("value") or "", c.get("tag", "")))
+        group_sorted = sorted(
+            group,
+            key=lambda c: (c.get("name", ""), c.get("value") or "", c.get("tag", "")),
+        )
         # Drop volatile fields from the hash input (visibility can flicker)
         hash_input = [
             {k: v for k, v in c.items() if k not in ("visible",)}

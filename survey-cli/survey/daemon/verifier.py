@@ -47,7 +47,9 @@ class Mismatch:
     qtype: str
     expected: Any
     actual: Any
-    reason: str  # "not_checked" | "wrong_value" | "missing_control" | "wrong_set" | "text_mismatch" | "out_of_range"
+    # Reason codes: "not_checked" | "wrong_value" | "missing_control" |
+    # "wrong_set" | "text_mismatch" | "out_of_range"
+    reason: str
 
     def to_dict(self) -> dict:
         return {
@@ -64,7 +66,8 @@ class VerificationResult:
     success: bool
     attempt: int
     mismatches: list[Mismatch] = field(default_factory=list)
-    dom_unstable: bool = False  # snapshot_before.page_hash == snapshot_after.page_hash AND we expected change
+    # True if snapshot_before.page_hash == snapshot_after.page_hash AND we expected change
+    dom_unstable: bool = False
     page_hash_before: str | None = None
     page_hash_after: str | None = None
     # qids whose subtree_hash is unchanged vs. snapshot_before (Phase 2 #168 input)
