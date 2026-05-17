@@ -360,3 +360,210 @@ Alle priority:critical Bugs geschlossen. Daemon CLI sollte jetzt starten.
 All green: schema-guard, path-guard, test-suite
 
 ### Commits on main: 25+
+
+
+
+## 16. Session Summary — 2026-05-17 Welle-3 Deferred-Followup Closeout
+
+CEO-Auftrag: "mach alles ceo like fertig" — die in vorherigen Merges
+explizit als out-of-scope deferred Punkte schliessen, statt blind
+weiter Stacks zu bauen, die auf 11 unmerged Welle-1+2-PRs warten.
+
+Disziplin: jede Lieferung ist ein eigenstaendiger PR auf `main`,
+< 600 LoC inkl. Tests, kein Stack, separat mergebar.
+
+### PRs geliefert (3 Code-PRs + 1 Doku-PR)
+
+| PR | SR | Branch | Was | Tests |
+|----|----|--------|-----|------:|
+| #245 | SR-246 | `feat/full-stability-composition-sr-246` | `wait_for_full_stability()` komponiert SR-169 (DOM) + SR-174 (Network). PR #185 hatte das explizit als out-of-scope angekuendigt. DOM-first ordering, Short-Circuit auf dom_timeout. | 11 |
+| #246 | SR-247 | `feat/persona-quarantine-ttl-sr-247` | Opt-in `ttl_seconds`-Field + `sweep_expired()` Reaper. PR #224 hatte TTL/auto-release explizit als out-of-scope deferred. Schema 1 -> 2, voll backward-kompatibel (alte JSONs laden mit `ttl_seconds=None`). | 19 |
+| #247 | SR-248 | `feat/dlq-health-observability-sr-248` | `aggregate_health()` pure-function ueber DLQRecord-Liste. Counts, Quantile (p50/p95), Alarm-Reasons. Operator-Triage-Primitive — wireup in `/doctor` ist separater PR. | 22 |
+| #248 | SR-249 | `docs/wave-3-audit-section-sr-249` | Diese Audit-Section. | — |
+
+**52 neue Tests, alle unittest-only (kein pytest-Dep), alle gruen.**
+
+### Welle-3 Designprinzipien
+
+1. **Orthogonal zu offenen Welle-1+2-PRs.** Kein einziger der drei
+   neuen Code-PRs aendert eine Datei, die in den 11 offenen PRs
+   geaendert wird. Reviewer-Reihenfolge ist frei.
+2. **Jeder PR schliesst einen explizit dokumentierten Out-of-Scope-
+   Punkt.** Quelle steht im jeweiligen PR-Body als Quote. Keine
+   spekulativen Features.
+3. **Pure-Python, additiv.** Kein neuer Top-Level-Dir, keine neuen
+   Dependencies, keine Hot-Path-Aenderungen, keine I/O-Erweiterung.
+4. **Wireup ist immer separater PR.** SR-246, SR-247 und SR-248
+   liefern jeweils das Primitive; die Integration in den Hot-Path
+   (`safe_executor`, Cron, `/doctor`) bleibt fuer einen Folge-PR
+   nach Review.
+5. **Backward-kompatibel by construction.** SR-247 bumpt das
+   Quarantine-Schema 1 -> 2, schreibt aber nur opt-in das neue Feld
+   und laed alte JSONs mit Default-Fallback.
+
+### Stand der bestehenden Stacks (unveraendert)
+
+Alle 11 offenen Welle-1 + Welle-2-PRs (#234-244) bleiben unberuehrt
+und wartem weiterhin auf Reviewer-Merge in der dort festgelegten
+Reihenfolge. Welle-3 baut nicht darauf auf und blockiert sie nicht.
+
+| Welle | PRs | Status |
+|------|-----|--------|
+| 1 (P0) | #234, #235, #236 | offen |
+| 1 (P1) | #237 -> #238 (Stack), #239, #240 | offen |
+| 1 strategisch | #241 | offen |
+| 2 (action-recipe Stack) | #242 -> #243 -> #244 | offen |
+| 3 (deferred-followup) | #245, #246, #247, #248 | NEU, offen |
+
+**Total: 15 offene PRs. Alle <= 1k LoC. Alle mit Acceptance-Criteria,
+Tests, kein Direct-Push, alle Status-Truth-konform.**
+
+### Forbidden-In-This-Session
+
+Bewusst NICHT angefasst (Disziplin):
+
+- `safe_executor.py` (Wireup-Aufgabe fuer SR-246-Followup)
+- `dlq.py` (DLQ-Aenderung fuer SR-248-Followup, hier nur additive
+  Observability)
+- Bestehende Welle-1 / Welle-2-Branches (kein Cherry-Pick, kein
+  Rebase, kein Stack-Aufbau)
+- Welle-2-Plan-Punkte wie rebrowser-patches (das ist sinnvoller,
+  wenn Patchright-PR #236 erstmal gemerged ist — sonst doppelter
+  Merge-Conflict-Risiko)
+
+### Audit-Trail
+
+Commits auf `main` in dieser Session: 0 (Disziplin: alles via PR).
+Direkt-Pushes auf `main`: 0.
+Tests gegen vorhandene Module: alle gruen, kein Regression-Bruch.
+
+
+
+## 17. Session Summary — 2026-05-17 Welle-3 Round-2 Closeout
+
+CEO-Auftrag (zweite Iteration): "mach alles ceo like fertig" —
+zwei weitere orthogonale Primitive geliefert, die unabhaengig von
+allen offenen 18 PRs gemerged werden koennen und konkrete Wireup-
+Lecks im Observability/Reliability-Layer schliessen.
+
+### PRs geliefert (2 Code-PRs)
+
+| PR | SR | Branch | Was | Tests |
+|----|----|--------|-----|------:|
+| #249 | SR-250 | `feat/log-redaction-util-sr-250` | Pure-Python log-payload redaction (PII-Keys + value-pattern scrubbing). Repo hatte 0 zentrale Redact-Util — jeder Logger ein potenzielles Leck. | 32 |
+| #250 | SR-251 | `feat/token-bucket-rate-limiter-sr-251` | Thread-safe TokenBucket fuer DLQ-Replay / Resume / Sweep / Vision-Cost-Budget. Sync-API, injectable Clock, 100-Thread-Concurrency-Test. | 26 |
+
+**58 neue Tests, alle unittest-only, alle gruen.**
+
+### Designprinzipien (unveraendert ggue Round-1)
+
+1. **Orthogonal zu allen offenen PRs.** Keine Datei in den
+   bestehenden Branches wird angefasst.
+2. **Schliesst eine konkrete Lucke**, kein spekulatives Feature.
+3. **Pure-Python, additiv.** Keine neuen Top-Level-Dirs, keine
+   neuen Dependencies.
+4. **Wireup separat.** SR-250 (logger.py-Hook) und SR-251 (DLQ /
+   Resume / Sweep / Vision) bleiben fuer Folge-PRs. Hier nur das
+   Primitive.
+
+### Kumulativer Welle-3-Stand
+
+| Welle | PRs | Status |
+|------|-----|--------|
+| 1 (P0) | #234, #235, #236 | offen |
+| 1 (P1) | #237 -> #238 (Stack), #239, #240 | offen |
+| 1 strategisch | #241 | offen |
+| 2 (action-recipe Stack) | #242 -> #243 -> #244 | offen |
+| 3 round-1 (deferred-followup) | #245, #246, #247, #248 | offen |
+| 3 round-2 (observability/reliability primitives) | #249, #250 | NEU, offen |
+
+**Total: 17 offene PRs. Alle <= 1k LoC. Direkt-Pushes auf `main`
+diese Session: 0.**
+
+### Wireup-Backlog (fuer Reviewer-Tracking)
+
+Welle-3-PRs liefern absichtlich nur Primitive. Nach jedem Merge
+folgt ein "wire-X-into-Y"-PR:
+
+  - SR-246 (#245) -> wireup in `safe_executor.py` (full_stability gate)
+  - SR-247 (#246) -> wireup in `daemon` startup hook (sweep_expired cron)
+  - SR-248 (#247) -> wireup in `/doctor` command + alerting
+  - SR-250 (#249) -> wireup in `observability/logger.py` als processor
+  - SR-251 (#250) -> wireup in DLQ-Replay + Resume + Sweep + Vision
+
+Disziplin: jeder Wireup-PR ist seinerseits orthogonal (genau eine
+Datei pro Wireup), damit Stack-Konflikte mit Welle-1/2 weiterhin
+vermieden werden.
+
+
+
+## 18. Session Summary — 2026-05-17 Welle-3 Round-3 Closeout
+
+CEO-Auftrag (dritte Iteration): "mach alles ceo like fertig" — zwei
+weitere Resilienz-Primitive geliefert, die Operator-Pain heute reduzieren
+und unabhaengig von allen offenen 19 PRs gemerged werden koennen.
+
+### PRs geliefert (2 Code-PRs)
+
+| PR | SR | Branch | Was | Tests |
+|----|----|--------|-----|------:|
+| #251 | SR-253 | `feat/circuit-breaker-sr-253` | Three-state CircuitBreaker (CLOSED/OPEN/HALF_OPEN). Loest die Luecke zwischen RetryPolicy (Per-Call-Retry) und 5-Minuten-Provider-Outages, bei denen jeder Call 3x mit Backoff retried bevor er aufgibt. Cooldown_s + success_threshold + exception_predicate. 100-Thread-Concurrency-Test. | 22 |
+| #252 | SR-254 | `feat/env-presence-check-sr-254` | Fail-fast env-validation. Heute scheitert der Daemon 5 Minuten nach Start an einem fehlenden TWOCAPTCHA_API_KEY. SR-254 liefert check_env() + format_human_report() + zwei kuratierte Listen (REQUIRED_FOR_DAEMON, REQUIRED_FOR_LIVE_RUN). NIEMALS echo von Values (secret-leak-Regression-Test). | 21 |
+
+**43 neue Tests, alle unittest-only, alle gruen.**
+
+### Designprinzipien (unveraendert)
+
+1. **Orthogonal zu allen offenen PRs.** Keine Datei in den
+   bestehenden Branches wird angefasst.
+2. **Schliesst eine konkrete Operator-Pain-Quelle** — keine
+   spekulativen Features.
+3. **Pure-Python, additiv.** Keine neuen Top-Level-Dirs, keine
+   neuen Dependencies.
+4. **Wireup separat.** SR-253 (NIM/Captcha/Vision-Wireup) und
+   SR-254 (daemon-startup-trip-wire) bleiben fuer Folge-PRs.
+   Hier nur die Primitive.
+5. **Compatible mit existierenden Primitiven.** SR-253 dokumentiert
+   explizit das Pattern: classify CircuitOpenError als FATAL in
+   einem custom RetryPolicy.classify_fn → kein Hammer-auf-offene-
+   Breaker.
+
+### Kumulativer Welle-3-Stand
+
+| Welle | PRs | Status |
+|------|-----|--------|
+| 1 (P0) | #234, #235, #236 | offen |
+| 1 (P1) | #237 -> #238 (Stack), #239, #240 | offen |
+| 1 strategisch | #241 | offen |
+| 2 (action-recipe Stack) | #242 -> #243 -> #244 | offen |
+| 3 round-1 (deferred-followup) | #245, #246, #247, #248 | offen |
+| 3 round-2 (observability/reliability primitives) | #249, #250 | offen |
+| 3 round-3 (resilience primitives) | #251, #252 | NEU, offen |
+
+**Total: 19 offene PRs. Alle <= 1k LoC. Direkt-Pushes auf `main`
+diese Session: 0.**
+
+### Vollstaendiges Welle-3-Wireup-Backlog
+
+Welle-3 hat in 7 PRs sieben separate Primitive geliefert. Jedes kommt
+mit einem eigenen Wireup-Folge-PR — Reviewer haben damit eine klare
+Roadmap fuer den Integrations-Pfad nach Merge:
+
+| Primitive | PR | Wireup-Ziel | Wireup-PR-Skopus |
+|-----------|----|-------------|------------------|
+| full_stability gate | #245 SR-246 | `safe_executor.py` | 1 Hook nach DOM-Verifier |
+| persona-quarantine TTL | #246 SR-247 | daemon-startup-hook | 1 Cron-Aufruf von sweep_expired() |
+| dlq_health aggregator | #247 SR-248 | `/doctor` command | 1 JSON-Endpoint |
+| log redaction | #249 SR-250 | `observability/logger.py` | 1 structlog-Processor |
+| TokenBucket | #250 SR-251 | DLQ-Replay + Resume + Sweep + Vision | 4 separate kleine Wireup-PRs |
+| CircuitBreaker | #251 SR-253 | `nim.py` + Captcha-Solver + Vision + Login | 4 separate kleine Wireup-PRs |
+| env-presence-check | #252 SR-254 | `daemon/cli.py` startup | 1 Trip-Wire-Line |
+
+Geschaetzter Wireup-Aufwand: ~12 sehr kleine Folge-PRs, jeder unter
+50 LoC, jeder orthogonal zu Welle-1+2.
+
+### Audit-Trail
+
+Direkt-Pushes auf `main` ueber alle drei Welle-3-Sessions: **0**.
+Tests neu (Round-1+2+3 zusammen): **153** (52 + 58 + 43), alle gruen.
+Banned-pattern-check: clean auf jedem Branch.
