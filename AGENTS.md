@@ -494,3 +494,76 @@ folgt ein "wire-X-into-Y"-PR:
 Disziplin: jeder Wireup-PR ist seinerseits orthogonal (genau eine
 Datei pro Wireup), damit Stack-Konflikte mit Welle-1/2 weiterhin
 vermieden werden.
+
+
+
+## 18. Session Summary — 2026-05-17 Welle-3 Round-3 Closeout
+
+CEO-Auftrag (dritte Iteration): "mach alles ceo like fertig" — zwei
+weitere Resilienz-Primitive geliefert, die Operator-Pain heute reduzieren
+und unabhaengig von allen offenen 19 PRs gemerged werden koennen.
+
+### PRs geliefert (2 Code-PRs)
+
+| PR | SR | Branch | Was | Tests |
+|----|----|--------|-----|------:|
+| #251 | SR-253 | `feat/circuit-breaker-sr-253` | Three-state CircuitBreaker (CLOSED/OPEN/HALF_OPEN). Loest die Luecke zwischen RetryPolicy (Per-Call-Retry) und 5-Minuten-Provider-Outages, bei denen jeder Call 3x mit Backoff retried bevor er aufgibt. Cooldown_s + success_threshold + exception_predicate. 100-Thread-Concurrency-Test. | 22 |
+| #252 | SR-254 | `feat/env-presence-check-sr-254` | Fail-fast env-validation. Heute scheitert der Daemon 5 Minuten nach Start an einem fehlenden TWOCAPTCHA_API_KEY. SR-254 liefert check_env() + format_human_report() + zwei kuratierte Listen (REQUIRED_FOR_DAEMON, REQUIRED_FOR_LIVE_RUN). NIEMALS echo von Values (secret-leak-Regression-Test). | 21 |
+
+**43 neue Tests, alle unittest-only, alle gruen.**
+
+### Designprinzipien (unveraendert)
+
+1. **Orthogonal zu allen offenen PRs.** Keine Datei in den
+   bestehenden Branches wird angefasst.
+2. **Schliesst eine konkrete Operator-Pain-Quelle** — keine
+   spekulativen Features.
+3. **Pure-Python, additiv.** Keine neuen Top-Level-Dirs, keine
+   neuen Dependencies.
+4. **Wireup separat.** SR-253 (NIM/Captcha/Vision-Wireup) und
+   SR-254 (daemon-startup-trip-wire) bleiben fuer Folge-PRs.
+   Hier nur die Primitive.
+5. **Compatible mit existierenden Primitiven.** SR-253 dokumentiert
+   explizit das Pattern: classify CircuitOpenError als FATAL in
+   einem custom RetryPolicy.classify_fn → kein Hammer-auf-offene-
+   Breaker.
+
+### Kumulativer Welle-3-Stand
+
+| Welle | PRs | Status |
+|------|-----|--------|
+| 1 (P0) | #234, #235, #236 | offen |
+| 1 (P1) | #237 -> #238 (Stack), #239, #240 | offen |
+| 1 strategisch | #241 | offen |
+| 2 (action-recipe Stack) | #242 -> #243 -> #244 | offen |
+| 3 round-1 (deferred-followup) | #245, #246, #247, #248 | offen |
+| 3 round-2 (observability/reliability primitives) | #249, #250 | offen |
+| 3 round-3 (resilience primitives) | #251, #252 | NEU, offen |
+
+**Total: 19 offene PRs. Alle <= 1k LoC. Direkt-Pushes auf `main`
+diese Session: 0.**
+
+### Vollstaendiges Welle-3-Wireup-Backlog
+
+Welle-3 hat in 7 PRs sieben separate Primitive geliefert. Jedes kommt
+mit einem eigenen Wireup-Folge-PR — Reviewer haben damit eine klare
+Roadmap fuer den Integrations-Pfad nach Merge:
+
+| Primitive | PR | Wireup-Ziel | Wireup-PR-Skopus |
+|-----------|----|-------------|------------------|
+| full_stability gate | #245 SR-246 | `safe_executor.py` | 1 Hook nach DOM-Verifier |
+| persona-quarantine TTL | #246 SR-247 | daemon-startup-hook | 1 Cron-Aufruf von sweep_expired() |
+| dlq_health aggregator | #247 SR-248 | `/doctor` command | 1 JSON-Endpoint |
+| log redaction | #249 SR-250 | `observability/logger.py` | 1 structlog-Processor |
+| TokenBucket | #250 SR-251 | DLQ-Replay + Resume + Sweep + Vision | 4 separate kleine Wireup-PRs |
+| CircuitBreaker | #251 SR-253 | `nim.py` + Captcha-Solver + Vision + Login | 4 separate kleine Wireup-PRs |
+| env-presence-check | #252 SR-254 | `daemon/cli.py` startup | 1 Trip-Wire-Line |
+
+Geschaetzter Wireup-Aufwand: ~12 sehr kleine Folge-PRs, jeder unter
+50 LoC, jeder orthogonal zu Welle-1+2.
+
+### Audit-Trail
+
+Direkt-Pushes auf `main` ueber alle drei Welle-3-Sessions: **0**.
+Tests neu (Round-1+2+3 zusammen): **153** (52 + 58 + 43), alle gruen.
+Banned-pattern-check: clean auf jedem Branch.
