@@ -1,4 +1,4 @@
-# STATUS-TRUTH WORKFLOW — SR-218
+# STATUS-TRUTH WORKFLOW — SR-218 / SR-CEO-WAVE-1
 #
 # Diese Datei ist Teil des Agenten-Brains. Aenderungen an `on:` muessen
 # in AGENTS.md §13.8 (CI-Notiz) reflektiert werden.
@@ -9,33 +9,38 @@
 #   existieren, Code existiert, Merge ist nie passiert. Dieses Gate
 #   verhindert die Wiederholung, indem es JEDE Status-Markdown im Repo
 #   gegen `gh api repos/.../pulls/<n>` haelt.
+# - 2026-05-17 (CEO-WAVE-1): Workflow lief mit `paths:`-Filter, was bei
+#   Required-Status-Check zu "expected, never reported" fuehrte und
+#   legitime PRs ohne MD-Aenderung dauerhaft blockierte. Path-Filter aus
+#   Trigger-Ebene entfernt; Filterung passiert jetzt im Job (git diff)
+#   und das Gate wird IMMER reportet — green wenn nichts zu pruefen ist.
+#   Neuer `truth-gate` Job buendelt das Ergebnis fuer Branch-Protection.
+#   Begleit-Doku: docs/BRANCH_PROTECTION.md.
 #
 # WAS GEPRUEFT WIRD
-# - Jede *.md im Repo (in PRs: nur geaenderte; nightly: alle).
-# - Jeder Issue-Body, der ein Label `status-update` traegt (issues-event).
+# - PR / push: nur in dem Diff geaenderte *.md (billig).
+# - schedule / workflow_dispatch: alle *.md im tree (Sicherheitsnetz).
+# - issues-event: Issue-Body, falls Label `status-update` gesetzt ist.
 #
 # DESIGN
 # - Read-only. Schreibt keine Kommentare zurueck — der Token in CI hat
 #   nur `contents:read`. Bei Verstoss faellt der Job, das ist genug Signal.
 # - Token: GITHUB_TOKEN ist standardmaessig vorhanden, wird an `gh` als
 #   GH_TOKEN durchgereicht.
+# - Branch-Protection: setze als Required-Check NUR den `truth-gate` Job.
+#   Die anderen Jobs sind Implementierungsdetails und koennen sich
+#   aendern, ohne dass die UI angepasst werden muss.
 name: status-truth
 
 on:
   pull_request:
-    paths:
-      - "**/*.md"
-      - "scripts/check_status_truth.py"
-      - ".github/workflows/status-truth.yml"
+    # NO paths filter: muss IMMER laufen, sonst blockiert Required-Check
+    # PRs ohne MD-Aenderung. Filterung passiert im Job per git diff.
   push:
     branches:
       - main
-    paths:
-      - "**/*.md"
-      - "scripts/check_status_truth.py"
   issues:
     types: [opened, edited, labeled]
-  # Nightly safety-net: scan all status documents in main.
   schedule:
     - cron: "17 4 * * *"
   workflow_dispatch:
@@ -49,9 +54,14 @@ jobs:
   scan-markdown:
     if: github.event_name != 'issues'
     runs-on: ubuntu-latest
+    outputs:
+      result: ${{ steps.scan.outputs.result }}
     steps:
       # AGENTS.md §13.8.4: Action-Versionen sind Brain-Eigentum, kein @latest.
       - uses: actions/checkout@v5
+        with:
+          # Need history for `git diff` against base ref on PR events.
+          fetch-depth: 0
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
@@ -60,31 +70,45 @@ jobs:
         id: files
         env:
           EVENT_NAME: ${{ github.event_name }}
+          BASE_REF: ${{ github.base_ref }}
         run: |
           set -euo pipefail
           if [ "$EVENT_NAME" = "pull_request" ]; then
-            git fetch origin "${{ github.base_ref }}" --depth=1
+            git fetch origin "$BASE_REF" --depth=1 || true
             CHANGED=$(git diff --name-only --diff-filter=AM \
-              "origin/${{ github.base_ref }}...HEAD" -- '*.md' || true)
+              "origin/$BASE_REF...HEAD" -- '*.md' || true)
+          elif [ "$EVENT_NAME" = "push" ]; then
+            # Push to main: scan files changed in the push range.
+            BEFORE='${{ github.event.before }}'
+            AFTER='${{ github.event.after }}'
+            if [ "$BEFORE" = "0000000000000000000000000000000000000000" ]; then
+              CHANGED=$(git ls-files '*.md')
+            else
+              CHANGED=$(git diff --name-only --diff-filter=AM \
+                "$BEFORE...$AFTER" -- '*.md' || true)
+            fi
           else
-            # push to main or scheduled/manual: scan everything.
+            # schedule / workflow_dispatch: full sweep.
             CHANGED=$(git ls-files '*.md')
           fi
-          echo "$CHANGED" > _md_to_scan.txt
-          wc -l _md_to_scan.txt
+          printf '%s\n' "$CHANGED" > _md_to_scan.txt
+          echo "Files queued for scan: $(grep -c . _md_to_scan.txt || echo 0)"
 
       - name: Run check_status_truth.py against each file
+        id: scan
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          if [ ! -s _md_to_scan.txt ]; then
-            echo "No markdown to scan — skipping."
+          if [ ! -s _md_to_scan.txt ] || ! grep -q . _md_to_scan.txt; then
+            echo "No markdown to scan — gate is GREEN by absence."
+            echo "result=pass-empty" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           rc=0
           while IFS= read -r f; do
             [ -z "$f" ] && continue
+            [ ! -f "$f" ] && continue
             echo "::group::status-truth: $f"
             if ! python scripts/check_status_truth.py \
                 --file "$f" \
@@ -93,6 +117,11 @@ jobs:
             fi
             echo "::endgroup::"
           done < _md_to_scan.txt
+          if [ $rc -ne 0 ]; then
+            echo "result=fail" >> "$GITHUB_OUTPUT"
+          else
+            echo "result=pass" >> "$GITHUB_OUTPUT"
+          fi
           exit $rc
 
   scan-issue-body:
@@ -129,3 +158,25 @@ jobs:
             --issue "$ISSUE_NUMBER" \
             --repo "${{ github.repository }}" \
             --exit-non-zero-on-violation
+
+  # SINGLE REQUIRED CHECK FOR BRANCH-PROTECTION.
+  # This job runs on every event that gates a merge (pull_request, push)
+  # and reports a stable status name independent of inner-job changes.
+  # Set this as the only required status in repo settings.
+  truth-gate:
+    name: truth-gate
+    if: github.event_name != 'issues'
+    needs: [scan-markdown]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Aggregate scan result
+        env:
+          MD_RESULT: ${{ needs.scan-markdown.result }}
+        run: |
+          set -euo pipefail
+          echo "scan-markdown conclusion: $MD_RESULT"
+          case "$MD_RESULT" in
+            success) echo "Truth-gate GREEN."; exit 0 ;;
+            skipped) echo "scan-markdown was skipped — gate cannot vouch."; exit 1 ;;
+            *)       echo "scan-markdown failed — gate RED."; exit 1 ;;
+          esac
