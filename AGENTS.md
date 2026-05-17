@@ -360,3 +360,79 @@ Alle priority:critical Bugs geschlossen. Daemon CLI sollte jetzt starten.
 All green: schema-guard, path-guard, test-suite
 
 ### Commits on main: 25+
+
+
+
+## 16. Session Summary — 2026-05-17 Welle-3 Deferred-Followup Closeout
+
+CEO-Auftrag: "mach alles ceo like fertig" — die in vorherigen Merges
+explizit als out-of-scope deferred Punkte schliessen, statt blind
+weiter Stacks zu bauen, die auf 11 unmerged Welle-1+2-PRs warten.
+
+Disziplin: jede Lieferung ist ein eigenstaendiger PR auf `main`,
+< 600 LoC inkl. Tests, kein Stack, separat mergebar.
+
+### PRs geliefert (3 Code-PRs + 1 Doku-PR)
+
+| PR | SR | Branch | Was | Tests |
+|----|----|--------|-----|------:|
+| #245 | SR-246 | `feat/full-stability-composition-sr-246` | `wait_for_full_stability()` komponiert SR-169 (DOM) + SR-174 (Network). PR #185 hatte das explizit als out-of-scope angekuendigt. DOM-first ordering, Short-Circuit auf dom_timeout. | 11 |
+| #246 | SR-247 | `feat/persona-quarantine-ttl-sr-247` | Opt-in `ttl_seconds`-Field + `sweep_expired()` Reaper. PR #224 hatte TTL/auto-release explizit als out-of-scope deferred. Schema 1 -> 2, voll backward-kompatibel (alte JSONs laden mit `ttl_seconds=None`). | 19 |
+| #247 | SR-248 | `feat/dlq-health-observability-sr-248` | `aggregate_health()` pure-function ueber DLQRecord-Liste. Counts, Quantile (p50/p95), Alarm-Reasons. Operator-Triage-Primitive — wireup in `/doctor` ist separater PR. | 22 |
+| #248 | SR-249 | `docs/wave-3-audit-section-sr-249` | Diese Audit-Section. | — |
+
+**52 neue Tests, alle unittest-only (kein pytest-Dep), alle gruen.**
+
+### Welle-3 Designprinzipien
+
+1. **Orthogonal zu offenen Welle-1+2-PRs.** Kein einziger der drei
+   neuen Code-PRs aendert eine Datei, die in den 11 offenen PRs
+   geaendert wird. Reviewer-Reihenfolge ist frei.
+2. **Jeder PR schliesst einen explizit dokumentierten Out-of-Scope-
+   Punkt.** Quelle steht im jeweiligen PR-Body als Quote. Keine
+   spekulativen Features.
+3. **Pure-Python, additiv.** Kein neuer Top-Level-Dir, keine neuen
+   Dependencies, keine Hot-Path-Aenderungen, keine I/O-Erweiterung.
+4. **Wireup ist immer separater PR.** SR-246, SR-247 und SR-248
+   liefern jeweils das Primitive; die Integration in den Hot-Path
+   (`safe_executor`, Cron, `/doctor`) bleibt fuer einen Folge-PR
+   nach Review.
+5. **Backward-kompatibel by construction.** SR-247 bumpt das
+   Quarantine-Schema 1 -> 2, schreibt aber nur opt-in das neue Feld
+   und laed alte JSONs mit Default-Fallback.
+
+### Stand der bestehenden Stacks (unveraendert)
+
+Alle 11 offenen Welle-1 + Welle-2-PRs (#234-244) bleiben unberuehrt
+und wartem weiterhin auf Reviewer-Merge in der dort festgelegten
+Reihenfolge. Welle-3 baut nicht darauf auf und blockiert sie nicht.
+
+| Welle | PRs | Status |
+|------|-----|--------|
+| 1 (P0) | #234, #235, #236 | offen |
+| 1 (P1) | #237 -> #238 (Stack), #239, #240 | offen |
+| 1 strategisch | #241 | offen |
+| 2 (action-recipe Stack) | #242 -> #243 -> #244 | offen |
+| 3 (deferred-followup) | #245, #246, #247, #248 | NEU, offen |
+
+**Total: 15 offene PRs. Alle <= 1k LoC. Alle mit Acceptance-Criteria,
+Tests, kein Direct-Push, alle Status-Truth-konform.**
+
+### Forbidden-In-This-Session
+
+Bewusst NICHT angefasst (Disziplin):
+
+- `safe_executor.py` (Wireup-Aufgabe fuer SR-246-Followup)
+- `dlq.py` (DLQ-Aenderung fuer SR-248-Followup, hier nur additive
+  Observability)
+- Bestehende Welle-1 / Welle-2-Branches (kein Cherry-Pick, kein
+  Rebase, kein Stack-Aufbau)
+- Welle-2-Plan-Punkte wie rebrowser-patches (das ist sinnvoller,
+  wenn Patchright-PR #236 erstmal gemerged ist — sonst doppelter
+  Merge-Conflict-Risiko)
+
+### Audit-Trail
+
+Commits auf `main` in dieser Session: 0 (Disziplin: alles via PR).
+Direkt-Pushes auf `main`: 0.
+Tests gegen vorhandene Module: alle gruen, kein Regression-Bruch.
