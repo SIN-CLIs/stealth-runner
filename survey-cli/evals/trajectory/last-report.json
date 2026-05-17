@@ -1,0 +1,159 @@
+{
+  "aggregate_mean": {
+    "accuracy": 1.0,
+    "coherence": 1.0,
+    "compliance": 0.961,
+    "efficiency": 0.9615
+  },
+  "backend": "mock",
+  "finished_at": "2026-05-17T17:33:49.307086+00:00",
+  "overall_mean": 0.980625,
+  "per_record": [
+    {
+      "expected_outcome": "completed",
+      "id": "qualtrics-clean-1",
+      "mean_score": 1.0,
+      "min_score": 1.0,
+      "provider": "qualtrics",
+      "rationale": "decide_steps=5, failed=0, retries=0, no_dom_change=0, delegated=0, qualif_blocks=0, final=detect_completion/'completed', monotonic=True",
+      "scores": {
+        "accuracy": 1.0,
+        "coherence": 1.0,
+        "compliance": 1.0,
+        "efficiency": 1.0
+      }
+    },
+    {
+      "expected_outcome": "completed",
+      "id": "qualtrics-with-retry-1",
+      "mean_score": 0.90625,
+      "min_score": 0.775,
+      "provider": "qualtrics",
+      "rationale": "decide_steps=4, failed=1, retries=1, no_dom_change=1, delegated=0, qualif_blocks=0, final=detect_completion/'completed', monotonic=True",
+      "scores": {
+        "accuracy": 1.0,
+        "coherence": 1.0,
+        "compliance": 0.85,
+        "efficiency": 0.775
+      }
+    },
+    {
+      "expected_outcome": "completed",
+      "id": "purespectrum-clean-1",
+      "mean_score": 1.0,
+      "min_score": 1.0,
+      "provider": "purespectrum",
+      "rationale": "decide_steps=4, failed=0, retries=0, no_dom_change=0, delegated=0, qualif_blocks=0, final=detect_completion/'completed', monotonic=True",
+      "scores": {
+        "accuracy": 1.0,
+        "coherence": 1.0,
+        "compliance": 1.0,
+        "efficiency": 1.0
+      }
+    },
+    {
+      "expected_outcome": "screen_out",
+      "id": "purespectrum-screen-out-1",
+      "mean_score": 1.0,
+      "min_score": 1.0,
+      "provider": "purespectrum",
+      "rationale": "decide_steps=2, failed=0, retries=0, no_dom_change=0, delegated=0, qualif_blocks=0, final=detect_completion/'screen_out', monotonic=True",
+      "scores": {
+        "accuracy": 1.0,
+        "coherence": 1.0,
+        "compliance": 1.0,
+        "efficiency": 1.0
+      }
+    },
+    {
+      "expected_outcome": "completed",
+      "id": "tolunastart-clean-1",
+      "mean_score": 1.0,
+      "min_score": 1.0,
+      "provider": "tolunastart",
+      "rationale": "decide_steps=6, failed=0, retries=0, no_dom_change=0, delegated=0, qualif_blocks=0, final=detect_completion/'completed', monotonic=True",
+      "scores": {
+        "accuracy": 1.0,
+        "coherence": 1.0,
+        "compliance": 1.0,
+        "efficiency": 1.0
+      }
+    },
+    {
+      "expected_outcome": "completed",
+      "id": "samplicio-clean-1",
+      "mean_score": 1.0,
+      "min_score": 1.0,
+      "provider": "samplicio",
+      "rationale": "decide_steps=4, failed=0, retries=0, no_dom_change=0, delegated=0, qualif_blocks=0, final=detect_completion/'completed', monotonic=True",
+      "scores": {
+        "accuracy": 1.0,
+        "coherence": 1.0,
+        "compliance": 1.0,
+        "efficiency": 1.0
+      }
+    },
+    {
+      "expected_outcome": "completed",
+      "id": "cint-with-captcha-1",
+      "mean_score": 1.0,
+      "min_score": 1.0,
+      "provider": "cint",
+      "rationale": "decide_steps=3, failed=0, retries=0, no_dom_change=0, delegated=0, qualif_blocks=0, final=detect_completion/'completed', monotonic=True",
+      "scores": {
+        "accuracy": 1.0,
+        "coherence": 1.0,
+        "compliance": 1.0,
+        "efficiency": 1.0
+      }
+    },
+    {
+      "expected_outcome": "completed",
+      "id": "qualtrics-stuck-recovered-1",
+      "mean_score": 0.9,
+      "min_score": 0.76,
+      "provider": "qualtrics",
+      "rationale": "decide_steps=5, failed=2, retries=0, no_dom_change=2, delegated=0, qualif_blocks=0, final=detect_completion/'completed', monotonic=True",
+      "scores": {
+        "accuracy": 1.0,
+        "coherence": 1.0,
+        "compliance": 0.76,
+        "efficiency": 0.84
+      }
+    },
+    {
+      "expected_outcome": "completed",
+      "id": "purespectrum-clean-2",
+      "mean_score": 1.0,
+      "min_score": 1.0,
+      "provider": "purespectrum",
+      "rationale": "decide_steps=4, failed=0, retries=0, no_dom_change=0, delegated=0, qualif_blocks=0, final=detect_completion/'completed', monotonic=True",
+      "scores": {
+        "accuracy": 1.0,
+        "coherence": 1.0,
+        "compliance": 1.0,
+        "efficiency": 1.0
+      }
+    },
+    {
+      "expected_outcome": "screen_out",
+      "id": "tolunastart-screen-out-1",
+      "mean_score": 1.0,
+      "min_score": 1.0,
+      "provider": "tolunastart",
+      "rationale": "decide_steps=2, failed=0, retries=0, no_dom_change=0, delegated=0, qualif_blocks=0, final=detect_completion/'screen_out', monotonic=True",
+      "scores": {
+        "accuracy": 1.0,
+        "coherence": 1.0,
+        "compliance": 1.0,
+        "efficiency": 1.0
+      }
+    }
+  ],
+  "per_record_count": 10,
+  "per_trajectory_threshold": 0.45,
+  "per_trajectory_violations": [],
+  "started_at": "2026-05-17T17:33:49.306085+00:00",
+  "threshold": 0.65,
+  "threshold_pass": true
+}
