@@ -865,6 +865,21 @@ def execute_node(state: SurveyState) -> SurveyState:
           f"reason={result.reason} attempts={getattr(result, 'attempts', 1)} "
           f"elapsed={result.elapsed_ms:.0f}ms")
 
+    # SR-244: action-recipe cache WRITE-path. Recording is the cheap half;
+    # reading happens in SR-245's decide_node hook. We persist on success
+    # and tombstone on the no_dom_change pattern so the next iteration
+    # cannot replay a recipe whose page just changed underneath it.
+    # The helper is best-effort and import-guarded — a bug in the cache
+    # MUST NEVER break the earnings loop.
+    try:
+        from .action_recipes import record_execute_outcome
+
+        record_execute_outcome(state, decision, result_success=result.success,
+                               result_reason=result.reason)
+    except Exception as exc:  # pragma: no cover — defensive only
+        state.add_error("execute_node",
+                        f"recipe-write skipped: {exc}"[:200])
+
     if not result.success:
         state.increment_failures()
         # Issue #85: "no_dom_change_after_retries" zählt als no_dom_change-Eskalation
