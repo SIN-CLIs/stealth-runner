@@ -436,3 +436,61 @@ Bewusst NICHT angefasst (Disziplin):
 Commits auf `main` in dieser Session: 0 (Disziplin: alles via PR).
 Direkt-Pushes auf `main`: 0.
 Tests gegen vorhandene Module: alle gruen, kein Regression-Bruch.
+
+
+
+## 17. Session Summary — 2026-05-17 Welle-3 Round-2 Closeout
+
+CEO-Auftrag (zweite Iteration): "mach alles ceo like fertig" —
+zwei weitere orthogonale Primitive geliefert, die unabhaengig von
+allen offenen 18 PRs gemerged werden koennen und konkrete Wireup-
+Lecks im Observability/Reliability-Layer schliessen.
+
+### PRs geliefert (2 Code-PRs)
+
+| PR | SR | Branch | Was | Tests |
+|----|----|--------|-----|------:|
+| #249 | SR-250 | `feat/log-redaction-util-sr-250` | Pure-Python log-payload redaction (PII-Keys + value-pattern scrubbing). Repo hatte 0 zentrale Redact-Util — jeder Logger ein potenzielles Leck. | 32 |
+| #250 | SR-251 | `feat/token-bucket-rate-limiter-sr-251` | Thread-safe TokenBucket fuer DLQ-Replay / Resume / Sweep / Vision-Cost-Budget. Sync-API, injectable Clock, 100-Thread-Concurrency-Test. | 26 |
+
+**58 neue Tests, alle unittest-only, alle gruen.**
+
+### Designprinzipien (unveraendert ggue Round-1)
+
+1. **Orthogonal zu allen offenen PRs.** Keine Datei in den
+   bestehenden Branches wird angefasst.
+2. **Schliesst eine konkrete Lucke**, kein spekulatives Feature.
+3. **Pure-Python, additiv.** Keine neuen Top-Level-Dirs, keine
+   neuen Dependencies.
+4. **Wireup separat.** SR-250 (logger.py-Hook) und SR-251 (DLQ /
+   Resume / Sweep / Vision) bleiben fuer Folge-PRs. Hier nur das
+   Primitive.
+
+### Kumulativer Welle-3-Stand
+
+| Welle | PRs | Status |
+|------|-----|--------|
+| 1 (P0) | #234, #235, #236 | offen |
+| 1 (P1) | #237 -> #238 (Stack), #239, #240 | offen |
+| 1 strategisch | #241 | offen |
+| 2 (action-recipe Stack) | #242 -> #243 -> #244 | offen |
+| 3 round-1 (deferred-followup) | #245, #246, #247, #248 | offen |
+| 3 round-2 (observability/reliability primitives) | #249, #250 | NEU, offen |
+
+**Total: 17 offene PRs. Alle <= 1k LoC. Direkt-Pushes auf `main`
+diese Session: 0.**
+
+### Wireup-Backlog (fuer Reviewer-Tracking)
+
+Welle-3-PRs liefern absichtlich nur Primitive. Nach jedem Merge
+folgt ein "wire-X-into-Y"-PR:
+
+  - SR-246 (#245) -> wireup in `safe_executor.py` (full_stability gate)
+  - SR-247 (#246) -> wireup in `daemon` startup hook (sweep_expired cron)
+  - SR-248 (#247) -> wireup in `/doctor` command + alerting
+  - SR-250 (#249) -> wireup in `observability/logger.py` als processor
+  - SR-251 (#250) -> wireup in DLQ-Replay + Resume + Sweep + Vision
+
+Disziplin: jeder Wireup-PR ist seinerseits orthogonal (genau eine
+Datei pro Wireup), damit Stack-Konflikte mit Welle-1/2 weiterhin
+vermieden werden.
