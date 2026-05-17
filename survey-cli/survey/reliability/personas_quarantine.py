@@ -31,20 +31,39 @@ NICHT-ZIELE
     Dieses Modul macht KEIN:
       • Persona-Selection-Logic (wo wird die Quarantine konsultiert?
         → das ist Aufgabe des Caller-Codes, z. B. `persona_picker.py`).
-      • Auto-Release nach Zeit (TTL). `release()` ist immer explizit.
       • Persona-Definitionen (siehe Brief-Constraint: nur `persona_id:
         str`-zentriert, keine Persona-Modelle).
+
+TTL / AUTO-RELEASE (SR-247, 2026-05-17)
+---------------------------------------
+    PR #224 hat TTL/auto-release explizit als out-of-scope deferred:
+
+        > TTL/auto-release policy for quarantine entries; currently every
+        > release is manual.
+
+    SR-247 schließt diesen Punkt mit einem opt-in TTL-Feld:
+
+      • quarantine(ttl_seconds=86400) lässt den Eintrag nach 24h ablaufen.
+      • is_quarantined() / list_active() behandeln expired Einträge bereits
+        als released (read-only — keine Writes auf dem Hot-Path).
+      • sweep_expired() ist der explizite Reaper: schreibt Release-Records
+        mit reason="ttl_expired:auto" für den Audit-Trail.
+      • ttl_seconds=None (default) = altes Verhalten, kein Auto-Release.
+
+    Backward-compatible: alte JSONs ohne ttl_seconds laden weiterhin sauber,
+    schema_version bumpt 1→2, from_dict() füllt Default ein.
 
 PUBLIC API
 ----------
     QuarantineEntry        — frozen dataclass mit Eintrag-Metadaten
     QuarantineError        — Basisklasse für Fehler
     PersonaNotQuarantined  — release() auf non-quarantined ID
-    quarantine             — Eintrag anlegen / updaten
-    is_quarantined         — Bool-Check
-    list_active            — alle aktiven Einträge
+    quarantine             — Eintrag anlegen / updaten (optional ttl_seconds)
+    is_quarantined         — Bool-Check (TTL-aware)
+    list_active            — alle aktiven Einträge (TTL-aware)
     release                — Eintrag schließen (mit Audit-Reason)
-    get                    — einzelnen Eintrag lesen (incl. released)
+    get                    — einzelnen Eintrag lesen (incl. released/expired)
+    sweep_expired          — TTL-Reaper: schreibt released_at auf abgelaufene
 
 ADD-HERE-TOO CHECKLIST (when extending this module)
 ----------------------------------------------------
@@ -52,8 +71,11 @@ ADD-HERE-TOO CHECKLIST (when extending this module)
         AND the JSON schema-version constant AND the migration logic in
         from_dict for old files.
     [ ] New error type?                     → also extend tests.
-    [ ] Auto-release / TTL?                 → STOP, requires a separate
-        background job + decision on policy. Open follow-up issue.
+    [x] Auto-release / TTL?                 → SR-247: opt-in via
+        ttl_seconds field; sweep_expired() is the explicit reaper.
+        Effective expiry timestamp = quarantined_at + ttl_seconds. Read
+        paths (is_quarantined / list_active) treat expired as released
+        WITHOUT writing — only sweep_expired() persists the release.
 
 Module Status: NEW (SR-170 Phase PR1, 2026-05-13)
 ================================================================================
@@ -84,11 +106,15 @@ class PersonaNotQuarantined(QuarantineError):
 # ── SCHEMA VERSION ───────────────────────────────────────────────────────────
 
 
-_SCHEMA_VERSION: int = 1
+_SCHEMA_VERSION: int = 2
 """
 Bump this when QuarantineEntry's on-disk shape changes incompatibly.
 The from_dict() loader keeps backward compatibility via the version
 field on each JSON file.
+
+Version history:
+    1 — initial (SR-170)
+    2 — added ttl_seconds field (SR-247)
 """
 
 
@@ -110,6 +136,10 @@ class QuarantineEntry:
         released_at:       UNIX epoch seconds (int) when released, or None
                            if still active.
         release_reason:    free-form why-it-was-released, or empty.
+        ttl_seconds:       optional integer seconds for auto-release. None
+                           (default) = no TTL, behaves exactly like SR-170
+                           pre-247. When set, expiry is computed lazily as
+                           quarantined_at + ttl_seconds.
         schema_version:    on-disk schema version, see _SCHEMA_VERSION.
     """
 
@@ -119,11 +149,43 @@ class QuarantineEntry:
     quarantined_at: int = 0
     released_at: Optional[int] = None
     release_reason: str = ""
+    ttl_seconds: Optional[int] = None
     schema_version: int = _SCHEMA_VERSION
 
     def is_active(self) -> bool:
-        """True iff the entry has not been released yet."""
+        """True iff the entry has not been released yet (TTL-unaware).
+
+        For TTL-aware activity use ``is_active_at(now)``. The legacy
+        ``is_active()`` is kept as the historical "released_at is None"
+        check so that get() callers and audit tools can distinguish a
+        TTL-expired-but-not-yet-swept entry from a manually-released one.
+        """
         return self.released_at is None
+
+    def expires_at(self) -> Optional[int]:
+        """Return the absolute epoch-seconds at which this entry expires,
+        or None if there is no TTL."""
+        if self.ttl_seconds is None:
+            return None
+        return self.quarantined_at + self.ttl_seconds
+
+    def is_active_at(self, now: int) -> bool:
+        """True iff the entry is active at wall-clock ``now``.
+
+        Two ways an entry can be inactive:
+          1) released_at was explicitly set (manual release, prior sweep).
+          2) ttl_seconds is set and quarantined_at + ttl_seconds <= now.
+
+        Read-path callers (is_quarantined, list_active) use this to filter
+        TTL-expired entries WITHOUT writing to disk. The actual release
+        record is only persisted by sweep_expired().
+        """
+        if self.released_at is not None:
+            return False
+        expiry = self.expires_at()
+        if expiry is not None and now >= expiry:
+            return False
+        return True
 
     def to_dict(self) -> dict[str, Any]:
         """JSON-safe dict; ordered fields for readable git diffs."""
@@ -134,6 +196,7 @@ class QuarantineEntry:
             "quarantined_at": self.quarantined_at,
             "released_at": self.released_at,
             "release_reason": self.release_reason,
+            "ttl_seconds": self.ttl_seconds,
             "schema_version": self.schema_version,
         }
 
@@ -142,7 +205,19 @@ class QuarantineEntry:
         """
         Reconstruct from on-disk JSON. Tolerates older schema versions
         by filling missing fields with safe defaults.
+
+        Schema-1 files (pre-SR-247) lack ``ttl_seconds`` and are loaded
+        with ttl_seconds=None — their behaviour is unchanged.
         """
+        ttl_raw = data.get("ttl_seconds")
+        ttl_value: Optional[int]
+        if ttl_raw is None:
+            ttl_value = None
+        else:
+            ttl_value = int(ttl_raw)
+            if ttl_value <= 0:
+                # Defensive: reject silly values from corrupted manifests.
+                ttl_value = None
         return cls(
             persona_id=str(data["persona_id"]),
             reason=str(data.get("reason", "")),
@@ -152,6 +227,7 @@ class QuarantineEntry:
                 int(data["released_at"]) if data.get("released_at") is not None else None
             ),
             release_reason=str(data.get("release_reason", "")),
+            ttl_seconds=ttl_value,
             schema_version=int(data.get("schema_version", 0)),
         )
 
@@ -241,6 +317,7 @@ def quarantine(
     reason: str,
     judge_scores: Optional[dict[str, Any]] = None,
     *,
+    ttl_seconds: Optional[int] = None,
     store_root: Optional[Path] = None,
     now: Optional[int] = None,
 ) -> QuarantineEntry:
@@ -252,6 +329,10 @@ def quarantine(
       • If `persona_id` IS already active:             update reason/scores,
                                                        keep original
                                                        quarantined_at.
+                                                       ttl_seconds, if given,
+                                                       overrides the prior
+                                                       value. Pass None
+                                                       explicitly to clear it.
       • If `persona_id` was previously released:       create a new active
                                                        entry, with a fresh
                                                        quarantined_at (i.e.,
@@ -264,12 +345,22 @@ def quarantine(
         persona_id:    opaque identifier; must sanitize to a non-empty filename.
         reason:        free-form. Will be persisted verbatim.
         judge_scores:  optional dict (e.g. JudgeScoreCard.to_dict()).
+        ttl_seconds:   optional integer seconds for auto-release. Must be > 0
+                       if not None. Default None = no TTL (legacy behaviour).
         store_root:    optional path override; default = repo-rooted runs/quarantine.
         now:           optional epoch-seconds injection for test determinism.
 
     Returns:
         The QuarantineEntry as written.
+
+    Raises:
+        ValueError: if ttl_seconds is not None and not a positive integer.
     """
+    if ttl_seconds is not None and ttl_seconds <= 0:
+        raise ValueError(
+            f"ttl_seconds must be positive int or None; got {ttl_seconds!r}"
+        )
+
     root = _resolve_store_root(store_root)
     path = _entry_path(root, persona_id)
     timestamp = int(now if now is not None else time.time())
@@ -292,6 +383,7 @@ def quarantine(
         quarantined_at=quarantined_at,
         released_at=None,
         release_reason="",
+        ttl_seconds=ttl_seconds,
         schema_version=_SCHEMA_VERSION,
     )
     _atomic_write_json(path, entry.to_dict())
@@ -302,12 +394,22 @@ def is_quarantined(
     persona_id: str,
     *,
     store_root: Optional[Path] = None,
+    now: Optional[int] = None,
 ) -> bool:
     """
-    True iff there is an active (un-released) quarantine for this persona_id.
+    True iff there is an active (un-released, un-expired) quarantine
+    for this persona_id.
 
     Released entries return False — they are kept on disk for audit but
     do not block the persona from being re-used.
+
+    TTL-expired entries (SR-247): also return False. The on-disk file is
+    NOT mutated by this read-path call — it stays in the "lazy expired"
+    state until sweep_expired() persists the release record.
+
+    Args:
+        now: optional epoch-seconds injection for test determinism. Used
+             to evaluate TTL expiry. Default = wall-clock time.
     """
     root = _resolve_store_root(store_root)
     path = _entry_path(root, persona_id)
@@ -319,27 +421,31 @@ def is_quarantined(
         # Corrupt file → fail-safe: treat as quarantined so the caller
         # surfaces the corruption instead of silently using the persona.
         return True
-    return entry.is_active()
+    timestamp = int(now if now is not None else time.time())
+    return entry.is_active_at(timestamp)
 
 
 def list_active(
     *,
     store_root: Optional[Path] = None,
+    now: Optional[int] = None,
 ) -> list[QuarantineEntry]:
     """
     Return every currently-active quarantine, ordered by quarantined_at ASC.
 
-    Released entries are NOT included. Corrupt files are skipped silently
-    (use `get(persona_id)` for diagnostics on a specific id).
+    Released entries are NOT included. TTL-expired entries are NOT included
+    (filtered via is_active_at(now), no writes). Corrupt files are skipped
+    silently (use ``get(persona_id)`` for diagnostics on a specific id).
     """
     root = _resolve_store_root(store_root)
+    timestamp = int(now if now is not None else time.time())
     entries: list[QuarantineEntry] = []
     for path in sorted(root.glob("*.json")):
         try:
             entry = QuarantineEntry.from_dict(json.loads(path.read_text("utf-8")))
         except (json.JSONDecodeError, KeyError, ValueError):
             continue
-        if entry.is_active():
+        if entry.is_active_at(timestamp):
             entries.append(entry)
     entries.sort(key=lambda e: e.quarantined_at)
     return entries
@@ -399,10 +505,72 @@ def release(
         quarantined_at=existing.quarantined_at,
         released_at=timestamp,
         release_reason=override_reason,
+        ttl_seconds=existing.ttl_seconds,
         schema_version=_SCHEMA_VERSION,
     )
     _atomic_write_json(path, released.to_dict())
     return released
+
+
+def sweep_expired(
+    *,
+    store_root: Optional[Path] = None,
+    now: Optional[int] = None,
+    release_reason: str = "ttl_expired:auto",
+) -> list[QuarantineEntry]:
+    """
+    Persist release records for every TTL-expired entry. SR-247 reaper.
+
+    Walks the store, finds entries that satisfy ``not is_active() but
+    quarantined_at + ttl_seconds <= now AND released_at is None``, and
+    writes a release record (released_at=now, release_reason given) to
+    each. Entries without a TTL, already-released, or not-yet-expired
+    entries are skipped.
+
+    This is the ONLY write path that is intended to be triggered on a
+    schedule (cron / startup hook). Read paths (is_quarantined,
+    list_active) deliberately do NOT mutate the store — that keeps the
+    hot path I/O-cheap and the sweep auditable as a single batch.
+
+    Args:
+        store_root:     optional path override.
+        now:            optional epoch-seconds for test determinism.
+        release_reason: text to store in release_reason. Default is the
+                        canonical "ttl_expired:auto" so audit greps can
+                        distinguish auto from manual releases.
+
+    Returns:
+        List of QuarantineEntry records that were swept (after writing).
+        Ordered by quarantined_at ASC. Empty list if nothing to do.
+    """
+    root = _resolve_store_root(store_root)
+    timestamp = int(now if now is not None else time.time())
+    swept: list[QuarantineEntry] = []
+    for path in sorted(root.glob("*.json")):
+        try:
+            entry = QuarantineEntry.from_dict(json.loads(path.read_text("utf-8")))
+        except (json.JSONDecodeError, KeyError, ValueError):
+            continue
+        if entry.released_at is not None:
+            continue
+        expiry = entry.expires_at()
+        if expiry is None or timestamp < expiry:
+            continue
+        # Eligible — write release record.
+        released = QuarantineEntry(
+            persona_id=entry.persona_id,
+            reason=entry.reason,
+            judge_scores=entry.judge_scores,
+            quarantined_at=entry.quarantined_at,
+            released_at=timestamp,
+            release_reason=release_reason,
+            ttl_seconds=entry.ttl_seconds,
+            schema_version=_SCHEMA_VERSION,
+        )
+        _atomic_write_json(path, released.to_dict())
+        swept.append(released)
+    swept.sort(key=lambda e: e.quarantined_at)
+    return swept
 
 
 def get(
@@ -443,4 +611,5 @@ __all__ = [
     "list_active",
     "quarantine",
     "release",
+    "sweep_expired",
 ]
