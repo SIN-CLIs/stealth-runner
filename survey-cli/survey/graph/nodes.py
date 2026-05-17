@@ -762,6 +762,36 @@ def decide_node(state: SurveyState) -> SurveyState:
             decision = {"action": "wait", "reason": "no_candidate_found"}
 
     state.decision = decision
+
+    # SR-239: Vision-fallback trigger marker. We do NOT call the VLM here
+    # — that lives in the wire-up PR. We only flag the iteration so the
+    # daemon's observability layer can show the trigger and a future
+    # execute_node hook can act on it. The flag is recomputed every
+    # iteration (no carry-over).
+    try:
+        from .vision_fallback import should_use_vision_fallback
+
+        if should_use_vision_fallback(state):
+            state.vision_fallback_requested = True
+            state.vision_fallback_reason = (
+                f"no_dom_change={state.no_dom_change_count}"
+                f", dom_decision={'click' if decision.get('action') == 'click' else 'wait'}"
+            )
+            print(
+                f"[decide] vision-fallback TRIGGERED "
+                f"(no_dom_change={state.no_dom_change_count}, "
+                f"action={decision.get('action')})"
+            )
+        else:
+            state.vision_fallback_requested = False
+            state.vision_fallback_reason = ""
+    except Exception as exc:  # pragma: no cover — defensive only
+        # vision_fallback is optional. A bug in the helper must NEVER
+        # break the decide path; the loop has its own anti-stuck guard.
+        state.vision_fallback_requested = False
+        state.vision_fallback_reason = ""
+        state.add_error("decide_node", f"vision_fallback skipped: {exc}"[:200])
+
     print(f"[decide] action={decision.get('action')} "
           f"stable_id={decision.get('stable_id','')[:10]} "
           f"reason={decision.get('reason','')[:40]}")

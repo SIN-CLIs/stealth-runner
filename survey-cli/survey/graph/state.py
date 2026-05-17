@@ -454,6 +454,23 @@ class SurveyState:
     Wird aus dem Page-Text extrahiert via Regex.
     Wird an den Angular-Drag-Drop-Solver übergeben."""
 
+    # ══════════════════════════════════════════════════════════════════════════
+    # VISION FALLBACK TRIGGER (SR-239 / CEO-WAVE-1)
+    # ══════════════════════════════════════════════════════════════════════════
+
+    vision_fallback_requested: bool = False
+    """Flag the decide_node sets when (a) the previous click did not move
+    the DOM AND (b) the DOM-only path produced no candidate this round.
+    A future wire-up PR consumes this flag in execute_node to drive a
+    Set-of-Mark screenshot through the multimodal NIM (Qwen2.5-VL); for
+    now the marker exists so the graph + observability layer can SEE
+    when the trigger fires without yet paying the VLM cost. Reset by
+    decide_node at the top of every iteration."""
+
+    vision_fallback_reason: str = ""
+    """Why the trigger fired this round, for logs / retro. Empty when
+    the trigger did not fire."""
+
 
     # ── Property Helpers ─────────────────────────────────────────────────────
 
