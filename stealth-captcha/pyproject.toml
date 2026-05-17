@@ -37,6 +37,13 @@ dev = [
     "mypy>=1.10.0",
     "hypothesis>=6.112",
 ]
+# CEO-WAVE-1: Optional Patchright backend for the Approach-A (Playwright
+# raw mouse) drag-drop solver. Subprocess script tries patchright first
+# and falls back to vanilla playwright; both are optional at install time
+# because stealth-captcha can also drive the browser via raw CDP.
+stealth = [
+    "patchright>=1.49",
+]
 
 [project.scripts]
 stealth-captcha = "stealth_captcha.cli:main"

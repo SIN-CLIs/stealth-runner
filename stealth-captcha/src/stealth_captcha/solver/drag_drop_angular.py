@@ -186,6 +186,14 @@ def _try_approach_a_playwright_mouse(ws_url: str, number: str, page_info: Dict) 
     cdp_port = int(port_match.group(1)) if port_match else 9999
     _log(f"Extracted CDP port: {cdp_port}")
     
+    # CEO-WAVE-1: subprocess script must prefer patchright over playwright.
+    # Importing the helper here (not at module top) keeps drag_drop_angular
+    # importable on hosts that have neither package installed (e.g. unit
+    # test runners that only exercise dataclass shapes).
+    from .._playwright_compat import BACKEND_NAME, subprocess_import_block
+    _log(f"Subprocess playwright backend: {BACKEND_NAME}")
+    _import_block = subprocess_import_block()
+    
     import subprocess
     result = subprocess.run(
         ["python3", "-c", f"""
@@ -194,8 +202,7 @@ import asyncio
 import json
 
 async def solve():
-    from playwright.async_api import async_playwright
-    
+{_import_block}
     debug = []
     
     async with async_playwright() as p:
