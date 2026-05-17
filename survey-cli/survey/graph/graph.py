@@ -386,21 +386,37 @@ def build_graph() -> StateGraph:
 # ── COMPILED GRAPH FACTORY ───────────────────────────────────────────────���─────
 
 
-def create_graph():
+def create_graph(*, checkpointer: Any = None, with_checkpoint: bool = True):
     """Factory: Erstelle und kompiliere den Survey-Graph.
 
     Convenience-Wrapper für:
       graph = build_graph()
-      compiled = graph.compile()
+      compiled = graph.compile(checkpointer=...)
       return compiled
 
+    Args:
+        checkpointer: Optionales LangGraph BaseCheckpointSaver. Wenn None
+            und with_checkpoint=True, wird ein SqliteSaver via
+            `survey.graph.checkpointer.create_sqlite_checkpointer()`
+            angelegt (DB unter $STATE_DIR/langgraph_checkpoints.db).
+        with_checkpoint: Wenn False, wird der Graph ohne Checkpointing
+            kompiliert — Backwards-compat für Tests und für Hosts ohne
+            langgraph[sqlite] extras.
+
     Returns:
-        Compiled Graph — invoke(initial_state) → final_state
+        Compiled Graph — `compiled.invoke(state, config=...)` → final_state.
+
+    Resume-Semantik (SR-238):
+        Beim invoke MUSS jetzt ein `config={"configurable": {"thread_id":
+        ...}}` mitgegeben werden, damit der Checkpointer den passenden
+        Thread anhebt. `survey.graph.checkpointer.make_run_config(state)`
+        baut den Config-Dict deterministisch aus survey_id + provider.
 
     Example:
+        >>> from survey.graph.checkpointer import make_run_config
         >>> survey_graph = create_graph()
         >>> initial = SurveyState(survey_id="67064749", provider="purespectrum")
-        >>> final = survey_graph.invoke(initial)
+        >>> final = survey_graph.invoke(initial, config=make_run_config(initial))
         >>> final.status
         'completed'
     """
@@ -410,7 +426,21 @@ def create_graph():
             "Install with: pip install langgraph"
         )
     _graph = build_graph()
-    return _graph.compile()
+
+    saver: Any = checkpointer
+    if saver is None and with_checkpoint:
+        try:
+            from .checkpointer import create_sqlite_checkpointer
+
+            saver = create_sqlite_checkpointer()
+        except Exception:
+            # Defensive: any failure to materialise the saver falls back
+            # to the historic non-checkpointed compile path.
+            saver = None
+
+    if saver is None:
+        return _graph.compile()
+    return _graph.compile(checkpointer=saver)
 
 
 # ── STANDALONE RUNNER (ohne LangGraph) ────────────────────────────────────────
@@ -538,6 +568,13 @@ def run_survey_protected(
     """
     if use_langgraph and LANGGRAPH_AVAILABLE:
         compiled = create_graph()
+        # SR-238: deterministic thread_id so a crash + resume picks up
+        # exactly where the previous attempt left off, with no double
+        # cash-out (see SR-237 ledger for the side-effect side of this).
+        from .checkpointer import make_run_config
+
+        run_config = make_run_config(state)
+
         def _run(s):
             # LangGraph kennt unsere CoreCtx-Attribute nicht — bei dict-state
             # waere das ein Problem, aber wir nutzen SurveyState (dataclass)
@@ -545,7 +582,7 @@ def run_survey_protected(
             # Node — wir muessen sicherstellen, dass _core_ctx persistiert.
             # Die SurveyState-class hat _core_ctx als Plain-Attribut, das
             # bei dataclass.replace() copied wird.
-            return compiled.invoke(s)
+            return compiled.invoke(s, config=run_config)
         return run_survey_with_core(state, run_fn=_run, max_seconds=max_seconds)
     return run_survey_with_core(state, run_fn=run_survey_loop,
                                  max_seconds=max_seconds)
