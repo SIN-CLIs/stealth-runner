@@ -638,5 +638,101 @@ __all__ = [
     "ResolvedAction",
     "compute_page_signature",
     "match_recipe_to_snapshot",
+    "record_execute_outcome",
     "should_consult_cache",
 ]
+
+
+# ── Wire-up helper for execute_node (SR-244) ────────────────────────────────
+
+
+def record_execute_outcome(
+    state: Any,
+    decision: dict,
+    *,
+    result_success: bool,
+    result_reason: str,
+    store: Optional["RecipeStore"] = None,
+) -> Optional[str]:
+    """One-shot post-execute callback the survey graph plugs into
+    `execute_node`. Decides whether to record a fresh recipe, tombstone
+    a stale one, or do nothing — and returns a short string indicating
+    which branch ran (for logs / tests).
+
+    Branches:
+      - `"recorded"`:    `result_success` is True and the action is
+                         persistable (click / fill / submit / press_key
+                         on a real stable_id or key). We persist a
+                         recipe under the key derived from the snapshot
+                         that was on screen WHEN the decision was made.
+                         IMPORTANT: that snapshot is `state.universal_elements`
+                         AS THEY WERE AT THE TOP OF execute_node — the
+                         cdp_actuator may have advanced the page, but
+                         decide_node looked at the old snapshot, so the
+                         old key is the right one for the cache.
+      - `"invalidated"`: `result_success` is False AND
+                         `result_reason in {"no_dom_change",
+                         "no_dom_change_after_retries"}`. We tombstone
+                         the recipe under the same key, so the next
+                         iteration's lookup misses and the regular
+                         decide path runs.
+      - `"skipped"`:     anything else (wait/done/noop, error before
+                         we know what page we were on, empty signature,
+                         non-cacheable action, …). The store stays
+                         untouched.
+
+    The function is intentionally safe to call from `execute_node`'s
+    happy path. Any exception inside the store is caught and logged;
+    the earnings loop NEVER fails because of a cache write.
+    """
+    action = str((decision or {}).get("action") or "")
+    if action in ("", "wait", "done", "noop"):
+        return "skipped"
+
+    # press_key has no stable_id; click/fill/submit need one.
+    if action in ("click", "fill", "submit"):
+        if not (decision.get("stable_id") or "").strip():
+            return "skipped"
+    elif action == "press_key":
+        if not (decision.get("key") or "").strip():
+            return "skipped"
+    else:
+        return "skipped"
+
+    try:
+        key = RecipeKey.from_state(state)
+    except Exception as exc:
+        logger.debug("record_execute_outcome: key derivation failed: %s", exc)
+        return "skipped"
+
+    if not key.page_signature:
+        # The store would refuse this on its own; short-circuit so we
+        # don't pay for the write attempt.
+        return "skipped"
+
+    # Empty snapshot — the URL alone IS hashable but it's not enough
+    # signal to discriminate two pages on the same URL. We refuse to
+    # cache under that key; SR-243's compute_page_signature contract
+    # is "shape, not URL".
+    if not (getattr(state, "universal_elements", None) or []):
+        return "skipped"
+
+    cache = store or RecipeStore()
+
+    if result_success:
+        try:
+            cache.record_success(key, Recipe.from_decision(decision))
+        except Exception as exc:
+            logger.debug("record_execute_outcome: record_success failed: %s", exc)
+            return "skipped"
+        return "recorded"
+
+    if result_reason in ("no_dom_change", "no_dom_change_after_retries"):
+        try:
+            cache.invalidate(key, reason=result_reason)
+        except Exception as exc:
+            logger.debug("record_execute_outcome: invalidate failed: %s", exc)
+            return "skipped"
+        return "invalidated"
+
+    return "skipped"
