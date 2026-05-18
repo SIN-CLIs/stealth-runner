@@ -43,6 +43,13 @@ dev = [
     "mypy>=1.7.0",
     "types-Pillow>=10.0.0",
 ]
+# CEO-WAVE-1: Patchright is the recommended browser backend for production
+# (CDP stealth patches). Install via `pip install -e '.[stealth]'` then run
+# `patchright install chromium`. The base install keeps vanilla `playwright`
+# so CI sandboxes without internet stay functional.
+stealth = [
+    "patchright>=1.49",
+]
 
 [project.scripts]
 survey = "survey.daemon.cli:main"

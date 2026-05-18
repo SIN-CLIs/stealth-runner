@@ -65,13 +65,16 @@ class BrowserDriver:
     async def start(self) -> None:
         """Start browser with stealth configuration."""
         try:
-            from playwright.async_api import async_playwright
+            from ._playwright_compat import BACKEND_NAME, get_async_playwright
+            async_playwright = get_async_playwright()
         except ImportError:
             logger.error(
-                "Playwright not installed. Run: pip install playwright && playwright install"
+                "Neither patchright nor playwright is installed. "
+                "Run: pip install patchright && patchright install chromium"
             )
             raise
 
+        logger.info(f"Browser backend selected: {BACKEND_NAME}")
         self._playwright = await async_playwright().start()
 
         launch_args = self.stealth.get_browser_args()
