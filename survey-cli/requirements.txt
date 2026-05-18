@@ -35,7 +35,7 @@ langgraph>=0.2
 #   2. Verify CI pip-install passes (no `|| true` since SR-61).
 #   3. Document the reason in this header.
 numpy>=1.26.0
-Pillow>=10.0.0
+Pillow>=12.2.0
 
 # SR-168 Phase 2B / SR-169 (2026-05-13): pytest-asyncio is required for
 # `async def test_*` collection. `pyproject.toml` already lists it in
