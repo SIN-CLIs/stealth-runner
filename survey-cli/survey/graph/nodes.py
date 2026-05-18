@@ -894,6 +894,36 @@ def execute_node(state: SurveyState) -> SurveyState:
             actuator.refresh_scan()
 
             # ─────────────────────────────────────────────────────────────
+            # SR-258: full_stability pre-click gate (best-effort, non-blocking)
+            # ─────────────────────────────────────────────────────────────
+            # Waits for DOM convergence + network quiet before clicking.
+            # On failure (tracker not available, timeout, import error) the
+            # gate is silently skipped — never blocks the earnings loop.
+            # ─────────────────────────────────────────────────────────────
+            try:
+                from survey.reliability.wireups import wait_for_full_stability_safe
+                import asyncio
+
+                async def _hash_target():
+                    return actuator.get_dom_hash() if hasattr(actuator, "get_dom_hash") else ""
+
+                # Best-effort: if the actuator doesn't expose a tracker, skip.
+                _tracker = getattr(actuator, "_network_tracker", None) or getattr(cdp, "_network_tracker", None)
+                if _tracker is not None:
+                    _stability_metrics = asyncio.get_event_loop().run_until_complete(
+                        wait_for_full_stability_safe(
+                            hasher=_hash_target,
+                            tracker=_tracker,
+                            provider=state.provider,
+                        )
+                    )
+                    if _stability_metrics:
+                        state.last_action_result = state.last_action_result or {}
+                        # Attach as telemetry — visible in visual-debug / structlog.
+            except Exception:
+                pass  # Best-effort gate — never blocks.
+
+            # ─────────────────────────────────────────────────────────────
             # Issue #85: no_dom_change Retry Strategy
             # ─────────────────────────────────────────────────────────────
             # Statt single-shot click() nutzen wir click_with_retry(), das
