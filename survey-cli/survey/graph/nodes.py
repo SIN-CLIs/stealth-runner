@@ -249,6 +249,11 @@ def snapshot_node(state: SurveyState) -> SurveyState:
     minimal befuellt (fuer alte Tools), wird aber NICHT mehr fuer decide/execute
     genutzt. Pflicht-Kontext: AGENTS.md "KANONISCHE ARCHITEKTUR (2026-05-11)".
     """
+    # SR-245: every iteration starts with a fresh recipe-replay budget.
+    # Without this reset, a single replay early in the loop would block
+    # the cache for the rest of the survey.
+    state.recipe_replay_attempted = False
+
     if not state.tab_ws:
         state.add_error("snapshot_node", "tab_ws not set")
         state.status = "error"
@@ -528,8 +533,50 @@ def decide_node(state: SurveyState) -> SurveyState:
     # ── Build stable_id → element index once (used by LLM-path filter) ───
     by_sid = {e["stable_id"]: e for e in elements}
 
+    # SR-245: action-recipe cache READ path. We consult the cache BEFORE
+    # paying for NIM. A hit means we have already solved this exact page
+    # before (provider + page_signature match) and the recipe's stable_id
+    # is still present and not disabled. The write side (SR-244) keeps
+    # the cache fresh; the SR-243 helpers enforce that a stale recipe
+    # got tombstoned the moment the page state changed.
+    #
+    # Anti-loop guard: state.recipe_replay_attempted gets flipped True
+    # the moment we replay. The same iteration's execute_node will
+    # invalidate the recipe if the click does nothing. The next iteration
+    # therefore can't replay the same broken recipe — should_consult_cache
+    # also short-circuits when recipe_replay_attempted is already True.
+    try:
+        from .action_recipes import (
+            RecipeKey,
+            RecipeStore,
+            match_recipe_to_snapshot,
+            should_consult_cache,
+        )
+
+        if should_consult_cache(state):
+            recipe = RecipeStore().lookup(RecipeKey.from_state(state))
+            if recipe is not None:
+                resolved = match_recipe_to_snapshot(recipe, elements)
+                if resolved is not None and resolved.stable_id != avoid_id:
+                    decision = {
+                        **resolved.as_decision(),
+                        "reason": "recipe_cache_hit",
+                    }
+                    state.recipe_replay_attempted = True
+                    print(
+                        f"[decide] recipe-cache HIT "
+                        f"action={resolved.action} "
+                        f"stable_id={resolved.stable_id[:10]}"
+                    )
+    except Exception as exc:  # pragma: no cover — defensive only
+        # A bug in the cache MUST NEVER break the earnings loop. Log
+        # and fall through to the existing decide path.
+        state.add_error(
+            "decide_node", f"recipe-read skipped: {exc}"[:200]
+        )
+
     # 1) LLM-Decide (optional)
-    if get_nim and elements:
+    if not decision and get_nim and elements:
         try:
             llm_in = {
                 "elements": [

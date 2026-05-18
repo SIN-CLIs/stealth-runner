@@ -471,6 +471,17 @@ class SurveyState:
     """Why the trigger fired this round, for logs / retro. Empty when
     the trigger did not fire."""
 
+    # ACTION RECIPE CACHE (SR-243 / SR-244 / SR-245)
+    # ══════════════════════════════════════════════════════════════════════════
+
+    recipe_replay_attempted: bool = False
+    """Flag the decide_node read-hook flips True the moment it replays a
+    cached recipe instead of paying for NIM. The same-iteration
+    execute_node will invalidate the recipe if the click did nothing
+    (no_dom_change), and the next iteration's should_consult_cache()
+    refuses to consult while this flag is True — anti-loop guard.
+    Reset by snapshot_node at the top of every iteration."""
+
 
     # ── Property Helpers ─────────────────────────────────────────────────────
 
