@@ -58,7 +58,7 @@ jobs:
       result: ${{ steps.scan.outputs.result }}
     steps:
       # AGENTS.md §13.8.4: Action-Versionen sind Brain-Eigentum, kein @latest.
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
         with:
           # Need history for `git diff` against base ref on PR events.
           fetch-depth: 0
@@ -130,7 +130,7 @@ jobs:
     if: github.event_name == 'issues'
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v5
+      - uses: actions/checkout@v6
       - uses: actions/setup-python@v6
         with:
           python-version: "3.13"
