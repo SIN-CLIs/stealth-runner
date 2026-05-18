@@ -248,4 +248,93 @@
       try { delete document[k]; } catch (_) {}
     }
   });
+
+  // ── 13. Error.stack sanitizer (rebrowser-patches equivalent, SR-259) ───
+  // Detection vectors: Playwright/Puppeteer inject evaluation scripts whose
+  // frames appear in Error.stack traces. Cloudflare/DataDome throw an Error
+  // and inspect .stack for telltale strings:
+  //   - "__playwright_evaluation_script__"
+  //   - "__puppeteer_evaluation_script__"
+  //   - "pptr:" protocol prefix
+  //   - "playwright:" protocol prefix
+  //   - "isolated-vm" frames
+  //
+  // Fix: Override Error.prepareStackTrace (V8-specific) to filter frames
+  // containing these markers. Also patch .stack getter on Error.prototype
+  // as a belt-and-braces fallback for engines that bypass prepareStackTrace.
+  if (cfg.errorStack !== false) {
+    safe(() => {
+      const LEAK_PATTERNS = [
+        '__playwright_evaluation_script__',
+        '__puppeteer_evaluation_script__',
+        'pptr:',
+        'playwright:',
+        'isolated-vm',
+        '__playwright_binding__',
+      ];
+
+      const isLeakyFrame = (frame) => {
+        const fn = (typeof frame === 'string') ? frame : (frame.getFileName && frame.getFileName()) || '';
+        return LEAK_PATTERNS.some(p => fn.includes(p));
+      };
+
+      // V8's Error.prepareStackTrace — gives us structured access to frames
+      const originalPrepare = Error.prepareStackTrace;
+      Object.defineProperty(Error, 'prepareStackTrace', {
+        configurable: true,
+        writable: true,
+        value: function(error, structuredStack) {
+          const filtered = structuredStack.filter(f => !isLeakyFrame(f));
+          if (originalPrepare) {
+            return originalPrepare(error, filtered);
+          }
+          // Default V8 formatting
+          const header = String(error);
+          const frames = filtered.map(f => `    at ${f}`).join('\n');
+          return frames ? `${header}\n${frames}` : header;
+        }
+      });
+
+      // Belt-and-braces: patch Error.prototype.stack getter for string-based
+      // consumers that read .stack after it's been formatted.
+      const stackDesc = Object.getOwnPropertyDescriptor(Error.prototype, 'stack');
+      if (stackDesc && stackDesc.get) {
+        const origGet = stackDesc.get;
+        Object.defineProperty(Error.prototype, 'stack', {
+          configurable: true,
+          get: function() {
+            const raw = origGet.call(this);
+            if (typeof raw !== 'string') return raw;
+            return raw.split('\n').filter(line => !LEAK_PATTERNS.some(p => line.includes(p))).join('\n');
+          },
+          set: function(v) { Object.defineProperty(this, 'stack', { value: v, writable: true, configurable: true }); }
+        });
+      }
+    });
+  }
+
+  // ── 14. sourceURL/sourceMap comment scrubber (SR-259) ──────────────────
+  // When Playwright evaluates scripts, it appends `//# sourceURL=...` and
+  // `//# sourceMappingURL=...` comments that fingerprint the automation
+  // framework. Patchright already strips these at the binary level, but
+  // some edge cases (e.g. `Page.evaluate` with user-defined sourceURL)
+  // can still leak. This module patches Function.prototype.toString to
+  // strip any sourceURL/sourceMappingURL comment from the output.
+  if (cfg.sourceUrl !== false) {
+    safe(() => {
+      const origToString = Function.prototype.toString;
+      const SOURCE_COMMENT_RE = /\/\/[#@]\s*source(Mapping)?URL\s*=\s*[^\s]+/g;
+      Object.defineProperty(Function.prototype, 'toString', {
+        configurable: true,
+        writable: true,
+        value: function() {
+          const result = origToString.call(this);
+          if (typeof result === 'string' && SOURCE_COMMENT_RE.test(result)) {
+            return result.replace(SOURCE_COMMENT_RE, '');
+          }
+          return result;
+        }
+      });
+    });
+  }
 })();
