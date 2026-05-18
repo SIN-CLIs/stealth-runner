@@ -34,7 +34,7 @@ langgraph>=0.2
 #   1. Add it here.
 #   2. Verify CI pip-install passes (no `|| true` since SR-61).
 #   3. Document the reason in this header.
-numpy>=1.26.0
+numpy>=2.4.5
 Pillow>=10.0.0
 
 # SR-168 Phase 2B / SR-169 (2026-05-13): pytest-asyncio is required for
