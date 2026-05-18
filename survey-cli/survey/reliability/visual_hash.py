@@ -37,11 +37,25 @@ HISTORY
 
 KNOWN LIMITS
 ------------
-- Hash collides on uniform regions (e.g. all-white box). Caller MUST check
-  that pre_hash is non-trivial before trusting hamming_distance.
+- Hash collides on uniform regions (e.g. all-white box). Up until SR-221
+  the API silently produced a noise-driven 64-bit value for these inputs;
+  callers had no way to tell signal from noise. From SR-221 on, callers
+  MUST go through `is_trustworthy_input(...)` first OR call `dct_hash`
+  with `strict=True` to get a `LowVarianceHashError` instead of a
+  meaningless number. The `dct_hash_safe(...)` convenience wrapper does
+  both for the common case.
 - Color-blind by design (we convert to grayscale). A red→green change of
   the same brightness is invisible. Acceptable for our use-case: 99 % of
   state changes also alter brightness/structure.
+
+HISTORY (SR-221)
+----------------
+- Issue #221 was closed as false-positive on the (incorrect) reading that
+  the function had an RGBA→RGB bug. The audit reading is wrong: line 1
+  of the implementation does `convert("L")`, which handles RGBA fine.
+  The REAL latent defect Issue #221 should have caught is the silent
+  collision behaviour above. This module now exposes the contract
+  callers were always supposed to honour, and the test suite locks it.
 """
 
 from __future__ import annotations
@@ -60,8 +74,67 @@ HASH_SIZE: Final = 8
 # mid-frequency detail to discriminate text changes while staying cheap.
 DCT_SIZE: Final = 32
 
+# Empirically determined on the regression set in tests/test_visual_hash.py:
+# a 200×200 PNG with std-dev below 4.0 (8-bit grayscale) does not contain
+# enough structure to drive a stable pHash. Below this threshold, the bits
+# we extract are dominated by Lanczos resampling rounding noise.
+#
+# Why 4.0:
+#   - Pure white / black: std-dev == 0.0
+#   - JPEG-quality-1 noise on flat field: std-dev ≈ 1.5–2.5
+#   - Single-pixel-wide line on flat field (200×200): std-dev ≈ 2.0
+#   - Smallest UI element we ever care about (3-px checkbox tick on white,
+#     32×32 region): std-dev ≈ 5.5
+# So 4.0 is below "smallest real signal" and well above "noise floor".
+MIN_TRUSTWORTHY_STDDEV: Final = 4.0
 
-def dct_hash(png_bytes: bytes) -> int:
+
+class LowVarianceHashError(ValueError):
+    """Raised by `dct_hash(..., strict=True)` when the input is too uniform
+    to produce a meaningful perceptual hash. The numeric value would be
+    noise-driven, not signal-driven; refusing to return it forces the caller
+    to handle the case explicitly (skip, fall back to bbox compare, etc.)."""
+
+    def __init__(self, stddev: float) -> None:
+        super().__init__(
+            f"input image is too uniform for a trustworthy pHash "
+            f"(grayscale std-dev={stddev:.3f}, threshold={MIN_TRUSTWORTHY_STDDEV})"
+        )
+        self.stddev = stddev
+
+
+def is_trustworthy_input(png_bytes: bytes) -> bool:
+    """Return True iff the image carries enough variance for `dct_hash`
+    output to be signal- rather than noise-driven.
+
+    Cheap pre-filter for the triple-channel attestation step: skip the
+    Vision-channel entirely on uniform regions instead of comparing two
+    noise-driven hashes against each other.
+
+    Cost: one PIL decode + one numpy std-dev call (~1 ms on 300×300 PNG).
+    """
+    pixels = _load_grayscale(png_bytes)
+    return float(pixels.std()) >= MIN_TRUSTWORTHY_STDDEV
+
+
+def dct_hash_safe(png_bytes: bytes) -> int | None:
+    """Compute `dct_hash` only when the input is trustworthy.
+
+    Returns the 64-bit hash, or None if the input would yield a
+    noise-driven value. This is the recommended entry point for the
+    triple-channel attestation pipeline:
+
+        h = dct_hash_safe(crop)
+        if h is None:
+            return AttestationResult.skip("uniform region")
+    """
+    pixels = _load_grayscale(png_bytes)
+    if float(pixels.std()) < MIN_TRUSTWORTHY_STDDEV:
+        return None
+    return _dct_hash_from_grayscale(pixels)
+
+
+def dct_hash(png_bytes: bytes, *, strict: bool = False) -> int:
     """
     Compute a 64-bit perceptual hash of a PNG image via DCT-II.
 
@@ -76,31 +149,24 @@ def dct_hash(png_bytes: bytes) -> int:
 
     Args:
         png_bytes: PNG-encoded image bytes (any size, any mode).
+        strict: If True, raise `LowVarianceHashError` when the input has
+            grayscale std-dev below `MIN_TRUSTWORTHY_STDDEV` (i.e. would
+            produce a noise-driven hash). Default False preserves the
+            historic, lenient behaviour for callers that have their own
+            uniform-region detection. New code SHOULD use strict=True or
+            the `dct_hash_safe` wrapper.
 
     Returns:
         64-bit unsigned integer hash. Compare via hamming_distance.
 
     Raises:
         PIL.UnidentifiedImageError: if png_bytes is not a valid image.
+        LowVarianceHashError: if strict=True and input is too uniform.
     """
-    img = Image.open(io.BytesIO(png_bytes)).convert("L")
-    img = img.resize((DCT_SIZE, DCT_SIZE), Image.Resampling.LANCZOS)
-    pixels = np.asarray(img, dtype=np.float64)
-
-    dct = _dct2(pixels)
-    low_freq = dct[:HASH_SIZE, :HASH_SIZE].flatten()
-
-    # Drop DC component → 63 signal bits.
-    signal = low_freq[1:]
-    median = float(np.median(signal))
-    bits = signal > median
-
-    # Pack into a 64-bit int (MSB first). LSB stays 0 (reserved).
-    result = 0
-    for bit in bits:
-        result = (result << 1) | int(bool(bit))
-    result <<= 1  # shift in the reserved LSB
-    return result
+    pixels = _load_grayscale(png_bytes)
+    if strict and float(pixels.std()) < MIN_TRUSTWORTHY_STDDEV:
+        raise LowVarianceHashError(stddev=float(pixels.std()))
+    return _dct_hash_from_grayscale(pixels)
 
 
 def hamming_distance(a: int, b: int) -> int:
@@ -117,6 +183,36 @@ def hamming_distance(a: int, b: int) -> int:
 # -----------------------------------------------------------------------
 # Internals
 # -----------------------------------------------------------------------
+
+
+def _load_grayscale(png_bytes: bytes) -> np.ndarray:
+    """Decode → grayscale → resize → numpy float64.
+
+    Centralised so that variance check and hashing observe the EXACT same
+    pixel matrix. If the resize ever changes, the threshold in
+    `MIN_TRUSTWORTHY_STDDEV` must be re-tuned together with it.
+    """
+    img = Image.open(io.BytesIO(png_bytes)).convert("L")
+    img = img.resize((DCT_SIZE, DCT_SIZE), Image.Resampling.LANCZOS)
+    return np.asarray(img, dtype=np.float64)
+
+
+def _dct_hash_from_grayscale(pixels: np.ndarray) -> int:
+    """Hash given a pre-loaded grayscale matrix. Internal use only."""
+    dct = _dct2(pixels)
+    low_freq = dct[:HASH_SIZE, :HASH_SIZE].flatten()
+
+    # Drop DC component → 63 signal bits.
+    signal = low_freq[1:]
+    median = float(np.median(signal))
+    bits = signal > median
+
+    # Pack into a 64-bit int (MSB first). LSB stays 0 (reserved).
+    result = 0
+    for bit in bits:
+        result = (result << 1) | int(bool(bit))
+    result <<= 1  # shift in the reserved LSB
+    return result
 
 
 def _dct2(matrix: np.ndarray) -> np.ndarray:

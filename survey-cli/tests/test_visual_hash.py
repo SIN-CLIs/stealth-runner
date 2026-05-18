@@ -20,8 +20,12 @@ from PIL import Image, ImageDraw
 from survey.reliability.visual_hash import (
     DCT_SIZE,
     HASH_SIZE,
+    MIN_TRUSTWORTHY_STDDEV,
+    LowVarianceHashError,
     dct_hash,
+    dct_hash_safe,
     hamming_distance,
+    is_trustworthy_input,
     _dct1,
     _dct2,
 )
@@ -236,3 +240,84 @@ def test_hash_size_constants_consistent() -> None:
     # 64 bits = HASH_SIZE² (minus DC, plus reserved LSB).
     assert HASH_SIZE * HASH_SIZE == 64
     assert DCT_SIZE >= HASH_SIZE
+
+
+
+# -----------------------------------------------------------------------
+# SR-221: Uniform-region trust contract
+#
+# Locks the contract documented in dct_hash() KNOWN LIMITS. Issue #221
+# was closed as false-positive on a wrong reading; the latent defect it
+# should have caught is the silent-collision behaviour these tests pin.
+# -----------------------------------------------------------------------
+
+
+def test_is_trustworthy_input_rejects_pure_white() -> None:
+    assert is_trustworthy_input(_make_png(fill="white")) is False
+
+
+def test_is_trustworthy_input_rejects_pure_black() -> None:
+    assert is_trustworthy_input(_make_png(fill="black")) is False
+
+
+def test_is_trustworthy_input_accepts_real_ui_element() -> None:
+    """A drawn checkbox is the smallest signal we ever care about; it
+    must pass the trust gate. Keeping this test green keeps the threshold
+    honest — too-strict tuning of MIN_TRUSTWORTHY_STDDEV breaks this."""
+    assert is_trustworthy_input(_make_checkbox_png(checked=True)) is True
+    assert is_trustworthy_input(_make_checkbox_png(checked=False)) is True
+
+
+def test_dct_hash_strict_raises_on_uniform_white() -> None:
+    with pytest.raises(LowVarianceHashError) as exc:
+        dct_hash(_make_png(fill="white"), strict=True)
+    assert exc.value.stddev < MIN_TRUSTWORTHY_STDDEV
+
+
+def test_dct_hash_strict_raises_on_uniform_black() -> None:
+    with pytest.raises(LowVarianceHashError):
+        dct_hash(_make_png(fill="black"), strict=True)
+
+
+def test_dct_hash_strict_passes_on_real_signal() -> None:
+    """strict=True must NOT raise on inputs with real structure."""
+    h = dct_hash(_make_checkbox_png(checked=True), strict=True)
+    assert 0 <= h < (1 << 64)
+
+
+def test_dct_hash_lenient_default_preserves_legacy_behaviour() -> None:
+    """strict defaults to False: same code as before SR-221 keeps working,
+    just with a documented warning in the docstring."""
+    h = dct_hash(_make_png(fill="white"))  # no strict kwarg → no raise
+    assert isinstance(h, int)
+
+
+def test_dct_hash_safe_returns_none_on_uniform() -> None:
+    assert dct_hash_safe(_make_png(fill="white")) is None
+    assert dct_hash_safe(_make_png(fill="black")) is None
+
+
+def test_dct_hash_safe_returns_int_on_real_signal() -> None:
+    h = dct_hash_safe(_make_checkbox_png(checked=True))
+    assert isinstance(h, int)
+    assert 0 <= h < (1 << 64)
+
+
+def test_dct_hash_safe_matches_dct_hash_when_trustworthy() -> None:
+    """The safe wrapper must not silently change the hash value for
+    inputs it does NOT skip — only the skip behaviour is new."""
+    png = _make_checkbox_png(checked=True)
+    assert dct_hash_safe(png) == dct_hash(png)
+
+
+def test_low_variance_hash_error_carries_stddev() -> None:
+    """The exception must expose the std-dev so callers can log/decide,
+    not just see an opaque ValueError."""
+    try:
+        dct_hash(_make_png(fill="white"), strict=True)
+    except LowVarianceHashError as e:
+        assert isinstance(e.stddev, float)
+        assert e.stddev < MIN_TRUSTWORTHY_STDDEV
+        assert "uniform" in str(e).lower()
+    else:  # pragma: no cover
+        pytest.fail("expected LowVarianceHashError")
