@@ -157,10 +157,17 @@ class SurveyDaemon:
             await reader.read(1024)
 
             stats = self._agent.get_stats() if self._agent else {}
+            # SR-258 wireup: include DLQ health in the response
+            try:
+                from survey.reliability.wireups import get_dlq_health_snapshot
+                dlq_health = get_dlq_health_snapshot()
+            except Exception:
+                dlq_health = {}
             response_body = json.dumps({
                 "status": "running" if self._running else "stopping",
                 "uptime_seconds": (datetime.now() - self._start_time).total_seconds(),
                 "stats": stats,
+                "dlq_health": dlq_health,
             })
 
             response = (
@@ -263,6 +270,13 @@ class SurveyDaemon:
         logger.info(f"Config: {self.config_path}")
         logger.info(f"State DB: {self.state_path}")
         logger.info(f"Logs: {self.log_path}")
+
+        # SR-258 wireup: sweep TTL-expired persona quarantine entries on startup
+        try:
+            from survey.reliability.wireups import sweep_expired_personas
+            sweep_expired_personas()
+        except Exception as _sweep_err:
+            logger.debug(f"sweep_expired_personas on startup skipped: {_sweep_err}")
 
         # Start health server
         await self._start_health_server()
