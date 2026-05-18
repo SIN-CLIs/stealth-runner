@@ -475,6 +475,7 @@ def cmd_loop(args):
 def _run_survey_via_graph(survey_dict, provider, args):
     """Issue #34: Wrapper to invoke survey via LangGraph instead of SurveyRunner."""
     from survey.graph import create_graph, SurveyState
+    from survey.graph.checkpointer import make_run_config
     import time
     
     graph = create_graph()
@@ -488,7 +489,9 @@ def _run_survey_via_graph(survey_dict, provider, args):
     state.session_start_time = time.time()
     
     try:
-        final_state = graph.invoke(state)
+        # SR-238: pass deterministic thread_id config so SqliteSaver
+        # picks up the right thread on resume after crash.
+        final_state = graph.invoke(state, config=make_run_config(state))
         return {
             "success": final_state.status == "completed",
             "balance_earned": final_state.balance_after - final_state.balance_before,
