@@ -119,5 +119,22 @@ jobs:
           PYTHONPATH: survey-cli
         run: python survey-cli/tools/eval_match_field.py --threshold 0.92
 
+      # SR-240 (CEO-WAVE-1): trajectory eval harness — gates the build
+      # on the SCORE-CARD QUALITY of frozen golden trajectories. Uses a
+      # deterministic mock backend (no NIM/LLM call), so this step is
+      # safe on every PR including forks. The harness exits non-zero on
+      # threshold miss; CI lifts that into a red build. See
+      # docs/EVAL_HARNESS.md for the contract and how to update the
+      # golden set.
+      - name: Run trajectory eval harness (SR-240)
+        env:
+          PYTHONPATH: survey-cli
+        run: |
+          cd survey-cli
+          python -m evals.trajectory.run_eval \
+            --threshold 0.65 \
+            --report evals/trajectory/last-report.json \
+            --exit-non-zero-on-threshold-miss
+
       - name: Run pre-commit hooks
         run: pre-commit run --all-files || true
