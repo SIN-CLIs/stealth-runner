@@ -105,6 +105,30 @@ BANNED_PATTERNS: list[tuple[re.Pattern[str], str]] = [
     # `datetime.now(timezone.utc)` instead. See issue #186 for migration log.
     (re.compile(r'\bdatetime\.utcnow\s*\('),
      'datetime.utcnow() returns NAIVE dt; use datetime.now(timezone.utc) (SR-187)'),
+    # SR-260: Paid captcha services are forbidden by repo policy.
+    # Captchas must be solved with own solvers (stealth-captcha/) or OSS.
+    # See docs/CAPTCHA_STRATEGY.md. Doc-strings/comments are masked first
+    # so this rule does not flag itself or strategy docs.
+    (re.compile(r'\b2captcha\b', re.IGNORECASE),
+     'Paid captcha service "2captcha" forbidden (SR-260) — see docs/CAPTCHA_STRATEGY.md'),
+    (re.compile(r'\bcapsolver\b', re.IGNORECASE),
+     'Paid captcha service "capsolver" forbidden (SR-260) — see docs/CAPTCHA_STRATEGY.md'),
+    (re.compile(r'\banticaptcha\b', re.IGNORECASE),
+     'Paid captcha service "anticaptcha" forbidden (SR-260) — see docs/CAPTCHA_STRATEGY.md'),
+    (re.compile(r'\bnextcaptcha\b', re.IGNORECASE),
+     'Paid captcha service "nextcaptcha" forbidden (SR-260) — see docs/CAPTCHA_STRATEGY.md'),
+    (re.compile(r'\bdeathbycaptcha\b', re.IGNORECASE),
+     'Paid captcha service "deathbycaptcha" forbidden (SR-260) — see docs/CAPTCHA_STRATEGY.md'),
+    (re.compile(r'\bTWOCAPTCHA_API_KEY\b'),
+     'TWOCAPTCHA_API_KEY env var forbidden (SR-260) — use own solver / Vercel AI Gateway'),
+    (re.compile(r'\bCAPSOLVER_API_KEY\b'),
+     'CAPSOLVER_API_KEY env var forbidden (SR-260) — use own solver / Vercel AI Gateway'),
+    # SR-260: Direct LLM-provider keys are forbidden. All LLM calls go via
+    # the Vercel AI Gateway (AI_GATEWAY_API_KEY).
+    (re.compile(r'\bOPENAI_API_KEY\b'),
+     'Direct OPENAI_API_KEY forbidden (SR-260) — use AI_GATEWAY_API_KEY (Vercel AI Gateway)'),
+    (re.compile(r'\bANTHROPIC_API_KEY\b'),
+     'Direct ANTHROPIC_API_KEY forbidden (SR-260) — use AI_GATEWAY_API_KEY'),
 ]
 
 ROOT = Path(__file__).resolve().parent.parent

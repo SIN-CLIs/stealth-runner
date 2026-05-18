@@ -10,6 +10,11 @@ SlideCaptchaSolver, DragDropCaptchaSolver, TextCaptchaSolver.
 Jeder Solver implementiert die 7-Stufen-Pipeline (Inject → Hit-Test →
 Gap-Detect → Memory/Trajectory → CDP-Drag → Verify → Persist).
 
+POLICY (SR-260): KEINE bezahlten Solver. Captchas werden ausschliesslich
+durch eigene Solver in diesem Paket plus offene OSS-Loesungen geloest.
+Wenn ein Captcha-Typ keinen Solver hat, faellt der Survey mit
+reason='no_solver_for_type' aus — wir bezahlen nicht fuer Solving.
+
 BANNED METHODS — NIEMALS VERWENDEN:
 ❌ playstealth launch
 ❌ webauto-nodriver — ABSOLUT BANNED
@@ -20,18 +25,13 @@ BANNED METHODS — NIEMALS VERWENDEN:
 ❌ pkill -f "Google Chrome"
 ❌ killall Google Chrome
 ❌ skylight-cli click --element-index
+❌ 2Captcha / Capsolver / sonstige bezahlte Captcha-API
 """
 
 from stealth_captcha.solver.base import BaseSolver, SolveOutcome, SolveResult
 from stealth_captcha.solver.drag_drop import DragDropCaptchaSolver
 from stealth_captcha.solver.slide import SlideCaptchaSolver
 from stealth_captcha.solver.text import TextCaptchaSolver
-from stealth_captcha.solver.twocaptcha import (
-    TwoCaptchaFallbackSolver,
-    TwoCaptchaParams,
-    TwoCaptchaError,
-    inject_token_via_cdp,
-)
 
 __all__ = [
     "BaseSolver",
@@ -40,9 +40,4 @@ __all__ = [
     "SlideCaptchaSolver",
     "TextCaptchaSolver",
     "DragDropCaptchaSolver",
-    # Generic paid fallback (hcaptcha, recaptcha, turnstile, geetest, lemin)
-    "TwoCaptchaFallbackSolver",
-    "TwoCaptchaParams",
-    "TwoCaptchaError",
-    "inject_token_via_cdp",
 ]

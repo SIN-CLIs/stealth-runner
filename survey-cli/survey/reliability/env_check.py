@@ -7,7 +7,7 @@ MODUL-KONZEPT (SR-254)
 
 Heutiger Stealth-Runner faellt typisch 5 Minuten in einen Run mit einem
 NoneType-Error oder einem 401, weil ein erforderlicher Env-Var nicht
-gesetzt war (TWOCAPTCHA_API_KEY, CHROME_EXECUTABLE, OPENAI_API_KEY etc).
+gesetzt war (CHROME_EXECUTABLE, AI_GATEWAY_API_KEY etc.).
 Das ist Operator-Pain, der vermeidbar ist:
 
   - Im worst case startet die ganze Browser-/Daemon-Pipeline, registriert
@@ -48,9 +48,9 @@ Two pre-curated lists for the typical entry points:
                          CHROME_EXECUTABLE, STATE_DIR.
 
   REQUIRED_FOR_LIVE_RUN — daemon plus what's needed for an actual
-                          earning live run: at least one CAPTCHA solver
-                          key (TWOCAPTCHA or CAPSOLVER), and an LLM
-                          key (OPENAI_API_KEY or NIM_API_KEY).
+                          earning live run: AI_GATEWAY_API_KEY for the
+                          Vercel AI Gateway. NO paid captcha service is
+                          ever required (SR-260 policy).
 
 Callers can override or extend these lists trivially.
 
@@ -104,7 +104,7 @@ class EnvRequirement:
     """One env-var the daemon expects to see.
 
     Fields:
-        name:          The env-var name (e.g. "OPENAI_API_KEY").
+        name:          The env-var name (e.g. "AI_GATEWAY_API_KEY").
         severity:      required / warning / optional.
         description:   One-liner shown in the human report.
         validator:     Optional ``(str) -> str`` callable. Return "" if the
@@ -412,24 +412,15 @@ REQUIRED_FOR_DAEMON: tuple[EnvRequirement, ...] = (
 
 REQUIRED_FOR_LIVE_RUN: tuple[EnvRequirement, ...] = REQUIRED_FOR_DAEMON + (
     EnvRequirement(
-        name="TWOCAPTCHA_API_KEY",
+        name="AI_GATEWAY_API_KEY",
         severity="warning",
         description=(
-            "2Captcha API key. Without ANY captcha key, the captcha "
-            "fallback chain is degraded — set at least one of "
-            "TWOCAPTCHA_API_KEY / CAPSOLVER_API_KEY for live earning."
+            "Vercel AI Gateway API key — the ONLY allowed LLM backend. "
+            "Per SR-260 policy: no OpenAI, no direct provider keys. "
+            "If unset, the answer engine falls back to the local "
+            "heuristic / NIM path."
         ),
-        default_hint="https://2captcha.com → Account → Settings → API Key",
-    ),
-    EnvRequirement(
-        name="OPENAI_API_KEY",
-        severity="warning",
-        description=(
-            "OpenAI API key for the answer engine and/or vision "
-            "fallback (#239). Without it, NIM_API_KEY must cover the "
-            "primary path."
-        ),
-        default_hint="https://platform.openai.com/api-keys",
+        default_hint="https://vercel.com/<team>/~/ai/gateway → API Keys",
     ),
 )
 

@@ -14,9 +14,9 @@ mit echten Account-Cookies (HeyPiggy-Session) hantiert:
 
 1. CredentialVault  -> Fernet-verschluesselter In-Memory-Store
    - HeyPiggy-Session-Cookies
-   - 2captcha API-Key (wenn nicht im Env-Path)
    - Supabase Service-Role-Key
    - opencode CLI-Token
+   - Vercel AI Gateway API-Key (wenn LLM-Backend genutzt wird)
 
 2. AuditLogger      -> Tamper-detected JSON-Lines-Log
    - JEDER Step-Start/Complete/Failed wird geloggt
@@ -43,8 +43,8 @@ INTEGRATION
 -----------
 - SecurityManager() ist Singleton im core/__init__.py
 - Jeder LangGraph-Node ruft security.log_step(name, status)
-- Token-Provider (z. B. captcha-Solver) holen Keys via
-  security.get_token("twocaptcha")
+- Token-Provider holen Keys via
+  security.get_token("ai_gateway")
 
 BANNED
 ------

@@ -44,12 +44,12 @@ class KeyBasedRedactionTests(unittest.TestCase):
     def test_provider_specific_keys_redact(self) -> None:
         out = redact(
             {
-                "openai_api_key": "sk-proj-abc",
+                "ai_gateway_api_key": "vc_proj_abc",
                 "nim_api_key": "nvapi-xxx",
                 "captcha_api_key": "cap-xxx",
             }
         )
-        self.assertEqual(out["openai_api_key"], REDACTED)
+        self.assertEqual(out["ai_gateway_api_key"], REDACTED)
         self.assertEqual(out["nim_api_key"], REDACTED)
         self.assertEqual(out["captcha_api_key"], REDACTED)
 

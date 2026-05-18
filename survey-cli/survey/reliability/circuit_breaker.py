@@ -9,9 +9,12 @@ Stealth-Runner hat mehrere externe Calls mit "kann ploetzlich fuer 30s
 komplett tot sein"-Verhalten:
 
   - NIM-API (`survey/nim.py`): Modell-Endpoint hat regelmaessig 5xx-Bursts
-  - OpenAI Vision-Fallback (#239): Rate-Limit oder Provider-Outage
-  - 2captcha / capsolver-API: Anti-Bot-Service-Maintenance
+  - Vercel AI Gateway: durchaus auch Outages und Rate-Limits, gleich
+    behandelbar wie ein direkter Provider
   - Heypiggy-Login: Session-Endpoint kann temporaer down sein
+  - Eigene Captcha-Solver (Slide / DragDrop / OCR): wenn ein Stealth-
+    Captcha-Modell tot ist, sollte der Breaker den Solver-Pfad pausieren
+    statt jeden Survey reinzudruecken
 
 `RetryPolicy` (SR-238) loest pro-Call-Retries mit Backoff. Was sie NICHT
 loest: bei einem 5-Minuten-Provider-Outage retried der Caller jeden Call

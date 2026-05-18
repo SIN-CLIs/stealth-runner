@@ -73,7 +73,10 @@ PUBLIC API
     LLMCallable          — Protocol für injizierbaren LLM-Aufruf
     TrajectoryJudge      — die Klasse
     load_default_prompt  — liest prompts/trajectory_audit.txt
-    make_openai_judge    — convenience factory mit OpenAI als Backend
+    make_ai_gateway_judge — convenience factory; LLM-Backend ist
+                           AUSSCHLIESSLICH der Vercel AI Gateway
+                           (POLICY SR-260: kein direkter OpenAI-/
+                           Anthropic-/Provider-Key).
 
 ADD-HERE-TOO CHECKLIST (when extending this module)
 ----------------------------------------------------
@@ -81,8 +84,10 @@ ADD-HERE-TOO CHECKLIST (when extending this module)
         AND test_trajectory_judge.py matrix.
     [ ] New JudgeError subclass? → also extend the test for parse-failure
         modes.
-    [ ] New LLM provider? → add factory parallel to make_openai_judge,
-        keep TrajectoryJudge itself provider-agnostic.
+    [ ] New LLM provider? → STOP. Per SR-260 ist der Vercel AI Gateway
+        die einzige zulaessige LLM-Quelle. Falls ein zweiter Backend
+        gebraucht wird, MUSS das mit dem Auftraggeber explizit abgestimmt
+        werden — keine direkten Provider-Keys.
 
 Module Status: NEW (SR-170 Phase PR1, 2026-05-13)
 ================================================================================
@@ -293,9 +298,9 @@ class TrajectoryJudge:
             config=JudgeConfig(),
         )
 
-    Or for production with OpenAI:
+    Or for production with the Vercel AI Gateway (SR-260):
 
-        judge = make_openai_judge(model="gpt-4o-mini")
+        judge = make_ai_gateway_judge(model="openai/gpt-4o-mini")
 
     Usage:
 
@@ -465,29 +470,44 @@ class TrajectoryJudge:
 # ── CONVENIENCE FACTORY: OPENAI BACKEND ──────────────────────────────────────
 
 
-def make_openai_judge(
-    model: str = "gpt-4o-mini",
+def make_ai_gateway_judge(
+    model: str = "openai/gpt-4o-mini",
     prompt: Optional[str] = None,
     config: Optional[JudgeConfig] = None,
     temperature: float = 0.0,
     max_tokens: int = 400,
     api_key: Optional[str] = None,
+    base_url: Optional[str] = None,
 ) -> TrajectoryJudge:
     """
-    Production factory: wires `openai>=1.0` as the LLM backend.
+    Production factory — wires the **Vercel AI Gateway** as the LLM backend.
 
-    The OpenAI client is constructed lazily inside the callable so that
-    importing this module does NOT require OPENAI_API_KEY to be set —
-    which matters for unit tests that import but never call the factory.
+    POLICY (SR-260): Direct provider keys (OpenAI, Anthropic, etc.) are
+    forbidden. The Vercel AI Gateway exposes an OpenAI-compatible API
+    surface and proxies the request to the chosen model. This factory
+    is the only sanctioned entry point for the trajectory judge.
+
+    The OpenAI client (used here purely as the OpenAI-compatible HTTP
+    client; the real backend is the gateway) is constructed lazily so
+    that importing this module does NOT require AI_GATEWAY_API_KEY to
+    be set — which matters for unit tests that import but never call
+    the factory.
 
     Args:
-        model:         OpenAI chat-completion model id.
-        prompt:        Audit prompt text. If None, loads via load_default_prompt().
+        model:         Gateway model id (e.g. "openai/gpt-4o-mini",
+                       "anthropic/claude-3-5-sonnet"). The model
+                       provider is resolved by the gateway.
+        prompt:        Audit prompt text. If None, loads via
+                       load_default_prompt().
         config:        JudgeConfig override.
         temperature:   0.0 for deterministic scoring (recommended).
-        max_tokens:    cap on response tokens; 400 is enough for 4 scores
-                       + ~300 chars rationale.
-        api_key:       optional explicit key; else uses $OPENAI_API_KEY.
+        max_tokens:    cap on response tokens; 400 is enough for
+                       4 scores + ~300 chars rationale.
+        api_key:       optional explicit gateway key; else uses
+                       $AI_GATEWAY_API_KEY.
+        base_url:      optional gateway base URL override; defaults to
+                       $AI_GATEWAY_BASE_URL or
+                       "https://gateway.ai.vercel.com/v1".
 
     Returns:
         A wired TrajectoryJudge ready to .audit(...).
@@ -495,12 +515,20 @@ def make_openai_judge(
     if prompt is None:
         prompt = load_default_prompt()
 
-    def _openai_call(rendered_prompt: str) -> str:
-        # Lazy import so that this module is importable without `openai` installed
-        # in environments that only use mock callables (e.g. CI unit tests).
+    resolved_base_url = (
+        base_url
+        or os.environ.get("AI_GATEWAY_BASE_URL")
+        or "https://gateway.ai.vercel.com/v1"
+    )
+    resolved_api_key = api_key or os.environ.get("AI_GATEWAY_API_KEY", "")
+
+    def _gateway_call(rendered_prompt: str) -> str:
+        # Lazy import: the openai SDK speaks the OpenAI-compatible API
+        # that the Vercel AI Gateway exposes; this is a transport choice,
+        # NOT a request to OpenAI directly.
         from openai import OpenAI
 
-        client = OpenAI(api_key=api_key) if api_key else OpenAI()
+        client = OpenAI(api_key=resolved_api_key, base_url=resolved_base_url)
         response = client.chat.completions.create(
             model=model,
             messages=[{"role": "user", "content": rendered_prompt}],
@@ -511,15 +539,29 @@ def make_openai_judge(
         choice = response.choices[0]
         content = choice.message.content
         if content is None:
-            raise JudgeParseError("OpenAI returned message.content=None.")
+            raise JudgeParseError("AI Gateway returned message.content=None.")
         return content
 
     return TrajectoryJudge(
-        llm_callable=_openai_call,
+        llm_callable=_gateway_call,
         prompt=prompt,
         config=config or JudgeConfig(),
         model_name=model,
     )
+
+
+# Backward-compat alias. KEEPS the old name importable but routes 100% of
+# traffic through the AI Gateway. Per SR-260 there is NEVER a direct
+# OpenAI path — the alias exists only so old code paths don't break
+# while we migrate callers.
+def make_openai_judge(*args: Any, **kwargs: Any) -> TrajectoryJudge:
+    """Deprecated alias for ``make_ai_gateway_judge``.
+
+    Per SR-260 policy, no direct OpenAI key is ever used. This alias
+    forwards all calls to the gateway factory. New callers MUST use
+    ``make_ai_gateway_judge`` directly.
+    """
+    return make_ai_gateway_judge(*args, **kwargs)
 
 
 # ── PUBLIC RE-EXPORTS ────────────────────────────────────────────────────────
@@ -536,5 +578,6 @@ __all__ = [
     "LLMCallable",
     "TrajectoryJudge",
     "load_default_prompt",
-    "make_openai_judge",
+    "make_ai_gateway_judge",
+    "make_openai_judge",  # deprecated alias, forwards to gateway
 ]
