@@ -26,6 +26,8 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, Optional
 
+from survey.observability.redact import redact as _redact_payload
+
 # ── Log Directory ──────────────────────────────────────
 
 LOGS_DIR = Path(__file__).parent.parent.parent / "logs"
@@ -129,6 +131,8 @@ class StructuredLogger:
             "provider": self.provider,
             **data,
         }
+        # SR-250 wireup: scrub PII/secrets before persisting to disk.
+        entry = _redact_payload(entry)
         fp = _daily_file("iterations")
         with open(fp, "a") as f:
             f.write(json.dumps(entry) + "\n")

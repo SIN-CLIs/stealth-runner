@@ -299,6 +299,18 @@ def cmd_config(args) -> int:
 
 def main(args: list[str] | None = None) -> int:
     """Main CLI entry point."""
+    # SR-254 wireup: fail-fast if required env-vars are missing/invalid.
+    from survey.reliability.env_check import (
+        REQUIRED_FOR_DAEMON,
+        check_env,
+        format_human_report,
+    )
+
+    env_result = check_env(REQUIRED_FOR_DAEMON)
+    if not env_result.is_ok:
+        print(format_human_report(env_result), file=sys.stderr)
+        return 2
+
     parser = argparse.ArgumentParser(
         prog="survey",
         description="Survey Agent CLI - Automated survey completion",
