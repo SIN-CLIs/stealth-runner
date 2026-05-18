@@ -199,14 +199,14 @@ class FormatReportTests(unittest.TestCase):
 
     def test_report_redacts_present_values(self) -> None:
         """Don't echo secrets back to the operator."""
-        env = {"OPENAI_API_KEY": "sk-proj-very-secret"}
+        env = {"AI_GATEWAY_API_KEY": "vc_proj_very_secret"}
         result = check_env(
-            [_req("OPENAI_API_KEY", description="LLM key")],
+            [_req("AI_GATEWAY_API_KEY", description="LLM key")],
             env=env,
         )
         report = format_human_report(result)
-        self.assertNotIn("sk-proj-very-secret", report)
-        self.assertIn("OPENAI_API_KEY", report)
+        self.assertNotIn("vc_proj_very_secret", report)
+        self.assertIn("AI_GATEWAY_API_KEY", report)
         self.assertIn("present", report.lower())
 
     def test_ok_report_states_ok(self) -> None:

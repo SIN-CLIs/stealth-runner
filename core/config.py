@@ -11,8 +11,15 @@ HeyPiggy-Survey-Use-Case angepasst:
   - Default CDP Port: 9999 (HeyPiggy Bot-Profil — NICHT 9336)
   - Default Chrome user_data_dir: ~/.stealth/chrome-profile (nicht /tmp/...)
   - HEYPIGGY_COOKIE_BACKUP wird hier zentral aufgeloest
-  - 2captcha API-Key wird hier als optional gefuehrt
   - SurveyBudgetConfig (NEU): 2-Minuten Wallclock-Budget pro Survey
+
+POLICY (SR-260, 2026-05-17)
+---------------------------
+  - KEINE bezahlten Captcha-Solver mehr (2Captcha, Capsolver entfernt).
+    Captchas werden ausschliesslich durch eigene Solver (siehe
+    stealth-captcha/) und freie Open-Source-Loesungen geloest.
+  - KEIN OpenAI-API-Key. Falls ein LLM-Backend gebraucht wird, MUSS
+    der Vercel AI Gateway verwendet werden (env: AI_GATEWAY_API_KEY).
 
 ZWECK
 -----
@@ -23,7 +30,6 @@ EINE Quelle der Wahrheit fuer ALLES was Environment-abhaengig ist:
   - Wo liegen die Cookies?          → ChromeConfig.heypiggy_cookie_backup
   - Wie viele Retries pro Step?    → RetryConfig.max_retries
   - Wie lang darf eine Survey sein? → SurveyBudgetConfig.max_seconds (120s!)
-  - 2captcha API-Key?               → CaptchaConfig.twocaptcha_api_key
 
 DESIGN-PRINZIPIEN
 -----------------
@@ -251,47 +257,31 @@ class RetryConfig:
 class CaptchaConfig:
     """Captcha-Solver Konfiguration.
 
-    twocaptcha_api_key: Wird als generischer Fallback genutzt wenn KEIN
-                        nativer Solver fuer einen Captcha-Typ existiert.
-                        Siehe stealth-captcha/.../twocaptcha_fallback.py.
-                        Ohne Key → solve faellt fehl mit
-                        reason='no_solver_for_type'.
-    max_solve_seconds:  Hartes Timeout pro Solve-Versuch. 60s ist
-                        2captcha-Realistic; laenger waere innerhalb des
-                        120s Survey-Budgets nicht mehr leistbar.
+    POLICY (SR-260): KEINE bezahlten Solver. Captchas werden durch eigene
+    Solver in stealth-captcha/ + offene Solver geloest (siehe Strategie
+    in docs/CAPTCHA_STRATEGY.md). Wenn KEIN Solver fuer einen
+    Captcha-Typ existiert, faellt der Solve fehl mit
+    reason='no_solver_for_type' — der Survey wird geskipt, NICHT
+    gegen Geld geloest.
+
+    max_solve_seconds:  Hartes Timeout pro Solve-Versuch. 60s ist innerhalb
+                        des 120s Survey-Budgets noch leistbar.
     """
-    twocaptcha_api_key: str = ""
-    capsolver_api_key: str = ""
     max_solve_seconds: int = 60
 
     @classmethod
     def from_env(cls) -> "CaptchaConfig":
         return cls(
-            twocaptcha_api_key=os.environ.get("TWOCAPTCHA_API_KEY", ""),
-            capsolver_api_key=os.environ.get("CAPSOLVER_API_KEY", ""),
             max_solve_seconds=int(os.environ.get("CAPTCHA_SOLVE_TIMEOUT_S", "60")),
         )
 
     @property
     def has_fallback_solver(self) -> bool:
-        return bool(self.twocaptcha_api_key or self.capsolver_api_key)
-
-    def __repr__(self) -> str:  # noqa: D401 — kurz und buendig
-        """Custom repr — KEINE Klartext-API-Keys in Logs/Tracebacks leaken!
-
-        Liefert nur das letzte 4-Zeichen-Suffix (z.B. "...xyz1") oder
-        "<unset>" wenn leer. Wichtig fuer Production: Sentry/Logging-Tools
-        recorden gern repr(config) bei Errors — ohne diese Redaction landet
-        der Key dann im Sentry-Issue.
+        """SR-260: keine paid solver mehr. Der Begriff bleibt aus
+        Backward-Compat; Returnt immer False, sodass Caller die alte
+        Eskalationslogik (skip + log) weiter nutzen koennen.
         """
-        def _mask(s: str) -> str:
-            return f"<unset>" if not s else f"...{s[-4:]}"
-        return (
-            f"CaptchaConfig("
-            f"twocaptcha_api_key={_mask(self.twocaptcha_api_key)}, "
-            f"capsolver_api_key={_mask(self.capsolver_api_key)}, "
-            f"max_solve_seconds={self.max_solve_seconds})"
-        )
+        return False
 
 
 # ── SURVEY-BUDGET-CONFIG ───────────────────────────────────────────────────────

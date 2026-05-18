@@ -123,6 +123,8 @@ DEFAULT_SECRET_KEY_PATTERNS: Final[tuple[str, ...]] = (
     r"(?i)\b(?:credit[_-]?card|card[_-]?number|cvv)\b",
     # Provider-specific
     r"(?i)\b(?:openai[_-]?api[_-]?key|nim[_-]?api[_-]?key|captcha[_-]?api[_-]?key)\b",
+    # SR-260: Vercel AI Gateway is the only sanctioned LLM backend.
+    r"(?i)\b(?:ai[_-]?gateway[_-]?api[_-]?key|ai[_-]?gateway[_-]?key)\b",
 )
 
 # Value patterns: match against string VALUES. Matching SUBSTRING

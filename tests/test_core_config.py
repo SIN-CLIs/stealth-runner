@@ -47,18 +47,22 @@ def test_env_override_chrome_port(monkeypatch, tmp_path):
     assert cfg.chrome.port == 12345
 
 
-def test_twocaptcha_api_key_redaction_safe(tmp_config, monkeypatch):
-    """twocaptcha_api_key NICHT im __repr__ ausgegeben."""
-    monkeypatch.setenv("TWOCAPTCHA_API_KEY", "supersecret_key_xyz")
+def test_secret_repr_redaction_safe(tmp_config, monkeypatch):
+    """Sicherheits-Regression: keine Secrets in __repr__(cfg).
+
+    SR-260: TWOCAPTCHA_API_KEY und OPENAI_API_KEY sind komplett
+    entfernt. Dieser Test stellt sicher, dass auch eingeschmuggelte
+    Werte fuer den verbleibenden VAULT_ENCRYPTION_KEY nicht im repr
+    der Config landen.
+    """
+    monkeypatch.setenv("ENCRYPTION_KEY", "supersecret_key_xyz")
     from core import reset_singletons, get_config
     reset_singletons()
     cfg = get_config()
-    # API key MUSS gesetzt sein, aber __repr__ darf ihn nicht leaken
-    if hasattr(cfg.captcha, "twocaptcha_api_key"):
-        assert cfg.captcha.twocaptcha_api_key == "supersecret_key_xyz"
     repr_str = repr(cfg)
     assert "supersecret_key_xyz" not in repr_str, (
-        "API key MUST NOT leak in __repr__ — Risk: leaks in logs/tracebacks"
+        "Encryption key MUST NOT leak in __repr__ — "
+        "Risk: leaks in logs/tracebacks"
     )
 
 
