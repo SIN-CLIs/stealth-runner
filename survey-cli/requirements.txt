@@ -14,7 +14,7 @@
 #   3. Document the reason in this header.
 websocket-client>=1.6.0
 openai>=2.36.0
-requests>=2.31.0
+requests>=2.34.2
 
 # SR-150 (2026-05-12 cherry-pick): langgraph is imported by
 # survey/daemon/survey_agent_graph.py and pulled into the daemon
